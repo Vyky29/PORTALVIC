@@ -204,6 +204,28 @@
     if (modal) modal.hidden = true;
   }
 
+  async function openCreatedGroupOnPortal(gid) {
+    gid = String(gid || "").trim();
+    if (!gid) return;
+    if (typeof global.portalAdminDmOpenGroupThread === "function") {
+      global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+      global.__PORTAL_ADMIN_DM_UI.hubPane = "channels";
+      if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
+        global.PortalAdminCsCliq.setRailPane("channels");
+      }
+      await global.portalAdminDmOpenGroupThread(gid);
+      return;
+    }
+    if (typeof global.portalRenderInternalChatSheet === "function") {
+      global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+      global.__PORTAL_INTERNAL_CHAT_UI.workerInboxTab = "groups";
+      global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+      global.__PORTAL_INTERNAL_CHAT_UI.groupId = gid;
+      global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = "";
+      await global.portalRenderInternalChatSheet();
+    }
+  }
+
   async function submitCreateGroup() {
     var c = client();
     var err = document.getElementById("portalCsCliqGroupErr");
@@ -232,18 +254,16 @@
       closeCreateModal();
       if (typeof global.portalAdminDmRenderList === "function") {
         await global.portalAdminDmRenderList();
+      } else if (
+        global.portalLeadStaffChatDirectory &&
+        typeof global.portalLeadStaffChatDirectory.renderSimplifiedInboxList === "function"
+      ) {
+        await global.portalLeadStaffChatDirectory.renderSimplifiedInboxList();
       } else {
         await refresh();
       }
       var gid = res.data && res.data.id ? String(res.data.id) : "";
-      if (gid && typeof global.portalAdminDmOpenGroupThread === "function") {
-        global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
-        global.__PORTAL_ADMIN_DM_UI.hubPane = "channels";
-        if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
-          global.PortalAdminCsCliq.setRailPane("channels");
-        }
-        await global.portalAdminDmOpenGroupThread(gid);
-      }
+      if (gid) await openCreatedGroupOnPortal(gid);
     } catch (e) {
       if (err) {
         err.textContent = String((e && e.message) || e || "Could not create group.");

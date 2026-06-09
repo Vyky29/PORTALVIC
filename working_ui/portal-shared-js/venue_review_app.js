@@ -320,7 +320,7 @@ function initVenueReviewPage() {
   updateNoButtonText(btnNo);
   const ctx = contextFromQuery();
   renderVenueContextHeader(ctx);
-  portalBindVenueReviewVoice(ctx);
+  void portalBindVenueReviewVoice(ctx);
 
   function getIssueMode() {
     const m = clean(form.dataset.issueMode || "").toLowerCase();
@@ -451,13 +451,18 @@ function initVenueReviewPage() {
   });
 }
 
-function portalBindVenueReviewVoice(ctx) {
+async function portalBindVenueReviewVoice(ctx) {
   if (typeof window === "undefined" || typeof window.PortalFeedbackVoiceInput === "undefined") {
     return;
   }
+  let staffName = clean((ctx && ctx.completedBy) || "");
+  try {
+    const submission = await resolveSubmissionContext(ctx);
+    staffName = clean(submission && submission.submittedByName) || staffName;
+  } catch (_) {}
   window.PortalFeedbackVoiceInput.init({
     fields: ["issues"],
-    staffName: clean((ctx && ctx.completedBy) || ""),
+    staffName,
   });
 }
 

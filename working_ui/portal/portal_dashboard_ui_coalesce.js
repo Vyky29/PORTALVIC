@@ -8,6 +8,9 @@
   var finishGen = 0;
 
   function normalizePhotoUrl(url) {
+    if (typeof global.portalNormalizeParticipantPhotoUrl === "function") {
+      return global.portalNormalizeParticipantPhotoUrl(url);
+    }
     var u = String(url || "").trim();
     if (!u) return "";
     if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
@@ -17,22 +20,38 @@
 
   global.portalNormalizeParticipantPhotoUrl = normalizePhotoUrl;
 
+  var photoRepairTimer = null;
+
+  function scheduleParticipantPhotoRepair() {
+    if (photoRepairTimer) global.clearTimeout(photoRepairTimer);
+    photoRepairTimer = global.setTimeout(function () {
+      photoRepairTimer = null;
+      if (typeof global.portalRefreshTodayNextParticipantPhotos === "function") {
+        global.portalRefreshTodayNextParticipantPhotos();
+      }
+    }, 140);
+  }
+
   global.portalPreloadParticipantPhotoUrls = function portalPreloadParticipantPhotoUrls(urls) {
     if (!global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__) {
       global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__ = Object.create(null);
     }
     var cache = global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__;
+    var queued = false;
     (urls || []).forEach(function (raw) {
       var u = normalizePhotoUrl(raw);
       if (!u || cache[u]) return;
       cache[u] = "pending";
+      queued = true;
       var img = new Image();
       img.decoding = "async";
       img.onload = img.onerror = function () {
         cache[u] = "done";
+        scheduleParticipantPhotoRepair();
       };
       img.src = u;
     });
+    if (queued) scheduleParticipantPhotoRepair();
   };
 
   global.portalParticipantPhotoLoadingAttr = function portalParticipantPhotoLoadingAttr() {

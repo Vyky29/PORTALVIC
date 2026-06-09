@@ -13,8 +13,8 @@
     "arthur mo": "portal/participants/arthur-mo.png",
     "arthur manners": "portal/participants/arthur-manners.png",
     ayaan: "portal/participants/ayaan.png",
-    "adam ab": "portal/participants/adam-ab.png",
-    "adam a": "portal/participants/adam-ab.png",
+    "adam ab": "portal/participants/adam ab.png",
+    "adam a": "portal/participants/adam ab.png",
     haneef: "portal/participants/haneef.png",
     haneff: "portal/participants/haneef.png",
     "amaar ah": "portal/participants/amaar-ah.png",
@@ -49,10 +49,22 @@
     samer: "portal/participants/samer.png",
     kate: "portal/participants/kate.png",
     kamy: "portal/participants/kamy.png",
-    cyrus: "portal/participants/cyrus.png?v=20260606-cyrus",
+    cyrus: "portal/participants/cyrus.png",
     erik: "portal/participants/erik.png",
     gabriel: "portal/participants/gabriel.png",
     yoan: "portal/participants/yoan.png",
+  };
+
+  /** Files actually shipped under working_ui/portal/participants/ — avoids 404 + empty avatars. */
+  var PARTICIPANT_PHOTO_FILES_ON_DISK = {
+    "/portal/participants/adaam-ah.png": true,
+    "/portal/participants/amaar-ah.png": true,
+    "/portal/participants/ayden-w.png": true,
+    "/portal/participants/adam%20ab.png": true,
+    "/portal/participants/gabriel.png": true,
+    "/portal/participants/anas.png": true,
+    "/portal/participants/aydaan-ah.png": true,
+    "/portal/participants/cyrus.png": true,
   };
 
   function photoKey(name) {
@@ -67,7 +79,17 @@
     if (!u) return "";
     if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
     if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
-    return u;
+    var qi = u.indexOf("?");
+    var path = qi >= 0 ? u.slice(0, qi) : u;
+    var query = qi >= 0 ? u.slice(qi) : "";
+    path = path
+      .split("/")
+      .map(function (seg) {
+        if (!seg || seg.indexOf("%") >= 0) return seg;
+        return encodeURIComponent(seg);
+      })
+      .join("/");
+    return path + query;
   }
 
   function normGenderValue(v) {
@@ -101,11 +123,71 @@
     return "";
   }
 
-  function portalParticipantPhotoUrl(name, avatarOverride) {
-    var override = String(avatarOverride || "").trim();
-    if (override) return override;
+  /** File names use hyphens (adam-ab.png), not spaces — see participantPhotoPathCandidates. */
+  function participantPhotoPathOnDisk(relative) {
+    var p = normalizePhotoUrl(String(relative || "").trim());
+    return p && PARTICIPANT_PHOTO_FILES_ON_DISK[p] ? p : "";
+  }
+
+  function participantPhotoPathCandidates(name, avatarOverride) {
     var key = photoKey(name);
-    return Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key) ? PARTICIPANT_PHOTOS[key] : "";
+    var out = [];
+    function add(raw) {
+      var p = normalizePhotoUrl(String(raw || "").trim());
+      if (p && out.indexOf(p) === -1) out.push(p);
+    }
+    function addIfOnDisk(raw) {
+      var p = participantPhotoPathOnDisk(raw);
+      if (p) add(p);
+    }
+    addIfOnDisk(avatarOverride);
+    var mapped = Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key)
+      ? PARTICIPANT_PHOTOS[key]
+      : "";
+    if (mapped) {
+      addIfOnDisk(mapped);
+    }
+    if (key) {
+      var hyphenSlug = key.replace(/\s+/g, "-");
+      addIfOnDisk("portal/participants/" + hyphenSlug + ".png");
+      addIfOnDisk("portal/participants/" + hyphenSlug + ".jpg");
+      if (key.indexOf(" ") >= 0) {
+        addIfOnDisk("portal/participants/" + key + ".png");
+        addIfOnDisk("portal/participants/" + key + ".jpg");
+      }
+      if (!mapped) {
+        var parts = key.split(/\s+/).filter(Boolean);
+        if (parts.length > 1 && Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, parts[0])) {
+          addIfOnDisk(PARTICIPANT_PHOTOS[parts[0]]);
+        }
+      }
+    }
+    return out;
+  }
+
+  function portalParticipantPhotoUrl(name, avatarOverride) {
+    var candidates = participantPhotoPathCandidates(name, avatarOverride);
+    return candidates.length ? candidates[0] : "";
+  }
+
+  function portalParticipantPhotoTryFallback(img) {
+    if (!img) return;
+    var rest = String(img.getAttribute("data-photo-fallbacks") || "")
+      .split("|")
+      .map(function (p) {
+        return normalizePhotoUrl(p);
+      })
+      .filter(Boolean);
+    if (!rest.length) {
+      if (typeof global.portalParticipantCalendarAvatarFallback === "function") {
+        global.portalParticipantCalendarAvatarFallback(img);
+      } else if (typeof global.portalClientPhotoSlotFallback === "function") {
+        global.portalClientPhotoSlotFallback(img);
+      }
+      return;
+    }
+    img.setAttribute("data-photo-fallbacks", rest.slice(1).join("|"));
+    img.src = rest[0];
   }
 
   function portalParticipantInitials(name) {
@@ -142,7 +224,9 @@
   function portalParticipantAvatarInnerHtml(name, clientId, opts) {
     opts = opts || {};
     var esc = typeof opts.esc === "function" ? opts.esc : defaultEsc;
-    var url = portalParticipantPhotoUrl(name, opts.avatarFile);
+    var candidates = participantPhotoPathCandidates(name, opts.avatarFile);
+    var url = candidates.length ? candidates[0] : "";
+    var photoFallbacks = candidates.slice(1).join("|");
     var initials = esc(portalParticipantInitials(name));
     var wrapClass = String(opts.className || "portal-roster-avatar").trim() || "portal-roster-avatar";
     var isStaff = wrapClass.indexOf("portal-roster-avatar--staff") >= 0;
@@ -168,7 +252,9 @@
       esc(url) +
       '" alt=""' +
       loadAttr +
-      ' decoding="async" draggable="false" onerror="this.remove();var p=this.parentElement;if(p)p.classList.remove(\'portal-roster-avatar--has-photo\');" />' +
+      ' decoding="async" draggable="false"' +
+      (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
+      ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();var p=this.parentElement;if(p)p.classList.remove(\'portal-roster-avatar--has-photo\');}" />' +
       "</span>"
     );
   }
@@ -177,8 +263,9 @@
   function portalParticipantCalendarAvatarHtml(name, photoUrl, esc) {
     esc = typeof esc === "function" ? esc : defaultEsc;
     name = String(name || "").trim();
-    photoUrl = String(photoUrl || "").trim();
-    if (!photoUrl) photoUrl = portalParticipantPhotoUrl(name) || "";
+    var candidates = participantPhotoPathCandidates(name, photoUrl);
+    photoUrl = candidates.length ? candidates[0] : "";
+    var photoFallbacks = candidates.slice(1).join("|");
     var nameAttr = ' data-participant-name="' + esc(name) + '"';
     if (photoUrl) {
       var loadAttr = photoLoadAttr();
@@ -190,7 +277,9 @@
         esc(photoUrl) +
         '" alt=""' +
         loadAttr +
-        ' decoding="async" draggable="false" onerror="if(window.portalParticipantCalendarAvatarFallback){window.portalParticipantCalendarAvatarFallback(this);}" />' +
+        ' decoding="async" draggable="false"' +
+        (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
+        ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else if(window.portalParticipantCalendarAvatarFallback){window.portalParticipantCalendarAvatarFallback(this);}" />' +
         "</div>"
       );
     }
@@ -208,7 +297,10 @@
   };
 
   global.PARTICIPANT_PHOTOS = PARTICIPANT_PHOTOS;
+  global.PARTICIPANT_PHOTO_FILES_ON_DISK = PARTICIPANT_PHOTO_FILES_ON_DISK;
   global.portalParticipantPhotoUrl = portalParticipantPhotoUrl;
+  global.portalParticipantPhotoPathCandidates = participantPhotoPathCandidates;
+  global.portalParticipantPhotoTryFallback = portalParticipantPhotoTryFallback;
   global.portalParticipantGender = portalParticipantGender;
   global.portalParticipantGenderClass = portalParticipantGenderClass;
   global.portalParticipantInitials = portalParticipantInitials;

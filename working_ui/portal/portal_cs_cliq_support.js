@@ -70,7 +70,8 @@
     });
   }
 
-  function submit(type) {
+  function submit(type, opts) {
+    opts = opts || {};
     var labels = {
       urgent_callback: "Urgent call back",
       participant_concern: "Participant concern",
@@ -79,10 +80,11 @@
       meeting_request: "Meeting request",
       other: "Need help",
     };
+    type = String(type || "other");
     var req = {
       id: "sr-" + Date.now(),
       type: type,
-      label: labels[type] || labels.other,
+      label: String(opts.label || labels[type] || labels.other).trim(),
       from: profileName(),
       created_at: new Date().toISOString(),
       status: "open",
@@ -100,23 +102,27 @@
         }
       });
     }
-    showConfirmation(req);
+    showConfirmation(req, opts.confirmHost, opts.onRestore);
   }
 
-  function showConfirmation(req) {
-    var host = document.getElementById("csCliqSupportBody");
+  function showConfirmation(req, hostEl, onRestore) {
+    var host = hostEl || document.getElementById("csCliqSupportBody");
     if (!host) return;
     host.innerHTML =
       '<div class="portal-cs-cliq-support-confirm">' +
-      '<h3>Support request sent</h3>' +
+      '<h3>Request sent</h3>' +
       "<p>Your <strong>" +
       esc(req.label) +
-      "</strong> request was sent to Management. You will be contacted here when someone replies.</p>" +
-      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="csCliqSupportDone">Back to options</button>' +
+      "</strong> request was sent to Management. You will be contacted in your <strong>Admin</strong> chat when someone replies.</p>" +
+      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" data-cs-cliq-support-done>Back to options</button>' +
       "</div>";
-    var done = document.getElementById("csCliqSupportDone");
+    var done = host.querySelector("[data-cs-cliq-support-done]");
     if (done) {
       done.addEventListener("click", function () {
+        if (typeof onRestore === "function") {
+          onRestore();
+          return;
+        }
         renderPane();
       });
     }
@@ -189,6 +195,7 @@
     readRequests: readRequests,
     submit: submit,
     submitMeetingRequest: submitMeetingRequest,
+    openMeetingRequest: openMeetingRequest,
     purgeTestMeetingAlerts: purgeTestMeetingAlerts,
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -349,9 +349,21 @@
       if (req.meetingType) parts.push("Type: " + (req.meetingType === "voice" ? "Voice" : "Video"));
       if (req.with) parts.push("With: " + String(req.with));
       if (req.notes) parts.push("Notes: " + String(req.notes));
+      if (req.label && String(req.label).trim()) parts.push("Topic: " + String(req.label).trim());
       return parts.join("\n");
     }
-    return SUPPORT_PREFIX + " " + name + " needs help. Please reply in this chat.";
+    var topic = String(req.label || "").trim();
+    if (!topic) {
+      var topics = {
+        urgent_callback: "Urgent call back",
+        participant_concern: "Participant concern",
+        safeguarding: "Safeguarding concern",
+        staff_issue: "Staff issue",
+        other: "Need help",
+      };
+      topic = topics[String(req.type || "")] || "Need help";
+    }
+    return SUPPORT_PREFIX + " " + name + " — " + topic + ". Please reply in this chat.";
   }
 
   function isSupportRouteBody(body) {

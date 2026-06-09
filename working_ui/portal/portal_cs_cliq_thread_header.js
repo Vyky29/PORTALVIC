@@ -203,6 +203,28 @@
     }
   }
 
+  function syncThreadBackChrome(inThread) {
+    var header = document.getElementById("internalChatThreadHeader");
+    var backBtn = document.getElementById("internalChatThreadBackBtn");
+    if (header) {
+      if (inThread) {
+        header.hidden = false;
+        header.removeAttribute("hidden");
+        header.setAttribute("aria-hidden", "false");
+        header.classList.add("is-open");
+      } else {
+        header.hidden = true;
+        header.setAttribute("aria-hidden", "true");
+        header.classList.remove("is-open");
+      }
+    }
+    if (backBtn) {
+      backBtn.hidden = !inThread;
+      backBtn.setAttribute("aria-hidden", inThread ? "false" : "true");
+      if (inThread) backBtn.removeAttribute("hidden");
+    }
+  }
+
   function syncBackUnread(count) {
     var el = document.getElementById("internalChatThreadBackUnread");
     if (!el) return;
@@ -230,6 +252,7 @@
     var ui = {
       peerProf: peerProf || null,
       managementOpsPeer: !!opts.managementOpsPeer,
+      groupId: opts.groupId ? String(opts.groupId).trim() : "",
     };
     var label = headerDisplayName(String(peerLabel || "").trim() || "Conversation", ui);
     var nameEl = document.getElementById("internalChatThreadName");
@@ -266,6 +289,7 @@
     header.classList.add("portal-cs-cliq-thread-header--chat");
     header.removeAttribute("hidden");
     header.setAttribute("aria-hidden", "false");
+    syncThreadBackChrome(true);
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
       global.portalCsCliqThreadFiles.onThreadChange();
     }
@@ -274,6 +298,7 @@
   global.portalCsCliqThreadHeader = {
     sync: sync,
     syncInternal: syncInternal,
+    syncThreadBackChrome: syncThreadBackChrome,
     syncBackUnread: syncBackUnread,
     initials: initials,
     headerDisplayName: headerDisplayName,

@@ -27,7 +27,7 @@
     if (!isMobileViewport()) return;
     try {
       document.documentElement.classList.add("portal-force-landscape");
-      document.body.classList.add("portal-force-landscape");
+      if (document.body) document.body.classList.add("portal-force-landscape");
     } catch (_e) {}
     if (!canLock()) return;
     try {

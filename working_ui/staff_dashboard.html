@@ -12,10 +12,12 @@
     Edge Functions: portal-push-subscribe · portal-push-dispatch-schedule-override · webhook DB en schedule_overrides + header x-portal-webhook-secret.
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
+  <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
   <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-two-btn"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
+  <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -94,10 +96,10 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-alerts-two-btn" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-chat-close-fix" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-thread-back-nav" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260609-inbox-pane-fix" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260609-thread-back-nav" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-thread-back-nav" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260608-inbox-fix" />
@@ -172,7 +174,7 @@
       var on;
       if(stored === '1') on = true;
       else if(stored === '0') on = false;
-      else on = narrow;
+      else on = true;
       applyMobilePreview(on, { persist: false });
       if(!mq || !mq.addEventListener) return;
       mq.addEventListener('change', function(){
@@ -1011,12 +1013,12 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260609-dan-sunday-green"></script>
+  <script src="/portal/term_from_timetable.js?v=20260609-giuseppe-tinashe"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260610-javier-sunday-v2"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-javi-javier-split"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260609-tinashe-june"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-tinashe-shared"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1032,8 +1034,8 @@
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260606-photo-stable"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260609-yusuf-photo"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260609-photo-repair"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260609-photo-on-disk"></script>
   <script src="/portal/portal_topbar_header.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260609-achievement-videos"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels"></script>
@@ -1048,7 +1050,7 @@
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-dock-menu-nav"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260607-area-icons-transparent"></script>
-  <script src="/portal/portal_today_next_chips.js?v=20260609-initials-gender"></script>
+  <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -1059,17 +1061,17 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260610-javi-javier-split"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260610-no-leads-404"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-thread-back-nav"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
+  <script src="/portal/portal_cs_cliq_support.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-thread-back-nav"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
@@ -1079,8 +1081,8 @@
   <script src="/portal/portal_executive_dm.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260610-javi-javier-split"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-group"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260609-photo-404-guard"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-thread-back-nav"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260610-chat-push-restore"></script>
@@ -1308,7 +1310,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260609-lead-daycentre-shared';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260609-feedback-history';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1610,15 +1612,27 @@
             if(cid) tryK(iso + '||' + cid);
             return o;
           })();
-          if(memOnly.feedbackDone || memOnly.absent || memOnly.cancelled){
+          if(memOnly.absent || memOnly.cancelled){
             return {
-              feedbackDone: !!memOnly.feedbackDone,
+              feedbackDone: false,
               incident: !!memOnly.incident,
               absent: !!memOnly.absent,
               cancelled: !!memOnly.cancelled
             };
           }
-          if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
+          if(memOnly.feedbackDone){
+            if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)){
+              return {
+                feedbackDone: true,
+                incident: !!memOnly.incident,
+                absent: false,
+                cancelled: false
+              };
+            }
+            if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
+              return portalReviewFlagsForResolvedSession(iso, sid, s);
+            }
+          } else if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
             return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
@@ -2075,6 +2089,19 @@
         return a.localeCompare(b, 'en', { sensitivity: 'base' });
       });
     }
+    function portalAppendStaffMobileVerticalParam(href){
+      const raw = String(href || '').trim();
+      if(!raw) return raw;
+      try{
+        const tu = new URL(raw, window.location.href);
+        if(!/(portal-venue-review|portal-pickup)/i.test(tu.pathname)) return raw;
+        if(tu.searchParams.get('m') !== '1') tu.searchParams.set('m', '1');
+        try{ sessionStorage.setItem('staffPortalMobileUx', '1'); }catch(_){}
+        return tu.href;
+      }catch(_){
+        return raw;
+      }
+    }
     function portalBuildPickupQuickMenuUrl(url){
       const base = String(url || '').trim();
       if(!base) return '';
@@ -2086,9 +2113,9 @@
           const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
           if(nm) u.searchParams.set('staff', nm);
         }catch(_){}
-        return u.href;
+        return portalAppendStaffMobileVerticalParam(u.href);
       }catch(_){
-        return base;
+        return portalAppendStaffMobileVerticalParam(base);
       }
     }
     function portalBuildVenueQuickMenuUrl(url){
@@ -2117,9 +2144,9 @@
           }
           if(service && service !== '—') u.searchParams.set('service', service);
         }catch(_){}
-        return u.href;
+        return portalAppendStaffMobileVerticalParam(u.href);
       }catch(_){
-        return base;
+        return portalAppendStaffMobileVerticalParam(base);
       }
     }
     function portalQuickMenuNavigate(url){
@@ -2200,6 +2227,9 @@
           }
         }catch(__){}
       }
+      target = typeof portalAppendStaffMobileVerticalParam === 'function'
+        ? portalAppendStaffMobileVerticalParam(target)
+        : target;
       try{ closeSheet(); }catch(_){}
       try{
         var profileTarget = false;
@@ -3865,6 +3895,13 @@
             cur.setDate(cur.getDate() + 1);
             continue;
           }
+          if(typeof getTermFeedbackStateForDay === 'function'){
+            const calSt = getTermFeedbackStateForDay(cur.getFullYear(), cur.getMonth(), cur.getDate());
+            if(calSt === 'complete' || calSt === 'cancelled'){
+              cur.setDate(cur.getDate() + 1);
+              continue;
+            }
+          }
           /* Same source of truth as term calendar green cells — do not nag when the day is complete. */
           if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)){
             cur.setDate(cur.getDate() + 1);
@@ -4054,6 +4091,10 @@
         : stats.pending.length;
       const sessionFeedbackTodayNeed = sessionFeedbackCount > 0;
       const sessionFeedbackNeed = sessionFeedbackCount > 0;
+      if(!sessionFeedbackNeed){
+        termIncomplete = false;
+        termLate = false;
+      }
       const venueScope = portalVenueReportScopeApplies();
       const shift = portalTodayShiftSessions();
       let venueOpenNeed = false;
@@ -4823,8 +4864,17 @@
     function resolveParticipantPhotoUrl(name, clientId){
       const c = clientId && clientNotesById[clientId];
       const fromNote = c && c.avatarFile ? String(c.avatarFile).trim() : '';
-      if(fromNote) return fromNote;
-      return clientPhotoUrl(name);
+      let url = '';
+      if(typeof portalParticipantPhotoPathCandidates === 'function'){
+        const candidates = portalParticipantPhotoPathCandidates(name, fromNote);
+        url = candidates.length ? candidates[0] : '';
+      }else if(fromNote){
+        url = fromNote;
+      }else{
+        url = clientPhotoUrl(name);
+      }
+      if(typeof portalNormalizeParticipantPhotoUrl === 'function') return portalNormalizeParticipantPhotoUrl(url) || '';
+      return url || '';
     }
     function clientPhotoSlotPlaceholderHtml(name){
       name = String(name || '').trim();
@@ -6647,11 +6697,20 @@
         try{
           if(id && sessionStorage.getItem('portalOvPushLast') === id) return;
         }catch(_){}
-        /* Same UX as “Undo change”: OS header banner + vibrate; no bottom toast — staff use centre logo → Quick menu. */
         const copy = portalOverridePushCopyForRow(row);
         const body = copy.body + (iso ? (' Date: ' + iso + '.') : '') + ' Tap the centre logo → Quick menu for details.';
         const tag = 'clubsensational-portal-roster-ov' + (id ? '-' + id : '');
-        portalStaffNotifyOsWhiteTile(copy.title, body, tag);
+        const appVisible = typeof document !== 'undefined' && String(document.visibilityState || '') === 'visible';
+        if(appVisible){
+          if(typeof window.portalPlayChatMessageAlertSound === 'function') window.portalPlayChatMessageAlertSound();
+          try{ if(navigator.vibrate) navigator.vibrate([120, 55, 120, 55, 160]); }catch(_){}
+          if(typeof syncPortalHeaderAlertChrome === 'function'){
+            syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+          }
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        }else{
+          portalStaffNotifyOsWhiteTile(copy.title, body, tag);
+        }
         try{ if(id) sessionStorage.setItem('portalOvPushLast', id); }catch(_){}
       }catch(_){}
     };
@@ -6997,6 +7056,9 @@
         }
         window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = 'chats';
       }catch(_ui){}
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.hideMeetingPanel === 'function'){
+        window.portalStaffChatCalls.hideMeetingPanel();
+      }
       portalInvalidateInternalChatRender();
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       if(typeof syncPortalInternalChatImmersive === 'function') syncPortalInternalChatImmersive();
@@ -7024,8 +7086,20 @@
         });
       }
       function portalInternalChatBackToInbox(){
+        if(
+          window.portalLeadStaffChatDirectory &&
+          typeof window.portalLeadStaffChatDirectory.backFromInternalThread === 'function'
+        ){
+          window.portalLeadStaffChatDirectory.backFromInternalThread();
+          return;
+        }
         if(portalInternalChatOfficeRestricted()){
-          portalCloseInternalChatToDashboard();
+          window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+          window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
+          var inpBackRestricted = document.getElementById('internalChatInput');
+          if(inpBackRestricted) inpBackRestricted.value = '';
+          void window.portalRenderInternalChatSheet();
           return;
         }
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
@@ -7698,6 +7772,18 @@
           profile: (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null
         });
       }
+      if(!inThread && typeof portalInternalChatOfficeRestricted === 'function' && portalInternalChatOfficeRestricted()){
+        var dirShell = window.portalLeadStaffChatDirectory;
+        if(dirShell && typeof dirShell.applyPortalChatShell === 'function'){
+          dirShell.applyPortalChatShell((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null, false);
+        }
+        if(dirShell && typeof dirShell.forceHideLegacyInboxChrome === 'function'){
+          dirShell.forceHideLegacyInboxChrome((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null, false);
+        }
+      }
+      if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncThreadBackChrome === 'function'){
+        window.portalCsCliqThreadHeader.syncThreadBackChrome(!!inThread);
+      }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       try{
@@ -7713,22 +7799,13 @@
         }
       };
       if(portalInternalChatOfficeRestricted()){
-        window.__PORTAL_INTERNAL_CHAT_UI.workerInboxTab = 'admin';
+        window.__PORTAL_INTERNAL_CHAT_UI.workerInboxTab = window.__PORTAL_INTERNAL_CHAT_UI.workerInboxTab || 'admin';
         window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = 'chats';
+        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
+        window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
+        openChatSheet();
         void (async function(){
-          try{
-            var tid = typeof window.portalStaffResolveOfficeThreadForQuickOpen === 'function'
-              ? String(await window.portalStaffResolveOfficeThreadForQuickOpen() || '').trim()
-              : '';
-            window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid || null;
-            window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
-            window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = !!tid;
-          }catch(_e){
-            window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-            window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
-            window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
-          }
-          openChatSheet();
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
             await window.portalStaffDmAckInboxOpened();
           }
@@ -8021,8 +8098,17 @@
       if(!chatSheet) return;
       chatSheet.classList.add('sheet--portal-chat-inbox');
       chatSheet.classList.remove('sheet--portal-chat-thread');
-      chatSheet.setAttribute('data-portal-chat-shell', 'worker');
-      chatSheet.setAttribute('data-portal-chat-booting', '1');
+      chatSheet.setAttribute('data-inbox-pane', 'chats');
+      chatSheet.removeAttribute('data-portal-chat-booting');
+      var dir = window.portalLeadStaffChatDirectory;
+      if(dir && typeof dir.ensureSimplifiedInboxSheetChrome === 'function'){
+        dir.ensureSimplifiedInboxSheetChrome((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null, false);
+      }else{
+        chatSheet.setAttribute('data-portal-chat-shell', 'simplified');
+      }
+      if(dir && typeof dir.forceHideLegacyInboxChrome === 'function'){
+        dir.forceHideLegacyInboxChrome((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null, false);
+      }
       var titleEl = document.getElementById('internalChatTitle');
       if(titleEl) titleEl.textContent = 'Chats';
       var backBtn = document.getElementById('internalChatBackBtn');
@@ -8035,6 +8121,15 @@
     }
     async function portalRenderRestrictedWorkerInbox(client, me, prof, listHost){
       var dir = window.portalLeadStaffChatDirectory;
+      if(dir && typeof dir.renderSimplifiedInboxList === 'function'){
+        try{
+          var simplifiedOk = await dir.renderSimplifiedInboxList();
+          if(simplifiedOk){
+            portalClearInternalChatBooting();
+            return;
+          }
+        }catch(_simpInbox){}
+      }
       var workerTab = dir && typeof dir.getWorkerInboxTab === 'function' ? dir.getWorkerInboxTab() : 'admin';
       if(dir && typeof dir.syncInboxChrome === 'function'){
         dir.syncInboxChrome({ profile: prof, workerInboxTabs: true, inThread: false });
@@ -8121,6 +8216,13 @@
     function portalClearInternalChatBooting(){
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet) chatSheet.removeAttribute('data-portal-chat-booting');
+      var dir = window.portalLeadStaffChatDirectory;
+      if(dir && typeof dir.applyPortalChatShell === 'function'){
+        var prof = (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
+        var ui = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        var inThread = !!(String(ui.threadId || '').trim() || String(ui.groupId || '').trim());
+        dir.applyPortalChatShell(prof, inThread);
+      }
     }
     window.portalRenderInternalChatSheet = async function portalRenderInternalChatSheet(){
       window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH = (window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH || 0) + 1;
@@ -10074,10 +10176,14 @@
           ? resolveParticipantPhotoUrl(name, clientId)
           : '';
         if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(name) || '';
+        const preloadUrls = typeof portalParticipantPhotoPathCandidates === 'function'
+          ? portalParticipantPhotoPathCandidates(name, photoUrl)
+          : (photoUrl ? [photoUrl] : []);
         return {
           name: name,
           clientId: clientId,
           photoUrl: photoUrl,
+          preloadUrls: preloadUrls,
           hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name)
         };
       });
@@ -10085,7 +10191,15 @@
         ? portalDedupeParticipantListEntries(participantsRaw, resolveParticipantPhotoUrl)
         : participantsRaw;
       if(typeof portalPreloadParticipantPhotoUrls === 'function'){
-        portalPreloadParticipantPhotoUrls(participants.map(function(p){ return p && p.photoUrl; }));
+        const preloadAll = [];
+        participants.forEach(function(p){
+          if(p && Array.isArray(p.preloadUrls) && p.preloadUrls.length){
+            p.preloadUrls.forEach(function(u){ if(u) preloadAll.push(u); });
+          }else if(p && p.photoUrl){
+            preloadAll.push(p.photoUrl);
+          }
+        });
+        portalPreloadParticipantPhotoUrls(preloadAll);
       }
       return {
         weekday: weekday,
@@ -11989,6 +12103,9 @@
           : '';
         if(dayOffSig && grid.getAttribute('data-day-off-sig') === dayOffSig && grid.querySelector('.today-day-panel')){
           grid.classList.add('today-grid--day-off');
+          if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
+            portalRefreshTodayNextParticipantPhotos(grid);
+          }
           if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
           return;
         }
@@ -13279,7 +13396,16 @@
           const v = map[k];
           if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(k, sid)) return;
           if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) return;
-          if(v === 'pending' || v === 'late') keys.push(String(k || '').trim());
+          if(v !== 'pending' && v !== 'late') return;
+          if(typeof getTermFeedbackStateForDay === 'function'){
+            const isoKey = String(k || '').trim().slice(0, 10);
+            const m = isoKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if(m){
+              const calSt = getTermFeedbackStateForDay(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+              if(calSt === 'complete' || calSt === 'cancelled') return;
+            }
+          }
+          keys.push(String(k || '').trim());
         });
       }
       const sorted = keys.filter(Boolean).sort();

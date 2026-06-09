@@ -670,11 +670,8 @@ export async function requestDefaultPortalPermissions() {
     results.camera = "not_required";
   }
 
-  if (!portalMicrophonePermissionGranted()) {
-    results.microphone = await requestMicrophonePermission();
-  } else {
-    results.microphone = "granted";
-  }
+  /* Voice typing mic is separate (portalMicEnableBtn) — not part of default portal bundle. */
+  results.microphone = portalMicrophonePermissionGranted() ? "granted" : "optional";
 
   const locRequired = portalLocationRequiredForSetup();
   if (locRequired && !portalLocationPermissionGranted()) {
@@ -723,6 +720,27 @@ export function portalMicrophoneReadyForSetup() {
   return true;
 }
 
+/** Voice typing (transcriptor) — optional; offered for Day Centre, Bespoke support tracks, and climbing. */
+export function portalVoiceTypingOfferedForStaff() {
+  try {
+    const boot =
+      typeof window !== "undefined" && window.__spreadsheetBoot
+        ? window.__spreadsheetBoot
+        : null;
+    const dd =
+      typeof window !== "undefined" && window.dashboardData ? window.dashboardData : null;
+    const raw = String(
+      (dd && dd.staffRoleTrack) || (boot && boot.staffRoleTrack) || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+    if (raw === "climbing") return true;
+    if (raw === "support" || raw === "supportlead") return true;
+  } catch (_) {}
+  return false;
+}
+
 export function portalLocationRequiredForSetup() {
   try {
     if (typeof window !== "undefined" && typeof window.portalLiveMapLocationRequiredForWorker === "function") {
@@ -738,8 +756,7 @@ export function portalMandatoryAlertsSettingsComplete() {
   const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
   const camOk = !camRequired || portalCameraPermissionGranted();
-  const micOk = portalMicrophonePermissionGranted();
-  return portalNotificationsGranted() && locOk && camOk && micOk;
+  return portalNotificationsGranted() && locOk && camOk;
 }
 
 export function portalSyncAlertsSettingsChrome() {
@@ -751,8 +768,7 @@ export function portalSyncAlertsSettingsChrome() {
   const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
   const camOk = !camRequired || portalCameraPermissionGranted();
-  const micOk = portalMicrophonePermissionGranted();
-  const incomplete = !notifyOk || !locOk || !camOk || !micOk;
+  const incomplete = !notifyOk || !locOk || !camOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
@@ -772,6 +788,10 @@ export function portalRefreshMicrophoneUi() {
   const block = document.getElementById("portalVoiceFeedbackBlock");
   if (!btn) return;
   if (statusEl) statusEl.textContent = "";
+  if (!portalVoiceTypingOfferedForStaff()) {
+    if (block) block.hidden = true;
+    return;
+  }
   const st = _micState === "unknown" ? "prompt" : _micState;
   if (st === "unsupported") {
     if (block) block.hidden = true;

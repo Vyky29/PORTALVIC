@@ -322,6 +322,7 @@
     adam_a: "adam_ab",
     steven_ce: "steven_c",
     steven_c: "steven_c",
+    junaid: "junaid_f",
   };
 
   function canonicalClientSlug(name) {

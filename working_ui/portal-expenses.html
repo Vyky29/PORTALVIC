@@ -16,8 +16,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Expenses</title>
-  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
-  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
   <style id="portal-expenses-styles">
     :root{
       --navy:#0a3d62;
@@ -30,7 +28,12 @@
     }
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Open Sans",Arial,sans-serif;background:var(--app-bg);color:var(--text-main);padding:18px;min-height:100vh;margin:0}
     .pe-shell{max-width:980px;margin:0 auto;width:100%}
-    .pe-logo-wrap-outer{text-align:center;margin-bottom:8px}
+    .pe-topbar{display:flex;align-items:center;margin:0 0 10px;min-width:0}
+    .pe-back-btn{
+      flex:0 1 auto;min-width:0;max-width:100%;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      padding:8px 12px;font-size:14px;
+    }
     .pe-page-title{
       margin:0 0 16px;text-align:center;font-size:clamp(26px,4vw,38px);
       font-weight:800;letter-spacing:-0.03em;color:var(--navy);
@@ -263,31 +266,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
 </head>
-<body class="portal-logo-expenses">
+<body>
   <form id="expenseForm" novalidate>
     <div class="pe-shell">
-    <div class="pe-logo-wrap-outer">
-      <div class="pe-logo-wrap">
-        <div class="pe-logo-pulse" aria-hidden="true"></div>
-        <svg class="pe-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
-          <g class="pe-orbit-layer pe-orbit-layer-a">
-            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-          </g>
-          <g class="pe-orbit-layer pe-orbit-layer-b">
-            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-          </g>
-        </svg>
-        <img class="pe-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
-      </div>
+    <div class="pe-topbar" role="navigation" aria-label="Return to dashboard">
+      <button type="button" class="btn btn-ghost pe-back-btn" id="expensesBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
     </div>
     <h1 class="pe-page-title">Expense Claim</h1>
     <div class="wrap">
@@ -750,7 +733,7 @@
       return "";
     }
 
-    /** Misma lógica que timesheet: PNG pesado → JPEG pequeño en el PDF. */
+    /** Receipt/logo embed: downscale only when above maxEdgePx; JPEG quality tuned for sharp PDF output. */
     async function shrinkDataUrlAsJpegForPdf(dataUrl, maxEdgePx, quality) {
       if (!dataUrl || !String(dataUrl).startsWith("data:")) return "";
       const maxE = maxEdgePx > 0 ? maxEdgePx : 380;
@@ -773,6 +756,8 @@
               resolve("");
               return;
             }
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, cw, ch);
             ctx.drawImage(img, 0, 0, cw, ch);
@@ -786,6 +771,42 @@
       });
     }
 
+    async function prepareExpenseReceiptImageForPdf(file) {
+      let dataUrl = await readFileAsDataURL(file);
+      if (!dataUrl) return null;
+      const compact = await shrinkDataUrlAsJpegForPdf(dataUrl, 2400, 0.93);
+      if (compact) dataUrl = compact;
+      const type = /^data:image\/jpe?g/i.test(dataUrl) ? "JPEG" : "PNG";
+      return { dataUrl, type };
+    }
+
+    function layoutExpenseReceiptImage(doc, image, receiptColL, receiptColW, maxImgH) {
+      if (!image || !image.dataUrl) return null;
+      const pad = 2;
+      const innerW = Math.max(8, receiptColW - pad * 2);
+      const maxH = maxImgH > 0 ? maxImgH : 58;
+      try {
+        const props = doc.getImageProperties(image.dataUrl);
+        const iw = props.width || 1;
+        const ih = props.height || 1;
+        const sc = Math.min(innerW / iw, maxH / ih);
+        const drawW = iw * sc;
+        const drawH = ih * sc;
+        return {
+          dataUrl: image.dataUrl,
+          type: image.type,
+          drawW,
+          drawH,
+          imgX: receiptColL + (receiptColW - drawW) / 2,
+          imgYPad: pad,
+          captionMaxW: innerW,
+          captionCenterX: receiptColL + receiptColW / 2,
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
     async function generatePdfBlob(payload) {
       const JsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
       if (!JsPDFCtor) throw new Error("jsPDF is not available.");
@@ -795,8 +816,8 @@
       const tableW = 184;
       const left = (pageW - tableW) / 2;
       const right = left + tableW;
-      const colWDesc = 92;
-      const colWAmt = 32;
+      const colWDesc = 84;
+      const colWAmt = 30;
       const colX = [left, left + colWDesc, left + colWDesc + colWAmt, right];
       let y = 12;
 
@@ -870,13 +891,21 @@
         const descLines = doc.splitTextToSize(String(item.desc || "-"), descW);
         const textBlockH = 5 + Math.max(1, descLines.length) * 4.35;
         const rTxt = hasImage ? String(item.receiptName || "") : String(item.receiptName || "-");
-        const rLines = doc.splitTextToSize(rTxt, colX[3] - colX[2] - 3);
-        const receiptW = colX[3] - colX[2] - 3;
-        const receiptImgW = Math.min(34, Math.max(24, receiptW - 1));
+        const receiptColL = colX[2];
+        const receiptColW = colX[3] - receiptColL;
+        const receiptInnerW = Math.max(8, receiptColW - 4);
+        const rLines = doc.splitTextToSize(rTxt, receiptInnerW);
         const receiptHNoImg = 6 + rLines.length * 4.35 + 2;
-        const receiptHImg = 1.5 + receiptImgW + 4 + rLines.length * 3.5 + 2;
+        let receiptImg = null;
+        if (hasImage) {
+          const prepared = await prepareExpenseReceiptImageForPdf(item.receiptFile);
+          receiptImg = layoutExpenseReceiptImage(doc, prepared, receiptColL, receiptColW, 72);
+        }
+        const receiptHImg = receiptImg
+          ? receiptImg.imgYPad + receiptImg.drawH + 4 + rLines.length * 3.5 + 2
+          : receiptHNoImg;
         const rowH = hasImage
-          ? Math.max(receiptHImg, textBlockH + 4, 36)
+          ? Math.max(receiptHImg, textBlockH + 4, receiptImg ? receiptImg.drawH + 10 : 36)
           : Math.max(11, textBlockH, receiptHNoImg);
         ensureRoom(rowH + 1);
         doc.rect(colX[0], y, colX[3] - colX[0], rowH, "S");
@@ -884,19 +913,35 @@
         doc.line(colX[2], y, colX[2], y + rowH);
         doc.text(descLines, colX[0] + 1.5, y + 6);
         doc.text(money(item.amount || 0), (colX[1] + colX[2]) / 2, y + 6, { align: "center" });
-        if (hasImage) {
-          let dataUrl = await readFileAsDataURL(item.receiptFile);
-          if (dataUrl) {
-            const compact = await shrinkDataUrlAsJpegForPdf(dataUrl, 480, 0.82);
-            if (compact) dataUrl = compact;
-            const type = /^data:image\/jpe?g/i.test(dataUrl) ? "JPEG" : "PNG";
-            try { doc.addImage(dataUrl, type, colX[2] + 1.5, y + 1.5, receiptImgW, receiptImgW); } catch (_) {}
-          }
+        if (receiptImg) {
+          try {
+            doc.addImage(
+              receiptImg.dataUrl,
+              receiptImg.type,
+              receiptImg.imgX,
+              y + receiptImg.imgYPad,
+              receiptImg.drawW,
+              receiptImg.drawH
+            );
+          } catch (_) {}
           doc.setFontSize(8);
-          doc.text(rLines, colX[2] + 1.5, y + 1.5 + receiptImgW + 4);
+          doc.text(rLines, receiptImg.captionCenterX, y + receiptImg.imgYPad + receiptImg.drawH + 4, {
+            align: "center",
+            maxWidth: receiptImg.captionMaxW,
+          });
+          doc.setFontSize(10);
+        } else if (hasImage) {
+          doc.setFontSize(8);
+          doc.text(rLines, receiptColL + receiptColW / 2, y + 6, {
+            align: "center",
+            maxWidth: receiptInnerW,
+          });
           doc.setFontSize(10);
         } else {
-          doc.text(rLines, colX[2] + 1.5, y + 6);
+          doc.text(rLines, receiptColL + receiptColW / 2, y + 6, {
+            align: "center",
+            maxWidth: receiptInnerW,
+          });
         }
         y += rowH;
       }
@@ -973,6 +1018,12 @@
       }
     });
 
+    function expensesNavigateBack() {
+      if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+      returnToPortalDashboard();
+    }
+    document.getElementById("expensesBackBtn")?.addEventListener("click", expensesNavigateBack);
+
     addRow();
     recalc();
     hydrateEmployee();
@@ -983,6 +1034,21 @@
       }
     }, 400);
     </script>
+  <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
+  <script>
+    (function () {
+      if (typeof portalLockLandscape === "function") void portalLockLandscape();
+      function unlockExpensesOrientation() {
+        if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+      }
+      window.addEventListener("pagehide", unlockExpensesOrientation);
+      window.addEventListener("beforeunload", unlockExpensesOrientation);
+      var closeBtn = document.getElementById("expenses-close-portal");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", unlockExpensesOrientation);
+      }
+    })();
+  </script>
 </body>
 </html>
   

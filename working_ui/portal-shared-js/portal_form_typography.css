@@ -1,0 +1,216 @@
+/**
+ * Portal worker form typography — matches session feedback (portal-session-feedback.html).
+ * Add class portal-form-page on <body>. Colours stay per form; type scale is shared.
+ */
+.portal-form-page {
+  --pf-title: 22px;
+  --pf-lead: 13.5px;
+  --pf-label: 14px;
+  --pf-value: 14px;
+  --pf-input: 16px;
+  --pf-field-text: 12px;
+  --pf-hint: 12px;
+  --pf-pill: 12px;
+  --pf-btn: 14px;
+  --pf-muted: #5b6473;
+  --pf-text: #0b1220;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--pf-text);
+}
+
+.portal-form-page.portal-logo-pickup {
+  font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+}
+
+.portal-form-page .title-row h1,
+.portal-form-page .brand h1 {
+  font-size: var(--pf-title) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  line-height: 1.2 !important;
+}
+
+.portal-form-page .title-row p,
+.portal-form-page .brand p {
+  font-size: var(--pf-lead) !important;
+  line-height: 1.5 !important;
+  font-weight: 400 !important;
+}
+
+.portal-form-page .field > label:first-child,
+.portal-form-page .field > label,
+.portal-form-page .field-label-row,
+.portal-form-page .issues-question,
+.portal-form-page .field-category,
+.portal-form-page .venue-context__label,
+.portal-form-page .participant-field label,
+.portal-form-page .participant-field > label,
+.portal-form-page legend,
+.portal-form-page .panel-title,
+.portal-form-page .form-inner-header h2,
+.portal-form-page .field-label-block,
+.portal-form-page .pickup-roster-today__title,
+.portal-form-page .search-panel label,
+.portal-form-page .dropoff-line > label,
+.portal-form-page .dropoff-line > .field-label-block {
+  font-size: var(--pf-label) !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.portal-form-page .venue-context__value,
+.portal-form-page .session-date-display,
+.portal-form-page .datetime-readonly-row .input[readonly],
+.portal-form-page input[readonly],
+.portal-form-page .input[readonly] {
+  font-size: var(--pf-value) !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+.portal-form-page .hint,
+.portal-form-page .small,
+.portal-form-page .participant-meta,
+.portal-form-page .pickup-roster-today__hint,
+.portal-form-page .empty-box,
+.portal-form-page .session-date-display__hint {
+  font-size: var(--pf-hint) !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+.portal-form-page input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),
+.portal-form-page select,
+.portal-form-page textarea,
+.portal-form-page .input {
+  font-size: var(--pf-input) !important;
+  font-weight: 400 !important;
+}
+
+.portal-form-page .field textarea,
+.portal-form-page .field input[type="text"],
+.portal-form-page .field input[type="search"],
+.portal-form-page textarea.input {
+  font-size: var(--pf-field-text) !important;
+  line-height: 1.4 !important;
+}
+
+.portal-form-page .field textarea::placeholder,
+.portal-form-page .field input[type="text"]::placeholder,
+.portal-form-page .input::placeholder {
+  font-size: var(--pf-field-text) !important;
+  font-weight: 400 !important;
+}
+
+.portal-form-page .venue-issue-pill-label,
+.portal-form-page .pill,
+.portal-form-page .role-group label,
+.portal-form-page .emotion-group label,
+.portal-form-page .role-btn,
+.portal-form-page .pickup-roster-chip {
+  font-size: var(--pf-pill) !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+}
+
+.portal-form-page .venue-issue-pill.selected .venue-issue-pill-label,
+.portal-form-page .pill.isSelected,
+.portal-form-page .pill.independence.isSelected,
+.portal-form-page .pill.emotion.isSelected,
+.portal-form-page .role-btn.active {
+  font-weight: 700 !important;
+}
+
+.portal-form-page .participant-name {
+  font-size: var(--pf-value) !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+
+.portal-form-page .submit-btn,
+.portal-form-page .btn,
+.portal-form-page .btn-primary,
+.portal-form-page .btn-pickup-new,
+.portal-form-page button[type="submit"],
+.portal-form-page .venue-review-back {
+  font-size: var(--pf-btn) !important;
+  font-weight: 800 !important;
+}
+
+.portal-form-page .portal-name-suggest__item,
+.portal-form-page .portal-name-suggest button {
+  font-size: var(--pf-value) !important;
+  font-weight: 600 !important;
+}
+
+.portal-form-page .req {
+  font-weight: 900 !important;
+}
+
+.portal-form-page .form-inner label,
+.portal-form-page label.subl {
+  font-size: var(--pf-label) !important;
+  font-weight: 700 !important;
+}
+
+.portal-form-page label.subl {
+  font-size: var(--pf-hint) !important;
+  font-weight: 400 !important;
+}
+
+.portal-form-page .status-pill {
+  font-size: var(--pf-hint) !important;
+  font-weight: 700 !important;
+}
+
+.portal-form-page .venue-notes-panel label,
+.portal-form-page #issuesLabel {
+  font-size: var(--pf-label) !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  color: #173247 !important;
+}
+
+.portal-form-page .venue-notes-panel textarea,
+.portal-form-page #issues {
+  font-size: var(--pf-field-text) !important;
+  line-height: 1.4 !important;
+}
+
+.portal-form-page .venue-notes-panel textarea::placeholder,
+.portal-form-page #issues::placeholder {
+  font-size: var(--pf-field-text) !important;
+  font-weight: 400 !important;
+  color: var(--pf-muted) !important;
+  opacity: 1 !important;
+}
+
+.portal-form-page .venue-notes-hint,
+.portal-form-page #venueNotesHint {
+  font-size: var(--pf-hint) !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  color: var(--pf-muted) !important;
+}
+
+.portal-form-page .portal-fb-voice-status {
+  font-size: var(--pf-hint) !important;
+  line-height: 1.4 !important;
+}
+
+.portal-form-page .venue-review-intro h2,
+.portal-form-page .venue-review-intro h3 {
+  font-size: var(--pf-label) !important;
+  font-weight: 700 !important;
+}
+
+.portal-form-page .venue-review-intro p,
+.portal-form-page .venue-review-intro ul {
+  font-size: var(--pf-lead) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+.portal-form-page .empty-box {
+  font-size: var(--pf-lead) !important;
+}

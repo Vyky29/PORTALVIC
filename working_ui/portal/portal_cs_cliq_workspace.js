@@ -1,5 +1,5 @@
 /**
- * CS Cliq workspace bridge ù announcements, files, meetings, and portal routing.
+ * CS Cliq workspace bridge ? announcements, files, meetings, and portal routing.
  */
 (function (global) {
   "use strict";
@@ -44,7 +44,9 @@
     }
     var p = profileRow();
     var app = String(p.app_role || "").toLowerCase();
-    return app === "admin" || app === "ceo";
+    if (app === "admin" || app === "ceo") return true;
+    if (app === "lead" && (portalKind() === "lead" || portalKind() === "staff")) return true;
+    return false;
   }
 
   function defaultNavIconHtml(name) {
@@ -55,6 +57,28 @@
   function openSheet(id) {
     if (typeof global.openSheet === "function") {
       global.openSheet(id);
+      return true;
+    }
+    return false;
+  }
+
+  /** Staff / lead CS Cliq simplified inbox ? view portal announcements (UI only). */
+  function openAnnouncementsSheet() {
+    if (openSheet("announcementsSheet", { bypassAnnouncementLock: true })) return true;
+    try {
+      global.location.assign("/staff_dashboard.html");
+    } catch (_a) {}
+    return false;
+  }
+
+  /** Staff CS Cliq simplified inbox ? meeting request entry (UI only). */
+  function openMeetingRequestEntry() {
+    if (global.portalStaffChatCalls && typeof global.portalStaffChatCalls.openMeetingPanel === "function") {
+      global.portalStaffChatCalls.openMeetingPanel({ contextual: false });
+      return true;
+    }
+    if (global.portalCsCliqSupport && typeof global.portalCsCliqSupport.openMeetingRequest === "function") {
+      global.portalCsCliqSupport.openMeetingRequest();
       return true;
     }
     return false;
@@ -198,6 +222,8 @@
     onAdminPortal: onAdminPortal,
     canManageChannels: canManageChannels,
     openView: openView,
+    openAnnouncementsSheet: openAnnouncementsSheet,
+    openMeetingRequestEntry: openMeetingRequestEntry,
     channelActions: channelActions,
     runChannelAction: runChannelAction,
     onPaneOpen: onPaneOpen,

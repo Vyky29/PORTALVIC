@@ -2,6 +2,7 @@
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
  * v20260610-chat-push-restore
  * v20260608-incoming-call-dismiss
+ * v20260609-foreground-no-os-banner
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -157,8 +158,11 @@ self.addEventListener('push', function (event) {
       var tasks = [
         portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
       ];
-      /* Chat: always show OS banner (sound on lock screen + Android heads-up). Page also plays in-app chirp when open. */
-      tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      /* Foreground: page plays sound/vibration + halo/badges — no OS heads-up banner.
+         Background/locked: OS notification (SMS-style at top of phone). */
+      if (!hasVisibleClient) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
       return Promise.all(tasks);
     })
   );

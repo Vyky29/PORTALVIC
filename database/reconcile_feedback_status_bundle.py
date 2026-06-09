@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_DEFAULT = ROOT / "working_ui" / "portal-import-bundle"
 FEEDBACK_JS = ROOT / "working_ui" / "portal" / "session_feedback_portal_data.js"
 FIRST_DATE = "2026-04-13"
-THROUGH_DEFAULT = "2026-05-22"
+THROUGH_DEFAULT = "2026-06-08"
 
 STATUS_FIELDS = [
     "date",

@@ -113,15 +113,29 @@
     ceoexec: true,
     csteam: true,
     conversation: true,
-    announcements: true,
-    reminders: true,
+    session: true,
+    weekly: true,
+    handover: true,
+    meeting: true,
+    meetings: true,
+    schedule: true,
+    video: true,
+    voice: true,
   };
+
+  function looksLikeOpaquePhotoKey(k) {
+    k = String(k || "").trim().toLowerCase();
+    if (!k) return true;
+    if (/^[0-9a-f-]{32,36}$/.test(k)) return true;
+    if (/^[0-9a-f]{8,}$/.test(k)) return true;
+    return false;
+  }
 
   function portalStaffPhotoKeyAllowed(nameOrKey, opts) {
     var keys = photoLookupKeys(nameOrKey, opts);
     if (!keys.length) return false;
     return keys.some(function (k) {
-      return k && !NO_STATIC_PHOTO[k];
+      return k && !NO_STATIC_PHOTO[k] && !looksLikeOpaquePhotoKey(k);
     });
   }
 
@@ -133,7 +147,7 @@
     if (base.charAt(base.length - 1) !== "/") base += "/";
 
     keys.forEach(function (key) {
-      if (NO_STATIC_PHOTO[key]) return;
+      if (NO_STATIC_PHOTO[key] || looksLikeOpaquePhotoKey(key)) return;
       var hadProfileFile = false;
       try {
         var src = global.STAFF_DASHBOARD_SOURCE;

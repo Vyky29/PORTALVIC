@@ -50,18 +50,56 @@
     return "default";
   }
 
+  function adminLaneLogoSrc() {
+    return (global.PORTAL_BRAND_LOGO_SRC && String(global.PORTAL_BRAND_LOGO_SRC)) || "/portal/F-02-1.png";
+  }
+
+  function adminLaneLogoOnErrorJs() {
+    return "typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')";
+  }
+
+  function adminLaneAvatarInnerHtml(escFn) {
+    escFn =
+      escFn ||
+      function (s) {
+        return String(s == null ? "" : s);
+      };
+    return (
+      '<span class="portal-dm-thread-avatar portal-dm-thread-avatar--exec portal-dm-thread-avatar--admin-lane portal-dm-thread-avatar--brand-logo" aria-hidden="true">' +
+      '<img class="portal-dm-thread-avatar__admin-logo" src="' +
+      escFn(adminLaneLogoSrc()) +
+      '" alt="" loading="lazy" decoding="async" draggable="false" referrerpolicy="no-referrer-when-downgrade" onerror="' +
+      adminLaneLogoOnErrorJs() +
+      '" />' +
+      "</span>"
+    );
+  }
+
+  function adminLaneBrandLogoImgHtml(escFn, className) {
+    escFn =
+      escFn ||
+      function (s) {
+        return String(s == null ? "" : s);
+      };
+    className = String(className || "portal-cs-cliq-inbox-acc__brand-logo").trim();
+    return (
+      '<img class="' +
+      escFn(className) +
+      '" src="' +
+      escFn(adminLaneLogoSrc()) +
+      '" alt="" width="18" height="18" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="' +
+      adminLaneLogoOnErrorJs() +
+      '" />'
+    );
+  }
+
   function innerAvatarHtml(item, escFn, tone) {
     var label = item && item.label ? item.label : "";
     var username = String((item && item.username) || "").trim();
     var prof = item && (item.peerProfile || item.profile);
     if (item && item.useAdminLaneAvatar) {
       tone = "exec";
-      return (
-        '<span class="portal-dm-thread-avatar portal-dm-thread-avatar--exec portal-dm-thread-avatar--admin-lane" aria-hidden="true">' +
-        '<svg class="portal-dm-thread-avatar__admin-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
-        '<path fill="currentColor" d="M12 2l7 4v6c0 5-3.5 9.2-7 10-3.5-.8-7-5-7-10V6l7-4z"/>' +
-        "</svg></span>"
-      );
+      return adminLaneAvatarInnerHtml(escFn);
     }
     if (!username && prof && prof.username) username = String(prof.username || "").trim();
     var avatarUrl = normalizeAvatarUrl(
@@ -161,6 +199,9 @@
     initials: initials,
     toneFromItem: toneFromItem,
     roleToneFromProfile: roleToneFromProfile,
+    adminLaneLogoSrc: adminLaneLogoSrc,
+    adminLaneAvatarInnerHtml: adminLaneAvatarInnerHtml,
+    adminLaneBrandLogoImgHtml: adminLaneBrandLogoImgHtml,
     innerHtml: innerHtml,
     html: html,
   };

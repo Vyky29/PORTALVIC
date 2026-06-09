@@ -194,7 +194,7 @@
  if (!key) return Promise.resolve(false);
  return fetch(supabaseFnUrl(), {
  method: "GET",
- headers: { apikey: key },
+ headers: { apikey: key, Authorization: "Bearer " + key },
  })
  .then(function (res) {
  if (!res.ok) return false;
@@ -210,9 +210,29 @@
  });
  }
 
+ function sessionTokenFromClient(client) {
+ if (!client || !client.auth) return Promise.resolve("");
+ return client.auth.getSession().then(function (res) {
+ return (res && res.data && res.data.session && res.data.session.access_token) || "";
+ });
+ }
+
  function getAuthHeaders() {
  var key = getAnonKey();
  if (!key) return Promise.resolve(null);
+ try {
+ var boot = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client;
+ if (boot && boot.auth) {
+ return sessionTokenFromClient(boot).then(function (tok) {
+ if (tok) return { apikey: key, Authorization: "Bearer " + tok };
+ return tryImportAuth(key);
+ });
+ }
+ } catch (_) {}
+ return tryImportAuth(key);
+ }
+
+ function tryImportAuth(key) {
  var bases = [];
  var sharedBase =
  global.PORTAL_SHARED_JS_BASE ||
@@ -223,10 +243,11 @@
  if (i >= bases.length) return Promise.resolve(null);
  return import(bases[i])
  .then(function (mod) {
- var client = mod.getSupabaseClient && mod.getSupabaseClient();
+ var client =
+ (mod.getSharedSupabaseClient && mod.getSharedSupabaseClient()) ||
+ (mod.getSupabaseClient && mod.getSupabaseClient());
  if (!client) return tryImport(i + 1);
- return client.auth.getSession().then(function (res) {
- var tok = res && res.data && res.data.session && res.data.session.access_token;
+ return sessionTokenFromClient(client).then(function (tok) {
  if (!tok) return tryImport(i + 1);
  return { apikey: key, Authorization: "Bearer " + tok };
  });
@@ -250,6 +271,9 @@
  body: fd,
  }).then(function (res) {
  return res.json().then(function (data) {
+ if (res.status === 401 || res.status === 403) {
+ throw new Error("webspeech_fallback");
+ }
  if (data && data.fallback === "webspeech") {
  throw new Error("webspeech_fallback");
  }
@@ -608,15 +632,11 @@
  })
  .catch(function (err) {
  cleanupSessionUi(s);
- if (err && err.message === "not_signed_in") {
- if (s.textarea) s.textarea.value = s.prefix;
- if (s.statusEl) s.statusEl.textContent = "Sign in to the portal to use voice input.";
- return;
- }
  if (
  preferWebSpeechCapture() &&
  err &&
- (err.message === "webspeech_fallback" ||
+ (err.message === "not_signed_in" ||
+ err.message === "webspeech_fallback" ||
  err.message === "no_openai" ||
  err.message === "transcribe_failed")
  ) {
@@ -644,6 +664,13 @@
  return !!getSpeechRecognition();
  }
 
+ /** ES/IT staff: live WebSpeech + MyMemory translate — no Whisper JWT on standalone forms. */
+ function prefersWebSpeechOverWhisper() {
+ if (!preferWebSpeechCapture()) return false;
+ var cfg = getLangConfig(getResolvedLang());
+ return !!cfg.translate;
+ }
+
  function canUseMediaRecorderCapture() {
  return (
  typeof MediaRecorder !== "undefined" &&
@@ -658,7 +685,7 @@
  return !!(s && s.btn && Date.now() - (s.startedAt || 0) < MIC_TOGGLE_GUARD_MS);
  }
 
- function shouldUseMediaRecorder() {
+ function shouldUseWhisperCapture() {
  return whisperProbeDone && whisperAvailable && canUseMediaRecorderCapture();
  }
 
@@ -673,8 +700,25 @@
  wireScreenshotGuardVoiceRecovery();
  setScreenshotGuardForRecording(true);
 
- if (shouldUseMediaRecorder()) {
+ if (prefersWebSpeechOverWhisper()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+
+ if (shouldUseWhisperCapture()) {
+ getAuthHeaders().then(function (headers) {
+ if (headers) {
  startMediaRecorderCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (statusEl) {
+ statusEl.textContent = "Sign in to the portal to use voice input.";
+ }
+ });
  return;
  }
  if (preferWebSpeechCapture()) {
@@ -805,7 +849,11 @@
  btn.setAttribute("aria-label", "Stop voice input");
  btn.setAttribute("aria-pressed", "true");
  if (statusEl) {
- statusEl.textContent = "Listening - speak now, then tap mic again to finish.";
+ statusEl.textContent = s.needsTranslate
+ ? "Listening (" +
+ (cfg.label || "your language") +
+ ") — speak now, then tap mic again. English appears in the box."
+ : "Listening — speak now, then tap mic again to finish.";
  }
 
  var rec = new Rec();
@@ -920,7 +968,6 @@
  if (!initDone) {
  injectStyles();
  initDone = true;
- probeWhisperAvailability();
  }
  applyStaffLanguages(opts.staffName || "");
  var fieldIds = opts.fields || [];

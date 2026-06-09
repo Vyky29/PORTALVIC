@@ -223,6 +223,20 @@
   background: #d1fae5;
   color: #065f46;
 }
+.portal-day-ops-embed .pickup-pill--warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.portal-day-ops-embed .pickup-admin-block--attention {
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 14px 14px 16px;
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+}
+.portal-day-ops-embed .pickup-admin-lead--compact {
+  margin: 0 0 12px;
+  font-size: 12px;
+}
 .portal-day-ops-embed .pickup-admin-last-refresh,
 .portal-day-ops-embed .portal-forms-last-refresh {
   margin: 14px 0 0;

@@ -1,0 +1,83 @@
+/* Phone-width vertical frame for staff portal subpages (venue, pickup, …) */
+html[data-portal-mobile-vertical="1"] {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-portal-mobile-vertical="1"] body {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  background: #0a1220;
+  overflow-x: hidden;
+}
+
+html[data-portal-mobile-vertical="1"] .wrap,
+html[data-portal-mobile-vertical="1"] .pickup-wrap,
+html[data-portal-mobile-vertical="1"] .page {
+  width: 100%;
+  max-width: min(390px, 100vw);
+  min-height: 100dvh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+html[data-portal-mobile-vertical="1"] body.portal-logo-venue .wrap {
+  background: linear-gradient(180deg, #f4fdf7 0%, #eef8f2 100%);
+}
+
+html[data-portal-mobile-vertical="1"] body.portal-logo-pickup .pickup-wrap {
+  background: linear-gradient(180deg, #f8f5ff 0%, #f3f0fa 100%);
+}
+
+@media (max-width: 420px) {
+  html[data-portal-mobile-vertical="1"] body {
+    background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+  }
+  html[data-portal-mobile-vertical="1"] .wrap,
+  html[data-portal-mobile-vertical="1"] .pickup-wrap,
+  html[data-portal-mobile-vertical="1"] .page {
+    box-shadow: none;
+    max-width: 100%;
+  }
+}
+
+html[data-portal-mobile-vertical="1"] .portal-pickup-logo-bar,
+html[data-portal-mobile-vertical="1"] .portal-venue-logo-bar {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+html[data-portal-mobile-vertical="1"] .grid,
+html[data-portal-mobile-vertical="1"] .topbar-grid,
+html[data-portal-mobile-vertical="1"] .search-panel,
+html[data-portal-mobile-vertical="1"] .datetime-readonly-row,
+html[data-portal-mobile-vertical="1"] .role-group,
+html[data-portal-mobile-vertical="1"] .result-list,
+html[data-portal-mobile-vertical="1"] .venue-issue-group {
+  grid-template-columns: 1fr !important;
+}
+
+html[data-portal-mobile-vertical="1"] .participant-row {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+}
+
+html[data-portal-mobile-vertical="1"] .topbar,
+html[data-portal-mobile-vertical="1"] .panel,
+html[data-portal-mobile-vertical="1"] .card,
+html[data-portal-mobile-vertical="1"] .form-shell {
+  max-width: 100%;
+  min-width: 0;
+}
+
+html[data-portal-mobile-vertical="1"] .btn,
+html[data-portal-mobile-vertical="1"] .submit-btn {
+  max-width: 100%;
+  min-width: 0;
+}

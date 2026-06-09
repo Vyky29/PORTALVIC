@@ -202,7 +202,21 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
 }
 
 /**
- * Session keys with server-side submissions in the last ~60 days.
+ * Unique YYYY-MM-DD values from roster session keys (term historical peer sync).
+ * @param {string[]} rosterSessionKeys
+ * @returns {string[]}
+ */
+export function portalExtractDatesFromRosterKeys(rosterSessionKeys) {
+  const dates = new Set();
+  for (const raw of rosterSessionKeys || []) {
+    const d = String(raw || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dates.add(d);
+  }
+  return [...dates].sort();
+}
+
+/**
+ * Session keys with server-side submissions in the last ~150 days (full term horizon).
  * Feedback: own rows plus, when `opts.rosterSessionKeys` is set, any submission for those
  * `portal_session_key` values (co-instructors on the same slot share one key).
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
@@ -221,7 +235,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   };
   if (!supabase || !userId) return empty;
   const since = new Date();
-  since.setDate(since.getDate() - 60);
+  since.setDate(since.getDate() - 150);
   const sinceStr = since.toISOString().slice(0, 10);
 
   const rawRoster = opts && Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
@@ -233,8 +247,11 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   )
     .map((d) => String(d || "").trim().slice(0, 10))
     .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  const peerSessionDates = [
+    ...new Set([...catchUpDates, ...portalExtractDatesFromRosterKeys(rosterSessionKeys)]),
+  ].slice(0, 90);
 
-  const [fb, inc, can, fbExactShared, quickMarks, fbCatchUp] = await Promise.all([
+  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("portal_session_key, attendance")
@@ -253,13 +270,23 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .eq("submitted_by_user_id", userId)
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
-    rosterSessionKeys.length
+    rosterSessionKeys.length && peerSessionDates.length
       ? supabase
           .from("session_feedback")
           .select("portal_session_key, attendance")
-          .in("portal_session_key", rosterSessionKeys)
+          .in("session_date", peerSessionDates)
           .not("portal_session_key", "is", null)
-          .gte("session_date", sinceStr)
+      : rosterSessionKeys.length
+        ? supabase
+            .from("session_feedback")
+            .select("portal_session_key, attendance")
+            .gte("session_date", sinceStr)
+            .not("portal_session_key", "is", null)
+        : Promise.resolve({ data: null, error: null }),
+    rosterSessionKeys.length
+      ? supabase.rpc("portal_feedback_submitted_keys_for_sessions", {
+          p_keys: rosterSessionKeys,
+        })
       : Promise.resolve({ data: null, error: null }),
     supabase
       .from("portal_staff_session_quick_marks")
@@ -348,10 +375,64 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
 
   const ownParts = partitionFeedbackRows(fb.data);
   const catchUpParts = partitionFeedbackRows(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
-  /** Co-instructor slots only: exact portal_session_key match (not loose client/day bleed). */
-  const exactSharedParts = partitionFeedbackRows(
-    fbExactShared && !fbExactShared.error ? fbExactShared.data : null
-  );
+
+  /** Co-instructor: match peer-visible session_feedback rows onto roster keys (flexible key shapes). */
+  function matchCoInstructorFeedbackToRosterKeys(peerRows) {
+    const present = [];
+    const absent = [];
+    const seenP = new Set();
+    const seenA = new Set();
+    if (!Array.isArray(peerRows)) return { present, absent };
+    for (const r of peerRows) {
+      if (!r || typeof r !== "object") continue;
+      const pk = String(
+        /** @type {{ portal_session_key?: string }} */ (r).portal_session_key || ""
+      ).trim();
+      if (!pk) continue;
+      const isAbs = portalFeedbackAttendanceIsAbsent(
+        /** @type {{ attendance?: string }} */ (r).attendance
+      );
+      for (const rk of rosterSessionKeys) {
+        if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk)) continue;
+        if (isAbs) {
+          if (!seenA.has(rk)) {
+            seenA.add(rk);
+            absent.push(rk);
+          }
+        } else if (!seenP.has(rk)) {
+          seenP.add(rk);
+          present.push(rk);
+        }
+        break;
+      }
+    }
+    return { present, absent };
+  }
+
+  const peerParts =
+    fbPeerShared && !fbPeerShared.error
+      ? matchCoInstructorFeedbackToRosterKeys(fbPeerShared.data)
+      : { present: [], absent: [] };
+  if (fbPeerShared && fbPeerShared.error) {
+    console.warn("[portal] co-instructor session_feedback peer read skipped", fbPeerShared.error);
+  }
+
+  const rpcKeys =
+    fbSharedRpc && !fbSharedRpc.error ? feedbackKeysFromSharedRpc(fbSharedRpc.data) : [];
+  if (fbSharedRpc && fbSharedRpc.error) {
+    console.warn("[portal] portal_feedback_submitted_keys_for_sessions skipped", fbSharedRpc.error);
+  }
+  const rpcPresent = [];
+  for (const rk of rpcKeys) {
+    const rks = String(rk || "").trim();
+    if (!rks || peerParts.present.includes(rks) || peerParts.absent.includes(rks)) continue;
+    rpcPresent.push(rks);
+  }
+
+  const exactSharedParts = {
+    present: [...new Set([...peerParts.present, ...rpcPresent])],
+    absent: peerParts.absent,
+  };
 
   const absentFeedbackKeys = [
     ...new Set([...ownParts.absent, ...catchUpParts.absent, ...exactSharedParts.absent]),
@@ -479,6 +560,7 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   if (sArea && rArea) {
     if (sArea === rArea) return true;
     if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
+    if (sArea === "day_centre" || rArea === "day_centre") return true;
     if (
       (sArea.includes("hub") || sArea === "bespoke_shared") &&
       (rArea.includes("hub") || rArea === "bespoke_shared")

@@ -198,10 +198,11 @@
     const key = String(clientSlug || "").trim();
     if (!key) return false;
     return submittedRowsForDateAll(iso).some(function (r) {
-      if (submittedRowMarksAbsent(r)) return false;
       if (!submittedRowIsBespoke(r)) return false;
       const rKey = slug(r.clientName);
-      return rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0;
+      if (!(rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0)) return false;
+      if (submittedRowMarksAbsent(r)) return true;
+      return submittedRowDone(r);
     });
   }
 

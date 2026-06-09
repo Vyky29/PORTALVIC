@@ -33,7 +33,13 @@
     global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = groupLabel;
 
     if (global.portalCsCliqThreadHeader && typeof global.portalCsCliqThreadHeader.syncInternal === "function") {
-      global.portalCsCliqThreadHeader.syncInternal(groupLabel, "Management");
+      global.portalCsCliqThreadHeader.syncInternal(groupLabel, "Group", null, { groupId: gid });
+    }
+    if (
+      global.portalCsCliqThreadHeader &&
+      typeof global.portalCsCliqThreadHeader.syncThreadBackChrome === "function"
+    ) {
+      global.portalCsCliqThreadHeader.syncThreadBackChrome(true);
     }
     if (global.portalDmIcons && typeof global.portalDmIcons.upgrade === "function") {
       var threadRootG = document.getElementById("internalChatThreadWrap");

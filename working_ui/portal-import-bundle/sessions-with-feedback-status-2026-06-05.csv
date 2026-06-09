@@ -1,0 +1,8 @@
+date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedback_unit_key,feedback_merge_group,overview_status,feedback_complete,matched_feedback_client,matched_feedback_by,matched_portal_session_key
+2026-06-05,Friday,Timi,Day Centre,1 to 3,RAUL,SwimFarm,Hub Room,2026-06-05|timi|day_centre,2026-06-05|timi|day_centre,,feedback_submitted,yes,Timi,,2026-06-05|timi|day_centre
+2026-06-05,Friday,Emmanuel,Day Centre,11 to 4,VICTOR,SwimFarm,Hub Room,2026-06-05|emmanuel|day_centre,2026-06-05|emmanuel|day_centre,,feedback_submitted,yes,Emmanuel,,2026-06-05|emmanuel|day_centre
+2026-06-05,Friday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room,2026-06-05|ikram|day_centre,2026-06-05|ikram|day_centre,,,no,,,
+2026-06-05,Friday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room,2026-06-05|fadi|day_centre,2026-06-05|fadi|day_centre,,,no,,,
+2026-06-05,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool,2026-06-05|16:00|adam_pi,2026-06-05|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,,2026-06-05|16:00|adam_pi
+2026-06-05,Friday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room,2026-06-05|16:30|tinashe|hub_room,2026-06-05|tinashe|16:30|bespoke_programme|hub_room,,feedback_submitted,yes,Tinashe,John Kyei-Fram,2026-06-05||tinashe
+2026-06-05,Friday,Amaar Ah,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool,2026-06-05|17:30|amaar_ah,2026-06-05|17:30|amaar_ah,,feedback_submitted,yes,Amaar Ah,,2026-06-05|17:30|amaar_ah

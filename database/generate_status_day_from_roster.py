@@ -165,7 +165,9 @@ def write_csv(iso: str, rows: list[dict]) -> Path:
 
 
 def main() -> None:
-    iso = "2026-06-08"
+    import sys
+
+    iso = sys.argv[1] if len(sys.argv) > 1 else "2026-06-08"
     rows = generate_day(iso)
     path = write_csv(iso, rows)
     print(f"Wrote {path.relative_to(ROOT)} rows={len(rows)}")

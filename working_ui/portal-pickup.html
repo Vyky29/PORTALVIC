@@ -2,6 +2,9 @@
 <html lang="en-GB">
 <head>
   <script src="/portal-static-bootstrap.js?v=20260605-form-redirect"></script>
+  <link rel="stylesheet" href="/portal-shared-js/portal_subpage_mobile_vertical.css?v=20260609-venue-pickup-mobile" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_form_typography.css?v=20260609-form-type" />
+  <script src="/portal-shared-js/portal_subpage_mobile_vertical.js?v=20260609-venue-pickup-mobile"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>clubSENsational Drop Off - Pick Up Portal</title>
@@ -62,15 +65,15 @@
     }
     .title-row h1{
       margin:0 0 6px;
-      font-size:clamp(22px,5vw,28px);
-      line-height:1.1;
+      font-size:22px;
+      line-height:1.2;
       color:var(--ink);
-      font-weight:800;
+      font-weight:700;
     }
     .title-row p{
       margin:0;
-      font-size:14px;
-      line-height:1.55;
+      font-size:13.5px;
+      line-height:1.5;
       color:var(--muted);
     }
     .field-icon-pickup{
@@ -91,7 +94,7 @@
     .participant-field label{
       display:flex;
       align-items:center;
-      font-size:13px;
+      font-size:14px;
       font-weight:700;
       color:var(--ink);
       text-transform:none;
@@ -124,7 +127,8 @@
       background:transparent;
       text-align:left;
       font:inherit;
-      font-size:15px;
+      font-size:14px;
+      font-weight:600;
       cursor:pointer;
     }
     .portal-name-suggest__item:hover,
@@ -206,11 +210,11 @@
     }
 
     .field label{
-      font-size:12px;
+      font-size:14px;
       font-weight:700;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      color:var(--muted);
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--ink);
     }
 
     .input{
@@ -220,7 +224,7 @@
       border-radius:14px;
       padding:14px;
       font-family:inherit;
-      font-size:14px;
+      font-size:16px;
       color:var(--text);
       outline:none;
     }
@@ -308,9 +312,9 @@
 
     .panel-title{
       margin:0;
-      font-size:18px;
+      font-size:14px;
       color:var(--ink);
-      font-weight:800;
+      font-weight:700;
     }
 
     .panel-body{ padding:20px 22px 24px; }
@@ -331,10 +335,10 @@
     }
     .pickup-roster-today__title{
       margin:0 0 4px;
-      font-size:13px;
-      font-weight:800;
+      font-size:14px;
+      font-weight:700;
       color:var(--ink);
-      letter-spacing:.02em;
+      letter-spacing:0;
     }
     .pickup-roster-today__hint{
       margin:0 0 10px;
@@ -358,8 +362,8 @@
       background:#fff;
       color:var(--pickupPrimary);
       font:inherit;
-      font-size:13px;
-      font-weight:700;
+      font-size:12px;
+      font-weight:500;
       line-height:1.25;
       cursor:pointer;
       overflow-wrap:break-word;
@@ -368,6 +372,102 @@
     .pickup-roster-chip:hover{
       background:var(--goldSoft);
       border-color:rgba(124,58,237,.5);
+    }
+
+    .pickup-staff-log{
+      margin:0 0 16px;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      min-width:0;
+    }
+    .pickup-staff-log__title{
+      margin:0 0 4px;
+      font-size:14px;
+      font-weight:700;
+      color:var(--ink);
+    }
+    .pickup-staff-log__hint{
+      margin:0 0 12px;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+    .pickup-staff-log__list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:0;
+    }
+    .pickup-staff-log-card{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      background:#fff;
+      min-width:0;
+    }
+    .pickup-staff-log-card__head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      min-width:0;
+      margin-bottom:8px;
+    }
+    .pickup-staff-log-card__name{
+      margin:0;
+      font-size:14px;
+      font-weight:700;
+      color:var(--ink);
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .pickup-staff-log-card__phase{
+      margin:0;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--ink);
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .pickup-staff-log-card__phase + .pickup-staff-log-card__phase{
+      margin-top:6px;
+    }
+    .pickup-staff-log-card__staff{
+      display:block;
+      margin-top:2px;
+      font-size:11px;
+      font-weight:600;
+      color:var(--pickupPrimary);
+      overflow-wrap:break-word;
+    }
+    .pickup-staff-log-card__empty{
+      margin:0;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+      text-align:center;
+      padding:8px 0;
+    }
+
+    .handover-flag-check{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      margin:8px 0 0;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+      min-width:0;
+    }
+    .handover-flag-check input{
+      margin-top:2px;
+      flex-shrink:0;
+    }
+    .handover-flag-check span{
+      min-width:0;
+      overflow-wrap:break-word;
     }
 
     .participant-card{
@@ -402,10 +502,10 @@
 
     .participant-name{
       margin:0;
-      font-size:16px;
-      font-weight:800;
+      font-size:14px;
+      font-weight:600;
       color:var(--ink);
-      line-height:1.3;
+      line-height:1.35;
     }
 
     .participant-meta{ font-size:12px; color:var(--muted); line-height:1.5; }
@@ -478,8 +578,8 @@
       padding:28px;
       background:#fbfdff;
       color:var(--muted);
-      font-size:15px;
-      line-height:1.7;
+      font-size:13.5px;
+      line-height:1.5;
       text-align:center;
       max-width:100%;
       overflow-wrap:anywhere;
@@ -503,9 +603,9 @@
 
     .form-inner-header h2{
       margin:0;
-      font-size:20px;
+      font-size:14px;
       color:var(--ink);
-      font-weight:800;
+      font-weight:700;
     }
 
     .grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -526,7 +626,7 @@
 
     .form-inner label{
       display:block;
-      font-size:12px;
+      font-size:14px;
       font-weight:700;
       margin-bottom:4px;
       color:var(--text);
@@ -556,7 +656,7 @@
 
     .field-label-block{
       display:block;
-      font-size:12px;
+      font-size:14px;
       font-weight:700;
       margin-bottom:2px;
       color:var(--text);
@@ -564,8 +664,8 @@
 
     label.subl{
       display:block;
-      font-size:11px;
-      font-weight:600;
+      font-size:12px;
+      font-weight:400;
       margin-bottom:4px;
       color:var(--muted);
     }
@@ -586,7 +686,7 @@
       padding:8px;
       border-radius:10px;
       font-size:12px;
-      font-weight:700;
+      font-weight:500;
       cursor:pointer;
       max-width:100%;
       min-width:0;
@@ -868,7 +968,7 @@
         gap:10px;
       }
       .form-inner-header h2{
-        font-size:17px;
+        font-size:14px;
       }
       #f .form-inner label,
       #f .field-label-block,
@@ -967,7 +1067,7 @@
     }
   </style>
 </head>
-<body class="portal-logo-pickup portal-form-no-logo">
+<body class="portal-logo-pickup portal-form-no-logo portal-form-page">
   <script>
     (function(){
       var s = location.search || '';
@@ -1003,6 +1103,12 @@
           <div id="pickupRosterTodayList" class="pickup-roster-today__list" role="list"></div>
         </div>
         <div id="searchResults" class="result-list pickup-results"></div>
+
+        <div id="pickupStaffLogWrap" class="pickup-staff-log" hidden>
+          <p class="pickup-staff-log__title">Today&apos;s handover log</p>
+          <p class="pickup-staff-log__hint">Your roster clients — shared participants show the same record. Staff names show who saved drop off and pick up.</p>
+          <div id="pickupStaffLogList" class="pickup-staff-log__list" role="list"></div>
+        </div>
 
         <div class="pickup-form-block">
       <div class="panel-body pickup-form-body">
@@ -1071,6 +1177,10 @@
                           <button type="button" class="role-btn" data-value="Carer">Carer</button>
                           <button type="button" class="role-btn" data-value="Other">Other</button>
                         </div>
+                        <label class="handover-flag-check" for="dropUnusualCheck">
+                          <input type="checkbox" id="dropUnusualCheck">
+                          <span>Unusual drop-off (not the regular carer)</span>
+                        </label>
                       </div>
                       <div class="full dropoff-line">
                         <label for="signatureCanvas">Signature (receiving staff) *</label>
@@ -1099,6 +1209,10 @@
                           <button type="button" class="role-btn" data-value="Carer">Carer</button>
                           <button type="button" class="role-btn" data-value="Other">Other</button>
                         </div>
+                        <label class="handover-flag-check" for="pickupUnfamiliarCheck">
+                          <input type="checkbox" id="pickupUnfamiliarCheck">
+                          <span>Unfamiliar collector (family approved)</span>
+                        </label>
                       </div>
                       <div id="pickupNameWrap" class="pu-row pu-name full dropoff-line"><label for="pickupName">Collected By</label><input id="pickupName" class="input" required></div>
                       <div class="pu-row pu-sig full dropoff-line">
@@ -1236,6 +1350,60 @@
       let syncTimer = null;
       let channel = null;
       let schemaMode = 'snake';
+      /** When Portal DB has no daily_handover_logs yet — stop polling / realtime spam. */
+      let remoteTableMissing = false;
+      let handoverStaffContext = { userId: '', fullName: '' };
+
+      async function resolveHandoverStaffContext(){
+        let fullName = '';
+        let userId = '';
+        try{
+          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+          fullName = String(sp.get('staff') || sp.get('completedBy') || '').trim();
+        }catch(_){}
+        if(client && client.auth && typeof client.auth.getUser === 'function'){
+          try{
+            const { data: authData } = await client.auth.getUser();
+            const uid = authData && authData.user && authData.user.id;
+            if(uid){
+              userId = uid;
+              if(!fullName){
+                const prof = await client.from('staff_profiles').select('full_name,username').eq('id', uid).maybeSingle();
+                if(prof && prof.data){
+                  fullName = String(prof.data.full_name || prof.data.username || '').trim();
+                }
+              }
+            }
+          }catch(_){}
+        }
+        handoverStaffContext = { userId: userId, fullName: fullName };
+        return handoverStaffContext;
+      }
+
+      function isHandoverTableMissingError(err){
+        const msg = String((err && err.message) || err || '').toLowerCase();
+        const code = String((err && err.code) || '').toLowerCase();
+        if(code === 'pgrst205' || code === '42p01') return true;
+        if(String((err && err.status) || (err && err.statusCode) || '') === '404') return true;
+        return msg.indexOf('daily_handover_logs') >= 0
+          && (msg.indexOf('schema cache') >= 0 || msg.indexOf('does not exist') >= 0 || msg.indexOf('could not find') >= 0);
+      }
+
+      function noteRemoteTableMissing(err){
+        if(!remoteTableMissing){
+          remoteTableMissing = true;
+          if(channel && client){
+            try{ client.removeChannel(channel); }catch(_){}
+            channel = null;
+          }
+          if(syncTimer){
+            clearInterval(syncTimer);
+            syncTimer = null;
+          }
+        }
+        status.textContent = 'Handover sync unavailable — database table not set up yet (saved on this device only). Ask admin to run migration portal_daily_handover_logs.';
+        console.warn('[pickup] daily_handover_logs missing', err && err.message ? err.message : err);
+      }
 
       /** IDs deleted on this device: skip re-import from server if Supabase DELETE is blocked by RLS. */
       const PENDING_DEL_KEY = 'clubsensational_handover_pending_deletes_v1';
@@ -1356,6 +1524,7 @@
         rosterTodayNames = uniqueSortedNames(names);
         renderRosterTodayChips();
         refreshParticipantDatalist();
+        renderStaffHandoverLog();
       }
 
       function renderRosterTodayChips(){
@@ -1830,7 +1999,136 @@
         syncPickupSignatureToHidden();
         const o = {};
         ids.forEach(function(id){ o[id] = get(id).value; });
+        const dropFlag = get('dropUnusualCheck');
+        const pickFlag = get('pickupUnfamiliarCheck');
+        o.dropUnusual = dropFlag && dropFlag.checked ? '1' : '';
+        o.pickupUnfamiliar = pickFlag && pickFlag.checked ? '1' : '';
+        if(String(o.dropRole || '').trim() === 'Other' && !o.dropUnusual) o.dropUnusual = '1';
+        if(String(o.pickupRole || '').trim() === 'Other' && !o.pickupUnfamiliar) o.pickupUnfamiliar = '1';
         return o;
+      }
+
+      function applyHandoverFlags(o){
+        const dropFlag = get('dropUnusualCheck');
+        const pickFlag = get('pickupUnfamiliarCheck');
+        const vals = o && typeof o === 'object' ? o : {};
+        if(dropFlag){
+          dropFlag.checked = vals.dropUnusual === '1' || vals.dropUnusual === true || vals.dropUnusual === 1;
+        }
+        if(pickFlag){
+          pickFlag.checked = vals.pickupUnfamiliar === '1' || vals.pickupUnfamiliar === true || vals.pickupUnfamiliar === 1;
+        }
+      }
+
+      function stampHandoverStaff(o, prevVals, pickupPhase){
+        const ctx = handoverStaffContext || {};
+        const prev = prevVals && typeof prevVals === 'object' ? prevVals : {};
+        const out = Object.assign({}, o);
+        if(!pickupPhase && isDropOffSaved(out) && dropDone(out)){
+          if(ctx.userId) out.dropStaffUserId = ctx.userId;
+          if(ctx.fullName) out.dropStaffName = ctx.fullName;
+        }
+        if(pickupPhase && pickDone(out)){
+          if(ctx.userId) out.pickupStaffUserId = ctx.userId;
+          if(ctx.fullName) out.pickupStaffName = ctx.fullName;
+        }
+        if(prev.dropStaffUserId && !out.dropStaffUserId) out.dropStaffUserId = prev.dropStaffUserId;
+        if(prev.dropStaffName && !out.dropStaffName) out.dropStaffName = prev.dropStaffName;
+        if(prev.pickupStaffUserId && !out.pickupStaffUserId) out.pickupStaffUserId = prev.pickupStaffUserId;
+        if(prev.pickupStaffName && !out.pickupStaffName) out.pickupStaffName = prev.pickupStaffName;
+        return out;
+      }
+
+      function formatHandoverClock(t){
+        if(t == null || t === '') return '—';
+        const s = String(t).trim();
+        const m = s.match(/^(\d{1,2}):(\d{2})/);
+        if(m) return String(m[1]).padStart(2, '0') + ':' + m[2];
+        return s.length > 14 ? '—' : s;
+      }
+
+      function rosterParticipantKeySet(){
+        const set = new Set();
+        rosterTodayNames.forEach(function(nm){
+          const k = String(nm || '').trim().toLowerCase();
+          if(k) set.add(k);
+        });
+        return set;
+      }
+
+      function handoverLogRowsForStaff(){
+        const roster = rosterParticipantKeySet();
+        const uid = String(handoverStaffContext.userId || '').trim();
+        return read().filter(function(r){
+          if(!r || !isTodaySession(r.sessionDate)) return false;
+          const pn = String(r.participantName || '').trim().toLowerCase();
+          const vals = r.values || {};
+          if(roster.has(pn)) return true;
+          if(uid && (String(vals.dropStaffUserId || '') === uid || String(vals.pickupStaffUserId || '') === uid)) return true;
+          return false;
+        }).filter(function(r){
+          const vals = r.values || {};
+          return adminHandoverDropSavedLocal(vals) || r.locked;
+        }).sort(function(a, b){
+          const ta = new Date(a.updatedAt || 0).getTime();
+          const tb = new Date(b.updatedAt || 0).getTime();
+          return tb - ta;
+        });
+      }
+
+      function adminHandoverDropSavedLocal(vals){
+        if(!vals || typeof vals !== 'object') return false;
+        if(Object.prototype.hasOwnProperty.call(vals, 'dropOffSaved')){
+          const v = vals.dropOffSaved;
+          return v === true || v === 'true' || v === '1' || v === 1;
+        }
+        return legacyDropOffComplete(vals);
+      }
+
+      function renderStaffHandoverLog(){
+        const wrap = document.getElementById('pickupStaffLogWrap');
+        const listEl = document.getElementById('pickupStaffLogList');
+        if(!wrap || !listEl) return;
+        const rows = handoverLogRowsForStaff();
+        if(!rows.length){
+          wrap.hidden = true;
+          listEl.innerHTML = '';
+          return;
+        }
+        wrap.hidden = false;
+        listEl.innerHTML = '';
+        rows.forEach(function(r){
+          const vals = r.values || {};
+          const card = document.createElement('article');
+          card.className = 'pickup-staff-log-card';
+          card.setAttribute('role', 'listitem');
+          const dropBy = String(vals.dropName || '').trim();
+          const dropRole = String(vals.dropRole || '').trim();
+          const pickBy = String(vals.pickupName || '').trim();
+          const pickRole = String(vals.pickupRole || '').trim();
+          const dropStaff = String(vals.dropStaffName || '').trim();
+          const pickStaff = String(vals.pickupStaffName || '').trim();
+          const dropLine = dropBy
+            ? 'Drop off ' + formatHandoverClock(vals.arrivalTime) + ' · ' + dropBy + (dropRole ? ' (' + dropRole + ')' : '')
+            : 'Drop off — not saved yet';
+          const pickLine = r.locked && pickBy
+            ? 'Pick up ' + formatHandoverClock(vals.pickupTime) + ' · ' + pickBy + (pickRole ? ' (' + pickRole + ')' : '')
+            : (adminHandoverDropSavedLocal(vals) ? 'Pick up — awaiting collection' : 'Pick up — not started');
+          const pillClass = r.locked ? 'status-pill status-done' : 'status-pill status-open';
+          const pillText = r.locked ? 'Complete' : 'Awaiting pick up';
+          card.innerHTML =
+            '<div class="pickup-staff-log-card__head">' +
+              '<p class="pickup-staff-log-card__name">' + escapeHtml(r.participantName || '—') + '</p>' +
+              '<span class="' + pillClass + '">' + pillText + '</span>' +
+            '</div>' +
+            '<p class="pickup-staff-log-card__phase">' + escapeHtml(dropLine) +
+              (dropStaff ? '<span class="pickup-staff-log-card__staff">Saved by ' + escapeHtml(dropStaff) + '</span>' : '') +
+            '</p>' +
+            '<p class="pickup-staff-log-card__phase">' + escapeHtml(pickLine) +
+              (pickStaff ? '<span class="pickup-staff-log-card__staff">Saved by ' + escapeHtml(pickStaff) + '</span>' : '') +
+            '</p>';
+          listEl.appendChild(card);
+        });
       }
 
       function apply(o){
@@ -1848,6 +2146,7 @@
         renderRoleButtons('emotionalState');
         renderRoleButtons('dropRole');
         renderRoleButtons('pickupRole');
+        applyHandoverFlags(o);
         syncNameRules();
         refreshHandoverSections(o);
         setSessionDateTime(get('sessionDate').value || nowDate(), get('arrivalTime').value || nowTime());
@@ -1962,11 +2261,27 @@
           status.textContent = 'No Supabase client (check script load)';
           return { ok: false, error: 'No client' };
         }
+        if(remoteTableMissing){
+          renderSearchResults(filterParticipants(searchInput.value));
+          return { ok: false, error: 'Table missing' };
+        }
         try{
           const today = nowDate();
           const byRemoteId = {};
           const resSnake = await client.from(TABLE).select('*').eq('session_date', today).order('updated_at', { ascending: false });
+          if(resSnake.error && isHandoverTableMissingError(resSnake.error)){
+            noteRemoteTableMissing(resSnake.error);
+            renderSearchResults(filterParticipants(searchInput.value));
+            renderStaffHandoverLog();
+            return { ok: false, error: 'Table missing' };
+          }
           const resCamel = await client.from(TABLE).select('*').eq('sessionDate', today).order('updatedAt', { ascending: false });
+          if(resCamel.error && isHandoverTableMissingError(resCamel.error)){
+            noteRemoteTableMissing(resCamel.error);
+            renderSearchResults(filterParticipants(searchInput.value));
+            renderStaffHandoverLog();
+            return { ok: false, error: 'Table missing' };
+          }
           if(!resSnake.error && resSnake.data){
             (resSnake.data || []).forEach(function(r){
               const m = mapRemoteRow(r);
@@ -1990,18 +2305,23 @@
           });
           mergeRemoteIntoCache(mapped);
           renderSearchResults(filterParticipants(searchInput.value));
+          renderStaffHandoverLog();
           const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
           status.textContent = `Synced ${t} · ${read().length} today · ${mapped.length} row(s) from server`;
           return { ok: true, count: read().length };
         } catch(err){
-          status.textContent = `Sync error — ${err.message || 'remote error'} (using local list)`;
+          if(isHandoverTableMissingError(err)){
+            noteRemoteTableMissing(err);
+          } else {
+            status.textContent = `Sync error — ${err.message || 'remote error'} (using local list)`;
+          }
           renderSearchResults(filterParticipants(searchInput.value));
           return { ok: false, error: err.message || 'remote error' };
         }
       }
 
       async function upsertSupabaseRow(row){
-        if(!client) return;
+        if(!client || remoteTableMissing) return;
         const upsertOpts = { onConflict: 'id' };
         try{
           let error = null;
@@ -2062,7 +2382,8 @@
           setTimeout(function(){ pullTodayFromSupabase(); }, 300);
           setTimeout(function(){ pullTodayFromSupabase(); }, 1500);
         } catch(err){
-          status.textContent = `Saved locally (${err.message || 'sync pending'})`;
+          if(isHandoverTableMissingError(err)) noteRemoteTableMissing(err);
+          else status.textContent = `Saved locally (${err.message || 'sync pending'})`;
         }
       }
 
@@ -2083,21 +2404,27 @@
       }
 
       async function cleanupRemoteDaily(){
-        if(!client) return;
+        if(!client || remoteTableMissing) return;
         try{
           const today = nowDate();
+          let res = null;
           if(schemaMode === 'snake'){
-            await client.from(TABLE).delete().neq('session_date', today);
+            res = await client.from(TABLE).delete().neq('session_date', today);
           } else {
-            await client.from(TABLE).delete().neq('sessionDate', today);
+            res = await client.from(TABLE).delete().neq('sessionDate', today);
           }
-        } catch(_){}
+          if(res && res.error){
+            if(isHandoverTableMissingError(res.error)) noteRemoteTableMissing(res.error);
+          }
+        } catch(err){
+          if(isHandoverTableMissingError(err)) noteRemoteTableMissing(err);
+        }
       }
 
       const POLL_MS = 2500;
 
       function startRealtimeSync(){
-        if(!client) return;
+        if(!client || remoteTableMissing) return;
         if(syncTimer) clearInterval(syncTimer);
         syncTimer = setInterval(function(){
           if(document.visibilityState === 'visible') pullTodayFromSupabase();
@@ -2180,6 +2507,7 @@
         });
         refreshParticipantDatalist();
         renderRosterTodayChips();
+        renderStaffHandoverLog();
       }
 
       function escapeHtml(s){
@@ -2241,6 +2569,9 @@
         if(dropDone(o)) get('dropOffSaved').value = '1';
         else get('dropOffSaved').value = '';
         o = collect();
+        const prevRow = read().find(function(r){ return r.id === id; });
+        const prevVals = (prevRow && prevRow.values) || {};
+        o = stampHandoverStaff(o, prevVals, pickupPhase);
         const rows = read().filter(function(r){ return r.id !== id; });
         const row = {
           id,
@@ -2256,6 +2587,7 @@
         upsertSupabaseRow(row);
         status.textContent = `Saved: ${row.participantName} (${row.sessionDate})`;
         renderSearchResults(filterParticipants(searchInput.value));
+        renderStaffHandoverLog();
         if(row.locked){
           form.reset();
           setSessionDateTime(nowDate(), nowTime());
@@ -2502,6 +2834,12 @@
         input.value = input.value === newValue ? '' : newValue;
         renderRoleButtons(roleId);
         syncNameRules();
+        if(roleId === 'dropRole' || roleId === 'pickupRole'){
+          const dropFlag = get('dropUnusualCheck');
+          const pickFlag = get('pickupUnfamiliarCheck');
+          if(roleId === 'dropRole' && get('dropRole').value === 'Other' && dropFlag) dropFlag.checked = true;
+          if(roleId === 'pickupRole' && get('pickupRole').value === 'Other' && pickFlag) pickFlag.checked = true;
+        }
       });
 
       document.getElementById('showDropOffBtn').addEventListener('click', function(){
@@ -2536,11 +2874,14 @@
 
       write(readLocal());
       keepTodayOnly();
+      await resolveHandoverStaffContext();
       await refreshRosterTodayNames();
-      await cleanupRemoteDaily();
       await pullTodayFromSupabase();
-      setTimeout(function(){ pullTodayFromSupabase(); }, 1000);
-      setTimeout(function(){ pullTodayFromSupabase(); }, 3500);
+      if(!remoteTableMissing) await cleanupRemoteDaily();
+      if(!remoteTableMissing){
+        setTimeout(function(){ pullTodayFromSupabase(); }, 1000);
+        setTimeout(function(){ pullTodayFromSupabase(); }, 3500);
+      }
       startRealtimeSync();
       setSessionDateTime(nowDate(), nowTime());
       if(SOLO_MODE){
@@ -2552,6 +2893,7 @@
         hideForm();
       }
       renderSearchResults(filterParticipants(''));
+      renderStaffHandoverLog();
       initSignaturePad();
       resizeSignatureCanvas();
       clearSignaturePad();

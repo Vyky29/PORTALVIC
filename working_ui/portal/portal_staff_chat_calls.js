@@ -2472,12 +2472,24 @@
   }
 
   function meetingPanelHost() {
-    if (global.__PORTAL_CS_CLIQ_ACTIVE || global.__PORTAL_CS_CLIQ_EMBED_OPEN) {
-      return document.body;
-    }
-    var root = document.getElementById("csCliqRoot");
-    if (root) return root;
-    return document.getElementById(resolveCallUi().threadWrapId) || document.body;
+    return document.body;
+  }
+
+  function hideMeetingPanel() {
+    var panel = document.getElementById("portalStaffChatMeetingPanel");
+    if (!panel) return;
+    panel.hidden = true;
+    panel.setAttribute("aria-hidden", "true");
+    panel.style.display = "";
+  }
+
+  function showMeetingPanel(panel) {
+    if (!panel) return;
+    mountMeetingPanel(panel);
+    panel.hidden = false;
+    panel.removeAttribute("hidden");
+    panel.setAttribute("aria-hidden", "false");
+    panel.style.display = "flex";
   }
 
   function mountMeetingPanel(panel) {
@@ -2538,13 +2550,13 @@
     mountMeetingPanel(panel);
 
     panel.addEventListener("click", function (ev) {
-      if (ev.target === panel) panel.hidden = true;
+      if (ev.target === panel) hideMeetingPanel();
     });
 
     var cancelBtn = panel.querySelector("#portalStaffChatMeetingCancelBtn");
     if (cancelBtn) {
       cancelBtn.addEventListener("click", function () {
-        panel.hidden = true;
+        hideMeetingPanel();
       });
     }
 
@@ -2603,7 +2615,9 @@
             return;
           }
           var ctx = getContext();
-          var hasThread = !!(ctx.threadId || ctx.groupId);
+          var threadId = ctx.threadId;
+          var groupId = ctx.groupId;
+          var hasThread = !!(threadId || groupId);
           var isStaffRequest =
             global.portalCsCliqHubRoles &&
             typeof global.portalCsCliqHubRoles.canScheduleMeetings === "function" &&
@@ -2630,26 +2644,35 @@
                   meetingType: meetingType,
                 });
               }
-              panel.hidden = true;
+              hideMeetingPanel();
               return;
+            }
+            if (!hasThread && ctx.client && typeof global.portalStaffResolveOfficeThreadForQuickOpen === "function") {
+              threadId = String(await global.portalStaffResolveOfficeThreadForQuickOpen() || "").trim();
+              hasThread = !!threadId;
             }
             if (hasThread && ctx.client) {
               var meetingTitle = title;
               if (duration) meetingTitle += " (" + duration + " min)";
               if (meetingType === "voice") meetingTitle = "[Voice] " + meetingTitle;
-              if (notes) meetingTitle += " ? " + notes;
+              if (notes) meetingTitle += " — " + notes;
+              if (participants) meetingTitle += " · " + participants;
               await sendCallInvite({
                 client: ctx.client,
-                threadId: ctx.threadId,
-                groupId: ctx.groupId,
+                threadId: threadId,
+                groupId: groupId,
                 kind: "meeting",
                 title: meetingTitle,
                 scheduledAt: scheduledAt,
               });
               await refreshThreadAfterCall();
+            } else if (err) {
+              err.textContent =
+                "Meeting saved locally but could not post to chat. Open Admin and try again, or check you are signed in.";
+              err.hidden = false;
             }
             dispatchMeetingCreated(meetingDetail);
-            panel.hidden = true;
+            if (hasThread || !err || err.hidden) hideMeetingPanel();
           } catch (e) {
             if (err) {
               err.textContent = String((e && e.message) || e || "Could not schedule meeting");
@@ -2762,8 +2785,12 @@
           String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
       }
     }
-    panel.hidden = false;
-    if (titleInp) titleInp.focus();
+    showMeetingPanel(panel);
+    requestAnimationFrame(function () {
+      mountMeetingPanel(panel);
+      showMeetingPanel(panel);
+      if (titleInp) titleInp.focus();
+    });
   }
 
   function csCliqCallsActive() {
@@ -2863,8 +2890,6 @@
         global.PortalAdminCsCliq.syncPhonePaneContext();
       }
     }
-    var panel = document.getElementById("portalStaffChatMeetingPanel");
-    if (panel && !inThread) panel.hidden = true;
   }
 
   function ensureLeadsCallPickerModal() {
@@ -3392,6 +3417,7 @@
     sendCallInvite: sendCallInvite,
     startCall: startCall,
     openMeetingPanel: openMeetingPanel,
+    hideMeetingPanel: hideMeetingPanel,
     syncCallBar: syncCallBar,
     bindCallBar: bindCallBar,
     openInAppCall: openInAppCall,

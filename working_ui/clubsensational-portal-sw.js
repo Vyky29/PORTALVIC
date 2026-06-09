@@ -157,8 +157,11 @@ self.addEventListener('push', function (event) {
       var tasks = [
         portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
       ];
-      /* Chat: always show OS banner (sound on lock screen + Android heads-up). Page also plays in-app chirp when open. */
-      tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      /* Foreground: page plays sound/vibration + halo/badges — no OS heads-up banner.
+         Background/locked: OS notification (SMS-style at top of phone). */
+      if (!hasVisibleClient) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
       return Promise.all(tasks);
     })
   );

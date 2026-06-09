@@ -9,6 +9,25 @@
       .replace(/"/g, "&quot;");
   }
 
+  function normalizePhotoUrl(url) {
+    if (typeof global.portalNormalizeParticipantPhotoUrl === "function") {
+      return global.portalNormalizeParticipantPhotoUrl(url);
+    }
+    var u = String(url || "").trim();
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
+    if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
+    return u;
+  }
+
+  function photoCandidates(name, photoOverride) {
+    if (typeof global.portalParticipantPhotoPathCandidates === "function") {
+      return global.portalParticipantPhotoPathCandidates(name, photoOverride);
+    }
+    var one = photoOverride ? normalizePhotoUrl(photoOverride) : "";
+    return one ? [one] : [];
+  }
+
   /** Avatar + gap sizing for Next session chips on day-off TODAY panel. */
   function portalTodayNextChipGridVars(count) {
     var n = Math.max(1, Number(count) || 1);
@@ -63,6 +82,45 @@
     return String(name || "?").slice(0, 2).toUpperCase();
   }
 
+  function portalTodayNextChipPhotoTryFallback(img) {
+    if (!img) return;
+    var rest = String(img.getAttribute("data-photo-fallbacks") || "")
+      .split("|")
+      .map(function (p) {
+        return normalizePhotoUrl(p);
+      })
+      .filter(Boolean);
+    if (rest.length) {
+      img.setAttribute("data-photo-fallbacks", rest.slice(1).join("|"));
+      img.src = rest[0];
+      return;
+    }
+    img.remove();
+    var el = img.parentElement;
+    if (!el) return;
+    el.classList.remove("today-participant-chip__avatar--has-photo");
+    el.classList.add("today-participant-chip__avatar--initials");
+    var name = String(el.getAttribute("data-participant-name") || "").trim();
+    if (name) el.textContent = chipAvatarInitials(name);
+  }
+
+  function portalRefreshTodayNextParticipantPhotos(root) {
+    root = root || document;
+    root.querySelectorAll(".today-participant-chip__avatar img.portal-screenshot-protected").forEach(function (img) {
+      if (img.complete && img.naturalWidth > 0) return;
+      if (!img.complete && img.src) return;
+      if (img.getAttribute("data-photo-fallbacks")) {
+        portalTodayNextChipPhotoTryFallback(img);
+        return;
+      }
+      if (img.src) {
+        var retry = img.src;
+        img.src = "";
+        img.src = retry;
+      }
+    });
+  }
+
   /** Day-off NEXT SESSION participant circles — one equal chip per client. */
   function portalTodayNextParticipantChipsHtml(participants, opts) {
     opts = opts || {};
@@ -84,22 +142,26 @@
       var rawName = String((p && p.name) || "—").trim();
       var name = esc(rawName);
       var rawId = String((p && p.clientId) || "").trim();
-      var src = p && p.photoUrl ? String(p.photoUrl).trim() : "";
+      var candidates = photoCandidates(rawName, p && p.photoUrl ? String(p.photoUrl).trim() : "");
+      var src = candidates.length ? candidates[0] : "";
+      var photoFallbacks = candidates.slice(1).join("|");
       var loadAttr =
         typeof global.portalParticipantPhotoLoadingAttr === "function"
           ? global.portalParticipantPhotoLoadingAttr()
           : ' loading="eager" fetchpriority="low"';
       var genderCls = chipAvatarGenderClass(rawName);
-      var av = src
-        ? '<img class="portal-screenshot-protected" src="' +
+      var initials = esc(chipAvatarInitials(rawName));
+      var av = initials;
+      if (src) {
+        av +=
+          '<img class="portal-screenshot-protected" src="' +
           esc(src) +
           '" alt=""' +
           loadAttr +
-          ' decoding="async" draggable="false" onerror="this.remove();var el=this.parentElement;if(el){el.classList.add(\'today-participant-chip__avatar--initials\');el.textContent=' +
-          JSON.stringify(chipAvatarInitials(rawName)) +
-          ";}" +
-          '"/>'
-        : esc(chipAvatarInitials(rawName));
+          ' decoding="async" draggable="false"' +
+          (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
+          ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
+      }
       var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
       html +=
         '<button type="button" class="today-participant-chip"' +
@@ -113,9 +175,11 @@
         '" role="listitem">';
       html += '<span class="today-participant-chip__avatar-wrap">';
       html +=
-        '<span class="today-participant-chip__avatar' +
-        (src ? "" : " today-participant-chip__avatar--initials") +
+        '<span class="today-participant-chip__avatar today-participant-chip__avatar--initials' +
+        (src ? " today-participant-chip__avatar--has-photo" : "") +
         genderCls +
+        '" data-participant-name="' +
+        esc(rawName) +
         '">' +
         av +
         "</span>";
@@ -132,6 +196,8 @@
     return html;
   }
 
+  global.portalTodayNextChipPhotoTryFallback = portalTodayNextChipPhotoTryFallback;
+  global.portalRefreshTodayNextParticipantPhotos = portalRefreshTodayNextParticipantPhotos;
   global.portalTodayNextChipGridVars = portalTodayNextChipGridVars;
   global.portalTodayNextChipColumnStyle = portalTodayNextChipColumnStyle;
   global.portalTodayNextParticipantChipsHtml = portalTodayNextParticipantChipsHtml;

@@ -31,12 +31,15 @@
 
   function isLeadProfile(prof) {
     prof = prof || profileRow();
-    if (global.portalLeadStaffChatDirectory && typeof global.portalLeadStaffChatDirectory.portalStaffIsLeadUser === "function") {
-      return global.portalLeadStaffChatDirectory.portalStaffIsLeadUser(prof);
+    if (isManagementProfile(prof)) return false;
+    if (
+      global.portalLeadStaffChatDirectory &&
+      typeof global.portalLeadStaffChatDirectory.portalStaffIsSessionLead === "function"
+    ) {
+      return global.portalLeadStaffChatDirectory.portalStaffIsSessionLead(prof);
     }
     var app = String(prof.app_role || "").toLowerCase();
-    var sr = String(prof.staff_role || "").toLowerCase();
-    return app === "lead" || sr === "manager";
+    return app === "lead";
   }
 
   function isManagementProfile(prof) {
@@ -100,7 +103,8 @@
     if (getTier() === "management" && /admin_dashboard\.html/.test(portalPath())) {
       return false;
     }
-    return getTier() !== "staff";
+    // Staff and session leads may not start new conversations from CS Cliq UI.
+    return getTier() === "management";
   }
 
   function canUseTeams() {

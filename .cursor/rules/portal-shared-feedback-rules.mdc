@@ -1,0 +1,36 @@
+---
+description: Shared vs per-staff session feedback rules (Day Centre, Bespoke trio, MA/climbing)
+globs: working_ui/portal/staff_portal_feedback_bridge.js,working_ui/portal-shared-js/staff_portal_feedback_bridge.js,working_ui/portal/supabase-client.js,working_ui/portal/admin-sessions-hub.js,working_ui/staff_dashboard.html,working_ui/lead_dashboard.html
+alwaysApply: false
+---
+
+# Portal — shared session feedback rules
+
+## Product rule (confirmed)
+
+| Session type | One feedback covers whole team? | Key / unit |
+|--------------|----------------------------------|------------|
+| **Day Centre** (Ikram, Fadi, Timi…) | **Yes** — any co-instructor | `YYYY-MM-DD\|client\|day_centre` |
+| **Bespoke 2:1 / 3:1** at **SwimFarm Hub** with **2+ instructors** (e.g. Tinashe) | **Yes** | `YYYY-MM-DD\|client\|bespoke_shared` |
+| **Multi-Activity / Climbing** | **No** — per instructor + area | separate unit keys |
+| **Yusuf / Cyrus** Aquatic + MA same instructor | **Yes** (merge group) | `feedbackMergeGroup` in status export |
+| **Aquatic** 2×30 min different instructors | **No** — two feedbacks | per slot/instructor |
+| **Admin overrides** | Per override flow | admin sessions hub |
+
+**Scope locked:** Bespoke shared is **automatic** for SwimFarm Hub + 2+ instructors — **not** a Tinashe-only hardcode (Tinashe slug is fallback only when roster lacks instructor list).
+
+## Do not break
+
+1. **Staff + lead must use the same logic** — `getEffectiveSessionReviewRecord`, `portalSessionReviewMap_v1:{staffId}`, `day_centre` / `bespoke_shared` keys.
+2. **Supabase sync** — co-instructor rows match via `portalExpandRosterKeysForSharedFeedbackLookup`, peer RLS (`session_feedback_select_roster_peer`), RPC `portal_feedback_submitted_keys_for_sessions` (150-day lookback).
+3. **Key shapes** — submitted rows may use `YYYY-MM-DD||client` or `…\|hub_room`; roster may use time token — use `portalFeedbackSubmittedKeyMatchesRosterKey`, never exact string only.
+4. **Historical** — term roster keys collected from `firstDate`→`today`; peer fetch by roster dates so past shared sessions go green when a colleague already submitted.
+
+## Key modules
+
+- `staff_portal_feedback_bridge.js` — `dayCentreClientResolved`, `bespokeClientResolved`, `isBespokeSharedRosterSession`
+- `portal/supabase-client.js` — `portalFetchSubmittedReviewSessionKeys`, `portalFanOutFeedbackKeysOntoRosterMemory`
+- `admin-sessions-hub.js` — `isBespokeMultiStaffSharedSlot`, overview counts
+- `staff_dashboard.html` / `lead_dashboard.html` — `portalCollectRosterSessionKeysForReviewSync`, `portalRosterSessionIsBespokeShared`
+
+When changing feedback completion, update **staff, lead, admin hub, and Supabase RPC** together; test co-instructor (Roberto submits Fadi → Victor green).

@@ -232,6 +232,7 @@
     rayyan_f: "rayyan_fi",
     adam_pilcher: "adam_pi",
     adam_a: "adam_ab",
+    junaid: "junaid_f",
   };
 
   function canonicalClientSlug(name) {
