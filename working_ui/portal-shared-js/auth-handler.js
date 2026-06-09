@@ -217,6 +217,8 @@ export function portalCanAccessCeoDashboard(profile, authEmail) {
  */
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
+  const staffKey = portalInferStaffKey(profile, authEmail);
+  if (staffKey === "sevitha" || staffKey === "info") return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
@@ -656,7 +658,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     );
     try {
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260610-presence-db"
+        "./portal_live_presence.js?v=20260609-teflon-presence"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {

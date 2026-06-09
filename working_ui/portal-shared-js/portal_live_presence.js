@@ -86,7 +86,27 @@ function londonTodayIso() {
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  */
-export function portalPresenceSurface(page, profile, authEmail) {
+/** Demo / guide preview only — real Teflon login should appear in the Online bar for QA. */
+export function portalPresenceSkipDemoBroadcast(profile, session, opts) {
+  if (opts?.isDemo === true) return true;
+  const p = profile || {};
+  const u = String(p.username || "").trim().toLowerCase();
+  const fn = String(p.full_name || "").trim().toLowerCase();
+  const email = String(session?.user?.email || "").trim().toLowerCase();
+  const local = email.split("@")[0] || "";
+  const isTeflonAccount =
+    u === "teflon" || fn === "teflon" || local === "teflon" || local === "stf020";
+  if (!isTeflonAccount) return false;
+  if (session?.user?.id) return false;
+  try {
+    const qs = new URLSearchParams(String(window.location.search || ""));
+    if (String(qs.get("portalPreview") || "").trim().toLowerCase() === "teflon") {
+      return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
   const p = String(page || "").toLowerCase();
   if (p === "onboarding") return "onboarding";
   const app = String(profile?.app_role || "").toLowerCase();
@@ -286,15 +306,8 @@ export async function startPortalLivePresence(opts = {}) {
   const session =
     opts.session || window.__PORTAL_SUPABASE__?.session || null;
   if (!session?.user?.id) return;
-  // Demo account is a sandbox: do not broadcast presence to real admins/CEOs.
-  {
-    const p = profile || {};
-    const u = String(p.username || "").trim().toLowerCase();
-    const fn = String(p.full_name || "").trim().toLowerCase();
-    const local = String(session.user.email || "").trim().toLowerCase().split("@")[0] || "";
-    if (opts.isDemo === true || u === "teflon" || fn === "teflon" || local === "teflon" || local === "stf020") {
-      return;
-    }
+  if (portalPresenceSkipDemoBroadcast(profile, session, opts)) {
+    return;
   }
 
   let supabase;

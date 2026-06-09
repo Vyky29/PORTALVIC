@@ -265,6 +265,7 @@ export function portalCanWriteScheduleOverrides(profile, authEmail) {
  */
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
+  if (portalIsOperationsAdminUser(profile, authEmail)) return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
@@ -1019,7 +1020,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         throw new Error("skip_presence_on_lead_overview");
       }
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260610-presence-db"
+        "./portal_live_presence.js?v=20260609-teflon-presence"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {
@@ -1031,7 +1032,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260601-visit-insert-fix"
+          "./portal_visit_tracker.js?v=20260609-teflon-presence"
         );
         await startPortalVisitTracker({ page, profile, session });
       }
