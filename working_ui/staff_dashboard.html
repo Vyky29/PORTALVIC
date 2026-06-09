@@ -6841,11 +6841,14 @@
     function portalCloseInternalChatToDashboard(){
       try{
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        var restrictedClose = portalInternalChatOfficeRestricted();
         var closingTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
         if(closingTid && typeof portalStaffDmMarkThreadSeenNow === 'function'){
           portalStaffDmMarkThreadSeenNow(closingTid);
         }
-        var restrictedClose = portalInternalChatOfficeRestricted();
+        if(restrictedClose && typeof portalStaffDmMarkOfficeSeenNow === 'function'){
+          portalStaffDmMarkOfficeSeenNow(portalStaffDmMeId());
+        }
         if(!restrictedClose){
           window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
           window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
@@ -7003,6 +7006,65 @@
       }
       return portalDmShortDisplayName(authorProf) || '';
     }
+    function portalStaffDmMeId(){
+      var box = window.__PORTAL_SUPABASE__ || {};
+      return String(
+        (box.staff_profile && box.staff_profile.id) ||
+        (box.session && box.session.user && box.session.user.id) ||
+        ''
+      ).trim();
+    }
+    function portalStaffDmOfficeSeenStorageKey(me){
+      return 'portal_staff_dm_office_seen_' + String(me || portalStaffDmMeId() || '').trim();
+    }
+    function portalStaffDmGetOfficeSeenIso(me){
+      me = String(me || portalStaffDmMeId() || '').trim();
+      if(!me) return '';
+      try{
+        return String(localStorage.getItem(portalStaffDmOfficeSeenStorageKey(me)) || '').trim();
+      }catch(_e){
+        return '';
+      }
+    }
+    function portalStaffDmDismissChatPushNotifications(){
+      if(!('serviceWorker' in navigator)) return;
+      void navigator.serviceWorker.getRegistration().then(function(reg){
+        if(!reg || typeof reg.getNotifications !== 'function') return;
+        return reg.getNotifications();
+      }).then(function(notifications){
+        (notifications || []).forEach(function(n){
+          try{
+            var tag = String(n.tag || '');
+            if(tag.indexOf('portal-chat-') === 0) n.close();
+          }catch(_c){}
+        });
+      }).catch(function(){});
+    }
+    function portalStaffDmMarkOfficeSeenNow(me, atIso){
+      me = String(me || portalStaffDmMeId() || '').trim();
+      if(!me) return;
+      try{
+        var iso = String(atIso || '').trim();
+        if(!iso) iso = new Date().toISOString();
+        var key = portalStaffDmOfficeSeenStorageKey(me);
+        var prev = portalStaffDmGetOfficeSeenIso(me);
+        if(prev){
+          try{
+            if(new Date(iso) <= new Date(prev)) return;
+          }catch(_p){}
+        }
+        localStorage.setItem(key, iso);
+        portalStaffDmDismissChatPushNotifications();
+      }catch(_e){}
+    }
+    function portalStaffDmGetEffectiveSeenIso(tid, me){
+      me = String(me || portalStaffDmMeId() || '').trim();
+      if(portalStaffIsRestrictedWorkerChat()){
+        var officeSeen = portalStaffDmGetOfficeSeenIso(me);
+        if(officeSeen) return officeSeen;
+      }
+      return portalStaffDmGetSeenIso(tid);
+    }
     function portalStaffDmSeenStorageKey(tid){
       return 'portal_staff_dm_seen_' + String(tid || '').trim();
     }
@@ -7025,11 +7087,21 @@
           }catch(_p){}
         }
         localStorage.setItem(key, iso);
+        if(portalStaffIsRestrictedWorkerChat()){
+          portalStaffDmMarkOfficeSeenNow(portalStaffDmMeId(), iso);
+        }
       }catch(_e2){}
     }
-    function portalStaffDmForceMarkThreadSeen(tid){
+    function portalStaffDmForceMarkThreadSeen(tid, atIso){
       try{
-        localStorage.setItem(portalStaffDmSeenStorageKey(tid), new Date().toISOString());
+        var iso = String(atIso || '').trim();
+        if(!iso) iso = new Date().toISOString();
+        localStorage.setItem(portalStaffDmSeenStorageKey(tid), iso);
+        if(portalStaffIsRestrictedWorkerChat()){
+          portalStaffDmMarkOfficeSeenNow(portalStaffDmMeId(), iso);
+        }else{
+          portalStaffDmDismissChatPushNotifications();
+        }
       }catch(_e3){}
     }
     function portalStaffDmMsgsByThread(rows){
@@ -7058,7 +7130,7 @@
     }
     function portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, authorProf, me){
       if(!portalStaffDmIsUnreadOfficeMessage(officeMsg, authorProf, me)) return false;
-      var seen = portalStaffDmGetSeenIso(threadId);
+      var seen = portalStaffDmGetEffectiveSeenIso(threadId, me);
       if(!seen) return true;
       try{
         return new Date(officeMsg.created_at).getTime() > new Date(seen).getTime() + 800;
@@ -7067,7 +7139,7 @@
       }
     }
     function portalStaffDmCountUnreadInThread(threadId, msgsByThread, authorProfBy, me){
-      var seen = portalStaffDmGetSeenIso(threadId);
+      var seen = portalStaffDmGetEffectiveSeenIso(threadId, me);
       var list = msgsByThread[threadId] || [];
       var count = 0;
       for(var ui = 0; ui < list.length; ui++){
@@ -7187,8 +7259,10 @@
     }
     function portalStaffDmSetUnreadCount(count){
       count = Math.max(0, parseInt(count, 10) || 0);
+      var prev = window.__PORTAL_STAFF_DM_UNREAD_COUNT__ || 0;
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = count;
       window.__PORTAL_STAFF_DM_HAS_UNREAD__ = count > 0;
+      if(count === 0 && prev > 0) portalStaffDmDismissChatPushNotifications();
       if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function') window.portalSyncFloatingChatUnreadFromMenuBtn();
     }
     function portalStaffDmClearUnreadChromeLocally(){
@@ -7289,10 +7363,21 @@
         var unreadCount = 0;
         var otherUnread = 0;
         var currentTid = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.threadId) || '').trim();
+        var restrictedUnread = portalStaffIsRestrictedWorkerChat(box && box.staff_profile);
+        var chatSheetEl = typeof document !== 'undefined' ? document.getElementById('internalChatSheet') : null;
+        var chatSheetOpen = !!(chatSheetEl && chatSheetEl.classList.contains('open'));
         ids.forEach(function(threadId){
           var n = portalStaffDmCountUnreadInThread(threadId, msgsByThread, authorProfBy, me);
-          unreadCount += n;
-          if(!currentTid || threadId !== currentTid) otherUnread += n;
+          if(chatSheetOpen && currentTid && threadId === currentTid) n = 0;
+          if(restrictedUnread){
+            if(n > unreadCount) unreadCount = n;
+            if(!currentTid || threadId !== currentTid){
+              if(n > otherUnread) otherUnread = n;
+            }
+          }else{
+            unreadCount += n;
+            if(!currentTid || threadId !== currentTid) otherUnread += n;
+          }
         });
         portalStaffDmSetUnreadCount(unreadCount);
         if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncBackUnread === 'function'){
@@ -8373,7 +8458,12 @@
           try{ lastRow.scrollIntoView({ block: "end", behavior: "auto" }); }catch(_si){}
         }
       });
-      portalStaffDmForceMarkThreadSeen(tid);
+      portalStaffDmForceMarkThreadSeen(
+        tid,
+        arr.length && arr[arr.length - 1] && arr[arr.length - 1].created_at
+          ? arr[arr.length - 1].created_at
+          : new Date().toISOString()
+      );
       if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
         void window.portalStaffDmSyncUnreadChrome();
       }
@@ -8511,7 +8601,10 @@
                 var sh = document.getElementById("internalChatSheet");
                 var ui = window.__PORTAL_INTERNAL_CHAT_UI || {};
                 var tid = ui.threadId ? String(ui.threadId) : "";
-                var chatOpenOnThread = !!(sh && sh.classList.contains("open") && tid && changedTid && tid === changedTid);
+                var restrictedWorkerRt = portalStaffIsRestrictedWorkerChat();
+                var chatSheetOpenRt = !!(sh && sh.classList.contains("open"));
+                var inThreadViewRt = !!(chatSheetOpenRt && tid);
+                var chatOpenOnThread = !!(inThreadViewRt && changedTid && (tid === changedTid || restrictedWorkerRt));
                 if(fromOther && !chatOpenOnThread && typeof window.portalStaffShowChatPushToast === 'function'){
                   var preview = String(row.body || '').trim();
                   if(
@@ -8528,10 +8621,12 @@
                   }
                 }
                 if(!sh || !sh.classList.contains("open") || typeof window.portalRenderInternalChatSheet !== "function") return;
-                if(tid && changedTid && tid !== changedTid) return;
+                if(tid && changedTid && tid !== changedTid && !restrictedWorkerRt) return;
                 if(chatOpenOnThread && row && typeof portalStaffDmMarkThreadSeenNow === "function"){
                   if(fromOther && row.created_at){
                     portalStaffDmMarkThreadSeenNow(tid, row.created_at);
+                  }else if(fromOther){
+                    portalStaffDmMarkThreadSeenNow(tid);
                   }
                 }
                 void window.portalRenderInternalChatSheet();
