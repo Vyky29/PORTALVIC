@@ -1897,8 +1897,8 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260608-javier-catchup-green';
-        const machineResetV = '20260605-feedback-instructor-own';
+        const resetV = '20260608-global-device-refresh';
+        const machineResetV = '20260608-global-device-refresh';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}

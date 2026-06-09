@@ -44,7 +44,7 @@ export {
 } from "./supabase-client.js";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
-export const APP_VERSION = "2026-06-24-push-icon-ghost-handoff";
+export const APP_VERSION = "2026-06-08-global-refresh-feedback-cache";
 export const PORTAL_APP_VERSION = APP_VERSION;
 const PORTAL_APP_VERSION_STORAGE_KEY = "cs_portal_app_version";
 const PORTAL_AUTH_VERSION_KEYS = [
@@ -315,9 +315,34 @@ function isLoginPage() {
   return Boolean(document.getElementById("login-form"));
 }
 
+/** Drop stale session-review / feedback colours cached on this device. */
+export function portalClearDeviceFeedbackReviewCache() {
+  if (typeof window === "undefined") return;
+  const dropKeys = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (
+        k === "portalSessionReviewMap_v1" ||
+        k.indexOf("portalSessionReviewMap_v1:") === 0 ||
+        k === "portalCatchUpReviewReset_v1" ||
+        k === "portalMachineReviewReset_v1"
+      ) {
+        dropKeys.push(k);
+      }
+    }
+    dropKeys.forEach((k) => {
+      localStorage.removeItem(k);
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * One-time session refresh after a portal build bump.
- * Clears only portal session/auth keys — not unrelated localStorage preferences.
+ * Clears portal session/auth keys and device feedback review cache.
  */
 export function enforceAppVersion() {
   if (typeof window === "undefined") return false;
@@ -334,6 +359,12 @@ export function enforceAppVersion() {
 
   try {
     localStorage.setItem(versionKey, APP_VERSION);
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    portalClearDeviceFeedbackReviewCache();
   } catch {
     /* ignore */
   }

@@ -941,19 +941,50 @@ function ensureNotifyTapBanner() {
 }
 
 /**
- * Permissions are requested only from Settings → Turn on portal features.
+ * First tap/click after login requests alerts, camera, mic, and location (when rota needs it).
  */
 export function bindAutoNotificationOnFirstGesture() {
   if (typeof document === "undefined" || !document.body) return;
   if (document.body.getAttribute("data-portal-notify-gesture-bound") === "1") return;
   document.body.setAttribute("data-portal-notify-gesture-bound", "1");
-  removeNotifyTapBanner();
-  if (
-    portalMandatoryAlertsSettingsComplete() &&
-    typeof window.portalEnsureWebPushSubscription === "function"
-  ) {
-    void window.portalEnsureWebPushSubscription();
+
+  if (portalMandatoryAlertsSettingsComplete()) {
+    removeNotifyTapBanner();
+    if (typeof window.portalEnsureWebPushSubscription === "function") {
+      void window.portalEnsureWebPushSubscription();
+    }
+    return;
   }
+
+  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+    return;
+  }
+
+  removeNotifyTapBanner();
+
+  function cleanup() {
+    document.removeEventListener("click", onGesture, true);
+    document.removeEventListener("touchstart", onGesture, true);
+  }
+
+  function onGesture() {
+    if (portalMandatoryAlertsSettingsComplete()) {
+      cleanup();
+      removeNotifyTapBanner();
+      return;
+    }
+    cleanup();
+    void requestDefaultPortalPermissions().then(() => {
+      removeNotifyTapBanner();
+      portalSyncAlertsSettingsChrome();
+      if (typeof window.portalRefreshAlertsNotifyUi === "function") {
+        window.portalRefreshAlertsNotifyUi();
+      }
+    });
+  }
+
+  document.addEventListener("click", onGesture, true);
+  document.addEventListener("touchstart", onGesture, true);
 }
 
 /** Alerts sheet opened — refresh UI only; push register runs silently. */
@@ -996,13 +1027,6 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
   }
 
   portalSyncAlertsSettingsChrome();
-  if (
-    typeof window.portalHasPendingPermissionsSignable === "function" &&
-    window.portalHasPendingPermissionsSignable()
-  ) {
-    removeNotifyTapBanner();
-    return;
-  }
   bindAutoNotificationOnFirstGesture();
 }
 
