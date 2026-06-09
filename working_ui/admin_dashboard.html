@@ -20335,6 +20335,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       closeSidebarMob();
       setView('cs_cliq');
     }
+    window.portalAdminNavigateToCsCliq = function portalAdminNavigateToCsCliq(){
+      openAdminPremiumInternalChat('staff_lead');
+    };
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       openAdminPremiumInternalChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
     };
@@ -22927,6 +22930,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
     }
+    try{
+      window.portalAdminDmOpenThread = portalAdminDmOpenThread;
+    }catch(_expOpenThread){}
     async function portalAdminDmLoadMessages(){
       var msgsBox = portalAdminDmMsgsEl();
       var client = getSchedSupabaseClient();
@@ -27903,8 +27909,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       try{
         var portalOpenParams = new URLSearchParams(String(location.search || ''));
-        if(portalOpenParams.get('portal_open') === 'cs_cliq'){
+        if(portalOpenParams.get('portal_open') === 'cs_cliq' || portalOpenParams.get('portal_chat_thread') || portalOpenParams.get('portal_chat_group')){
           var portalCliqChannel = portalOpenParams.get('portal_cliq_channel');
+          var portalChatThread = portalOpenParams.get('portal_chat_thread');
+          var portalChatGroup = portalOpenParams.get('portal_chat_group');
           try{
             var storedCliqChannel = String(sessionStorage.getItem('portal_cliq_pending_channel') || '').trim();
             if(storedCliqChannel){
@@ -27912,11 +27920,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               sessionStorage.removeItem('portal_cliq_pending_channel');
             }
           }catch(_storedCliq){}
+          setView('cs_cliq');
           openAdminPremiumInternalChat(portalCliqChannel || 'staff_lead');
+          if(portalChatGroup){
+            setTimeout(function(){
+              if(typeof portalAdminDmOpenGroupThread === 'function'){
+                void portalAdminDmOpenGroupThread(String(portalChatGroup));
+              }
+            }, 450);
+          }else if(portalChatThread){
+            setTimeout(function(){
+              if(typeof portalAdminDmOpenThread === 'function'){
+                void portalAdminDmOpenThread(String(portalChatThread));
+              }
+            }, 450);
+          }
           if(history.replaceState){
             var cleanUrl = new URL(location.href);
             cleanUrl.searchParams.delete('portal_open');
             cleanUrl.searchParams.delete('portal_cliq_channel');
+            cleanUrl.searchParams.delete('portal_chat_thread');
+            cleanUrl.searchParams.delete('portal_chat_group');
             history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
           }
         }

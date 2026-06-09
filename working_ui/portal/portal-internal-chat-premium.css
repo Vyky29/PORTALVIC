@@ -727,6 +727,30 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 
 @media (max-width:899px){
+  #internalChatSheet.sheet--portal-chat-immersive.sheet--portal-chat-thread.open{
+    top:0 !important;
+    height:100dvh !important;
+    max-height:100dvh !important;
+  }
+  #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-head{
+    flex-shrink:0;
+  }
+  #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-body,
+  #internalChatSheet.sheet--portal-chat-thread #internalChatThreadWrap,
+  #internalChatSheet.sheet--portal-chat-thread .portal-cs-cliq-thread{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+  #internalChatSheet.sheet--portal-chat-thread .portal-cs-cliq-messages,
+  #internalChatSheet.sheet--portal-chat-thread #internalChatMessages{
+    flex:1 1 auto;
+    min-height:0;
+  }
+  #internalChatSheet.sheet--portal-chat-thread .portal-cs-cliq-composer--chat{
+    flex-shrink:0;
+  }
   #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-body,
   #internalChatSheet.sheet--portal-chat-thread .portal-cs-cliq-thread,
   #internalChatSheet.sheet--portal-chat-thread #internalChatThreadWrap,

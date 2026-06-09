@@ -1,6 +1,6 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260608-incoming-call-push2
+ * v20260609-chat-push-v4
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -50,7 +50,7 @@ function portalPushIconUrl() {
   return PORTAL_PUSH_ICON_PATH;
 }
 
-function portalNotifyOpenClients(title, body, portalOpen, callData) {
+function portalNotifyOpenClients(title, body, portalOpen, callData, chatData) {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
     clientList.forEach(function (client) {
       try {
@@ -60,6 +60,7 @@ function portalNotifyOpenClients(title, body, portalOpen, callData) {
           body: body,
           portalOpen: portalOpen,
           call: callData || null,
+          chat: chatData || null,
         });
         if (portalOpen === 'incoming_call' && typeof client.focus === 'function') {
           try {
@@ -80,6 +81,7 @@ self.addEventListener('push', function (event) {
   var requireInteraction = false;
   var vibrate = undefined;
   var callData = null;
+  var chatData = null;
   try {
     if (event.data) {
       var j = event.data.json();
@@ -91,6 +93,7 @@ self.addEventListener('push', function (event) {
       if (j && j.requireInteraction) requireInteraction = true;
       if (j && j.vibrate && j.vibrate.length) vibrate = j.vibrate;
       if (j && j.call) callData = j.call;
+      if (j && j.chat) chatData = j.chat;
     }
   } catch (e) {
     try {
@@ -98,7 +101,7 @@ self.addEventListener('push', function (event) {
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
   }
-  if (portalOpen === 'alerts') {
+  if (portalOpen === 'alerts' || portalOpen === 'chat') {
     requireInteraction = true;
     if (!vibrate) vibrate = PORTAL_ALERT_VIBRATE;
   }
@@ -115,13 +118,13 @@ self.addEventListener('push', function (event) {
     renotify: true,
     requireInteraction: requireInteraction,
     silent: false,
-    data: { url: url, portalOpen: portalOpen, call: callData },
+    data: { url: url, portalOpen: portalOpen, call: callData, chat: chatData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(title, notifyOpts),
-      portalNotifyOpenClients(title, body, portalOpen, callData),
+      portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
     ])
   );
 });
@@ -133,7 +136,9 @@ self.addEventListener('notificationclick', function (event) {
   var portalOpen = String(data.portalOpen || '');
   var openAlerts = portalOpen === 'alerts';
   var openCall = portalOpen === 'incoming_call';
+  var openChat = portalOpen === 'chat';
   var callData = data.call || null;
+  var chatData = data.chat || null;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
@@ -141,8 +146,9 @@ self.addEventListener('notificationclick', function (event) {
           try {
             list[i].postMessage({
               type: 'portal-notification-click',
-              portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : ''),
+              portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : (openChat ? 'chat' : '')),
               call: callData,
+              chat: chatData,
               url: u,
             });
           } catch (e) {}

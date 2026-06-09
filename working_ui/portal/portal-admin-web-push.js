@@ -72,6 +72,30 @@
   global.portalAdminShowInboundAlert = portalAdminShowInboundAlert;
   global.portalAdminPulseAlertBadge = portalAdminPulseAlertBadge;
 
+  async function portalAdminOpenChatFromPush(chat) {
+    chat = chat || {};
+    var threadId = String(chat.threadId || chat.thread_id || "").trim();
+    var groupId = String(chat.groupId || chat.group_id || "").trim();
+    try {
+      if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
+        await global.portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+      }
+    } catch (_) {}
+    if (typeof global.portalAdminNavigateToCsCliq === "function") {
+      await global.portalAdminNavigateToCsCliq();
+    }
+    if (groupId && typeof global.portalAdminDmOpenGroupThread === "function") {
+      await global.portalAdminDmOpenGroupThread(groupId);
+      return;
+    }
+    if (threadId && typeof global.portalAdminDmOpenThread === "function") {
+      await global.portalAdminDmOpenThread(threadId);
+      return;
+    }
+    portalAdminOpenAlertsNotificationsSheet();
+  }
+  global.portalAdminOpenChatFromPush = portalAdminOpenChatFromPush;
+
   function portalAdminHandleForegroundPush(d) {
     if (!d) return;
     if (d.portalOpen === "incoming_call") {
@@ -82,6 +106,10 @@
           src: call.source || call.src || "dm",
         });
       }
+      return;
+    }
+    if (d.portalOpen === "chat") {
+      void portalAdminOpenChatFromPush(d.chat || {});
       return;
     }
     try {
@@ -798,6 +826,10 @@
           }
           if (d.type !== "portal-notification-click") return;
           if (d.portalOpen === "incoming_call") return;
+          if (d.portalOpen === "chat") {
+            void portalAdminOpenChatFromPush(d.chat || {});
+            return;
+          }
           if (d.portalOpen === "alerts") {
             try {
               if (typeof global.portalAdminDmSyncIncomingAttention === "function") {

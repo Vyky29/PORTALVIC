@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-compact-header" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-post-call-chat-fix" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
@@ -1059,6 +1059,7 @@
   <script src="/portal/portal_chat_actor_identity.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260609-chat-push-v4"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
@@ -5822,6 +5823,9 @@
     function portalInternalChatOfficeRestricted(){
       return portalStaffIsRestrictedWorkerChat();
     }
+    window.portalInternalChatOfficeRestricted = portalInternalChatOfficeRestricted;
+    window.portalSyncInternalChatMobileViewport = portalSyncInternalChatMobileViewport;
+    window.syncPortalInternalChatImmersive = syncPortalInternalChatImmersive;
     function portalSyncInternalChatMobileViewport(){
       var sh = document.getElementById('internalChatSheet');
       if(!sh){

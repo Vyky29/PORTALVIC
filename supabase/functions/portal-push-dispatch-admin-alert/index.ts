@@ -35,6 +35,7 @@ import {
   loadAdminCeoUserIds,
   PORTAL_PUSH_CORS_HEADERS,
   sendPushPayloadToUserIds,
+  staffPushOpenBase,
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
 
@@ -54,6 +55,60 @@ const CHAT_TABLES = new Set([
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
 ]);
+
+function openBaseForProfile(prof: {
+  app_role?: string | null;
+  dashboard_route?: string | null;
+} | null): string {
+  const staff = staffPushOpenBase();
+  const admin = adminPushOpenBase();
+  const role = String(prof?.app_role || "").toLowerCase();
+  const dr = String(prof?.dashboard_route || "").toLowerCase();
+  if (role === "admin" || role === "ceo") {
+    if (dr.includes("staff_dashboard") && staff) return staff;
+    if (dr.includes("lead_dashboard") && staff) {
+      if (/staff_dashboard\.html/i.test(staff)) {
+        return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
+      }
+    }
+    return admin || staff;
+  }
+  if (dr.includes("lead_dashboard") && staff) {
+    if (/staff_dashboard\.html/i.test(staff)) {
+      return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
+    }
+  }
+  return staff || admin;
+}
+
+function buildChatNotifyUrl(
+  base: string,
+  threadId: string,
+  groupId: string,
+): string {
+  const root = String(base || "").replace(/\/$/, "");
+  if (/admin_dashboard\.html/i.test(root)) {
+    if (threadId) {
+      return `${root}?portal_open=cs_cliq&portal_chat_thread=${encodeURIComponent(threadId)}`;
+    }
+    if (groupId) {
+      return `${root}?portal_open=cs_cliq&portal_chat_group=${encodeURIComponent(groupId)}`;
+    }
+    return `${root}?portal_open=cs_cliq`;
+  }
+  if (threadId) {
+    return `${root}?portal_open=internal_chat&portal_chat_thread=${encodeURIComponent(threadId)}`;
+  }
+  if (groupId) {
+    return `${root}?portal_open=internal_chat&portal_chat_group=${encodeURIComponent(groupId)}`;
+  }
+  return `${root}?portal_open=internal_chat`;
+}
+
+function buildAdminAlertsUrl(base: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  return `${root}?portalOpen=alerts`;
+}
 
 function lateTypeLabel(t: string): string {
   const x = String(t || "").toLowerCase();
@@ -347,32 +402,96 @@ Deno.serve(async (req) => {
     return jsonPushResponse({ error: "dedupe" }, 500);
   }
 
-  const notifyUrl = `${openBase}?portalOpen=alerts`;
-  const pushPayload = JSON.stringify({
+  const threadId = table === "portal_staff_dm_messages"
+    ? String(record.thread_id ?? "").trim()
+    : "";
+  const groupId = table === "portal_ceo_group_message"
+    ? String(record.group_id ?? "").trim()
+    : "";
+  let notifyUrl = buildAdminAlertsUrl(openBase);
+  let portalOpen = "alerts";
+  if (CHAT_TABLES.has(table)) {
+    portalOpen = "chat";
+    notifyUrl = buildChatNotifyUrl(openBase, threadId, groupId);
+  }
+
+  const { data: profRows } = await admin
+    .from("staff_profiles")
+    .select("id,app_role,dashboard_route")
+    .in("id", recipientIds);
+
+  const profBy: Record<string, { app_role?: string; dashboard_route?: string }> =
+    {};
+  for (const row of profRows ?? []) {
+    const id = String((row as { id?: string }).id || "").trim();
+    if (id) profBy[id] = row as { app_role?: string; dashboard_route?: string };
+  }
+
+  const pushPayloadBase = {
     title: alert.title,
     body: alert.body,
-    url: notifyUrl,
-    portalOpen: "alerts",
-    tag: `admin-${table}-${alert.sourceId}`,
+    portalOpen,
+    tag: CHAT_TABLES.has(table)
+      ? `portal-chat-${alert.sourceId}`
+      : `admin-${table}-${alert.sourceId}`,
     requireInteraction: true,
-  });
+    vibrate: [120, 55, 120, 55, 160],
+    chat: threadId ? { threadId } : groupId ? { groupId } : null,
+  };
 
+  let sent = 0;
+  let failed = 0;
+  let subs = 0;
   try {
-    const { sent, targets } = await sendPushPayloadToUserIds(
-      admin,
-      recipientIds,
-      pushPayload,
-    );
+    for (const userId of recipientIds) {
+      const userBase = CHAT_TABLES.has(table)
+        ? openBaseForProfile(profBy[userId] || null)
+        : openBase;
+      const userUrl = CHAT_TABLES.has(table)
+        ? buildChatNotifyUrl(userBase, threadId, groupId)
+        : buildAdminAlertsUrl(userBase);
+      const pushPayload = JSON.stringify({
+        ...pushPayloadBase,
+        url: userUrl,
+      });
+      const topicKey = CHAT_TABLES.has(table)
+        ? (threadId || groupId || alert.sourceId)
+        : alert.sourceId;
+      const result = await sendPushPayloadToUserIds(
+        admin,
+        [userId],
+        pushPayload,
+        {
+          TTL: CHAT_TABLES.has(table) ? 43200 : 86400,
+          urgency: "high",
+          topic: CHAT_TABLES.has(table)
+            ? `chat-${String(topicKey).slice(0, 24)}`
+            : "",
+        },
+      );
+      sent += result.sent;
+      failed += result.failed;
+      subs += result.subs;
+    }
     console.log("[portal-push-admin] done", {
       table,
       title: alert.title,
       sent,
-      targets,
+      failed,
+      subs,
+      targets: recipientIds.length,
       subscriptionsNote: sent === 0
         ? "no portal_push_subscriptions or all sends failed"
         : "ok",
     });
-    return jsonPushResponse({ ok: true, sent, targets, table });
+    return jsonPushResponse({
+      ok: true,
+      sent,
+      failed,
+      subs,
+      targets: recipientIds.length,
+      table,
+    });
   } catch (e) {
     console.error("[portal-push-admin] send error", e);
     return jsonPushResponse({ error: String(e) }, 500);

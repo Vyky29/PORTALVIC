@@ -1808,6 +1808,23 @@
     callState.api = null;
   }
 
+  function resetPortalChatSheetLayoutAfterCall() {
+    try {
+      document.body.classList.remove("portal-inapp-call-open", "portal-incoming-call-active");
+    } catch (_b) {}
+    var sh = document.getElementById("internalChatSheet");
+    if (sh) {
+      sh.style.removeProperty("top");
+      sh.style.removeProperty("height");
+      sh.style.removeProperty("max-height");
+    }
+    if (typeof global.syncPortalInternalChatImmersive === "function") {
+      global.syncPortalInternalChatImmersive();
+    } else if (typeof global.portalSyncInternalChatMobileViewport === "function") {
+      global.portalSyncInternalChatMobileViewport();
+    }
+  }
+
   function closeInAppCall() {
     var session = callState.activeSession;
     hideIncomingCallOverlay();
@@ -1823,6 +1840,7 @@
     }
     if (shell) shell.hidden = true;
     document.body.classList.remove("portal-inapp-call-open");
+    resetPortalChatSheetLayoutAfterCall();
     callState.activeSession = null;
     outboundCallActive = false;
     void postCallEndedMessage(session);

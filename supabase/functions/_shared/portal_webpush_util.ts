@@ -137,8 +137,8 @@ export async function sendPushPayloadToUserIds(
   userIds: string[],
   pushPayload: string,
   options?: { TTL?: number; urgency?: string; topic?: string },
-): Promise<{ sent: number; targets: number }> {
-  if (!userIds.length) return { sent: 0, targets: 0 };
+): Promise<{ sent: number; targets: number; subs: number; failed: number }> {
+  if (!userIds.length) return { sent: 0, targets: 0, subs: 0, failed: 0 };
 
   const { data: subs, error: subErr } = await admin
     .from("portal_push_subscriptions")
@@ -154,19 +154,30 @@ export async function sendPushPayloadToUserIds(
     console.log("[portal-webpush] no subscriptions for targets", {
       targets: userIds.length,
     });
-    return { sent: 0, targets: userIds.length };
+    return { sent: 0, targets: userIds.length, subs: 0, failed: 0 };
   }
 
   let sent = 0;
+  let failed = 0;
   const ttl = options?.TTL ?? 86400;
   const urgency = options?.urgency ?? "high";
   const topic = options?.topic ? String(options.topic).slice(0, 32) : "";
   for (const row of subs) {
-    const raw = row.subscription_json;
-    if (!raw || typeof raw !== "object") continue;
+    const raw = row.subscription_json as Record<string, unknown> | null;
+    const endpoint = String(
+      raw?.endpoint ?? (row as { endpoint?: string }).endpoint ?? "",
+    ).trim();
+    const keys = raw?.keys as Record<string, unknown> | undefined;
+    const p256dh = String(keys?.p256dh ?? "").trim();
+    const auth = String(keys?.auth ?? "").trim();
+    if (!endpoint || !p256dh || !auth) {
+      failed++;
+      continue;
+    }
+    const subscription = { endpoint, keys: { p256dh, auth } };
     try {
       await webpush.sendNotification(
-        raw as unknown as webpush.PushSubscription,
+        subscription as unknown as webpush.PushSubscription,
         pushPayload,
         {
           TTL: ttl,
@@ -176,22 +187,20 @@ export async function sendPushPayloadToUserIds(
       );
       sent++;
     } catch (e) {
+      failed++;
       const st = (e as { statusCode?: number })?.statusCode;
-      console.warn("[portal-webpush] send fail", st, e);
-      if (st === 404 || st === 410) {
-        const ep = String(
-          row.endpoint ?? (raw as { endpoint?: string }).endpoint ?? "",
-        );
-        if (ep) {
+      console.warn("[portal-webpush] send fail", st, endpoint.slice(0, 48), e);
+      if (st === 404 || st === 410 || st === 401 || st === 403) {
+        if (endpoint) {
           await admin.from("portal_push_subscriptions").delete()
             .eq("user_id", row.user_id as string)
-            .eq("endpoint", ep);
+            .eq("endpoint", endpoint);
         }
       }
     }
   }
 
-  return { sent, targets: userIds.length };
+  return { sent, targets: userIds.length, subs: subs.length, failed };
 }
 
 export async function insertDedupeOrSkip(
