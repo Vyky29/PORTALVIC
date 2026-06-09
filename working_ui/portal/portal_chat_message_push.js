@@ -109,6 +109,14 @@
   function portalStaffNotifyIncomingChat(title, preview, row) {
     title = String(title || "Admin").trim();
     preview = String(preview || "New message").trim();
+    var dedupeKey = String((row && row.id) || title + "|" + preview).trim();
+    var dedupeMap = global.__PORTAL_CHAT_NOTIFY_DEDUPE__ || {};
+    var dedupeAt = dedupeMap[dedupeKey] || 0;
+    if (dedupeKey && dedupeAt && Date.now() - dedupeAt < 5000) return;
+    if (dedupeKey) {
+      dedupeMap[dedupeKey] = Date.now();
+      global.__PORTAL_CHAT_NOTIFY_DEDUPE__ = dedupeMap;
+    }
     if (typeof global.portalStaffDmBumpUnreadOptimistic === "function") {
       global.portalStaffDmBumpUnreadOptimistic();
     }
@@ -117,8 +125,11 @@
         global.navigator.vibrate([120, 55, 120, 55, 160]);
       } catch (_v) {}
     }
-    portalStaffShowChatPushToast(title, preview);
-    if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
+    var appVisible =
+      global.document && String(global.document.visibilityState || "") === "visible";
+    if (appVisible) {
+      portalStaffShowChatPushToast(title, preview);
+    } else if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
       global.portalStaffNotifyOsWhiteTile(
         title,
         preview,

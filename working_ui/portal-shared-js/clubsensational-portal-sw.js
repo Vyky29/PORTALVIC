@@ -1,6 +1,6 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260609-chat-push-v4
+ * v20260610-chat-foreground-once
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -72,6 +72,18 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData) {
   });
 }
 
+function portalHasVisiblePortalClient() {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+    for (var i = 0; i < clientList.length; i++) {
+      var client = clientList[i];
+      if (!client) continue;
+      if (client.visibilityState === 'visible') return true;
+      if (client.focused) return true;
+    }
+    return false;
+  });
+}
+
 self.addEventListener('push', function (event) {
   var title = 'clubSENsational';
   var body = 'Schedule update';
@@ -122,10 +134,16 @@ self.addEventListener('push', function (event) {
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
   event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(title, notifyOpts),
-      portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
-    ])
+    portalHasVisiblePortalClient().then(function (hasVisibleClient) {
+      var tasks = [
+        portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
+      ];
+      var skipOsBanner = hasVisibleClient && portalOpen === 'chat';
+      if (!skipOsBanner) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
+      return Promise.all(tasks);
+    })
   );
 });
 
