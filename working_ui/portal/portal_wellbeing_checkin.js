@@ -566,8 +566,7 @@
  if (ta.closest(".portal-wb-domain-all-clear")) return;
  if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return;
  if (ta.closest(".portal-wb-admin-hide")) return;
- var field = ta.closest(".field");
- if (field && field.offsetParent === null) return;
+ if (ta.closest("[hidden]")) return;
  if (!ta.id) {
  ta.id = "wb-sra-voice-" + n;
  n += 1;

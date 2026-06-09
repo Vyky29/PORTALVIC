@@ -522,6 +522,7 @@
     return {
       root: root,
       form: form,
+      staffName: opts.staffName || (checkin && checkin.staff_name) || "",
       collect: function () {
         return collectRecord(form);
       },
@@ -531,8 +532,16 @@
           closingHost,
           withSignOffDefaults(nextRecord || emptyRecord(), { adminProfile: opts.adminProfile })
         );
+        refreshReviewVoice(form, opts.staffName || (checkin && checkin.staff_name) || "");
       },
     };
+  }
+
+  function refreshReviewVoice(form, staffName) {
+    var wb = global.portalWellbeingCheckin;
+    if (wb && typeof wb.wireWellbeingReviewVoice === "function") {
+      wb.wireWellbeingReviewVoice(form, staffName || "");
+    }
   }
 
   function markAdminReady() {
@@ -547,6 +556,7 @@
     parseDraft: parseDraft,
     validateForComplete: validateForComplete,
     markAdminReady: markAdminReady,
+    refreshReviewVoice: refreshReviewVoice,
     mountAdminSimpleReview: mountAdminSimpleReview,
     statusLabel: function (status) {
       var map = {

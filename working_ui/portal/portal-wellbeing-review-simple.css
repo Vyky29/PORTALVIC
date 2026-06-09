@@ -327,6 +327,17 @@ body.portal-wellbeing-admin-mode #portalWbAdvancedWrap {
   margin-bottom: 8px;
 }
 
+.portal-wb-simple .portal-fb-voice-wrap,
+.portal-wb-closing .portal-fb-voice-wrap {
+  margin-top: 6px;
+}
+
+.portal-wb-simple .portal-fb-voice-mic,
+.portal-wb-closing .portal-fb-voice-mic {
+  border-color: rgba(42, 49, 64, 0.2);
+  color: var(--navy, #2a3140);
+}
+
 body.portal-wellbeing-admin-mode .portal-wb-decisions-host {
   padding-top: 8px;
 }
