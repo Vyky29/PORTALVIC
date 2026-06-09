@@ -346,13 +346,17 @@
         reg = await navigator.serviceWorker.ready;
       }
       var keyU8 = portalUrlBase64ToUint8Array(vapid);
-      var sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: keyU8,
-        });
-      }
+      var sub =
+        typeof global.portalSubscribePushWithCurrentVapid === "function"
+          ? await global.portalSubscribePushWithCurrentVapid(reg, vapid)
+          : await (async function () {
+              var existing = await reg.pushManager.getSubscription();
+              if (existing) return existing;
+              return reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: keyU8,
+              });
+            })();
       var box = global.__PORTAL_SUPABASE__;
       var token =
         box && box.session && box.session.access_token

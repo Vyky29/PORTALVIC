@@ -257,6 +257,44 @@
     return "Test sent — if you saw the banner, this device is ready.";
   }
 
+  function portalUrlBase64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; i++) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  /** Re-subscribe when VAPID key rotates (old push subs cannot receive). */
+  async function portalSubscribePushWithCurrentVapid(reg, vapidPublicKey) {
+    if (!reg || !reg.pushManager || !vapidPublicKey) {
+      throw new Error("missing-push-params");
+    }
+    var vapidId = String(
+      global.__PORTAL_VAPID_KEY_ID__ || vapidPublicKey.slice(0, 16)
+    ).trim();
+    var storedId = persistGet("portal_vapid_key_id");
+    var keyU8 = portalUrlBase64ToUint8Array(String(vapidPublicKey).trim());
+    var sub = await reg.pushManager.getSubscription();
+    if (sub && vapidId && storedId && storedId !== vapidId) {
+      try {
+        await sub.unsubscribe();
+      } catch (_u) {}
+      sub = null;
+    }
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: keyU8,
+      });
+      if (vapidId) persistSet("portal_vapid_key_id", vapidId);
+    }
+    return sub;
+  }
+
   global.portalSendLocalTestNotification = portalSendLocalTestNotification;
   global.portalTestNotificationStatusMessage = portalTestNotificationStatusMessage;
   global.portalNotifyEnvironment = portalNotifyEnvironment;
@@ -264,4 +302,5 @@
   global.portalUserActivationActive = global.portalUserActivationActive || portalUserActivationActive;
   global.portalRegisterPortalServiceWorker = portalRegisterPortalServiceWorker;
   global.portalAwaitServiceWorkerReady = portalAwaitServiceWorkerReady;
+  global.portalSubscribePushWithCurrentVapid = portalSubscribePushWithCurrentVapid;
 })(typeof window !== "undefined" ? window : globalThis);

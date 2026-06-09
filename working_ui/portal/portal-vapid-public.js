@@ -1,6 +1,7 @@
 /** Web Push VAPID public key — must match Supabase Edge secret VAPID_PUBLIC_KEY. */
 (function (global) {
   "use strict";
+  global.__PORTAL_VAPID_KEY_ID__ = "20260609-v2";
   global.__PORTAL_VAPID_PUBLIC_KEY__ =
-    "BHbLzDd4KY1SSuv-eu8jcqOuTfeZ2623r70oo-aJAHTFDIZqUF1ssP5URjbvo2YogWdtoHs1QO4NbWxVKH0Ichg";
+    "BDJTHcE-iKb9jp-gc5uLOYj3_ldv0lHtdh5mIpjauedTw9mpneMJCWIC0QDG0JDRIwKOKcRjWF2D-iUMzHh9nrY";
 })(typeof window !== "undefined" ? window : globalThis);
