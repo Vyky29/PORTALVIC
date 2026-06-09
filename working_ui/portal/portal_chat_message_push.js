@@ -127,9 +127,7 @@
     }
     var appVisible =
       global.document && String(global.document.visibilityState || "") === "visible";
-    if (appVisible) {
-      portalStaffShowChatPushToast(title, preview);
-    } else if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
+    if (!appVisible && typeof global.portalStaffNotifyOsWhiteTile === "function") {
       global.portalStaffNotifyOsWhiteTile(
         title,
         preview,
