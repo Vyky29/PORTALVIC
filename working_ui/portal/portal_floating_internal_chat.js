@@ -14,15 +14,17 @@
 
   function portalStaffDmUnreadCount() {
     try {
+      if (global.window.__PORTAL_ADMIN_DM_INBOX_UNREAD_SYNCED__) {
+        var synced = parseInt(global.window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10);
+        return !isNaN(synced) && synced > 0 ? synced : 0;
+      }
+    } catch (_) {}
+    try {
       var n = parseInt(global.window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10);
       if (!isNaN(n) && n > 0) return n;
     } catch (_) {}
     try {
       if (global.window.__PORTAL_STAFF_DM_HAS_UNREAD__) return 1;
-    } catch (_) {}
-    try {
-      var hints = global.window.__PORTAL_ADMIN_DM_UNREAD_HINTS__;
-      if (Array.isArray(hints) && hints.length) return hints.length;
     } catch (_) {}
     try {
       if (typeof global.window.portalAdminDmHasUnread === "function" && global.window.portalAdminDmHasUnread()) {

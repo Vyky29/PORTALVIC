@@ -578,6 +578,10 @@
     syncInboxChrome();
   }
 
+  function sumVisibleInboxUnread(merged, splitSections, teamDmItems) {
+    return countUnread(flattenDmInbox(merged, splitSections, teamDmItems));
+  }
+
   global.portalCsCliqAdminInbox = {
     shouldUseCategorizedInbox: shouldUseCategorizedInbox,
     managementInboxFullStaffRoster: managementInboxFullStaffRoster,
@@ -591,5 +595,8 @@
     getCeoInboxCategory: getCeoInboxCategory,
     setCeoInboxCategory: setCeoInboxCategory,
     isDirectorDirectGroup: isDirectorDirectGroup,
+    countUnread: countUnread,
+    flattenDmInbox: flattenDmInbox,
+    sumVisibleInboxUnread: sumVisibleInboxUnread,
   };
 })(typeof window !== "undefined" ? window : globalThis);

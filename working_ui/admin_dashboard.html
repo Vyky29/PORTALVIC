@@ -42,7 +42,7 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260609-ops-send-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-lane-hints"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-unread-badge"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-ceo-groups-direct"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -20544,21 +20544,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var total = 0;
       var staffMsgs = 0;
       var ceoMsgs = 0;
-      merged.forEach(function(item){
-        var n = Number(item.unreadCount) || 0;
-        if(n <= 0) return;
-        total += n;
-        if(item.kind === 'group'){
-          var gsl = String(item.canonicalSlug || item.slug || '').toLowerCase();
-          if(portalAdminDmStaffChannelGroupSlug(gsl)) staffMsgs += n;
-          else ceoMsgs += n;
-          return;
-        }
-        if(item.kind === 'dm'){
-          staffMsgs += n;
-        }
-      });
+      var ctx = window.__PORTAL_ADMIN_DM_CHANNEL_CTX;
+      var useVisibleInbox =
+        window.portalCsCliqAdminInbox &&
+        typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
+        window.portalCsCliqAdminInbox.shouldUseCategorizedInbox() &&
+        typeof window.portalCsCliqAdminInbox.sumVisibleInboxUnread === 'function' &&
+        ctx &&
+        Array.isArray(ctx.merged);
+      if(useVisibleInbox){
+        total = window.portalCsCliqAdminInbox.sumVisibleInboxUnread(
+          merged,
+          ctx.splitSections,
+          ctx.teamDmItems
+        );
+        staffMsgs = total;
+      }else{
+        merged.forEach(function(item){
+          var n = Number(item.unreadCount) || 0;
+          if(n <= 0) return;
+          total += n;
+          if(item.kind === 'group'){
+            var gsl = String(item.canonicalSlug || item.slug || '').toLowerCase();
+            if(portalAdminDmStaffChannelGroupSlug(gsl)) staffMsgs += n;
+            else ceoMsgs += n;
+            return;
+          }
+          if(item.kind === 'dm'){
+            staffMsgs += n;
+          }
+        });
+      }
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = total;
+      window.__PORTAL_ADMIN_DM_INBOX_UNREAD_SYNCED__ = true;
       window.__PORTAL_ADMIN_DM_LIST_KNOWS_UNREAD = total > 0;
       if(total <= 0){
         window.__PORTAL_ADMIN_DM_UNREAD = false;
@@ -20601,12 +20619,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ window.portalAdminSyncChatBellAlerts({ silent: true }); }catch(_bell){}
       }
       try{
-        var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
-        window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
         if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
           window.portalSyncFloatingChatUnreadFromMenuBtn();
         }
       }catch(_fab){}
+    }
+    async function portalAdminDmRefreshChatBadgeFromCachedInbox(){
+      var ctx = window.__PORTAL_ADMIN_DM_CHANNEL_CTX;
+      if(!ctx || !Array.isArray(ctx.merged)) return;
+      if(ctx.client && ctx.me && window.__PORTAL_CS_CLIQ_ACTIVE){
+        try{
+          await portalAdminDmEnrichListItems(ctx.client, ctx.me, ctx.ch || 'staff_lead', ctx.merged, ctx.profBy || {});
+        }catch(_en){}
+      }
+      portalAdminDmApplyChatBadgeFromMerged(ctx.merged);
     }
     function portalAdminDmNotifyIncomingChat(){
       var hints = typeof window.portalAdminBellResolveChatHints === 'function'
@@ -20949,6 +20975,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UNREAD = hs || hgStaff;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
+        await portalAdminDmRefreshChatBadgeFromCachedInbox();
         portalAdminDmApplyTeamTileUnreadClass();
         var suppressLoginNotify = !!window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC;
         var nowUnread = portalAdminDmHasUnread();
@@ -28132,7 +28159,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
   </script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260609-inbox-unread-badge"></script>
   <script>
     (function(){
       if(typeof window.portalAdminBootDmWatchers === 'function'){
