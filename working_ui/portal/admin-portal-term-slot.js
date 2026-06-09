@@ -310,10 +310,98 @@
     return weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
   }
 
+  var NO_CLIENT_PARTICIPANT = "No client";
+
+  function normSlotTime(v) {
+    return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function slotInstructorsMatch(rowInstr, formInstr) {
+    var want = String(formInstr || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (!want) return true;
+    return String(rowInstr || "").toLowerCase().replace(/\s+/g, " ").trim() === want;
+  }
+
+  function noClientRowInScope(row, p) {
+    if (normSlotTime(row.time_slot) !== normSlotTime(p.time_slot)) return false;
+    if (!slotInstructorsMatch(row.instructors, p.instructors)) return false;
+    var sd = normIso(row.session_date);
+    if (!sd) return p.scope === "weekday_term";
+    if (p.scope === "single_day") return sd === p.anchorDate;
+    if (p.scope === "weekday_term") return true;
+    return sd >= p.anchorDate;
+  }
+
+  function cancelNoClientRowsForScope(client, p) {
+    return client
+      .from("portal_roster_rows")
+      .select("id, client_name, day, time_slot, instructors, session_date, status")
+      .eq("status", "active")
+      .eq("client_name", NO_CLIENT_PARTICIPANT)
+      .eq("day", p.day)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var rows = (res.data || []).filter(function (row) {
+          return noClientRowInScope(row, p);
+        });
+        if (!rows.length) return;
+        return client
+          .from("portal_roster_rows")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .in(
+            "id",
+            rows.map(function (r) {
+              return r.id;
+            }),
+          );
+      });
+  }
+
+  function supersedeTermRosterScheduleOverrides(client, p) {
+    var dates = affectedDatesForPayload(p);
+    if (!dates.length) return Promise.resolve();
+    var timeNorm = normSlotTime(p.time_slot);
+    var now = new Date().toISOString();
+    return dates.reduce(function (acc, iso) {
+      return acc.then(function () {
+        return client
+          .from("schedule_overrides")
+          .select("id, payload, anchor_time_slot_label, session_date, status")
+          .eq("session_date", iso)
+          .eq("status", "active")
+          .then(function (res) {
+            if (res.error) throw res.error;
+            var ids = (res.data || [])
+              .filter(function (ov) {
+                var pl = ov.payload || {};
+                if (!pl.term_roster_edit) return false;
+                return normSlotTime(ov.anchor_time_slot_label || pl.time_slot || "") === timeNorm;
+              })
+              .map(function (ov) {
+                return ov.id;
+              });
+            if (!ids.length) return;
+            return client
+              .from("schedule_overrides")
+              .update({ status: "superseded", superseded_at: now, updated_at: now })
+              .in("id", ids);
+          });
+      });
+    }, Promise.resolve());
+  }
+
   function writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction) {
     var isCancel = eventAction === "cancel" || String(afterSnap.action || "") === "cancel_service";
     var isNoPax = String(afterSnap.action || "") === "no_participant";
     if (!isCancel && !isNoPax) return Promise.resolve();
+    return supersedeTermRosterScheduleOverrides(client, p).then(function () {
+      return writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction);
+    });
+  }
+
+  function writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction) {
+    var isCancel = eventAction === "cancel" || String(afterSnap.action || "") === "cancel_service";
+    var isNoPax = String(afterSnap.action || "") === "no_participant";
     var dates = affectedDatesForPayload(p);
     if (!dates.length) return Promise.resolve();
     var ovType = isNoPax ? "slot_clear_client" : "client_cancelled";
@@ -689,18 +777,31 @@
 
     var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var afterSnap = snapshotRow(p);
-    var chain = Promise.resolve();
+    var chain = supersedeTermRosterScheduleOverrides(client, p).then(function () {
+      return cancelNoClientRowsForScope(client, p);
+    });
 
     if (p.scope === "single_day") {
-      chain = upsertDatedRow(client, p, p.anchorDate, p.day);
+      chain = chain.then(function () {
+        return upsertDatedRow(client, p, p.anchorDate, p.day);
+      });
     } else if (p.scope === "weekday_term") {
-      chain = cancelDatedRowsForWeekday(client, p.day, p.client_name, p.time_slot, bounds.firstDate, bounds.lastDate)
-        .then(function () { return upsertTemplateRow(client, p); });
+      chain = chain
+        .then(function () {
+          return cancelDatedRowsForWeekday(client, p.day, p.client_name, p.time_slot, bounds.firstDate, bounds.lastDate);
+        })
+        .then(function () {
+          return upsertTemplateRow(client, p);
+        });
     } else {
       var dates = weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
-      chain = dates.reduce(function (acc, iso) {
-        return acc.then(function () { return upsertDatedRow(client, p, iso, p.day); });
-      }, Promise.resolve());
+      chain = chain.then(function () {
+        return dates.reduce(function (acc, iso) {
+          return acc.then(function () {
+            return upsertDatedRow(client, p, iso, p.day);
+          });
+        }, Promise.resolve());
+      });
     }
 
     finishTermSlotSave(chain, root, p, before, afterSnap, before ? "update" : "create", client, "Term slot saved.");

@@ -177,9 +177,28 @@
       out.push(r);
     });
 
+    var occupiedSlots = Object.create(null);
+
+    function markOccupied(row) {
+      if (!row || isNoClientName(row.client_name)) return;
+      var iso = normIso(row.session_date);
+      if (!iso || !row.time_slot) return;
+      occupiedSlots[openedSlotKey(iso, row)] = true;
+    }
+
+    out.forEach(markOccupied);
+    Object.keys(dated).forEach(function (sk) {
+      markOccupied(dated[sk]);
+    });
+
     Object.keys(dated).forEach(function (sk) {
       if (seenDated[sk]) return;
-      out.push(dated[sk]);
+      var row = dated[sk];
+      if (isNoClientName(row.client_name)) {
+        var iso = normIso(row.session_date);
+        if (iso && occupiedSlots[openedSlotKey(iso, row)]) return;
+      }
+      out.push(row);
       seenDated[sk] = true;
     });
 
@@ -194,6 +213,7 @@
         if (!slot || !slot.session_date) return;
         if (String(slot.day || "").toLowerCase() !== tplDay) return;
         if (normTimeSlot(slot.time_slot) !== tplSlot) return;
+        if (occupiedSlots[openedSlotKey(slot.session_date, slot)]) return;
         var skNoClient = datedSlotKey({
           session_date: slot.session_date,
           client_name: tpl.client_name,

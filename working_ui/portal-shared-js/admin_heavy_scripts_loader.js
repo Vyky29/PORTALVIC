@@ -10,7 +10,7 @@
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
-      "/portal/portal-roster-rows-merge.js?v=20260609-kirushy-rest-term",
+      "/portal/portal-roster-rows-merge.js?v=20260608-term-slot-replace",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260602-javier-may20-catchup",
     ],
     feedback: [
