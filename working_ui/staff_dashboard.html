@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-initials-gender" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-quick-menu-toggle" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-chat-close-fix" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-staff-admin-group" />
@@ -1091,8 +1091,8 @@
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-group"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-no-toast"></script>
-  <script src="/portal/portal_sheet_back.js?v=20260609-worker-chat-only"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-dedupe"></script>
+  <script src="/portal/portal_sheet_back.js?v=20260609-quick-menu-toggle"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -11546,7 +11546,7 @@
       const menu = document.getElementById('menuSheet');
       const openSheets = $$('.sheet.open');
       const onlyMenuOpen = openSheets.length === 1 && menu && menu.classList.contains('open');
-      if(onlyMenuOpen && portalQuickMenuEntryMode === 'logo-lite'){
+      if(onlyMenuOpen){
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         return;
       }
@@ -13664,6 +13664,7 @@
       const sessionsOverviewOpen = document.getElementById('clientSessionsOverviewSheet')?.classList.contains('open');
       document.body.classList.toggle('portal-sessions-overview-open', !!sessionsOverviewOpen);
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
+      if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();
     }
     function openSheet(id, opts){
       opts = opts || {};
@@ -14454,12 +14455,17 @@
         ? portalExitHistoricalReviewToLiveTodayMode(shouldForceHistoricalExit)
         : false;
       if(exitedHistorical){
-        openSheet('menuSheet');
+        if(typeof portalToggleQuickMenuFromDock === 'function') portalToggleQuickMenuFromDock();
+        else openSheet('menuSheet');
         return;
       }
       const genSh = document.getElementById('clientGeneralSheet');
       if(genSh && genSh.classList.contains('open')){
         closeClientGeneralSheet();
+      }
+      if(typeof portalToggleQuickMenuFromDock === 'function'){
+        portalToggleQuickMenuFromDock();
+        return;
       }
       const menuOpen = document.getElementById('menuSheet')?.classList.contains('open');
       if(menuOpen){

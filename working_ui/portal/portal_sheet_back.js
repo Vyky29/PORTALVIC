@@ -161,6 +161,66 @@
     return portalGetSheetBackTarget(current) === "menuSheet";
   }
 
+  function portalIsQuickMenuSheetOpen() {
+    var menu = global.document && global.document.getElementById("menuSheet");
+    return !!(menu && menu.classList.contains("open"));
+  }
+
+  function portalCloseQuickMenuSheet() {
+    if (!portalIsQuickMenuSheetOpen()) return false;
+    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
+    if (close) {
+      close({ bypassAnnouncementLock: true });
+      return true;
+    }
+    var menu = global.document.getElementById("menuSheet");
+    if (menu) menu.classList.remove("open");
+    return true;
+  }
+
+  function portalSyncQuickMenuDockChrome() {
+    var btn = global.document && global.document.getElementById("dockQuickMenuTile");
+    if (!btn) return;
+    var open = portalIsQuickMenuSheetOpen();
+    btn.setAttribute("aria-label", open ? "Close quick menu" : "Open quick menu");
+    btn.setAttribute("aria-pressed", open ? "true" : "false");
+    btn.classList.toggle("dock-nav-item--active", open);
+  }
+
+  /** Footer Quick menu: open on first tap, close on second (full menu sheet). */
+  function portalToggleQuickMenuFromDock(opts) {
+    opts = opts || {};
+    try {
+      if (typeof global.portalQuickMenuEntryMode !== "undefined") {
+        global.portalQuickMenuEntryMode = "full";
+      }
+    } catch (_mode) {}
+    if (portalIsQuickMenuSheetOpen()) {
+      if (typeof global.portalNavigateSheetBack === "function") {
+        global.portalNavigateSheetBack();
+      } else {
+        portalCloseQuickMenuSheet();
+      }
+      portalSyncQuickMenuDockChrome();
+      return "closed";
+    }
+    if (typeof global.portalQuickMenuDockShouldBack === "function" && global.portalQuickMenuDockShouldBack()) {
+      if (typeof global.portalNavigateSheetBack === "function") {
+        global.portalNavigateSheetBack();
+      } else {
+        portalCloseQuickMenuSheet();
+      }
+      portalSyncQuickMenuDockChrome();
+      return "back";
+    }
+    if (typeof global.openSheet === "function") {
+      global.openSheet("menuSheet", opts.openOpts || {});
+      portalSyncQuickMenuDockChrome();
+      return "opened";
+    }
+    return "noop";
+  }
+
   function handleTargetIsSheetBack(el) {
     if (!el || !el.closest) return false;
     if (el.closest(".sheet.sheet--popover")) return false;
@@ -260,6 +320,10 @@
   global.portalOnSheetClosed = portalOnSheetClosed;
   global.portalNavigateSheetBack = portalNavigateSheetBack;
   global.portalQuickMenuDockShouldBack = portalQuickMenuDockShouldBack;
+  global.portalIsQuickMenuSheetOpen = portalIsQuickMenuSheetOpen;
+  global.portalCloseQuickMenuSheet = portalCloseQuickMenuSheet;
+  global.portalSyncQuickMenuDockChrome = portalSyncQuickMenuDockChrome;
+  global.portalToggleQuickMenuFromDock = portalToggleQuickMenuFromDock;
   global.portalGetSheetBackTarget = portalGetSheetBackTarget;
   global.portalInitSheetBackNavigation = portalInitSheetBackNavigation;
   global.portalClearSheetNavigation = clearStack;
