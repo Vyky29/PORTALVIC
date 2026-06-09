@@ -1023,7 +1023,7 @@
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260608-june8-partial"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260610-javier-sunday"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-kirushy-term-cancel"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-kirushy-no-participant"></script>
@@ -1070,7 +1070,7 @@
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260610-no-leads-404"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
@@ -1087,11 +1087,11 @@
   <script src="/portal/portal_executive_dm.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260609-luliya-photo"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260610-realtime-retry"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-group"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-dedupe"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-foreground-alert"></script>
   <script src="/portal/portal_sheet_back.js?v=20260609-quick-menu-toggle"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -3874,6 +3874,11 @@
           const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
             ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
             : [];
+          if(typeof portalTermDayFeedbackOutstandingResolved === 'function'
+            && portalTermDayFeedbackOutstandingResolved(key, dayWord, staffId, relFb, cur)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
           let dayCount = 0;
           /* Feedback reminders fire only after the whole shift has ended (+15 min grace),
              so a worker with back-to-back sessions is not nagged mid-shift. The last
@@ -6644,7 +6649,9 @@
     var __PORTAL_STAFF_OVR_DEB = null;
     window.portalInitScheduleOverrideRealtimeForStaff = function portalInitScheduleOverrideRealtimeForStaff(){
       try{
-        if(window.__PORTAL_STAFF_SCHED_RT_CH) return;
+        if(typeof window.portalRealtimePrepareInit === "function"){
+          if(!window.portalRealtimePrepareInit("__PORTAL_STAFF_SCHED_RT_CH", "__PORTAL_STAFF_SCHED_RT_READY")) return;
+        }else if(window.__PORTAL_STAFF_SCHED_RT_CH) return;
         var box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client || typeof box.client.channel !== "function") return;
         if(typeof window.__PORTAL_STAFF_REMOTE_OVERRIDE_REFRESH__ !== "function"){
@@ -6670,7 +6677,20 @@
               window.__PORTAL_STAFF_SCHED_RT_READY = true;
               console.info("[portal] Realtime: schedule_overrides (staff)");
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
-              console.warn("[portal] Realtime schedule_overrides", status, err || "");
+              if(typeof window.portalRealtimeOnChannelError === "function"){
+                window.portalRealtimeOnChannelError(
+                  "__PORTAL_STAFF_SCHED_RT_CH",
+                  "__PORTAL_STAFF_SCHED_RT_READY",
+                  window.portalInitScheduleOverrideRealtimeForStaff,
+                  "[portal] Realtime schedule_overrides",
+                  status,
+                  err
+                );
+              }else if(typeof window.portalWarnUnlessOffline === "function"){
+                window.portalWarnUnlessOffline("[portal] Realtime schedule_overrides", status, err);
+              }else if(typeof navigator === "undefined" || navigator.onLine !== false){
+                console.warn("[portal] Realtime schedule_overrides", status, err || "");
+              }
             }
           });
         window.__PORTAL_STAFF_SCHED_RT_CH = ch;
@@ -6694,7 +6714,9 @@
     var __PORTAL_STAFF_ANN_RT_DEB = null;
     window.portalInitStaffAnnouncementsRealtime = function portalInitStaffAnnouncementsRealtime(){
       try{
-        if(window.__PORTAL_STAFF_ANN_RT_CH) return;
+        if(typeof window.portalRealtimePrepareInit === "function"){
+          if(!window.portalRealtimePrepareInit("__PORTAL_STAFF_ANN_RT_CH", "__PORTAL_STAFF_ANN_RT_READY")) return;
+        }else if(window.__PORTAL_STAFF_ANN_RT_CH) return;
         var box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client || typeof box.client.channel !== "function") return;
         if(typeof portalHydrateAnnouncementsFromSupabase !== "function"){
@@ -6725,7 +6747,20 @@
               window.__PORTAL_STAFF_ANN_RT_READY = true;
               try{ console.info("[portal] Realtime: portal_staff_announcements (staff)"); }catch(_){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
-              console.warn("[portal] Realtime portal_staff_announcements", status, err || "");
+              if(typeof window.portalRealtimeOnChannelError === "function"){
+                window.portalRealtimeOnChannelError(
+                  "__PORTAL_STAFF_ANN_RT_CH",
+                  "__PORTAL_STAFF_ANN_RT_READY",
+                  window.portalInitStaffAnnouncementsRealtime,
+                  "[portal] Realtime portal_staff_announcements",
+                  status,
+                  err
+                );
+              }else if(typeof window.portalWarnUnlessOffline === "function"){
+                window.portalWarnUnlessOffline("[portal] Realtime portal_staff_announcements", status, err);
+              }else if(typeof navigator === "undefined" || navigator.onLine !== false){
+                console.warn("[portal] Realtime portal_staff_announcements", status, err || "");
+              }
             }
           });
         window.__PORTAL_STAFF_ANN_RT_CH = ch;
@@ -8876,8 +8911,10 @@
     };
     window.portalInitStaffDmRealtime = function portalInitStaffDmRealtime(){
       try{
-        if(window.__PORTAL_STAFF_DM_RT_CH && window.__PORTAL_STAFF_DM_RT_READY) return;
-        if(window.__PORTAL_STAFF_DM_RT_CH && !window.__PORTAL_STAFF_DM_RT_READY){
+        if(typeof window.portalRealtimePrepareInit === "function"){
+          if(!window.portalRealtimePrepareInit("__PORTAL_STAFF_DM_RT_CH", "__PORTAL_STAFF_DM_RT_READY")) return;
+        }else if(window.__PORTAL_STAFF_DM_RT_CH && window.__PORTAL_STAFF_DM_RT_READY) return;
+        else if(window.__PORTAL_STAFF_DM_RT_CH && !window.__PORTAL_STAFF_DM_RT_READY){
           try{ window.__PORTAL_STAFF_DM_RT_CH.unsubscribe(); }catch(_un){}
           window.__PORTAL_STAFF_DM_RT_CH = null;
         }
@@ -8946,12 +8983,16 @@
               window.__PORTAL_STAFF_DM_RT_READY = true;
               try{ console.info("[portal] Realtime: portal_staff_dm_messages"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
-              console.debug("[portal] Realtime portal_staff_dm_messages", status, err || "");
-              window.__PORTAL_STAFF_DM_RT_READY = false;
-              window.__PORTAL_STAFF_DM_RT_CH = null;
-              setTimeout(function(){
-                if(typeof window.portalInitStaffDmRealtime === "function") window.portalInitStaffDmRealtime();
-              }, 2500);
+              if(typeof window.portalRealtimeOnChannelError === "function"){
+                window.portalRealtimeOnChannelError(
+                  "__PORTAL_STAFF_DM_RT_CH",
+                  "__PORTAL_STAFF_DM_RT_READY",
+                  window.portalInitStaffDmRealtime,
+                  "[portal] Realtime portal_staff_dm_messages",
+                  status,
+                  err
+                );
+              }
             }
           });
         window.__PORTAL_STAFF_DM_RT_CH = ch;
@@ -12861,6 +12902,38 @@
         fbMap[key] = 'pending';
       }
     }
+    /** Today list / export / roster agree the day needs no more feedback (stale fbMap "late" override). */
+    function portalTermDayFeedbackOutstandingResolved(isoKey, dayWord, staffId, sessionsOpt, curDateOpt){
+      const iso = String(isoKey || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const dw = String(dayWord || '').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid || portalTermIsCatchUpFeedbackDate(iso, sid)) return false;
+      if(typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(iso, sid)) return true;
+      if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+        && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)
+        && portalCountPendingSessionReviewsForCalendarDay(iso, dw) === 0){
+        return !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+          && portalTermCalendarDayHasNotEndedClientSession(iso, dw, sid, sessionsOpt, curDateOpt));
+      }
+      const cur = curDateOpt || new Date(iso + 'T12:00:00');
+      const dayW = dw || cur.toLocaleDateString('en-GB', { weekday: 'long' });
+      let list = Array.isArray(sessionsOpt) ? sessionsOpt : [];
+      if(!list.length && typeof portalTermFeedbackSessionsForDate === 'function'){
+        const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+        const isReal = function(s){
+          if(baseReal) return baseReal(s, iso);
+          const st = String(s.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(s.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        list = portalTermFeedbackSessionsForDate(dayW, iso, sid, isReal);
+      }
+      if(list.length && typeof portalTermDayAllSessionsComplete === 'function'
+        && portalTermDayAllSessionsComplete(dayW, iso, sid, list, cur)) return true;
+      return false;
+    }
     /** Same rules as inside the day sheet: all countable sessions done → term cell green. */
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
       const list = Array.isArray(sessions) ? sessions : [];
@@ -13101,7 +13174,7 @@
           }
         }
         const relReconcile = relFb.length ? relFb : relAll;
-        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'late'
+        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
           && !portalTermIsCatchUpFeedbackDate(key, staffId) && key <= todayKey && relReconcile.length
           && typeof portalTermDayAllSessionsComplete === 'function'
           && portalTermDayAllSessionsComplete(dayWord, key, staffId, relReconcile, cur)){
@@ -13110,7 +13183,12 @@
         if(typeof portalTermApplyHistoricalDayGreen === 'function'){
           portalTermApplyHistoricalDayGreen(key, staffId, dayWord, key, relAll, relFb, cur, fbMap);
         }
-        if(inCurrentWeek && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
+        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
+          && typeof portalTermDayFeedbackOutstandingResolved === 'function'
+          && portalTermDayFeedbackOutstandingResolved(key, dayWord, staffId, relReconcile, cur)){
+          fbMap[key] = 'complete';
+        }
+        if(key <= todayKey && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
           && typeof portalTermExportMarksDayComplete === 'function'
           && portalTermExportMarksDayComplete(key, staffId)){
           fbMap[key] = 'complete';

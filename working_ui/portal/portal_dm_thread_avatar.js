@@ -99,6 +99,18 @@
       if (!photoKey && label) {
         photoKey = String(label).trim().split(/\s+/)[0] || label;
       }
+      if (
+        global.portalStaffPhotoKeyAllowed &&
+        !global.portalStaffPhotoKeyAllowed(photoKey || label, { username: username })
+      ) {
+        return (
+          '<span class="portal-dm-thread-avatar portal-dm-thread-avatar--' +
+          escFn(tone) +
+          '">' +
+          escFn(initials(label)) +
+          "</span>"
+        );
+      }
       return global.portalStaffAvatarInnerHtml(photoKey || label, {
         esc: escFn,
         displayName: label,

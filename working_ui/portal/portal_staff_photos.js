@@ -92,8 +92,36 @@
     if (u && urls.indexOf(u) < 0) urls.push(u);
   }
 
-  /** No static file on disk — use initials only (avoids console 404 spam). */
-  var NO_STATIC_PHOTO = {};
+  /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
+  var NO_STATIC_PHOTO = {
+    leads: true,
+    lead: true,
+    staff: true,
+    admin: true,
+    ceo: true,
+    ceos: true,
+    directors: true,
+    director: true,
+    group: true,
+    team: true,
+    ops: true,
+    inbox: true,
+    directory: true,
+    staffmgmt: true,
+    ceoexec: true,
+    csteam: true,
+    conversation: true,
+    announcements: true,
+    reminders: true,
+  };
+
+  function portalStaffPhotoKeyAllowed(nameOrKey, opts) {
+    var keys = photoLookupKeys(nameOrKey, opts);
+    if (!keys.length) return false;
+    return keys.some(function (k) {
+      return k && !NO_STATIC_PHOTO[k];
+    });
+  }
 
   function resolveStaffPhotoCandidates(nameOrKey, opts) {
     opts = opts || {};
@@ -201,12 +229,81 @@
     );
   }
 
+  function portalNetworkIsOffline() {
+    try {
+      return typeof navigator !== "undefined" && navigator.onLine === false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function portalWarnUnlessOffline(label, status, err) {
+    if (portalNetworkIsOffline()) return;
+    console.warn(label, status, err || "");
+  }
+
+  /** Drop a stale Supabase Realtime channel so init can run again. */
+  function portalRealtimePrepareInit(chKey, readyKey) {
+    try {
+      if (global[chKey] && global[readyKey]) return false;
+      if (global[chKey] && !global[readyKey]) {
+        try {
+          var stale = global[chKey];
+          if (stale && typeof stale.unsubscribe === "function") stale.unsubscribe();
+        } catch (_) {}
+        global[chKey] = null;
+      }
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  function portalRealtimeOnChannelError(chKey, readyKey, initFn, label, status, err) {
+    try {
+      global[readyKey] = false;
+      var ch = global[chKey];
+      if (ch && typeof ch.unsubscribe === "function") ch.unsubscribe();
+    } catch (_) {}
+    global[chKey] = null;
+    portalWarnUnlessOffline(label, status, err);
+    if (!portalNetworkIsOffline() && typeof initFn === "function") {
+      setTimeout(initFn, 2500);
+    }
+  }
+
+  function bindPortalRealtimeOnlineReconnect() {
+    if (bindPortalRealtimeOnlineReconnect._bound) return;
+    bindPortalRealtimeOnlineReconnect._bound = true;
+    try {
+      global.addEventListener("online", function () {
+        [
+          global.portalInitScheduleOverrideRealtimeForStaff,
+          global.portalInitStaffAnnouncementsRealtime,
+          global.portalInitStaffDmRealtime,
+        ].forEach(function (fn) {
+          if (typeof fn === "function") {
+            try {
+              fn();
+            } catch (_) {}
+          }
+        });
+      });
+    } catch (_) {}
+  }
+  bindPortalRealtimeOnlineReconnect();
+
   global.portalStaffPhotoUrl = portalStaffPhotoUrl;
   global.portalStaffInitials = portalStaffInitials;
   global.portalStaffAvatarInnerHtml = portalStaffAvatarInnerHtml;
   global.portalStaffPhotoImgError = portalStaffPhotoImgError;
   global.portalResolveStaffPhotoCandidates = resolveStaffPhotoCandidates;
   global.portalStaffPhotoLookupKeys = photoLookupKeys;
+  global.portalStaffPhotoKeyAllowed = portalStaffPhotoKeyAllowed;
+  global.portalNetworkIsOffline = portalNetworkIsOffline;
+  global.portalWarnUnlessOffline = portalWarnUnlessOffline;
+  global.portalRealtimePrepareInit = portalRealtimePrepareInit;
+  global.portalRealtimeOnChannelError = portalRealtimeOnChannelError;
 })(
   typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this
 );

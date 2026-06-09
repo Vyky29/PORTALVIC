@@ -1,0 +1,5 @@
+date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedback_unit_key,feedback_merge_group,overview_status,feedback_complete,matched_feedback_client,matched_feedback_by,matched_portal_session_key
+2026-06-07,Sunday,Zaid,Multi-Activity,10.15 to 11,JAVIER,SwimFarm,Small Pool,2026-06-07|10:15|zaid|small_pool,2026-06-07|zaid|10:15|multi-activity|small_pool,,feedback_submitted,yes,Zaid,Javier Marquez,2026-06-07||zaid
+2026-06-07,Sunday,Hazem,Multi-Activity,11 to 11.45,JAVIER,SwimFarm,Big Pool,2026-06-07|11:00|hazem|big_pool,2026-06-07|hazem|11:00|multi-activity|big_pool,,feedback_submitted,yes,Hazem,Javier Marquez,2026-06-07||hazem
+2026-06-07,Sunday,Eiji,Multi-Activity,11.45 to 12.30,JAVIER,SwimFarm,Big Pool,2026-06-07|11:45|eiji|big_pool,2026-06-07|eiji|11:45|multi-activity|big_pool,,feedback_submitted,yes,Eiji,Javier Marquez,2026-06-07||eiji
+2026-06-07,Sunday,Haneef,Multi-Activity,1.15 to 2,JAVIER,SwimFarm,Small Pool,2026-06-07|13:15|haneef|small_pool,2026-06-07|haneef|13:15|multi-activity|small_pool,,feedback_submitted,yes,Haneef,Javier Marquez,2026-06-07||haneef

@@ -1,6 +1,6 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260610-chat-foreground-once
+ * v20260610-chat-foreground-alert
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -138,10 +138,8 @@ self.addEventListener('push', function (event) {
       var tasks = [
         portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
       ];
-      var skipOsBanner = hasVisibleClient && portalOpen === 'chat';
-      if (!skipOsBanner) {
-        tasks.unshift(self.registration.showNotification(title, notifyOpts));
-      }
+      /* Chat: always show OS banner (sound on lock screen + Android heads-up). Page also plays in-app chirp when open. */
+      tasks.unshift(self.registration.showNotification(title, notifyOpts));
       return Promise.all(tasks);
     })
   );

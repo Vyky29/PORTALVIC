@@ -115,6 +115,101 @@
     portalStaffToast(msg);
   }
 
+  function primeChatAlertAudio() {
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (Ctx && !global.__PORTAL_CHAT_AUDIO_CTX__) {
+        global.__PORTAL_CHAT_AUDIO_CTX__ = new Ctx();
+      }
+      var ctx = global.__PORTAL_CHAT_AUDIO_CTX__;
+      if (ctx && ctx.state === "suspended") {
+        void ctx.resume();
+      }
+    } catch (_c) {}
+    if (
+      global.portalStaffChatCalls &&
+      typeof global.portalStaffChatCalls.primeCallRingAudio === "function"
+    ) {
+      global.portalStaffChatCalls.primeCallRingAudio();
+    }
+  }
+
+  function bindChatAlertAudioPrime() {
+    if (global.__PORTAL_CHAT_AUDIO_PRIME_BOUND__) return;
+    global.__PORTAL_CHAT_AUDIO_PRIME_BOUND__ = true;
+    var once = function () {
+      primeChatAlertAudio();
+      try {
+        global.document.removeEventListener("pointerdown", once, true);
+        global.document.removeEventListener("touchstart", once, true);
+      } catch (_u) {}
+    };
+    try {
+      global.document.addEventListener("pointerdown", once, true);
+      global.document.addEventListener("touchstart", once, true);
+    } catch (_b) {}
+  }
+
+  function playChatMessageAlertSound() {
+    primeChatAlertAudio();
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (!Ctx) return false;
+      var ctx = global.__PORTAL_CHAT_AUDIO_CTX__ || new Ctx();
+      global.__PORTAL_CHAT_AUDIO_CTX__ = ctx;
+      function chirp() {
+        var gain = ctx.createGain();
+        gain.gain.value = 0.32;
+        gain.connect(ctx.destination);
+        function beep(freq, start, dur) {
+          var osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          osc.connect(gain);
+          osc.start(start);
+          osc.stop(start + dur);
+        }
+        var t = ctx.currentTime;
+        beep(880, t, 0.11);
+        beep(1174.66, t + 0.13, 0.15);
+      }
+      if (ctx.state === "suspended") {
+        void ctx.resume().then(chirp).catch(function () {});
+      } else {
+        chirp();
+      }
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function portalStaffTryForegroundChatOsBanner(title, preview, tag) {
+    var icon = "/portal/app-icon/icon-192.png?v=20260624-push-icon";
+    var opts = {
+      body: String(preview || ""),
+      tag: String(tag || "portal-chat-fg"),
+      renotify: true,
+      silent: false,
+      vibrate: [120, 55, 120, 55, 160],
+      icon: icon,
+      badge: icon,
+    };
+    if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.ready) {
+      void global.navigator.serviceWorker.ready
+        .then(function (reg) {
+          if (reg && typeof reg.showNotification === "function") {
+            return reg.showNotification(String(title || "New message"), opts);
+          }
+        })
+        .catch(function () {});
+      return;
+    }
+    if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
+      global.portalStaffNotifyOsWhiteTile(title, preview, tag, { vibrate: false });
+    }
+  }
+
   function portalStaffNotifyIncomingChat(title, preview, row) {
     title = String(title || "Admin").trim();
     preview = String(preview || "New message").trim();
@@ -129,6 +224,7 @@
     if (typeof global.portalStaffDmBumpUnreadOptimistic === "function") {
       global.portalStaffDmBumpUnreadOptimistic();
     }
+    playChatMessageAlertSound();
     if (global.navigator && global.navigator.vibrate) {
       try {
         global.navigator.vibrate([120, 55, 120, 55, 160]);
@@ -136,12 +232,12 @@
     }
     var appVisible =
       global.document && String(global.document.visibilityState || "") === "visible";
-    if (!appVisible && typeof global.portalStaffNotifyOsWhiteTile === "function") {
-      global.portalStaffNotifyOsWhiteTile(
-        title,
-        preview,
-        "portal-chat-live-" + String((row && row.id) || Date.now())
-      );
+    var tag = "portal-chat-live-" + String((row && row.id) || Date.now());
+    if (appVisible) {
+      portalStaffShowChatPushToast(title, preview);
+      portalStaffTryForegroundChatOsBanner(title, preview, tag);
+    } else if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
+      global.portalStaffNotifyOsWhiteTile(title, preview, tag);
     }
     if (typeof global.syncPortalHeaderAlertChrome === "function") {
       global.syncPortalHeaderAlertChrome(
@@ -215,9 +311,12 @@
   global.portalStaffToast = portalStaffToast;
   global.portalStaffShowChatPushToast = portalStaffShowChatPushToast;
   global.portalStaffNotifyIncomingChat = portalStaffNotifyIncomingChat;
+  global.portalPlayChatMessageAlertSound = playChatMessageAlertSound;
+  global.portalPrimeChatAlertAudio = primeChatAlertAudio;
   global.portalBindChatPushMessages = bindChatPushMessages;
   global.portalConsumeChatPushQuery = consumeChatOpenQueryOnReady;
 
+  bindChatAlertAudioPrime();
   bindChatPushMessages();
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {

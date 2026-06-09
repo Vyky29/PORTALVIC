@@ -1020,7 +1020,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         throw new Error("skip_presence_on_lead_overview");
       }
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260608-presence-fix"
+        "./portal_live_presence.js?v=20260610-offline-quiet"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {
@@ -1032,7 +1032,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260608-presence-fix"
+          "./portal_visit_tracker.js?v=20260610-offline-quiet"
         );
         await startPortalVisitTracker({ page, profile, session });
       }

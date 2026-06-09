@@ -65,7 +65,10 @@
           push(swapStaffPhotoExtension(af, "jpg"));
         }
       }
-      if (key) {
+      if (
+        key &&
+        (!global.portalStaffPhotoKeyAllowed || global.portalStaffPhotoKeyAllowed(key))
+      ) {
         var base = staffPhotosBaseFromSource();
         if (base.charAt(base.length - 1) !== "/") base += "/";
         push(base + key + ".png");

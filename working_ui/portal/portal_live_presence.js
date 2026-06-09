@@ -291,7 +291,11 @@ async function subscribeAndTrack(supabase, payload) {
       }
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
         clearTimeout(timeout);
-        console.warn("[portal] presence channel", status, err || "");
+        if (typeof globalThis.portalWarnUnlessOffline === "function") {
+          globalThis.portalWarnUnlessOffline("[portal] presence channel", status, err);
+        } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
+          console.warn("[portal] presence channel", status, err || "");
+        }
         resolve(false);
       }
     });

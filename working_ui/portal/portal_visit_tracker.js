@@ -195,7 +195,11 @@ async function flushPatch(extra) {
     .eq("id", _sessionId)
     .eq("staff_user_id", _userId);
   if (error) {
-    console.warn("[portal] visit session update", error.message || error);
+    if (typeof globalThis.portalWarnUnlessOffline === "function") {
+      globalThis.portalWarnUnlessOffline("[portal] visit session update", "", error.message || error);
+    } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
+      console.warn("[portal] visit session update", error.message || error);
+    }
   }
 }
 
@@ -261,7 +265,11 @@ async function ensureSession(opts) {
   };
   const insResult = await insertVisitSessionRow(row);
   if (insResult.error) {
-    console.warn("[portal] visit session insert", insResult.error.message || insResult.error);
+    if (typeof globalThis.portalWarnUnlessOffline === "function") {
+      globalThis.portalWarnUnlessOffline("[portal] visit session insert", "", insResult.error.message || insResult.error);
+    } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
+      console.warn("[portal] visit session insert", insResult.error.message || insResult.error);
+    }
     return;
   }
   _sessionId = sessionId;
@@ -295,7 +303,11 @@ async function heartbeat() {
     .eq("id", _sessionId)
     .eq("staff_user_id", _userId);
   if (error) {
-    console.warn("[portal] visit session heartbeat", error.message || error);
+    if (typeof globalThis.portalWarnUnlessOffline === "function") {
+      globalThis.portalWarnUnlessOffline("[portal] visit session heartbeat", "", error.message || error);
+    } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
+      console.warn("[portal] visit session heartbeat", error.message || error);
+    }
   }
 }
 
