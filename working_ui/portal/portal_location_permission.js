@@ -825,30 +825,19 @@ export function portalRefreshCameraUi() {
 export function portalRefreshEnableAllUi() {
   const statusEl = document.getElementById("portalEnableAllStatus");
   const btn = document.getElementById("portalEnableAllBtn");
-  const block = document.getElementById("portalDefaultPermsBlock");
-  const readyBlock = document.getElementById("portalDefaultPermsReady");
-  if (!statusEl && !btn) return;
+  if (!btn) return;
 
   const complete = portalMandatoryAlertsSettingsComplete();
-
-  if (block) block.hidden = !!complete;
-  if (readyBlock) readyBlock.hidden = !complete;
-  const readyStatus = document.getElementById("portalDefaultPermsReadyStatus");
-  if (readyStatus && complete) {
-    readyStatus.textContent = "On";
-  }
 
   if (statusEl) {
     statusEl.textContent = "";
   }
-  if (btn) {
-    if (complete) {
-      btn.textContent = "Portal features on";
-      btn.disabled = true;
-    } else {
-      btn.textContent = "Turn on portal features";
-      btn.disabled = false;
-    }
+  if (complete) {
+    btn.textContent = "Portal features on";
+    btn.disabled = true;
+  } else {
+    btn.textContent = "Turn on portal features";
+    btn.disabled = false;
   }
 }
 
