@@ -158,6 +158,43 @@ export async function portalBumpAuthSessionGeneration(supabase) {
 }
 
 /**
+ * Bespoke SwimFarm trio (Tinashe): submitted rows often use `YYYY-MM-DD||client` while roster
+ * review keys use `YYYY-MM-DD|client|bespoke_shared` — expand so co-instructor Supabase fetch hits both.
+ * @param {string[]} rosterSessionKeys
+ * @returns {string[]}
+ */
+export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys) {
+  const out = new Set();
+  for (const raw of rosterSessionKeys || []) {
+    const rk = String(raw || "").trim();
+    if (!rk) continue;
+    out.add(rk);
+    const parts = rk.split("|");
+    const date = String(parts[0] || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const last = String(parts[parts.length - 1] || "")
+      .trim()
+      .toLowerCase();
+    if (last === "bespoke_shared" && parts.length >= 2) {
+      const client = String(parts[1] || "").trim().toLowerCase();
+      if (client) {
+        out.add(`${date}||${client}`);
+        out.add(`${date}||${client}|hub_room`);
+      }
+      continue;
+    }
+    if (parts.length >= 3 && parts[1] === "") {
+      const client = String(parts[2] || "").trim().toLowerCase();
+      if (client) {
+        out.add(`${date}||${client}`);
+        out.add(`${date}|${client}|bespoke_shared`);
+      }
+    }
+  }
+  return [...out];
+}
+
+/**
  * Session keys with server-side submissions in the last ~60 days.
  * Feedback: own rows plus, when `opts.rosterSessionKeys` is set, any submission for those
  * `portal_session_key` values (co-instructors on the same slot share one key).
@@ -181,7 +218,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const sinceStr = since.toISOString().slice(0, 10);
 
   const rawRoster = opts && Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
-  const rosterSessionKeys = [...new Set(rawRoster.map((k) => String(k || "").trim()).filter(Boolean))].slice(0, 250);
+  const rosterSessionKeys = portalExpandRosterKeysForSharedFeedbackLookup(
+    [...new Set(rawRoster.map((k) => String(k || "").trim()).filter(Boolean))]
+  ).slice(0, 400);
   const catchUpDates = (
     opts && Array.isArray(opts.catchUpSessionDates) ? opts.catchUpSessionDates : []
   )
