@@ -1051,13 +1051,13 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_icons.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260608-silent-prime"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260609-chat-push-v4"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
@@ -6996,7 +6996,13 @@
             var textEl = document.createElement("div");
             textEl.style.whiteSpace = "pre-wrap";
             textEl.style.overflowWrap = "break-word";
-            textEl.textContent = String(m.body || "");
+            textEl.textContent = (function(){
+              var plain = String(m.body || "");
+              if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.stripDmOperatorTag === "function"){
+                plain = window.portalChatActorIdentity.stripDmOperatorTag(plain);
+              }
+              return plain;
+            })();
             bodyHost.appendChild(textEl);
           }
           div.appendChild(bodyHost);

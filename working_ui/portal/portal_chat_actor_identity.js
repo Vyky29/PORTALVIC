@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var DM_OPERATOR_TAG_RE = /^\[\[portal-dm-operator:([0-9a-f-]{36})\]\]/i;
+  var DM_OPERATOR_TAG_RE = /^\s*\[\[portal-dm-operator:([0-9a-f-]{36})\]\]/i;
 
   function parseDmOperatorTag(body) {
     var raw = String(body || "");

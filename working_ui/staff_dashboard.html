@@ -1058,13 +1058,13 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_icons.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260630-dm-operator"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260608-silent-prime"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
@@ -8221,7 +8221,13 @@
               var textElG = document.createElement('div');
               textElG.style.whiteSpace = 'pre-wrap';
               textElG.style.overflowWrap = 'break-word';
-              textElG.textContent = String(gm.body || '');
+              textElG.textContent = (function(){
+                var plain = String(gm.body || '');
+                if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'){
+                  plain = window.portalChatActorIdentity.stripDmOperatorTag(plain);
+                }
+                return plain;
+              })();
               bodyHostG.appendChild(textElG);
             }
             divG.appendChild(bodyHostG);
@@ -8437,7 +8443,14 @@
             var textEl = document.createElement("div");
             textEl.style.whiteSpace = "pre-wrap";
             textEl.style.overflowWrap = "break-word";
-            textEl.textContent = String(m.body || "");
+            var plainBody = String(m.body || "");
+            if(
+              window.portalChatActorIdentity &&
+              typeof window.portalChatActorIdentity.stripDmOperatorTag === "function"
+            ){
+              plainBody = window.portalChatActorIdentity.stripDmOperatorTag(plainBody);
+            }
+            textEl.textContent = plainBody;
             bodyHost.appendChild(textEl);
           }
           div.appendChild(bodyHost);
