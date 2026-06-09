@@ -14,7 +14,7 @@
   -->
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
   <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-notify-parity"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-one-btn"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -735,38 +735,33 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p id="portalAlertsSheetIntro">Alerts, camera and live map when your rota needs it (Bespoke, Day Centre or Climbing). Saved on this device — we won’t ask again after you turn it on.</p>
+      <p id="portalAlertsSheetIntro">One tap on this device — alerts and live map when your rota needs it.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
         <div class="portal-alerts-block portal-alerts-block--ready" id="portalDefaultPermsReady" hidden>
-          <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On — portal features ready on this device.</p>
+          <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On</p>
         </div>
         <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
-          <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite" hidden></p>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on portal features</button>
         </div>
-        <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
-          <p class="portal-alerts-hint muted">Optional: transcribe your voice to text in Feedback, Incident, Cancellation and Reports.</p>
-          <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
-          <p class="portal-alerts-hint muted portal-alerts-voice-how">On a form, tap the mic, speak, review the text, then submit.</p>
-        </div>
-        <div class="portal-alerts-block" id="portalPushNotifyBlock">
-          <h4 class="portal-alerts-section-title">Background alerts</h4>
-          <p class="portal-alerts-hint muted">Announcements, roster changes and incoming calls when the app is closed. On iPhone, add the portal to your Home Screen first.</p>
-          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <p id="portalNotifyVapidHint" class="portal-alerts-hint muted" aria-live="polite" hidden></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
-          <button type="button" class="portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
-        </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
+          <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
+            <p id="portalMicStatus"></p>
+            <button type="button" id="portalMicEnableBtn"></button>
+          </div>
+          <div class="portal-alerts-block" id="portalPushNotifyBlock">
+            <p id="portalNotifyStatus"></p>
+            <p id="portalNotifyVapidHint" hidden></p>
+            <button type="button" id="portalNotifyEnableBtn"></button>
+            <button type="button" id="portalNotifyTestBtn" hidden></button>
+          </div>
           <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>
           <p id="portalMicHint"></p>
         </div>
-        <p class="portal-alerts-footnote muted">Live map shares your location only during your shift window on the rota.</p>
       </div>
     </div>
   </section>

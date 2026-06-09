@@ -413,9 +413,6 @@
 
   async function portalRegisterPushAfterGrant(statusEl, opts) {
     opts = opts || {};
-    if (statusEl) {
-      statusEl.textContent = "Registering this device for background alerts…";
-    }
     if (typeof portalRegisterPortalServiceWorker === "function") {
       try {
         await portalRegisterPortalServiceWorker();
@@ -423,9 +420,6 @@
     }
     var hasSession = await portalWaitForPortalSession(15000);
     if (!hasSession) {
-      if (statusEl) {
-        statusEl.textContent = portalSubscribeFailureMessage({ reason: "no-session" });
-      }
       return { ok: false, reason: "no-session" };
     }
     if (typeof global.portalEnsureWebPushSubscription !== "function") {
@@ -433,27 +427,8 @@
     }
     var wp = await global.portalEnsureWebPushSubscription();
     if (wp && wp.ok) {
-      var env = typeof portalNotifyEnvironment === "function" ? portalNotifyEnvironment() : {};
-      var iosCallHint = "";
-      if (
-        env.isIOS &&
-        env.mobile &&
-        typeof portalIsStandalonePwa === "function" &&
-        !portalIsStandalonePwa()
-      ) {
-        iosCallHint =
-          " For incoming calls when the app is closed, add the portal to your Home Screen and open it from that icon.";
-      }
-      if (statusEl) {
-        statusEl.textContent =
-          (opts.registeredMessage ||
-            "Registered — tap Send test alert below to confirm banners reach this device.") +
-          iosCallHint;
-      }
       return wp;
     }
-    var msg = portalSubscribeFailureMessage(wp);
-    if (statusEl) statusEl.textContent = msg + portalNotifyFrameHint(wp && wp.reason);
     return wp || { ok: false, reason: "unknown" };
   }
 

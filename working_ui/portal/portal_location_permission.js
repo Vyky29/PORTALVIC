@@ -624,11 +624,6 @@ export function requestNotificationPermission() {
       .then((r) => {
         if (r === "granted") {
           removeNotifyTapBanner();
-          try {
-            new Notification("Portal alerts on", {
-              body: "Chat, calls, meetings and roster updates on this device.",
-            });
-          } catch (_) {}
           if (typeof window.portalEnsureWebPushSubscription === "function") {
             void window.portalEnsureWebPushSubscription();
           }
@@ -642,8 +637,8 @@ export function requestNotificationPermission() {
 }
 
 /**
- * Default portal setup in one in-app tap: alerts, camera, and location when your role needs it.
- * Microphone stays optional under Advanced settings.
+ * Default portal setup in one in-app tap: alerts and location when your role needs it.
+ * Camera and microphone are requested only when a feature needs them (calls, photos, voice).
  * @returns {Promise<Record<string, string>>}
  */
 export async function requestDefaultPortalPermissions() {
@@ -666,14 +661,7 @@ export async function requestDefaultPortalPermissions() {
     results.notifications = "granted";
   }
 
-  const camRequired = portalCameraRequiredForSetup();
-  if (camRequired && !portalCameraPermissionGranted()) {
-    results.camera = await requestCameraPermission();
-  } else if (portalCameraPermissionGranted()) {
-    results.camera = "granted";
-  } else {
-    results.camera = "not_required";
-  }
+  results.camera = portalCameraPermissionGranted() ? "granted" : "deferred";
 
   const locRequired = portalLocationRequiredForSetup();
   if (locRequired && !portalLocationPermissionGranted()) {
@@ -734,10 +722,8 @@ export function portalLocationRequiredForSetup() {
 
 export function portalMandatoryAlertsSettingsComplete() {
   const locRequired = portalLocationRequiredForSetup();
-  const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
-  const camOk = !camRequired || portalCameraPermissionGranted();
-  return portalNotificationsGranted() && locOk && camOk;
+  return portalNotificationsGranted() && locOk;
 }
 
 export function portalSyncAlertsSettingsChrome() {
@@ -746,15 +732,12 @@ export function portalSyncAlertsSettingsChrome() {
   const sub = btn.querySelector(".menu-btn-sub");
   const notifyOk = portalNotificationsGranted();
   const locRequired = portalLocationRequiredForSetup();
-  const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
-  const camOk = !camRequired || portalCameraPermissionGranted();
-  const incomplete = !notifyOk || !locOk || !camOk;
+  const incomplete = !notifyOk || !locOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
     if (!notifyOk) sub.textContent = "Tap once for portal features";
-    else if (!camOk) sub.textContent = "Camera needed for video and photos";
     else sub.textContent = "Location needed for live map";
   } else {
     sub.textContent = "Portal features on";
@@ -841,32 +824,16 @@ export function portalRefreshEnableAllUi() {
   if (!statusEl && !btn) return;
 
   const complete = portalMandatoryAlertsSettingsComplete();
-  const locRequired = portalLocationRequiredForSetup();
-  const camRequired = portalCameraRequiredForSetup();
 
   if (block) block.hidden = !!complete;
   if (readyBlock) readyBlock.hidden = !complete;
   const readyStatus = document.getElementById("portalDefaultPermsReadyStatus");
   if (readyStatus && complete) {
-    readyStatus.textContent = locRequired
-      ? "On — alerts, camera and live map when your Bespoke, Day Centre or Climbing sessions need it."
-      : "On — alerts and camera ready on this device.";
+    readyStatus.textContent = "On";
   }
 
   if (statusEl) {
-    if (complete) {
-      statusEl.textContent = locRequired
-        ? "Ready — alerts, camera and live map when your sessions need it."
-        : "Ready — alerts and camera on for calls, chat and roster changes.";
-    } else {
-      const parts = ["alerts"];
-      if (camRequired) parts.push("camera");
-      if (locRequired) parts.push("location for the live map");
-      statusEl.textContent =
-        "One tap turns on " +
-        parts.join(", ") +
-        ". Saved on this device after you allow — same as signing the portal announcement.";
-    }
+    statusEl.textContent = "";
   }
   if (btn) {
     if (complete) {
@@ -975,97 +942,34 @@ function removeNotifyTapBanner() {
 }
 
 function ensureNotifyTapBanner() {
-  if (typeof document === "undefined" || !document.body) return;
-  if (portalNotificationsGranted()) {
-    removeNotifyTapBanner();
-    return;
-  }
-  if (typeof Notification === "undefined") return;
-  if (Notification.permission === "denied") return;
-  if (document.getElementById("portalNotifyTapBanner")) return;
-  ensureNotifyTapBannerStyles();
-  const banner = document.createElement("div");
-  banner.id = "portalNotifyTapBanner";
-  banner.className = "portal-notify-tap-banner";
-  banner.setAttribute("role", "status");
-  banner.textContent =
-    "Tap once to turn on portal features (alerts, camera, live map if your rota needs it). Microphone is optional in Settings.";
-  document.body.appendChild(banner);
+  /* Settings sheet only — no floating banner */
 }
 
 /**
- * First tap/click after login requests notification permission (browser requirement).
- * No need to open Settings → Portal features.
+ * Permissions are requested only from Settings → Turn on portal features.
  */
 export function bindAutoNotificationOnFirstGesture() {
   if (typeof document === "undefined" || !document.body) return;
   if (document.body.getAttribute("data-portal-notify-gesture-bound") === "1") return;
   document.body.setAttribute("data-portal-notify-gesture-bound", "1");
-
-  if (portalMandatoryAlertsSettingsComplete()) {
-    removeNotifyTapBanner();
-    if (typeof window.portalEnsureWebPushSubscription === "function") {
-      void window.portalEnsureWebPushSubscription();
-    }
-    return;
-  }
-
+  removeNotifyTapBanner();
   if (
-    typeof window.portalHasPendingPermissionsSignable === "function" &&
-    window.portalHasPendingPermissionsSignable()
+    portalMandatoryAlertsSettingsComplete() &&
+    typeof window.portalEnsureWebPushSubscription === "function"
   ) {
-    removeNotifyTapBanner();
-    return;
+    void window.portalEnsureWebPushSubscription();
   }
-
-  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-    removeNotifyTapBanner();
-  } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-    return;
-  }
-
-  ensureNotifyTapBanner();
-
-  function cleanup() {
-    document.removeEventListener("click", onGesture, true);
-    document.removeEventListener("touchstart", onGesture, true);
-  }
-
-  function onGesture() {
-    if (portalMandatoryAlertsSettingsComplete()) {
-      cleanup();
-      removeNotifyTapBanner();
-      return;
-    }
-    cleanup();
-    void requestDefaultPortalPermissions().then(() => {
-      removeNotifyTapBanner();
-      portalSyncAlertsSettingsChrome();
-      if (typeof window.portalRefreshAlertsNotifyUi === "function") {
-        window.portalRefreshAlertsNotifyUi();
-      }
-    });
-  }
-
-  document.addEventListener("click", onGesture, true);
-  document.addEventListener("touchstart", onGesture, true);
 }
 
-/** Alerts sheet opened — refresh UI and register push when already allowed. */
+/** Alerts sheet opened — refresh UI only; push register runs silently. */
 export async function portalOnAlertsSheetOpened() {
   await portalRefreshMandatoryAlertsSettingsUi();
   if (
     typeof Notification !== "undefined" &&
     Notification.permission === "granted" &&
-    typeof window.portalRegisterPushAfterGrant === "function"
+    typeof window.portalEnsureWebPushSubscription === "function"
   ) {
-    void window.portalRegisterPushAfterGrant(
-      document.getElementById("portalNotifyStatus")
-    ).then(function () {
-      if (typeof window.portalRefreshAlertsNotifyUi === "function") {
-        window.portalRefreshAlertsNotifyUi();
-      }
-    });
+    void window.portalEnsureWebPushSubscription();
   }
 }
 
