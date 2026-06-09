@@ -1,6 +1,5 @@
 /**
- * Settings sheet — one tap turns on portal features (staff / lead).
- * Push register runs silently; no Safari/VAPID copy in the UI.
+ * Settings sheet — two buttons: portal features + voice typing (staff / lead).
  */
 (function (global) {
   "use strict";
@@ -43,6 +42,9 @@
     }
     if (typeof global.portalRefreshEnableAllUi === "function") {
       global.portalRefreshEnableAllUi();
+    }
+    if (typeof global.portalRefreshMicrophoneUi === "function") {
+      global.portalRefreshMicrophoneUi();
     }
     silentPushRegister();
   }

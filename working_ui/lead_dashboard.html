@@ -14,7 +14,7 @@
   -->
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
   <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-one-btn"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-two-btn"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -730,7 +730,6 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p id="portalAlertsSheetIntro">One tap on this device — alerts and live map when your rota needs it.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
@@ -738,14 +737,14 @@
           <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On</p>
         </div>
         <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
-          <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite" hidden></p>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on portal features</button>
         </div>
+        <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
+          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow voice typing</button>
+          <p id="portalMicStatus" class="portal-alerts-status" hidden aria-live="polite"></p>
+        </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
-          <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
-            <p id="portalMicStatus"></p>
-            <button type="button" id="portalMicEnableBtn"></button>
-          </div>
+          <p id="portalEnableAllStatus" hidden></p>
           <div class="portal-alerts-block" id="portalPushNotifyBlock">
             <p id="portalNotifyStatus"></p>
             <p id="portalNotifyVapidHint" hidden></p>

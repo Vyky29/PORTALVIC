@@ -637,8 +637,8 @@ export function requestNotificationPermission() {
 }
 
 /**
- * Default portal setup in one in-app tap: alerts and location when your role needs it.
- * Camera and microphone are requested only when a feature needs them (calls, photos, voice).
+ * Default portal setup: alerts, camera, call mic, and location when the rota needs it.
+ * Voice-to-text uses the separate mic button in Settings.
  * @returns {Promise<Record<string, string>>}
  */
 export async function requestDefaultPortalPermissions() {
@@ -661,7 +661,20 @@ export async function requestDefaultPortalPermissions() {
     results.notifications = "granted";
   }
 
-  results.camera = portalCameraPermissionGranted() ? "granted" : "deferred";
+  const camRequired = portalCameraRequiredForSetup();
+  if (camRequired && !portalCameraPermissionGranted()) {
+    results.camera = await requestCameraPermission();
+  } else if (portalCameraPermissionGranted()) {
+    results.camera = "granted";
+  } else {
+    results.camera = "not_required";
+  }
+
+  if (!portalMicrophonePermissionGranted()) {
+    results.microphone = await requestMicrophonePermission();
+  } else {
+    results.microphone = "granted";
+  }
 
   const locRequired = portalLocationRequiredForSetup();
   if (locRequired && !portalLocationPermissionGranted()) {
@@ -722,8 +735,11 @@ export function portalLocationRequiredForSetup() {
 
 export function portalMandatoryAlertsSettingsComplete() {
   const locRequired = portalLocationRequiredForSetup();
+  const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
-  return portalNotificationsGranted() && locOk;
+  const camOk = !camRequired || portalCameraPermissionGranted();
+  const micOk = portalMicrophonePermissionGranted();
+  return portalNotificationsGranted() && locOk && camOk && micOk;
 }
 
 export function portalSyncAlertsSettingsChrome() {
@@ -732,13 +748,15 @@ export function portalSyncAlertsSettingsChrome() {
   const sub = btn.querySelector(".menu-btn-sub");
   const notifyOk = portalNotificationsGranted();
   const locRequired = portalLocationRequiredForSetup();
+  const camRequired = portalCameraRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
-  const incomplete = !notifyOk || !locOk;
+  const camOk = !camRequired || portalCameraPermissionGranted();
+  const micOk = portalMicrophonePermissionGranted();
+  const incomplete = !notifyOk || !locOk || !camOk || !micOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
-    if (!notifyOk) sub.textContent = "Tap once for portal features";
-    else sub.textContent = "Location needed for live map";
+    sub.textContent = "Tap once for portal features";
   } else {
     sub.textContent = "Portal features on";
   }
@@ -751,34 +769,22 @@ export function portalRefreshMicrophoneUi() {
   portalRefreshMicrophoneHint();
   const statusEl = document.getElementById("portalMicStatus");
   const btn = document.getElementById("portalMicEnableBtn");
-  if (!statusEl) return;
+  const block = document.getElementById("portalVoiceFeedbackBlock");
+  if (!btn) return;
+  if (statusEl) statusEl.textContent = "";
   const st = _micState === "unknown" ? "prompt" : _micState;
   if (st === "unsupported") {
-    statusEl.textContent = "Not supported on this browser.";
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Not supported";
-    }
-  } else if (st === "granted") {
-    statusEl.textContent = "On — voice-to-text ready on forms.";
-    if (btn) {
-      btn.textContent = "Microphone on";
-      btn.disabled = true;
-    }
-  } else if (st === "denied") {
-    statusEl.textContent = "Blocked — allow microphone for this site in browser settings.";
-    if (btn) {
-      btn.textContent = "Open browser settings";
-      btn.disabled = false;
-    }
-  } else {
-    statusEl.textContent = "Off — optional voice-to-text for typing fields.";
-    if (btn) {
-      btn.textContent = "Allow microphone";
-      btn.disabled = false;
-    }
+    if (block) block.hidden = true;
+    return;
   }
-  portalRefreshEnableAllUi();
+  if (block) block.hidden = false;
+  if (st === "granted") {
+    btn.textContent = "Voice typing on";
+    btn.disabled = true;
+  } else {
+    btn.textContent = "Allow voice typing";
+    btn.disabled = false;
+  }
   portalSyncAlertsSettingsChrome();
 }
 
@@ -1059,12 +1065,19 @@ export function bindPortalLocationPermissionUi() {
       (e) => {
         const t =
           e.target && e.target.closest ? e.target.closest("#portalMicEnableBtn") : null;
-        if (!t || !alertsSheet.contains(t)) return;
+        if (!t || !alertsSheet.contains(t) || t.disabled) return;
         e.preventDefault();
-        void requestMicrophonePermission().then(() => {
+        const prev = t.textContent;
+        t.disabled = true;
+        t.textContent = "Allow when asked…";
+        void requestMicrophonePermission().finally(() => {
           portalRefreshMicrophoneUi();
           portalRefreshEnableAllUi();
           portalSyncAlertsSettingsChrome();
+          if (!portalMicrophonePermissionGranted()) {
+            t.disabled = false;
+            t.textContent = prev;
+          }
         });
       },
       true
