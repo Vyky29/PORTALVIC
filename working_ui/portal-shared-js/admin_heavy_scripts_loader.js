@@ -7,7 +7,7 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260609-feedback-real",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo",
       "/portal/clients_info_embed.js?v=20260606-ayden-info-trim",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
       "/portal/portal-roster-rows-merge.js?v=20260609-kirushy-rest-term",

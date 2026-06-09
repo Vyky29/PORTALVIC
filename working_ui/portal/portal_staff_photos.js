@@ -93,7 +93,7 @@
   }
 
   /** No static file on disk — use initials only (avoids console 404 spam). */
-  var NO_STATIC_PHOTO = { lulia: true };
+  var NO_STATIC_PHOTO = {};
 
   function resolveStaffPhotoCandidates(nameOrKey, opts) {
     opts = opts || {};
@@ -118,6 +118,9 @@
       } catch (_) {}
       if (hadProfileFile) return;
       if (!key) return;
+      if (key === "lulia") {
+        pushCandidate(urls, base + "luliya.png");
+      }
       pushCandidate(urls, base + key + ".png");
       pushCandidate(urls, base + key + ".jpg");
     });

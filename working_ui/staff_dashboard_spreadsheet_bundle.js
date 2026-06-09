@@ -170,8 +170,8 @@
     },
     "lulia": {
       "staffId": "lulia",
-      "staffName": "Lulia",
-      "avatarFile": "portal/staff_photos/lulia.jpg",
+      "staffName": "Luliya",
+      "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
