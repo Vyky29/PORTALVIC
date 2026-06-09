@@ -77,6 +77,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-05-18",
       "2026-05-19",
       "2026-05-20"
+    ],
+    "dan": [
+      "2026-06-07"
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {

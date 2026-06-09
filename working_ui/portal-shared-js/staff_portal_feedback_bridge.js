@@ -409,9 +409,58 @@
     return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
   }
 
+  function normalizeHmToken(v) {
+    const m = String(v || "")
+      .trim()
+      .match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return "";
+    return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+  }
+
+  function portalRowTimeTokenFromKey(pk) {
+    const parts = String(pk || "").split("|");
+    for (let i = 0; i < parts.length; i++) {
+      const n = normalizeHmToken(parts[i]);
+      if (n) return n;
+    }
+    return "";
+  }
+
+  /** Sunday SwimFarm: one aquatic OR multi submission covers the paired slot (same client + start). */
+  function isSundaySwimfarmAquaticOrMultiSession(s, iso) {
+    if (!s) return false;
+    const day = String(iso || "")
+      .trim()
+      .substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+    const dow =
+      String(s.day || "").trim() ||
+      new Date(day + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" });
+    if (dow !== "Sunday") return false;
+    if (String(s.venue || "").trim().toLowerCase() !== "swimfarm") return false;
+    const act = String((s.activity || s.rosterService || s.service) || "").toLowerCase();
+    return /aquatic|multi[-\s]?activity/.test(act);
+  }
+
+  function submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById) {
+    if (!isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
+    const wantStart = normalizeHmToken(s.start);
+    if (!wantStart) return false;
+    return submittedRowsForStaffDate(iso, staffId).some(function (r) {
+      if (submittedRowMarksAbsent(r)) return false;
+      if (!submittedRowCoversRosterSession(r, s, clientNotesById)) return false;
+      const pk = String((r.portalSessionKey || r.portal_session_key) || "").trim();
+      const rStart = portalRowTimeTokenFromKey(pk);
+      return !rStart || rStart === wantStart;
+    });
+  }
+
   function staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById) {
     const clientKey = rosterKeyForSession(s, clientNotesById);
     if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+      return true;
+    }
+    if (submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById)) {
       return true;
     }
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
@@ -652,6 +701,7 @@
 
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
+    if (rec.feedbackDone) return true;
     if (rec.absent || rec.cancelled) return true;
     if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
     if (staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById)) return true;

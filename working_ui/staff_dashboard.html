@@ -1019,12 +1019,12 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260609-feedback-real"></script>
+  <script src="/portal/term_from_timetable.js?v=20260609-dan-sunday-green"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-photo-png-fix"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260608-june8-partial"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-tinashe-shared-feedback"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-dan-sunday-feedback"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1606,6 +1606,15 @@
             if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)){
               return { feedbackDone: true, incident: false, absent: false, cancelled: false };
             }
+            let staffStatusOnDay = 0;
+            if(src && Array.isArray(src.rows)){
+              src.rows.forEach(function(st){
+                if(String(st.date || '').trim().substring(0, 10) !== iso) return;
+                if(!portalStaffOwnsFeedbackStatusRow(sid, st)) return;
+                staffStatusOnDay++;
+              });
+            }
+            if(!staffStatusOnDay) return null;
             return { feedbackDone: false, incident: false, absent: false, cancelled: false };
           }
           return null;
@@ -2778,12 +2787,18 @@
     }
     /** Export bundle overrides stale localStorage when support vs instructor units differ. */
     function getEffectiveSessionReviewRecord(item){
-      const mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
-      if(!item || !item.sessionKey) return mem;
+      if(!item || !item.sessionKey){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      }
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      if(!iso || !staffId) return mem;
+      const dayWord = iso ? new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '';
       const baseS = item.__portalBaseSession || null;
+      let mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      if(baseS && iso && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
+        mem = portalGetMergedSessionReviewRecordForRoster(baseS, dayWord, iso);
+      }
+      if(!iso || !staffId) return mem;
       if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
         const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffId);
         if(ex){
@@ -2818,7 +2833,7 @@
         const floorIso = portalMachineRosterFeedbackFloorIso();
         if(iso >= floorIso && !portalStaffInGhostView()){
           return {
-            feedbackDone: false,
+            feedbackDone: !!mem.feedbackDone,
             incident: !!mem.incident,
             absent: !!mem.absent,
             cancelled: !!mem.cancelled
