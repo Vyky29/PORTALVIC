@@ -16,6 +16,8 @@
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "youssef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "javiermarquez") return "javier";
+    if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     return k;
   }
 
@@ -28,7 +30,11 @@
       const p = String(parts[i] || "").trim().toLowerCase();
       if (!p) continue;
       const first = canonicalStaffRosterKey((p.split(/\s+/)[0] || "").trim());
-      if (canonicalStaffRosterKey(p) === sid || first === sid) return true;
+      const partKey = canonicalStaffRosterKey(p);
+      /* CEO javi (Arranz) ≠ roster instructor JAVIER (Marquez). */
+      if (sid === "javi" && (first === "javier" || partKey === "javier")) continue;
+      if (sid === "javier" && (first === "javi" || partKey === "javi")) continue;
+      if (partKey === sid || first === sid) return true;
     }
     return false;
   }
@@ -160,6 +166,28 @@
     return act.indexOf("bespoke") >= 0;
   }
 
+  /** 2:1 / 3:1 Bespoke SwimFarm Hub — one feedback covers all co-instructors (e.g. Tinashe). */
+  function isBespokeSharedRosterSession(s) {
+    if (!isBespokeRosterSession(s)) return false;
+    if (String((s && s.venue) || "").trim().toLowerCase() !== "swimfarm") return false;
+    const instBlob = String((s && (s.instructors || s.staffNames)) || "").trim();
+    if (instBlob) {
+      const parts = instBlob.split(/[,/&+]+|\s+and\s+/gi).filter(function (p) {
+        return String(p || "").trim();
+      });
+      if (parts.length >= 2) return true;
+    }
+    const cid = slug(String((s && s.clientId) || ""));
+    return cid === "tinashe";
+  }
+
+  function isBespokeSharedStatusRow(st) {
+    if (!st) return false;
+    const u = String(st.feedbackUnitKey || "");
+    if (u.indexOf("bespoke_shared") >= 0) return true;
+    return isBespokeStatusRow(st) && isBespokeSharedRosterSession({ service: st.service, venue: st.venue, clientId: st.client || st.clientName, instructors: st.instructor });
+  }
+
   function submittedRowIsBespoke(r) {
     if (serviceKindFromLabel(r && r.service) === "bespoke") return true;
     const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").toLowerCase();
@@ -205,6 +233,22 @@
     return "";
   }
 
+  function portalKeyTimeToken(key) {
+    const parts = String(key || "")
+      .split("|")
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    for (let i = 0; i < parts.length; i++) {
+      const m = parts[i].match(/^(\d{1,2}):(\d{2})$/);
+      if (m) {
+        return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+      }
+    }
+    return "";
+  }
+
   function portalKeyAreaToken(key) {
     const parts = String(key || "")
       .split("|")
@@ -213,6 +257,15 @@
       })
       .filter(Boolean);
     if (parts.length < 4) return "";
+    /* date|client|HH:mm|service|area|instructor — last segment is instructor, not area */
+    if (
+      parts.length >= 6 &&
+      /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) &&
+      /^\d{1,2}:\d{2}$/.test(parts[2]) &&
+      /multi|climb|aquatic|bespoke|day_centre|swim/.test(parts[3])
+    ) {
+      return parts[4] || "";
+    }
     const last = parts[parts.length - 1];
     if (last === "day_centre") return last;
     if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
@@ -225,15 +278,49 @@
     const aa = portalKeyAreaToken(a);
     const bb = portalKeyAreaToken(b);
     if (!aa && !bb) return true;
-    if (!aa || !bb) return false;
-    if (aa === bb) return true;
-    if (
-      (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
-      (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
-    ) {
+    if (aa && bb) {
+      if (aa === bb) return true;
+      if (
+        (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
+        (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
+      ) {
+        return true;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function rosterSessionStartHm(s) {
+    return portalKeyTimeToken(String(s && s.start != null ? s.start : ""));
+  }
+
+  /** Match status export row to one roster session (client + slot time + service), not every row that day. */
+  function statusRowMatchesRosterSession(st, s, clientNotesById) {
+    if (!clientMatch(st, s, clientNotesById)) return false;
+    if (isBespokeSharedStatusRow(st) || isBespokeSharedRosterSession(s)) {
+      const stKind = serviceKindFromLabel(st.service);
+      const act = String(
+        (s && (s.activity || s.rosterService || s.service)) || ""
+      )
+        .trim()
+        .toLowerCase();
+      if (stKind === "bespoke" && act.indexOf("bespoke") < 0) return false;
       return true;
     }
-    return false;
+    const rowTime = portalKeyTimeToken(st.feedbackUnitKey);
+    const rosterTime = rosterSessionStartHm(s);
+    if (rowTime && rosterTime && rowTime !== rosterTime) return false;
+    const stKind = serviceKindFromLabel(st.service);
+    const act = String(
+      (s && (s.activity || s.rosterService || s.service)) || ""
+    )
+      .trim()
+      .toLowerCase();
+    if (stKind === "climbing" && act.indexOf("climb") < 0) return false;
+    if (stKind === "multi_activity" && !/multi[-\s]?activity/.test(act)) return false;
+    if (stKind === "bespoke" && act.indexOf("bespoke") < 0) return false;
+    return true;
   }
 
   function submittedRowMatchesStatusUnit(r, st) {
@@ -351,6 +438,15 @@
     if (isDayCentreStatusRow(st)) {
       return submittedRowsForDateAll(iso).some(function (r) {
         return submittedRowMatchesStatusClient(r, st) && !submittedRowMarksAbsent(r);
+      });
+    }
+    if (isBespokeSharedStatusRow(st)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          submittedRowMatchesStatusClient(r, st) &&
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsBespoke(r)
+        );
       });
     }
     if (isBespokeStatusRow(st)) {
@@ -540,7 +636,11 @@
 
   function staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById) {
     const clientKey = rosterKeyForSession(s, clientNotesById);
-    if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+    if (
+      (isBespokeSharedRosterSession(s) || isBespokeRosterSession(s)) &&
+      clientKey &&
+      bespokeClientResolved(iso, clientKey)
+    ) {
       return true;
     }
     if (submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById)) {
@@ -699,6 +799,7 @@
     }
     if (status.length) {
       const dayCentreDone = Object.create(null);
+      const bespokeSharedDone = Object.create(null);
       const mergeDone = Object.create(null);
       let unresolved = 0;
       status.forEach(function (st) {
@@ -716,6 +817,14 @@
           if (ck && dayCentreDone[ck]) return;
           if (ck && dayCentreClientResolved(iso, staffId, ck)) {
             dayCentreDone[ck] = true;
+            return;
+          }
+        }
+        if (isBespokeSharedStatusRow(st)) {
+          const ck = statusClientSlug(st);
+          if (ck && bespokeSharedDone[ck]) return;
+          if (ck && bespokeClientResolved(iso, ck)) {
+            bespokeSharedDone[ck] = true;
             return;
           }
         }
@@ -796,12 +905,15 @@
     ) {
       return true;
     }
+    if (isBespokeSharedRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+      return true;
+    }
     if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
       return true;
     }
     const owned = statusRowsForStaffDate(iso, staffId);
     const matchingOwned = owned.filter(function (st) {
-      return clientMatch(st, s, clientNotesById);
+      return statusRowMatchesRosterSession(st, s, clientNotesById);
     });
     if (
       matchingOwned.some(function (st) {
@@ -905,6 +1017,7 @@
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     submittedRowsForDateAll: submittedRowsForDateAll,
     statusSlotResolved: statusSlotResolved,
+    statusRowMatchesRosterSession: statusRowMatchesRosterSession,
     submittedCoversStatusRow: submittedCoversStatusRow,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,

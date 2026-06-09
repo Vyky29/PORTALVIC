@@ -1,15 +1,19 @@
 /**
  * Username → email for Supabase signInWithPassword (resolveDemoEmail for auth-handler).
  *
- * Executives: victor@, javier@, raul@, sevitha@ (Auth users).
+ * Executives: victor@, javi@ (Javi Arranz CEO), raul@, sevitha@ (Auth users).
+ * javier@ → login alias for javi@ (same CEO Auth user; not staff Javier Marquez).
  * info@ → login alias for Sevitha (same Auth as sevitha@).
  * admin@ → system From address only (no portal login).
+ *
+ * Staff roster keys: javi = Javi Arranz (CEO), javier = Javier Marquez (swimming).
  */
 
-/** Canonical Auth emails for CEO + admin (one Supabase user each). */
+/** Canonical Auth emails for CEO + admin (one Supabase user each). CEO Auth email may be javier@; staff key is javi. */
 export const PORTAL_EXECUTIVE_AUTH_EMAILS = [
   "victor@clubsensational.org",
   "javier@clubsensational.org",
+  "javi@clubsensational.org",
   "raul@clubsensational.org",
   "sevitha@clubsensational.org",
 ];
@@ -54,7 +58,7 @@ export function resolveCorporateAuthEmail(rawEmail) {
   return PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES[lower] || lower;
 }
 
-/** First-name login for executives (before Javier→stf010 swimming collision). */
+/** First-name login for executives (Javi = CEO Arranz; Javier = staff Marquez via STAFF_USERNAME_TO_EMAIL). */
 export const PORTAL_EXECUTIVE_LOGIN_NAMES = {
   victor: "victor@clubsensational.org",
   javi: "javier@clubsensational.org",
@@ -75,6 +79,7 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Giuseppe: "stf008@staff.import.pending",
   Godsway: "stf009@staff.import.pending",
   Javier: "stf010@staff.import.pending",
+  "Javier Marquez": "stf010@staff.import.pending",
   Aurora: "stf011@staff.import.pending",
   "Aurora Garcia": "stf011@staff.import.pending",
   Michelle: "michelle@youtimecounselling.com",
@@ -88,6 +93,8 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Lulia: "stf021@staff.import.pending",
   Andres: "stf022@staff.import.pending",
   Javi: "javier@clubsensational.org",
+  "Javi Arranz": "javier@clubsensational.org",
+  "Javi Arranz Escorial": "javier@clubsensational.org",
   Raul: "raul@clubsensational.org",
   Sevitha: "sevitha@clubsensational.org",
   Teflon: "stf020@staff.import.pending",
@@ -147,6 +154,7 @@ const PORTAL_LOGIN_MAP_PROTECTED_KEYS = new Set([
   "Sevitha",
   "Info",
   "victor@clubsensational.org",
+  "javi@clubsensational.org",
   "javier@clubsensational.org",
   "raul@clubsensational.org",
   "sevitha@clubsensational.org",
@@ -312,6 +320,8 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "luliya") return "lulia";
   if (k === "aida") return "lulia";
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+  if (k === "javiermarquez") return "javier";
+  if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

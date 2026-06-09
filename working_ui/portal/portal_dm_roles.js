@@ -4,7 +4,7 @@
 (function (global) {
   "use strict";
 
-  var DIRECTOR_FIRST_KEYS = { raul: true, victor: true, javier: true, javi: true };
+  var DIRECTOR_FIRST_KEYS = { raul: true, victor: true, javi: true };
   var DIRECTOR_SURNAME_KEYS = { arranz: true, palan: true };
 
   function normKey(v) {
@@ -38,19 +38,14 @@
     var ar = String(row.app_role || "").toLowerCase();
     if (ar === "staff") return false;
     var p = profileNameParts(row);
-    if (p.username === "raul" || p.username === "victor") return true;
+    if (p.username === "raul" || p.username === "victor" || p.username === "javi") return true;
+    if (p.username === "javier") return false;
     if (p.username.indexOf("palan") >= 0) return true;
-    if (p.username === "javi" || p.username === "javier") {
-      return (
-        DIRECTOR_SURNAME_KEYS[p.last] ||
-        p.full.indexOf("arranz") >= 0 ||
-        p.full.indexOf("palan") >= 0
-      );
-    }
+    if (p.full.indexOf("marquez") >= 0 && p.first === "javier") return false;
     if (p.full.indexOf("palan") >= 0 || p.full.indexOf("arranz") >= 0) return true;
-    if (p.first === "raul" || p.first === "victor") return true;
+    if (p.first === "raul" || p.first === "victor" || p.first === "javi") return true;
     if (
-      (p.first === "javier" || p.first === "javi") &&
+      p.first === "javi" &&
       (DIRECTOR_SURNAME_KEYS[p.last] || p.full.indexOf("arranz") >= 0 || p.full.indexOf("palan") >= 0)
     ) {
       return true;

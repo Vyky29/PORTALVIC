@@ -49,6 +49,8 @@
     if (!k) return "";
     if (k === "luliya") return "lulia";
     if (k === "aida") return "lulia";
+    if (k === "javiermarquez") return "javier";
+    if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];
     if (alias) return alias;
     return k;
@@ -98,6 +100,27 @@
     if (app === "ceo" || app === "admin") return true;
     var pk = portalPrimaryStaffRosterKey(profile, authUser);
     return !!(pk && EXEC_OR_ADMIN_ROSTER_KEYS[pk]);
+  }
+
+  /** Ignore ?portalPreview=teflon when a real signed-in user is not the teflon demo account. */
+  function portalStaffShouldIgnoreTeflonPreview(profile, authUser) {
+    try {
+      var qs = new URLSearchParams(window.location.search || "");
+      if (String(qs.get("portalPreview") || "").trim().toLowerCase() !== "teflon") return false;
+      var pk = portalPrimaryStaffRosterKey(profile, authUser);
+      return !!pk && pk !== "teflon";
+    } catch (_ignore) {
+      return false;
+    }
+  }
+
+  function portalStaffClearTeflonPreviewFromUrl() {
+    try {
+      var u = new URL(window.location.href);
+      if (!u.searchParams.has("portalPreview")) return;
+      u.searchParams.delete("portalPreview");
+      window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+    } catch (_url) {}
   }
 
   function portalStaffRosterKeyCandidates(profile, authUser) {
@@ -210,4 +233,6 @@
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
   window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
   window.portalStaffIsExecOrAdminProfile = portalStaffIsExecOrAdminProfile;
+  window.portalStaffShouldIgnoreTeflonPreview = portalStaffShouldIgnoreTeflonPreview;
+  window.portalStaffClearTeflonPreviewFromUrl = portalStaffClearTeflonPreviewFromUrl;
 })();

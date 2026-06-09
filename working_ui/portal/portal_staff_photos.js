@@ -38,6 +38,8 @@
     carlosherrero: "carlos",
     bertatraperocasado: "berta",
     javiermarquez: "javier",
+    javiarranzescorial: "javi",
+    javiarranz: "javi",
     auroragarcia: "aurora",
     giuseppemorelli: "giuseppe",
     bismarkgyan: "bismark",

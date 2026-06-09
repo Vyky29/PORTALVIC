@@ -1,15 +1,19 @@
 /**
  * Username → email for Supabase signInWithPassword (resolveDemoEmail for auth-handler).
  *
- * Executives: victor@, javier@, raul@, sevitha@ (Auth users).
+ * Executives: victor@, javi@ (Javi Arranz CEO), raul@, sevitha@ (Auth users).
+ * javier@ → login alias for javi@ (same CEO Auth user; not staff Javier Marquez).
  * info@ → login alias for Sevitha (same Auth as sevitha@).
  * admin@ → system From address only (no portal login).
+ *
+ * Staff roster keys: javi = Javi Arranz (CEO), javier = Javier Marquez (swimming).
  */
 
-/** Canonical Auth emails for CEO + admin (one Supabase user each). */
+/** Canonical Auth emails for CEO + admin (one Supabase user each). CEO Auth email may be javier@; staff key is javi. */
 export const PORTAL_EXECUTIVE_AUTH_EMAILS = [
   "victor@clubsensational.org",
   "javier@clubsensational.org",
+  "javi@clubsensational.org",
   "raul@clubsensational.org",
   "sevitha@clubsensational.org",
 ];
@@ -54,7 +58,7 @@ export function resolveCorporateAuthEmail(rawEmail) {
   return PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES[lower] || lower;
 }
 
-/** First-name login for executives (before Javier→stf010 swimming collision). */
+/** First-name login for executives (Javi = CEO Arranz; Javier = staff Marquez via STAFF_USERNAME_TO_EMAIL). */
 export const PORTAL_EXECUTIVE_LOGIN_NAMES = {
   victor: "victor@clubsensational.org",
   javi: "javier@clubsensational.org",
@@ -75,6 +79,7 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Giuseppe: "stf008@staff.import.pending",
   Godsway: "stf009@staff.import.pending",
   Javier: "stf010@staff.import.pending",
+  "Javier Marquez": "stf010@staff.import.pending",
   Aurora: "stf011@staff.import.pending",
   "Aurora Garcia": "stf011@staff.import.pending",
   Michelle: "michelle@youtimecounselling.com",
@@ -87,16 +92,18 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Luliya: "stf021@staff.import.pending",
   Lulia: "stf021@staff.import.pending",
   Andres: "stf022@staff.import.pending",
-  Javi: "javier@clubsensational.org",
+  Javi: "javi@clubsensational.org",
+  "Javi Arranz": "javi@clubsensational.org",
+  "Javi Arranz Escorial": "javi@clubsensational.org",
   Raul: "raul@clubsensational.org",
   Sevitha: "sevitha@clubsensational.org",
   Teflon: "stf020@staff.import.pending",
   teflon: "stf020@staff.import.pending",
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
-  "javier@clubsensational.org": "javier@clubsensational.org",
-  "javi@clubsensational.org": "javier@clubsensational.org",
-  "javier@clbusensational.org": "javier@clubsensational.org",
+  "javi@clubsensational.org": "javi@clubsensational.org",
+  "javier@clubsensational.org": "javi@clubsensational.org",
+  "javier@clbusensational.org": "javi@clubsensational.org",
   "sevitha@clubsensational.org": "sevitha@clubsensational.org",
   "info@clubsensational.org": "sevitha@clubsensational.org",
 };
@@ -105,8 +112,8 @@ export const STAFF_USERNAME_TO_EMAIL = {
 export const PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY = {
   "victor@clubsensational.org": "victor",
   "raul@clubsensational.org": "raul",
-  "javier@clubsensational.org": "javi",
   "javi@clubsensational.org": "javi",
+  "javier@clubsensational.org": "javi",
   "javier@clbusensational.org": "javi",
   "sevitha@clubsensational.org": "sevitha",
   "info@clubsensational.org": "sevitha",
@@ -147,6 +154,7 @@ const PORTAL_LOGIN_MAP_PROTECTED_KEYS = new Set([
   "Sevitha",
   "Info",
   "victor@clubsensational.org",
+  "javi@clubsensational.org",
   "javier@clubsensational.org",
   "raul@clubsensational.org",
   "sevitha@clubsensational.org",
@@ -166,12 +174,40 @@ export function mergeStaffLoginEmailMap(extra) {
     }
     STAFF_USERNAME_TO_EMAIL[key] = email;
   }
+  PORTAL_REGISTERED_LOGIN_EMAILS = null;
   rebuildNormalizedLookup();
 }
 
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
-  "Name or email not recognised. Contact the office if you need help.";
+  "Name or email not recognised. Only club staff can use this portal — contact the office if you need access.";
+
+/** Cached set of Supabase Auth emails allowed to sign in (values from staff login map). */
+let PORTAL_REGISTERED_LOGIN_EMAILS = null;
+
+export function portalRegisteredLoginEmailsSet() {
+  if (PORTAL_REGISTERED_LOGIN_EMAILS) return PORTAL_REGISTERED_LOGIN_EMAILS;
+  const set = new Set();
+  for (const email of Object.values(STAFF_USERNAME_TO_EMAIL)) {
+    const resolved = resolveCorporateAuthEmail(String(email || "").trim());
+    if (resolved) set.add(resolved.toLowerCase());
+  }
+  for (const email of PORTAL_EXECUTIVE_AUTH_EMAILS) {
+    set.add(String(email || "").trim().toLowerCase());
+  }
+  for (const alias of Object.keys(PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES)) {
+    set.add(resolveCorporateAuthEmail(alias).toLowerCase());
+  }
+  PORTAL_REGISTERED_LOGIN_EMAILS = set;
+  return set;
+}
+
+/** True when this email is on the portal roster (before Supabase Auth is called). */
+export function portalIsRegisteredPortalLoginEmail(rawEmail) {
+  const lower = resolveCorporateAuthEmail(String(rawEmail || "").trim()).toLowerCase();
+  if (!lower) return false;
+  return portalRegisteredLoginEmailsSet().has(lower);
+}
 
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();
@@ -198,10 +234,11 @@ export function resolveDemoEmail(rawUsername) {
     if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[lower]) {
       return resolveCorporateAuthEmail(lower);
     }
-    if (lower.endsWith("@clubsensational.org") || lower.endsWith("@clbusensational.org")) {
-      return resolveCorporateAuthEmail(lower);
+    const resolved = resolveCorporateAuthEmail(lower);
+    if (portalIsRegisteredPortalLoginEmail(resolved)) {
+      return resolved;
     }
-    return lower;
+    return null;
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
@@ -283,6 +320,8 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "luliya") return "lulia";
   if (k === "aida") return "lulia";
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+  if (k === "javiermarquez") return "javier";
+  if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

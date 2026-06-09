@@ -16,6 +16,8 @@
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "youssef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "javiermarquez") return "javier";
+    if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     return k;
   }
 
@@ -28,7 +30,11 @@
       const p = String(parts[i] || "").trim().toLowerCase();
       if (!p) continue;
       const first = canonicalStaffRosterKey((p.split(/\s+/)[0] || "").trim());
-      if (canonicalStaffRosterKey(p) === sid || first === sid) return true;
+      const partKey = canonicalStaffRosterKey(p);
+      /* CEO javi (Arranz) ≠ roster instructor JAVIER (Marquez). */
+      if (sid === "javi" && (first === "javier" || partKey === "javier")) continue;
+      if (sid === "javier" && (first === "javi" || partKey === "javi")) continue;
+      if (partKey === sid || first === sid) return true;
     }
     return false;
   }
