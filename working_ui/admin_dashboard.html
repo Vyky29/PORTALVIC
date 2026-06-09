@@ -10610,7 +10610,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Participant:</strong> '+esc(slot.clientDisplay)+' <span class="muted">(slug '+esc(slot.clientSlug)+')</span></li>'+
         '<li><strong style="color:var(--ink)">Roster cell:</strong> '+esc(slot.rosterSheetLabel||'—')+' <span class="muted">(raw: '+esc(String(slot.status||'—'))+')</span></li>'+
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
-        '</ul></div>'+ovBlock+
+        '</ul><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" data-view-target="term_roster_edit">Edit pool / area (term slot)</button></p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<label class="muted" for="schedFormOvType" style="display:block;margin-top:10px">Action</label>'+
         '<select id="schedFormOvType" class="sel" style="max-width:100%">'+
@@ -13379,6 +13379,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           day: String(s.day || '').trim(),
           venue: String(s.venue || '').trim(),
           programme: prog,
+          rosterArea: String(s.rosterArea || '').trim(),
           startMin: sm,
           endMin: em,
           timeFallback: s.timeSlotLabel ? String(s.timeSlotLabel) : (String(s.start || '') + '–' + String(s.end || ''))
@@ -13411,15 +13412,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         for(i = 0; i < segs.length; i++){
           seg = segs[i];
           if(!Number.isFinite(seg.startMin) || !Number.isFinite(seg.endMin) || seg.endMin <= seg.startMin){
-            blocks.push({ day: seg.day, venue: seg.venue, programme: seg.programme, timeDisp: seg.timeFallback || '—' });
+            blocks.push({ day: seg.day, venue: seg.venue, programme: seg.programme, rosterArea: seg.rosterArea || '', timeDisp: seg.timeFallback || '—' });
             continue;
           }
           last = blocks[blocks.length - 1];
           if(last && Number.isFinite(last.startMin) && Number.isFinite(last.endMin) && seg.startMin <= last.endMin + 1){
             last.endMin = Math.max(last.endMin, seg.endMin);
+            if(!last.rosterArea && seg.rosterArea) last.rosterArea = seg.rosterArea;
             continue;
           }
-          blocks.push({ day: seg.day, venue: seg.venue, programme: seg.programme, startMin: seg.startMin, endMin: seg.endMin });
+          blocks.push({ day: seg.day, venue: seg.venue, programme: seg.programme, rosterArea: seg.rosterArea || '', startMin: seg.startMin, endMin: seg.endMin });
         }
         for(i = 0; i < blocks.length; i++){
           b = blocks[i];
@@ -13438,24 +13440,62 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return merged;
     }
+    /** Live portal_roster_rows bands (portal-only participants like new intakes). */
+    function paxPortalRosterAreaRowsForParticipant(P){
+      if(!P || !String(P.name || '').trim()) return [];
+      var cache = Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE) ? window.PORTAL_ROSTER_ROWS_CACHE : [];
+      if(!cache.length) return [];
+      var pname = String(P.name || '').trim();
+      var amb = adminPortalParticipantAmbiguityMap();
+      var out = [];
+      cache.forEach(function(r){
+        if(String(r.status || 'active') !== 'active') return;
+        var cn = String(r.client_name || '').trim();
+        if(!cn) return;
+        if(!adminPortalParticipantMatchesDisplayName(pname, cn, amb) && pname.toLowerCase() !== cn.toLowerCase()) return;
+        out.push({
+          day: String(r.day || '').trim(),
+          venue: String(r.venue || '').trim(),
+          programme: portalDisplayProgrammeFromSheet(String(r.service || '')),
+          timeDisp: String(r.time_slot || '').trim() || '—',
+          rosterArea: String(r.area || '').trim() || '—'
+        });
+      });
+      out.sort(function(a, b){
+        return c4kRosterSheetDowOrder(a.day) - c4kRosterSheetDowOrder(b.day)
+          || String(a.timeDisp || '').localeCompare(String(b.timeDisp || ''));
+      });
+      return out;
+    }
     /** Participant Services tab: merged roster services (no instructor column; first-name match unless ambiguous). */
     function paxContactsBookedServicesFromRosterHtml(P){
       if(!P || !String(P.name || '').trim()) return '<div class="card card-pad"><p class="muted" style="margin:0">No participant name to match roster.</p></div>';
-      if(!adminSpreadsheetAdapterAvailable()){
-        return '<div class="card card-pad"><p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">Load the roster bundle (<code>STAFF_DASHBOARD_SOURCE</code>) to list booked services for this child.</p></div>';
-      }
       var pname = String(P.name || '').trim();
-      var raw = paxPortalCollectRawMatchedBands(P);
-      if(!raw.length){
-        return '<div class="card card-pad"><p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">No booked roster rows match <strong>'+esc(pname)+'</strong> in the merged sheet.</p></div>';
+      var rows = [];
+      var fromPortalOnly = false;
+      if(adminSpreadsheetAdapterAvailable()){
+        var raw = paxPortalCollectRawMatchedBands(P);
+        rows = raw.length ? paxBookedServicesMergeBands(raw) : [];
       }
-      var rows = paxBookedServicesMergeBands(raw);
+      if(!rows.length){
+        rows = paxPortalRosterAreaRowsForParticipant(P);
+        fromPortalOnly = rows.length > 0;
+      }
+      if(!rows.length){
+        var emptyMsg = adminSpreadsheetAdapterAvailable()
+          ? ('No booked roster rows match <strong>'+esc(pname)+'</strong> in the merged sheet or live roster.')
+          : 'Load the roster bundle or open <strong>Scheduling</strong> once so live roster rows sync.';
+        return '<div class="card card-pad"><p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">'+emptyMsg+'</p></div>';
+      }
       var body = rows.map(function(r){
-        return '<tr><td class="muted" style="white-space:nowrap;min-width:0">'+esc(r.day)+'</td><td style="min-width:0;max-width:11rem;overflow-wrap:break-word">'+esc(r.venue)+'</td><td style="min-width:0;max-width:12rem;overflow-wrap:break-word">'+esc(r.programme)+'</td><td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">'+esc(r.timeDisp || '—')+'</td></tr>';
+        var area = String(r.rosterArea || '').trim() || '—';
+        return '<tr><td class="muted" style="white-space:nowrap;min-width:0">'+esc(r.day)+'</td><td style="min-width:0;max-width:11rem;overflow-wrap:break-word">'+esc(r.venue)+'</td><td style="min-width:0;max-width:12rem;overflow-wrap:break-word">'+esc(r.programme)+'</td><td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">'+esc(r.timeDisp || '—')+'</td><td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-weight:600">'+esc(area)+'</td></tr>';
       }).join('');
+      var editHint = '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">Pool / area is what staff see as the pool-room icon on the tablet (e.g. <strong>Lane (SE)</strong>, <strong>Teaching Pool</strong>). Change it under <button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Edit term slot</button> → field <strong>Pool / area</strong>, then save.'+(fromPortalOnly ? ' Rows below are from the live portal roster (not the spreadsheet export yet).' : '')+'</p>';
       return (
         '<div class="card"><div class="card-h"><h3 style="margin:0">Booked services</h3><span class="chip chip--info" title="Merged service lines (same window + venue + programme)">'+esc(String(rows.length))+'</span></div>'+
-        '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Day</th><th>Venue</th><th>Service</th><th>Time (sheet)</th></tr></thead><tbody>'+body+'</tbody></table></div></div>'
+        '<div class="card-pad" style="padding-bottom:0">'+editHint+'</div>'+
+        '<div class="card-pad" style="overflow:auto;padding-top:8px"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Day</th><th>Venue</th><th>Service</th><th>Time</th><th>Pool / area</th></tr></thead><tbody>'+body+'</tbody></table></div></div>'
       );
     }
     function buildC4kParticipantWorkspaceHtml(P){
