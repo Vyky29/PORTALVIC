@@ -476,8 +476,91 @@
   }
 
   /** Status row done in overview OR covered by a matching instructor's submitted feedback. */
+  function normTimeSlotLabel(v) {
+    return String(v || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function statusRowClientLabel(st) {
+    return String(st && (st.client || st.clientName) ? st.client || st.clientName : "").trim();
+  }
+
+  function portalScheduleOverridesAll() {
+    try {
+      return Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+        ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function portalRosterRowsCacheAll() {
+    try {
+      return Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE)
+        ? window.PORTAL_ROSTER_ROWS_CACHE
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /** Admin term cancel / no-participant: do not count static export row as pending feedback. */
+  function statusRowTermCancelledOnPortalRoster(iso, st) {
+    const cache = portalRosterRowsCacheAll();
+    if (!cache.length || !st) return false;
+    const client = statusRowClientLabel(st).toLowerCase();
+    const slot = normTimeSlotLabel(st.timeSlot || st.time_slot || "");
+    const day = String(st.weekday || "")
+      .trim()
+      .toLowerCase();
+    if (!client || !slot) return false;
+    for (let i = 0; i < cache.length; i++) {
+      const r = cache[i];
+      if (String(r.status || "") !== "cancelled") continue;
+      if (String(r.client_name || "").trim().toLowerCase() !== client) continue;
+      if (normTimeSlotLabel(r.time_slot) !== slot) continue;
+      const rowIso = String(r.session_date || "").trim().slice(0, 10);
+      if (rowIso) {
+        if (rowIso === iso) return true;
+        continue;
+      }
+      if (day && String(r.day || "").trim().toLowerCase() === day) return true;
+    }
+    return false;
+  }
+
+  function statusRowTermCancelledOnScheduleOverride(iso, st) {
+    const rows = portalScheduleOverridesAll();
+    if (!rows.length || !st) return false;
+    const clientSlug = slug(statusRowClientLabel(st));
+    if (!clientSlug || !iso) return false;
+    for (let i = 0; i < rows.length; i++) {
+      const ov = rows[i];
+      if (String(ov.status || "active") !== "active") continue;
+      if (String(ov.session_date || "").trim().slice(0, 10) !== iso) continue;
+      if (String(ov.anchor_client_id || "").trim().toLowerCase() !== clientSlug) continue;
+      const t = String(ov.override_type || "").trim();
+      if (t === "slot_close" || t === "client_cancelled") return true;
+      if (t === "slot_clear_client" && ov.payload && ov.payload.cancelled_by_admin) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function statusRowTermCancelledOnPortal(iso, st) {
+    return (
+      statusRowTermCancelledOnPortalRoster(iso, st) ||
+      statusRowTermCancelledOnScheduleOverride(iso, st)
+    );
+  }
+
   function statusSlotResolved(iso, st) {
     if (!st) return false;
+    if (statusRowTermCancelledOnPortal(iso, st)) return true;
     if (statusOverviewIsAbsent(st)) return true;
     if (String(st.feedbackMergeGroup || "").trim()) {
       if (submittedCoversMergeGroup(iso, st)) return true;

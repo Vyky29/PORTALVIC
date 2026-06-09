@@ -1024,9 +1024,9 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-photo-png-fix"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260608-june8-partial"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-dan-sunday-feedback"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-kirushy-term-cancel"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260609-kirushy-no-participant"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260606-ayden-info-trim"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
@@ -15331,6 +15331,9 @@
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         dashboardData.week = buildWeekRows(sid);
         if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
+        if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") {
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }
         if (typeof renderToday === "function") renderToday();
         if (typeof renderLists === "function") renderLists();
         if (typeof renderMiniCounts === "function") renderMiniCounts();

@@ -43,6 +43,23 @@
     return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
   }
 
+  function normInstructors(v) {
+    return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function isNoClientName(name) {
+    var n = String(name || "").trim().toLowerCase();
+    return !n || n === "no client" || n === "noclient" || n === "no_client";
+  }
+
+  function openedSlotKey(iso, row) {
+    return [
+      normIso(iso),
+      normTimeSlot(row.time_slot),
+      normInstructors(row.instructors),
+    ].join("|");
+  }
+
   /** From this ISO, machine/bundle dated rows keep their instructors; DB templates may not replace them. */
   function summerRosterFloorIso() {
     try {
@@ -104,15 +121,38 @@
 
     var out = [];
     var seenDated = Object.create(null);
+    var openedSlots = Object.create(null);
+
+    function rememberOpenedSlot(iso, row, dayLabel) {
+      if (!iso || !row || !row.time_slot) return;
+      openedSlots[openedSlotKey(iso, row)] = {
+        session_date: iso,
+        day: String(row.day || dayLabel || weekdayLongFromIso(iso) || "").trim(),
+        time_slot: row.time_slot,
+        instructors: row.instructors,
+        service: row.service,
+        area: row.area,
+        venue: row.venue,
+      };
+    }
 
     base.forEach(function (r) {
       var iso = normIso(r.session_date);
       var sk = datedSlotKey(r);
-      if (cancelledDated[sk]) return;
       var dayLabel = String(r.day || weekdayLongFromIso(iso) || "").toLowerCase();
-      if (iso && cancelledClientDay[iso + "|" + String(r.client_name || "").toLowerCase() + "|" + dayLabel]) return;
+      if (cancelledDated[sk]) {
+        rememberOpenedSlot(iso, r, dayLabel);
+        return;
+      }
+      if (iso && cancelledClientDay[iso + "|" + String(r.client_name || "").toLowerCase() + "|" + dayLabel]) {
+        rememberOpenedSlot(iso, r, dayLabel);
+        return;
+      }
       var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
-      if (!dated[sk] && cancelledTemplates[tk]) return;
+      if (!dated[sk] && cancelledTemplates[tk]) {
+        rememberOpenedSlot(iso, r, dayLabel);
+        return;
+      }
       if (dated[sk]) {
         out.push(Object.assign({}, r, dated[sk], { session_date: iso, day: r.day || dated[sk].day }));
         seenDated[sk] = true;
@@ -140,6 +180,34 @@
     Object.keys(dated).forEach(function (sk) {
       if (seenDated[sk]) return;
       out.push(dated[sk]);
+      seenDated[sk] = true;
+    });
+
+    Object.keys(templates).forEach(function (tk) {
+      var tpl = templates[tk];
+      if (!tpl || !isNoClientName(tpl.client_name)) return;
+      var tplParts = tk.split("|");
+      var tplDay = tplParts[0] || "";
+      var tplSlot = tplParts[2] || "";
+      Object.keys(openedSlots).forEach(function (ok) {
+        var slot = openedSlots[ok];
+        if (!slot || !slot.session_date) return;
+        if (String(slot.day || "").toLowerCase() !== tplDay) return;
+        if (normTimeSlot(slot.time_slot) !== tplSlot) return;
+        var skNoClient = datedSlotKey({
+          session_date: slot.session_date,
+          client_name: tpl.client_name,
+          time_slot: slot.time_slot,
+        });
+        if (seenDated[skNoClient]) return;
+        out.push(
+          Object.assign({}, slot, tpl, {
+            session_date: slot.session_date,
+            day: slot.day,
+          }),
+        );
+        seenDated[skNoClient] = true;
+      });
     });
 
     return out.sort(function (a, b) {
