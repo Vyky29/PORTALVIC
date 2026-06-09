@@ -244,6 +244,13 @@
   box-shadow:0 1px 0 rgba(255,255,255,.8);
   overflow:hidden;
 }
+#internalChatSheet.sheet--portal-chat-inbox[data-portal-chat-shell="simplified"] .portal-dm-lead-inbox-chrome,
+#internalChatSheet.sheet--portal-chat-inbox:has(.portal-cs-cliq-inbox-accordion) .portal-dm-lead-inbox-chrome,
+#internalChatSheet.sheet--portal-chat-inbox:has(.portal-cs-cliq-inbox-accordion) #internalChatLeadInboxChrome{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-inbox-chrome--tabs-only{
   gap:0;
   padding:8px 14px 6px;
@@ -497,8 +504,17 @@
   color:#c2410c;
 }
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--admin{
-  background:#eef6fb;
+  background:linear-gradient(180deg,#f2f7fb,#e5edf5);
   color:#1d6f96;
+  padding:2px;
+  overflow:hidden;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__brand-logo{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  object-position:center;
 }
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--lead{
   background:#f3ecff;
@@ -594,6 +610,11 @@
   background:#f5f3ff;
   color:#5b21b6;
   border-color:rgba(91,33,182,.18);
+}
+#internalChatSheet .portal-dm-role-chip--leads{
+  background:#ede9fe;
+  color:#6d28d9;
+  border-color:rgba(109,40,217,.2);
 }
 #internalChatSheet .portal-dm-role-chip--swimming{
   background:#e0f2fe;

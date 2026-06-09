@@ -465,12 +465,44 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
 }
 
 #csCliqRoot #csCliqInboxCategoryBar.portal-cs-cliq-inbox-lane-nav {
-  display: flex;
-  grid-template-columns: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding: 10px 12px 8px;
   border-bottom: 1px solid var(--portal-chat-line);
   background: linear-gradient(180deg, #fafcff, #fff);
+}
+
+#csCliqRoot #csCliqInboxCategoryBar.portal-cs-cliq-inbox-lane-nav .portal-cs-cliq-inbox-lane-btn {
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="direct"].is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(124, 58, 237, 0.14);
+  color: #6d28d9;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="direct"].is-active {
+  border-color: rgba(124, 58, 237, 0.28);
+  background: linear-gradient(180deg, #f5f3ff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="direct"].is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #5b21b6;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="ops"].is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(234, 88, 12, 0.14);
+  color: #c2410c;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="ops"].is-active {
+  border-color: rgba(234, 88, 12, 0.28);
+  background: linear-gradient(180deg, #fff7ed, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-btn[data-cs-cliq-inbox-cat="ops"].is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #9a3412;
 }
 
 #csCliqRoot #csCliqInboxCategoryBar.portal-cs-cliq-inbox-lane-nav .portal-dm-inbox-nav-btn {
@@ -730,19 +762,28 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
 }
 
 #csCliqRoot .portal-dm-thread-avatar--admin-lane {
-  background: linear-gradient(145deg, #eef2ff, #dbe4ff);
+  background: linear-gradient(180deg, #f2f7fb, #e5edf5);
   color: #3730a3;
+  padding: 0;
+  overflow: hidden;
 }
 
-#csCliqRoot .portal-dm-thread-avatar__admin-icon {
-  width: 22px;
-  height: 22px;
+#csCliqRoot .portal-dm-thread-avatar--admin-lane.portal-dm-thread-avatar--brand-logo {
+  background: linear-gradient(180deg, #f2f7fb, #e5edf5);
+}
+
+#csCliqRoot .portal-dm-thread-avatar__admin-logo {
+  width: 100%;
+  height: 100%;
   display: block;
+  object-fit: contain;
+  object-position: center;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
-#csCliqRoot .portal-cs-cliq-thread-header__avatar.portal-dm-thread-avatar--admin-lane .portal-dm-thread-avatar__admin-icon {
-  width: 26px;
-  height: 26px;
+#csCliqRoot .portal-cs-cliq-thread-header__avatar.portal-dm-thread-avatar--admin-lane .portal-dm-thread-avatar__admin-logo {
+  padding: 6px;
 }
 
 #csCliqRoot .portal-dm-thread-avatar--photo,
@@ -854,29 +895,62 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
 }
 
 #csCliqRoot .portal-dm-thread-role-tag {
-  font-size: 11px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
   margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  vertical-align: middle;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #csCliqRoot .portal-dm-thread-role-tag--staff {
-  color: #145a3a;
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.24);
 }
 
 #csCliqRoot .portal-dm-thread-role-tag--lead {
-  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+  border-color: rgba(124, 58, 237, 0.22);
 }
 
 #csCliqRoot .portal-dm-thread-role-tag--group {
+  background: rgba(3, 105, 161, 0.12);
   color: #0369a1;
+  border-color: rgba(3, 105, 161, 0.2);
 }
 
 #csCliqRoot .portal-dm-thread-role-tag--team {
+  background: rgba(180, 83, 9, 0.12);
   color: #b45309;
+  border-color: rgba(180, 83, 9, 0.2);
 }
 
 #csCliqRoot .portal-dm-thread-role-tag--ops {
+  background: rgba(234, 88, 12, 0.12);
   color: #9a3412;
+  border-color: rgba(234, 88, 12, 0.22);
+}
+
+#csCliqRoot .portal-dm-thread-role-tag--exec {
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
+#csCliqRoot .portal-dm-thread-role-tag--admin {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.24);
 }
 
 #csCliqRoot .portal-dm-thread-preview {
@@ -1830,8 +1904,54 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
   box-shadow: 0 0 0 2px #fff;
 }
 
-/* —— Mobile: bottom rail + full-screen conversation sub-screens —— */
+/* —— Mobile: CS Cliq = full screen (not embedded in dashboard chrome) —— */
 @media (max-width: 899px) {
+  body.admin-touch-compact.admin-view-cs-cliq .admin-topbar,
+  body.admin-touch-compact.admin-view-cs-cliq .admin-bottom-nav,
+  body.admin-touch-compact.admin-view-cs-cliq .admin-float-menu-btn,
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-topbar {
+    display: none !important;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq,
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen {
+    overflow: hidden;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq .admin-shell,
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-main {
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq .admin-main,
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-main {
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq .admin-workspace,
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-workspace {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq #csCliqRoot.portal-cs-cliq--admin-fullscreen,
+  #csCliqRoot.portal-cs-cliq--subscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 12100;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: #fff;
+  }
+
   body.admin-touch-compact.admin-view-cs-cliq .admin-workspace {
     display: flex;
     flex-direction: column;

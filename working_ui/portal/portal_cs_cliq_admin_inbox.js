@@ -500,6 +500,13 @@
 
   var lastInboxCtx = null;
 
+  var LANE_SVGS = {
+    direct:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+    ops:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  };
+
   function renderCeoInboxNav(activeCat, split) {
     var bar = document.getElementById("csCliqInboxCategoryBar");
     if (!bar) return;
@@ -507,21 +514,33 @@
     split = split || { directItems: [], opsItems: [] };
     bar.hidden = false;
     bar.setAttribute("aria-hidden", "false");
-    bar.className = "portal-dm-inbox-nav portal-cs-cliq-inbox-lane-nav";
+    bar.className = "portal-cs-cliq-inbox-categories portal-cs-cliq-inbox-lane-nav";
     var directUnread = countUnread(split.directItems);
     var opsUnread = countUnread(split.opsItems);
     var directLabel = "Direct" + (directUnread > 0 ? " (" + directUnread + ")" : "");
-    var opsLabel = "Staff ops" + (opsUnread > 0 ? " (" + opsUnread + ")" : "");
+    var opsLabel = "Ops" + (opsUnread > 0 ? " (" + opsUnread + ")" : "");
     bar.innerHTML =
-      '<button type="button" class="portal-dm-inbox-nav-btn' +
+      '<button type="button" class="portal-cs-cliq-inbox-cat-btn portal-cs-cliq-inbox-lane-btn' +
       (activeCat === "direct" ? " is-active" : "") +
-      '" data-cs-cliq-inbox-cat="direct">' +
+      '" data-cs-cliq-inbox-cat="direct" aria-label="Direct leadership inbox">' +
+      '<span class="portal-cs-cliq-inbox-cat-btn__icon">' +
+      (LANE_SVGS.direct || "") +
+      "</span>" +
+      '<span class="portal-cs-cliq-inbox-cat-btn__label">' +
       directLabel +
+      "</span>" +
+      '<span class="portal-cs-cliq-inbox-cat-btn__sub">CEOs &amp; Admin</span>' +
       "</button>" +
-      '<button type="button" class="portal-dm-inbox-nav-btn' +
+      '<button type="button" class="portal-cs-cliq-inbox-cat-btn portal-cs-cliq-inbox-lane-btn' +
       (activeCat === "ops" ? " is-active" : "") +
-      '" data-cs-cliq-inbox-cat="ops">' +
+      '" data-cs-cliq-inbox-cat="ops" aria-label="Shared staff ops inbox">' +
+      '<span class="portal-cs-cliq-inbox-cat-btn__icon">' +
+      (LANE_SVGS.ops || "") +
+      "</span>" +
+      '<span class="portal-cs-cliq-inbox-cat-btn__label">' +
       opsLabel +
+      "</span>" +
+      '<span class="portal-cs-cliq-inbox-cat-btn__sub">Sevitha line</span>' +
       "</button>";
     if (!bar.dataset.portalCeoInboxNavBound) {
       bar.dataset.portalCeoInboxNavBound = "1";

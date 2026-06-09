@@ -1022,6 +1022,19 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
     }
 
+    if (typeof window !== "undefined" && profile && (page === "lead" || page === "staff")) {
+      const surfaceMap = globalThis.portalAdminSurfaceMap;
+      if (
+        surfaceMap &&
+        typeof surfaceMap.shouldRedirectFromWorkerPortal === "function" &&
+        surfaceMap.shouldRedirectFromWorkerPortal(profile, window.location.pathname)
+      ) {
+        const dest = surfaceMap.adminDashboardUrl(surfaceMap.resolve(profile));
+        window.location.replace(dest);
+        return;
+      }
+    }
+
     if (typeof window !== "undefined" && profile && page === "lead") {
       let authEmail = String(session.user?.email || "").trim();
       if (!authEmail) {
@@ -1056,9 +1069,18 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     window.__PORTAL_SUPABASE__ = { client: supabase, session, staff_profile: profile || null };
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.classList.add("portal-auth-ready");
+    }
     window.dispatchEvent(
       new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
     );
+    if (typeof window !== "undefined" && profile && page === "admin") {
+      const surfaceMap = globalThis.portalAdminSurfaceMap;
+      if (surfaceMap && typeof surfaceMap.bootAdminSurface === "function") {
+        surfaceMap.bootAdminSurface(profile);
+      }
+    }
     try {
       if (page === "lead_overview" || isGhostDashboard) {
         throw new Error("skip_presence_on_lead_overview");

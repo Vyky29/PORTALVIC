@@ -1376,17 +1376,17 @@
       '<div class="trs-control-block" id="trsActionBox" role="group" aria-labelledby="trsActionLegend">' +
       '<span class="trs-control-label" id="trsActionLegend">Action</span>' +
       '<div class="trs-pills">' +
-      '<label class="trs-pill" title="Change time, instructor, service, venue…"><input type="radio" name="trsAction" value="update"' + (preAction === "update" ? " checked" : "") + "/> Update slot</label>" +
-      '<label class="trs-pill trs-pill--warn" title="Remove this participante from the roster (left the term)"><input type="radio" name="trsAction" value="cancel_service"' + (preAction === "cancel_service" ? " checked" : "") + "/> Cancel service</label>" +
-      '<label class="trs-pill" title="Keep the staff slot open with no client booked"><input type="radio" name="trsAction" value="no_participant"' + (preAction === "no_participant" ? " checked" : "") + "/> No participant</label>" +
+      '<label class="trs-pill" title="Change time, instructor, service, venue…"><input type="radio" name="trsAction" value="update"' + (preAction === "update" ? " checked" : "") + '/> Update slot</label>' +
+      '<label class="trs-pill trs-pill--warn" title="Remove this participante from the roster (left the term)"><input type="radio" name="trsAction" value="cancel_service"' + (preAction === "cancel_service" ? " checked" : "") + '/> Cancel service</label>' +
+      '<label class="trs-pill" title="Keep the staff slot open with no client booked"><input type="radio" name="trsAction" value="no_participant"' + (preAction === "no_participant" ? " checked" : "") + '/> No participant</label>' +
       "</div></div>" +
       '<div class="trs-control-block" role="group" aria-labelledby="trsScopeLegend">' +
       '<span class="trs-control-label" id="trsScopeLegend">Apply to</span>' +
       '<div class="trs-pills trs-pills--scope">' +
-      '<label class="trs-pill" title="One dated exception on the anchor date"><input type="radio" name="trsScope" value="single_day"' + (preScope === "single_day" ? " checked" : "") + "/> This day only</label>" +
-      '<label class="trs-pill" title="Updates the weekly template for all matching weekdays in the term"><input type="radio" name="trsScope" value="weekday_term"' + (preScope === "weekday_term" ? " checked" : "") + "/> Every <span id="trsScopeWeekdayLabel">' + esc(weekday || "weekday") + "</span> until end of term</label>" +
-      '<label class="trs-pill" title="Same weekday from the anchor date through term end"><input type="radio" name="trsScope" value="rest_of_term"' + (preScope === "rest_of_term" ? " checked" : "") + "/> Rest of term (from anchor)</label>" +
-      '<label class="trs-pill" title="Pick individual session dates in the term"><input type="radio" name="trsScope" value="pick_sessions"' + (preScope === "pick_sessions" ? " checked" : "") + "/> Selected sessions</label>" +
+      '<label class="trs-pill" title="One dated exception on the anchor date"><input type="radio" name="trsScope" value="single_day"' + (preScope === "single_day" ? " checked" : "") + '/> This day only</label>' +
+      '<label class="trs-pill" title="Updates the weekly template for all matching weekdays in the term"><input type="radio" name="trsScope" value="weekday_term"' + (preScope === "weekday_term" ? " checked" : "") + '/> Every <span id="trsScopeWeekdayLabel">' + esc(weekday || "weekday") + '</span> until end of term</label>' +
+      '<label class="trs-pill" title="Same weekday from the anchor date through term end"><input type="radio" name="trsScope" value="rest_of_term"' + (preScope === "rest_of_term" ? " checked" : "") + '/> Rest of term (from anchor)</label>' +
+      '<label class="trs-pill" title="Pick individual session dates in the term"><input type="radio" name="trsScope" value="pick_sessions"' + (preScope === "pick_sessions" ? " checked" : "") + '/> Selected sessions</label>' +
       "</div></div>" +
       '<div class="trs-control-block trs-control-block--reason" id="trsReasonBlock">' +
       '<label class="trs-control-label" for="trsReason">Reason</label>' +

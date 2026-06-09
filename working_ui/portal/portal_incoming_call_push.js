@@ -80,24 +80,32 @@
 
   async function openChatForIncomingRow(row) {
     if (!row) return;
-    var calls = global.portalStaffChatCalls;
-    if (calls && typeof calls.openIncomingCallChatContext === "function") {
-      await calls.openIncomingCallChatContext(row);
-      return;
+    var isAdminDash = false;
+    try {
+      isAdminDash = /admin_dashboard\.html/i.test(String(global.location.pathname || ""));
+    } catch (_path) {}
+    if (isAdminDash && typeof global.portalAdminNavigateToCsCliq === "function") {
+      await global.portalAdminNavigateToCsCliq();
     }
-    if (row.group_id) {
+    if (row.group_id && typeof global.portalAdminDmOpenGroupThread === "function") {
       global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
       global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
       global.__PORTAL_INTERNAL_CHAT_UI.groupId = String(row.group_id);
       global.__PORTAL_INTERNAL_CHAT_UI.threadId = "";
-      if (typeof global.portalAdminDmOpenGroupThread === "function") {
-        await global.portalAdminDmOpenGroupThread(String(row.group_id));
-        return;
-      }
-    } else if (row.thread_id) {
+      await global.portalAdminDmOpenGroupThread(String(row.group_id));
+      return;
+    }
+    if (row.thread_id && typeof global.portalAdminDmOpenThread === "function") {
       global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
       global.__PORTAL_INTERNAL_CHAT_UI.threadId = String(row.thread_id);
       global.__PORTAL_INTERNAL_CHAT_UI.groupId = "";
+      await global.portalAdminDmOpenThread(String(row.thread_id));
+      return;
+    }
+    var calls = global.portalStaffChatCalls;
+    if (calls && typeof calls.openIncomingCallChatContext === "function") {
+      await calls.openIncomingCallChatContext(row);
+      return;
     }
     try {
       if (typeof global.closeSheet === "function") {

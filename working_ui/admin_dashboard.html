@@ -4,6 +4,7 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
   <meta charset="UTF-8" />
+  <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
   <script src="/portal/portal_web_push_support.js?v=20260609-vapid-resub"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
@@ -22,7 +23,7 @@
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-training-progress.js?v=20260607-app-device-readiness"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260609-yusuf-photo"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
   <script src="/portal/portal_staff_photos.js?v=20260610-javi-javier-split"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260609-achievement-videos"></script>
@@ -34,22 +35,23 @@
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260610-no-leads-404"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-brand-logo"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-sevitha-admin-photo"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-ops-thread-rpc"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
+  <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260610-god-mode-boot"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-liaison-inbox-pin"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-direct-ops"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-liaison-inbox-pin"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260609-liaison-inbox-pin"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260609-inbox-direct-ops"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_teams.js?v=20260609-channels-split"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
@@ -85,8 +87,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-inbox-lane-hints" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-admin-brand-logo" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-inbox-direct-ops" />
 </head>
 <body>
   <script>
@@ -2008,6 +2010,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var sbCs = $('adminSidebar');
           if(aeCs && sbCs && sbCs.contains(aeCs) && typeof aeCs.blur === 'function') aeCs.blur();
         }catch(_blurCs){}
+      }else{
+        try{ portalAdminCsCliqSyncMobileSubscreen('list'); document.body.classList.remove('admin-cs-cliq-mobile-subscreen','portal-cs-cliq-mobile-subscreen'); }catch(_csMobOff){}
       }
       var g = navGroupForView(id);
       if(g){
@@ -2023,6 +2027,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       $('workspace').innerHTML = renderView(id);
       bindView(id);
+      if(id === 'cs_cliq'){
+        try{ portalAdminCsCliqSyncMobileSubscreen('list'); }catch(_csMobInit){}
+      }
       try{
         if(typeof window.portalAdminDayOpsBadgesMarkSeenView === 'function'){
           window.portalAdminDayOpsBadgesMarkSeenView(id);
@@ -15856,19 +15863,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<a href="portal-pickup.html" class="pickup-admin-open-form" target="_blank" rel="noopener noreferrer">Open handover form</a>' +
         '</div>' +
         '<p class="pickup-admin-lead">Live list: participants signed in today (drop off saved, awaiting collection). Log: completed handovers with pick up saved.</p>' +
+        '<div class="pickup-admin-block pickup-admin-block--attention">' +
+        '<h3 class="pickup-admin-subhead">Needs attention</h3>' +
+        '<p class="pickup-admin-lead pickup-admin-lead--compact">Unusual drop-off or pick-up by an unfamiliar collector (family approved).</p>' +
+        '<div class="files-table-wrap portal-forms-table-wrap">' +
+        '<table class="files-table portal-forms-table">' +
+        '<thead><tr><th>Participant</th><th>Drop off</th><th>Pick up</th><th>Flags</th><th>Status</th></tr></thead>' +
+        '<tbody id="pickupAttentionTbody"><tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '</table></div></div>' +
         '<div class="pickup-admin-block">' +
         '<h3 class="pickup-admin-subhead">Live now</h3>' +
         '<div class="files-table-wrap portal-forms-table-wrap">' +
         '<table class="files-table portal-forms-table">' +
-        '<thead><tr><th>Participant</th><th>Arrived</th><th>Drop off by</th><th>Mood</th><th>Status</th></tr></thead>' +
-        '<tbody id="pickupLiveTbody"><tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '<thead><tr><th>Participant</th><th>Arrived</th><th>Drop off by</th><th>Staff (drop off)</th><th>Mood</th><th>Status</th></tr></thead>' +
+        '<tbody id="pickupLiveTbody"><tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
         '</table></div></div>' +
         '<div class="pickup-admin-block">' +
         '<h3 class="pickup-admin-subhead">Completed today</h3>' +
         '<div class="files-table-wrap portal-forms-table-wrap">' +
         '<table class="files-table portal-forms-table">' +
-        '<thead><tr><th>Participant</th><th>Arrived</th><th>Pick up time</th><th>Collected by</th><th>Status</th></tr></thead>' +
-        '<tbody id="pickupLogTbody"><tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '<thead><tr><th>Participant</th><th>Drop staff</th><th>Pick staff</th><th>Arrived</th><th>Pick up</th><th>Collected by</th><th>Status</th></tr></thead>' +
+        '<tbody id="pickupLogTbody"><tr><td colspan="7"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
         '</table></div></div>' +
         '<p class="portal-forms-last-refresh pickup-admin-last-refresh" id="pickupHandoverRefreshLine" aria-live="polite"></p>'
       );
@@ -15925,6 +15940,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return html;
     }
+    function adminHandoverFlagTruthy(v){
+      return v === true || v === 'true' || v === '1' || v === 1;
+    }
+    function adminHandoverIsUnusualDrop(vals){
+      if(!vals || typeof vals !== 'object') return false;
+      return adminHandoverFlagTruthy(vals.dropUnusual) || String(vals.dropRole || '').trim() === 'Other';
+    }
+    function adminHandoverIsUnfamiliarPickup(vals){
+      if(!vals || typeof vals !== 'object') return false;
+      return adminHandoverFlagTruthy(vals.pickupUnfamiliar) || String(vals.pickupRole || '').trim() === 'Other';
+    }
+    function adminHandoverNeedsAttention(row){
+      var vals = row && row.values ? row.values : {};
+      if(!adminHandoverDropSaved(vals)) return false;
+      return adminHandoverIsUnusualDrop(vals) || adminHandoverIsUnfamiliarPickup(vals);
+    }
+    function adminHandoverFlagsHtml(vals){
+      var flags = [];
+      if(adminHandoverIsUnusualDrop(vals)) flags.push('Unusual drop-off');
+      if(adminHandoverIsUnfamiliarPickup(vals)) flags.push('Unfamiliar pick-up');
+      if(!flags.length) return '<span class="muted">—</span>';
+      return flags.map(function(f){
+        return '<span class="pickup-pill pickup-pill--warn">' + esc(f) + '</span>';
+      }).join(' ');
+    }
+    function adminHandoverStaffCell(name){
+      var n = String(name || '').trim();
+      if(!n) return '<span class="muted">—</span>';
+      return '<div class="portal-forms-cell-main" style="min-width:0;overflow-wrap:break-word">' + esc(n) + '</div>';
+    }
     async function adminFetchTodayHandovers(){
       var client = getSchedSupabaseClient();
       if(!client) return { rows: [], error: 'Supabase not connected' };
@@ -15943,17 +15988,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function adminRenderPickupHandoverTables(rows){
+      var attentionTb = $('pickupAttentionTbody');
       var liveTb = $('pickupLiveTbody');
       var logTb = $('pickupLogTbody');
-      if(!liveTb && !logTb) return;
+      if(!attentionTb && !liveTb && !logTb) return;
       var today = isoDateLocal(new Date());
-      var live = [], done = [];
+      var attention = [], live = [], done = [];
       (rows || []).forEach(function(row){
         if(String(row.sessionDate || '').slice(0, 10) !== today) return;
         var vals = row.values || {};
+        if(adminHandoverNeedsAttention(row)) attention.push(row);
         if(row.locked) done.push(row);
         else if(adminHandoverDropSaved(vals)) live.push(row);
       });
+      function attentionRow(row){
+        var vals = row.values || {};
+        var pickCell = row.locked
+          ? adminHandoverPersonCell(vals.pickupName, vals.pickupRole)
+          : '<span class="muted">Awaiting collection</span>';
+        var status = row.locked
+          ? '<span class="pickup-pill pickup-pill--done">Completed</span>'
+          : '<span class="pickup-pill pickup-pill--live">Awaiting pick up</span>';
+        return (
+          '<tr>' +
+          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><div class="portal-forms-cell-main">' +
+          esc(row.participantName) + '</div></td>' +
+          '<td style="min-width:0;max-width:220px">' + adminHandoverPersonCell(vals.dropName, vals.dropRole) +
+          (vals.dropStaffName ? '<div class="portal-forms-cell-sub">Staff: ' + esc(String(vals.dropStaffName).trim()) + '</div>' : '') +
+          '</td>' +
+          '<td style="min-width:0;max-width:220px">' + pickCell +
+          (vals.pickupStaffName ? '<div class="portal-forms-cell-sub">Staff: ' + esc(String(vals.pickupStaffName).trim()) + '</div>' : '') +
+          '</td>' +
+          '<td style="min-width:0;max-width:180px">' + adminHandoverFlagsHtml(vals) + '</td>' +
+          '<td>' + status + '</td>' +
+          '</tr>'
+        );
+      }
       function liveRow(row){
         var vals = row.values || {};
         return (
@@ -15962,6 +16032,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           esc(row.participantName) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.arrivalTime)) + '</td>' +
           '<td style="min-width:0;max-width:200px">' + adminHandoverPersonCell(vals.dropName, vals.dropRole) + '</td>' +
+          '<td style="min-width:0;max-width:160px">' + adminHandoverStaffCell(vals.dropStaffName) + '</td>' +
           '<td style="min-width:0;max-width:160px;overflow-wrap:break-word">' + esc(String(vals.emotionalState || '').trim() || '—') + '</td>' +
           '<td><span class="pickup-pill pickup-pill--live">Awaiting pick up</span></td>' +
           '</tr>'
@@ -15973,6 +16044,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<tr>' +
           '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><div class="portal-forms-cell-main">' +
           esc(row.participantName) + '</div></td>' +
+          '<td style="min-width:0;max-width:140px">' + adminHandoverStaffCell(vals.dropStaffName) + '</td>' +
+          '<td style="min-width:0;max-width:140px">' + adminHandoverStaffCell(vals.pickupStaffName) + '</td>' +
           '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.arrivalTime)) + '</td>' +
           '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.pickupTime)) + '</td>' +
           '<td style="min-width:0;max-width:200px">' + adminHandoverPersonCell(vals.pickupName, vals.pickupRole) + '</td>' +
@@ -15980,15 +16053,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</tr>'
         );
       }
+      if(attentionTb){
+        attentionTb.innerHTML = attention.length
+          ? attention.map(attentionRow).join('')
+          : '<tr><td colspan="5"><div class="submission-state">No unusual or unfamiliar handovers flagged today.</div></td></tr>';
+      }
       if(liveTb){
         liveTb.innerHTML = live.length
           ? live.map(liveRow).join('')
-          : '<tr><td colspan="5"><div class="submission-state">No one signed in and waiting for pick up right now.</div></td></tr>';
+          : '<tr><td colspan="6"><div class="submission-state">No one signed in and waiting for pick up right now.</div></td></tr>';
       }
       if(logTb){
         logTb.innerHTML = done.length
           ? done.map(doneRow).join('')
-          : '<tr><td colspan="5"><div class="submission-state">No completed handovers for today yet.</div></td></tr>';
+          : '<tr><td colspan="7"><div class="submission-state">No completed handovers for today yet.</div></td></tr>';
       }
       var refreshLine = $('pickupHandoverRefreshLine');
       if(refreshLine){
@@ -15998,20 +16076,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     async function adminRefreshPickupHandoverMonitor(){
+      var attentionTb = $('pickupAttentionTbody');
       var liveTb = $('pickupLiveTbody');
       var logTb = $('pickupLogTbody');
-      if(!liveTb && !logTb) return;
-      var loading =
+      if(!attentionTb && !liveTb && !logTb) return;
+      var loading5 =
         '<tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr>';
-      if(liveTb) liveTb.innerHTML = loading;
-      if(logTb) logTb.innerHTML = loading;
+      var loading6 =
+        '<tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr>';
+      var loading7 =
+        '<tr><td colspan="7"><div class="submission-state"><strong>Loading…</strong></div></td></tr>';
+      if(attentionTb) attentionTb.innerHTML = loading5;
+      if(liveTb) liveTb.innerHTML = loading6;
+      if(logTb) logTb.innerHTML = loading7;
       var result = await adminFetchTodayHandovers();
       if(result.error){
-        var errRow =
+        var errRow5 =
           '<tr><td colspan="5"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
           esc(result.error) + '</div></td></tr>';
-        if(liveTb) liveTb.innerHTML = errRow;
-        if(logTb) logTb.innerHTML = errRow;
+        var errRow6 =
+          '<tr><td colspan="6"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          esc(result.error) + '</div></td></tr>';
+        var errRow7 =
+          '<tr><td colspan="7"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          esc(result.error) + '</div></td></tr>';
+        if(attentionTb) attentionTb.innerHTML = errRow5;
+        if(liveTb) liveTb.innerHTML = errRow6;
+        if(logTb) logTb.innerHTML = errRow7;
         throw new Error(result.error);
       }
       adminRenderPickupHandoverTables(result.rows);
@@ -16110,13 +16201,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       function onPickupRefreshFail(err){
         var msg = esc(String((err && err.message) || err));
-        var errRow =
+        var errRow5 =
           '<tr><td colspan="5"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
           msg + '</div></td></tr>';
+        var errRow6 =
+          '<tr><td colspan="6"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          msg + '</div></td></tr>';
+        var errRow7 =
+          '<tr><td colspan="7"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          msg + '</div></td></tr>';
+        var attentionTb = $('pickupAttentionTbody');
         var liveTb = $('pickupLiveTbody');
         var logTb = $('pickupLogTbody');
-        if(liveTb) liveTb.innerHTML = errRow;
-        if(logTb) logTb.innerHTML = errRow;
+        if(attentionTb) attentionTb.innerHTML = errRow5;
+        if(liveTb) liveTb.innerHTML = errRow6;
+        if(logTb) logTb.innerHTML = errRow7;
       }
       function runHubRefresh(){
         if(showPickup){
@@ -20075,20 +20174,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       bindClick('csCliqBackBtn', function(){
         window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
-        var hubPane = String(window.__PORTAL_ADMIN_DM_UI.hubPane || window.__PORTAL_CS_CLIQ_RAIL_PANE || 'chats');
-        window.__PORTAL_ADMIN_DM_UI.threadId = '';
-        window.__PORTAL_ADMIN_DM_UI.groupId = '';
-        window.__PORTAL_ADMIN_DM_UI.groupAliasIds = [];
-        window.__PORTAL_ADMIN_DM_UI.peerLabel = '';
-        window.__PORTAL_ADMIN_DM_UI.managementWorkerId = '';
+        var ui = window.__PORTAL_ADMIN_DM_UI;
+        var panel = String(ui.panel || 'list');
+        var inThread = panel === 'thread' || panel === 'compose';
+        if(
+          !inThread &&
+          !String(ui.threadId || '').trim() &&
+          !String(ui.groupId || '').trim() &&
+          adminTouchCompactLayoutActive() &&
+          state.view === 'cs_cliq'
+        ){
+          setView('staff_live_map');
+          return;
+        }
+        var hubPane = String(ui.hubPane || window.__PORTAL_CS_CLIQ_RAIL_PANE || 'chats');
+        ui.threadId = '';
+        ui.groupId = '';
+        ui.groupAliasIds = [];
+        ui.peerLabel = '';
+        ui.managementWorkerId = '';
         portalAdminDmTogglePanels('list');
         portalAdminDmRefreshListAfterRead();
+        try{ portalAdminCsCliqSyncMobileSubscreen('list'); }catch(_csBack){}
         void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
       });
       bindClick('csCliqTabStaff', function(){
         if(portalAdminDmChannel() === 'staff_lead') return;
         window.__PORTAL_ADMIN_DM_CHANNEL = 'staff_lead';
-        window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list', peerLabel: '' };
+        portalAdminDmPreserveInboxUiState();
         portalAdminDmPremiumSyncView();
         void portalAdminDmRenderList();
         var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
@@ -20100,7 +20213,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       bindClick('csCliqTabCeo', function(){
         if(portalAdminDmChannel() === 'ceo_exec') return;
         window.__PORTAL_ADMIN_DM_CHANNEL = 'ceo_exec';
-        window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list', peerLabel: '' };
+        portalAdminDmPreserveInboxUiState();
         portalAdminDmPremiumSyncView();
         void portalAdminDmRenderList();
         var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
@@ -20256,11 +20369,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminCsCliqSyncMobileSubscreen(panel){
       var mobile = false;
       try{ mobile = adminTouchCompactLayoutActive(); }catch(_mob){}
-      var sub = mobile && (panel === 'thread' || panel === 'compose');
-      document.body.classList.toggle('admin-cs-cliq-mobile-subscreen', sub);
-      document.body.classList.toggle('portal-cs-cliq-mobile-subscreen', sub);
+      var adminFull = mobile && document.body.classList.contains('admin-view-cs-cliq');
+      var threadSub = mobile && (panel === 'thread' || panel === 'compose');
+      document.body.classList.toggle('admin-cs-cliq-mobile-subscreen', adminFull || threadSub);
+      document.body.classList.toggle('portal-cs-cliq-mobile-subscreen', adminFull || threadSub);
       var root = document.getElementById('csCliqRoot');
-      if(root) root.classList.toggle('portal-cs-cliq--subscreen', sub);
+      if(root){
+        root.classList.toggle('portal-cs-cliq--admin-fullscreen', adminFull);
+        root.classList.toggle('portal-cs-cliq--subscreen', threadSub);
+      }
     }
     function portalAdminCsCliqSyncChatView(){
       if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncInboxLayout === 'function'){
@@ -22091,6 +22208,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(sr.indexOf('lead') >= 0) return 'Lead';
       return '';
     }
+    function portalAdminDmRoleChipHtml(label, tone){
+      label = String(label || '').trim();
+      if(!label) return '';
+      tone = String(tone || 'staff').trim();
+      return '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--'+esc(tone)+'">'+esc(label)+'</span>';
+    }
+    function portalAdminDmPreserveInboxUiState(){
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var keep = {
+        inboxCategory: ui.inboxCategory,
+        hubPane: ui.hubPane,
+        panel: 'list'
+      };
+      window.__PORTAL_ADMIN_DM_UI = {
+        threadId: '',
+        groupId: '',
+        groupAliasIds: [],
+        peerLabel: '',
+        managementWorkerId: '',
+        workerId: '',
+        peerId: '',
+        inboxLane: ui.inboxLane || 'mine',
+        inboxCategory: keep.inboxCategory,
+        hubPane: keep.hubPane,
+        panel: keep.panel
+      };
+      return keep;
+    }
     function portalAdminDmFormatListWhen(iso){
       if(!iso) return '';
       try{
@@ -22408,26 +22553,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.portalCsCliqAdminInbox.getCeoInboxCategory &&
           window.portalCsCliqAdminInbox.getCeoInboxCategory() === 'ops'
         );
-        if(!inOpsTab){
-          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Shared ops</span>';
+        if(inOpsTab){
+          roleTag = portalAdminDmRoleChipHtml('Staff', 'staff');
+        }else if(!inOpsTab){
+          roleTag = portalAdminDmRoleChipHtml('Ops', 'ops');
         }
       }else if(item.kind === 'dm' && ch === 'staff_lead'){
         if(item.isTeamChat){
-          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';
+          roleTag = portalAdminDmRoleChipHtml('Team', 'team');
         }else{
-          var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
-          if(rt === 'Lead'){
-            roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span>';
-            avatarItem.roleTone = 'lead';
-          }else if(rt === 'Staff'){
-            roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--staff">Staff</span>';
-            avatarItem.roleTone = 'staff';
+          var peerAr = String((item.peerProf && item.peerProf.app_role) || '').toLowerCase();
+          if(peerAr === 'ceo'){
+            roleTag = portalAdminDmRoleChipHtml('Director', 'exec');
+            avatarItem.roleTone = 'exec';
+          }else if(peerAr === 'admin' || portalAdminDmIsOpsAdminPeer(item.peerProf || {})){
+            roleTag = portalAdminDmRoleChipHtml('Admin', 'admin');
+            avatarItem.roleTone = 'admin';
+          }else{
+            var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
+            if(rt === 'Lead'){
+              roleTag = portalAdminDmRoleChipHtml('Lead', 'lead');
+              avatarItem.roleTone = 'lead';
+            }else if(rt === 'Staff'){
+              roleTag = portalAdminDmRoleChipHtml('Staff', 'staff');
+              avatarItem.roleTone = 'staff';
+            }
           }
         }
       }else if(item.kind === 'group'){
         var gslug0 = String(item.canonicalSlug || item.slug || '').toLowerCase();
-        if(gslug0 !== 'all_ceos' && gslug0 !== 'ceo_liaison'){
-          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--group">Group</span>';
+        if(gslug0 === 'all_ceos' || gslug0 === 'ceo_liaison'){
+          roleTag = portalAdminDmRoleChipHtml('Direct', 'exec');
+        }else{
+          roleTag = portalAdminDmRoleChipHtml('Group', 'group');
         }
       }else if(ch === 'ceo_exec'){
         avatarItem.roleTone = 'exec';
@@ -27970,6 +28128,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.addEventListener('portal:supabase-ready', function(){
           portalAdminSyncTopbarIdentity();
           if(typeof window.portalMountAdminPortalSwitch === 'function') window.portalMountAdminPortalSwitch();
+          if(
+            window.portalAdminSurfaceMap &&
+            typeof window.portalAdminSurfaceMap.bootAdminSurface === 'function' &&
+            window.__PORTAL_SUPABASE__ &&
+            window.__PORTAL_SUPABASE__.staff_profile
+          ){
+            try{
+              var surfProf = window.__PORTAL_SUPABASE__.staff_profile;
+              var surf = window.portalAdminSurfaceMap.bootAdminSurface(surfProf);
+              var surfParams = new URLSearchParams(location.search || '');
+              var surfHash = String((location.hash || '').replace(/^#/, '')).trim();
+              var surfHasRoute = !!(surfParams.get('view') || surfHash);
+              if(surf && !surfHasRoute && surf.layout === 'mobile_compact' && state.view === 'nav_hub'){
+                setView(surf.mobile.defaultView || 'staff_live_map');
+              }
+            }catch(_surfBoot){}
+          }
           if(state.view === 'settings') portalAdminRefreshSettingsView();
           portalLateAdminScheduleBadgeRefresh();
           if(
@@ -28228,7 +28403,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     })();
   </script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-dm-operator-strip"></script>
-  <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
+  <script src="/portal/portal_incoming_call_push.js?v=20260609-inbox-direct-ops"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-inbox-unread-badge"></script>
   <script>
     (function(){

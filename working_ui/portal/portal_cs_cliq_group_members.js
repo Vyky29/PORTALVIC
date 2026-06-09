@@ -13,6 +13,12 @@
     climbing_instructors: true,
     support_staff: true,
     pool_leads: true,
+    lead_team_john: true,
+    lead_team_john_bespoke: true,
+    lead_team_john_sunday_ma: true,
+    lead_team_berta: true,
+    lead_team_berta_ma: true,
+    lead_team_michelle: true,
   };
 
   var KNOWN_LEAD_KEYS = {
@@ -209,6 +215,23 @@
       .filter(Boolean);
   }
 
+  async function loadActiveStaffChips(supabase, limit) {
+    limit = Math.max(1, parseInt(limit, 10) || 24);
+    var res = await supabase
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,staff_role,is_active")
+      .eq("app_role", "staff")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(limit);
+    if (res.error || !Array.isArray(res.data)) return [];
+    return res.data
+      .map(function (row) {
+        return chipFromProfile(row);
+      })
+      .filter(Boolean);
+  }
+
   async function loadStaffRoleChips(supabase, staffRole, appRole) {
     staffRole = String(staffRole || "").toLowerCase();
     appRole = String(appRole || "staff").toLowerCase();
@@ -235,12 +258,24 @@
   async function loadMemberChips(groupSlug, groupId) {
     groupSlug = String(groupSlug || "").toLowerCase();
     groupId = String(groupId || "").trim();
+    if (
+      global.portalLeadTeamGroups &&
+      typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function" &&
+      (groupSlug.indexOf("lead_team_") === 0 || groupSlug === "session_leads")
+    ) {
+      var leadChips = await global.portalLeadTeamGroups.loadMemberChipsForSlug(groupSlug, groupId);
+      if (leadChips != null) return leadChips;
+    }
     if (!MEMBER_SLUGS[groupSlug] && !groupId) return [];
     var supabase = client();
     if (!supabase) return [];
     var primary = [];
-    if (groupSlug === "session_leads" || groupSlug === "staff_leads_ops") {
+    if (groupSlug === "pool_leads") {
       primary = await loadSessionLeadChips(supabase);
+    } else if (groupSlug === "staff_leads_ops") {
+      var opsLeads = await loadSessionLeadChips(supabase);
+      var opsStaff = await loadActiveStaffChips(supabase, 24);
+      primary = mergeChips(opsLeads, opsStaff);
     } else if (groupSlug === "all_ceos") {
       primary = await loadCeoChips(supabase);
     } else if (groupSlug === "ceo_liaison") {
@@ -253,6 +288,27 @@
       primary = await loadStaffRoleChips(supabase, "support", "staff");
     } else if (groupSlug === "pool_leads") {
       primary = await loadStaffRoleChips(supabase, "", "lead");
+    } else if (groupSlug === "lead_team_john_bespoke") {
+      if (global.portalLeadTeamGroups && typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function") {
+        primary = (await global.portalLeadTeamGroups.loadMemberChipsForSlug(groupSlug, groupId, supabase)) || [];
+      }
+    } else if (groupSlug === "lead_team_john_sunday_ma") {
+      if (global.portalLeadTeamGroups && typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function") {
+        primary = (await global.portalLeadTeamGroups.loadMemberChipsForSlug(groupSlug, groupId, supabase)) || [];
+      }
+    } else if (groupSlug === "lead_team_berta_ma" || groupSlug === "lead_team_berta") {
+      if (global.portalLeadTeamGroups && typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function") {
+        primary =
+          (await global.portalLeadTeamGroups.loadMemberChipsForSlug("lead_team_berta_ma", groupId, supabase)) || [];
+      }
+    } else if (groupSlug === "lead_team_michelle") {
+      if (global.portalLeadTeamGroups && typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function") {
+        primary = (await global.portalLeadTeamGroups.loadMemberChipsForSlug(groupSlug, groupId, supabase)) || [];
+      }
+    } else if (groupSlug === "session_leads") {
+      if (global.portalLeadTeamGroups && typeof global.portalLeadTeamGroups.loadMemberChipsForSlug === "function") {
+        primary = (await global.portalLeadTeamGroups.loadMemberChipsForSlug(groupSlug, groupId, supabase)) || [];
+      }
     }
     var extra = groupId ? await loadGroupAuthorChips(supabase, groupId) : [];
     return mergeChips(primary, extra);
@@ -269,9 +325,10 @@
       return opts.emptyHtml != null ? String(opts.emptyHtml) : "";
     }
     var tone = String(opts.tone || "").trim();
-    var toneClass = tone ? " portal-cs-cliq-group-member-chip--" + tone : "";
     return members
       .map(function (m) {
+        var chipTone = String(m.tone || tone || "").trim();
+        var toneClass = chipTone ? " portal-cs-cliq-group-member-chip--" + chipTone : "";
         return (
           '<span class="portal-cs-cliq-group-member-chip' +
           toneClass +

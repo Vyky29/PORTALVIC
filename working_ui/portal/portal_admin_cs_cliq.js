@@ -35,18 +35,32 @@
     return false;
   }
 
+  function adminCsCliqMobileFullscreen() {
+    try {
+      return (
+        mobileLayoutActive() &&
+        document.body.classList.contains("admin-view-cs-cliq") &&
+        document.body.classList.contains("admin-touch-compact")
+      );
+    } catch (_e) {
+      return false;
+    }
+  }
+
   function syncMobileSubscreen(panel) {
     panel = String(panel || "list");
     var mobile = mobileLayoutActive();
-    var sub = mobile && (panel === "thread" || panel === "compose");
-    document.body.classList.toggle("portal-cs-cliq-mobile-subscreen", sub);
+    var adminFull = adminCsCliqMobileFullscreen();
+    var threadSub = mobile && (panel === "thread" || panel === "compose");
+    document.body.classList.toggle("portal-cs-cliq-mobile-subscreen", adminFull || threadSub);
     document.body.classList.toggle(
       "admin-cs-cliq-mobile-subscreen",
-      sub && document.body.classList.contains("admin-touch-compact")
+      (adminFull || threadSub) && document.body.classList.contains("admin-touch-compact")
     );
     var root = document.getElementById("csCliqRoot");
     if (root) {
-      root.classList.toggle("portal-cs-cliq--subscreen", sub);
+      root.classList.toggle("portal-cs-cliq--admin-fullscreen", adminFull);
+      root.classList.toggle("portal-cs-cliq--subscreen", threadSub);
     }
   }
 
@@ -526,8 +540,34 @@
     }
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
     if (backBtn) {
-      backBtn.hidden = !inThread && !inCompose;
-      backBtn.setAttribute("aria-label", railPane === "channels" ? "Back to channels" : "Back to inbox");
+      var adminMobileFull = adminCsCliqMobileFullscreen();
+      var showBack = inThread || inCompose || (adminMobileFull && !inCompose);
+      backBtn.hidden = !showBack;
+      if (adminMobileFull && !inThread && !inCompose) {
+        backBtn.setAttribute("aria-label", "Back to dashboard");
+      } else if (inThread || inCompose) {
+        var lane = "";
+        try {
+          if (
+            global.portalCsCliqAdminInbox &&
+            typeof global.portalCsCliqAdminInbox.getCeoInboxCategory === "function"
+          ) {
+            lane = global.portalCsCliqAdminInbox.getCeoInboxCategory();
+          }
+        } catch (_lane) {}
+        if (lane === "ops") {
+          backBtn.setAttribute("aria-label", "Back to Ops inbox");
+        } else if (lane === "direct") {
+          backBtn.setAttribute("aria-label", "Back to Direct inbox");
+        } else {
+          backBtn.setAttribute(
+            "aria-label",
+            railPane === "channels" ? "Back to channels" : "Back to inbox"
+          );
+        }
+      } else {
+        backBtn.setAttribute("aria-label", railPane === "channels" ? "Back to channels" : "Back to inbox");
+      }
     }
     if (nav) {
       var showNav =
