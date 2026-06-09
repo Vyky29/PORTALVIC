@@ -20,13 +20,6 @@
       icon:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
     },
-    {
-      id: "ceos",
-      label: "CEOs",
-      sub: "Directors",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 4.8L20 8l-3.6 3.5.9 5.2L12 14.8 6.7 16.7l.9-5.2L4 8l5.6-1.2L12 2z"/></svg>',
-    },
   ];
 
   function shouldUseAdminChannels() {
@@ -42,6 +35,7 @@
   function getStoredCategory() {
     try {
       var v = String(sessionStorage.getItem(CAT_STORAGE_KEY) || "").trim();
+      if (v === "ceos") v = "leads";
       return CATEGORIES.some(function (c) {
         return c.id === v;
       })
@@ -292,15 +286,10 @@
     return null;
   }
 
-  function renderCategoryBar(activeCat, esc, rerender, cats) {
+  function renderCategoryBar(activeCat, esc, rerender) {
     var bar = categoryBarEl();
     if (!bar) return;
-    cats = cats || { ceoItems: [] };
-    var visible = CATEGORIES.filter(function (cat) {
-      if (cat.id !== "ceos") return true;
-      return (cats.ceoItems || []).length > 0;
-    });
-    if (!visible.length) visible = CATEGORIES.slice(0, 2);
+    var visible = CATEGORIES;
     if (
       !visible.some(function (cat) {
         return cat.id === activeCat;
@@ -398,30 +387,6 @@
         }
       }
       bindChannelCards(host);
-      return;
-    }
-
-    if (cat === "ceos") {
-      appendSectionLabel(host, "CEO groups");
-      if (ctx.isSevitha) {
-        var note = document.createElement("p");
-        note.className = "portal-cs-cliq-inbox-section__hint muted";
-        note.textContent =
-          "Internal CEO ring is hidden. Use CEOs & Admin or message directors individually in Inbox.";
-        host.appendChild(note);
-      }
-      var ceoItems = cats.ceoItems || [];
-      if (!ceoItems.length) {
-        appendSectionEmpty(host, "No CEO group channels yet.");
-      } else {
-        for (var c = 0; c < ceoItems.length; c++) {
-          if (seq !== renderSeq) return;
-          var cItem = ceoItems[c];
-          var cChips = await loadMemberChipsForItem(cItem, chipCache);
-          host.appendChild(renderChannelCard(cItem, esc, formatWhen(cItem.when), cChips));
-        }
-      }
-      bindChannelCards(host);
     }
   }
 
@@ -442,7 +407,7 @@
     if (seq !== renderSeq) return;
     renderCategoryBar(cat, esc, function (nextCat) {
       if (lastCtx && host) void paintChannels(host, nextCat, lastCtx, lastLeads, renderSeq);
-    }, cats);
+    });
     await renderCategoryPanel(host, cat, ctx, cats, leads, esc, seq);
   }
 

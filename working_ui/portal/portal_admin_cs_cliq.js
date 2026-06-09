@@ -287,7 +287,7 @@
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqChannelsTitle">Channels</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqChannelsNewBtn">New group</button>' +
       "</div>" +
-      '<p class="portal-cs-cliq-channels-intro muted">Group chats and team channels — Leads, Staff and CEOs.</p>' +
+      '<p class="portal-cs-cliq-channels-intro muted">Group chats and team channels — Leads and Staff.</p>' +
       '<div id="csCliqChannelsCategoryBar" class="portal-cs-cliq-inbox-categories" hidden aria-hidden="true"></div>' +
       '<div id="csCliqChannelsListPanel">' +
       '<div id="csCliqTeamsList" class="portal-dm-inbox-list portal-cs-cliq-teams-list"></div>' +

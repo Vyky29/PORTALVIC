@@ -255,7 +255,7 @@
           push(staffItems, item);
           return;
         }
-        if (isDirectorDirectGroup(item) && managementSharedWorkerOpsInbox()) return;
+        if (isDirectorDirectGroup(item)) return;
         if (!seesSlug(slug)) return;
         push(ceoItems, item);
         return;
@@ -367,6 +367,7 @@
   }
 
   var DIRECTOR_DIRECT_GROUP_SLUGS = { all_ceos: true, ceo_liaison: true };
+  var LIAISON_GROUP_SLUG = "ceo_liaison";
 
   function groupSlugKey(item) {
     if (!item || item.kind !== "group") return "";
@@ -377,6 +378,33 @@
 
   function isDirectorDirectGroup(item) {
     return !!DIRECTOR_DIRECT_GROUP_SLUGS[groupSlugKey(item)];
+  }
+
+  function isLiaisonGroup(item) {
+    return item && item.kind === "group" && groupSlugKey(item) === LIAISON_GROUP_SLUG;
+  }
+
+  function findLiaisonGroup(merged) {
+    return (merged || []).find(isLiaisonGroup) || null;
+  }
+
+  function pinLiaisonFirst(items, merged) {
+    var liaison = findLiaisonGroup(merged);
+    if (!liaison) return Array.isArray(items) ? items.slice() : [];
+    var rest = (items || []).filter(function (item) {
+      return !isLiaisonGroup(item);
+    });
+    return [liaison].concat(rest);
+  }
+
+  function buildVisibleInboxItems(merged, splitSections, teamDmItems, activeCat) {
+    var sharedWorkerOps = managementSharedWorkerOpsInbox();
+    var split = splitDmInbox(merged, splitSections, teamDmItems);
+    if (sharedWorkerOps) {
+      var laneItems = activeCat === "ops" ? split.opsItems : split.directItems;
+      return activeCat === "ops" ? laneItems : pinLiaisonFirst(laneItems, merged);
+    }
+    return pinLiaisonFirst(flattenDmInbox(merged, splitSections, teamDmItems), merged);
   }
 
   function appendDirectorDirectGroups(merged, directItems, directSeen) {
@@ -522,7 +550,7 @@
     if (activeCat === "ops") {
       return "No staff ops threads yet. Tap a staff name when one appears, or wait for the shared roster to load.";
     }
-    return "No direct chats yet. Open CEOs, Sev + CEOs, or message Raul, Javi, or Admin.";
+    return "No direct chats yet. Open Sev + CEOs at the top of this list, or message Raul, Javi, or Admin.";
   }
 
   async function renderAdminInbox(host, ctx) {
@@ -541,11 +569,7 @@
     } else {
       renderCeoInboxLaneHint("direct", false);
     }
-    var dmItems = sharedWorkerOps
-      ? activeCat === "ops"
-        ? split.opsItems
-        : split.directItems
-      : flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
+    var dmItems = buildVisibleInboxItems(ctx.merged, ctx.splitSections, ctx.teamDmItems, activeCat);
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
@@ -579,7 +603,9 @@
   }
 
   function sumVisibleInboxUnread(merged, splitSections, teamDmItems) {
-    return countUnread(flattenDmInbox(merged, splitSections, teamDmItems));
+    var sharedWorkerOps = managementSharedWorkerOpsInbox();
+    var activeCat = sharedWorkerOps ? getCeoInboxCategory() : "direct";
+    return countUnread(buildVisibleInboxItems(merged, splitSections, teamDmItems, activeCat));
   }
 
   global.portalCsCliqAdminInbox = {
@@ -595,6 +621,9 @@
     getCeoInboxCategory: getCeoInboxCategory,
     setCeoInboxCategory: setCeoInboxCategory,
     isDirectorDirectGroup: isDirectorDirectGroup,
+    isLiaisonGroup: isLiaisonGroup,
+    pinLiaisonFirst: pinLiaisonFirst,
+    buildVisibleInboxItems: buildVisibleInboxItems,
     countUnread: countUnread,
     flattenDmInbox: flattenDmInbox,
     sumVisibleInboxUnread: sumVisibleInboxUnread,
