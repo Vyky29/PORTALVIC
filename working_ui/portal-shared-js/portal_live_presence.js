@@ -81,11 +81,6 @@ function londonTodayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * @param {string} page
- * @param {Record<string, unknown> | null | undefined} profile
- * @param {string} authEmail
- */
 /** Demo / guide preview only — real Teflon login should appear in the Online bar for QA. */
 export function portalPresenceSkipDemoBroadcast(profile, session, opts) {
   if (opts?.isDemo === true) return true;
@@ -107,6 +102,13 @@ export function portalPresenceSkipDemoBroadcast(profile, session, opts) {
   return false;
 }
 
+/**
+ * @param {string} page
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {string} authEmail
+ * @returns {"onboarding"|"admin"|"lead"|"staff"}
+ */
+export function portalPresenceSurface(page, profile, email) {
   const p = String(page || "").toLowerCase();
   if (p === "onboarding") return "onboarding";
   const app = String(profile?.app_role || "").toLowerCase();

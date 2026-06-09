@@ -658,7 +658,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     );
     try {
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260609-teflon-presence"
+        "./portal_live_presence.js?v=20260608-presence-fix"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {
