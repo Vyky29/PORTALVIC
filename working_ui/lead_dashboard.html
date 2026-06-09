@@ -777,6 +777,7 @@
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="announcementsSheet" aria-labelledby="announcementsTitle">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
+      <button type="button" class="announcements-sheet-back" id="announcementsSheetBackBtn" hidden aria-label="Back to dashboard">← Back to dashboard</button>
       <h3 id="announcementsTitle">Announcements &amp; reminders</h3>
       <p>Read, confirm, and sign site-wide updates and personal reminders.</p>
       <p>Timetable changes and operational updates.</p>
@@ -8717,7 +8718,18 @@
           if(bodyEl) bodyEl.scrollTop = 0;
         }catch(_){}
       }
+      syncAnnouncementsSheetBackBtn();
       if(typeof syncDockNavContext === 'function') syncDockNavContext();
+    }
+
+    function syncAnnouncementsSheetBackBtn(){
+      const btn = document.getElementById('announcementsSheetBackBtn');
+      if(!btn) return;
+      const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
+      const lockActive = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
+      const show = annOpen && !lockActive;
+      btn.hidden = !show;
+      btn.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
 
     function portalNotificationAlertFlags(st){
@@ -11993,6 +12005,9 @@
       });
     }
     document.getElementById('clientGeneralSheetBack')?.addEventListener('click', closeClientGeneralSheet);
+    document.getElementById('announcementsSheetBackBtn')?.addEventListener('click', function(){
+      if(typeof closeSheet === 'function') closeSheet();
+    });
     document.getElementById('clientSessionsOverviewSheetBack')?.addEventListener('click', closeClientSessionsOverviewSheet);
     const clientBtnSessionsOverview = document.getElementById('clientBtnSessionsOverview');
     if(clientBtnSessionsOverview){

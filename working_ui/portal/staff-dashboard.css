@@ -5852,6 +5852,32 @@
     #announcementsSheet .sheet-head h3#announcementsTitle{
       font-size:15px;
     }
+    #announcementsSheet .sheet-head .announcements-sheet-back{
+      display:block;
+      width:100%;
+      text-align:left;
+      margin:0 0 4px;
+      padding:6px 2px 8px;
+      border:none;
+      background:transparent;
+      font-family:inherit;
+      font-size:14px;
+      font-weight:700;
+      color:var(--blue);
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    #announcementsSheet .sheet-head .announcements-sheet-back:hover{
+      color:var(--ink);
+    }
+    #announcementsSheet .sheet-head .announcements-sheet-back:focus-visible{
+      outline:2px solid var(--blue);
+      outline-offset:2px;
+      border-radius:8px;
+    }
+    #announcementsSheet .sheet-head .announcements-sheet-back[hidden]{
+      display:none !important;
+    }
     .sheet.sheet--fullscreen.sheet--mobile-frame .sheet-head p{
       margin:0 0 4px;
       font-size:13px;
