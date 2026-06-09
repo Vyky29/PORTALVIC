@@ -184,33 +184,8 @@
     }
   }
 
-  function portalStaffTryForegroundChatOsBanner(title, preview, tag) {
-    var icon = "/portal/app-icon/icon-192.png?v=20260624-push-icon";
-    var opts = {
-      body: String(preview || ""),
-      tag: String(tag || "portal-chat-fg"),
-      renotify: true,
-      silent: false,
-      vibrate: [120, 55, 120, 55, 160],
-      icon: icon,
-      badge: icon,
-    };
-    if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.ready) {
-      void global.navigator.serviceWorker.ready
-        .then(function (reg) {
-          if (reg && typeof reg.showNotification === "function") {
-            return reg.showNotification(String(title || "New message"), opts);
-          }
-        })
-        .catch(function () {});
-      return;
-    }
-    if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
-      global.portalStaffNotifyOsWhiteTile(title, preview, tag, { vibrate: false });
-    }
-  }
-
-  function portalStaffNotifyIncomingChat(title, preview, row) {
+  function portalStaffNotifyIncomingChat(title, preview, row, notifyOpts) {
+    notifyOpts = notifyOpts || {};
     title = String(title || "Admin").trim();
     preview = String(preview || "New message").trim();
     var dedupeKey = String((row && row.id) || title + "|" + preview).trim();
@@ -233,10 +208,13 @@
     var appVisible =
       global.document && String(global.document.visibilityState || "") === "visible";
     var tag = "portal-chat-live-" + String((row && row.id) || Date.now());
+    /* Foreground: sound + unread chrome only — no in-app toast. */
     if (appVisible) {
-      portalStaffShowChatPushToast(title, preview);
-      portalStaffTryForegroundChatOsBanner(title, preview, tag);
+      /* Server Web Push already raised the OS banner via the service worker. */
+    } else if (notifyOpts.fromServerPush) {
+      /* Background/killed: service worker owns OS notifications — do not duplicate from the page. */
     } else if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
+      /* Realtime-only fallback while the tab is alive but not focused (no server push). */
       global.portalStaffNotifyOsWhiteTile(title, preview, tag);
     }
     if (typeof global.syncPortalHeaderAlertChrome === "function") {
@@ -256,17 +234,20 @@
     var threadId = String(chat.threadId || chat.thread_id || "").trim();
     var groupId = String(chat.groupId || chat.group_id || "").trim();
     if (!threadId && !groupId) {
-      if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
-        global.portalOpenInternalChatFromHeaderQuickMenu();
+      if (opts.fromNotificationClick) {
+        if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
+          global.portalOpenInternalChatFromHeaderQuickMenu();
+        }
       }
       return;
     }
-    if (
-      !opts.fromNotificationClick &&
-      global.document &&
-      global.document.visibilityState === "visible"
-    ) {
-      portalStaffNotifyIncomingChat(data.title, data.body, { id: data.tag || "" });
+    if (!opts.fromNotificationClick) {
+      portalStaffNotifyIncomingChat(
+        data.title,
+        data.body,
+        { id: data.tag || "" },
+        { fromServerPush: true }
+      );
       return;
     }
     void portalOpenInternalChatFromPush(chat);

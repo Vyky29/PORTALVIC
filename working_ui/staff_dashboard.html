@@ -1091,7 +1091,7 @@
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-group"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-foreground-alert"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-push-restore"></script>
   <script src="/portal/portal_sheet_back.js?v=20260609-dock-menu-nav"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6567,9 +6567,12 @@
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
     };
-    /** OS banner: white app tile + vibrate (same pattern as roster “undo”). */
+    /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
       opts = opts || {};
+      if(opts.force !== true && typeof document !== 'undefined' && document.visibilityState === 'visible'){
+        return false;
+      }
       if(opts.vibrate !== false){
         try{
           if(navigator.vibrate) navigator.vibrate([120, 55, 120, 55, 160]);
@@ -15138,6 +15141,11 @@
     }
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible'){
+        try{
+          if(typeof Notification !== 'undefined' && Notification.permission === 'granted' && typeof window.portalEnsureWebPushSubscription === 'function'){
+            void window.portalEnsureWebPushSubscription();
+          }
+        }catch(_wps){}
         try{
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
