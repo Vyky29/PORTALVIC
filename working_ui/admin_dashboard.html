@@ -40,7 +40,7 @@
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-ops-thread-rpc"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
+  <script src="/portal/portal_ceo_god_mode_admin.js?v=20260609-ops-send-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-lane-hints"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-ceo-groups-direct"></script>
@@ -19928,6 +19928,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '';
     }
+    window.portalAdminDmFindStaffLeadThreadForWorker = portalAdminDmFindStaffLeadThreadForWorker;
     async function portalAdminDmFetchStaffDmThreads(client, me, ch){
       if(ch === 'staff_lead' && portalAdminDmUsesSharedStaffInbox()){
         return client
@@ -22821,12 +22822,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }catch(_flatMine){}
       }
+      if(portalAdminDmCeoUsesSharedWorkerOpsInbox() && client && me && tid){
+        try{
+          var preservedWorker = String((window.__PORTAL_ADMIN_DM_UI || {}).managementWorkerId || (window.__PORTAL_ADMIN_DM_UI || {}).workerId || '').trim();
+          if(!preservedWorker){
+            var tresPre = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
+            if(tresPre && tresPre.data){
+              var idsPre = [String(tresPre.data.participant_a||''), String(tresPre.data.participant_b||'')].filter(Boolean);
+              var profPre = {};
+              if(idsPre.length){
+                var prPre = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', idsPre);
+                if(!prPre.error && Array.isArray(prPre.data)){
+                  prPre.data.forEach(function(p){ if(p && p.id) profPre[String(p.id)] = p; });
+                }
+              }
+              var wPre = portalAdminDmWorkerPeerFromThread(tresPre.data, profPre, me);
+              if(wPre && portalAdminDmIsWorkerRecipient(profPre[wPre] || {})) preservedWorker = wPre;
+            }
+          }
+          if(preservedWorker){
+            var opsOnlyTid = await portalAdminDmFindStaffLeadThreadForWorker(client, preservedWorker);
+            if(opsOnlyTid) tid = String(opsOnlyTid);
+          }
+        }catch(_opsOpenCanon){}
+      }
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
       window.__PORTAL_ADMIN_DM_UI.groupId = '';
       window.__PORTAL_ADMIN_DM_UI.groupSlug = '';
       window.__PORTAL_ADMIN_DM_UI.threadId = tid;
       window.__PORTAL_ADMIN_DM_UI.hubPane = 'chats';
-      window.__PORTAL_ADMIN_DM_UI.managementWorkerId = '';
       if(client && me && tid){
         try{
           var tresW = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
@@ -22889,6 +22913,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(peerId){
           peerProf = profMap[peerId] || null;
+          window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+          window.__PORTAL_ADMIN_DM_UI.peerProf = peerProf;
           if(!peerLabel){
             if(
               peerProf &&
@@ -23351,6 +23377,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return tid;
     }
     async function portalAdminDmSendReply(){
+      if(window.__PORTAL_ADMIN_DM_SENDING__) return;
       var client = getSchedSupabaseClient();
       if(
         window.portalChatActorIdentity &&
@@ -23376,6 +23403,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(errB) errB.textContent = 'Enter a message.';
         return;
       }
+      window.__PORTAL_ADMIN_DM_SENDING__ = true;
       if(sendBtn) sendBtn.disabled = true;
       try{
         if(gid){
@@ -23423,6 +23451,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(e){
         if(errB) errB.textContent = String((e && e.message) || e || 'Send failed');
       }finally{
+        window.__PORTAL_ADMIN_DM_SENDING__ = false;
         if(sendBtn) sendBtn.disabled = false;
       }
     }

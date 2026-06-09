@@ -83,10 +83,66 @@
   function shouldSendAsOpsAdmin(ui) {
     ui = ui || global.__PORTAL_ADMIN_DM_UI || {};
     if (isOpsAdminUser()) return false;
+    var ch = String(global.__PORTAL_ADMIN_DM_CHANNEL || ui.channel || "staff_lead").trim();
+    if (isCeoTrio() && ch !== "ceo_exec") {
+      if (String(ui.inboxLane || "") === "ops") return true;
+      if (String(ui.managementWorkerId || ui.workerId || "").trim()) return true;
+      if (
+        ui.peerProf &&
+        typeof global.portalInternalDmIsWorkerRecipient === "function" &&
+        global.portalInternalDmIsWorkerRecipient(ui.peerProf)
+      ) {
+        return true;
+      }
+    }
     if (!isCeoTrio() && !isActive()) return false;
     if (String(ui.inboxLane || "") === "ops") return true;
-    if (isActive() && String(ui.channel || "") !== "ceo_exec") return true;
+    if (isActive() && ch !== "ceo_exec") return true;
     return !!ui.godModeAdmin;
+  }
+
+  async function ensureOpsThreadForSend(client, threadId, ui) {
+    threadId = String(threadId || "").trim();
+    ui = ui || global.__PORTAL_ADMIN_DM_UI || {};
+    var workerId = String(ui.managementWorkerId || ui.workerId || "").trim();
+    if (
+      !workerId &&
+      window.portalCsCliqSupportRoute &&
+      typeof window.portalCsCliqSupportRoute.resolveWorkerIdInPair === "function" &&
+      client &&
+      threadId
+    ) {
+      try {
+        var tres = await client
+          .from("portal_staff_dm_threads")
+          .select("participant_a,participant_b")
+          .eq("id", threadId)
+          .maybeSingle();
+        if (tres && tres.data) {
+          var a = String(tres.data.participant_a || "");
+          var b = String(tres.data.participant_b || "");
+          workerId = String(
+            (await window.portalCsCliqSupportRoute.resolveWorkerIdInPair(client, a, b)) || ""
+          ).trim();
+        }
+      } catch (_w) {}
+    }
+    if (
+      workerId &&
+      window.portalCsCliqSupportRoute &&
+      typeof window.portalCsCliqSupportRoute.ensureOpsThreadForWorker === "function"
+    ) {
+      var opsTid = await window.portalCsCliqSupportRoute.ensureOpsThreadForWorker(client, workerId);
+      if (opsTid) return String(opsTid);
+    }
+    if (
+      workerId &&
+      typeof global.portalAdminDmFindStaffLeadThreadForWorker === "function"
+    ) {
+      var legacyOps = await global.portalAdminDmFindStaffLeadThreadForWorker(client, workerId);
+      if (legacyOps) return String(legacyOps);
+    }
+    return threadId;
   }
 
   async function insertDmMessage(client, threadId, body, messageType) {
@@ -96,15 +152,18 @@
     if (!client || !threadId || !body) throw new Error("Not available.");
 
     if (shouldSendAsOpsAdmin()) {
-      try {
-        var opsIns = await client.rpc("portal_staff_dm_insert_ops_admin_message", {
-          p_thread_id: threadId,
-          p_body: body,
-          p_message_type: messageType,
-        });
-        if (!opsIns.error && opsIns.data) return opsIns.data;
-        if (opsIns.error) throw opsIns.error;
-      } catch (_ops) {}
+      threadId = await ensureOpsThreadForSend(client, threadId, global.__PORTAL_ADMIN_DM_UI || {});
+      global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+      global.__PORTAL_ADMIN_DM_UI.threadId = threadId;
+      global.__PORTAL_ADMIN_DM_UI.inboxLane = "ops";
+      var opsIns = await client.rpc("portal_staff_dm_insert_ops_admin_message", {
+        p_thread_id: threadId,
+        p_body: body,
+        p_message_type: messageType,
+      });
+      if (opsIns.error) throw opsIns.error;
+      if (!opsIns.data) throw new Error("Could not send on the Admin ops line.");
+      return opsIns.data;
     }
 
     var ins = await client.rpc("portal_staff_dm_insert_message", {
