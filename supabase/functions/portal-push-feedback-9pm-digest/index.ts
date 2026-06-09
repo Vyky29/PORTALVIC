@@ -1,11 +1,10 @@
-// @ts-nocheck — Edge Function (Deno). Daily 21:00 Europe/London admin digest for missing session feedback.
+// @ts-nocheck — Edge Function (Deno). Daily 09:00 Europe/London admin alert for yesterday's missing session feedback.
 //
 // Secrets: same as portal-push-dispatch-admin-alert (VAPID_*, SUPABASE_*, PORTAL_PUSH_*)
 //   PORTAL_PUSH_WEBHOOK_SECRET — cron / manual invoke header x-portal-webhook-secret
 //
-// Schedule (Supabase Dashboard → Cron or pg_cron):
-//   0 21 * * * Europe/London → POST .../portal-push-feedback-9pm-digest
-//   Header: x-portal-webhook-secret: <PORTAL_PUSH_WEBHOOK_SECRET>
+// Schedule (pg_cron migration 20260609120000_portal_late_feedback_9am_digest.sql):
+//   0 8 * * * UTC ≈ 09:00 London (BST); 08:00 GMT in winter — adjust if needed
 //
 // Deploy: supabase functions deploy portal-push-feedback-9pm-digest
 
@@ -23,24 +22,36 @@ import {
 
 const DEDUPE_TABLE = "portal_webpush_feedback_9pm_sent";
 
-function londonTodayIso(): string {
+function londonPartsForDate(d: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/London",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(d);
   const y = parts.find((p) => p.type === "year")?.value ?? "";
   const m = parts.find((p) => p.type === "month")?.value ?? "";
-  const d = parts.find((p) => p.type === "day")?.value ?? "";
+  const day = parts.find((p) => p.type === "day")?.value ?? "";
+  return { y, m, d: day };
+}
+
+function londonIsoFromParts(y: string, m: string, d: string): string {
   return `${y}-${m}-${d}`;
 }
 
-function londonWeekdayLong(): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/London",
-    weekday: "long",
-  }).format(new Date());
+function londonTodayIso(): string {
+  const { y, m, d } = londonPartsForDate(new Date());
+  return londonIsoFromParts(y, m, d);
+}
+
+function londonYesterdayIso(): string {
+  const { y, m, d } = londonPartsForDate(new Date(Date.now() - 86400000));
+  return londonIsoFromParts(y, m, d);
+}
+
+function weekdayLongForIso(iso: string): string {
+  const dt = new Date(`${iso}T12:00:00`);
+  return new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(dt);
 }
 
 Deno.serve(async (req) => {
@@ -74,29 +85,33 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
-  const todayIso = londonTodayIso();
-  const weekday = londonWeekdayLong();
+  const shiftDateIso = londonYesterdayIso();
+  const weekday = weekdayLongForIso(shiftDateIso);
 
   const { data: dedupeHit, error: dedupeErr } = await admin
     .from(DEDUPE_TABLE)
     .select("id")
-    .eq("digest_date", todayIso)
+    .eq("digest_date", shiftDateIso)
     .maybeSingle();
   if (dedupeErr) {
-    console.error("[portal-feedback-9pm] dedupe read", dedupeErr);
+    console.error("[portal-feedback-9am] dedupe read", dedupeErr);
     return jsonPushResponse({ error: dedupeErr.message }, 500);
   }
   if (dedupeHit) {
-    return jsonPushResponse({ skipped: true, reason: "already sent", date: todayIso });
+    return jsonPushResponse({
+      skipped: true,
+      reason: "already sent",
+      shiftDate: shiftDateIso,
+    });
   }
 
   const { data: datedRoster, error: datedErr } = await admin
     .from("portal_roster_rows")
     .select("client_name, time_slot, service, instructors, session_date, day")
     .eq("status", "active")
-    .eq("session_date", todayIso);
+    .eq("session_date", shiftDateIso);
   if (datedErr) {
-    console.error("[portal-feedback-9pm] roster dated", datedErr);
+    console.error("[portal-feedback-9am] roster dated", datedErr);
     return jsonPushResponse({ error: datedErr.message }, 500);
   }
   const { data: templateRoster, error: templateErr } = await admin
@@ -106,7 +121,7 @@ Deno.serve(async (req) => {
     .is("session_date", null)
     .ilike("day", weekday);
   if (templateErr) {
-    console.error("[portal-feedback-9pm] roster template", templateErr);
+    console.error("[portal-feedback-9am] roster template", templateErr);
     return jsonPushResponse({ error: templateErr.message }, 500);
   }
   const rosterRows = [...(datedRoster || []), ...(templateRoster || [])];
@@ -114,28 +129,28 @@ Deno.serve(async (req) => {
   const { data: feedbackRows, error: fbErr } = await admin
     .from("session_feedback")
     .select("client_name, session_date")
-    .eq("session_date", todayIso);
+    .eq("session_date", shiftDateIso);
   if (fbErr) {
-    console.error("[portal-feedback-9pm] feedback", fbErr);
+    console.error("[portal-feedback-9am] feedback", fbErr);
     return jsonPushResponse({ error: fbErr.message }, 500);
   }
 
   const { data: absentRows, error: absErr } = await admin
     .from("portal_staff_session_quick_marks")
     .select("client_name, session_date")
-    .eq("session_date", todayIso)
+    .eq("session_date", shiftDateIso)
     .eq("mark_type", "absent");
   if (absErr) {
-    console.error("[portal-feedback-9pm] absent marks", absErr);
+    console.error("[portal-feedback-9am] absent marks", absErr);
     return jsonPushResponse({ error: absErr.message }, 500);
   }
 
   const { data: cancelRows, error: canErr } = await admin
     .from("cancellation_reports")
     .select("client_name, session_date")
-    .eq("session_date", todayIso);
+    .eq("session_date", shiftDateIso);
   if (canErr) {
-    console.error("[portal-feedback-9pm] cancellations", canErr);
+    console.error("[portal-feedback-9am] cancellations", canErr);
     return jsonPushResponse({ error: canErr.message }, 500);
   }
 
@@ -163,8 +178,16 @@ Deno.serve(async (req) => {
   });
 
   if (!missing.length) {
-    await admin.from(DEDUPE_TABLE).insert({ digest_date: todayIso, missing_count: 0 });
-    return jsonPushResponse({ ok: true, sent: 0, missing: 0, date: todayIso });
+    await admin.from(DEDUPE_TABLE).insert({
+      digest_date: shiftDateIso,
+      missing_count: 0,
+    });
+    return jsonPushResponse({
+      ok: true,
+      sent: 0,
+      missing: 0,
+      shiftDate: shiftDateIso,
+    });
   }
 
   let adminIds: string[];
@@ -174,14 +197,20 @@ Deno.serve(async (req) => {
     return jsonPushResponse({ error: String(e) }, 500);
   }
   if (!adminIds.length) {
-    return jsonPushResponse({ ok: true, sent: 0, targets: 0, missing: missing.length });
+    return jsonPushResponse({
+      ok: true,
+      sent: 0,
+      targets: 0,
+      missing: missing.length,
+      shiftDate: shiftDateIso,
+    });
   }
 
   const sample = missing.slice(0, 4).join(", ");
   const more = missing.length > 4 ? ` +${missing.length - 4} more` : "";
-  const title = `Feedback missing · ${todayIso}`;
+  const title = `Late shift feedback · ${shiftDateIso}`;
   const body = clampPushBody(
-    `${missing.length} session(s) still need feedback by 9pm: ${sample}${more}`,
+    `${missing.length} session(s) from ${weekday}'s shift still missing feedback: ${sample}${more}`,
   );
 
   const notifyUrl = `${openBase}?portalOpen=alerts`;
@@ -190,7 +219,7 @@ Deno.serve(async (req) => {
     body,
     url: notifyUrl,
     portalOpen: "alerts",
-    tag: `admin-feedback-9pm-${todayIso}`,
+    tag: `admin-feedback-late-${shiftDateIso}`,
     requireInteraction: true,
   });
 
@@ -201,7 +230,7 @@ Deno.serve(async (req) => {
       pushPayload,
     );
     await admin.from(DEDUPE_TABLE).insert({
-      digest_date: todayIso,
+      digest_date: shiftDateIso,
       missing_count: missing.length,
     });
     return jsonPushResponse({
@@ -209,10 +238,11 @@ Deno.serve(async (req) => {
       sent,
       targets,
       missing: missing.length,
-      date: todayIso,
+      shiftDate: shiftDateIso,
+      runDate: londonTodayIso(),
     });
   } catch (e) {
-    console.error("[portal-feedback-9pm] send", e);
+    console.error("[portal-feedback-9am] send", e);
     return jsonPushResponse({ error: String(e) }, 500);
   }
 });

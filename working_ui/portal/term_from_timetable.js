@@ -27,7 +27,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termBreakFrom": "2026-05-23",
   "termBreakTo": "2026-05-31",
   "termResumeDate": "2026-06-01",
-  "termFeedbackAssumeCompleteThroughYesterday": true,
+  "termFeedbackAssumeCompleteThroughYesterday": false,
   "termClosedDates": [
     "2026-05-04"
   ],
@@ -106,9 +106,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ]
     }
   },
-  "termStaffLateSubmissionBypassProfileKeys": [
-    "javier"
-  ],
+  "termStaffLateSubmissionBypassProfileKeys": [],
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"
   },

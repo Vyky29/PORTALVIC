@@ -140,9 +140,9 @@ function buildAlert(
     const svc = String(record.service ?? "").trim();
     return {
       sourceId: id,
-      title: `Late feedback · ${client}`,
+      title: `Late shift feedback received · ${client}`,
       body: clampPushBody(
-        `${who} · ${sessionDate || "session"}${svc ? " · " + svc : ""} — submitted late`,
+        `${who} completed late feedback for the ${sessionDate || "session"} shift${svc ? " · " + svc : ""}`,
       ),
     };
   }
