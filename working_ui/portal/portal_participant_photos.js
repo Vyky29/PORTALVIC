@@ -36,7 +36,7 @@
     rodin: "portal/participants/rodin.png",
     zaid: "portal/participants/zaid.png",
     "yusef ah": "portal/participants/yusef-ah.png",
-    "yusuf ah": "portal/participants/yusuf-ah.png",
+    "yusuf ah": "portal/participants/yusef-ah.png",
     "rayyan fi": "portal/participants/rayaan-fi.png",
     "rayaan fi": "portal/participants/rayaan-fi.png",
     "rayyan f": "portal/participants/rayaan-fi.png",
