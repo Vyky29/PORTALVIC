@@ -1020,6 +1020,96 @@
   }
 }
 
+/* Admin / management desktop — full-width meetings hub */
+@media (min-width: 900px) {
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq__pane--meetings {
+    overflow: auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(248, 252, 255, 0.92) 100%);
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-centre {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 28px 32px 36px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px 22px;
+    align-content: start;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-header {
+    grid-column: 1 / -1;
+    padding-bottom: 4px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-header h2 {
+    font-size: 26px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--primary,
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--active {
+    min-height: 168px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--primary {
+    grid-column: 1;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--active {
+    grid-column: 2;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--active .portal-cs-cliq-meetings-btn,
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--primary .portal-cs-cliq-meetings-btn {
+    margin-top: auto;
+    align-self: flex-start;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card--requests {
+    grid-column: 1 / -1;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-upcoming {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px 22px;
+    align-content: start;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-upcoming__title {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    font-size: 18px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-upcoming__group {
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-requests-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1200px) {
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-centre {
+    padding: 32px 40px 40px;
+    gap: 20px 28px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--tier-management .portal-cs-cliq-meetings-card {
+    padding: 20px 22px;
+  }
+}
+
 /* Announcements centre + inbox */
 #csCliqRoot .portal-cs-cliq__pane--announcements,
 #csCliqRoot .portal-cs-cliq-announcements-centre {

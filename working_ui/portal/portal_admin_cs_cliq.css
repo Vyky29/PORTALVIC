@@ -30,6 +30,15 @@
   }
 }
 
+@media (min-width: 900px) {
+  #csCliqRoot.portal-cs-cliq--tier-management.portal-cs-cliq {
+    min-height: calc(100dvh - 88px);
+    max-height: calc(100dvh - 88px);
+    margin: -12px -16px 0;
+  }
+}
+
+
 #csCliqRoot .portal-cs-cliq__layout {
   flex: 1 1 auto;
   min-height: 0;

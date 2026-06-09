@@ -1,5 +1,5 @@
 /**
- * CS Cliq Meetings centre ù schedule, requests and upcoming meetings.
+ * CS Cliq Meetings centre ? schedule, requests and upcoming meetings.
  */
 (function (global) {
   "use strict";
@@ -115,7 +115,7 @@
       var d = new Date(iso);
       return (
         d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) +
-        " ù " +
+        " ? " +
         d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
       );
     } catch (_e) {
@@ -158,7 +158,7 @@
       "</div>" +
       '<p class="portal-cs-cliq-meetings-upcoming-card__when">' +
       esc(formatWhen(mtg.scheduledAt)) +
-      (mtg.duration ? " ù " + esc(mtg.duration) : "") +
+      (mtg.duration ? " ? " + esc(mtg.duration) : "") +
       "</p>" +
       '<p class="portal-cs-cliq-meetings-upcoming-card__who">' +
       esc(mtg.participants || "Participants TBC") +
@@ -181,7 +181,7 @@
       "</p>" +
       '<p class="portal-cs-cliq-meetings-request-item__meta">' +
       esc(req.from || "Staff") +
-      (req.with ? " ù with " + esc(req.with) : "") +
+      (req.with ? " ? with " + esc(req.with) : "") +
       "</p>" +
       '<p class="portal-cs-cliq-meetings-request-item__when">' +
       esc(when) +
@@ -216,7 +216,7 @@
     if (active && state.peerLabel) {
       var contextualBtn = schedule ? "Schedule with this person" : "Request meeting with this person";
       activeBlock =
-        '<section class="portal-cs-cliq-meetings-card">' +
+        '<section class="portal-cs-cliq-meetings-card portal-cs-cliq-meetings-card--active">' +
         '<p class="portal-cs-cliq-meetings-card__eyebrow">Active conversation</p>' +
         '<h3 class="portal-cs-cliq-meetings-card__title">' +
         esc(state.peerLabel) +
@@ -229,7 +229,7 @@
         "</button></section>";
     } else {
       activeBlock =
-        '<section class="portal-cs-cliq-meetings-card portal-cs-cliq-meetings-card--muted">' +
+        '<section class="portal-cs-cliq-meetings-card portal-cs-cliq-meetings-card--active portal-cs-cliq-meetings-card--muted">' +
         '<p class="portal-cs-cliq-meetings-card__eyebrow">Active conversation</p>' +
         '<h3 class="portal-cs-cliq-meetings-card__title">No active conversation selected</h3>' +
         '<p class="portal-cs-cliq-meetings-card__desc">Choose a chat first or create a new meeting from the button above.</p>' +
@@ -248,7 +248,7 @@
             "</div>"
           : '<p class="portal-cs-cliq-meetings-empty">No meeting requests yet.</p>';
       requestsBlock =
-        '<section class="portal-cs-cliq-meetings-card">' +
+        '<section class="portal-cs-cliq-meetings-card portal-cs-cliq-meetings-card--requests">' +
         '<h3 class="portal-cs-cliq-meetings-card__title">Meeting requests</h3>' +
         '<p class="portal-cs-cliq-meetings-card__desc">Staff requests for urgent support or internal meetings.</p>' +
         requestsBody +
