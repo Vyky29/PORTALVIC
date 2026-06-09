@@ -108,6 +108,88 @@
     };
   }
 
+  function normName(v) {
+    return String(v || "")
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function resolveClientName(raw) {
+    if (typeof global.portalResolveParticipantCanonicalName === "function") {
+      var c = global.portalResolveParticipantCanonicalName(raw);
+      if (c) return c;
+    }
+    return String(raw || "").trim();
+  }
+
+  function rosterRows() {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    return src && Array.isArray(src.rows) ? src.rows : [];
+  }
+
+  function rowMatchesAnchorWeekday(row, anchorIso, weekday) {
+    var rowIso = normIso(row.session_date);
+    if (rowIso) {
+      if (anchorIso && rowIso === anchorIso) return true;
+      return !!(weekday && weekdayLongFromIso(rowIso) === weekday);
+    }
+    var rowDay = String(row.day || "").trim();
+    return !!(weekday && rowDay === weekday);
+  }
+
+  function collectParticipantRows(clientName, anchorIso) {
+    var want = normName(resolveClientName(clientName) || clientName);
+    if (!want) return [];
+    var weekday = weekdayLongFromIso(anchorIso);
+    var out = [];
+    rosterRows().forEach(function (r) {
+      var nm = String(r.client_name || "").trim();
+      if (!nm || /^no[\s_-]*client$/i.test(nm)) return;
+      if (normName(nm) !== want) return;
+      if (anchorIso && weekday && !rowMatchesAnchorWeekday(r, anchorIso, weekday)) return;
+      out.push(r);
+    });
+    return out;
+  }
+
+  function collectServicesForParticipantOnAnchor(clientName, anchorIso) {
+    var set = Object.create(null);
+    collectParticipantRows(clientName, anchorIso).forEach(function (r) {
+      var s = String(r.service || "").trim();
+      if (s) set[s] = true;
+    });
+    if (!Object.keys(set).length && typeof global.portalCollectServicesForParticipantName === "function") {
+      (global.portalCollectServicesForParticipantName(clientName) || []).forEach(function (s) {
+        if (s) set[s] = true;
+      });
+    }
+    return Object.keys(set).sort(function (a, b) {
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+  }
+
+  function findBundleSlotByParticipantService(anchorIso, clientName, service) {
+    var wantSvc = normName(service);
+    if (!wantSvc) return null;
+    var matches = collectParticipantRows(clientName, anchorIso).filter(function (r) {
+      return normName(r.service) === wantSvc;
+    });
+    if (!matches.length) {
+      var wantClient = normName(resolveClientName(clientName) || clientName);
+      matches = rosterRows().filter(function (r) {
+        return normName(r.client_name) === wantClient && normName(r.service) === wantSvc;
+      });
+    }
+    if (!matches.length) return null;
+    var exact = matches.filter(function (r) {
+      return normIso(r.session_date) === anchorIso;
+    });
+    if (exact.length) return exact[0];
+    return matches[0];
+  }
+
   function findBundleSlot(anchorIso, client, timeSlot) {
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
@@ -137,29 +219,104 @@
     };
   }
 
+  function setFormField(root, sel, val) {
+    var el = root.querySelector(sel);
+    if (el) el.value = String(val == null ? "" : val);
+  }
+
+  function clearAutofilledSlotFields(root) {
+    ["#trsTimeSlot", "#trsInstructors", "#trsVenue", "#trsArea"].forEach(function (sel) {
+      setFormField(root, sel, "");
+    });
+  }
+
+  function applyBundleSlotToForm(root, slot) {
+    if (!slot) return false;
+    setFormField(root, "#trsTimeSlot", slot.time_slot);
+    setFormField(root, "#trsInstructors", slot.instructors);
+    setFormField(root, "#trsVenue", slot.venue);
+    setFormField(root, "#trsArea", slot.area);
+    return true;
+  }
+
+  function rebuildTermSlotServiceSelect(root, participantName, preferred, anchorIso) {
+    var svcEl = root.querySelector("#trsService");
+    if (!svcEl || svcEl.tagName !== "SELECT") return "";
+    var part = resolveClientName(participantName) || String(participantName || "").trim();
+    var pref = String(preferred == null ? svcEl.value : preferred || "").trim();
+    svcEl.innerHTML = "";
+    var ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = part ? "Select service" : "Pick participante first";
+    svcEl.appendChild(ph);
+    var list = part ? collectServicesForParticipantOnAnchor(part, anchorIso) : [];
+    list.forEach(function (svc) {
+      var o = document.createElement("option");
+      o.value = svc;
+      o.textContent = svc;
+      svcEl.appendChild(o);
+    });
+    var chosen = "";
+    if (list.length === 1) chosen = list[0];
+    else if (pref && list.indexOf(pref) !== -1) chosen = pref;
+    if (chosen) {
+      svcEl.value = chosen;
+      return chosen;
+    }
+    if (pref && !list.length) {
+      var ox = document.createElement("option");
+      ox.value = pref;
+      ox.textContent = pref;
+      svcEl.appendChild(ox);
+      svcEl.value = pref;
+      return pref;
+    }
+    svcEl.value = "";
+    return "";
+  }
+
+  function refreshTermSlotAutofill(root, opts) {
+    opts = opts || {};
+    var clientEl = root.querySelector("#trsClient");
+    var svcEl = root.querySelector("#trsService");
+    var anchorEl = root.querySelector("#trsAnchorDate");
+    if (!clientEl || !svcEl) return false;
+    var anchor = normIso(anchorEl && anchorEl.value);
+    var resolved = resolveClientName(clientEl.value);
+    if (resolved && resolved !== String(clientEl.value || "").trim()) clientEl.value = resolved;
+    var part = resolved || String(clientEl.value || "").trim();
+    if (!part) {
+      rebuildTermSlotServiceSelect(root, "", "", anchor);
+      clearAutofilledSlotFields(root);
+      return false;
+    }
+    var chosenSvc = rebuildTermSlotServiceSelect(root, part, svcEl.value, anchor);
+    if (!chosenSvc) {
+      clearAutofilledSlotFields(root);
+      if (opts.toastIfMissing && part) {
+        var wd = weekdayLongFromIso(anchor);
+        deps.toast("Pick a service for " + part + (wd ? " on " + wd : "") + ".");
+      }
+      return false;
+    }
+    var slot = findBundleSlotByParticipantService(anchor, part, chosenSvc);
+    if (!slot) {
+      clearAutofilledSlotFields(root);
+      if (opts.toastIfMissing) deps.toast("No roster row for that participante and service on this date.");
+      return false;
+    }
+    applyBundleSlotToForm(root, slot);
+    if (opts.toastOnSuccess) deps.toast("Loaded from roster — check fields then Save.");
+    return true;
+  }
+
   function fillFormFromBundle(root) {
     var p = rowPayloadFromForm(root);
-    if (!p.anchorDate || !p.client_name || !p.time_slot) {
-      deps.toast("Pick anchor date, participante, and time slot first.");
+    if (!p.anchorDate || !p.client_name) {
+      deps.toast("Pick anchor date and participante first.");
       return;
     }
-    var slot = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
-    if (!slot) {
-      deps.toast("No matching roster row in the loaded bundle for that date.");
-      return;
-    }
-    var map = [
-      ["#trsTimeSlot", slot.time_slot],
-      ["#trsInstructors", slot.instructors],
-      ["#trsService", slot.service],
-      ["#trsArea", slot.area],
-      ["#trsVenue", slot.venue],
-    ];
-    map.forEach(function (pair) {
-      var el = root.querySelector(pair[0]);
-      if (el) el.value = String(pair[1] || "");
-    });
-    deps.toast("Loaded current bundle values — edit fields then Save.");
+    refreshTermSlotAutofill(root, { toastIfMissing: true, toastOnSuccess: true });
   }
 
   function snapshotRow(p) {
@@ -760,7 +917,9 @@
       return;
     }
     if (!p.client_name || !p.time_slot || !p.day) {
-      deps.toast("Participante and time slot are required.");
+      if (p.client_name && !p.service) deps.toast("Select a service for this participante.");
+      else if (p.client_name && p.service && !p.time_slot) deps.toast("No roster slot for that service on this date.");
+      else deps.toast("Participante and time slot are required.");
       return;
     }
     if (/^no[\s_-]*client$/i.test(p.client_name)) {
@@ -833,8 +992,8 @@
       "@media(max-width:640px){.trs-row--identity,.trs-row--details,.trs-row--control{grid-template-columns:1fr}.trs-panel__head,.trs-panel__body,.trs-panel__foot{padding-left:14px;padding-right:14px}}",
       ".trs-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
       ".trs-field label{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#64748b}",
-      ".trs-field input{font:inherit;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
-      ".trs-field input[readonly]{background:#f8fafc;color:#475569}",
+      ".trs-field input,.trs-field select{font:inherit;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
+      ".trs-field input[readonly],.trs-field select:disabled{background:#f8fafc;color:#475569}",
       ".trs-field .participant-field-wrap{position:relative;min-width:0}",
       ".trs-field .portal-name-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;margin:0;padding:4px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:220px;overflow-y:auto}",
       ".trs-field .portal-name-suggest[hidden]{display:none!important}",
@@ -865,27 +1024,33 @@
     if (!root || typeof global.portalWireFieldSuggest !== "function") return;
     var wire = global.portalWireFieldSuggest;
 
-    function onParticipantPick(name) {
-      var svcEl = root.querySelector("#trsService");
-      if (!svcEl || String(svcEl.value || "").trim()) return;
-      if (typeof global.portalCollectServicesForParticipantName !== "function") return;
-      var list = global.portalCollectServicesForParticipantName(name) || [];
-      if (list.length === 1) svcEl.value = list[0];
+    function onParticipantChange() {
+      refreshTermSlotAutofill(root);
     }
 
     wire(root.querySelector("#trsClient"), root.querySelector("#trsClientSuggest"), {
       kind: "participant",
       strict: true,
       match: "contains",
-      onPick: onParticipantPick,
+      onPick: onParticipantChange,
     });
+    var clientEl = root.querySelector("#trsClient");
+    if (clientEl) {
+      var trsClientTimer = null;
+      clientEl.addEventListener("input", function () {
+        clearTimeout(trsClientTimer);
+        trsClientTimer = setTimeout(onParticipantChange, 300);
+      });
+      clientEl.addEventListener("change", onParticipantChange);
+    }
+    var svcEl = root.querySelector("#trsService");
+    if (svcEl) {
+      svcEl.addEventListener("change", function () {
+        refreshTermSlotAutofill(root);
+      });
+    }
     wire(root.querySelector("#trsInstructors"), root.querySelector("#trsInstructorsSuggest"), {
       kind: "instructor",
-      strict: false,
-      match: "contains",
-    });
-    wire(root.querySelector("#trsService"), root.querySelector("#trsServiceSuggest"), {
-      kind: "service",
       strict: false,
       match: "contains",
     });
@@ -929,24 +1094,24 @@
       '<div class="trs-panel__head">' +
       '<div class="trs-panel__title">' +
       "<h1>Edit term slot</h1>" +
-      "<p>Update, cancel or clear a participante from the term timetable. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>" +
+      "<p>Pick <strong>participante</strong> then <strong>service</strong> — time, instructor, venue and pool fill from the term roster. One-day covers stay in <strong>Schedule &amp; Covers</strong>.</p>" +
       "</div>" +
       '<div class="trs-panel__head-actions">' +
-      '<button type="button" class="btn btn--sec" id="trsLoadBundle">Load from roster</button>' +
+      '<button type="button" class="btn btn--sec" id="trsLoadBundle">Reload from roster</button>' +
       "</div>" +
       "</div>" +
       '<div class="trs-panel__body">' +
       '<div class="trs-row trs-row--identity">' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
-      '<div class="trs-field"><label for="trsClient">Participante</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="e.g. Kirushy" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participantes"></div></div></div>' +
-      '<div class="trs-field"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="e.g. 4.30 to 5"/></div>' +
+      '<div class="trs-field"><label for="trsClient">Participante</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="Start typing name…" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participantes"></div></div></div>' +
+      '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">Pick participante first</option></select></div>' +
       "</div>" +
       '<div class="trs-row trs-row--details" id="trsDetailsRow">' +
-      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="e.g. DAN, RAUL" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
-      '<div class="trs-field"><label for="trsService">Service</label><div class="participant-field-wrap"><input type="text" id="trsService" value="' + esc(pre.service || "") + '" placeholder="e.g. Aquatic Activity" autocomplete="off"/><div id="trsServiceSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Services"></div></div></div>' +
-      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. Northolt" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
-      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="e.g. Teaching Pool"/></div>' +
+      '<div class="trs-field"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="Auto from roster"/></div>' +
+      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
+      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
+      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Auto from roster"/></div>' +
       "</div>" +
       '<div class="trs-row trs-row--control" id="trsControlRow">' +
       '<div class="trs-control-block" id="trsActionBox" role="group" aria-labelledby="trsActionLegend">' +
@@ -985,6 +1150,7 @@
         wdEl.value = weekdayLongFromIso(normIso(anchorEl.value));
         var scopeWd = root.querySelector("#trsScopeWeekdayLabel");
         if (scopeWd) scopeWd.textContent = wdEl.value;
+        refreshTermSlotAutofill(root);
       });
     }
     root.querySelectorAll('input[name="trsAction"]').forEach(function (inp) {
@@ -1002,6 +1168,13 @@
       });
     });
     wireTermSlotAutofill(root);
+    if (pre.client_name || pre.service) {
+      var svcEl0 = root.querySelector("#trsService");
+      if (svcEl0 && pre.service) {
+        rebuildTermSlotServiceSelect(root, pre.client_name || "", pre.service, anchor);
+      }
+      refreshTermSlotAutofill(root);
+    }
   }
 
   function openWithPrefill(prefill) {
