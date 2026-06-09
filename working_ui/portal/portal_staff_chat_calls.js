@@ -793,6 +793,31 @@
     return new Blob([buffer], { type: "audio/wav" });
   }
 
+  function silentPrimeBlobUrl() {
+    if (incomingState.silentBlobUrl) return incomingState.silentBlobUrl;
+    var sampleRate = 8000;
+    var samples = Math.floor(sampleRate * 0.05);
+    var data = new Float32Array(samples);
+    incomingState.silentBlobUrl = URL.createObjectURL(pcmToWavBlob(data, sampleRate));
+    return incomingState.silentBlobUrl;
+  }
+
+  function ensureSilentPrimeElement() {
+    if (incomingState.primeEl) return incomingState.primeEl;
+    if (typeof document === "undefined") return null;
+    var audio = document.createElement("audio");
+    audio.preload = "auto";
+    audio.setAttribute("playsinline", "true");
+    audio.setAttribute("webkit-playsinline", "true");
+    audio.volume = 0.001;
+    audio.src = silentPrimeBlobUrl();
+    incomingState.primeEl = audio;
+    try {
+      document.body.appendChild(audio);
+    } catch (_a) {}
+    return audio;
+  }
+
   function incomingRingtoneBlobUrl() {
     if (incomingState.ringBlobUrl) return incomingState.ringBlobUrl;
     var sampleRate = 8000;
@@ -913,27 +938,22 @@
         void incomingState.audioCtx.resume();
       }
     } catch (_c) {}
-    var audio = ensureIncomingRingElement();
-    if (audio) {
+    var primeAudio = ensureSilentPrimeElement();
+    if (primeAudio) {
       try {
-        var prevVol = audio.volume;
-        audio.volume = 0.001;
-        audio.currentTime = 0;
-        var silentPlay = audio.play();
+        primeAudio.currentTime = 0;
+        var silentPlay = primeAudio.play();
         if (silentPlay && typeof silentPlay.then === "function") {
           silentPlay
             .then(function () {
-              audio.pause();
-              audio.currentTime = 0;
-              audio.volume = prevVol || 0.85;
+              primeAudio.pause();
+              primeAudio.currentTime = 0;
             })
-            .catch(function () {
-              audio.volume = prevVol || 0.85;
-            });
+            .catch(function () {});
         }
       } catch (_ap) {}
     }
-    /* Do not play the 3-tone ring pattern while priming — users heard it on app open. */
+    /* Never play the 3-tone ring WAV while priming — use silentPrimeBlobUrl only. */
   }
 
   function playIncomingRingtoneWebAudio(silentPrime) {

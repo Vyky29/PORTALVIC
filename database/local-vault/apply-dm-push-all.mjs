@@ -63,12 +63,14 @@ async function assertVapidKeyPair(publicKey, privateKey) {
 async function main() {
   run("node database/local-vault/apply-chat-admin-push.mjs");
   run("node database/local-vault/apply-incoming-call-push.mjs");
+  run("node database/local-vault/apply-staff-dm-push.mjs");
 
   run("npx supabase db query --linked -f database/local-vault/step-chat-admin-push.local.sql");
   run("npx supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql");
+  run("npx supabase db query --linked -f database/local-vault/step-staff-dm-push.local.sql");
 
   run(
-    'npx supabase db query --linked "select tgname, tgrelid::regclass as on_table from pg_trigger where not tgisinternal and tgname in (\'portal-staff-dm-admin-chat-push\',\'portal-ceo-group-admin-chat-push\',\'portal-staff-dm-incoming-call-push\',\'portal-ceo-group-incoming-call-push\') order by 1;"',
+    'npx supabase db query --linked "select tgname, tgrelid::regclass as on_table from pg_trigger where not tgisinternal and tgname in (\'portal-staff-dm-admin-chat-push\',\'portal-ceo-group-admin-chat-push\',\'portal-staff-dm-worker-chat-push\',\'portal-staff-dm-incoming-call-push\',\'portal-ceo-group-incoming-call-push\') order by 1;"',
   );
 
   if (args.has("--secrets")) {
@@ -96,9 +98,12 @@ async function main() {
     run(
       "npx supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     );
+    run(
+      "npx supabase functions deploy portal-push-dispatch-staff-dm --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+    );
   }
 
-  console.log("\nDone. Re-test: Victor → Raul DM with Raul portal fully closed (PWA on iPhone).");
+  console.log("\nDone. Re-test: Victor → Teflon DM with Teflon portal closed; badge when app open.");
 }
 
 main().catch((err) => {

@@ -690,6 +690,13 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 4px;
 }
 /* Staff workers (Teflon): Admin-only lane — never show legacy inbox chrome behind thread */
+#internalChatSheet[data-portal-chat-booting="1"] .portal-dm-inbox-brand,
+#internalChatSheet[data-portal-chat-booting="1"] #internalChatListWrap,
+#internalChatSheet[data-portal-chat-booting="1"] #internalChatLeadInboxChrome,
+#internalChatSheet[data-portal-chat-booting="1"] #internalChatStaffDirectoryWrap{
+  visibility:hidden !important;
+  pointer-events:none;
+}
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadInboxChrome,
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadStaffSuggestions,
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatStaffDirectoryWrap,

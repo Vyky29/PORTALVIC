@@ -79,7 +79,8 @@
     }
   }
 
-  function handleChatPushMessage(data) {
+  function handleChatPushMessage(data, opts) {
+    opts = opts || {};
     if (!data || data.portalOpen !== "chat") return;
     var chat = data.chat || {};
     var threadId = String(chat.threadId || chat.thread_id || "").trim();
@@ -90,8 +91,16 @@
       }
       return;
     }
-    if (global.document && global.document.visibilityState === "visible") {
+    if (
+      !opts.fromNotificationClick &&
+      global.document &&
+      global.document.visibilityState === "visible"
+    ) {
       portalStaffShowChatPushToast(data.title, data.body);
+      if (typeof global.portalStaffDmSyncUnreadChrome === "function") {
+        void global.portalStaffDmSyncUnreadChrome();
+      }
+      return;
     }
     void portalOpenInternalChatFromPush(chat);
   }
@@ -106,11 +115,11 @@
           var d = ev.data;
           if (!d || !d.type) return;
           if (d.type === "portal-push-received" && d.portalOpen === "chat") {
-            handleChatPushMessage(d);
+            handleChatPushMessage(d, { fromNotificationClick: false });
             return;
           }
           if (d.type === "portal-notification-click" && d.portalOpen === "chat") {
-            handleChatPushMessage(d);
+            handleChatPushMessage(d, { fromNotificationClick: true });
           }
         } catch (_e) {}
       });
@@ -132,6 +141,7 @@
   }
 
   global.portalOpenInternalChatFromPush = portalOpenInternalChatFromPush;
+  global.portalStaffShowChatPushToast = portalStaffShowChatPushToast;
   global.portalBindChatPushMessages = bindChatPushMessages;
   global.portalConsumeChatPushQuery = consumeChatOpenQueryOnReady;
 
