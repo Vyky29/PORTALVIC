@@ -33,6 +33,8 @@
   }
 
   async function portalOpenInternalChatFromPush(chat) {
+    if (global.__PORTAL_CHAT_PUSH_OPENING__) return;
+    global.__PORTAL_CHAT_PUSH_OPENING__ = true;
     chat = chat || {};
     var threadId = String(chat.threadId || chat.thread_id || "").trim();
     var groupId = String(chat.groupId || chat.group_id || "").trim();
@@ -50,19 +52,26 @@
       global.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
       global.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = true;
     }
-    if (typeof global.openSheet === "function") {
-      global.openSheet("internalChatSheet", { bypassAnnouncementLock: true });
-    }
-    if (typeof global.syncPortalInternalChatImmersive === "function") {
-      global.syncPortalInternalChatImmersive();
-    } else if (typeof global.portalSyncInternalChatMobileViewport === "function") {
-      global.portalSyncInternalChatMobileViewport();
-    }
-    if (typeof global.portalStaffDmAckInboxOpened === "function") {
-      void global.portalStaffDmAckInboxOpened();
-    }
-    if (typeof global.portalRenderInternalChatSheet === "function") {
-      await global.portalRenderInternalChatSheet();
+    try {
+      if (typeof global.openSheet === "function") {
+        global.openSheet("internalChatSheet", {
+          bypassAnnouncementLock: true,
+          skipInternalChatRender: true,
+        });
+      }
+      if (typeof global.syncPortalInternalChatImmersive === "function") {
+        global.syncPortalInternalChatImmersive();
+      } else if (typeof global.portalSyncInternalChatMobileViewport === "function") {
+        global.portalSyncInternalChatMobileViewport();
+      }
+      if (typeof global.portalStaffDmAckInboxOpened === "function") {
+        await global.portalStaffDmAckInboxOpened();
+      }
+      if (typeof global.portalRenderInternalChatSheet === "function") {
+        await global.portalRenderInternalChatSheet();
+      }
+    } finally {
+      global.__PORTAL_CHAT_PUSH_OPENING__ = false;
     }
   }
 
