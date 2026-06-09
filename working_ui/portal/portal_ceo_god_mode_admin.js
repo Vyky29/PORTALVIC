@@ -58,11 +58,27 @@
     try {
       var base = new URL("admin_dashboard.html", global.location.href);
       base.searchParams.set("portalGodAdmin", "1");
-      base.hash = "view=cs_cliq";
+      base.searchParams.set("view", "cs_cliq");
+      base.hash = "cs_cliq";
       return base.href;
     } catch (_u) {
-      return "admin_dashboard.html?portalGodAdmin=1#view=cs_cliq";
+      return "admin_dashboard.html?portalGodAdmin=1&view=cs_cliq#cs_cliq";
     }
+  }
+
+  function primeGodModeChatBoot() {
+    global.__PORTAL_GOD_MODE_BOOT_CS_CLIQ__ = true;
+    global.__PORTAL_CS_CLIQ_PENDING_PANE = "channels";
+    global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+    global.__PORTAL_ADMIN_DM_UI.inboxLane = "ops";
+    global.__PORTAL_ADMIN_DM_UI.godModeAdmin = true;
+  }
+
+  function openGodModeChatView() {
+    primeGodModeChatBoot();
+    try {
+      if (typeof global.setView === "function") global.setView("cs_cliq");
+    } catch (_v) {}
   }
 
   async function resolveOpsAuthorId(client) {
@@ -218,9 +234,12 @@
     if (queryFlag()) activate();
     if (isActive()) {
       mountBanner();
-      try {
-        if (typeof global.setView === "function") global.setView("cs_cliq");
-      } catch (_v) {}
+      primeGodModeChatBoot();
+      if (global.__PORTAL_ADMIN_BOOT_DONE__) {
+        openGodModeChatView();
+      } else {
+        global.__PORTAL_GOD_MODE_BOOT_PENDING__ = true;
+      }
     }
     return false;
   }
@@ -232,6 +251,8 @@
     isOpsAdminUser: isOpsAdminUser,
     shouldRedirectCeoFromFullAdmin: shouldRedirectCeoFromFullAdmin,
     godModeAdminUrl: godModeAdminUrl,
+    primeGodModeChatBoot: primeGodModeChatBoot,
+    openGodModeChatView: openGodModeChatView,
     resolveOpsAuthorId: resolveOpsAuthorId,
     shouldSendAsOpsAdmin: shouldSendAsOpsAdmin,
     insertDmMessage: insertDmMessage,

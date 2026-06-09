@@ -747,6 +747,18 @@ function portalIsGhostDashboardSession() {
   return !!(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active);
 }
 
+/** CEO ops-admin chat mirror (`?portalGodAdmin=1`) — shared Admin inbox, not Sevitha's login. */
+function portalIsGodModeAdminSession() {
+  if (typeof window === "undefined") return false;
+  try {
+    const q = new URLSearchParams(String(window.location.search || ""));
+    if (q.get("portalGodAdmin") === "1" || q.get("portalGodAdmin") === "true") return true;
+  } catch {
+    /* ignore */
+  }
+  return !!window.__PORTAL_CEO_GOD_MODE_ADMIN__;
+}
+
 /**
  * Optional: dashboards may import this; does not change DOM.
  * @param {{ page?: string }} _opts
@@ -756,6 +768,7 @@ export async function bootstrapDashboardSupabase(_opts) {
 
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
   const isGhostDashboard = portalIsGhostDashboardSession();
+  const isGodModeAdmin = portalIsGodModeAdminSession();
   const loginRedirect = portalPublishedLoginUrl();
   const isLeadOverview = page === "lead_overview";
   const leadHubUrl = portalPublishedLeadUrl();
@@ -959,8 +972,8 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) {
       const gen = Number(profile.auth_session_generation) || 0;
-      if (isGhostDashboard) {
-        // Reused ghost tab can hold a stale generation in sessionStorage; never kick admin out mid-teleport.
+      if (isGhostDashboard || isGodModeAdmin) {
+        // Fresh tab can hold a stale generation cache; sync to server before single-session kick.
         portalClearCachedAuthSessionGeneration();
         portalSetCachedAuthSessionGeneration(gen);
       } else {

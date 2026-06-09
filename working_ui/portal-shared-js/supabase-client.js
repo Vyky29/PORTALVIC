@@ -10,7 +10,7 @@ const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
 
 const STORAGE_KEY = "portal_staff_context";
-/** Last seen `staff_profiles.auth_session_generation` for this tab (sessionStorage). */
+/** Last seen `staff_profiles.auth_session_generation` (localStorage — shared across portal tabs). */
 const PORTAL_AUTH_GEN_SESSION_KEY = "portalAuthSessionGenV1";
 
 /** @type {import("@supabase/supabase-js").SupabaseClient | null} */
@@ -108,7 +108,7 @@ export function clearPortalStaffContext() {
 
 export function portalGetCachedAuthSessionGeneration() {
   try {
-    const raw = sessionStorage.getItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    const raw = localStorage.getItem(PORTAL_AUTH_GEN_SESSION_KEY);
     if (raw == null || raw === "") return null;
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
@@ -119,7 +119,7 @@ export function portalGetCachedAuthSessionGeneration() {
 
 export function portalSetCachedAuthSessionGeneration(n) {
   try {
-    sessionStorage.setItem(PORTAL_AUTH_GEN_SESSION_KEY, String(Number(n) || 0));
+    localStorage.setItem(PORTAL_AUTH_GEN_SESSION_KEY, String(Number(n) || 0));
   } catch {
     /* ignore */
   }
@@ -127,7 +127,7 @@ export function portalSetCachedAuthSessionGeneration(n) {
 
 export function portalClearCachedAuthSessionGeneration() {
   try {
-    sessionStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    localStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
   } catch {
     /* ignore */
   }
