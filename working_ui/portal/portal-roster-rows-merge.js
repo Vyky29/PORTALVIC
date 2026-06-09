@@ -40,7 +40,12 @@
   }
 
   function normTimeSlot(v) {
-    return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
+    var s = String(v || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!s) return "";
+    return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
   function normInstructors(v) {

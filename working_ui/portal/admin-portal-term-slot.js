@@ -368,12 +368,11 @@
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
     var cLow = String(client || "").toLowerCase();
-    var tLow = String(timeSlot || "").toLowerCase().replace(/\s+/g, " ").trim();
+    var tLow = normSlotTime(timeSlot);
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (String(r.client_name || "").toLowerCase() !== cLow) continue;
-      var rowSlot = String(r.time_slot || "").toLowerCase().replace(/\s+/g, " ").trim();
-      if (rowSlot !== tLow) continue;
+      if (normSlotTime(r.time_slot) !== tLow) continue;
       if (anchorIso && normIso(r.session_date) && normIso(r.session_date) !== anchorIso) continue;
       return r;
     }
@@ -651,7 +650,12 @@
   var NO_CLIENT_PARTICIPANT = "No client";
 
   function normSlotTime(v) {
-    return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
+    var s = String(v || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!s) return "";
+    return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
   function slotInstructorsMatch(rowInstr, formInstr) {
@@ -1089,6 +1093,7 @@
             details: {
               session_date: p.anchorDate,
               scope: p.scope,
+              selected_session_dates: p.selectedSessionDates || null,
               day: p.day,
               term_action: p.action,
               instructors: p.instructors,

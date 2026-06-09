@@ -483,10 +483,12 @@
 
   /** Status row done in overview OR covered by a matching instructor's submitted feedback. */
   function normTimeSlotLabel(v) {
-    return String(v || "")
+    var s = String(v || "")
       .toLowerCase()
       .replace(/\s+/g, " ")
       .trim();
+    if (!s) return "";
+    return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
   function statusRowClientLabel(st) {
