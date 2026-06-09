@@ -295,6 +295,182 @@
     return sub;
   }
 
+  function portalVapidConfigured() {
+    return !!(
+      global.__PORTAL_VAPID_PUBLIC_KEY__ &&
+      String(global.__PORTAL_VAPID_PUBLIC_KEY__).trim()
+    );
+  }
+
+  function portalVapidStatusText() {
+    if (portalVapidConfigured()) {
+      return "VAPID configured — background alerts can reach this device when the app is closed.";
+    }
+    return "VAPID missing (closed-tab push disabled) — alerts work in this tab until IT configures server push.";
+  }
+
+  function portalSubscribeFailureMessage(wp) {
+    wp = wp || {};
+    var reason = String(wp.reason || "").trim();
+    if (reason === "no-session") {
+      return "Sign-in still loading — wait a few seconds and tap Turn on again.";
+    }
+    if (reason === "no-vapid") {
+      return "Server push keys (VAPID) missing — contact IT.";
+    }
+    if (reason === "no-sw" || reason === "sw-timeout") {
+      return "Service worker not ready — refresh the page and try again.";
+    }
+    if (reason === "subscribe-http") {
+      return (
+        "Could not save subscription (HTTP " +
+        String(wp.status || "?") +
+        "). Check Edge Function portal-push-subscribe."
+      );
+    }
+    if (reason === "no-notify-perm") {
+      return "Allow notifications when the browser asks.";
+    }
+    if (reason === "exception") {
+      return "Could not register push — try Chrome or Edge on desktop.";
+    }
+    return "Could not register this device for background alerts.";
+  }
+
+  function portalNotifyFrameHint(reason) {
+    try {
+      if (typeof global !== "undefined" && global.self !== global.top) {
+        return " Open the portal in a full browser tab (not inside another site frame).";
+      }
+    } catch (_e) {}
+    if (typeof global !== "undefined" && global.isSecureContext === false) {
+      return " Needs HTTPS.";
+    }
+    var env =
+      typeof portalNotifyEnvironment === "function" ? portalNotifyEnvironment() : null;
+    if (typeof portalNotifyEnvironmentHint === "function") {
+      return portalNotifyEnvironmentHint(env, reason);
+    }
+    return "";
+  }
+
+  function portalApplyWebPushStatus(statusEl, wp, opts) {
+    opts = opts || {};
+    if (!statusEl || !wp) return;
+    var env =
+      wp.env ||
+      (typeof portalNotifyEnvironment === "function" ? portalNotifyEnvironment() : null);
+    if (wp.ok) {
+      statusEl.textContent =
+        opts.registeredMessage ||
+        "On — including alerts when this browser is in the background (Mac or Windows).";
+      return;
+    }
+    if (wp.reason === "no-vapid") {
+      statusEl.textContent =
+        "On in this tab — server push needs IT setup (VAPID) for closed-browser alerts.";
+      return;
+    }
+    if (wp.reason === "no-sw" || wp.reason === "sw-timeout") {
+      statusEl.textContent =
+        "On in this tab — background alerts need the browser service worker." +
+        portalNotifyFrameHint(wp.reason);
+      return;
+    }
+    if (wp.reason === "no-session") {
+      statusEl.textContent = "On — finish sign-in to register this computer.";
+      return;
+    }
+    if (env && env.desktop) {
+      statusEl.textContent =
+        "On in this tab — use Send test alert; for background alerts, check browser notification settings." +
+        portalNotifyFrameHint(wp.reason);
+    }
+  }
+
+  function portalWaitForPortalSession(maxMs) {
+    maxMs = Number(maxMs || 12000);
+    var start = Date.now();
+    return new Promise(function (resolve) {
+      (function tick() {
+        var box = global.__PORTAL_SUPABASE__;
+        var token =
+          box && box.session && box.session.access_token
+            ? String(box.session.access_token).trim()
+            : "";
+        if (token) {
+          resolve(true);
+          return;
+        }
+        if (Date.now() - start >= maxMs) {
+          resolve(false);
+          return;
+        }
+        setTimeout(tick, 220);
+      })();
+    });
+  }
+
+  async function portalRegisterPushAfterGrant(statusEl, opts) {
+    opts = opts || {};
+    if (statusEl) {
+      statusEl.textContent = "Registering this device for background alerts…";
+    }
+    if (typeof portalRegisterPortalServiceWorker === "function") {
+      try {
+        await portalRegisterPortalServiceWorker();
+      } catch (_sw) {}
+    }
+    var hasSession = await portalWaitForPortalSession(15000);
+    if (!hasSession) {
+      if (statusEl) {
+        statusEl.textContent = portalSubscribeFailureMessage({ reason: "no-session" });
+      }
+      return { ok: false, reason: "no-session" };
+    }
+    if (typeof global.portalEnsureWebPushSubscription !== "function") {
+      return { ok: false, reason: "no-fn" };
+    }
+    var wp = await global.portalEnsureWebPushSubscription();
+    if (wp && wp.ok) {
+      var env = typeof portalNotifyEnvironment === "function" ? portalNotifyEnvironment() : {};
+      var iosCallHint = "";
+      if (
+        env.isIOS &&
+        env.mobile &&
+        typeof portalIsStandalonePwa === "function" &&
+        !portalIsStandalonePwa()
+      ) {
+        iosCallHint =
+          " For incoming calls when the app is closed, add the portal to your Home Screen and open it from that icon.";
+      }
+      if (statusEl) {
+        statusEl.textContent =
+          (opts.registeredMessage ||
+            "Registered — tap Send test alert below to confirm banners reach this device.") +
+          iosCallHint;
+      }
+      return wp;
+    }
+    var msg = portalSubscribeFailureMessage(wp);
+    if (statusEl) statusEl.textContent = msg + portalNotifyFrameHint(wp && wp.reason);
+    return wp || { ok: false, reason: "unknown" };
+  }
+
+  function portalSyncNotifyVapidHint(vapidEl) {
+    if (!vapidEl) return;
+    vapidEl.textContent = portalVapidStatusText();
+    vapidEl.hidden = false;
+  }
+
+  global.portalVapidConfigured = portalVapidConfigured;
+  global.portalVapidStatusText = portalVapidStatusText;
+  global.portalSubscribeFailureMessage = portalSubscribeFailureMessage;
+  global.portalNotifyFrameHint = portalNotifyFrameHint;
+  global.portalApplyWebPushStatus = portalApplyWebPushStatus;
+  global.portalWaitForPortalSession = portalWaitForPortalSession;
+  global.portalRegisterPushAfterGrant = portalRegisterPushAfterGrant;
+  global.portalSyncNotifyVapidHint = portalSyncNotifyVapidHint;
   global.portalSendLocalTestNotification = portalSendLocalTestNotification;
   global.portalTestNotificationStatusMessage = portalTestNotificationStatusMessage;
   global.portalNotifyEnvironment = portalNotifyEnvironment;

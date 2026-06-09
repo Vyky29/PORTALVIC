@@ -13,8 +13,8 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
-  <script src="/portal/portal_web_push_support.js?v=20260609-mobile-test-push"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-mobile-test-push"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-notify-parity"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -756,10 +756,11 @@
           <h4 class="portal-alerts-section-title">Background alerts</h4>
           <p class="portal-alerts-hint muted">Announcements, roster changes and incoming calls when the app is closed. On iPhone, add the portal to your Home Screen first.</p>
           <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
+          <p id="portalNotifyVapidHint" class="portal-alerts-hint muted" aria-live="polite" hidden></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
         </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
-          <button type="button" id="portalNotifyEnableBtn"></button>
           <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>

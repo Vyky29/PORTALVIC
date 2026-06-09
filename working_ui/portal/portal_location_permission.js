@@ -1051,9 +1051,22 @@ export function bindAutoNotificationOnFirstGesture() {
   document.addEventListener("touchstart", onGesture, true);
 }
 
-/** Alerts sheet opened — refresh UI only (no auto prompts; first app tap handles defaults). */
+/** Alerts sheet opened — refresh UI and register push when already allowed. */
 export async function portalOnAlertsSheetOpened() {
   await portalRefreshMandatoryAlertsSettingsUi();
+  if (
+    typeof Notification !== "undefined" &&
+    Notification.permission === "granted" &&
+    typeof window.portalRegisterPushAfterGrant === "function"
+  ) {
+    void window.portalRegisterPushAfterGrant(
+      document.getElementById("portalNotifyStatus")
+    ).then(function () {
+      if (typeof window.portalRefreshAlertsNotifyUi === "function") {
+        window.portalRefreshAlertsNotifyUi();
+      }
+    });
+  }
 }
 
 /**

@@ -1048,6 +1048,11 @@
       font-family:inherit;
     }
     #portalNotifyTestBtn{background:#fff;color:var(--ink);font-weight:600}
+    .portal-alerts-test-btn[hidden]{display:none!important}
+    .portal-alerts-test-btn--ready{
+      font-weight:800;border-color:var(--blue,#2d84b3);
+      box-shadow:0 0 0 2px rgba(45,132,179,.22);
+    }
     #menuSheet #quickMenuAlerts.menu-btn--settings-alerts-incomplete{
       border-color:rgba(190,79,70,.35);
       box-shadow:0 0 0 1px rgba(190,79,70,.12);
