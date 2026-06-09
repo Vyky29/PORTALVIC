@@ -1,6 +1,7 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
  * v20260610-chat-push-restore
+ * v20260608-incoming-call-dismiss
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -83,6 +84,24 @@ function portalHasVisiblePortalClient() {
     return false;
   });
 }
+
+self.addEventListener('message', function (event) {
+  var d = event.data;
+  if (!d || d.type !== 'portal-incoming-call-dismiss') return;
+  var tags = Array.isArray(d.tags) ? d.tags : [];
+  event.waitUntil(
+    self.registration.getNotifications().then(function (list) {
+      (list || []).forEach(function (n) {
+        var tag = String((n && n.tag) || '');
+        if (tags.indexOf(tag) >= 0 || tag.indexOf('portal-incoming-call') === 0) {
+          try {
+            n.close();
+          } catch (e) {}
+        }
+      });
+    })
+  );
+});
 
 self.addEventListener('push', function (event) {
   var title = 'clubSENsational';

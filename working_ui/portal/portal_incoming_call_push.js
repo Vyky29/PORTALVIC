@@ -142,6 +142,9 @@
       typeof calls.isIncomingCallInviteLive === "function" &&
       !(await calls.isIncomingCallInviteLive(client, row, data))
     ) {
+      if (typeof calls.stopIncomingCallAlert === "function") {
+        calls.stopIncomingCallAlert();
+      }
       try {
         global.sessionStorage.removeItem(PENDING_CALL_KEY);
       } catch (_dead) {}

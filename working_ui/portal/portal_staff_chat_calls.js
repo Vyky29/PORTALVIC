@@ -30,9 +30,12 @@
     active: false,
     payload: null,
     incomingRow: null,
+    callerLabel: "",
+    inviteMsgId: "",
     ringTimer: null,
     vibrateTimer: null,
     autoStopTimer: null,
+    livePollTimer: null,
     audioCtx: null,
     oscNodes: null,
     ringEl: null,
@@ -40,6 +43,7 @@
     notification: null,
     overlay: null,
   };
+  var incomingMissedRooms = Object.create(null);
 
   var INCOMING_CALL_MAX_AGE_MS = 120000;
   var INCOMING_CALL_RING_MAX_AGE_MS = 55000;
@@ -109,6 +113,14 @@
 
   function formatCallEndParts(kind, durationSec) {
     var kindLabel = humanLabel(String(kind || "video"), "");
+    if (Math.max(0, Math.round(Number(durationSec) || 0)) === 0) {
+      return {
+        kind: kindLabel,
+        duration: "",
+        title: kindLabel + " — no answer",
+        summary: kindLabel + " — no answer",
+      };
+    }
     var duration = formatCallDuration(durationSec);
     var line = kindLabel + " ended " + duration;
     return {
@@ -903,17 +915,117 @@
         incomingState.ringEl.currentTime = 0;
       }
     } catch (_re) {}
+    dismissIncomingCallPushNotifications();
+  }
+
+  function dismissIncomingCallPushNotifications() {
     try {
       if (incomingState.notification) incomingState.notification.close();
     } catch (_n) {}
     incomingState.notification = null;
+    var tags = ["portal-incoming-call"];
+    if (incomingState.inviteMsgId) tags.push("portal-incoming-call-" + incomingState.inviteMsgId);
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      try {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "portal-incoming-call-dismiss",
+            tags: tags,
+          });
+        }
+      } catch (_sw) {}
+      void navigator.serviceWorker.ready
+        .then(function (reg) {
+          if (!reg || typeof reg.getNotifications !== "function") return;
+          return reg.getNotifications();
+        })
+        .then(function (list) {
+          (list || []).forEach(function (n) {
+            var tag = String((n && n.tag) || "");
+            if (tags.indexOf(tag) >= 0 || tag.indexOf("portal-incoming-call") === 0) {
+              try {
+                n.close();
+              } catch (_c) {}
+            }
+          });
+        })
+        .catch(function () {});
+    }
+  }
+
+  function stopIncomingLivePoll() {
+    if (incomingState.livePollTimer) {
+      clearInterval(incomingState.livePollTimer);
+      incomingState.livePollTimer = null;
+    }
+  }
+
+  function notifyMissedIfNeeded(kind, callerLabel, room) {
+    room = String(room || "").trim();
+    if (room && incomingMissedRooms[room]) return;
+    if (room) incomingMissedRooms[room] = true;
+    showMissedCallNotification(kind, callerLabel);
+  }
+
+  function showMissedCallNotification(kind, callerLabel) {
+    dismissIncomingCallPushNotifications();
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    try {
+      new Notification(kind === "video" ? "Missed video call" : "Missed voice call", {
+        body: String(callerLabel || "Someone") + " called",
+        tag: "portal-missed-call-" + String(Date.now()),
+        silent: false,
+      });
+    } catch (_m) {}
+  }
+
+  function startIncomingLivePoll() {
+    stopIncomingLivePoll();
+    incomingState.livePollTimer = setInterval(function () {
+      if (!incomingState.active || !incomingState.payload) {
+        stopIncomingLivePoll();
+        return;
+      }
+      var box = global.__PORTAL_SUPABASE__;
+      var client = box && box.client;
+      void (async function () {
+        var live = await isIncomingCallInviteLive(
+          client,
+          incomingState.incomingRow,
+          incomingState.payload
+        );
+        if (!live && incomingState.active) {
+          var kind = String((incomingState.payload && incomingState.payload.kind) || "video");
+          var callerLabel = incomingState.callerLabel || "Someone";
+          var room = incomingState.payload && incomingState.payload.room;
+          hideIncomingCallOverlay();
+          notifyMissedIfNeeded(kind, callerLabel, room);
+        }
+      })();
+    }, 2500);
+  }
+
+  function processCallEndRow(row) {
+    if (!row || !incomingState.active || !incomingState.payload) return;
+    var endData = parseCallEndPayload(String(row.body || ""));
+    if (!endData) return;
+    if (String(endData.room || "") !== String(incomingState.payload.room || "")) return;
+    var kind = String(incomingState.payload.kind || "video");
+    var callerLabel = incomingState.callerLabel || "Someone";
+    var room = incomingState.payload.room;
+    var missed = Math.max(0, Math.round(Number(endData.durationSec) || 0)) === 0;
+    hideIncomingCallOverlay();
+    if (missed) notifyMissedIfNeeded(kind, callerLabel, room);
   }
 
   function hideIncomingCallOverlay() {
     stopIncomingRingtone();
+    stopIncomingLivePoll();
     incomingState.active = false;
     incomingState.payload = null;
     incomingState.incomingRow = null;
+    incomingState.callerLabel = "";
+    incomingState.inviteMsgId = "";
     syncIncomingCallFooterChrome(false);
     var ov = incomingState.overlay || document.getElementById("portalIncomingCallOverlay");
     if (ov) ov.hidden = true;
@@ -1196,7 +1308,7 @@
       incomingState.notification = new Notification(
         kind === "video" ? "Incoming video call" : "Incoming voice call",
         {
-          body: String(callerLabel || "Team chat") + " ? tap to answer",
+          body: String(callerLabel || "Team chat") + " — tap to answer",
           tag: "portal-incoming-call",
           requireInteraction: true,
           silent: false,
@@ -1368,6 +1480,8 @@
     incomingState.active = true;
     incomingState.payload = data;
     incomingState.incomingRow = row || null;
+    incomingState.inviteMsgId = row && row.id ? String(row.id) : "";
+    incomingState.callerLabel = "Team chat";
 
     var ov = ensureIncomingCallOverlay();
     var icon = ov.querySelector("#portalIncomingCallIcon");
@@ -1381,6 +1495,7 @@
     if (sub) sub.textContent = label;
     resolveIncomingCallerLabel(row, data, function (nm) {
       if (!incomingState.active) return;
+      incomingState.callerLabel = nm;
       if (sub) sub.textContent = nm;
       showIncomingCallNotification(kind, nm);
     });
@@ -1405,6 +1520,7 @@
     }
 
     playIncomingRingtone(false);
+    startIncomingLivePoll();
     incomingState.autoStopTimer = setTimeout(hideIncomingCallOverlay, 50000);
   }
 
@@ -1429,10 +1545,20 @@
   }
 
   function onDmMessageInsert(row) {
+    var body = String((row && row.body) || "");
+    if (body.indexOf(CALL_END_TAG) >= 0) {
+      processCallEndRow(row);
+      return;
+    }
     processIncomingCallRow(row, 0);
   }
 
   function onGroupMessageInsert(row) {
+    var body = String((row && row.body) || "");
+    if (body.indexOf(CALL_END_TAG) >= 0) {
+      processCallEndRow(row);
+      return;
+    }
     processIncomingCallRow(row, 0);
   }
 
@@ -1892,9 +2018,10 @@
   }
 
   async function postCallEndedMessage(session) {
-    if (!session || session.endedPosted || !session.joinedAt) return;
-    var durationSec = Math.max(0, Math.round((Date.now() - session.joinedAt) / 1000));
-    if (durationSec < 1) return;
+    if (!session || session.endedPosted) return;
+    var durationSec = session.joinedAt
+      ? Math.max(0, Math.round((Date.now() - session.joinedAt) / 1000))
+      : 0;
 
     var ctx = getContext();
     var me = authUserId();
