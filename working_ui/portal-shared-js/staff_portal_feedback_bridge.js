@@ -319,9 +319,9 @@
       .trim()
       .toLowerCase();
     if (os === "absent" || os === "cancelled") return true;
+    /* Reconciled status export (overview / feedback_complete) wins over per-unit submitted-row lookup. */
+    if (st.feedbackComplete === true || os === "feedback_submitted") return true;
     if (statusRowNeedsPerStaffUnitFeedback(st)) return false;
-    if (st.feedbackComplete === true) return true;
-    if (os === "feedback_submitted") return true;
     return false;
   }
 
