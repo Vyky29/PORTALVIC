@@ -35,6 +35,14 @@
     return isSessionLeadProfile(profBy[a] || {}) && isSessionLeadProfile(profBy[b] || {});
   }
 
+  function groupsBelongInChannelsOnly() {
+    if (!shouldUseCategorizedInbox()) return false;
+    if (global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.getTier === "function") {
+      return global.portalCsCliqHubRoles.getTier() === "management";
+    }
+    return false;
+  }
+
   function shouldUseCategorizedInbox() {
     if (!global.__PORTAL_CS_CLIQ_ACTIVE) return false;
     try {
@@ -255,7 +263,10 @@
           push(staffItems, item);
           return;
         }
-        if (isDirectorDirectGroup(item)) return;
+        if (isDirectorDirectGroup(item)) {
+          push(ceoItems, item);
+          return;
+        }
         if (!seesSlug(slug)) return;
         push(ceoItems, item);
         return;
@@ -408,6 +419,7 @@
   }
 
   function appendDirectorDirectGroups(merged, directItems, directSeen) {
+    if (groupsBelongInChannelsOnly()) return;
     if (!managementSharedWorkerOpsInbox()) return;
     (merged || []).forEach(function (item) {
       if (!item || item.kind !== "group" || !isDirectorDirectGroup(item)) return;
@@ -589,6 +601,11 @@
       renderCeoInboxLaneHint("direct", false);
     }
     var dmItems = buildVisibleInboxItems(ctx.merged, ctx.splitSections, ctx.teamDmItems, activeCat);
+    if (groupsBelongInChannelsOnly()) {
+      dmItems = dmItems.filter(function (item) {
+        return item && item.kind !== "group";
+      });
+    }
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
@@ -628,6 +645,7 @@
   }
 
   global.portalCsCliqAdminInbox = {
+    groupsBelongInChannelsOnly: groupsBelongInChannelsOnly,
     shouldUseCategorizedInbox: shouldUseCategorizedInbox,
     managementInboxFullStaffRoster: managementInboxFullStaffRoster,
     managementSharedWorkerOpsInbox: managementSharedWorkerOpsInbox,

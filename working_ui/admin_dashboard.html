@@ -44,14 +44,14 @@
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260610-god-mode-boot"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-direct-ops"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-liaison-inbox-pin"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260610-groups-channels"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260610-groups-channels"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-back-icon"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-groups-channels"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_teams.js?v=20260609-channels-split"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
@@ -23400,13 +23400,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         }
         if(groups.length){
-          var grpLbl = document.createElement('p');
-          grpLbl.className = 'portal-cs-cliq-inbox-section__label';
-          grpLbl.textContent = 'Groups';
-          host.appendChild(grpLbl);
-          portalAdminDmOrderFixedGroups(groups).forEach(function(item){
-            host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
-          });
+          var groupsInChannelsOnly =
+            window.portalCsCliqAdminInbox &&
+            typeof window.portalCsCliqAdminInbox.groupsBelongInChannelsOnly === 'function' &&
+            window.portalCsCliqAdminInbox.groupsBelongInChannelsOnly();
+          if(!groupsInChannelsOnly){
+            var grpLbl = document.createElement('p');
+            grpLbl.className = 'portal-cs-cliq-inbox-section__label';
+            grpLbl.textContent = 'Groups';
+            host.appendChild(grpLbl);
+            portalAdminDmOrderFixedGroups(groups).forEach(function(item){
+              host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
+            });
+          }
         }
       }else{
         merged.forEach(function(item){

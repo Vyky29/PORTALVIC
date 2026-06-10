@@ -338,6 +338,16 @@
           };
 
     if (cat === "leads") {
+      var ceoGroups = cats.ceoItems || [];
+      if (ceoGroups.length) {
+        appendSectionLabel(host, "Leadership groups");
+        for (var cg = 0; cg < ceoGroups.length; cg++) {
+          if (seq !== renderSeq) return;
+          var ceoItem = ceoGroups[cg];
+          var ceoChips = await loadMemberChipsForItem(ceoItem, chipCache);
+          host.appendChild(renderChannelCard(ceoItem, esc, formatWhen(ceoItem.when), ceoChips));
+        }
+      }
       appendSectionLabel(host, "View as lead (read-only)");
       if (!leads.length) {
         appendSectionEmpty(host, "No session leads found.");

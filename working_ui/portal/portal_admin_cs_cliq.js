@@ -562,12 +562,9 @@
       document.body &&
       document.body.classList.contains("admin-view-cs-cliq");
     if (backBtn) {
-      var adminMobileFull = adminCsCliqMobileFullscreen();
-      var showBack = inThread || inCompose || (adminMobileFull && !inCompose);
+      var showBack = inThread || inCompose;
       backBtn.hidden = !showBack;
-      if (adminMobileFull && !inThread && !inCompose) {
-        backBtn.setAttribute("aria-label", "Back to dashboard");
-      } else if (inThread || inCompose) {
+      if (inThread || inCompose) {
         var lane = "";
         try {
           if (
