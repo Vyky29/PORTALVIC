@@ -1,10 +1,11 @@
-// @ts-nocheck — Edge Function (Deno). Daily 21:00 UTC admin alert for yesterday's missing session feedback.
+// @ts-nocheck — Edge Function (Deno). Daily 21:00 Europe/London admin alert for yesterday's missing session feedback.
 //
 // Secrets: same as portal-push-dispatch-admin-alert (VAPID_*, SUPABASE_*, PORTAL_PUSH_*)
 //   PORTAL_PUSH_WEBHOOK_SECRET — cron / manual invoke header x-portal-webhook-secret
 //
-// Schedule: pg_cron migration 20260610220000_portal_late_feedback_single_21h_cron.sql
-//   0 21 * * * UTC (≈ 21:00 London GMT; 22:00 BST — use 0 20 * * * in summer if needed)
+// Schedule: pg_cron migration 20260611210000_portal_late_feedback_london_21h_cron.sql
+//   0 20,21 * * * UTC — pg_cron is UTC-only; function runs only when London hour is 21 (GMT/BST).
+//   Manual test: POST body {"force":true} to bypass the hour gate.
 //
 // Deploy: supabase functions deploy portal-push-feedback-9pm-digest
 
@@ -50,6 +51,17 @@ function londonYesterdayIso(): string {
   return londonIsoFromParts(y, m, d);
 }
 
+/** Current hour 0–23 in Europe/London (handles GMT/BST). */
+function londonHourNow(): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const h = parts.find((p) => p.type === "hour")?.value ?? "0";
+  return Number(h);
+}
+
 function weekdayLongForIso(iso: string): string {
   const dt = new Date(`${iso}T12:00:00`);
   return new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(dt);
@@ -68,6 +80,23 @@ Deno.serve(async (req) => {
 
   const forbidden = verifyPortalPushWebhook(req);
   if (forbidden) return forbidden;
+
+  let forceRun = false;
+  try {
+    const body = await req.clone().json();
+    forceRun = body?.force === true;
+  } catch {
+    /* empty cron body */
+  }
+
+  const londonHour = londonHourNow();
+  if (!forceRun && londonHour !== 21) {
+    return jsonPushResponse({
+      skipped: true,
+      reason: "outside London 21:00 window",
+      londonHour,
+    });
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
