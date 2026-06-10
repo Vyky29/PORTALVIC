@@ -320,13 +320,32 @@ function clientSlugTokensFromPortalSessionKey(key) {
   return out;
 }
 
+/** Known client_id / slug aliases (roster spreadsheet vs ClassForKids). */
+function portalCanonicalClientSlugToken(slug) {
+  const s = String(slug || "").trim().toLowerCase();
+  if (!s) return "";
+  if (s === "amar_rai") return "amar_ra";
+  return s;
+}
+
+/** Strict client slug match — never treat "amar" as matching "amber". */
+export function portalClientSlugTokensEquivalent(a, b) {
+  const rs = portalCanonicalClientSlugToken(a);
+  const ss = portalCanonicalClientSlugToken(b);
+  if (!rs || !ss) return false;
+  if (rs === ss) return true;
+  if (/_ah$/.test(rs) && /_ah$/.test(ss) && rs !== ss) return false;
+  if (rs.startsWith(`${ss}_`) || ss.startsWith(`${rs}_`)) return true;
+  return false;
+}
+
 function portalSessionKeyClientSlugsMatch(submittedKey, rosterKey) {
   const rSlugs = clientSlugTokensFromPortalSessionKey(rosterKey);
   const sSlugs = clientSlugTokensFromPortalSessionKey(submittedKey);
   if (!rSlugs.length || !sSlugs.length) return false;
   for (const rs of rSlugs) {
     for (const ss of sSlugs) {
-      if (rs === ss || rs.includes(ss) || ss.includes(rs)) return true;
+      if (portalClientSlugTokensEquivalent(rs, ss)) return true;
     }
   }
   return false;
@@ -414,7 +433,7 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
     .trim()
     .toLowerCase();
   if (!rClient || !sClient) return false;
-  return rClient === sClient || rClient.includes(sClient) || sClient.includes(rClient);
+  return portalClientSlugTokensEquivalent(rClient, sClient);
 }
 
 /**

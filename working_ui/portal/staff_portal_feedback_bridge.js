@@ -77,13 +77,28 @@
     return slug(cid);
   }
 
+  function canonicalClientSlugToken(slugKey) {
+    const s = String(slugKey || "").trim().toLowerCase();
+    if (!s) return "";
+    if (s === "amar_rai") return "amar_ra";
+    return s;
+  }
+
+  function clientSlugTokensEquivalent(a, b) {
+    const rs = canonicalClientSlugToken(a);
+    const ss = canonicalClientSlugToken(b);
+    if (!rs || !ss) return false;
+    if (rs === ss) return true;
+    if (/_ah$/.test(rs) && /_ah$/.test(ss) && rs !== ss) return false;
+    if (rs.startsWith(ss + "_") || ss.startsWith(rs + "_")) return true;
+    return false;
+  }
+
   function clientMatch(st, s, clientNotesById) {
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const statusKey = slug(st && (st.client || st.clientName));
     if (!rosterKey || !statusKey) return false;
-    if (rosterKey === statusKey) return true;
-    if (/_ah$/.test(rosterKey) && /_ah$/.test(statusKey)) return false;
-    return rosterKey.indexOf(statusKey) >= 0 || statusKey.indexOf(rosterKey) >= 0;
+    return clientSlugTokensEquivalent(rosterKey, statusKey);
   }
 
   function staffOwnsStatusRow(staffId, st) {
@@ -1030,10 +1045,14 @@
     if (unitKey && feedbackUnitKeyResolved(iso, staffId, unitKey)) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
     const fbHit = sub.find(function (r) {
-      return (
-        clientMatch({ clientName: r.clientName }, s, clientNotesById) &&
-        submittedRowMatchesRosterServiceUnit(r, s)
+      if (!clientMatch({ clientName: r.clientName }, s, clientNotesById)) return false;
+      if (!submittedRowMatchesRosterServiceUnit(r, s)) return false;
+      const rTime = portalKeyTimeToken(
+        String((r && (r.portalSessionKey || r.portal_session_key)) || "")
       );
+      const rosterTime = rosterSessionStartHm(s);
+      if (rTime && rosterTime && rTime !== rosterTime) return false;
+      return true;
     });
     return !!fbHit && submittedRowDone(fbHit);
   }
@@ -1050,7 +1069,7 @@
       if (sid && !staffOwnsInstructor(sid, r.instructor)) return false;
       const key = slug(r.clientName);
       if (!key || !want) return false;
-      return key === want || key.indexOf(want) >= 0 || want.indexOf(key) >= 0;
+      return clientSlugTokensEquivalent(key, want);
     });
   }
 

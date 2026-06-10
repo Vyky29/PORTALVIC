@@ -1027,7 +1027,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260610-emmanuel-timi-purge"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-feedback-server-truth"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-amar-amber-fix"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1322,7 +1322,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-server-truth';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-amar-amber-fix';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -6210,6 +6210,37 @@
         kind: kind
       };
     }
+    function portalOverrideAbsentQuickMenuSlotKey(row){
+      const iso = normaliseIsoDate(row && row.session_date);
+      const t0 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_start) : String(row && row.anchor_start || '').trim();
+      const t1 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_end) : String(row && row.anchor_end || '').trim();
+      const venue = String(row && row.anchor_venue || '').trim().toLowerCase();
+      const slot = t0 && t1 ? (t0 + ' – ' + t1) : (t0 || t1 || '');
+      return [iso, slot.toLowerCase(), venue].join('|');
+    }
+    /** One absent card per slot — prefer "Absent - Amar" over generic "Absent". */
+    function portalDedupeAbsentOverrideQuickMenuItems(items){
+      if(!items || !items.length) return items || [];
+      const absentBySlot = Object.create(null);
+      const rest = [];
+      for(let i = 0; i < items.length; i++){
+        const it = items[i];
+        if(String(it && it.kind || '') !== 'absent'){
+          rest.push(it);
+          continue;
+        }
+        const slot = String(it.sub || '').trim().toLowerCase();
+        const named = String(it.title || '').trim() !== 'Absent';
+        const prev = absentBySlot[slot];
+        if(!prev){
+          absentBySlot[slot] = it;
+          continue;
+        }
+        const prevNamed = String(prev.title || '').trim() !== 'Absent';
+        if(named && !prevNamed) absentBySlot[slot] = it;
+      }
+      return rest.concat(Object.keys(absentBySlot).map(function(k){ return absentBySlot[k]; }));
+    }
     function portalStaffRosterOverrideAttentionState(){
       const empty = { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
       try{
@@ -6221,6 +6252,17 @@
         const todayStr = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(today) : '';
         if(!todayStr) return empty;
         const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        const namedAbsentSlots = Object.create(null);
+        for(let ni = 0; ni < list.length; ni++){
+          const nr = list[ni];
+          if(!nr || String(nr.override_type || '') !== 'client_absence_announced') continue;
+          if(!portalScheduleOverrideRowAppliesToLoggedInStaff(nr)) continue;
+          const niso = normaliseIsoDate(nr.session_date);
+          if(!niso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(niso)) continue;
+          if(!String(nr.anchor_client_id || '').trim()) continue;
+          const nslot = portalOverrideAbsentQuickMenuSlotKey(nr);
+          if(nslot) namedAbsentSlots[nslot] = true;
+        }
         const byIso = {};
         const seen = {};
         for(let i = 0; i < list.length; i++){
@@ -6228,6 +6270,11 @@
           if(!r || !portalScheduleOverrideRowAppliesToLoggedInStaff(r)) continue;
           const iso = normaliseIsoDate(r.session_date);
           if(!iso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)) continue;
+          if(String(r.override_type || '') === 'client_absence_announced'){
+            const slotKey = portalOverrideAbsentQuickMenuSlotKey(r);
+            const hasClient = !!String(r.anchor_client_id || '').trim();
+            if(!hasClient && slotKey && namedAbsentSlots[slotKey]) continue;
+          }
           const card = portalScheduleOverrideRowQuickMenuCard(r);
           if(!card.id || dismissed[card.id]) continue;
           if(seen[card.id]) continue;
@@ -6265,11 +6312,12 @@
           const items = byIso[iso];
           items.sort(function(a, b){ return (b._sort || 0) - (a._sort || 0); });
           for(let a = 0; a < items.length; a++) delete items[a]._sort;
-          n += items.length;
+          const dedupedItems = portalDedupeAbsentOverrideQuickMenuItems(items);
+          n += dedupedItems.length;
           rosterOverrideDayGroups.push({
             iso: iso,
             label: typeof portalOverrideSessionDateDisplayLabel === 'function' ? portalOverrideSessionDateDisplayLabel(iso) : iso,
-            items: items
+            items: dedupedItems
           });
         }
         if(!n) return empty;
