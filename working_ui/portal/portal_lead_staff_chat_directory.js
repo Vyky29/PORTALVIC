@@ -506,8 +506,16 @@
   function normalizeStaffAvatarUrl(url) {
     var u = String(url || "").trim();
     if (!u) return "";
-    if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
+    if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) {
+      if (typeof global.portalSanitizeRemoteAvatarUrl === "function") {
+        return global.portalSanitizeRemoteAvatarUrl(u);
+      }
+      return u;
+    }
     if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
+    if (typeof global.portalSanitizeRemoteAvatarUrl === "function") {
+      return global.portalSanitizeRemoteAvatarUrl(u);
+    }
     return u;
   }
 
@@ -1210,6 +1218,7 @@
     var dirMode = getDirectoryMode(prof);
 
     if (chrome) {
+      if (!hasDirectory || inThread) blurFocusWithin(chrome);
       chrome.hidden = !hasDirectory || inThread;
       chrome.setAttribute("aria-hidden", !hasDirectory || inThread ? "true" : "false");
     }
@@ -1242,7 +1251,9 @@
         suggestions.setAttribute("aria-hidden", "true");
       }
       if (listWrap && inThread) {
+        blurFocusWithin(listWrap);
         listWrap.hidden = true;
+        listWrap.setAttribute("aria-hidden", "true");
       }
       return;
     }
@@ -1250,6 +1261,7 @@
     bindInboxNav();
 
     if (listWrap) {
+      if (tab !== "chats") blurFocusWithin(listWrap);
       listWrap.hidden = tab !== "chats";
       listWrap.setAttribute("aria-hidden", tab === "chats" ? "false" : "true");
     }

@@ -171,6 +171,16 @@
     return urls;
   }
 
+  /** Drop stale Supabase avatar paths and broken storage keys (spaces → 400). */
+  function portalSanitizeRemoteAvatarUrl(url) {
+    var u = String(url || "").trim();
+    if (!u) return "";
+    if (u.indexOf("/portal/staff_photos/") >= 0) return "";
+    if (/storage\/v1\/object\/public\/avatars\//i.test(u)) return "";
+    if (/^avatars\//i.test(u) && (/%20|\s/.test(u) || /adam[\s%20]+ab/i.test(u))) return "";
+    return u;
+  }
+
   function portalStaffPhotoUrl(nameOrKey, opts) {
     var candidates = resolveStaffPhotoCandidates(nameOrKey, opts);
     return candidates.length ? candidates[0] : "";
@@ -309,6 +319,7 @@
   }
   bindPortalRealtimeOnlineReconnect();
 
+  global.portalSanitizeRemoteAvatarUrl = portalSanitizeRemoteAvatarUrl;
   global.portalStaffPhotoUrl = portalStaffPhotoUrl;
   global.portalStaffInitials = portalStaffInitials;
   global.portalStaffAvatarInnerHtml = portalStaffAvatarInnerHtml;

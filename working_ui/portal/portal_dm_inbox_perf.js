@@ -4,11 +4,24 @@
 (function (global) {
   "use strict";
 
-  function portalDmBlurHiddenSubtree(el) {
-    if (!el || !el.hidden) return;
+  function portalDmBlurFocusBeforeHide(el) {
+    if (!el) return;
     try {
       var active = document.activeElement;
       if (active && el.contains(active) && typeof active.blur === "function") {
+        active.blur();
+      }
+    } catch (_) {}
+  }
+
+  function portalDmBlurHiddenSubtree(el) {
+    if (!el) return;
+    try {
+      var active = document.activeElement;
+      if (!active || !el.contains(active)) return;
+      var hidden =
+        el.hidden === true || String(el.getAttribute("aria-hidden") || "").toLowerCase() === "true";
+      if (hidden && typeof active.blur === "function") {
         active.blur();
       }
     } catch (_) {}
@@ -138,6 +151,7 @@
     return true;
   }
 
+  global.portalDmBlurFocusBeforeHide = portalDmBlurFocusBeforeHide;
   global.portalDmBlurHiddenSubtree = portalDmBlurHiddenSubtree;
   global.portalDmDebounceAsync = portalDmDebounceAsync;
   global.portalDmAppendThreadTextMessage = portalDmAppendThreadTextMessage;

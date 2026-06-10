@@ -1044,7 +1044,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260609-photo-repair"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260610-adam-ab-photo"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_topbar_header.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260609-achievement-videos"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels"></script>
@@ -1073,7 +1073,7 @@
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260610-javi-javier-split"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-thread-back-nav"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
@@ -1090,9 +1090,9 @@
   <script src="/portal/portal_executive_dm.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260609-photo-404-guard"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-thread-back-nav"></script>
-  <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-incremental"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-chat-focus-fix"></script>
+  <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-focus-fix"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260610-chat-mobile-admin-fix"></script>
@@ -7772,12 +7772,12 @@
       var threadWrap = document.getElementById('internalChatThreadWrap');
       var offHost = document.getElementById('internalChatOfficeComposeHost');
       if(listHost){
-        if(inThread && typeof portalDmBlurHiddenSubtree === 'function') portalDmBlurHiddenSubtree(listHost);
+        if(inThread && typeof portalDmBlurFocusBeforeHide === 'function') portalDmBlurFocusBeforeHide(listHost);
         listHost.hidden = !!inThread;
         listHost.setAttribute('aria-hidden', inThread ? 'true' : 'false');
       }
       if(threadWrap){
-        if(!inThread && typeof portalDmBlurHiddenSubtree === 'function') portalDmBlurHiddenSubtree(threadWrap);
+        if(!inThread && typeof portalDmBlurFocusBeforeHide === 'function') portalDmBlurFocusBeforeHide(threadWrap);
         threadWrap.hidden = !inThread;
         threadWrap.setAttribute('aria-hidden', inThread ? 'false' : 'true');
       }

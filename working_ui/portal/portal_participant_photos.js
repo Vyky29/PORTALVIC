@@ -140,6 +140,13 @@
       var p = participantPhotoPathOnDisk(raw);
       if (p) add(p);
     }
+    if (
+      avatarOverride &&
+      typeof global.portalSanitizeRemoteAvatarUrl === "function" &&
+      !global.portalSanitizeRemoteAvatarUrl(avatarOverride)
+    ) {
+      avatarOverride = "";
+    }
     addIfOnDisk(avatarOverride);
     var mapped = Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key)
       ? PARTICIPANT_PHOTOS[key]
@@ -152,8 +159,8 @@
       addIfOnDisk("portal/participants/" + hyphenSlug + ".png");
       addIfOnDisk("portal/participants/" + hyphenSlug + ".jpg");
       if (key.indexOf(" ") >= 0) {
-        addIfOnDisk("portal/participants/" + key + ".png");
-        addIfOnDisk("portal/participants/" + key + ".jpg");
+        addIfOnDisk("portal/participants/" + key.replace(/\s+/g, "-") + ".png");
+        addIfOnDisk("portal/participants/" + key.replace(/\s+/g, "-") + ".jpg");
       }
       if (!mapped) {
         var parts = key.split(/\s+/).filter(Boolean);
