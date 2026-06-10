@@ -1035,6 +1035,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260610-aquatic-merge"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -9538,6 +9539,11 @@
       if(portalRosterSessionIsDayCentre(s)) return String(sessionDateIso) + '|' + cid + '|day_centre';
       if(portalRosterSessionIsBespokeShared(s)) return String(sessionDateIso) + '|' + cid + '|bespoke_shared';
       const activity = String(s.activity || s.rosterService || 'Swimming').trim();
+      if(typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activity)){
+        if(typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
+          return portalStaffLeadAquaticSessionReviewKey(sessionDateIso, cid, s, viewDayWord);
+        }
+      }
       const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
       return String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix;
     }
@@ -10308,9 +10314,13 @@
         const p = sk.split('|');
         return p[1] || '00:00';
       }
-      return primary.concat(extra).sort(function(a, b){
+      var sortedToday = primary.concat(extra).sort(function(a, b){
         return Number(normalizeTimeForSort(portalTodayItemSortKey(a))) - Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
       });
+      if(typeof portalMergeStaffLeadTodayAquaticCards === 'function'){
+        return portalMergeStaffLeadTodayAquaticCards(sortedToday, sessionDateKey, anchorDayWord);
+      }
+      return sortedToday;
     }
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}

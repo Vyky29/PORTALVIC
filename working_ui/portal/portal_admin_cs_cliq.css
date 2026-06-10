@@ -292,6 +292,36 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   }
 }
 
+#csCliqRoot .portal-cs-cliq-inbox__list-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px 6px;
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+}
+
+#csCliqRoot .portal-cs-cliq__back-btn--inbox-portal {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__list-head .portal-cs-cliq__chat-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__list-head .portal-cs-cliq__new-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
 #csCliqRoot .portal-cs-cliq__chat-title {
   margin: 0;
   font-size: 17px;

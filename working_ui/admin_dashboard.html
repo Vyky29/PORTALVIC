@@ -51,7 +51,7 @@
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-chat-sound-rail"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-inbox-back"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_teams.js?v=20260609-channels-split"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260610-call-ended-join" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260610-meetings-desktop" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260610-inbox-back" />
 </head>
 <body>
   <script>
@@ -4258,7 +4258,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var nid = String(s.clientId||'');
       var cn = notesById && notesById[nid];
       var clientName = cn && cn.name ? cn.name : (nid==='available'?'No participant':nid==='closed'?'Closed':nid);
-      var tm = s.timeSlotLabel ? String(s.timeSlotLabel) : (String(s.start||'')+'–'+String(s.end||''));
+      var tm = schedAnchorTimeLabelFromSession(s);
       return {
         demoId: schedEncodeRowId(sessionDateIso, s),
         whenLabel: String(s.day||'')+' · '+tm,
@@ -4303,6 +4303,137 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(s.length>=16) return s.slice(11,16);
       if(s.length>=5) return s.slice(0,5);
       return s;
+    }
+    function schedFormatRosterHmToken(hm){
+      var p = String(hm || '').trim().match(/^(\d{1,2}):(\d{2})/);
+      if(!p) return String(hm || '').trim();
+      var h = parseInt(p[1], 10);
+      var m = parseInt(p[2], 10);
+      if(m === 0) return String(h);
+      if(m === 15) return h + '.15';
+      if(m === 30) return h + '.30';
+      if(m === 45) return h + '.45';
+      return h + ':' + String(m).padStart(2, '0');
+    }
+    function schedAnchorTimeLabelFromSession(s){
+      var start = String(s.start || '').trim();
+      var end = String(s.end || '').trim();
+      if(start && end){
+        return schedFormatRosterHmToken(start) + ' to ' + schedFormatRosterHmToken(end);
+      }
+      return s.timeSlotLabel ? String(s.timeSlotLabel) : (start && end ? start + '–' + end : '');
+    }
+    function schedPgTimeToMinutes(pg){
+      var p = String(pg || '').match(/(\d{2}):(\d{2})/);
+      return p ? parseInt(p[1], 10) * 60 + parseInt(p[2], 10) : NaN;
+    }
+    function schedMinutesToPgTime(mins){
+      var h = Math.floor(mins / 60);
+      var m = mins % 60;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':00';
+    }
+    /** Two roster rows with the same band (e.g. Amar Ra twice at "5 to 6") → 5–5.30 and 5.30–6. */
+    function schedSplitDuplicateSameBandSessions(slots){
+      var passthrough = [];
+      var groups = Object.create(null);
+      (slots || []).forEach(function(slot){
+        var cid = String(slot.clientSlug || '').trim().toLowerCase();
+        if(!cid || cid === 'closed' || cid === 'available' || cid === 'noclient' || cid === 'no client'){
+          passthrough.push(slot);
+          return;
+        }
+        var key = [
+          String(slot.sessionDate || ''),
+          String(slot.staffRosterId || '').toLowerCase(),
+          String(slot.venue || '').trim().toLowerCase(),
+          cid,
+          String(slot.anchorStart || ''),
+          String(slot.anchorEnd || '')
+        ].join('|');
+        if(!groups[key]) groups[key] = [];
+        groups[key].push(slot);
+      });
+      var out = passthrough.slice();
+      Object.keys(groups).forEach(function(key){
+        var list = groups[key];
+        if(list.length <= 1){
+          out.push(list[0]);
+          return;
+        }
+        list.sort(function(a, b){
+          return String(a.demoId || '').localeCompare(String(b.demoId || ''));
+        });
+        var lo = schedPgTimeToMinutes(list[0].anchorStart);
+        var hi = schedPgTimeToMinutes(list[0].anchorEnd);
+        if(!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo){
+          list.forEach(function(s){ out.push(s); });
+          return;
+        }
+        var span = hi - lo;
+        var slice = Math.max(15, Math.round(span / list.length / 15) * 15);
+        for(var i = 0; i < list.length; i++){
+          var s0 = lo + i * slice;
+          var s1 = i === list.length - 1 ? hi : lo + (i + 1) * slice;
+          var clone = Object.assign({}, list[i]);
+          clone.anchorStart = schedMinutesToPgTime(s0);
+          clone.anchorEnd = schedMinutesToPgTime(s1);
+          clone.anchorTimeLabel = schedFormatRosterHmToken(normTimeShort(clone.anchorStart)) + ' to ' + schedFormatRosterHmToken(normTimeShort(clone.anchorEnd));
+          clone.whenLabel = String(clone.sheetDay || '') + ' · ' + clone.anchorTimeLabel;
+          clone.demoId = schedEncodeRowId(clone.sessionDate, {
+            day: clone.sheetDay,
+            start: normTimeShort(clone.anchorStart),
+            end: normTimeShort(clone.anchorEnd),
+            venue: clone.venue,
+            staffId: clone.staffRosterId,
+            clientId: clone.clientSlug
+          });
+          out.push(clone);
+        }
+      });
+      out.sort(function(a, b){
+        return String(a.anchorStart || '').localeCompare(String(b.anchorStart || '')) ||
+          String(a.clientDisplay || '').localeCompare(String(b.clientDisplay || ''));
+      });
+      return out;
+    }
+    function schedBuildMoveTargetOptions(sourceSlot, allSlots){
+      var out = [];
+      (allSlots || []).forEach(function(t){
+        if(!t || !sourceSlot || t.demoId === sourceSlot.demoId) return;
+        if(String(t.sessionDate || '') !== String(sourceSlot.sessionDate || '')) return;
+        var ov = findOverrideForSlot(t);
+        var cid = String(t.clientSlug || '').trim().toLowerCase();
+        var vacant = !cid || cid === 'available' || cid === 'closed' || cid === 'noclient' || cid === 'no client';
+        var absent = ov && String(ov.override_type || '').trim() === 'client_absence_announced';
+        var cleared = ov && String(ov.override_type || '').trim() === 'slot_clear_client';
+        var hasMakeup = ov && String(ov.override_type || '').trim() === 'client_replace_in_slot';
+        if(!vacant && !absent && !cleared && !hasMakeup) return;
+        out.push(t);
+      });
+      out.sort(function(a, b){
+        return String(a.anchorStart || '').localeCompare(String(b.anchorStart || '')) ||
+          String(a.venue || '').localeCompare(String(b.venue || ''));
+      });
+      return out;
+    }
+    function schedPopulateMoveTargetSelect(sourceSlot){
+      var sel = $('schedFormMoveTarget');
+      if(!sel) return 0;
+      var pool = sched.cachedDaySlots && sched.cachedDaySlots.length
+        ? sched.cachedDaySlots
+        : Object.keys(sched.slotsById || {}).map(function(k){ return sched.slotsById[k]; });
+      var opts = schedBuildMoveTargetOptions(sourceSlot, pool);
+      sel.innerHTML = '<option value="" selected disabled>Select target slot</option>' +
+        opts.map(function(t){
+          var ov = findOverrideForSlot(t);
+          var st = bookingStatusMeta(t, ov).label;
+          var pax = bookingEffectiveParticipantLabel(t, ov);
+          var tm = t.anchorTimeLabel || normTimeShort(t.anchorStart);
+          var staff = schedStaffDisplayName(t.staffRosterId, t.staffName);
+          var label = tm + ' · ' + String(t.venue || '') + ' · ' + staff + ' · ' + (pax && pax !== 'No participant' ? pax + ' (' + st + ')' : st);
+          return '<option value="' + esc(t.demoId) + '">' + esc(label) + '</option>';
+        }).join('');
+      return opts.length;
     }
     function adminNormIsoDate(raw){
       var s = String(raw || '').trim();
@@ -10229,6 +10360,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var typeEl = $('schedFormOvType');
       var wrapRep = $('schedWrapReplace');
       var wrapCov = $('schedWrapCover');
+      var wrapMove = $('schedWrapMoveTarget');
       var wrapRea = $('schedWrapReason');
       var inp = $('schedFormReplaceInput');
       var hid = $('schedFormReplaceSlug');
@@ -10242,7 +10374,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ovType = typeEl && typeEl.value ? typeEl.value : '';
         if(wrapRep) wrapRep.style.display = ovType === 'client_replace_in_slot' ? '' : 'none';
         if(wrapCov) wrapCov.style.display = ovType === 'instructor_reassign' ? '' : 'none';
+        if(wrapMove) wrapMove.style.display = ovType === 'client_move_same_day' ? '' : 'none';
         if(wrapRea) wrapRea.style.display = '';
+        if(ovType === 'client_move_same_day' && sched.activeSlot){
+          schedPopulateMoveTargetSelect(sched.activeSlot);
+        }
       }
       function renderCoverSuggest(query){
         if(!covSug) return;
@@ -10490,7 +10626,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedOverrideLabelForRow(ov){
       if(!ov) return '';
       var t = String(ov.override_type || '').trim();
-      if(t === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin) return 'Cancelled';
+      var payload = ov.payload || {};
+      if(t === 'slot_clear_client' && payload && payload.client_move) return 'Moved out';
+      if(t === 'client_replace_in_slot' && payload && payload.client_move) return 'Moved in';
+      if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'Cancelled';
       return schedOverrideTypeLabel(t);
     }
     function schedOverrideTypeClass(key, ov){
@@ -10604,6 +10743,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       sched.activeSlot = slot;
       var ov = findOverrideForSlot(slot);
+      var movePool = sched.cachedDaySlots && sched.cachedDaySlots.length
+        ? sched.cachedDaySlots
+        : Object.keys(sched.slotsById || {}).map(function(k){ return sched.slotsById[k]; });
+      var moveTargetCount = schedBuildMoveTargetOptions(slot, movePool).length;
+      var srcSlug = String(slot.clientSlug || '').trim().toLowerCase();
+      var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
         ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
@@ -10629,8 +10774,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="client_cancelled">Cancelled</option>'+
         '<option value="client_replace_in_slot">MakeUp</option>'+
         '<option value="instructor_reassign">Change Instructor</option>'+
+        (canMoveClient ? '<option value="client_move_same_day">Move to another slot today</option>' : '')+
         '<option value="slot_open">Open closed slot</option>'+
         '</select>'+
+        '<div id="schedWrapMoveTarget" style="display:none">'+
+        '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+
+        '<select id="schedFormMoveTarget" class="sel" style="max-width:100%">'+
+        '<option value="" selected disabled>Select target slot</option>'+
+        '</select>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Choose a vacant, absent, or open slot — same instructor or another. This participant moves there; this row becomes open.</p>'+
+        '</div>'+
         '<div id="schedWrapReplace" style="display:none">'+
         '<label class="muted" for="schedFormReplaceInput" style="display:block;margin-top:12px">Replacement participant</label>'+
         '<div class="sched-combo-wrap" id="schedRepComboWrap">'+
@@ -10669,6 +10822,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       $('schedSlotDrawer').classList.add('open');
       $('schedSlotDrawer').setAttribute('aria-hidden','false');
       try{ bindSchedDrawerFormControls(); }catch(e){}
+      try{ schedPopulateMoveTargetSelect(slot); }catch(_mv){}
       var snI = $('schedParentNotifyInstructor');
       if(snI) snI.onclick = function(){
         openParentNotifyModal({ kind:'instructor_change', slot: slot, useSchedOverrides: true });
@@ -10753,6 +10907,123 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(slot2) openSchedSlotDrawer(slot2);
       else closeSchedDrawer();
     }
+    async function saveSchedClientMoveFromDrawer(){
+      var msgEl = $('schedFormErr');
+      if(msgEl) msgEl.textContent = '';
+      var sourceSlot = sched.activeSlot;
+      if(!sourceSlot){ if(msgEl) msgEl.textContent = 'No slot selected.'; return; }
+      var client = getSchedSupabaseClient();
+      if(!client){ if(msgEl) msgEl.textContent = 'Supabase connection not available. Sign in as admin and wait for session to load.'; return; }
+      if(!(await adminEnsureScheduleOverrideEditor(msgEl))) return;
+      var targetDemoId = String(($('schedFormMoveTarget') && $('schedFormMoveTarget').value) || '').trim();
+      if(!targetDemoId){
+        if(msgEl) msgEl.textContent = 'Choose the target slot for this move.';
+        return;
+      }
+      var targetSlot = sched.slotsById[targetDemoId];
+      if(!targetSlot){
+        if(msgEl) msgEl.textContent = 'Target slot not found — refresh the day and try again.';
+        return;
+      }
+      var reason = ($('schedFormReason') && $('schedFormReason').value) || '';
+      var srcOv = findOverrideForSlot(sourceSlot);
+      var participantName = bookingEffectiveParticipantLabel(sourceSlot, srcOv);
+      var participantSlug = String(sourceSlot.clientSlug || '').trim().toLowerCase();
+      if(srcOv && String(srcOv.override_type || '').trim() === 'client_replace_in_slot'){
+        participantSlug = String(srcOv.payload && (srcOv.payload.to_client_id || srcOv.payload.replacement_client_id) || participantSlug).trim().toLowerCase();
+        participantName = String(srcOv.payload && (srcOv.payload.to_client_name || srcOv.payload.replacement_client_name) || participantName).trim() || participantName;
+      }
+      if(!participantSlug || participantSlug === 'available' || participantSlug === 'closed'){
+        if(msgEl) msgEl.textContent = 'This row has no booked participant to move.';
+        return;
+      }
+      var movePayloadCommon = {
+        client_move: true,
+        moved_client_id: participantSlug,
+        moved_client_name: participantName
+      };
+      var clearRow = {
+        session_date: sourceSlot.sessionDate,
+        anchor_staff_id: normalizeSchedAnchorStaffId(sourceSlot.staffRosterId),
+        anchor_start: sourceSlot.anchorStart,
+        anchor_end: sourceSlot.anchorEnd,
+        anchor_venue: sourceSlot.venue,
+        anchor_client_id: sourceSlot.clientSlug,
+        anchor_time_slot_label: sourceSlot.whenLabel || sourceSlot.anchorTimeLabel || '',
+        override_type: 'slot_clear_client',
+        payload: Object.assign({}, movePayloadCommon, {
+          moved_to_demo_id: targetDemoId,
+          moved_to_time: targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart),
+          moved_to_venue: targetSlot.venue,
+          moved_to_staff_id: normalizeSchedAnchorStaffId(targetSlot.staffRosterId),
+          moved_to_staff_name: schedStaffDisplayName(targetSlot.staffRosterId, targetSlot.staffName)
+        }),
+        reason: reason || null,
+        status: 'active',
+        superseded_by: null,
+        spreadsheet_revision: 'admin-dashboard:client_move_same_day'
+      };
+      var replaceRow = {
+        session_date: targetSlot.sessionDate,
+        anchor_staff_id: normalizeSchedAnchorStaffId(targetSlot.staffRosterId),
+        anchor_start: targetSlot.anchorStart,
+        anchor_end: targetSlot.anchorEnd,
+        anchor_venue: targetSlot.venue,
+        anchor_client_id: targetSlot.clientSlug,
+        anchor_time_slot_label: targetSlot.whenLabel || targetSlot.anchorTimeLabel || '',
+        override_type: 'client_replace_in_slot',
+        payload: Object.assign({}, movePayloadCommon, {
+          to_client_id: participantSlug,
+          to_client_name: participantName,
+          replacement_client_id: participantSlug,
+          replacement_client_name: participantName,
+          moved_from_demo_id: sourceSlot.demoId,
+          moved_from_time: sourceSlot.anchorTimeLabel || normTimeShort(sourceSlot.anchorStart),
+          moved_from_venue: sourceSlot.venue
+        }),
+        reason: reason || null,
+        status: 'active',
+        superseded_by: null,
+        spreadsheet_revision: 'admin-dashboard:client_move_same_day'
+      };
+      var insClear = await client.from('schedule_overrides').insert([clearRow]).select('id,created_at,created_by');
+      if(insClear.error){
+        if(msgEl) msgEl.textContent = 'Move failed (clear source): ' + esc(String(insClear.error.message || insClear.error));
+        return;
+      }
+      var insRep = await client.from('schedule_overrides').insert([replaceRow]).select('id,created_at,created_by');
+      if(insRep.error){
+        if(msgEl) msgEl.textContent = 'Source cleared but target move failed: ' + esc(String(insRep.error.message || insRep.error));
+        await refreshSchedulingModule();
+        return;
+      }
+      try{
+        var evRows = [];
+        if(insClear.data && insClear.data[0]){
+          evRows.push({
+            override_id: insClear.data[0].id,
+            action: 'create',
+            before_snapshot: { slot: sourceSlot, previous_override: srcOv },
+            after_snapshot: { row: clearRow, inserted: insClear.data[0] },
+            client_context: { page: 'admin_dashboard', module: 'scheduling_cover', action: 'client_move_clear' }
+          });
+        }
+        if(insRep.data && insRep.data[0]){
+          evRows.push({
+            override_id: insRep.data[0].id,
+            action: 'create',
+            before_snapshot: { slot: targetSlot, previous_override: findOverrideForSlot(targetSlot) },
+            after_snapshot: { row: replaceRow, inserted: insRep.data[0] },
+            client_context: { page: 'admin_dashboard', module: 'scheduling_cover', action: 'client_move_fill' }
+          });
+        }
+        if(evRows.length) await client.from('schedule_override_events').insert(evRows);
+      }catch(_ev){}
+      closeSchedDrawer();
+      sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
+      adminInvalidateSessionsHubLiveCaches();
+      await refreshSchedulingModule();
+    }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -10764,6 +11035,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ovTypeRaw = ($('schedFormOvType') && $('schedFormOvType').value) || '';
       if(!String(ovTypeRaw).trim()){
         if(msgEl) msgEl.textContent = 'Select an action.';
+        return;
+      }
+      if(ovTypeRaw === 'client_move_same_day'){
+        await saveSchedClientMoveFromDrawer();
         return;
       }
       var ovType = ovTypeRaw === 'client_cancelled' ? 'slot_clear_client' : ovTypeRaw;
@@ -12448,7 +12723,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         msg.style.color = '';
       }
       var rawSlots = slotsForSelectedDate(iso);
-      var slots = adminCollapseSchedSlotsToUnits(rawSlots);
+      var slots = schedSplitDuplicateSameBandSessions(rawSlots);
       sched.cachedDaySlots = slots;
       sched.slotsById = {};
       for(var sxi = 0; sxi < slots.length; sxi++) sched.slotsById[slots[sxi].demoId] = slots[sxi];
@@ -20169,6 +20444,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return $(id);
     }
+    function portalAdminDmMarkRealtimeReplacing(){
+      window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_CLOSE = true;
+      try{ clearTimeout(window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_TIMER); }catch(_c){}
+      window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_TIMER = setTimeout(function(){
+        window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_CLOSE = false;
+      }, 900);
+    }
+    function portalAdminDmScheduleRealtimeReconnect(){
+      if(window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER) return;
+      window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER = setTimeout(function(){
+        window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER = null;
+        portalInitAdminDmRealtime({ force: true });
+      }, 2500);
+    }
+    function portalAdminCsCliqMobileExitToDashboard(){
+      window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+      var ui = window.__PORTAL_ADMIN_DM_UI;
+      ui.threadId = '';
+      ui.groupId = '';
+      ui.groupAliasIds = [];
+      ui.peerLabel = '';
+      ui.managementWorkerId = '';
+      ui.panel = 'list';
+      try{ portalAdminDmTogglePanels('list'); }catch(_tp){}
+      try{ portalAdminCsCliqSyncMobileSubscreen('list'); }catch(_cs){}
+      void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+      setView('dashboard');
+    }
     function portalAdminCsCliqBindControls(){
       if(!portalAdminDmCsCliqEmbedActive()) return;
       function bindClick(elId, fn){
@@ -20182,14 +20485,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ui = window.__PORTAL_ADMIN_DM_UI;
         var panel = String(ui.panel || 'list');
         var inThread = panel === 'thread' || panel === 'compose';
-        if(
-          !inThread &&
-          !String(ui.threadId || '').trim() &&
-          !String(ui.groupId || '').trim() &&
-          adminTouchCompactLayoutActive() &&
-          state.view === 'cs_cliq'
-        ){
-          setView('staff_live_map');
+        if(!inThread && adminTouchCompactLayoutActive() && state.view === 'cs_cliq'){
+          portalAdminCsCliqMobileExitToDashboard();
           return;
         }
         var hubPane = String(ui.hubPane || window.__PORTAL_CS_CLIQ_RAIL_PANE || 'chats');
@@ -20202,6 +20499,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalAdminDmRefreshListAfterRead();
         try{ portalAdminCsCliqSyncMobileSubscreen('list'); }catch(_csBack){}
         void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+      });
+      bindClick('csCliqInboxBackBtn', function(){
+        portalAdminCsCliqMobileExitToDashboard();
       });
       bindClick('csCliqTabStaff', function(){
         if(portalAdminDmChannel() === 'staff_lead') return;
@@ -21279,6 +21579,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!box || !box.client || typeof box.client.channel !== 'function') return;
         if(window.__PORTAL_ADMIN_DM_RT_CH){
           if(!opts.force) return;
+          portalAdminDmMarkRealtimeReplacing();
           try{ box.client.removeChannel(window.__PORTAL_ADMIN_DM_RT_CH); }catch(_rm){}
           window.__PORTAL_ADMIN_DM_RT_CH = null;
         }
@@ -21370,10 +21671,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           )
           .subscribe(function(status, err){
             if(status === 'SUBSCRIBED'){
+              window.__PORTAL_ADMIN_DM_RT_READY = true;
               try{ console.info('[portal] Realtime: portal_staff_dm_messages (admin)'); }catch(_s){}
-            }else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){
+              return;
+            }
+            if(status === 'CLOSED'){
               window.__PORTAL_ADMIN_DM_RT_CH = null;
-              try{ console.warn('[portal] Realtime admin DM', status, err || ''); }catch(_e){}
+              window.__PORTAL_ADMIN_DM_RT_READY = false;
+              if(window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_CLOSE) return;
+              portalAdminDmScheduleRealtimeReconnect();
+              return;
+            }
+            if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+              window.__PORTAL_ADMIN_DM_RT_CH = null;
+              window.__PORTAL_ADMIN_DM_RT_READY = false;
+              if(window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_CLOSE) return;
               if(typeof window.portalRealtimeOnChannelError === 'function'){
                 window.portalRealtimeOnChannelError(
                   '__PORTAL_ADMIN_DM_RT_CH',
@@ -21384,7 +21696,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   err
                 );
               }else{
-                setTimeout(function(){ portalInitAdminDmRealtime({ force: true }); }, 2500);
+                portalAdminDmScheduleRealtimeReconnect();
               }
             }
           });

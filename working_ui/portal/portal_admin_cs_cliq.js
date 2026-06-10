@@ -231,6 +231,7 @@
       '<div class="portal-cs-cliq-inbox portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
       '<aside class="portal-cs-cliq-inbox__list-col" id="csCliqListColumn">' +
       '<div class="portal-cs-cliq-inbox__list-head">' +
+      '<button type="button" class="portal-cs-cliq__back-btn portal-cs-cliq__back-btn--inbox-portal" id="csCliqInboxBackBtn" aria-label="Back to dashboard" hidden>‹</button>' +
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
@@ -549,6 +550,10 @@
       channelsListCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
     }
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
+    var adminMobileChat =
+      mobileLayoutActive() &&
+      document.body &&
+      document.body.classList.contains("admin-view-cs-cliq");
     if (backBtn) {
       var adminMobileFull = adminCsCliqMobileFullscreen();
       var showBack = inThread || inCompose || (adminMobileFull && !inCompose);
@@ -578,6 +583,13 @@
       } else {
         backBtn.setAttribute("aria-label", railPane === "channels" ? "Back to channels" : "Back to inbox");
       }
+    }
+    var inboxBackBtn = document.getElementById("csCliqInboxBackBtn");
+    if (inboxBackBtn) {
+      var showInboxPortalBack =
+        adminMobileChat && !inThread && !inCompose && railPane === "chats";
+      inboxBackBtn.hidden = !showInboxPortalBack;
+      inboxBackBtn.setAttribute("aria-hidden", showInboxPortalBack ? "false" : "true");
     }
     if (nav) {
       var showNav =
