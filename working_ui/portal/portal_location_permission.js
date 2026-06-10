@@ -877,7 +877,7 @@ export function portalRefreshLocationUi() {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
       statusEl.textContent =
-        "On — office can see you on the live map during your shift (±15 min) and until session feedback is submitted.";
+        "On — office can see you on the live map during your shift (±15 min).";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -895,7 +895,7 @@ export function portalRefreshLocationUi() {
     }
   } else {
     statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required during your shift (15 min before until 15 min after) and while session feedback is pending."
+      ? "Off — required during your shift (15 min before until 15 min after)."
       : "Not required today — no shift on your rota.";
     if (btn) {
       btn.textContent = "Allow location";
