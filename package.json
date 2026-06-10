@@ -14,7 +14,8 @@
     "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt",
     "deploy:openai-assist": "supabase functions deploy portal-openai-assist --no-verify-jwt",
     "deploy:incoming-call-push": "supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
-    "apply:incoming-call-push": "node database/local-vault/apply-incoming-call-push.mjs && supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql"
+    "apply:incoming-call-push": "node database/local-vault/apply-incoming-call-push.mjs && supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql",
+    "apply:schedule-overrides-permissions": "node database/local-vault/apply-schedule-overrides-permissions.mjs"
   },
   "devDependencies": {
     "supabase": "^2.67.2"
