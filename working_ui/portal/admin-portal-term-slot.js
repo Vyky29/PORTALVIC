@@ -1203,14 +1203,10 @@
   function injectStyleOnce() {
     if (document.getElementById("adminTermSlotStyle")) return;
     var css = [
-      "body.admin-view-term-slot .admin-workspace{padding:14px 18px 18px;display:flex;flex-direction:column;min-height:0}",
-      "body.admin-view-term-slot .admin-term-slot-root{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
-      "body.admin-view-term-slot .trs-page{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
-      "body.admin-view-term-slot .trs-panel{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
-      "body.admin-view-term-slot .trs-panel__body{flex:1 1 auto}",
+      "body.admin-view-term-slot .admin-workspace{padding:14px 18px 32px;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}",
       "body.admin-view-term-slot .admin-term-slot-root{width:100%;max-width:none;min-width:0}",
-      ".trs-page{width:100%;max-width:none;min-width:0;margin:0}",
-      ".trs-panel{width:100%;max-width:none;min-width:0;border:1px solid var(--line,#e2e8f0);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);overflow:hidden}",
+      "body.admin-view-term-slot .trs-page{width:100%;max-width:none;min-width:0;margin:0}",
+      ".trs-panel{width:100%;max-width:none;min-width:0;border:1px solid var(--line,#e2e8f0);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);display:flex;flex-direction:column}",
       ".trs-panel--cancel{border-color:#fecaca}",
       ".trs-panel__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 20px;padding:18px 22px;border-bottom:1px solid #e2e8f0;background:linear-gradient(180deg,#f8fafc 0%,#fff 100%)}",
       ".trs-panel__title{min-width:0;flex:1 1 280px}",
