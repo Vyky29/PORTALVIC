@@ -1130,7 +1130,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview" || isGhostDashboard) {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260610-bespoke-dc-window");
+      const perm = await import("./portal_location_permission.js?v=20260610-geo-denied-skip");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
@@ -1166,7 +1166,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.portalRefreshCameraUi();
       perm.portalRefreshEnableAllUi();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260607-portal-features-two-btn");
+      const loc = await import("./portal_location_tracker.js?v=20260610-geo-denied-skip");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };

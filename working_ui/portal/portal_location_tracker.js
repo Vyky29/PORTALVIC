@@ -8,9 +8,10 @@ import {
   markLocationGranted,
   markLocationDenied,
   portalLocationPermissionGranted,
+  portalLocationPermissionDenied,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260610-bespoke-dc-window";
+} from "./portal_location_permission.js?v=20260610-geo-denied-skip";
 
 const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;
@@ -275,7 +276,7 @@ function onPositionError(err) {
           ? "GPS timed out — try again outdoors."
           : "Could not read GPS.";
   reportUploadResult(false, msg);
-  console.warn("[portal] location GPS error:", code, err && err.message);
+  console.debug("[portal] location GPS error:", code, err && err.message);
 }
 
 function clearWatch() {
@@ -328,7 +329,7 @@ export async function startPortalLocationTracker(opts = {}) {
 
   bindPermissionResume();
   await probeLocationPermissionState();
-  if (!portalLocationPermissionGranted()) {
+  if (!portalLocationPermissionGranted() && !portalLocationPermissionDenied()) {
     await tryProbeLocationGrantedViaGeolocation();
   }
   if (!portalLocationPermissionGranted()) {

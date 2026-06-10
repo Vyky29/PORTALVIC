@@ -170,6 +170,10 @@ export function portalLocationPermissionGranted() {
   return _state === "granted";
 }
 
+export function portalLocationPermissionDenied() {
+  return _state === "denied" || persistGet("portal_location_denied_v1") === "1";
+}
+
 export function markLocationGranted() {
   _state = "granted";
   persistSet("portal_location_granted_v1", "1");
@@ -200,6 +204,10 @@ export function tryProbeLocationGrantedViaGeolocation() {
       resolve(true);
       return;
     }
+    if (_state === "denied" || persistGet("portal_location_denied_v1") === "1") {
+      resolve(false);
+      return;
+    }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       resolve(false);
       return;
@@ -217,7 +225,10 @@ export function tryProbeLocationGrantedViaGeolocation() {
         markLocationGranted();
         resolve(true);
       },
-      () => resolve(false),
+      (err) => {
+        if (err && err.code === 1) markLocationDenied();
+        resolve(false);
+      },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 }
     );
   });
@@ -261,10 +272,14 @@ export async function probeLocationPermissionState() {
     };
     if (_state === "granted") {
       persistSet("portal_location_granted_v1", "1");
+      persistRemove("portal_location_denied_v1");
+    } else if (_state === "denied") {
+      persistRemove("portal_location_granted_v1");
+      persistSet("portal_location_denied_v1", "1");
     } else if (_state === "prompt") {
       // Permissions API says "prompt", but if this device already granted once
       // (remembered), trust that so we don't nag again on reopen. iOS Safari in
-      // particular reports prompt/unsupported even after a real grant.
+      // particularly reports prompt/unsupported even after a real grant.
       if (persistGet("portal_location_granted_v1") === "1") _state = "granted";
     }
     return _state;
@@ -284,6 +299,11 @@ export function requestLocationPermission() {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       _state = "unsupported";
       resolve("unsupported");
+      return;
+    }
+    if (portalLocationPermissionDenied()) {
+      _state = "denied";
+      resolve("denied");
       return;
     }
     if (

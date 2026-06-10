@@ -1204,12 +1204,26 @@
       var staffWrap = document.getElementById("internalChatStaffDirectoryWrap");
       var suggestions = document.getElementById("internalChatLeadStaffSuggestions");
       var chatSheet = document.getElementById("internalChatSheet");
+      var threadWrap = document.getElementById("internalChatThreadWrap");
       if (chatSheet && !inThread) {
         chatSheet.setAttribute("data-inbox-pane", "chats");
       }
-      if (listWrap && !inThread) {
-        listWrap.hidden = false;
-        listWrap.setAttribute("aria-hidden", "false");
+      if (listWrap) {
+        if (inThread) {
+          blurFocusWithin(listWrap);
+          if (typeof global.portalDmPrepareHidePanel === "function") {
+            global.portalDmPrepareHidePanel(listWrap, { fallbackFocusId: "internalChatBackBtn" });
+          }
+          listWrap.hidden = true;
+          listWrap.setAttribute("aria-hidden", "true");
+        } else {
+          listWrap.hidden = false;
+          listWrap.setAttribute("aria-hidden", "false");
+        }
+      }
+      if (threadWrap && inThread) {
+        threadWrap.hidden = false;
+        threadWrap.setAttribute("aria-hidden", "false");
       }
       if (staffWrap) {
         staffWrap.hidden = true;
@@ -2088,6 +2102,10 @@
 
   async function openLeadAdminChat(opts) {
     opts = opts || {};
+    try {
+      var ae = document.activeElement;
+      if (ae && typeof ae.blur === "function") ae.blur();
+    } catch (_blurAdmin) {}
     var box = global.__PORTAL_SUPABASE__ || {};
     var client = box.client;
     var me = chatMeId(box);
@@ -2194,6 +2212,9 @@
       useAdminLaneAvatar: true,
     });
     adminBtn.addEventListener("click", function () {
+      try {
+        if (typeof adminBtn.blur === "function") adminBtn.blur();
+      } catch (_blurBtn) {}
       void openLeadAdminChat();
     });
     listHost.appendChild(adminBtn);

@@ -14,6 +14,25 @@
     } catch (_) {}
   }
 
+  function portalDmPrepareHidePanel(el, opts) {
+    opts = opts || {};
+    if (!el) return;
+    portalDmBlurFocusBeforeHide(el);
+    try {
+      var active = document.activeElement;
+      if (!active || !el.contains(active)) return;
+      var fallbackId = String(opts.fallbackFocusId || "internalChatBackBtn").trim();
+      var fallback =
+        (fallbackId && document.getElementById(fallbackId)) ||
+        document.getElementById("internalChatSheet");
+      if (fallback && typeof fallback.focus === "function") {
+        fallback.focus({ preventScroll: true });
+        return;
+      }
+      if (active && typeof active.blur === "function") active.blur();
+    } catch (_) {}
+  }
+
   function portalDmBlurHiddenSubtree(el) {
     if (!el) return;
     try {
@@ -188,6 +207,7 @@
   }
 
   global.portalDmBlurFocusBeforeHide = portalDmBlurFocusBeforeHide;
+  global.portalDmPrepareHidePanel = portalDmPrepareHidePanel;
   global.portalDmBlurHiddenSubtree = portalDmBlurHiddenSubtree;
   global.portalDmDebounceAsync = portalDmDebounceAsync;
   global.portalDmAppendThreadTextMessage = portalDmAppendThreadTextMessage;
