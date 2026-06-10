@@ -74,6 +74,13 @@
     function portalAdminDmUsesSharedStaffInbox(){
       var prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
       if(!prof) return false;
+      if(
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmUsesAdminCliq === 'function' &&
+        global.portalDmRoles.portalDmUsesAdminCliq(prof)
+      ){
+        return true;
+      }
       var app = String(prof.app_role || '').toLowerCase();
       if(app === 'admin' || app === 'ceo') return true;
       var sr = String(prof.staff_role || '').toLowerCase();
@@ -242,12 +249,14 @@
         el.addEventListener('click', fn);
       }
       bindClick('csCliqBackBtn', function(){
+        portalAdminDmAckOpenConversationNow();
         window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
         window.__PORTAL_ADMIN_DM_UI.threadId = '';
         window.__PORTAL_ADMIN_DM_UI.groupId = '';
         window.__PORTAL_ADMIN_DM_UI.peerLabel = '';
         portalAdminDmTogglePanels('list');
-        void portalAdminDmRenderList();
+        void portalAdminDmRefreshInboxLists();
+        void portalAdminDmSyncIncomingAttention();
       });
       bindClick('csCliqTabStaff', function(){
         if(portalAdminDmChannel() === 'staff_lead') return;
@@ -1086,6 +1095,37 @@
         return new Date(new Date(latestIso).getTime() + 1).toISOString();
       }catch(_ack){ return latestIso; }
     }
+    function portalAdminDmAckOpenConversationNow(){
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var gid = String(ui.groupId || '').trim();
+      var tid = String(ui.threadId || '').trim();
+      var iso = new Date().toISOString();
+      if(gid) portalAdminDmSetGroupAck(gid, iso);
+      else if(tid) portalAdminDmSetThreadAck(tid, iso);
+    }
+    function portalAdminDmRefreshInboxLists(){
+      // #region agent log
+      global.__DBG_INBOX_REFRESH_N__ = (global.__DBG_INBOX_REFRESH_N__ || 0) + 1;
+      fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H4',location:'portal_executive_dm.js:portalAdminDmRefreshInboxLists',message:'refreshInboxLists',data:{count:global.__DBG_INBOX_REFRESH_N__},timestamp:Date.now()})}).catch(function(){});
+      // #endregion
+      if(global.__PORTAL_DM_INBOX_REFRESH_DEB){
+        clearTimeout(global.__PORTAL_DM_INBOX_REFRESH_DEB);
+      }
+      global.__PORTAL_DM_INBOX_REFRESH_DEB = setTimeout(function(){
+        global.__PORTAL_DM_INBOX_REFRESH_DEB = null;
+        if(typeof portalAdminDmRenderList === 'function') void portalAdminDmRenderList();
+        if(global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === 'function'){
+          void global.portalCsCliqTeams.refresh();
+        }
+      }, 120);
+    }
+    function portalAdminDmGroupsBelongInChannelsOnly(){
+      if(!portalAdminDmCsCliqUnifiedInbox()) return false;
+      if(global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.getTier === 'function'){
+        return global.portalCsCliqHubRoles.getTier() === 'management';
+      }
+      return false;
+    }
     async function portalAdminDmRingAllLeads(gid){
       gid = String(gid || '').trim();
       if(!gid) return;
@@ -1610,17 +1650,24 @@
         var gid = String(g.id);
         if(groupIds[gid]) return;
         var gsl = String(g.slug || '').toLowerCase();
+        var gtitle = String(g.title || g.slug || 'Group');
+        if(
+          global.portalCsCliqAnnouncementInbox &&
+          typeof global.portalCsCliqAnnouncementInbox.canonicalGroupSlug === 'function'
+        ){
+          gsl = global.portalCsCliqAnnouncementInbox.canonicalGroupSlug(gsl, gtitle);
+        }
         if(!portalAdminDmViewerSeesCeoGroupSlug(gsl)) return;
         groupIds[gid] = true;
         merged.push({
           kind: 'group',
           id: gid,
           slug: gsl,
-          label: portalAdminDmSimplifyGroupLabel(gsl, String(g.title || g.slug || 'Group')),
+          label: portalAdminDmSimplifyGroupLabel(gsl, gtitle),
           when: g.updated_at
         });
       }
-      if(unified){
+      if(unified && !portalAdminDmGroupsBelongInChannelsOnly()){
         var gresAll = await client.from('portal_ceo_group').select('id,title,slug,updated_at').order('updated_at', { ascending: false });
         if(!gresAll.error && Array.isArray(gresAll.data)){
           gresAll.data.forEach(pushGroup);
@@ -2018,6 +2065,9 @@
       if((uiRead.threadId || uiRead.groupId) && (uiRead.panel === 'thread' || String(uiRead.panel || '') === 'thread')){
         portalAdminDmMarkChannelReadFromMessages(arr, { groupId: gid, threadId: tid });
         void portalAdminDmSyncIncomingAttention();
+        if(portalAdminDmCsCliqEmbedActive() || global.__PORTAL_CS_CLIQ_ACTIVE){
+          void portalAdminDmRefreshInboxLists();
+        }
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
     }
@@ -2086,6 +2136,9 @@
       portalAdminDmBindAttachmentControls();
     }
     async function portalAdminDmSendReply(){
+      // #region agent log
+      fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H2',location:'portal_executive_dm.js:portalAdminDmSendReply',message:'sendReply start',data:{panel:String((window.__PORTAL_ADMIN_DM_UI||{}).panel||''),hasTid:!!(window.__PORTAL_ADMIN_DM_UI||{}).threadId,hasGid:!!(window.__PORTAL_ADMIN_DM_UI||{}).groupId},timestamp:Date.now()})}).catch(function(){});
+      // #endregion
       var client = getSchedSupabaseClient();
       if(
         window.portalChatActorIdentity &&
@@ -2117,10 +2170,14 @@
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
+          var _dbgUseOps = !!(window.portalCeoGodModeAdmin && typeof window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin === 'function' && window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin(ui));
+          // #region agent log
+          fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H2',location:'portal_executive_dm.js:portalAdminDmSendReply:branch',message:'send branch',data:{useOpsInsert:_dbgUseOps,inboxLane:String(ui.inboxLane||''),workerId:String(ui.workerId||ui.managementWorkerId||'').slice(0,8)},timestamp:Date.now()})}).catch(function(){});
+          // #endregion
           if(
             window.portalCeoGodModeAdmin &&
             typeof window.portalCeoGodModeAdmin.insertDmMessage === 'function' &&
-            window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin(ui)
+            _dbgUseOps
           ){
             await window.portalCeoGodModeAdmin.insertDmMessage(client, tid, body, 'text');
           }else{
@@ -2145,6 +2202,9 @@
           void portalAdminDmRenderList();
         }
       }catch(e){
+        // #region agent log
+        fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H5',location:'portal_executive_dm.js:portalAdminDmSendReply:catch',message:'sendReply error',data:{errMsg:String((e&&e.message)||e||'').slice(0,120),errName:String(e&&e.name||'')},timestamp:Date.now()})}).catch(function(){});
+        // #endregion
         if(errB) errB.textContent = String((e && e.message) || e || 'Send failed');
       }finally{
         if(sendBtn) sendBtn.disabled = false;

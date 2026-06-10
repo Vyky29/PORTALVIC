@@ -410,6 +410,9 @@
     if (pane === "channels" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
       global.portalCsCliqTeams.refresh();
     }
+    if (pane === "chats" && typeof global.portalExecutiveDmRenderList === "function") {
+      void global.portalExecutiveDmRenderList();
+    }
     reparentConversationCol(pane);
     if (pane === "chats" && typeof cfg.initChat === "function") {
       var ch = String(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";

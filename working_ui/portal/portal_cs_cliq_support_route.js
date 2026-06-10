@@ -109,14 +109,42 @@
   }
 
   function viewerUsesSharedOpsInbox() {
-    if (typeof global.portalAdminDmUsesSharedStaffInbox === "function") {
-      return !!global.portalAdminDmUsesSharedStaffInbox();
+    // #region agent log
+    global.__DBG_VIEWER_OPS_DEPTH__ = (global.__DBG_VIEWER_OPS_DEPTH__ || 0) + 1;
+    if (global.__DBG_VIEWER_OPS_DEPTH__ > 2) {
+      fetch("http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "eea3b5" },
+        body: JSON.stringify({
+          sessionId: "eea3b5",
+          runId: "pre-fix",
+          hypothesisId: "H1",
+          location: "portal_cs_cliq_support_route.js:viewerUsesSharedOpsInbox",
+          message: "viewerUsesSharedOpsInbox depth exceeded",
+          data: { depth: global.__DBG_VIEWER_OPS_DEPTH__ },
+          timestamp: Date.now(),
+        }),
+      }).catch(function () {});
     }
+    // #endregion
+    try {
     var p = clientBox().staff_profile || {};
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmUsesAdminCliq === "function" &&
+      global.portalDmRoles.portalDmUsesAdminCliq(p)
+    ) {
+      return true;
+    }
     var app = String(p.app_role || "").toLowerCase();
     if (app === "admin" || app === "ceo") return true;
     var sr = String(p.staff_role || "").toLowerCase();
     return sr === "manager" || sr === "admin";
+    } finally {
+      // #region agent log
+      global.__DBG_VIEWER_OPS_DEPTH__ = Math.max(0, (global.__DBG_VIEWER_OPS_DEPTH__ || 1) - 1);
+      // #endregion
+    }
   }
 
   async function resolveWorkerIdInPair(client, userA, userB) {
@@ -141,6 +169,21 @@
   async function ensureOpsThreadForWorker(client, workerId) {
     workerId = String(workerId || "").trim();
     if (!client || !workerId) return "";
+    // #region agent log
+    fetch("http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "eea3b5" },
+      body: JSON.stringify({
+        sessionId: "eea3b5",
+        runId: "pre-fix",
+        hypothesisId: "H3",
+        location: "portal_cs_cliq_support_route.js:ensureOpsThreadForWorker",
+        message: "ensureOpsThreadForWorker called",
+        data: { workerId: workerId.slice(0, 8) },
+        timestamp: Date.now(),
+      }),
+    }).catch(function () {});
+    // #endregion
     if (!viewerUsesSharedOpsInbox()) return "";
     var rpc = await client.rpc("portal_staff_dm_ensure_ops_thread", {
       p_worker_id: workerId,

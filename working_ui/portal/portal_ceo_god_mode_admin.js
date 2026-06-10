@@ -166,8 +166,24 @@
     body = String(body || "").trim();
     messageType = String(messageType || "text").trim() || "text";
     if (!client || !threadId || !body) throw new Error("Not available.");
+    // #region agent log
+    var _dbgOps = shouldSendAsOpsAdmin();
+    fetch("http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "eea3b5" },
+      body: JSON.stringify({
+        sessionId: "eea3b5",
+        runId: "pre-fix",
+        hypothesisId: "H3",
+        location: "portal_ceo_god_mode_admin.js:insertDmMessage",
+        message: "insertDmMessage entry",
+        data: { shouldSendAsOpsAdmin: _dbgOps, threadId: threadId.slice(0, 8) },
+        timestamp: Date.now(),
+      }),
+    }).catch(function () {});
+    // #endregion
 
-    if (shouldSendAsOpsAdmin()) {
+    if (_dbgOps) {
       threadId = await ensureOpsThreadForSend(client, threadId, global.__PORTAL_ADMIN_DM_UI || {});
       global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
       global.__PORTAL_ADMIN_DM_UI.threadId = threadId;
