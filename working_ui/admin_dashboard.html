@@ -21309,8 +21309,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
                   return;
                 }
-                if(ui.panel === 'thread' && typeof portalAdminDmLoadMessages === 'function'){
-                  void portalAdminDmLoadMessages();
+                if(ui.panel === 'thread' && typeof portalAdminDmScheduleLoadMessages === 'function'){
+                  portalAdminDmScheduleLoadMessages(320);
                   portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
                 }else if(ui.panel === 'list'){
                   portalAdminDmScheduleSidebarListRefresh({ immediate: true });
@@ -21350,7 +21350,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var gid = ui.groupId ? String(ui.groupId) : '';
                 var changedGid = row && row.group_id ? String(row.group_id) : '';
                 if(ui.panel === 'thread' && gid && changedGid && gid === changedGid){
-                  void portalAdminDmLoadMessages();
+                  portalAdminDmScheduleLoadMessages(320);
                   portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
                 }else if(ui.panel === 'thread'){
                   portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
@@ -23343,6 +23343,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     try{
       window.portalAdminDmOpenThread = portalAdminDmOpenThread;
     }catch(_expOpenThread){}
+    async function portalAdminDmScheduleLoadMessages(delayMs){
+      if(window.__PORTAL_ADMIN_DM_LOAD_SCHED) clearTimeout(window.__PORTAL_ADMIN_DM_LOAD_SCHED);
+      window.__PORTAL_ADMIN_DM_LOAD_SCHED = setTimeout(function(){
+        window.__PORTAL_ADMIN_DM_LOAD_SCHED = null;
+        void portalAdminDmLoadMessages();
+      }, delayMs == null ? 320 : Number(delayMs));
+    }
     async function portalAdminDmLoadMessages(){
       var msgsBox = portalAdminDmMsgsEl();
       var client = getSchedSupabaseClient();

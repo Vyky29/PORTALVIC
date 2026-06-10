@@ -1080,6 +1080,7 @@
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_lead_team_groups.js?v=20260609-chip-roles"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-no-chip-legend"></script>
+  <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-incremental"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260609-lead-teams-v2"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6597,6 +6598,9 @@
         if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }
     };
+    if(typeof window.portalDmDebounceAsync === 'function'){
+      window.portalStaffDmSyncUnreadChrome = window.portalDmDebounceAsync(window.portalStaffDmSyncUnreadChrome, 520);
+    }
     function portalSyncInternalChatSheetView(inThread, peerLabel){
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet){
@@ -7499,7 +7503,24 @@
         if(window.portalDmComposerWa && typeof window.portalDmComposerWa.sync === 'function'){
           window.portalDmComposerWa.sync('internalChatInput');
         }
-        await window.portalRenderInternalChatSheet();
+        var uiSend = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        var sentTid = String(uiSend.threadId || tid || '').trim();
+        var appended =
+          sentTid &&
+          typeof window.portalDmAppendThreadTextMessage === 'function' &&
+          window.portalDmAppendThreadTextMessage({
+            threadId: sentTid,
+            openThreadId: sentTid,
+            me: me,
+            authorId: me,
+            body: body,
+            isMine: true,
+            isThreadViewOpen: function(){
+              var sh = document.getElementById('internalChatSheet');
+              return !!(sh && sh.classList.contains('open') && String(uiSend.threadId || '').trim() === sentTid);
+            }
+          });
+        if(!appended) await window.portalRenderInternalChatSheet();
       }catch(e){
         if(errB) errB.textContent = String((e && e.message) || e || "Send failed");
       }finally{
@@ -7534,7 +7555,23 @@
         if(typeof portalStaffDmMarkThreadSeenNow === 'function'){
           portalStaffDmMarkThreadSeenNow(openTid, row.created_at || undefined);
         }
-        if(typeof window.portalRenderInternalChatSheet === 'function'){
+        var appended =
+          typeof window.portalDmAppendThreadTextMessage === 'function' &&
+          window.portalDmAppendThreadTextMessage({
+            threadId: openTid,
+            openThreadId: openTid,
+            me: me,
+            authorId: row.author_id,
+            body: body,
+            createdAt: row.created_at,
+            isThreadViewOpen: function(){
+              var sh = document.getElementById('internalChatSheet');
+              var ui0 = window.__PORTAL_INTERNAL_CHAT_UI || {};
+              return !!(sh && sh.classList.contains('open') && String(ui0.threadId || '').trim());
+            },
+            stripOperatorTag: true
+          });
+        if(!appended && typeof window.portalRenderInternalChatSheet === 'function'){
           void window.portalRenderInternalChatSheet();
         }
       }
@@ -7570,21 +7607,6 @@
                 if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
                   void window.portalStaffDmSyncUnreadChrome();
                 }
-                var sh = document.getElementById("internalChatSheet");
-                if(!sh || !sh.classList.contains("open") || typeof window.portalRenderInternalChatSheet !== "function") return;
-                var ui = window.__PORTAL_INTERNAL_CHAT_UI || {};
-                var tid = ui.threadId ? String(ui.threadId) : "";
-                var row = payload && (payload.new || payload.record);
-                var changedTid = row && row.thread_id ? String(row.thread_id) : "";
-                if(tid && changedTid && tid !== changedTid) return;
-                if(tid && changedTid && tid === changedTid && row && typeof portalStaffDmMarkThreadSeenNow === "function"){
-                  var boxRt = window.__PORTAL_SUPABASE__;
-                  var meRt = portalLeadChatMeId(boxRt);
-                  if(meRt && String(row.author_id || "").toLowerCase() !== meRt.toLowerCase() && row.created_at){
-                    portalStaffDmMarkThreadSeenNow(tid, row.created_at);
-                  }
-                }
-                void window.portalRenderInternalChatSheet();
               }, 350);
             }
           )
