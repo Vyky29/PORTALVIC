@@ -37,7 +37,7 @@
     if (typeof global.portalApplyWebPushStatus === "function") {
       global.portalApplyWebPushStatus(statusEl, wp, {
         registeredMessage:
-          "On — tap Send test alert to confirm banners reach this device.",
+          "Registered for background chat alerts. Send test checks this tab only — close the app to verify real push.",
       });
     }
   }
@@ -59,7 +59,7 @@
     testBtn.hidden = false;
     testBtn.disabled = false;
     testBtn.setAttribute("aria-disabled", "false");
-    testBtn.textContent = "Send test alert";
+    testBtn.textContent = "Send test (this tab only)";
     if (opts.highlight) {
       testBtn.classList.add("portal-alerts-test-btn--ready");
     }
@@ -100,14 +100,14 @@
     var p = Notification.permission;
     if (p === "granted") {
       statusEl.textContent =
-        "On — tap Send test alert to confirm banners reach this device.";
+        "Notifications on — Send test checks this tab only.";
       syncTestButton(testBtn, p);
       if (typeof global.portalEnsureWebPushSubscription === "function") {
         global.portalEnsureWebPushSubscription().then(function (wp) {
           applyWebPushStatus(statusEl, wp);
           if (wp && wp.ok) {
             statusEl.textContent =
-              "On — tap Send test alert to confirm banners reach this device.";
+              "Registered for background chat alerts. Send test checks this tab only — close the app to verify real push.";
           }
           syncTestButton(testBtn, "granted", { highlight: !!(wp && wp.ok) });
           if (btn) {
