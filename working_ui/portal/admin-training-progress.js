@@ -24,24 +24,6 @@
   var INDUCTION_MODULES = 6;
   var INDUCTION_REQUIRED_KEYS = { alex: true, michelle: true, carlos: true };
 
-  /** Staff roster keys that need live-map location when on Bespoke / Day Centre / Climbing shifts. */
-  var LIVE_MAP_MANDATORY_KEYS = {
-    berta: true,
-    john: true,
-    michelle: true,
-    youssef: true,
-    lulia: true,
-    raul: true,
-    victor: true,
-    giuseppe: true,
-    bismark: true,
-    godsway: true,
-    alex: true,
-    carlos: true,
-    andres: true,
-    javi: true,
-  };
-
   function normStaffKey(value) {
     return String(value || "")
       .trim()
@@ -208,9 +190,39 @@
     return "complete";
   }
 
+  /** All active staff with a shift must grant location during portal setup. */
   function locationRequiredForRow(row) {
-    var key = profileRosterKey(row.profile);
-    return !!(key && LIVE_MAP_MANDATORY_KEYS[key]);
+    if (!row || !row.profile) return true;
+    if (row.profile.is_active === false) return false;
+    return true;
+  }
+
+  function formatGpsAgo(iso) {
+    if (!iso) return "";
+    var ms = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return "";
+    if (ms < 60000) return Math.round(ms / 1000) + "s ago";
+    if (ms < 3600000) return Math.round(ms / 60000) + "m ago";
+    return Math.round(ms / 3600000) + "h ago";
+  }
+
+  function mergeLiveLocationPings(rows, liveRows) {
+    var byUser = Object.create(null);
+    (liveRows || []).forEach(function (r) {
+      if (!r || !r.staff_user_id) return;
+      byUser[r.staff_user_id] = r;
+    });
+    rows.forEach(function (row) {
+      var ping = byUser[row.id];
+      row.liveLocation = ping
+        ? {
+            updated_at: ping.updated_at,
+            is_sharing: !!ping.is_sharing,
+            ago: formatGpsAgo(ping.updated_at),
+          }
+        : null;
+    });
+    return rows;
   }
 
   function portalFeaturesComplete(row) {
@@ -341,6 +353,17 @@
     if (r.portalAccess === "web" && !r.webOnlyApproved) items.push("Using web only");
     if (!r.deviceRegistered) items.push("App not installed");
     if (r.locationRequired && !s.location_granted) items.push("Location disabled");
+    if (r.locationRequired && s.location_granted && (!row.liveLocation || !row.liveLocation.updated_at)) {
+      items.push("No GPS from their device yet");
+    } else if (
+      r.locationRequired &&
+      s.location_granted &&
+      row.liveLocation &&
+      row.liveLocation.updated_at &&
+      Date.now() - new Date(row.liveLocation.updated_at).getTime() > 20 * 60 * 1000
+    ) {
+      items.push("GPS stale — portal must stay open during shift");
+    }
     if (!s.microphone_granted) items.push("Microphone off (optional voice-to-text)");
     return items;
   }
@@ -378,6 +401,12 @@
     }
     if (items.indexOf("Setup announcement not signed") >= 0) {
       return "Ask worker to read and sign the portal setup announcement";
+    }
+    if (items.indexOf("No GPS from their device yet") >= 0) {
+      return "Ask worker to open the portal app on their own phone and keep it open during shift";
+    }
+    if (items.indexOf("GPS stale — portal must stay open during shift") >= 0) {
+      return "Ask worker to reopen the portal app — GPS stops when the app is closed";
     }
     if (items.indexOf("Alerts disabled") >= 0) {
       return "Ask worker to enable alerts in app settings";
@@ -582,7 +611,23 @@
     var r = row.readiness;
     if (field === "location") {
       if (!r.locationRequired) return statusBadge("muted", "Not Required");
-      return s.location_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+      var base = s.location_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+      var ping = row.liveLocation;
+      if (ping && ping.updated_at) {
+        var fresh = Date.now() - new Date(ping.updated_at).getTime() <= 20 * 60 * 1000;
+        var sub =
+          '<span class="muted portal-sready-subdate">' +
+          esc(fresh ? "GPS " + ping.ago : "No recent GPS") +
+          "</span>";
+        return base + sub;
+      }
+      if (s.location_granted) {
+        return (
+          base +
+          '<span class="muted portal-sready-subdate">No GPS ping yet — must open portal on their phone</span>'
+        );
+      }
+      return base;
     }
     if (field === "camera") {
       return s.camera_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
@@ -933,6 +978,20 @@
 
     var setupRes = await client.from("portal_staff_setup_status").select("*");
 
+    var liveLocRes = await client.rpc("portal_admin_fetch_staff_live_locations", {
+      p_stale_minutes: 120,
+    });
+    var liveLocRows = [];
+    if (!liveLocRes.error && liveLocRes.data != null) {
+      liveLocRows = Array.isArray(liveLocRes.data) ? liveLocRes.data : [];
+    } else {
+      var liveTable = await client
+        .from("portal_staff_live_locations")
+        .select("staff_user_id, updated_at, is_sharing")
+        .gte("updated_at", new Date(Date.now() - 120 * 60 * 1000).toISOString());
+      if (!liveTable.error) liveLocRows = liveTable.data || [];
+    }
+
     var annRes = await client
       .from("portal_staff_announcements")
       .select("id, ends_at")
@@ -1000,7 +1059,10 @@
       return;
     }
 
-    state.rows = mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff);
+    state.rows = mergeLiveLocationPings(
+      mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff),
+      liveLocRows
+    );
     setStatus("");
     renderTable(state.rows);
   }

@@ -1,8 +1,6 @@
 /**
- * Staff live map — share GPS around today's roster shift:
+ * Staff live map — share GPS around today's roster shift for all services:
  * from 15 minutes before first session until 15 minutes after last session.
- * Bespoke and Day Centre: strict roster window only (feedback can be submitted ~30 min early).
- * Other services: may extend after shift while session feedback is still pending.
  */
 (function (global) {
   "use strict";
@@ -70,47 +68,6 @@
     return true;
   }
 
-  function sessionLiveMapQualifyBlob(s) {
-    if (!s) return "";
-    return [
-      s.service,
-      s.serviceName,
-      s.programme,
-      s.activity,
-      s.rosterService,
-      s.rosterArea,
-      s.venue,
-    ]
-      .map(function (v) {
-        return String(v || "").trim();
-      })
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .replace(/[\s_-]+/g, " ");
-  }
-
-  /** Bespoke / Day Centre — feedback can be submitted before shift end; no post-shift GPS extension. */
-  function sessionIsBespokeOrDayCentre(s) {
-    var blob = sessionLiveMapQualifyBlob(s);
-    if (!blob) return false;
-    return (
-      blob.indexOf("bespoke") !== -1 ||
-      blob.indexOf("day centre") !== -1 ||
-      blob.indexOf("day center") !== -1 ||
-      blob.indexOf("daycentre") !== -1 ||
-      /\bdc\b/.test(blob)
-    );
-  }
-
-  function todaySessionsAreAllBespokeOrDayCentre(sessions) {
-    if (!sessions || !sessions.length) return false;
-    for (var i = 0; i < sessions.length; i++) {
-      if (!sessionIsBespokeOrDayCentre(sessions[i])) return false;
-    }
-    return true;
-  }
-
   function sessionsForCalendarToday(sessionsModel) {
     var todayIso = localTodayIso();
     var todayDow = new Date().toLocaleDateString("en-GB", {
@@ -140,160 +97,88 @@
     return { shiftStartMs: minStart, shiftEndMs: maxEnd };
   }
 
-  function portalWorkerPendingSessionFeedback() {
-    try {
-      if (typeof global.portalReminderState === "function") {
-        var st = global.portalReminderState();
-        return !!(st && st.sessionFeedbackNeed);
-      }
-    } catch (_) {}
-    return false;
+  function bootWrapForProfile(profile, authUser) {
+    var bootFn = global.portalBootstrapStaffRosterFromProfile;
+    return typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
   }
 
-  /** Pending feedback extends live map only outside Bespoke / Day Centre roster days. */
-  function pendingFeedbackExtendsLiveMap(todaySessions) {
-    if (!portalWorkerPendingSessionFeedback()) return false;
-    if (todaySessionsAreAllBespokeOrDayCentre(todaySessions)) return false;
-    return true;
+  function todaySessionsForProfile(profile, authUser) {
+    var bootWrap = bootWrapForProfile(profile, authUser);
+    if (!bootWrap || !bootWrap.boot) return [];
+    return sessionsForCalendarToday(bootWrap.boot.sessionsModel);
   }
 
   /**
-   * True when the worker must enable Location in Settings (any shift today or pending feedback on field services).
-   * @param {Record<string, unknown> | null | undefined} profile
-   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
+   * Location permission is required when the worker has any rostered session today.
    */
   function portalLiveMapLocationRequiredForWorker(profile, authUser) {
-    var bootFn = global.portalBootstrapStaffRosterFromProfile;
-    var bootWrap =
-      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
-    var todaySessions =
-      bootWrap && bootWrap.boot
-        ? sessionsForCalendarToday(bootWrap.boot.sessionsModel)
-        : [];
-    if (pendingFeedbackExtendsLiveMap(todaySessions)) return true;
-    return todaySessions.length > 0;
+    return todaySessionsForProfile(profile, authUser).length > 0;
   }
 
-  /**
-   * True when the worker has a rostered session on today's calendar.
-   * @param {Record<string, unknown> | null | undefined} profile
-   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
-   */
   function portalLiveMapLocationRequiredToday(profile, authUser) {
-    var bootFn = global.portalBootstrapStaffRosterFromProfile;
-    var bootWrap =
-      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
-    if (!bootWrap || !bootWrap.boot) return false;
-    var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
-    return todaySessions.length > 0;
+    return portalLiveMapLocationRequiredForWorker(profile, authUser);
   }
 
-  /**
-   * @param {Record<string, unknown> | null | undefined} profile
-   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
-   */
   function portalLiveMapShiftWindowState(profile, authUser) {
     var todayIso = localTodayIso();
-    var bootFn = global.portalBootstrapStaffRosterFromProfile;
-    var bootWrap =
-      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
+    var bootWrap = bootWrapForProfile(profile, authUser);
     var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
-    var todaySessions =
-      bootWrap && bootWrap.boot
-        ? sessionsForCalendarToday(bootWrap.boot.sessionsModel)
-        : [];
-    var pendingFeedback = portalWorkerPendingSessionFeedback();
-    var feedbackExtension = pendingFeedbackExtendsLiveMap(todaySessions);
-    var strictBespokeDayCentre = todaySessionsAreAllBespokeOrDayCentre(todaySessions);
-
-    if (!bootWrap || !bootWrap.boot) {
-      return {
-        allowed: feedbackExtension,
-        reason: feedbackExtension ? "pending_feedback_no_roster" : "no_roster",
-        locationRequired: feedbackExtension,
-        staffId: staffKey || null,
-        todayIso: todayIso,
-        windowStartMs: null,
-        windowEndMs: null,
-        pendingFeedback: pendingFeedback,
-        feedbackExtension: feedbackExtension,
-        strictBespokeDayCentre: strictBespokeDayCentre,
-      };
-    }
-
-    var locationRequired = todaySessions.length > 0 || feedbackExtension;
+    var todaySessions = todaySessionsForProfile(profile, authUser);
+    var locationRequired = todaySessions.length > 0;
 
     if (!todaySessions.length) {
       return {
-        allowed: feedbackExtension,
-        reason: feedbackExtension ? "pending_feedback_only" : "no_shift_today",
-        locationRequired: locationRequired,
-        staffId: staffKey || bootWrap.staffId,
+        allowed: false,
+        reason: "no_shift_today",
+        locationRequired: false,
+        staffId: staffKey || (bootWrap && bootWrap.staffId) || null,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
-        pendingFeedback: pendingFeedback,
-        feedbackExtension: feedbackExtension,
-        strictBespokeDayCentre: false,
+        sessionCount: 0,
       };
     }
 
     var bounds = shiftBoundsFromSessions(todaySessions, todayIso);
     if (!bounds) {
       return {
-        allowed: feedbackExtension,
-        reason: feedbackExtension ? "pending_feedback_invalid_shift" : "invalid_shift_times",
-        staffId: staffKey || bootWrap.staffId,
+        allowed: false,
+        reason: "invalid_shift_times",
         locationRequired: locationRequired,
+        staffId: staffKey || (bootWrap && bootWrap.staffId) || null,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
-        pendingFeedback: pendingFeedback,
-        feedbackExtension: feedbackExtension,
-        strictBespokeDayCentre: strictBespokeDayCentre,
+        sessionCount: todaySessions.length,
       };
     }
 
     var windowStartMs = bounds.shiftStartMs - BEFORE_MS;
     var windowEndMs = bounds.shiftEndMs + AFTER_MS;
     var now = Date.now();
-    var inShiftWindow = now >= windowStartMs && now <= windowEndMs;
-    var afterShiftFeedbackExtension =
-      feedbackExtension && now >= windowStartMs && now > windowEndMs;
-    var allowed = inShiftWindow || afterShiftFeedbackExtension;
+    var allowed = now >= windowStartMs && now <= windowEndMs;
     var reason = allowed
-      ? afterShiftFeedbackExtension
-        ? "pending_feedback"
-        : "in_shift_window"
+      ? "in_shift_window"
       : now < windowStartMs
         ? "before_shift_window"
-        : strictBespokeDayCentre && pendingFeedback
-          ? "after_shift_bespoke_dc"
-          : "after_shift_window";
+        : "after_shift_window";
 
     return {
       allowed: allowed,
       reason: reason,
       locationRequired: locationRequired,
-      staffId: staffKey || bootWrap.staffId,
+      staffId: staffKey || (bootWrap && bootWrap.staffId) || null,
       todayIso: todayIso,
       shiftStartMs: bounds.shiftStartMs,
       shiftEndMs: bounds.shiftEndMs,
       windowStartMs: windowStartMs,
       windowEndMs: windowEndMs,
       sessionCount: todaySessions.length,
-      pendingFeedback: pendingFeedback,
-      feedbackExtension: feedbackExtension,
-      strictBespokeDayCentre: strictBespokeDayCentre,
     };
   }
 
-  /** Ms until the next boundary (window open or close); minimum 15s. */
   function portalLiveMapMsUntilShiftBoundary(state) {
     if (!state) return 60000;
-    if (state.feedbackExtension && state.allowed) {
-      return 120000;
-    }
     if (state.windowStartMs == null || state.windowEndMs == null) {
       return 60000;
     }
@@ -309,8 +194,6 @@
   global.portalLiveMapLocationRequiredForWorker = portalLiveMapLocationRequiredForWorker;
   global.portalLiveMapLocationRequiredToday = portalLiveMapLocationRequiredToday;
   global.portalLiveMapMsUntilShiftBoundary = portalLiveMapMsUntilShiftBoundary;
-  global.portalWorkerPendingSessionFeedback = portalWorkerPendingSessionFeedback;
-  global.portalLiveMapSessionIsBespokeOrDayCentre = sessionIsBespokeOrDayCentre;
   global.PORTAL_LIVE_MAP_SHIFT_BEFORE_MS = BEFORE_MS;
   global.PORTAL_LIVE_MAP_SHIFT_AFTER_MS = AFTER_MS;
 })(typeof window !== "undefined" ? window : globalThis);

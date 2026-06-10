@@ -125,7 +125,7 @@
     if (!host) return;
     if (!rows.length) {
       host.innerHTML =
-        '<p class="muted">No staff sharing location right now. GPS is sent for mandatory staff (leads, Day Centre, Bespoke support, climbing) from 10 minutes before their first qualifying session until 30 minutes after their last (rota shift window + location allowed).</p>';
+        '<p class="muted">No staff sharing location right now. Staff must open the portal app on <strong>their own phone</strong> during today\'s shift (15 min before first session until 15 min after last). Push alerts alone do not send GPS — the app must stay open.</p>';
       return;
     }
     host.innerHTML =

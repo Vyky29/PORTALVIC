@@ -1166,7 +1166,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.portalRefreshCameraUi();
       perm.portalRefreshEnableAllUi();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260610-console-clean2");
+      const loc = await import("./portal_location_tracker.js?v=20260610-all-services-window");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };

@@ -11,9 +11,9 @@ import {
   probeLocationPermissionState,
 } from "./portal_location_permission.js?v=20260610-console-clean2";
 
-const MIN_SEND_INTERVAL_MS = 120000;
-const MIN_MOVE_M = 25;
-const MAX_STALE_SEND_MS = 300000;
+const MIN_SEND_INTERVAL_MS = 60000;
+const MIN_MOVE_M = 20;
+const MAX_STALE_SEND_MS = 180000;
 const DISPLAY_ACCURACY_CAP_M = 10;
 const GEO_OPTS = {
   enableHighAccuracy: true,
@@ -80,6 +80,8 @@ let _trackerProfile = null;
 let _trackerSession = null;
 /** @type {boolean} */
 let _shiftWindowModuleLoading = false;
+/** @type {WakeLockSentinel | null} */
+let _wakeLock = null;
 
 async function ensureShiftWindowModule() {
   if (typeof window !== "undefined" && typeof window.portalLiveMapShiftWindowState === "function") {
@@ -88,7 +90,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260610-bespoke-dc-window");
+    await import("./portal_live_map_shift_window.js?v=20260610-all-services-window");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
@@ -130,6 +132,24 @@ function scheduleShiftBoundaryTimer() {
   }, ms);
 }
 
+async function acquireShiftWakeLock() {
+  if (_wakeLock || typeof navigator === "undefined") return;
+  try {
+    if (navigator.wakeLock && typeof navigator.wakeLock.request === "function") {
+      _wakeLock = await navigator.wakeLock.request("screen");
+      _wakeLock.addEventListener("release", () => {
+        _wakeLock = null;
+      });
+    }
+  } catch (_) {}
+}
+
+function releaseShiftWakeLock() {
+  if (!_wakeLock) return;
+  void _wakeLock.release().catch(() => {});
+  _wakeLock = null;
+}
+
 async function syncLiveMapShiftWindow() {
   await ensureShiftWindowModule();
   const state = currentShiftWindowState();
@@ -137,13 +157,14 @@ async function syncLiveMapShiftWindow() {
 
   if (!state.allowed) {
     clearWatch();
-    await stopSharing();
+    releaseShiftWakeLock();
     scheduleShiftBoundaryTimer();
     return;
   }
 
   if (portalLocationPermissionGranted()) {
     startWatchInternal();
+    void acquireShiftWakeLock();
   }
   scheduleShiftBoundaryTimer();
 }
@@ -282,6 +303,7 @@ function clearWatch() {
     navigator.geolocation.clearWatch(_watchId);
   }
   _watchId = null;
+  releaseShiftWakeLock();
 }
 
 /** @type {((opts: Record<string, unknown>) => void) | null} */
@@ -347,7 +369,15 @@ export async function startPortalLocationTracker(opts = {}) {
   document.addEventListener("visibilitychange", () => {
     void probeLocationPermissionState().then(() => {
       void syncLiveMapShiftWindow();
+      if (document.visibilityState === "visible" && isLiveMapSharingAllowed()) {
+        sendCurrentPositionOnce(true);
+      }
     });
+  });
+  window.addEventListener("pageshow", () => {
+    if (isLiveMapSharingAllowed() && portalLocationPermissionGranted()) {
+      sendCurrentPositionOnce(true);
+    }
   });
 
   bindShiftWindowListeners();
