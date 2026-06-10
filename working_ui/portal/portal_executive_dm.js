@@ -951,11 +951,6 @@
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
       }
     }
-    function portalAdminDmDebugLog(location, message, data, hypothesisId){
-      // #region agent log
-      fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:location,message:message,data:data||{},timestamp:Date.now(),hypothesisId:hypothesisId||''})}).catch(function(){});
-      // #endregion
-    }
     function portalAdminDmChatSurfaceActive(){
       if(window.__PORTAL_ADMIN_DM_OPEN) return true;
       if(global.__PORTAL_CS_CLIQ_EMBED_OPEN) return true;
@@ -1028,7 +1023,6 @@
                 var changedTid = row && row.thread_id ? String(row.thread_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingThread = portalAdminDmViewingThread(changedTid);
-                portalAdminDmDebugLog('portal_executive_dm.js:rt-dm','admin dm realtime insert',{surfaceActive:surfaceActive,dmOpen:!!window.__PORTAL_ADMIN_DM_OPEN,embedOpen:!!global.__PORTAL_CS_CLIQ_EMBED_OPEN,panel:String((window.__PORTAL_ADMIN_DM_UI||{}).panel||''),threadId:String((window.__PORTAL_ADMIN_DM_UI||{}).threadId||''),changedTid:changedTid,viewingThread:viewingThread},'H1-H4');
                 if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
                 if(!surfaceActive) return;
                 if(viewingThread){
@@ -1058,7 +1052,6 @@
                 var changedGid = row && row.group_id ? String(row.group_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingGroup = portalAdminDmViewingGroup(changedGid);
-                portalAdminDmDebugLog('portal_executive_dm.js:rt-group','admin group realtime insert',{surfaceActive:surfaceActive,viewingGroup:viewingGroup,changedGid:changedGid},'H1-H4');
                 if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
                 if(!surfaceActive) return;
                 if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
@@ -1072,7 +1065,6 @@
             }
           )
           .subscribe(function(status, err){
-            portalAdminDmDebugLog('portal_executive_dm.js:rt-status','admin dm realtime channel status',{status:String(status||''),hasErr:!!err},'H2');
             if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){
               window.__PORTAL_ADMIN_DM_RT_CH = null;
               try{ console.warn('[portal] Realtime admin DM', status, err || ''); }catch(_e){}

@@ -305,9 +305,6 @@
       return { ok: false, reason: "subscribe-fn", status: st || 0 };
     }
     var onServer = await portalServerHasPushEndpoint(client, userId, endpoint);
-    // #region agent log
-    fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_web_push_support.js:postPush',message:'push subscribe server verify',data:{onServer:onServer,endpointPrefix:endpoint.slice(0,48),userIdPrefix:userId.slice(0,8)},timestamp:Date.now(),hypothesisId:'H7'})}).catch(function(){});
-    // #endregion
     if (!onServer) return { ok: false, reason: "server-missing" };
     return { ok: true };
   }

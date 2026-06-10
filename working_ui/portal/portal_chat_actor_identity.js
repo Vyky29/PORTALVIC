@@ -397,9 +397,6 @@
     opts = opts || {};
     if (!authorProf) return "";
     if (opts.mine) return portalChatActorDisplayName(authorProf) || "You";
-    // #region agent log
-    fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_chat_actor_identity.js:workerPreviewSender',message:'worker preview sender resolve',data:{audience:opts.audience||'',hasOperatorTag:!!parseDmOperatorId(opts.messageBody||''),appRole:String(authorProf.app_role||''),mgmtWorker:isManagementAuthorForWorkerDisplay(authorProf),mgmtStrict:isManagementAuthor(authorProf),isActive:authorProf.is_active},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(function(){});
-    // #endregion
     if (parseDmOperatorId(opts.messageBody || "")) return "Admin";
     if (isManagementAuthorForWorkerDisplay(authorProf)) {
       return workerFacingAuthorChip(authorProf);
