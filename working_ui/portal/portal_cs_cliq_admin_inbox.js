@@ -86,7 +86,7 @@
     if (activeCat === "ops") {
       return "Shared Sevitha\u2194staff line with Raul, Javi & Sevitha (Admin). Your replies are signed with your name.";
     }
-    return "Directors, CEO groups (CEOs, Sev + CEOs), and Admin \u2014 your leadership circle.";
+    return "Directors and Admin — your leadership circle. CEO groups are under Channels.";
   }
 
   function renderCeoInboxLaneHint(activeCat, show) {
@@ -581,7 +581,7 @@
     if (activeCat === "ops") {
       return "No staff ops threads yet. Tap a staff name when one appears, or wait for the shared roster to load.";
     }
-    return "No direct chats yet. Open Sev + CEOs at the top of this list, or message Raul, Javi, or Admin.";
+    return "No direct chats yet. Message Raul, Javi, or Admin — CEO groups are in Channels.";
   }
 
   async function renderAdminInbox(host, ctx) {
