@@ -322,6 +322,13 @@ export async function loadStaffLeadUserIds(
   return ids;
 }
 
+/** Apple Web Push rejects topics ending with "-" (BadWebPushTopic / HTTP 400). */
+export function normalizeWebPushTopic(raw: string): string {
+  let topic = String(raw || "").trim().slice(0, 32);
+  topic = topic.replace(/-+$/, "");
+  return topic;
+}
+
 export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],
@@ -352,7 +359,7 @@ export async function sendPushPayloadToUserIds(
   let lastStatus = 0;
   const ttl = options?.TTL ?? 86400;
   const urgency = options?.urgency ?? "high";
-  const topic = options?.topic ? String(options.topic).slice(0, 32) : "";
+  const topic = options?.topic ? normalizeWebPushTopic(options.topic) : "";
   for (const row of subs) {
     const raw = row.subscription_json as Record<string, unknown> | null;
     const endpoint = String(
