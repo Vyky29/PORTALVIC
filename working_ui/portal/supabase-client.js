@@ -709,24 +709,8 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   const sTime = portalSessionKeyTimeToken(s);
   if (rTime && sTime && sTime !== rTime) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
-  if (portalSessionKeyClientSlugsMatch(s, r)) return true;
-  const rClientSlug = String(rParts[2] || rParts[1] || "")
-    .trim()
-    .toLowerCase();
-  const sClientSlug = String(sParts[sParts.length - 1] || sParts[1] || "")
-    .trim()
-    .toLowerCase();
-  if (/_ah$/.test(rClientSlug) && /_ah$/.test(sClientSlug) && rClientSlug !== sClientSlug) {
-    return false;
-  }
-  const rClient = String(rParts[2] || rParts[1] || "")
-    .trim()
-    .toLowerCase();
-  const sClient = String(sParts[sParts.length - 1] || sParts[1] || "")
-    .trim()
-    .toLowerCase();
-  if (!rClient || !sClient) return false;
-  return portalClientSlugTokensEquivalent(rClient, sClient);
+  /* Participant slugs only — never fall back to raw pipe segment (e.g. "aquatic" on date|amber|aquatic). */
+  return portalSessionKeyClientSlugsMatch(s, r);
 }
 
 /**
