@@ -843,6 +843,42 @@ function portalReviewMemoryBase() {
 }
 
 /**
+ * Roster session keys backed by Supabase for staff tablets (fan-out uses strict slug match).
+ * @param {string[]} rosterKeys
+ * @param {{ feedbackKeys?: string[], absentFeedbackKeys?: string[], incidentKeys?: string[], cancellationKeys?: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ */
+export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs) {
+  const submittedFb = portalSubmittedFeedbackKeysForMemory(packs || {});
+  const absentAll = [
+    ...new Set([...(packs?.absentFeedbackKeys || []), ...(packs?.absentKeys || [])]),
+  ];
+  const cancelledKeys = [...new Set(packs?.cancellationKeys || [])];
+  /** @type {Set<string>} */
+  const feedback = new Set();
+  /** @type {Set<string>} */
+  const absent = new Set();
+  /** @type {Set<string>} */
+  const cancelled = new Set();
+
+  function fanOut(keys, target) {
+    for (const rk of rosterKeys || []) {
+      const rosterKey = String(rk || "").trim();
+      if (!rosterKey) continue;
+      for (const fk of keys || []) {
+        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) {
+          target.add(rosterKey);
+        }
+      }
+    }
+  }
+
+  fanOut(submittedFb, feedback);
+  fanOut(absentAll, absent);
+  fanOut(cancelledKeys, cancelled);
+  return { feedback, absent, cancelled };
+}
+
+/**
  * Drop stale tablet greens: after server sync, roster keys on/after `serverTruthFromIso`
  * must be backed by Supabase (feedback, absent, cancellation, or quick mark).
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory

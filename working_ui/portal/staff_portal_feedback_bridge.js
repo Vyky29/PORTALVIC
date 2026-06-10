@@ -699,9 +699,7 @@
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const rKey = slug(r && r.clientName);
     if (!rosterKey || !rKey) return false;
-    if (rosterKey === rKey) return true;
-    if (/_ah$/.test(rosterKey) && /_ah$/.test(rKey) && rosterKey !== rKey) return false;
-    return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+    return clientSlugTokensEquivalent(rosterKey, rKey);
   }
 
   function normalizeHmToken(v) {
@@ -1117,6 +1115,7 @@
   window.PortalStaffFeedbackBridge = {
     slug: slug,
     staffOwnsInstructor: staffOwnsInstructor,
+    clientSlugTokensEquivalent: clientSlugTokensEquivalent,
     clientMatch: clientMatch,
     portalAttendanceIsAbsent: portalAttendanceIsAbsent,
     statusOverviewIsAbsent: statusOverviewIsAbsent,
