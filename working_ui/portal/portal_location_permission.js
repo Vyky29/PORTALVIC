@@ -720,25 +720,9 @@ export function portalMicrophoneReadyForSetup() {
   return true;
 }
 
-/** Voice typing (transcriptor) — optional; offered for Day Centre, Bespoke support tracks, and climbing. */
+/** Voice typing (transcription for feedback/incident forms — not video-call mic). */
 export function portalVoiceTypingOfferedForStaff() {
-  try {
-    const boot =
-      typeof window !== "undefined" && window.__spreadsheetBoot
-        ? window.__spreadsheetBoot
-        : null;
-    const dd =
-      typeof window !== "undefined" && window.dashboardData ? window.dashboardData : null;
-    const raw = String(
-      (dd && dd.staffRoleTrack) || (boot && boot.staffRoleTrack) || ""
-    )
-      .trim()
-      .toLowerCase()
-      .replace(/[\s_-]+/g, "");
-    if (raw === "climbing") return true;
-    if (raw === "support" || raw === "supportlead") return true;
-  } catch (_) {}
-  return false;
+  return true;
 }
 
 export function portalLocationRequiredForSetup() {
@@ -799,9 +783,21 @@ export function portalRefreshMicrophoneUi() {
   }
   if (block) block.hidden = false;
   if (st === "granted") {
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "On — speak to fill session feedback and incident forms (not video calls).";
+    }
     btn.textContent = "Voice typing on";
     btn.disabled = true;
+  } else if (st === "denied") {
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "Blocked — allow microphone for this site in browser settings.";
+    }
+    btn.textContent = "Open browser settings";
+    btn.disabled = false;
   } else {
+    if (statusEl) statusEl.hidden = true;
     btn.textContent = "Allow voice typing";
     btn.disabled = false;
   }
@@ -879,10 +875,11 @@ export function portalRefreshLocationUi() {
       btn.disabled = true;
       btn.textContent = "HTTPS required";
     }
-  } else if (st === "granted") {
+  } else   if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent = "On — office can see you on the live map during Bespoke, Day Centre or Climbing shifts.";
+      statusEl.textContent =
+        "On — office can see you on the live map during your shift (±15 min) and until session feedback is submitted.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -900,8 +897,8 @@ export function portalRefreshLocationUi() {
     }
   } else {
     statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required for Bespoke, Day Centre or Climbing during your shift."
-      : "Not required for your rota today — only when you deliver Bespoke, Day Centre or Climbing.";
+      ? "Off — required during your shift (15 min before until 15 min after) and while session feedback is pending."
+      : "Not required today — no shift on your rota.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;

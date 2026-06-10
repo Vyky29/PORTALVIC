@@ -1,43 +1,13 @@
 /**
- * Staff live map — share GPS only around today's roster shift:
- * from 10 minutes before first session until 30 minutes after last session.
- *
- * Mandatory live-map staff (location block in Settings + shift GPS):
- * - Leads: Berta, John, Michelle
- * - Day Centre: Youssef, Lulia, Michelle, Raul, Victor
- * - Bespoke support: John, Giuseppe, Bismark, Godsway
- * - Climbing: Alex, Carlos, Andres, Javi
+ * Staff live map — share GPS around today's roster shift:
+ * from 15 minutes before first session until 15 minutes after last session,
+ * and until session feedback is submitted when still pending.
  */
 (function (global) {
   "use strict";
 
-  var BEFORE_MS = 10 * 60 * 1000;
-  var AFTER_MS = 30 * 60 * 1000;
-
-  /** Roster keys (staffProfiles) with mandatory location sharing when on shift. */
-  var PORTAL_LIVE_MAP_MANDATORY_STAFF = {
-    berta: true,
-    john: true,
-    michelle: true,
-    youssef: true,
-    lulia: true,
-    raul: true,
-    victor: true,
-    giuseppe: true,
-    bismark: true,
-    godsway: true,
-    alex: true,
-    carlos: true,
-    andres: true,
-    javi: true,
-  };
-
-  /** Leads: any rostered session today counts for the shift window (not only bespoke/day centre). */
-  var PORTAL_LIVE_MAP_LEAD_STAFF = {
-    berta: true,
-    john: true,
-    michelle: true,
-  };
+  var BEFORE_MS = 15 * 60 * 1000;
+  var AFTER_MS = 15 * 60 * 1000;
 
   function localTodayIso() {
     try {
@@ -93,55 +63,9 @@
     return "";
   }
 
-  function portalLiveMapMandatoryStaff(profile, authUser, bootWrap) {
-    var key = resolveStaffRosterKey(profile, authUser, bootWrap);
-    return !!(key && PORTAL_LIVE_MAP_MANDATORY_STAFF[key]);
-  }
-
-  /** Roster sessions use activity / rosterService (spreadsheet adapter), not always service. */
-  function sessionLiveMapQualifyBlob(s) {
-    if (!s) return "";
-    return [
-      s.service,
-      s.serviceName,
-      s.programme,
-      s.activity,
-      s.rosterService,
-      s.rosterArea,
-      s.venue,
-    ]
-      .map(function (v) {
-        return String(v || "").trim();
-      })
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .replace(/[\s_-]+/g, " ");
-  }
-
-  function sessionQualifiesForLiveLocation(s) {
-    var blob = sessionLiveMapQualifyBlob(s);
-    if (!blob) return false;
-    return (
-      blob.indexOf("bespoke") !== -1 ||
-      blob.indexOf("day centre") !== -1 ||
-      blob.indexOf("day center") !== -1 ||
-      blob.indexOf("daycentre") !== -1 ||
-      blob.indexOf("climbing") !== -1 ||
-      blob.indexOf(" climb") !== -1 ||
-      blob.indexOf("climb ") !== -1 ||
-      blob === "climb" ||
-      /\bdc\b/.test(blob)
-    );
-  }
-
-  /** Shift-window sessions: bespoke, day centre, climbing; leads also count any client session. */
-  function sessionQualifiesForLiveLocationShift(s, staffKey) {
-    if (sessionQualifiesForLiveLocation(s)) return true;
-    if (!staffKey || !PORTAL_LIVE_MAP_LEAD_STAFF[staffKey]) return false;
-    if (!s || s.clientId === "closed" || !s.start || !s.end) return false;
-    var cid = String(s.clientId || s.clientSlug || "").trim().toLowerCase();
-    if (!cid || cid === "available" || cid === "noclient" || cid === "no client") return false;
+  function sessionCountsForShiftWindow(s) {
+    if (!s || s.clientId === "closed") return false;
+    if (!s.start || !s.end) return false;
     return true;
   }
 
@@ -152,8 +76,7 @@
       timeZone: "Europe/London",
     });
     return (sessionsModel || []).filter(function (s) {
-      if (!s || s.clientId === "closed") return false;
-      if (!s.start || !s.end) return false;
+      if (!sessionCountsForShiftWindow(s)) return false;
       var sd = String(s.session_date || "").slice(0, 10);
       if (sd) return sd === todayIso;
       return String(s.day || "") === todayDow;
@@ -175,29 +98,28 @@
     return { shiftStartMs: minStart, shiftEndMs: maxEnd };
   }
 
-  /**
-   * True when the worker must enable Location in Settings (mandatory list or qualifying roster).
-   * @param {Record<string, unknown> | null | undefined} profile
-   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
-   */
-  function portalLiveMapLocationRequiredForWorker(profile, authUser) {
-    var bootFn = global.portalBootstrapStaffRosterFromProfile;
-    var bootWrap =
-      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
-    if (portalLiveMapMandatoryStaff(profile, authUser, bootWrap)) return true;
-    if (!bootWrap || !bootWrap.boot) return false;
-    var model = bootWrap.boot.sessionsModel || [];
-    for (var i = 0; i < model.length; i++) {
-      var s = model[i];
-      if (!s || s.clientId === "closed") continue;
-      if (!s.start || !s.end) continue;
-      if (sessionQualifiesForLiveLocation(s)) return true;
-    }
+  function portalWorkerPendingSessionFeedback() {
+    try {
+      if (typeof global.portalReminderState === "function") {
+        var st = global.portalReminderState();
+        return !!(st && st.sessionFeedbackNeed);
+      }
+    } catch (_) {}
     return false;
   }
 
   /**
-   * True when the worker has a qualifying session on today's calendar rota.
+   * True when the worker must enable Location in Settings (any shift today or pending feedback).
+   * @param {Record<string, unknown> | null | undefined} profile
+   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
+   */
+  function portalLiveMapLocationRequiredForWorker(profile, authUser) {
+    if (portalWorkerPendingSessionFeedback()) return true;
+    return portalLiveMapLocationRequiredToday(profile, authUser);
+  }
+
+  /**
+   * True when the worker has a rostered session on today's calendar.
    * @param {Record<string, unknown> | null | undefined} profile
    * @param {import("@supabase/supabase-js").User | null | undefined} authUser
    */
@@ -206,11 +128,8 @@
     var bootWrap =
       typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
     if (!bootWrap || !bootWrap.boot) return false;
-    var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
     var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
-    return todaySessions.some(function (s) {
-      return sessionQualifiesForLiveLocationShift(s, staffKey);
-    });
+    return todaySessions.length > 0;
   }
 
   /**
@@ -223,73 +142,66 @@
     var bootWrap =
       typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
     var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
-    var mandatory = portalLiveMapMandatoryStaff(profile, authUser, bootWrap);
+    var pendingFeedback = portalWorkerPendingSessionFeedback();
 
     if (!bootWrap || !bootWrap.boot) {
       return {
-        allowed: false,
-        reason: mandatory ? "no_roster_mandatory" : "no_roster",
-        locationRequired: mandatory,
+        allowed: pendingFeedback,
+        reason: pendingFeedback ? "pending_feedback_no_roster" : "no_roster",
+        locationRequired: pendingFeedback,
         staffId: staffKey || null,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
+        pendingFeedback: pendingFeedback,
       };
     }
 
     var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
-    var qualifyingSessions = todaySessions.filter(function (s) {
-      return sessionQualifiesForLiveLocationShift(s, staffKey);
-    });
-    var locationRequired = mandatory || qualifyingSessions.length > 0;
+    var locationRequired = todaySessions.length > 0 || pendingFeedback;
 
     if (!todaySessions.length) {
       return {
-        allowed: false,
-        reason: "no_shift_today",
-        locationRequired: mandatory,
+        allowed: pendingFeedback,
+        reason: pendingFeedback ? "pending_feedback_only" : "no_shift_today",
+        locationRequired: locationRequired,
         staffId: staffKey || bootWrap.staffId,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
+        pendingFeedback: pendingFeedback,
       };
     }
 
-    if (!qualifyingSessions.length) {
-      return {
-        allowed: false,
-        reason: mandatory ? "no_qualifying_shift_today" : "location_not_required",
-        locationRequired: mandatory,
-        staffId: staffKey || bootWrap.staffId,
-        todayIso: todayIso,
-        windowStartMs: null,
-        windowEndMs: null,
-        sessionCount: todaySessions.length,
-      };
-    }
-
-    var bounds = shiftBoundsFromSessions(qualifyingSessions, todayIso);
+    var bounds = shiftBoundsFromSessions(todaySessions, todayIso);
     if (!bounds) {
       return {
-        allowed: false,
-        reason: "invalid_shift_times",
+        allowed: pendingFeedback,
+        reason: pendingFeedback ? "pending_feedback_invalid_shift" : "invalid_shift_times",
         staffId: staffKey || bootWrap.staffId,
         locationRequired: locationRequired,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
+        pendingFeedback: pendingFeedback,
       };
     }
 
     var windowStartMs = bounds.shiftStartMs - BEFORE_MS;
     var windowEndMs = bounds.shiftEndMs + AFTER_MS;
     var now = Date.now();
-    var allowed = now >= windowStartMs && now <= windowEndMs;
+    var inShiftWindow = now >= windowStartMs && now <= windowEndMs;
+    var feedbackExtension = pendingFeedback && now >= windowStartMs && now > windowEndMs;
+    var allowed = inShiftWindow || feedbackExtension;
     var reason = allowed
-      ? "in_shift_window"
+      ? feedbackExtension
+        ? "pending_feedback"
+        : "in_shift_window"
       : now < windowStartMs
         ? "before_shift_window"
-        : "after_shift_window";
+        : pendingFeedback
+          ? "after_shift_pending_feedback"
+          : "after_shift_window";
 
     return {
       allowed: allowed,
@@ -301,14 +213,18 @@
       shiftEndMs: bounds.shiftEndMs,
       windowStartMs: windowStartMs,
       windowEndMs: windowEndMs,
-      sessionCount: qualifyingSessions.length,
-      mandatory: mandatory,
+      sessionCount: todaySessions.length,
+      pendingFeedback: pendingFeedback,
     };
   }
 
   /** Ms until the next boundary (window open or close); minimum 15s. */
   function portalLiveMapMsUntilShiftBoundary(state) {
-    if (!state || state.windowStartMs == null || state.windowEndMs == null) {
+    if (!state) return 60000;
+    if (state.pendingFeedback && state.allowed) {
+      return 120000;
+    }
+    if (state.windowStartMs == null || state.windowEndMs == null) {
       return 60000;
     }
     var now = Date.now();
@@ -323,7 +239,7 @@
   global.portalLiveMapLocationRequiredForWorker = portalLiveMapLocationRequiredForWorker;
   global.portalLiveMapLocationRequiredToday = portalLiveMapLocationRequiredToday;
   global.portalLiveMapMsUntilShiftBoundary = portalLiveMapMsUntilShiftBoundary;
-  global.PORTAL_LIVE_MAP_MANDATORY_STAFF = PORTAL_LIVE_MAP_MANDATORY_STAFF;
+  global.portalWorkerPendingSessionFeedback = portalWorkerPendingSessionFeedback;
   global.PORTAL_LIVE_MAP_SHIFT_BEFORE_MS = BEFORE_MS;
   global.PORTAL_LIVE_MAP_SHIFT_AFTER_MS = AFTER_MS;
 })(typeof window !== "undefined" ? window : globalThis);

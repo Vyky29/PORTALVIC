@@ -1123,7 +1123,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview" || isGhostDashboard) {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260607-portal-features-two-btn");
+      const perm = await import("./portal_location_permission.js?v=20260610-worker-alerts");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;

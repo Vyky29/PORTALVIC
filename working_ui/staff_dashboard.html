@@ -15,7 +15,7 @@
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260609-vapid-v2"></script>
   <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260609-two-btn"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
@@ -740,25 +740,36 @@
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
+        <p class="portal-alerts-lead">Alerts, live map and voice typing for your shift. Turn each section on once — your browser will ask for permission.</p>
         <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on portal features</button>
         </div>
+        <div class="portal-alerts-block" id="portalPushNotifyBlock">
+          <h4 class="portal-alerts-section-title">Notifications</h4>
+          <p class="portal-alerts-hint muted">Chat, reminders and activity alerts.</p>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <p id="portalNotifyVapidHint" class="portal-alerts-hint muted" hidden></p>
+          <p id="portalNotifyDeniedHelp" class="portal-alerts-hint muted" hidden>In your browser: open site settings → Notifications → Allow, then refresh this page.</p>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalNotifyEnableBtn">Turn on notifications</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
+        </div>
+        <div class="portal-alerts-block" id="portalLocationBlock">
+          <h4 class="portal-alerts-section-title">Location (live map)</h4>
+          <p class="portal-alerts-hint muted">During your shift (15 min before until 15 min after) and until session feedback is submitted.</p>
+          <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
+        </div>
         <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
+          <h4 class="portal-alerts-section-title">Voice typing</h4>
+          <p class="portal-alerts-hint muted">Speak to fill session feedback and incident forms — not for video calls.</p>
+          <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite" hidden></p>
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow voice typing</button>
-          <p id="portalMicStatus" class="portal-alerts-status" hidden aria-live="polite"></p>
+          <p id="portalMicHint" class="portal-alerts-footnote muted" hidden></p>
         </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
           <p id="portalEnableAllStatus" hidden></p>
-          <div class="portal-alerts-block" id="portalPushNotifyBlock">
-            <p id="portalNotifyStatus"></p>
-            <p id="portalNotifyVapidHint" hidden></p>
-            <button type="button" id="portalNotifyEnableBtn"></button>
-            <button type="button" id="portalNotifyTestBtn" hidden></button>
-          </div>
-          <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>
-          <p id="portalMicHint"></p>
         </div>
       </div>
     </div>
@@ -4132,6 +4143,7 @@
         rosterOverrideDayGroups: Array.isArray(rosterAttention.rosterOverrideDayGroups) ? rosterAttention.rosterOverrideDayGroups : []
       };
     }
+    window.portalReminderState = portalReminderState;
     function portalReminderOperationalAny(){
       const st = portalReminderState();
       return !!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.rosterOverrideNeed);
