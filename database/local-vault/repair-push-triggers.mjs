@@ -28,6 +28,7 @@ function shellEscape(value) {
 
 const webhookSecret = readPushWebhookSecret();
 
+run("node database/local-vault/sync-vapid-public-js.mjs");
 run("node database/local-vault/apply-chat-admin-push.mjs");
 run("node database/local-vault/apply-incoming-call-push.mjs");
 run("node database/local-vault/apply-staff-dm-push.mjs");
