@@ -1048,7 +1048,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260609-dock-menu-nav"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260610-lead-exec-admin-badge"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260607-area-icons-transparent"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
@@ -5924,7 +5924,7 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_SCHED_RT_READY = true;
-              console.info("[portal] Realtime: schedule_overrides (staff)");
+              try{ console.debug("[portal] Realtime: schedule_overrides (staff)"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -5994,7 +5994,7 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_ANN_RT_READY = true;
-              try{ console.info("[portal] Realtime: portal_staff_announcements (staff)"); }catch(_){}
+              try{ console.debug("[portal] Realtime: portal_staff_announcements (staff)"); }catch(_){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -6500,6 +6500,7 @@
       count = Math.max(0, parseInt(count, 10) || 0);
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = count;
       window.__PORTAL_STAFF_DM_HAS_UNREAD__ = count > 0;
+      if(window.__PORTAL_LEAD_EXEC_FOOTER_ADMIN__) return;
       if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function') window.portalSyncFloatingChatUnreadFromMenuBtn();
     }
     window.portalStaffDmBumpUnreadOptimistic = function portalStaffDmBumpUnreadOptimistic(){
@@ -7725,7 +7726,7 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_DM_RT_READY = true;
-              try{ console.info("[portal] Realtime: portal_staff_dm_messages"); }catch(_s){}
+              try{ console.debug("[portal] Realtime: portal_staff_dm_messages"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -13906,6 +13907,9 @@
           if(typeof window.portalSyncLeadSessionOverviewButton === "function"){
             window.portalSyncLeadSessionOverviewButton();
           }
+          if(typeof window.portalSyncLeadExecFooterAdminBtn === "function"){
+            window.portalSyncLeadExecFooterAdminBtn();
+          }
           if (typeof window.portalInductionSyncQuickMenu === "function") {
             window.portalInductionSyncQuickMenu();
           }
@@ -14032,7 +14036,6 @@
           void rehydrateFromProfile();
         }
       });
-      setTimeout(rehydrateFromProfile, 200);
       setTimeout(rehydrateFromProfile, 1200);
     })();
   </script>
@@ -14078,7 +14081,33 @@
         }
         var btn = document.getElementById("portalFloatingChatBtn");
         var wrap = document.getElementById("portalFloatingChatOrbitWrap");
-        if (!btn || btn.getAttribute("data-portal-lead-exec-admin") === "1") return;
+        function portalLeadExecFooterAdminClearBadge(targetBtn, targetWrap) {
+          if (targetWrap) {
+            targetWrap.classList.remove(
+              "dock-chat-wrap--unread",
+              "topbar-chat-orbit-wrap--unread",
+              "portal-admin-floating-chat-wrap--unread"
+            );
+            targetWrap.classList.add(
+              "dock-chat-wrap--idle",
+              "topbar-chat-orbit-wrap--idle",
+              "portal-admin-floating-chat-wrap--idle"
+            );
+          }
+          if (!targetBtn) return;
+          targetBtn.classList.remove("portal-floating-chat-btn--unread", "dock-nav-item--unread");
+          var badgeEl = targetBtn.querySelector(".portal-floating-chat-badge");
+          if (badgeEl) {
+            badgeEl.hidden = true;
+            badgeEl.setAttribute("aria-hidden", "true");
+            badgeEl.textContent = "";
+          }
+        }
+        if (btn && btn.getAttribute("data-portal-lead-exec-admin") === "1") {
+          portalLeadExecFooterAdminClearBadge(btn, wrap);
+          return;
+        }
+        if (!btn) return;
         var adminUrl = portalLeadExecAdminPortalUrl();
         var clone = btn.cloneNode(true);
         clone.setAttribute("data-portal-lead-exec-admin", "1");
@@ -14106,17 +14135,9 @@
           window.location.href = adminUrl;
         });
         btn.replaceWith(clone);
-        if (wrap) {
-          wrap.classList.remove(
-            "dock-chat-wrap--unread",
-            "topbar-chat-orbit-wrap--unread",
-            "portal-admin-floating-chat-wrap--unread"
-          );
-          wrap.classList.add(
-            "dock-chat-wrap--idle",
-            "topbar-chat-orbit-wrap--idle",
-            "portal-admin-floating-chat-wrap--idle"
-          );
+        portalLeadExecFooterAdminClearBadge(clone, wrap);
+        if (typeof window.portalInitFloatingInternalChat === "function") {
+          window.portalInitFloatingInternalChat();
         }
       };
       function bootLeadExecFooterAdmin() {

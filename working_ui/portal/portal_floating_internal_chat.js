@@ -80,7 +80,31 @@
     }
   }
 
+  function portalLeadExecFooterAdminActive() {
+    try {
+      if (global.window.__PORTAL_LEAD_EXEC_FOOTER_ADMIN__) return true;
+      var btn = portalFloatingChatBtn();
+      return !!(btn && btn.getAttribute("data-portal-lead-exec-admin") === "1");
+    } catch (_) {
+      return false;
+    }
+  }
+
   function portalSyncFloatingChatUnreadFromMenuBtn() {
+    if (portalLeadExecFooterAdminActive()) {
+      var adminBtn = portalFloatingChatBtn();
+      if (adminBtn) {
+        portalApplyChatDockChrome(portalFloatingChatOrbitWrap(), adminBtn, false);
+        var adminBadge = adminBtn.querySelector(".portal-floating-chat-badge");
+        if (adminBadge) {
+          adminBadge.hidden = true;
+          adminBadge.setAttribute("aria-hidden", "true");
+          adminBadge.textContent = "";
+        }
+        adminBtn.classList.remove("portal-floating-chat-btn--unread", "dock-nav-item--unread");
+      }
+      return;
+    }
     var count = portalStaffDmUnreadCount();
     var unread = count > 0;
     portalApplyChatButtonChrome(
@@ -118,6 +142,18 @@
 
   function portalInitFloatingInternalChat() {
     var btn = portalFloatingChatBtn();
+    if (portalLeadExecFooterAdminActive()) {
+      if (btn) {
+        portalApplyChatDockChrome(portalFloatingChatOrbitWrap(), btn, false);
+        var badge = btn.querySelector(".portal-floating-chat-badge");
+        if (badge) {
+          badge.hidden = true;
+          badge.setAttribute("aria-hidden", "true");
+          badge.textContent = "";
+        }
+      }
+      return;
+    }
     if (!btn || btn.getAttribute("data-portal-floating-chat-bound") === "1") {
       portalSyncFloatingChatUnreadFromMenuBtn();
       return;
