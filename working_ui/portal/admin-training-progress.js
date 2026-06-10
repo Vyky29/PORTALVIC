@@ -225,6 +225,77 @@
     return rows;
   }
 
+  function mergeDeviceAttribution(rows, attributionRows, unavailable) {
+    if (unavailable) {
+      rows.forEach(function (row) {
+        var s = row.setup || {};
+        var hasSetup =
+          !!s.push_enabled || !!s.location_granted || !!s.is_pwa || !!s.last_seen_at;
+        row.deviceAttribution = hasSetup
+          ? { attribution: "unknown", sharedWith: [], lastGpsAt: null, hasPush: false }
+          : { attribution: "not_setup", sharedWith: [], lastGpsAt: null, hasPush: false };
+      });
+      return rows;
+    }
+    var byUser = Object.create(null);
+    (attributionRows || []).forEach(function (r) {
+      if (!r || !r.staff_user_id) return;
+      byUser[r.staff_user_id] = r;
+    });
+    rows.forEach(function (row) {
+      var attr = byUser[row.id];
+      row.deviceAttribution = attr
+        ? {
+            attribution: String(attr.attribution || "unknown"),
+            sharedWith: Array.isArray(attr.shared_with) ? attr.shared_with : [],
+            lastGpsAt: attr.last_gps_at || null,
+            hasPush: !!attr.has_push,
+          }
+        : { attribution: "not_setup", sharedWith: [], lastGpsAt: null, hasPush: false };
+    });
+    return rows;
+  }
+
+  function deviceSetupIsShared(row) {
+    var a = row.deviceAttribution && row.deviceAttribution.attribution;
+    return a === "shared_device" || a === "likely_shared";
+  }
+
+  function sharedDeviceNames(row) {
+    var list = (row.deviceAttribution && row.deviceAttribution.sharedWith) || [];
+    return list
+      .map(function (x) {
+        return String((x && x.staff_display_name) || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function deviceAttributionCell(row) {
+    var da = row.deviceAttribution || {};
+    var attr = da.attribution || "unknown";
+    var names = sharedDeviceNames(row);
+    var labelMap = {
+      own_device: { kind: "ok", label: "Their phone" },
+      shared_device: { kind: "bad", label: "Someone else's phone" },
+      likely_shared: { kind: "bad", label: "Likely shared phone" },
+      unknown: { kind: "warn", label: "Can't tell yet" },
+      not_setup: { kind: "muted", label: "Not set up" },
+    };
+    var item = labelMap[attr] || labelMap.unknown;
+    var html = statusBadge(item.kind, item.label);
+    if (names.length) {
+      html +=
+        '<span class="muted portal-sready-subdate">Same device as: ' +
+        esc(names.join(", ")) +
+        "</span>";
+    }
+    if (deviceSetupIsShared(row) && da.lastGpsAt) {
+      html +=
+        '<span class="muted portal-sready-subdate">GPS from their phone recently — ask them to redo setup on their device</span>';
+    }
+    return html;
+  }
+
   function portalFeaturesComplete(row) {
     var s = row.setup || {};
     if (s.portal_features_complete) return true;
@@ -365,6 +436,9 @@
       items.push("GPS stale — portal must stay open during shift");
     }
     if (!s.microphone_granted) items.push("Microphone off (optional voice-to-text)");
+    if (deviceSetupIsShared(row)) {
+      items.push("Portal setup done on someone else's phone — not their device");
+    }
     return items;
   }
 
@@ -402,6 +476,9 @@
     if (items.indexOf("Setup announcement not signed") >= 0) {
       return "Ask worker to read and sign the portal setup announcement";
     }
+    if (items.indexOf("Portal setup done on someone else's phone — not their device") >= 0) {
+      return "Ask worker to sign in on their own phone and turn on portal features there — do not use admin phone";
+    }
     if (items.indexOf("No GPS from their device yet") >= 0) {
       return "Ask worker to open the portal app on their own phone and keep it open during shift";
     }
@@ -438,6 +515,10 @@
 
   function rowWebOnly(row) {
     return row.readiness.portalAccess === "web";
+  }
+
+  function rowSharedDeviceSetup(row) {
+    return deviceSetupIsShared(row);
   }
 
   function mergeRows(profiles, progressRows, setupRows, permissionAcksByStaff) {
@@ -503,6 +584,7 @@
     if (f === "compliance_missing") return rows.filter(rowComplianceMissing);
     if (f === "app_setup_missing") return rows.filter(rowAppSetupMissing);
     if (f === "browser_only") return rows.filter(rowWebOnly);
+    if (f === "shared_device") return rows.filter(rowSharedDeviceSetup);
     return rows;
   }
 
@@ -816,6 +898,9 @@
           "<td>" +
           permissionCell(row, "microphone") +
           "</td>" +
+          '<td class="portal-sready-cell">' +
+          deviceAttributionCell(row) +
+          "</td>" +
           '<td class="muted portal-tprog-seen">' +
           esc(formatLondon(s.last_seen_at)) +
           "</td>" +
@@ -841,6 +926,7 @@
       "<th>Camera</th>" +
       "<th>Location</th>" +
       "<th>Microphone</th>" +
+      "<th>Setup on whose phone?</th>" +
       "<th>Last seen</th>" +
       "<th>Device status</th>" +
       "</tr></thead><tbody>" +
@@ -981,6 +1067,8 @@
     var liveLocRes = await client.rpc("portal_admin_fetch_staff_live_locations", {
       p_stale_minutes: 120,
     });
+
+    var deviceAttrRes = await client.rpc("portal_admin_fetch_staff_device_attribution");
     var liveLocRows = [];
     if (!liveLocRes.error && liveLocRes.data != null) {
       liveLocRows = Array.isArray(liveLocRes.data) ? liveLocRes.data : [];
@@ -1059,11 +1147,30 @@
       return;
     }
 
-    state.rows = mergeLiveLocationPings(
-      mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff),
-      liveLocRows
+    var deviceAttrRows = [];
+    var deviceAttrUnavailable = false;
+    if (!deviceAttrRes.error && deviceAttrRes.data != null) {
+      deviceAttrRows = Array.isArray(deviceAttrRes.data) ? deviceAttrRes.data : [];
+    } else if (deviceAttrRes.error) {
+      deviceAttrUnavailable = true;
+    }
+
+    state.rows = mergeDeviceAttribution(
+      mergeLiveLocationPings(
+        mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff),
+        liveLocRows
+      ),
+      deviceAttrRows,
+      deviceAttrUnavailable
     );
-    setStatus("");
+    if (deviceAttrUnavailable) {
+      setStatus(
+        "<strong>Device check unavailable.</strong> Run migration <code>20260608130000_portal_admin_fetch_staff_device_attribution.sql</code> on Portal Supabase, then refresh.",
+        false
+      );
+    } else {
+      setStatus("");
+    }
     renderTable(state.rows);
   }
 
@@ -1116,6 +1223,7 @@
       '<option value="compliance_missing">Compliance Missing</option>' +
       '<option value="app_setup_missing">App Setup Missing</option>' +
       '<option value="browser_only">Web Only Users</option>' +
+      '<option value="shared_device">Setup on someone else\'s phone</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
