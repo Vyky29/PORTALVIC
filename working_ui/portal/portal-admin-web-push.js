@@ -24,6 +24,7 @@
   }
 
   var portalInboundAlertLastAt = 0;
+  var portalAdminAlertsSheetReturnFocus = null;
 
   function portalAdminToastFallback(msg, ms) {
     var m = String(msg || "").trim();
@@ -170,6 +171,15 @@
     var sheet = document.getElementById("alertsNotificationsSheet");
     var backdrop = document.getElementById("portalAdminSheetBackdrop");
     if (!sheet) return;
+    var opener = document.activeElement;
+    if (
+      opener &&
+      opener !== document.body &&
+      typeof opener.focus === "function" &&
+      !sheet.contains(opener)
+    ) {
+      portalAdminAlertsSheetReturnFocus = opener;
+    }
     sheet.classList.add("open");
     sheet.setAttribute("aria-hidden", "false");
     if (backdrop) {
@@ -177,6 +187,18 @@
       backdrop.setAttribute("aria-hidden", "false");
     }
     void portalOnAdminAlertsSheetOpened();
+    requestAnimationFrame(function () {
+      var primary =
+        document.getElementById("portalNotifyEnableBtn") ||
+        document.getElementById("portalAdminAlertsSheetClose");
+      if (primary && typeof primary.focus === "function") {
+        try {
+          primary.focus({ preventScroll: true });
+        } catch (_) {
+          primary.focus();
+        }
+      }
+    });
   }
 
   function portalAdminSubscribeFailureMessage(wp) {
@@ -357,12 +379,31 @@
     var sheet = document.getElementById("alertsNotificationsSheet");
     var backdrop = document.getElementById("portalAdminSheetBackdrop");
     if (sheet) {
+      var focused = document.activeElement;
+      if (
+        focused &&
+        sheet.contains(focused) &&
+        typeof focused.blur === "function"
+      ) {
+        focused.blur();
+      }
       sheet.classList.remove("open");
       sheet.setAttribute("aria-hidden", "true");
     }
     if (backdrop) {
       backdrop.classList.remove("open");
       backdrop.setAttribute("aria-hidden", "true");
+    }
+    var restore = portalAdminAlertsSheetReturnFocus;
+    portalAdminAlertsSheetReturnFocus = null;
+    if (restore && typeof restore.focus === "function") {
+      requestAnimationFrame(function () {
+        try {
+          restore.focus({ preventScroll: true });
+        } catch (_) {
+          restore.focus();
+        }
+      });
     }
   }
 
