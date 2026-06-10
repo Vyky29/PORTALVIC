@@ -261,12 +261,6 @@
 
     var targets = [
       {
-        mode: "staff",
-        label: "Staff portal",
-        title: "Open staff dashboard",
-        url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
-      },
-      {
         mode: "lead",
         label: "Lead portal",
         title: "Open lead dashboard",
