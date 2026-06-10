@@ -36,6 +36,26 @@ function isGroupService(service) {
   return !isBespokeService(service) && !isDayCentreService(service);
 }
 
+function leadServiceMode(service) {
+  const svc = clean(service);
+  if (!svc) return "none";
+  if (isBespokeService(svc)) return "bespoke";
+  if (isDayCentreService(svc)) return "dayCentre";
+  return "group";
+}
+
+function setLeadSectionVisible(el, visible) {
+  if (!el) return;
+  el.hidden = !visible;
+  if (visible) {
+    el.removeAttribute("aria-hidden");
+    el.classList.remove("lr-service-section--off");
+  } else {
+    el.setAttribute("aria-hidden", "true");
+    el.classList.add("lr-service-section--off");
+  }
+}
+
 function mapStarEngagement(rating) {
   const n = Number(rating);
   if (!n || n < 1) return "";
@@ -542,29 +562,14 @@ export async function bootPortalLeadFeedback() {
   );
   if (partInp && qsParticipant) partInp.value = qsParticipant;
 
-  function rebuildServiceSelect(allowedServices, selected) {
-    const current = clean(selected != null ? selected : serviceEl.value);
-    const allow =
-      Array.isArray(allowedServices) && allowedServices.length
-        ? allowedServices.slice()
-        : LEAD_SERVICES.slice();
-    serviceEl.innerHTML = "";
-    const ph = document.createElement("option");
-    ph.value = "";
-    ph.textContent = allow.length > 1 ? "Select service" : "Select a service";
-    serviceEl.appendChild(ph);
-    allow.forEach((label) => {
-      const opt = document.createElement("option");
-      opt.value = label;
-      opt.textContent = label;
-      serviceEl.appendChild(opt);
-    });
-    let chosen = "";
-    if (current && allow.some((s) => servicesEquivalent(s, current))) chosen = current;
-    else if (allow.length === 1) chosen = allow[0];
-    else if (ctx.service && allow.some((s) => servicesEquivalent(s, ctx.service))) chosen = ctx.service;
-    if (chosen) serviceEl.value = chosen;
-    ctx.service = clean(serviceEl.value);
+  function suggestServiceSelection(preferred) {
+    const pref = clean(preferred);
+    if (!pref || clean(serviceEl.value)) return;
+    const match = LEAD_SERVICES.find((l) => servicesEquivalent(l, pref));
+    if (match) {
+      serviceEl.value = match;
+      ctx.service = match;
+    }
   }
 
   function servicesForLeadDay(iso) {
@@ -584,17 +589,15 @@ export async function bootPortalLeadFeedback() {
   function refreshServiceUi() {
     const svc = clean(serviceEl.value);
     ctx.service = svc;
-    const bespoke = isBespokeService(svc);
-    const dayCentre = isDayCentreService(svc);
-    const hasService = !!svc;
+    const mode = leadServiceMode(svc);
 
-    if (singleWrap) singleWrap.hidden = !hasService || !bespoke;
-    if (dayCentreWrap) dayCentreWrap.hidden = !hasService || !dayCentre;
-    if (detailed) detailed.hidden = !hasService || !bespoke;
-    if (general) general.hidden = !hasService || bespoke;
-    if (activityWrap) activityWrap.hidden = !hasService || !/multi-activity/i.test(svc);
-    if (partInp) partInp.required = bespoke;
-    if (hasService) void initVoiceInput(ctx.submittedByName);
+    setLeadSectionVisible(singleWrap, mode === "bespoke");
+    setLeadSectionVisible(dayCentreWrap, mode === "dayCentre");
+    setLeadSectionVisible(detailed, mode === "bespoke");
+    setLeadSectionVisible(general, mode === "dayCentre" || mode === "group");
+    setLeadSectionVisible(activityWrap, mode === "group" && /multi-activity/i.test(svc));
+    if (partInp) partInp.required = mode === "bespoke";
+    if (mode !== "none") void initVoiceInput(ctx.submittedByName);
   }
 
   function findSlotsForParticipant(participantName, serviceFilter) {
@@ -665,18 +668,7 @@ export async function bootPortalLeadFeedback() {
   function applyParticipantSlot(participantName) {
     const nm = clean(participantName);
     if (!nm) return;
-
-    const partServices = participantServicesOnDate(ctx.date, nm, leadScopeFns);
-    if (partServices.length > 1) {
-      rebuildServiceSelect(
-        partServices.map((s) => LEAD_SERVICES.find((l) => servicesEquivalent(l, s)) || s),
-        clean(serviceEl.value) || partServices[0]
-      );
-      refreshServiceUi();
-    } else if (partServices.length === 1) {
-      rebuildServiceSelect([partServices[0]], partServices[0]);
-      refreshServiceUi();
-    }
+    if (!isBespokeService(serviceEl.value)) return;
 
     const matches = findSlotsForParticipant(nm, clean(serviceEl.value));
     if (!matches.length) return;
@@ -760,6 +752,8 @@ export async function bootPortalLeadFeedback() {
   }
 
   serviceEl.addEventListener("change", () => applyServiceContext());
+  serviceEl.addEventListener("input", () => applyServiceContext());
+  refreshServiceUi();
 
   if (dateDisplay && datePanel) {
     dateDisplay.addEventListener("dblclick", () => {
@@ -807,10 +801,7 @@ export async function bootPortalLeadFeedback() {
     rosterReady = true;
     const dayServices = servicesForLeadDay(ctx.date);
     if (dayServices.length) {
-      rebuildServiceSelect(
-        dayServices.map((s) => LEAD_SERVICES.find((l) => servicesEquivalent(l, s)) || s),
-        ctx.service || dayServices[0]
-      );
+      suggestServiceSelection(ctx.service || dayServices[0]);
     }
     applyServiceContext({ keepVenue: !!ctx.venue });
   } catch (e) {

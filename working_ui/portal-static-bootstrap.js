@@ -586,13 +586,14 @@
 
       var voiceReady =
         typeof window.PortalFeedbackVoiceInput !== "undefined" &&
-        typeof window.PortalFeedbackVoiceInput.rescan === "function";
+        typeof window.PortalFeedbackVoiceInput.rescan === "function" &&
+        window.PortalFeedbackVoiceInput.captureVersion === "voice-status-clear";
       if (voiceReady) {
         startPortalVoice();
       } else {
         var voiceScript = document.createElement("script");
         voiceScript.src =
-          "/portal/portal_feedback_voice_input.js?v=20260610-portal-voice-auto";
+          "/portal/portal_feedback_voice_input.js?v=20260610-voice-status-clear";
         voiceScript.onload = startPortalVoice;
         voiceScript.onerror = function () {};
         (document.head || document.documentElement).appendChild(voiceScript);

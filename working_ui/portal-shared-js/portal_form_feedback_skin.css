@@ -504,10 +504,15 @@ button {
 }
 
 #lrDetailedSection[hidden],
+#lrDetailedSection.lr-service-section--off,
 #lrGeneralSection[hidden],
+#lrGeneralSection.lr-service-section--off,
 #lrParticipantSingleWrap[hidden],
+#lrParticipantSingleWrap.lr-service-section--off,
 #lrDayCentreParticipantsWrap[hidden],
+#lrDayCentreParticipantsWrap.lr-service-section--off,
 #lrActivityFieldWrap[hidden],
+#lrActivityFieldWrap.lr-service-section--off,
 #lrTimeSlotWrap[hidden],
 #lrSessionDateEditPanel[hidden] {
   display: none !important;

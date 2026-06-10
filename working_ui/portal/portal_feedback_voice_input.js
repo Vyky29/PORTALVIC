@@ -34,6 +34,24 @@
  var session = null;
  var whisperAvailable = false;
  var whisperProbeDone = false;
+ var voiceStatusTimers = new WeakMap();
+ var VOICE_ERROR_CLEAR_MS = 5000;
+
+ function setVoiceStatus(statusEl, message, opts) {
+ if (!statusEl) return;
+ opts = opts || {};
+ var prev = voiceStatusTimers.get(statusEl);
+ if (prev) clearTimeout(prev);
+ voiceStatusTimers.delete(statusEl);
+ statusEl.textContent = message || "";
+ if (message && opts.autoClearMs) {
+ var timer = setTimeout(function () {
+ if (statusEl.textContent === message) statusEl.textContent = "";
+ voiceStatusTimers.delete(statusEl);
+ }, opts.autoClearMs);
+ voiceStatusTimers.set(statusEl, timer);
+ }
+ }
 
  var ui = {
  staffGroup: "english",
@@ -568,11 +586,11 @@
  cleanupSessionUi(s);
  if (!hadSpeech) {
  if (s.textarea) s.textarea.value = s.prefix;
- if (s.statusEl) {
- s.statusEl.textContent = "No speech detected - tap mic and try again.";
- }
+ setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
+ autoClearMs: VOICE_ERROR_CLEAR_MS,
+ });
  } else if (s.statusEl) {
- s.statusEl.textContent = "Done - edit if needed before submit.";
+ setVoiceStatus(s.statusEl, "Done - edit if needed before submit.");
  }
  }
 
@@ -607,7 +625,9 @@
  if (!chunks.length) {
  cleanupSessionUi(s);
  if (s.textarea) s.textarea.value = s.prefix;
- if (s.statusEl) s.statusEl.textContent = "No audio recorded - tap mic and try again.";
+ setVoiceStatus(s.statusEl, "No audio recorded - tap mic and try again.", {
+ autoClearMs: VOICE_ERROR_CLEAR_MS,
+ });
  return;
  }
 
@@ -622,13 +642,27 @@
 
  whisperTranscribe(blob, mime, s.whisperCode)
  .then(function (english) {
- if (english) setLiveTextarea(s, english);
+ if (english) {
+ setLiveTextarea(s, english);
  cleanupSessionUi(s);
  if (s.statusEl) {
- s.statusEl.textContent = english
- ? "Done - edit if needed before submit."
- : "No speech detected - tap mic and try again.";
+ s.statusEl.textContent = "Done - edit if needed before submit.";
  }
+ return;
+ }
+ if (preferWebSpeechCapture()) {
+ cleanupSessionUi(s);
+ if (s.statusEl) {
+ s.statusEl.textContent =
+ "Live dictation - speak now, then tap mic again to finish.";
+ }
+ startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
+ return;
+ }
+ cleanupSessionUi(s);
+ setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
+ autoClearMs: VOICE_ERROR_CLEAR_MS,
+ });
  })
  .catch(function (err) {
  cleanupSessionUi(s);
@@ -657,11 +691,16 @@
  if (session) requestStop(session, "manual");
  }
 
- var MIC_TOGGLE_GUARD_MS = 600;
- var NO_SPEECH_GRACE_MS = 2800;
+ var MIC_TOGGLE_GUARD_MS = 900;
+ var NO_SPEECH_GRACE_MS = 3500;
 
  function preferWebSpeechCapture() {
  return !!getSpeechRecognition();
+ }
+
+ /** Live dictation first whenever the browser supports it (EN + ES/IT). Whisper is fallback only. */
+ function shouldPreferWebSpeechFirst() {
+ return preferWebSpeechCapture();
  }
 
  /** ES/IT staff: live WebSpeech + MyMemory translate — no Whisper JWT on standalone forms. */
@@ -691,7 +730,12 @@
 
  function startCapture(textarea, btn, statusEl) {
  if (session && session.btn === btn) {
- if (shouldIgnoreMicToggle(session)) return;
+ if (shouldIgnoreMicToggle(session)) {
+ if (statusEl) {
+ statusEl.textContent = "Still recording — speak, then tap mic again to finish.";
+ }
+ return;
+ }
  requestStop(session, "manual");
  return;
  }
@@ -701,7 +745,7 @@
  setScreenshotGuardForRecording(true);
 
  function runCapture() {
- if (prefersWebSpeechOverWhisper()) {
+ if (shouldPreferWebSpeechFirst()) {
  startWebSpeechCapture(textarea, btn, statusEl);
  return;
  }
@@ -712,18 +756,10 @@
  startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
- if (preferWebSpeechCapture()) {
- startWebSpeechCapture(textarea, btn, statusEl);
- return;
- }
  if (statusEl) {
  statusEl.textContent = "Sign in to the portal to use voice input.";
  }
  });
- return;
- }
- if (preferWebSpeechCapture()) {
- startWebSpeechCapture(textarea, btn, statusEl);
  return;
  }
  if (canUseMediaRecorderCapture()) {
@@ -856,11 +892,14 @@
  btn.setAttribute("aria-label", "Stop voice input");
  btn.setAttribute("aria-pressed", "true");
  if (statusEl) {
- statusEl.textContent = s.needsTranslate
+ setVoiceStatus(
+ statusEl,
+ s.needsTranslate
  ? "Listening (" +
  (cfg.label || "your language") +
  ") — speak now, then tap mic again. English appears in the box."
- : "Listening — speak now, then tap mic again to finish.";
+ : "Listening — speak now, then tap mic again to finish."
+ );
  }
 
  var rec = new Rec();
@@ -977,6 +1016,16 @@
  if (ta.dataset.portalVoiceSkip === "1" || ta.classList.contains("portal-no-voice")) return false;
  if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return false;
  if (ta.closest(".portal-wb-domain-all-clear, .portal-wb-admin-hide")) return false;
+ var sectionRoot = ta.closest(
+ "#lrGeneralSection, #lrDetailedSection, #lrDayCentreParticipantsWrap, #lrParticipantSingleWrap"
+ );
+ if (
+ sectionRoot &&
+ (sectionRoot.hidden ||
+ (sectionRoot.classList && sectionRoot.classList.contains("lr-service-section--off")))
+ ) {
+ return false;
+ }
  var maxLen = parseInt(ta.getAttribute("maxlength"), 10);
  if (!isNaN(maxLen) && maxLen > 0 && maxLen < LONG_TEXT_MIN_MAXLENGTH) return false;
  var rows = parseInt(ta.getAttribute("rows"), 10);
@@ -1048,5 +1097,6 @@
  setStaffName: setStaffName,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
+ captureVersion: "voice-status-clear",
  };
 })(typeof window !== "undefined" ? window : this);
