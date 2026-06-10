@@ -14,7 +14,7 @@
   -->
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v3"></script>
-  <script src="/portal/portal_web_push_support.js?v=20260609-notify-parity"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260610-push-reconcile-eea3b5"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
@@ -15143,15 +15143,17 @@
           ? await window.portalAwaitServiceWorkerReady(15000)
           : await navigator.serviceWorker.ready;
         const keyU8 = portalUrlBase64ToUint8Array(vapid);
-        let sub = typeof window.portalSubscribePushWithCurrentVapid === 'function'
+        const box = window.__PORTAL_SUPABASE__;
+        if(!box || !box.session || !box.session.access_token) return { ok: false, reason: 'no-session' };
+        let sub = typeof window.portalEnsureFreshPushSubscription === 'function'
+          ? await window.portalEnsureFreshPushSubscription(reg, vapid, box.client, box.session.user.id)
+          : (typeof window.portalSubscribePushWithCurrentVapid === 'function'
           ? await window.portalSubscribePushWithCurrentVapid(reg, vapid)
           : await (async function(){
               let existing = await reg.pushManager.getSubscription();
               if(existing) return existing;
               return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyU8 });
-            })();
-        const box = window.__PORTAL_SUPABASE__;
-        if(!box || !box.session || !box.session.access_token) return { ok: false, reason: 'no-session' };
+            })());
         if(window.__PORTAL_WPS_SKIP__) return { ok: false, reason: 'skipped' };
         const subJson = sub.toJSON();
         if(box.client && typeof box.client.functions.invoke === 'function'){

@@ -327,7 +327,7 @@ export async function sendPushPayloadToUserIds(
   userIds: string[],
   pushPayload: string,
   options?: { TTL?: number; urgency?: string; topic?: string },
-): Promise<{ sent: number; targets: number; subs: number; failed: number }> {
+): Promise<{ sent: number; targets: number; subs: number; failed: number; lastStatus?: number }> {
   if (!userIds.length) return { sent: 0, targets: 0, subs: 0, failed: 0 };
 
   const { data: subs, error: subErr } = await admin
@@ -349,6 +349,7 @@ export async function sendPushPayloadToUserIds(
 
   let sent = 0;
   let failed = 0;
+  let lastStatus = 0;
   const ttl = options?.TTL ?? 86400;
   const urgency = options?.urgency ?? "high";
   const topic = options?.topic ? String(options.topic).slice(0, 32) : "";
@@ -379,6 +380,7 @@ export async function sendPushPayloadToUserIds(
     } catch (e) {
       failed++;
       const st = (e as { statusCode?: number })?.statusCode;
+      if (st) lastStatus = st;
       console.warn("[portal-webpush] send fail", st, endpoint.slice(0, 48), e);
       if (st === 404 || st === 410 || st === 401 || st === 403) {
         if (endpoint) {
@@ -390,7 +392,7 @@ export async function sendPushPayloadToUserIds(
     }
   }
 
-  return { sent, targets: userIds.length, subs: subs.length, failed };
+  return { sent, targets: userIds.length, subs: subs.length, failed, lastStatus: lastStatus || undefined };
 }
 
 export async function insertDedupeOrSkip(

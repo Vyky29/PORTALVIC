@@ -269,6 +269,46 @@
   }
 
   /** Re-subscribe when VAPID key rotates (old push subs cannot receive). */
+  async function portalServerHasPushEndpoint(client, userId, endpoint) {
+    endpoint = String(endpoint || "").trim();
+    userId = String(userId || "").trim();
+    if (!client || !userId || !endpoint) return false;
+    try {
+      var res = await client
+        .from("portal_push_subscriptions")
+        .select("endpoint")
+        .eq("user_id", userId)
+        .eq("endpoint", endpoint)
+        .maybeSingle();
+      return !res.error && !!(res.data && res.data.endpoint);
+    } catch (_q) {
+      return false;
+    }
+  }
+
+  async function portalEnsureFreshPushSubscription(reg, vapidPublicKey, client, userId) {
+    var sub = await portalSubscribePushWithCurrentVapid(reg, vapidPublicKey);
+    var endpoint = sub && sub.endpoint ? String(sub.endpoint) : "";
+    if (endpoint && client && userId) {
+      var onServer = await portalServerHasPushEndpoint(client, userId, endpoint);
+      if (!onServer) {
+        // #region agent log
+        fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_web_push_support.js:ensureFresh',message:'browser push sub missing on server — resubscribing',data:{endpointPrefix:endpoint.slice(0,48)},timestamp:Date.now(),hypothesisId:'H6'})}).catch(function(){});
+        // #endregion
+        try {
+          await sub.unsubscribe();
+        } catch (_u) {}
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: portalUrlBase64ToUint8Array(String(vapidPublicKey).trim()),
+        });
+        var vapidId = String(global.__PORTAL_VAPID_KEY_ID__ || "").trim();
+        if (vapidId) persistSet("portal_vapid_key_id", vapidId);
+      }
+    }
+    return sub;
+  }
+
   async function portalSubscribePushWithCurrentVapid(reg, vapidPublicKey) {
     if (!reg || !reg.pushManager || !vapidPublicKey) {
       throw new Error("missing-push-params");
@@ -304,7 +344,7 @@
 
   function portalVapidStatusText() {
     if (portalVapidConfigured()) {
-      return "VAPID configured — background alerts can reach this device when the app is closed.";
+      return "VAPID configured — Turn on saves this device for background chat alerts. Send test checks this tab only; lock the phone or close the app to verify real push.";
     }
     return "VAPID missing (closed-tab push disabled) — alerts work in this tab until IT configures server push.";
   }
@@ -454,4 +494,6 @@
   global.portalRegisterPortalServiceWorker = portalRegisterPortalServiceWorker;
   global.portalAwaitServiceWorkerReady = portalAwaitServiceWorkerReady;
   global.portalSubscribePushWithCurrentVapid = portalSubscribePushWithCurrentVapid;
+  global.portalEnsureFreshPushSubscription = portalEnsureFreshPushSubscription;
+  global.portalServerHasPushEndpoint = portalServerHasPushEndpoint;
 })(typeof window !== "undefined" ? window : globalThis);

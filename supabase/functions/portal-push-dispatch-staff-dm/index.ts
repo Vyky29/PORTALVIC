@@ -234,6 +234,7 @@ Deno.serve(async (req) => {
   let sent = 0;
   let failed = 0;
   let subs = 0;
+  let lastStatus = 0;
 
   for (const userId of targetIds) {
     const base = openBaseForProfile(profBy[userId] || null);
@@ -256,6 +257,7 @@ Deno.serve(async (req) => {
     sent += result.sent;
     failed += result.failed;
     subs += result.subs;
+    if (result.lastStatus) lastStatus = result.lastStatus;
   }
 
   console.log("[portal-push-staff-dm] done", {
@@ -265,6 +267,7 @@ Deno.serve(async (req) => {
     targets: targetIds.length,
     messageId,
     threadId: threadId.slice(0, 8),
+    lastStatus: lastStatus || undefined,
     note: sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
   });
 
@@ -275,5 +278,6 @@ Deno.serve(async (req) => {
     subs,
     targets: targetIds.length,
     messageId,
+    lastStatus: lastStatus || undefined,
   });
 });
