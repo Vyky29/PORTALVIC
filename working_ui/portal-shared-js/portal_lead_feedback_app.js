@@ -355,7 +355,6 @@ export async function bootPortalLeadFeedback() {
       document.getElementById("lrDayCentreSuggest" + i)
     );
   }
-  const venueInput = document.getElementById("lrVenue");
   const venueSuggest = document.getElementById("lrVenueSuggest");
   if (venueInput && typeof window.portalWireFieldSuggest === "function") {
     window.portalWireFieldSuggest(venueInput, venueSuggest, {
@@ -385,6 +384,13 @@ export async function bootPortalLeadFeedback() {
     box.addEventListener("change", () => syncPillGroup(box, sel, name));
     syncPillGroup(box, sel, name);
   });
+
+  try {
+    const { bootstrapDashboardSupabase } = await import(PORTAL_AUTH_MODULE);
+    await bootstrapDashboardSupabase({ page: "lead" });
+  } catch (bootstrapErr) {
+    console.warn("[lead-report] supabase bootstrap", bootstrapErr);
+  }
 
   const auth = await resolveAuthContext();
   if (!auth) {
@@ -543,14 +549,18 @@ export async function bootPortalLeadFeedback() {
   });
 
   if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
-    window.PortalFeedbackVoiceInput.init({
-      fields: [
-        "lrPositiveFeedback",
-        "lrRelevantInformation",
-        "lrSessionSummary",
-        "lrOtherOptional",
-      ],
-      staffName: ctx.submittedByName,
-    });
+    try {
+      window.PortalFeedbackVoiceInput.init({
+        fields: [
+          "lrPositiveFeedback",
+          "lrRelevantInformation",
+          "lrSessionSummary",
+          "lrOtherOptional",
+        ],
+        staffName: ctx.submittedByName,
+      });
+    } catch (voiceErr) {
+      console.warn("[lead-report] voice input", voiceErr);
+    }
   }
 }
