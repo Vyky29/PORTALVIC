@@ -545,9 +545,16 @@
       emptyState.hidden = inThread || inCompose;
       emptyState.setAttribute("aria-hidden", inThread || inCompose ? "true" : "false");
     }
-    if (listCol) listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
+    var hideInboxListChrome = inThread || inCompose;
+    if (listCol) {
+      listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", hideInboxListChrome);
+      var listHead = listCol.querySelector(".portal-cs-cliq-inbox__list-head");
+      if (listHead) listHead.hidden = hideInboxListChrome;
+    }
     if (channelsListCol) {
-      channelsListCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
+      channelsListCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", hideInboxListChrome);
+      var channelsListHead = channelsListCol.querySelector(".portal-cs-cliq-inbox__list-head");
+      if (channelsListHead) channelsListHead.hidden = hideInboxListChrome;
     }
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
     var adminMobileChat =

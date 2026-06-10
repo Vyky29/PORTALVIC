@@ -442,6 +442,10 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
     background: transparent;
   }
 
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__list-head,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] .portal-cs-cliq-inbox__list-head,
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__list-head,
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="compose"] .portal-cs-cliq-inbox__list-head,
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqListPanel,
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqChannelNav,
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqCeoQuickWrap,
@@ -2130,6 +2134,10 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__rail {
+    display: none !important;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__list-head {
     display: none !important;
   }
 
