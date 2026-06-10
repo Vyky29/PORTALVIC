@@ -10640,7 +10640,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot_close: 'Closed',
         slot_open: 'Open closed slot',
         override_void: 'Void',
-        session_add: 'Training / Shadowing'
+        session_add: 'Training / Shadowing',
+        slot_update: 'Updated'
       };
       return map[k] || k;
     }
@@ -10714,6 +10715,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_open') return 'override--slot-open';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--makeup';
       if(k === 'instructor_reassign') return 'override--instructor';
+      if(k === 'slot_update') return 'override--updated';
       return '';
     }
     function getSchedSupabaseClient(){

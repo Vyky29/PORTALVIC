@@ -5629,6 +5629,7 @@
       if(t === 'slot_open') return 'override--slot-open';
       if(t === 'client_replace_in_slot' || t === 'replace_participant') return 'override--replace';
       if(t === 'instructor_reassign') return 'override--instructor';
+      if(t === 'slot_update') return 'override--updated';
       return '';
     }
     function portalTodayItemOverrideClass(item){
@@ -5791,7 +5792,10 @@
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const ovTypeCls = portalTodayItemOverrideClass(item);
-      const ovBadge = item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge
+      const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
+      const ovBadge = ovType === 'slot_update'
+        ? '<span class="portal-sched-ov-badge override--updated" title="Session time updated">Updated</span>'
+        : item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge
         ? '<span class="portal-sched-ov-badge' + (ovTypeCls ? ' ' + ovTypeCls : '') + '" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>'
         : '';
       const symNorm = String(item.portalOverrideSymbolText || '').trim().toLowerCase().replace(/\s+/g, ' ');

@@ -882,10 +882,74 @@
   function writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction) {
     var isCancel = eventAction === "cancel" || String(afterSnap.action || "") === "cancel_service";
     var isNoPax = String(afterSnap.action || "") === "no_participant";
-    if (!isCancel && !isNoPax) return Promise.resolve();
-    return supersedeTermRosterScheduleOverrides(client, p).then(function () {
-      return writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction);
+    var isUpdate =
+      !isCancel &&
+      !isNoPax &&
+      (eventAction === "update" || String(p.action || "").trim() === "update");
+    if (isCancel || isNoPax) {
+      return supersedeTermRosterScheduleOverrides(client, p).then(function () {
+        return writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction);
+      });
+    }
+    if (isUpdate) {
+      return supersedeTermRosterScheduleOverrides(client, p).then(function () {
+        return writeScheduleOverridesForTermUpdate(client, p, before, afterSnap);
+      });
+    }
+    return Promise.resolve();
+  }
+
+  function writeScheduleOverridesForTermUpdate(client, p, before, afterSnap) {
+    var dates = affectedDatesForPayload(p);
+    if (!dates.length) return Promise.resolve();
+    var paxName = String(p.client_name || "").trim();
+    if (!paxName) return Promise.resolve();
+    var times = parseTimeSlotBounds(p.time_slot, p.day);
+    var staffTok = String(p.instructors || "")
+      .split(/[,/&]|\band\b/i)[0]
+      .trim();
+    var prevTimes = before ? parseTimeSlotBounds(before.time_slot, p.day || before.day) : null;
+    var rows = dates.map(function (iso) {
+      return {
+        session_date: iso,
+        anchor_staff_id: rosterSlug(staffTok),
+        anchor_start: times.start,
+        anchor_end: times.end,
+        anchor_venue: String(p.venue || "").trim(),
+        anchor_client_id: rosterSlug(paxName),
+        anchor_time_slot_label: String(p.time_slot || "").trim(),
+        override_type: "slot_update",
+        payload: {
+          term_roster_edit: true,
+          scope: p.scope,
+          anchor_date: p.anchorDate,
+          previous_time_slot: before ? String(before.time_slot || "").trim() : null,
+          previous_start: prevTimes ? prevTimes.start : null,
+          previous_end: prevTimes ? prevTimes.end : null,
+          service: String(p.service || "").trim(),
+          instructors: String(p.instructors || "").trim(),
+          area: String(p.area || "").trim(),
+        },
+        reason: String(p.reason || "").trim() || "Term roster · slot updated",
+        status: "active",
+        superseded_by: null,
+        spreadsheet_revision: "admin-dashboard:term_roster_edit",
+      };
     });
+    return client.from("schedule_overrides").insert(rows).then(function (res) {
+      if (res.error) console.warn("[term-slot] schedule_overrides slot_update", res.error);
+    });
+  }
+
+  function cancelFormerDefaultSlotWhenTimeChanged(client, p, before) {
+    if (!before || !before.time_slot) return Promise.resolve();
+    if (normSlotTime(before.time_slot) === normSlotTime(p.time_slot)) return Promise.resolve();
+    var dates = affectedDatesForPayload(p);
+    return dates.reduce(function (acc, iso) {
+      return acc.then(function () {
+        return ensureCancelledDated(client, before, iso, p.day || before.day);
+      });
+    }, Promise.resolve());
   }
 
   function writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction) {
@@ -1314,10 +1378,14 @@
     state.saving = true;
     render(root);
 
-    var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
+    var before =
+      findBundleSlotByParticipantService(p.anchorDate, p.client_name, p.service) ||
+      findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var afterSnap = snapshotRow(p);
     var chain = supersedeTermRosterScheduleOverrides(client, p).then(function () {
       return cancelNoClientRowsForScope(client, p);
+    }).then(function () {
+      return cancelFormerDefaultSlotWhenTimeChanged(client, p, before);
     });
 
     if (p.scope === "single_day") {

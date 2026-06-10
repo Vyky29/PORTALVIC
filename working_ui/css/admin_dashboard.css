@@ -3453,6 +3453,7 @@
     .override--slot-open{background:rgba(8,145,178,.1);color:#0e7490;border:1px solid rgba(8,145,178,.32)}
     .override--replace{background:rgba(252,228,236,.92);color:#a81f63;border:1px solid rgba(194,24,91,.32)}
     .override--instructor{background:rgba(45,132,179,.12);color:var(--blue);border:1px solid rgba(45,132,179,.28)}
+    .override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border:1px solid rgba(37,99,235,.28)}
     .dash-link-card{
       text-align:left;cursor:pointer;border:1px solid var(--btnSecBorder);width:100%;
       background:var(--btnSecBg);color:var(--ink);border-radius:var(--radiusLg);

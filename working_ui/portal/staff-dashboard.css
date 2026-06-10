@@ -3122,6 +3122,7 @@
     .portal-sched-ov-badge.override--replace{background:rgba(194,24,91,.13);color:#a81f63;border-color:rgba(194,24,91,.3)}
     .portal-sched-ov-badge.override--instructor{background:rgba(45,132,179,.12);color:#2d84b3;border-color:rgba(45,132,179,.28)}
     .portal-sched-ov-badge.override--slot-open{background:rgba(8,145,178,.14);color:#0e7490;border-color:rgba(8,145,178,.32)}
+    .portal-sched-ov-badge.override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
     .session-card--ov-green{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);

@@ -165,6 +165,15 @@
     var out = [];
     var seenDated = Object.create(null);
     var openedSlots = Object.create(null);
+    var clientDayActive = Object.create(null);
+
+    Object.keys(dated).forEach(function (sk) {
+      var row = dated[sk];
+      var iso = normIso(row.session_date);
+      if (!iso || isNoClientName(row.client_name)) return;
+      var ck = iso + "|" + String(row.client_name || "").toLowerCase();
+      clientDayActive[ck] = row;
+    });
 
     function rememberOpenedSlot(iso, row, dayLabel) {
       if (!iso || !row || !row.time_slot) return;
@@ -186,6 +195,18 @@
       if (iso && !rowEligibleForSessionDate(r, iso)) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
+      }
+      if (iso) {
+        var clientDayKey = iso + "|" + String(r.client_name || "").toLowerCase();
+        var moved = clientDayActive[clientDayKey];
+        if (
+          moved &&
+          normTimeSlot(moved.time_slot) !== normTimeSlot(r.time_slot) &&
+          String(moved.service || "").trim().toLowerCase() === String(r.service || "").trim().toLowerCase()
+        ) {
+          rememberOpenedSlot(iso, r, dayLabel);
+          return;
+        }
       }
       if (cancelledDated[sk]) {
         rememberOpenedSlot(iso, r, dayLabel);

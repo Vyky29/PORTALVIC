@@ -549,7 +549,8 @@
       area: clean(r.area),
       instructors: instructors,
       instructor_label: instructors.join(", ") || clean(r.instructors),
-      session_key: buildSessionKey(isoDate, r)
+      session_key: buildSessionKey(isoDate, r),
+      __portal_roster_row_id: r.__portal_roster_row_id || null,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
     slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
@@ -818,6 +819,26 @@
     if (t === "slot_close") return true;
     var p = overridePayloadObj(ov);
     return t === "slot_clear_client" && !!p.cancelled_by_admin;
+  }
+
+  function overrideIsSlotUpdateType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "slot_update" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function hubOverrideLabel(ov) {
+    if (!ov) return "";
+    if (overrideIsSlotUpdateType(ov)) return "Updated";
+    return String(ov.override_type || "").trim() || "Override";
+  }
+
+  function hubOverrideChipClass(ov) {
+    if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsAbsentType(ov)) return "override--absent";
+    if (overrideIsCancelledType(ov)) return "override--cancelled";
+    return "";
   }
 
   function overrideClientName(ov) {
@@ -2960,6 +2981,9 @@
   AdminSessionsHub.prototype.loadBundle = async function () {
     try {
       await loadScriptOnce(BUNDLE_SRC);
+      if (typeof global.portalResolveStaffDashboardSource === "function") {
+        global.portalResolveStaffDashboardSource();
+      }
       var src = global.STAFF_DASHBOARD_SOURCE;
       this.rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
       this.bundleError = this.rosterRows.length ? "" : "Roster bundle loaded but has no rows.";
@@ -5157,6 +5181,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
         var isCancelled = hub.slotHasCancellation(slot);
+        var slotOv = hub.overrideForSlot(slot);
+        var isUpdated = overrideIsSlotUpdateType(slotOv);
         var fbCell;
         if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
@@ -5169,7 +5195,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : '<span class="ash-badge ash-badge--booked">Booked</span>';
+            : isUpdated
+              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
+                esc(hubOverrideLabel(slotOv)) +
+                "</span>"
+              : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
