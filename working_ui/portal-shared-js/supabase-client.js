@@ -339,9 +339,37 @@ export function portalClientSlugTokensEquivalent(a, b) {
   return false;
 }
 
+/** Service / area tokens in portal_session_key — not participant slugs. */
+function portalFeedbackNonParticipantSlugToken(token) {
+  const s = String(token || "").trim().toLowerCase();
+  if (!s) return true;
+  if (
+    s === "aquatic" ||
+    s === "day_centre" ||
+    s === "bespoke_shared" ||
+    s === "hub_room" ||
+    s === "teaching_pool" ||
+    s === "big_pool" ||
+    s === "climbing" ||
+    s === "climbing_wall" ||
+    s === "multi_activity" ||
+    s === "multi-activity"
+  ) {
+    return true;
+  }
+  if (/^(multi|climb|swim|bespoke|day_centre)/.test(s)) return true;
+  return false;
+}
+
+function portalFeedbackParticipantSlugTokensFromKey(key) {
+  return clientSlugTokensFromPortalSessionKey(key).filter(
+    (t) => !portalFeedbackNonParticipantSlugToken(t)
+  );
+}
+
 function portalSessionKeyClientSlugsMatch(submittedKey, rosterKey) {
-  const rSlugs = clientSlugTokensFromPortalSessionKey(rosterKey);
-  const sSlugs = clientSlugTokensFromPortalSessionKey(submittedKey);
+  const rSlugs = portalFeedbackParticipantSlugTokensFromKey(rosterKey);
+  const sSlugs = portalFeedbackParticipantSlugTokensFromKey(submittedKey);
   if (!rSlugs.length || !sSlugs.length) return false;
   for (const rs of rSlugs) {
     for (const ss of sSlugs) {

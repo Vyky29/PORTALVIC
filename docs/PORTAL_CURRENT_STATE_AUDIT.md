@@ -191,4 +191,42 @@
 
 ---
 
+## Feedback overview ↔ staff tablet parity (2026-06-11 audit)
+
+### Two surfaces, one truth target
+
+| Surface | Authoritative for “today” | Key code |
+|---------|---------------------------|----------|
+| **Admin Feedback progress** | Live Supabase `session_feedback` + roster bundle + overrides | `admin-sessions-hub.js` → `slotFeedbackComplete`, `feedbackFitsSlot`, `dayStats` |
+| **Staff Today row colour** | Supabase-resolved keys after sync (`portalServerResolvedRosterKeys`) | `staff_dashboard.html` → `portalServerTruthReviewRecordForItem`, `sessionReviewRowClass` |
+
+Static exports (`session_feedback_status_portal_data.js`, coverage through **2026-06-08**) are **not** used for admin week strip counts on current term dates.
+
+### Root cause: Amber green while admin “Awaiting feedback” (Roberto, 2026-06-10)
+
+Verified in Portal Supabase:
+
+- Submitted feedback for Roberto that day: **Fadi** (`2026-06-10|fadi|day_centre`), **Vithura** (`2026-06-10|vithura|aquatic`) only.
+- **No** `session_feedback` row for **Amber**.
+
+Bug: RPC `portal_feedback_submitted_keys_for_sessions` / JS fan-out used `portal_roster_key_has_feedback` which matched **any shared token** in `portal_session_key`, including the service suffix **`aquatic`**. Vithura’s submitted key caused **`2026-06-10|amber|aquatic`** to be treated as done on staff tablets.
+
+Fix (2026-06-11):
+
+- SQL: participant slugs only in `portal_feedback_key_client_slugs` (exclude `aquatic`, `day_centre`, pool areas, …).
+- JS: `portalFeedbackParticipantSlugTokensFromKey` in `portal/supabase-client.js`.
+- Staff: server-backed days from term floor (`2026-06-01+`); disable `termFeedbackAssumeComplete` for row colours on those dates.
+
+### Duplicate absent alerts (Amar, 17:00–18:00)
+
+Two active `schedule_overrides` rows for the same slot (`amar_rai` + `amar_ra`). UI dedupes in `portalStaffRosterOverrideAttentionState`; cancel duplicate row via admin when authenticated (CLI update blocked by `updated_by` trigger).
+
+### Verification checklist (after deploy + hard refresh)
+
+1. Roberto Today: **Amber** = white/orange (awaiting), **Vithura/Fadi** = green, **Amar** = green + ABSENT.
+2. Admin overview Wed 10 Jun: Amber = **Awaiting feedback**; counts align with tablet outstanding list.
+3. Console: no errors; `dashboardData.portalServerResolvedRosterKeys.feedback` must **not** contain Amber’s key when only Vithura is submitted.
+
+---
+
 *Generated from repository read-only audit; does not assert which SQL has been applied on the live Supabase project.*
