@@ -128,7 +128,8 @@
       var row = findBundleSlot(iso, p.client_name, p.time_slot);
       if (row) return !svcNorm || normName(row.service) === svcNorm;
       return collectParticipantRows(p.client_name, iso).some(function (r) {
-        return normSlotTime(r.time_slot) === timeNorm && (!svcNorm || normName(r.service) === svcNorm);
+        if (svcNorm && normName(r.service) !== svcNorm) return false;
+        return timeSlotNormMatchesOrWithin(r.time_slot, p.time_slot, p.day);
       });
     });
     return matched.length ? matched : dates;
@@ -367,16 +368,52 @@
   function findBundleSlot(anchorIso, client, timeSlot) {
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    var cLow = String(client || "").toLowerCase();
+    var cLow = normName(resolveClientName(client) || client);
     var tLow = normSlotTime(timeSlot);
+    var wd = weekdayLongFromIso(anchorIso);
+    var exact = null;
+    var within = null;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      if (String(r.client_name || "").toLowerCase() !== cLow) continue;
-      if (normSlotTime(r.time_slot) !== tLow) continue;
+      if (normName(r.client_name) !== cLow) continue;
       if (anchorIso && normIso(r.session_date) && normIso(r.session_date) !== anchorIso) continue;
-      return r;
+      if (normSlotTime(r.time_slot) === tLow) {
+        exact = r;
+        break;
+      }
+      if (timeSlot && timeSlotNormMatchesOrWithin(r.time_slot, timeSlot, wd || r.day)) {
+        within = r;
+      }
     }
-    return null;
+    return exact || within || null;
+  }
+
+  function effectiveTimeSlotForEdit(p, slot) {
+    var picked = String(p.time_slot || "").trim();
+    if (!picked) return slot ? String(slot.time_slot || "").trim() : "";
+    if (
+      slot &&
+      timeSlotNormMatchesOrWithin(slot.time_slot, picked, p.day) &&
+      normSlotTime(slot.time_slot) !== normSlotTime(picked)
+    ) {
+      return picked;
+    }
+    return slot ? String(slot.time_slot || picked).trim() : picked;
+  }
+
+  function validateAquaticHalfHourBand(p) {
+    if (!isAquaticServiceName(p.service)) return "";
+    var base = findBundleSlotByParticipantService(p.anchorDate, p.client_name, p.service);
+    if (!base) return "";
+    var bands = aquaticHalfHourBands(base.time_slot, p.day);
+    if (bands.length <= 1) return "";
+    if (bands.indexOf(p.time_slot) < 0) {
+      return "Pick the 30-minute band (e.g. 5.30 to 6), not the full hour.";
+    }
+    if (p.scope === "weekday_term" || p.scope === "rest_of_term") {
+      return "30-minute bands work with This day only or Selected sessions — not the full term template.";
+    }
+    return "";
   }
 
   function bundleCancelRow(p, iso) {
@@ -384,7 +421,7 @@
     return {
       client_name: p.client_name,
       day: p.day,
-      time_slot: slot ? String(slot.time_slot || p.time_slot).trim() : p.time_slot,
+      time_slot: effectiveTimeSlotForEdit(p, slot),
       instructors: slot ? String(slot.instructors || p.instructors || "").trim() : p.instructors,
       service: slot ? String(slot.service || p.service || "").trim() : p.service,
       area: slot ? String(slot.area || p.area || "").trim() : p.area,
@@ -401,15 +438,65 @@
     ["#trsTimeSlot", "#trsInstructors", "#trsVenue", "#trsArea"].forEach(function (sel) {
       setFormField(root, sel, "");
     });
+    refreshTermSlotTimeBandPicker(root, null, [], "");
   }
 
-  function applyBundleSlotToForm(root, slot) {
+  function applyBundleSlotToForm(root, slot, opts) {
+    opts = opts || {};
     if (!slot) return false;
-    setFormField(root, "#trsTimeSlot", slot.time_slot);
+    var day = String(slot.day || "").trim();
+    var bands =
+      opts.timeSlot && String(opts.timeSlot).trim()
+        ? [String(opts.timeSlot).trim()]
+        : isAquaticServiceName(slot.service)
+          ? aquaticHalfHourBands(slot.time_slot, day)
+          : [String(slot.time_slot || "").trim()];
+    var chosen = bands.length === 1 ? bands[0] : String((root.querySelector("#trsTimeSlot") || {}).value || "").trim();
+    if (bands.length > 1 && (!chosen || bands.indexOf(chosen) < 0)) chosen = bands[0];
+    setFormField(root, "#trsTimeSlot", chosen || slot.time_slot);
     setFormField(root, "#trsInstructors", slot.instructors);
     setFormField(root, "#trsVenue", slot.venue);
     setFormField(root, "#trsArea", slot.area);
+    refreshTermSlotTimeBandPicker(root, slot, bands, chosen);
     return true;
+  }
+
+  function refreshTermSlotTimeBandPicker(root, slot, bands, selected) {
+    var wrap = root.querySelector("#trsTimeSlotPickWrap");
+    var host = root.querySelector("#trsTimeSlotOptions");
+    var inp = root.querySelector("#trsTimeSlot");
+    if (!wrap || !host) return;
+    bands = bands || [];
+    var show = bands.length > 1;
+    wrap.hidden = !show;
+    if (inp) {
+      inp.readOnly = show;
+      inp.classList.toggle("trs-time-slot--readonly", show);
+    }
+    if (!show) {
+      host.replaceChildren();
+      return;
+    }
+    host.replaceChildren();
+    bands.forEach(function (band) {
+      var lbl = document.createElement("label");
+      lbl.className = "trs-pill trs-time-band-pill";
+      var checked = band === selected;
+      lbl.innerHTML =
+        '<input type="radio" name="trsTimeBandPick" value="' +
+        esc(band) +
+        '"' +
+        (checked ? " checked" : "") +
+        "/><span>" +
+        esc(band) +
+        "</span>";
+      lbl.addEventListener("change", function () {
+        if (inp) inp.value = band;
+        refreshTermSlotSessionPicker(root);
+      });
+      host.appendChild(lbl);
+    });
+    if (inp && selected) inp.value = selected;
   }
 
   function rebuildTermSlotServiceSelect(root, participantName, preferred, anchorIso) {
@@ -656,6 +743,59 @@
       .trim();
     if (!s) return "";
     return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
+  }
+
+  function isAquaticServiceName(service) {
+    var s = normName(service).replace(/[^a-z0-9]+/g, "");
+    return s.indexOf("aquatic") >= 0 || s.indexOf("swim") >= 0;
+  }
+
+  function minutesFromHm(hm) {
+    var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+    if (!p) return NaN;
+    return parseInt(p[1], 10) * 60 + parseInt(p[2], 10);
+  }
+
+  function formatBandLabelFromMinutes(startMin, endMin) {
+    function tok(m) {
+      var h = Math.floor(m / 60);
+      var mi = m % 60;
+      if (mi === 0) return String(h);
+      if (mi === 30) return h + ".30";
+      if (mi === 15) return h + ".15";
+      if (mi === 45) return h + ".45";
+      return h + ":" + String(mi).padStart(2, "0");
+    }
+    return tok(startMin) + " to " + tok(endMin);
+  }
+
+  function aquaticHalfHourBands(timeSlot, day) {
+    var raw = String(timeSlot || "").trim();
+    if (!raw) return [];
+    var b = parseTimeSlotBounds(raw, day);
+    var lo = minutesFromHm(b.start);
+    var hi = minutesFromHm(b.end);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi - lo <= 30) return [raw];
+    var out = [];
+    for (var t = lo; t < hi; t += 30) {
+      out.push(formatBandLabelFromMinutes(t, Math.min(t + 30, hi)));
+    }
+    return out;
+  }
+
+  function timeSlotNormMatchesOrWithin(rowSlot, wantSlot, day) {
+    if (normSlotTime(rowSlot) === normSlotTime(wantSlot)) return true;
+    if (!rowSlot || !wantSlot) return false;
+    var rw = parseTimeSlotBounds(rowSlot, day);
+    var ww = parseTimeSlotBounds(wantSlot, day);
+    var rlo = minutesFromHm(rw.start);
+    var rhi = minutesFromHm(rw.end);
+    var wlo = minutesFromHm(ww.start);
+    var whi = minutesFromHm(ww.end);
+    if (!Number.isFinite(wlo) || !Number.isFinite(whi) || !Number.isFinite(rlo) || !Number.isFinite(rhi)) {
+      return false;
+    }
+    return wlo >= rlo && whi <= rhi;
   }
 
   function slotInstructorsMatch(rowInstr, formInstr) {
@@ -922,6 +1062,11 @@
       deps.toast("Anchor date, participante, and time slot are required.");
       return;
     }
+    var bandErrC = validateAquaticHalfHourBand(p);
+    if (bandErrC) {
+      deps.toast(bandErrC);
+      return;
+    }
     if (/^no[\s_-]*client$/i.test(p.client_name) || /^no[\s_-]*participant$/i.test(p.client_name)) {
       deps.toast("Pick the participante to remove, not No client.");
       return;
@@ -980,6 +1125,11 @@
     }
     if (!p.anchorDate || !p.client_name || !p.time_slot || !p.day) {
       deps.toast("Anchor date, participante, and time slot are required.");
+      return;
+    }
+    var bandErrN = validateAquaticHalfHourBand(p);
+    if (bandErrN) {
+      deps.toast(bandErrN);
       return;
     }
     if (typeof global.portalResolveParticipantCanonicalName === "function") {
@@ -1151,6 +1301,11 @@
       deps.toast('Use action "No participant" to open the slot without a client.');
       return;
     }
+    var bandErrU = validateAquaticHalfHourBand(p);
+    if (bandErrU) {
+      deps.toast(bandErrU);
+      return;
+    }
     if (typeof global.portalResolveParticipantCanonicalName === "function") {
       var canon = global.portalResolveParticipantCanonicalName(p.client_name);
       if (canon) p.client_name = canon;
@@ -1223,7 +1378,12 @@
       ".trs-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
       ".trs-field label{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#64748b}",
       ".trs-field input,.trs-field select{font:inherit;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
-      ".trs-field input[readonly],.trs-field select:disabled{background:#f8fafc;color:#475569}",
+      ".trs-field input[readonly],.trs-field select:disabled,.trs-field input.trs-time-slot--readonly{background:#f8fafc;color:#475569}",
+      ".trs-time-band-wrap{margin-top:8px;display:flex;flex-direction:column;gap:6px;min-width:0}",
+      ".trs-time-band-wrap[hidden]{display:none!important}",
+      ".trs-time-band-wrap .trs-control-label{margin:0}",
+      ".trs-time-band-wrap .trs-pills{gap:6px}",
+      ".trs-time-band-pill{font-size:12px;padding:8px 12px}",
       ".trs-field .participant-field-wrap{position:relative;min-width:0}",
       ".trs-field .portal-name-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;margin:0;padding:4px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:220px;overflow-y:auto}",
       ".trs-field .portal-name-suggest[hidden]{display:none!important}",
@@ -1357,7 +1517,7 @@
       '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">Pick participante first</option></select></div>' +
       "</div>" +
       '<div class="trs-row trs-row--details" id="trsDetailsRow">' +
-      '<div class="trs-field"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="Auto from roster"/></div>' +
+      '<div class="trs-field trs-field--time"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="Auto from roster"/><div class="trs-time-band-wrap" id="trsTimeSlotPickWrap" hidden><span class="trs-control-label">30-minute band (Aquatic)</span><div class="trs-pills" id="trsTimeSlotOptions"></div></div></div>' +
       '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
       '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
       '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Auto from roster"/></div>' +
@@ -1437,6 +1597,11 @@
         rebuildTermSlotServiceSelect(root, pre.client_name || "", pre.service, anchor);
       }
       refreshTermSlotAutofill(root);
+      if (pre.time_slot) {
+        var slotPre = findBundleSlotByParticipantService(anchor, pre.client_name || "", pre.service || (svcEl0 && svcEl0.value) || "");
+        if (slotPre) applyBundleSlotToForm(root, slotPre, { timeSlot: pre.time_slot });
+        else setFormField(root, "#trsTimeSlot", pre.time_slot);
+      }
     }
     refreshTermSlotSessionPicker(root);
   }

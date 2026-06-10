@@ -76,7 +76,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260610-term-slot-scroll"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260610-aquatic-half-hour-b"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260616-day-centre-hours"></script>
@@ -4389,6 +4389,59 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
           out.push(clone);
         }
+      });
+      out.sort(function(a, b){
+        return String(a.anchorStart || '').localeCompare(String(b.anchorStart || '')) ||
+          String(a.clientDisplay || '').localeCompare(String(b.clientDisplay || ''));
+      });
+      return out;
+    }
+    /** Aquatic roster bands longer than 30′ → one sched row per half-hour (e.g. Amar Ra 5–6 → 5–5.30 + 5.30–6). */
+    function schedExpandAquaticHalfHourSlots(slots){
+      var out = [];
+      (slots || []).forEach(function(slot){
+        if(!slot){
+          return;
+        }
+        var progKey = typeof adminServiceProgrammeNormKey === 'function'
+          ? adminServiceProgrammeNormKey(slot.programme || slot.rosterService || '')
+          : '';
+        if(progKey !== 'aquatic'){
+          out.push(slot);
+          return;
+        }
+        var lo = schedPgTimeToMinutes(slot.anchorStart);
+        var hi = schedPgTimeToMinutes(slot.anchorEnd);
+        if(!Number.isFinite(lo) || !Number.isFinite(hi) || hi - lo <= 30){
+          out.push(slot);
+          return;
+        }
+        var parentLabel = String(slot.anchorTimeLabel || slot.timeSlotLabel || '').trim();
+        var segments = typeof adminServiceSlotSegments30 === 'function'
+          ? adminServiceSlotSegments30({ anchorStart: slot.anchorStart, anchorEnd: slot.anchorEnd })
+          : [{ anchorStart: slot.anchorStart, anchorEnd: slot.anchorEnd }];
+        if(!segments || segments.length <= 1){
+          out.push(slot);
+          return;
+        }
+        segments.forEach(function(seg, idx){
+          var clone = Object.assign({}, slot);
+          clone.anchorStart = seg.anchorStart;
+          clone.anchorEnd = seg.anchorEnd;
+          clone.anchorTimeLabel = schedFormatRosterHmToken(normTimeShort(clone.anchorStart)) + ' to ' + schedFormatRosterHmToken(normTimeShort(clone.anchorEnd));
+          clone.whenLabel = String(clone.sheetDay || '') + ' · ' + clone.anchorTimeLabel;
+          clone.parentBandLabel = parentLabel;
+          clone.halfHourSegment = idx;
+          clone.demoId = schedEncodeRowId(clone.sessionDate, {
+            day: clone.sheetDay,
+            start: normTimeShort(clone.anchorStart),
+            end: normTimeShort(clone.anchorEnd),
+            venue: clone.venue,
+            staffId: clone.staffRosterId,
+            clientId: clone.clientSlug
+          });
+          out.push(clone);
+        });
       });
       out.sort(function(a, b){
         return String(a.anchorStart || '').localeCompare(String(b.anchorStart || '')) ||
@@ -10784,7 +10837,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Participant:</strong> '+esc(slot.clientDisplay)+' <span class="muted">(slug '+esc(slot.clientSlug)+')</span></li>'+
         '<li><strong style="color:var(--ink)">Roster cell:</strong> '+esc(slot.rosterSheetLabel||'—')+' <span class="muted">(raw: '+esc(String(slot.status||'—'))+')</span></li>'+
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
-        '</ul><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" data-view-target="term_roster_edit">Edit pool / area (term slot)</button></p></div>'+ovBlock+
+        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<label class="muted" for="schedFormOvType" style="display:block;margin-top:10px">Action</label>'+
         '<select id="schedFormOvType" class="sel" style="max-width:100%">'+
@@ -10857,6 +10910,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var snP = $('schedParentNotifyPay');
       if(snP) snP.onclick = function(){
         openParentNotifyModal({ kind:'payment_due', slot: slot, useSchedOverrides: true });
+      };
+      var termBtn = $('schedOpenTermSlotBtn');
+      if(termBtn) termBtn.onclick = function(){
+        closeSchedDrawer();
+        if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
+          window.portalAdminOpenTermSlotEdit({
+            anchorDate: String(slot.sessionDate || sched.selectedDate || '').slice(0, 10),
+            client_name: String(slot.clientDisplay || '').trim(),
+            service: String(slot.programme || slot.rosterService || '').trim(),
+            time_slot: String(slot.anchorTimeLabel || '').trim(),
+            instructors: String(slot.staffName || slot.staffRosterId || '').trim(),
+            venue: String(slot.venue || '').trim(),
+            area: String(slot.rosterArea || '').trim(),
+            scope: 'single_day',
+            action: 'update'
+          });
+        }else{
+          setView('term_roster_edit');
+        }
       };
     }
     function adminPortalAuthEmail(){
@@ -12805,7 +12877,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         msg.style.color = '';
       }
       var rawSlots = slotsForSelectedDate(iso);
-      var slots = schedSplitDuplicateSameBandSessions(rawSlots);
+      var slots = schedSplitDuplicateSameBandSessions(schedExpandAquaticHalfHourSlots(rawSlots));
       sched.cachedDaySlots = slots;
       sched.slotsById = {};
       for(var sxi = 0; sxi < slots.length; sxi++) sched.slotsById[slots[sxi].demoId] = slots[sxi];
