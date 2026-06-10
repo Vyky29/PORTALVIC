@@ -9,7 +9,35 @@
   var DOC_CATEGORY = "training";
   var DOC_SOURCE = "general-induction";
   var DOC_SESSION_KEY = "general-induction-certificate";
+  var PDF_RENDER_WIDTH = 1200;
+  var PDF_RENDER_HEIGHT = Math.round(1131 * (PDF_RENDER_WIDTH / 1600));
   var logoDataUriCache = null;
+
+  function yieldToMain() {
+    return new Promise(function (resolve) {
+      global.setTimeout(resolve, 0);
+    });
+  }
+
+  function isMobileCertificateFlow() {
+    try {
+      if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) return true;
+    } catch (_e) {}
+    try {
+      if (/iPhone|iPad|iPod|Android/i.test(String(global.navigator && global.navigator.userAgent || ""))) {
+        return true;
+      }
+    } catch (_e2) {}
+    return false;
+  }
+
+  function notifyProgress(opts, phase) {
+    if (opts && typeof opts.onProgress === "function") {
+      try {
+        opts.onProgress(phase);
+      } catch (_e) {}
+    }
+  }
 
   function escapeXml(value) {
     return String(value == null ? "" : value)
@@ -132,8 +160,8 @@
 
   function svgToPdfBlob(svgString) {
     return new Promise(function (resolve, reject) {
-      var w = 1600;
-      var h = 1131;
+      var w = PDF_RENDER_WIDTH;
+      var h = PDF_RENDER_HEIGHT;
       var img = new Image();
       var url = URL.createObjectURL(new Blob([svgString], { type: "image/svg+xml;charset=utf-8" }));
       img.onload = function () {
@@ -147,7 +175,7 @@
           ctx.fillRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
           URL.revokeObjectURL(url);
-          var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+          var dataUrl = canvas.toDataURL("image/jpeg", 0.9);
           if (!global.jspdf || !global.jspdf.jsPDF) throw new Error("jsPDF missing");
           var pdf = new global.jspdf.jsPDF({
             orientation: "landscape",
@@ -286,17 +314,21 @@
    * @returns {Promise<{ downloaded: boolean, savedToDocuments?: boolean }>}
    */
   function shouldSkipBrowserCertificateDownload() {
+    return isMobileCertificateFlow();
+  }
+
+  function myDocumentsTrainingUrl() {
     try {
-      if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) return true;
-    } catch (_e) {}
-    try {
-      if (/iPhone|iPad|iPod|Android/i.test(String(global.navigator && global.navigator.userAgent || ""))) return true;
-    } catch (_e2) {}
-    return false;
+      return new URL("my_documents.html?category=training", global.location.href).href;
+    } catch (_e) {
+      return "/my_documents.html?category=training";
+    }
   }
 
   async function portalDownloadInductionCertificatePdf(learnerName, issuedIso, opts) {
     var options = opts || {};
+    notifyProgress(options, "building");
+    await yieldToMain();
     var built;
     try {
       built = await portalBuildInductionCertificatePdfBlob(learnerName, issuedIso);
@@ -305,27 +337,40 @@
         alert(
           "Your name is not available for the certificate. Sign in to the staff portal, or open induction once so we can load your profile."
         );
-        return { downloaded: false };
+        return { downloaded: false, savedToDocuments: false, mobileFlow: isMobileCertificateFlow() };
       }
       throw err;
     }
     var date = parseDate(issuedIso);
-    var out = { downloaded: false, savedToDocuments: false };
+    var out = {
+      downloaded: false,
+      savedToDocuments: false,
+      mobileFlow: isMobileCertificateFlow(),
+      myDocumentsUrl: myDocumentsTrainingUrl(),
+    };
     if (options.saveToDocuments) {
+      notifyProgress(options, "saving");
+      await yieldToMain();
       try {
         var saved = await savePdfToMyDocuments(built.blob, date.toISOString());
         out.savedToDocuments = !!(saved && saved.savedToDocuments);
         out.alreadyHad = !!(saved && saved.alreadyHad);
       } catch (err) {
         console.warn("[induction-cert] My Documents save", err);
+        out.saveError = String(err && err.message ? err.message : err);
       }
     }
     if (!shouldSkipBrowserCertificateDownload()) {
+      notifyProgress(options, "downloading");
+      await yieldToMain();
       triggerBrowserDownload(built.blob, built.filename);
       out.downloaded = true;
     }
-    if ((out.downloaded || out.savedToDocuments) && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
-      global.portalInductionMarkCertificatePdfDownloaded();
+    if (out.downloaded || out.savedToDocuments) {
+      notifyProgress(options, "done");
+      if (typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+        global.portalInductionMarkCertificatePdfDownloaded();
+      }
     }
     return out;
   }
@@ -343,4 +388,6 @@
   global.portalBuildInductionCertificatePdfBlob = portalBuildInductionCertificatePdfBlob;
   global.portalDownloadInductionCertificatePdf = portalDownloadInductionCertificatePdf;
   global.portalDownloadInductionCertificate = portalDownloadInductionCertificate;
+  global.portalInductionIsMobileCertificateFlow = isMobileCertificateFlow;
+  global.portalInductionMyDocumentsTrainingUrl = myDocumentsTrainingUrl;
 })(typeof window !== "undefined" ? window : globalThis);

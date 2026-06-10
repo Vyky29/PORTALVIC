@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-@import url('/assets/module-completion-flow.css');
-@import url('/assets/water-orbit-branding.css');
-@import url('/assets/module-roadmap.css');
-@import url('/assets/module-hero-system.css');
-@import url('/assets/key-ideas-recap-system.css');
-@import url('/assets/induction-recap-completion-theme.css');
-@import url('/assets/induction-quiz-theme.css');
+@import url('/induction-assets/module-completion-flow.css');
+@import url('/induction-assets/water-orbit-branding.css');
+@import url('/induction-assets/induction-journey-nodes.css');
+@import url('/induction-assets/journey-node-layout.css');
+@import url('/induction-assets/key-ideas-recap-system.css');
+@import url('/induction-assets/induction-recap-completion-theme.css');
+@import url('/induction-assets/induction-quiz-theme.css');
 
 :root{
   --bg:#fef8ec;

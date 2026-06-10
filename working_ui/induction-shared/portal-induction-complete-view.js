@@ -57,6 +57,86 @@
     return "staff_dashboard.html";
   }
 
+  function myDocumentsTrainingUrl() {
+    if (typeof global.portalInductionMyDocumentsTrainingUrl === "function") {
+      return global.portalInductionMyDocumentsTrainingUrl();
+    }
+    try {
+      return new URL("my_documents.html?category=training", global.location.href).href;
+    } catch (_e) {
+      return "/my_documents.html?category=training";
+    }
+  }
+
+  function isMobileCertificateFlow() {
+    if (typeof global.portalInductionIsMobileCertificateFlow === "function") {
+      return global.portalInductionIsMobileCertificateFlow();
+    }
+    return /iPhone|iPad|iPod|Android/i.test(String(global.navigator && global.navigator.userAgent || ""));
+  }
+
+  function yieldToMain() {
+    return new Promise(function (resolve) {
+      global.setTimeout(resolve, 0);
+    });
+  }
+
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (_resolve, reject) {
+        global.setTimeout(function () {
+          reject(new Error("INDUCTION_CERT_TIMEOUT"));
+        }, ms);
+      }),
+    ]);
+  }
+
+  async function certificateExistsInDocuments() {
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var client = box.client;
+      var uid = box.session && box.session.user && box.session.user.id;
+      if (!client || !uid || !client.from) return false;
+      var res = await client
+        .from("documents")
+        .select("id")
+        .eq("user_id", uid)
+        .eq("document_type", "induction_certificate")
+        .is("hidden_by_user_at", null)
+        .limit(1);
+      return !!(res.data && res.data.length);
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function setDownloadButtonBusy(btn, busy, label) {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.setAttribute("aria-busy", busy ? "true" : "false");
+    if (label) btn.textContent = label;
+  }
+
+  function promoteButtonToMyDocuments(btn) {
+    if (!btn) return;
+    btn.dataset.inductionCertSaved = "1";
+    btn.disabled = false;
+    btn.removeAttribute("aria-busy");
+    btn.textContent = "Open My documents";
+    btn.classList.add("btn-certificate-download--saved");
+  }
+
+  function ensureMyDocumentsLink(afterBtn) {
+    var actions = afterBtn && afterBtn.parentNode;
+    if (!actions || actions.querySelector(".induction-certificate-panel__my-docs-link")) return;
+    var link = global.document.createElement("a");
+    link.className = "induction-certificate-panel__my-docs-link";
+    link.href = myDocumentsTrainingUrl();
+    link.textContent = "Open My documents → Training";
+    actions.appendChild(link);
+  }
+
   function ensureBackLink() {
     if (global.document.getElementById("inductionPortalBack")) return;
     var wrap = global.document.querySelector(".training-wrap");
@@ -153,41 +233,83 @@
       alert("Open induction from the staff portal so we can put your name on the certificate.");
       return;
     }
-    var iso = issuedIso();
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Preparing PDF…";
+    if (btn && btn.dataset.inductionCertSaved === "1") {
+      global.location.href = myDocumentsTrainingUrl();
+      return;
     }
+    var iso = issuedIso();
+    setDownloadButtonBusy(btn, true, "Building certificate…");
     setSavedHint("");
+    await yieldToMain();
     try {
       await loadJsPdf();
       if (typeof global.portalDownloadInductionCertificatePdf !== "function") {
         throw new Error("Certificate PDF helper not loaded.");
       }
-      var result = await global.portalDownloadInductionCertificatePdf(name, iso, {
-        saveToDocuments: true,
-      });
+      var result = await withTimeout(
+        global.portalDownloadInductionCertificatePdf(name, iso, {
+          saveToDocuments: true,
+          onProgress: function (phase) {
+            if (phase === "saving") setDownloadButtonBusy(btn, true, "Saving to My documents…");
+            else if (phase === "downloading") setDownloadButtonBusy(btn, true, "Downloading PDF…");
+            else if (phase === "building") setDownloadButtonBusy(btn, true, "Building certificate…");
+          },
+        }),
+        90000
+      );
       if (result && result.savedToDocuments) {
-        setSavedHint(
-          "Saved to My documents → Training. Open it anytime from the dashboard — no need to download again on your phone."
-        );
+        if (result.alreadyHad) {
+          setSavedHint("Your certificate is already in My documents → Training.");
+        } else {
+          setSavedHint("Certificate saved to My documents → Training.");
+        }
+        if (isMobileCertificateFlow()) {
+          promoteButtonToMyDocuments(btn);
+        } else {
+          setSavedHint(
+            (result.downloaded ? "PDF downloaded. " : "") +
+              "Your certificate is in My documents → Training."
+          );
+          ensureMyDocumentsLink(btn);
+          setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
+        }
       } else if (result && result.downloaded) {
-        setSavedHint("PDF downloaded. A copy is also saved under My documents → Training when you are signed in.");
-      } else if (result && !result.downloaded && !result.savedToDocuments) {
-        setSavedHint("Could not save yet. Sign in on the portal and try again, or open My documents → Training.");
-      }
-      if (result && result.downloaded && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
-        global.portalInductionMarkCertificatePdfDownloaded();
+        setSavedHint("PDF downloaded to your device.");
+        setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
+      } else {
+        setSavedHint(
+          result && result.saveError
+            ? "Could not save yet (" + result.saveError + "). Sign in on the portal and try again."
+            : "Could not save yet. Sign in on the portal and try again, or open My documents → Training."
+        );
+        setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
       }
     } catch (err) {
       console.error("[induction] certificate PDF", err);
-      setSavedHint(
-        "Could not prepare the certificate. Try again, or open My documents → Training from your dashboard."
-      );
+      var maybeSaved = await certificateExistsInDocuments();
+      if (maybeSaved) {
+        setSavedHint("Your certificate is in My documents → Training.");
+        if (isMobileCertificateFlow()) promoteButtonToMyDocuments(btn);
+        else {
+          ensureMyDocumentsLink(btn);
+          setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
+        }
+      } else if (err && err.message === "INDUCTION_CERT_TIMEOUT") {
+        setSavedHint(
+          "This is taking longer than usual. If nothing happens, open My documents → Training — your certificate may already be there."
+        );
+        ensureMyDocumentsLink(btn);
+        setDownloadButtonBusy(btn, false, "Try again");
+      } else {
+        setSavedHint(
+          "Could not prepare the certificate. Try again, or open My documents → Training from your dashboard."
+        );
+        ensureMyDocumentsLink(btn);
+        setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
+      }
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "Download certificate (PDF)";
+      if (btn && btn.dataset.inductionCertSaved !== "1" && btn.disabled) {
+        setDownloadButtonBusy(btn, false, "Download certificate (PDF)");
       }
     }
   }
@@ -198,8 +320,25 @@
     btn.dataset.portalPdfBound = "1";
     btn.addEventListener("click", function (e) {
       e.preventDefault();
+      if (btn.dataset.inductionCertSaved === "1") {
+        global.location.href = myDocumentsTrainingUrl();
+        return;
+      }
       void onDownloadClick(btn);
     });
+  }
+
+  async function syncSavedCertificateUi() {
+    if (!isTrainingComplete()) return;
+    var exists = await certificateExistsInDocuments();
+    if (!exists) return;
+    var btn = global.document.getElementById("downloadInductionCertificate");
+    if (typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+      global.portalInductionMarkCertificatePdfDownloaded();
+    }
+    setSavedHint("Your certificate is in My documents → Training.");
+    if (isMobileCertificateFlow()) promoteButtonToMyDocuments(btn);
+    else ensureMyDocumentsLink(btn);
   }
 
   async function bootstrapAuth() {
@@ -227,6 +366,7 @@
       applyCertificateOnlyLayout();
       if (isTrainingComplete()) {
         bindDownload();
+        void syncSavedCertificateUi();
         if (
           global.provisionalInductionCertificate &&
           typeof global.provisionalInductionCertificate.refreshDashboardPanel === "function"

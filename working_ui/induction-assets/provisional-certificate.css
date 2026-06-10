@@ -1,4 +1,4 @@
-/* General Induction ó pathway completion & certificate download */
+/* General Induction ù pathway completion & certificate download */
 .induction-certificate-panel {
   margin: 28px auto 0;
   max-width: 920px;
@@ -38,7 +38,9 @@
 .induction-certificate-panel h2 {
   margin: 0 0 10px;
   font-size: clamp(1.5rem, 3vw, 2rem);
-  line-height: 1.2;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: #fff;
 }
 
@@ -47,6 +49,12 @@
   font-size: 1rem;
   line-height: 1.65;
   color: rgba(255, 255, 255, 0.88);
+}
+
+.induction-certificate-panel__lead {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  max-width: 36em;
 }
 
 .induction-certificate-panel__learner {
@@ -123,7 +131,7 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-/* PORTALVIC ó completed induction (same green as feedback-done session cards) */
+/* PORTALVIC ù completed induction (same green as feedback-done session cards) */
 .induction-certificate-panel.induction-certificate-panel--portal-complete {
   margin-top: 0;
   background: linear-gradient(180deg, #eef8f1 0%, #dff6e8 100%);
@@ -134,14 +142,28 @@
 
 .induction-certificate-panel--portal-complete .induction-certificate-panel__kicker {
   color: #15803d;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
 }
 
 .induction-certificate-panel--portal-complete h2 {
-  color: #0a3d62;
+  color: #0f2840;
+  font-size: clamp(1.625rem, 5.2vw, 2.125rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin-bottom: 12px;
 }
 
 .induction-certificate-panel--portal-complete p {
-  color: #445e70;
+  color: #5d7688;
+}
+
+.induction-certificate-panel--portal-complete .induction-certificate-panel__lead {
+  color: #5d7688;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.55;
 }
 
 .induction-certificate-panel--portal-complete .induction-certificate-panel__learner {
@@ -172,18 +194,122 @@ body.induction--certificate-only {
   background: linear-gradient(180deg, #f4f8fc 0%, #eaf1f8 100%);
 }
 
+body.induction--certificate-only .training-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(28px, env(safe-area-inset-bottom, 0px));
+}
+
+body.induction--certificate-only .training-wrap {
+  width: 100%;
+  max-width: min(480px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 body.induction--certificate-only #inductionPathwayWrap {
   display: none !important;
 }
 
 body.induction--certificate-only #inductionCertificatePanel {
   display: block !important;
-  margin: 24px auto;
-  max-width: min(920px, calc(100% - 28px));
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: clamp(24px, 5vw, 32px) clamp(20px, 4vw, 28px) clamp(28px, 5vw, 36px);
+  border-radius: 22px;
+}
+
+body.induction--certificate-only .induction-certificate-panel__inner {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+}
+
+body.induction--certificate-only .induction-certificate-panel__logo {
+  width: min(148px, 46vw);
+  padding: 14px 18px;
+  margin: 0 auto;
+}
+
+body.induction--certificate-only .induction-certificate-panel__copy {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.induction--certificate-only .induction-certificate-panel__lead {
+  max-width: 32ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.induction--certificate-only .induction-certificate-panel__learner {
+  margin-top: 10px !important;
+}
+
+body.induction--certificate-only .induction-certificate-panel__actions {
+  flex: 0 0 auto;
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+body.induction--certificate-only .induction-certificate-panel__actions .btn-certificate-download {
+  width: min(100%, 320px);
+}
+
+.induction-certificate-panel .btn-certificate-download--saved {
+  background: linear-gradient(135deg, #0f2840 0%, #1a4a6e 100%);
+  color: #fff;
+  border-color: rgba(15, 40, 64, 0.2);
+  box-shadow: 0 8px 20px rgba(15, 40, 64, 0.18);
+}
+
+.induction-certificate-panel--portal-complete .btn-certificate-download--saved {
+  background: linear-gradient(135deg, #0f2840 0%, #1a4a6e 100%);
+  color: #fff;
+}
+
+.induction-certificate-panel__my-docs-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2d84b3;
+  text-decoration: none;
+  border: 1px solid rgba(45, 132, 179, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.induction-certificate-panel__my-docs-link:hover,
+.induction-certificate-panel__my-docs-link:focus-visible {
+  text-decoration: underline;
+  background: #edf6fb;
+}
+
+body.induction--certificate-only .induction-certificate-panel__saved {
+  text-align: center;
+  max-width: 34ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 body.induction--certificate-only .training-wrap {
-  padding: 14px 14px 28px;
+  padding: 0;
   min-width: 0;
 }
 
@@ -193,8 +319,6 @@ body.induction--certificate-only .training-wrap {
   gap: 6px;
   margin: 0 0 14px;
   max-width: min(920px, calc(100% - 28px));
-  margin-left: auto;
-  margin-right: auto;
   padding: 0;
   border: 0;
   background: none;
@@ -205,6 +329,12 @@ body.induction--certificate-only .training-wrap {
   cursor: pointer;
   text-decoration: none;
   overflow-wrap: break-word;
+}
+
+body.induction--certificate-only .induction-portal-back {
+  align-self: flex-start;
+  margin: 0 0 12px;
+  max-width: 100%;
 }
 
 .induction-portal-back:hover,
