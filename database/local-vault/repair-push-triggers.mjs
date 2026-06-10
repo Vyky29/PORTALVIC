@@ -8,8 +8,10 @@
  *   node database/local-vault/repair-push-triggers.mjs --deploy
  */
 import { execSync } from "child_process";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { readPushWebhookSecret } from "./read_push_webhook_secret.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
@@ -20,6 +22,12 @@ function run(cmd) {
   execSync(cmd, { stdio: "inherit", cwd: root });
 }
 
+function shellEscape(value) {
+  return String(value || "").replace(/"/g, '\\"');
+}
+
+const webhookSecret = readPushWebhookSecret();
+
 run("node database/local-vault/apply-chat-admin-push.mjs");
 run("node database/local-vault/apply-incoming-call-push.mjs");
 run("node database/local-vault/apply-staff-dm-push.mjs");
@@ -28,7 +36,11 @@ run("npx supabase db query --linked -f database/local-vault/step-incoming-call-p
 run("npx supabase db query --linked -f database/local-vault/step-staff-dm-push.local.sql");
 
 const edgeEnv = path.join(root, "local-secrets/edge-secrets.env");
-run(`npx supabase secrets set --env-file ${edgeEnv}`);
+if (fs.existsSync(edgeEnv)) {
+  run(`npx supabase secrets set --env-file ${edgeEnv}`);
+}
+// Canonical webhook secret must match SQL triggers (same source as apply-*.mjs).
+run(`npx supabase secrets set PORTAL_PUSH_WEBHOOK_SECRET="${shellEscape(webhookSecret)}"`);
 
 if (args.has("--deploy")) {
   const ref = "cklpnwhlqsulpmkipmqb";
@@ -37,4 +49,5 @@ if (args.has("--deploy")) {
   run(`npx supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref ${ref}`);
 }
 
-console.log("\nDone. Test: Victor → Teflon with Teflon portal closed; expect OS notification + sound.");
+console.log("\nDone. Triggers + Edge PORTAL_PUSH_WEBHOOK_SECRET synced from local-secrets/secrets.env.");
+console.log("Test: Victor → Teflon with Teflon portal closed; expect OS notification + sound.");

@@ -22,6 +22,11 @@ export function verifyPortalPushWebhook(req: Request): Response | null {
   const expected = Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") ?? "";
   const got = req.headers.get("x-portal-webhook-secret") ?? "";
   if (!expected || got !== expected) {
+    console.warn("[portal-webpush] webhook forbidden", {
+      expectedLen: expected.length,
+      gotLen: got.length,
+      match: expected === got,
+    });
     return new Response("Forbidden", { status: 403, headers: PORTAL_PUSH_CORS_HEADERS });
   }
   return null;
