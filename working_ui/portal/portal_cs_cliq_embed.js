@@ -139,6 +139,7 @@
     global.__PORTAL_CS_CLIQ_EMBED_OPEN = true;
     global.__PORTAL_CS_CLIQ_EMBED_SHEET = backdrop;
     global.__PORTAL_CS_CLIQ_ACTIVE = true;
+    global.__PORTAL_ADMIN_DM_OPEN = true;
     global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
     global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
     global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = "";
