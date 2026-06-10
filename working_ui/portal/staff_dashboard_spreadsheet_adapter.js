@@ -431,10 +431,12 @@
           null;
         if (startMap) {
           const slug = nameRaw.toLowerCase();
-          let startIso = startMap[nameRaw] || startMap[slug] || "";
+          const slugNorm = slug === "timmy" ? "timi" : slug;
+          let startIso = startMap[nameRaw] || startMap[slug] || startMap[slugNorm] || "";
           if (!startIso) {
             for (const k of Object.keys(startMap)) {
-              if (String(k).trim().toLowerCase() === slug) {
+              const kl = String(k).trim().toLowerCase();
+              if (kl === slug || kl === slugNorm) {
                 startIso = startMap[k];
                 break;
               }

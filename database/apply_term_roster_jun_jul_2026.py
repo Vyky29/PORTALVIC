@@ -9,6 +9,7 @@ Then: python database/build_machine_exports.py  (patch bundle only if xlsx missi
 from __future__ import annotations
 
 import json
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,19 @@ CARLOS_WEEKDAY_OFF_END = "2026-07-31"
 
 # Michelle off Ikram day-centre cover on these Wednesdays (Luliya only).
 MICHELLE_IKRAM_WEDNESDAY_OFF = frozenset({"2026-06-10", "2026-06-17"})
+
+EMMANUEL_ROSTER_START = "2026-06-12"
+TIMI_ROSTER_START = "2026-06-15"
+SUMMER_TERM_END = "2026-07-17"
+_WEEKDAY_NAMES = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+)
 
 
 def _strip_carlos_from_instructors(instr: str) -> str | None:
@@ -204,10 +218,7 @@ def morning_day_centre() -> list[dict]:
         r("Fadi", "Thursday", "RAUL", "12.30 to 3", service=dc, area=hub, venue=sf)
     )
 
-    for day in ("Monday", "Wednesday", "Friday"):
-        rows.append(
-            r("Timi", day, "RAUL", "1 to 3", service=dc, area=hub, venue=sf)
-        )
+    # Timi is NOT a weekday template: confirmed start 2026-06-15 — dated rows only (see patch_emmanuel_timi_roster).
 
     return rows
 
@@ -459,6 +470,75 @@ def sunday_roster() -> list[dict]:
     return rows
 
 
+def _client_slug(name: str) -> str:
+    n = str(name or "").strip().lower()
+    if n == "timmy":
+        return "timi"
+    return n
+
+
+def _iter_iso_weekdays(start_iso: str, end_iso: str, weekday_indexes: tuple[int, ...]):
+    start = date.fromisoformat(start_iso)
+    end = date.fromisoformat(end_iso)
+    d = start
+    while d <= end:
+        if d.weekday() in weekday_indexes:
+            yield d.isoformat(), _WEEKDAY_NAMES[d.weekday()]
+        d += timedelta(days=1)
+
+
+def generate_emmanuel_timi_dated_rows() -> list[dict]:
+    """Mon/Wed/Fri day-centre dated rows from each client's real start through term end."""
+    dc = "Day Centre"
+    hub = "Hub Room"
+    sf = "SwimFarm"
+    out: list[dict] = []
+    mwf = (0, 2, 4)
+    for iso, day in _iter_iso_weekdays(EMMANUEL_ROSTER_START, SUMMER_TERM_END, mwf):
+        row = r("Emmanuel", day, "YOUSSEF, VICTOR", "11 to 4", service=dc, area=hub, venue=sf)
+        row["session_date"] = iso
+        out.append(row)
+    for iso, day in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, mwf):
+        row = r("Timi", day, "RAUL", "1 to 3", service=dc, area=hub, venue=sf)
+        row["session_date"] = iso
+        out.append(row)
+    return out
+
+
+def patch_emmanuel_timi_roster(rows: list[dict]) -> dict[str, int]:
+    """Drop templates / early term rows; regenerate Emmanuel + Timi from start dates."""
+    kept: list[dict] = []
+    tpl_removed = 0
+    dropped = 0
+    for row in rows:
+        client = _client_slug(row.get("client_name"))
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if client == "emmanuel":
+            if not sd:
+                tpl_removed += 1
+                continue
+            if sd <= SUMMER_TERM_END:
+                dropped += 1
+                continue
+        elif client == "timi":
+            if not sd:
+                tpl_removed += 1
+                continue
+            if sd >= "2026-06-01" and sd <= SUMMER_TERM_END:
+                dropped += 1
+                continue
+        kept.append(row)
+    generated = generate_emmanuel_timi_dated_rows()
+    kept.extend(generated)
+    rows.clear()
+    rows.extend(kept)
+    return {
+        "templates_removed": tpl_removed,
+        "dated_dropped": dropped,
+        "dated_generated": len(generated),
+    }
+
+
 def build_template() -> list[dict]:
     out: list[dict] = []
     for part in (
@@ -487,6 +567,7 @@ def main() -> None:
     patched = patch_tuesday_hazem_rayan_instructors(merged)
     carlos_off = patch_carlos_weekday_roster_off(merged)
     michelle_off = patch_michelle_ikram_wednesday_off(merged)
+    emmanuel_timi = patch_emmanuel_timi_roster(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -509,6 +590,14 @@ def main() -> None:
         print(
             f"Removed Michelle from {michelle_off} Ikram row(s) on "
             f"{', '.join(sorted(MICHELLE_IKRAM_WEDNESDAY_OFF))}"
+        )
+    if emmanuel_timi["templates_removed"] or emmanuel_timi["dated_dropped"] or emmanuel_timi["dated_generated"]:
+        print(
+            "Emmanuel/Timi roster: removed "
+            f"{emmanuel_timi['templates_removed']} template row(s), dropped "
+            f"{emmanuel_timi['dated_dropped']} dated row(s), wrote "
+            f"{emmanuel_timi['dated_generated']} dated row(s) "
+            f"(Emmanuel from {EMMANUEL_ROSTER_START}, Timi from {TIMI_ROSTER_START})"
         )
 
 

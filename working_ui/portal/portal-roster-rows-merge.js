@@ -94,14 +94,15 @@
   }
 
   function clientFirstSessionIso(clientName) {
+    var slug = String(clientName || "")
+      .trim()
+      .toLowerCase();
+    if (slug === "timmy") slug = "timi";
     try {
       var map =
         global.STAFF_DASHBOARD_SOURCE &&
         global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates;
       if (map && map[clientName]) return normIso(map[clientName]);
-      var slug = String(clientName || "")
-        .trim()
-        .toLowerCase();
       if (map) {
         for (var k in map) {
           if (
