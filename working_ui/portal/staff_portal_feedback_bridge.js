@@ -68,10 +68,12 @@
   }
 
   function statusRowsForStaffDate(iso, staffId) {
+    const thru = feedbackCoverageThroughIso();
+    const day = String(iso || "").trim().substring(0, 10);
+    if (thru && day > thru) return [];
     const src =
       typeof window !== "undefined" && window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
     if (!src || !Array.isArray(src.rows)) return [];
-    const day = String(iso || "").trim().substring(0, 10);
     return src.rows.filter(function (st) {
       return (
         String(st.date || "").trim().substring(0, 10) === day &&
@@ -82,30 +84,77 @@
 
   /** All status rows on a calendar day (any instructor) — shared Bespoke / merge groups. */
   function statusRowsForDateAll(iso) {
+    const thru = feedbackCoverageThroughIso();
+    const day = String(iso || "").trim().substring(0, 10);
+    if (thru && day > thru) return [];
     const src =
       typeof window !== "undefined" && window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
     if (!src || !Array.isArray(src.rows)) return [];
-    const day = String(iso || "").trim().substring(0, 10);
     return src.rows.filter(function (st) {
       return String(st.date || "").trim().substring(0, 10) === day;
     });
   }
 
-  function submittedRowsForStaffDate(iso, staffId) {
-    const src =
-      typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
-    if (!src || !Array.isArray(src.rows)) return [];
-    const day = String(iso || "").trim().substring(0, 10);
-    return src.rows.filter(function (r) {
-      return (
-        String(r.date || "").trim().substring(0, 10) === day &&
-        staffOwnsInstructor(staffId, r.instructor)
-      );
-    });
+  function mapLiveFeedbackRowToPortalShape(r) {
+    if (!r) return null;
+    if (r.clientName != null || r.client_name != null) {
+      return {
+        clientName: r.clientName != null ? r.clientName : r.client_name,
+        date: String(r.date || r.session_date || "")
+          .trim()
+          .substring(0, 10),
+        service: r.service,
+        attendance: r.attendance,
+        instructor: r.instructor || r.completed_by_name,
+        portalSessionKey: r.portalSessionKey || r.portal_session_key,
+        portal_session_key: r.portalSessionKey || r.portal_session_key,
+        _live: true,
+      };
+    }
+    return null;
   }
 
-  /** All submitted feedback on a date (any instructor) — Day Centre / shared slots. */
-  function submittedRowsForDateAll(iso) {
+  function liveSubmittedRowsForDate(iso) {
+    const day = String(iso || "").trim().substring(0, 10);
+    const cache =
+      (typeof window !== "undefined" && window.__PORTAL_LIVE_SESSION_FEEDBACK_ROWS__) ||
+      [];
+    const out = [];
+    cache.forEach(function (r) {
+      const mapped = mapLiveFeedbackRowToPortalShape(r);
+      if (!mapped || mapped.date !== day) return;
+      out.push(mapped);
+    });
+    return out;
+  }
+
+  function mergeSubmittedFeedbackRows(staticRows, liveRows) {
+    const byKey = Object.create(null);
+    const out = [];
+    function addRow(r, prefer) {
+      if (!r) return;
+      const pk = String(r.portalSessionKey || r.portal_session_key || "").trim();
+      const key =
+        pk ||
+        slug(r.clientName) + "|" + String(r.date || "").trim().substring(0, 10);
+      if (byKey[key] != null && prefer) {
+        out[byKey[key]] = r;
+        return;
+      }
+      if (byKey[key] != null) return;
+      byKey[key] = out.length;
+      out.push(r);
+    }
+    (staticRows || []).forEach(function (r) {
+      addRow(r, false);
+    });
+    (liveRows || []).forEach(function (r) {
+      addRow(r, true);
+    });
+    return out;
+  }
+
+  function staticSubmittedRowsForDate(iso) {
     const src =
       typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
     if (!src || !Array.isArray(src.rows)) return [];
@@ -113,6 +162,28 @@
     return src.rows.filter(function (r) {
       return String(r.date || "").trim().substring(0, 10) === day;
     });
+  }
+
+  function submittedRowsForStaffDate(iso, staffId) {
+    const day = String(iso || "").trim().substring(0, 10);
+    const thru = feedbackCoverageThroughIso();
+    const live = liveSubmittedRowsForDate(day).filter(function (r) {
+      return staffOwnsInstructor(staffId, r.instructor);
+    });
+    if (thru && day > thru) return live;
+    const staticRows = staticSubmittedRowsForDate(day).filter(function (r) {
+      return staffOwnsInstructor(staffId, r.instructor);
+    });
+    return mergeSubmittedFeedbackRows(staticRows, live);
+  }
+
+  /** All submitted feedback on a date (any instructor) — Day Centre / shared slots. */
+  function submittedRowsForDateAll(iso) {
+    const day = String(iso || "").trim().substring(0, 10);
+    const thru = feedbackCoverageThroughIso();
+    const live = liveSubmittedRowsForDate(day);
+    if (thru && day > thru) return live;
+    return mergeSubmittedFeedbackRows(staticSubmittedRowsForDate(day), live);
   }
 
   function isDayCentreServiceLabel(label) {
@@ -786,7 +857,6 @@
   function dayFeedbackCountsFromPortalExports(iso, staffId) {
     const status = statusRowsForStaffDate(iso, staffId);
     const sub = submittedRowsForStaffDate(iso, staffId);
-    const thru = feedbackCoverageThroughIso();
     function applicableStatusCount(rows) {
       const mergeSeen = Object.create(null);
       let n = 0;
@@ -833,17 +903,6 @@
         }
         unresolved++;
       });
-      if (unresolved > 0 && thru && iso > thru) {
-        if (sub.length) return { applicable: Math.max(status.length, sub.length), unresolved: 0 };
-        let unresolvedShared = 0;
-        status.forEach(function (st) {
-          if (!statusSlotResolved(iso, st)) unresolvedShared++;
-        });
-        if (unresolvedShared === 0) {
-          return { applicable: applicableStatusCount(status), unresolved: 0 };
-        }
-        return null;
-      }
       return { applicable: applicableStatusCount(status), unresolved: unresolved };
     }
     if (sub.length) {

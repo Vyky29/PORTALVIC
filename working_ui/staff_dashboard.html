@@ -1027,7 +1027,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260609-tinashe-june"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260609-tinashe-shared"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-feedback-unified-truth"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1321,7 +1321,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-server-truth';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-unified-truth';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1808,6 +1808,13 @@
         Object.keys(doneMergeGroups).forEach(function(iso){ isosToSeed[iso] = true; });
         Object.keys(isosToSeed).forEach(function(iso){
           if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
+          const exportThru = (function(){
+            try{
+              const meta = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE && window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE.meta;
+              return String(meta && meta.coverageThroughIso || '').trim().substring(0, 10);
+            }catch(_){ return ''; }
+          })();
+          if(exportThru && iso > exportThru) return;
           const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
           const rel = typeof portalTermFeedbackSessionsForDate === 'function'
             ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
@@ -1882,6 +1889,13 @@
         src.rows.forEach(function(row){
           const iso = String(row.date || '').trim().substring(0, 10);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          const exportThru = (function(){
+            try{
+              const meta = window.SESSION_FEEDBACK_PORTAL_SOURCE && window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
+              return String(meta && meta.coverageThroughIso || '').trim().substring(0, 10);
+            }catch(_){ return ''; }
+          })();
+          if(exportThru && iso > exportThru) return;
           const catchUpDay = typeof portalTermIsCatchUpFeedbackDate === 'function'
             && portalTermIsCatchUpFeedbackDate(iso, staffId);
           const instructor = String(row.instructor || row.completedBy || '').trim();

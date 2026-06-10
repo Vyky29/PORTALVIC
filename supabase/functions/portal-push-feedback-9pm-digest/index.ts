@@ -1,10 +1,10 @@
-// @ts-nocheck — Edge Function (Deno). Daily 09:00 Europe/London admin alert for yesterday's missing session feedback.
+// @ts-nocheck — Edge Function (Deno). Daily 21:00 UTC admin alert for yesterday's missing session feedback.
 //
 // Secrets: same as portal-push-dispatch-admin-alert (VAPID_*, SUPABASE_*, PORTAL_PUSH_*)
 //   PORTAL_PUSH_WEBHOOK_SECRET — cron / manual invoke header x-portal-webhook-secret
 //
-// Schedule (pg_cron migration 20260609120000_portal_late_feedback_9am_digest.sql):
-//   0 8 * * * UTC ≈ 09:00 London (BST); 08:00 GMT in winter — adjust if needed
+// Schedule: pg_cron migration 20260610220000_portal_late_feedback_single_21h_cron.sql
+//   0 21 * * * UTC (≈ 21:00 London GMT; 22:00 BST — use 0 20 * * * in summer if needed)
 //
 // Deploy: supabase functions deploy portal-push-feedback-9pm-digest
 
@@ -19,6 +19,7 @@ import {
   sendPushPayloadToUserIds,
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
+import { missingFeedbackClientsForShift } from "../_shared/portal_feedback_digest_match.ts";
 
 const DEDUPE_TABLE = "portal_webpush_feedback_9pm_sent";
 
@@ -94,7 +95,7 @@ Deno.serve(async (req) => {
     .eq("digest_date", shiftDateIso)
     .maybeSingle();
   if (dedupeErr) {
-    console.error("[portal-feedback-9am] dedupe read", dedupeErr);
+    console.error("[portal-feedback-late-digest] dedupe read", dedupeErr);
     return jsonPushResponse({ error: dedupeErr.message }, 500);
   }
   if (dedupeHit) {
@@ -111,7 +112,7 @@ Deno.serve(async (req) => {
     .eq("status", "active")
     .eq("session_date", shiftDateIso);
   if (datedErr) {
-    console.error("[portal-feedback-9am] roster dated", datedErr);
+    console.error("[portal-feedback-late-digest] roster dated", datedErr);
     return jsonPushResponse({ error: datedErr.message }, 500);
   }
   const { data: templateRoster, error: templateErr } = await admin
@@ -121,60 +122,49 @@ Deno.serve(async (req) => {
     .is("session_date", null)
     .ilike("day", weekday);
   if (templateErr) {
-    console.error("[portal-feedback-9am] roster template", templateErr);
+    console.error("[portal-feedback-late-digest] roster template", templateErr);
     return jsonPushResponse({ error: templateErr.message }, 500);
   }
   const rosterRows = [...(datedRoster || []), ...(templateRoster || [])];
 
   const { data: feedbackRows, error: fbErr } = await admin
     .from("session_feedback")
-    .select("client_name, session_date")
+    .select("client_name, session_date, portal_session_key, attendance, service")
     .eq("session_date", shiftDateIso);
   if (fbErr) {
-    console.error("[portal-feedback-9am] feedback", fbErr);
+    console.error("[portal-feedback-late-digest] feedback", fbErr);
     return jsonPushResponse({ error: fbErr.message }, 500);
   }
 
-  const { data: absentRows, error: absErr } = await admin
+  const { data: quickMarkRows, error: qmErr } = await admin
     .from("portal_staff_session_quick_marks")
-    .select("client_name, session_date")
+    .select("portal_session_key, session_date, mark_type")
     .eq("session_date", shiftDateIso)
-    .eq("mark_type", "absent");
-  if (absErr) {
-    console.error("[portal-feedback-9am] absent marks", absErr);
-    return jsonPushResponse({ error: absErr.message }, 500);
+    .in("mark_type", ["absent", "feedback_done"]);
+  if (qmErr) {
+    console.error("[portal-feedback-late-digest] quick marks", qmErr);
+    return jsonPushResponse({ error: qmErr.message }, 500);
   }
 
   const { data: cancelRows, error: canErr } = await admin
     .from("cancellation_reports")
-    .select("client_name, session_date")
+    .select("client_name, session_date, portal_session_key")
     .eq("session_date", shiftDateIso);
   if (canErr) {
-    console.error("[portal-feedback-9am] cancellations", canErr);
+    console.error("[portal-feedback-late-digest] cancellations", canErr);
     return jsonPushResponse({ error: canErr.message }, 500);
   }
 
-  const done = new Set(
-    (feedbackRows || []).map((r) =>
-      String(r.client_name || "").trim().toLowerCase()
-    ),
+  const absentMarks = (quickMarkRows || []).filter((r) => r.mark_type === "absent");
+  const feedbackDoneMarks = (quickMarkRows || []).filter(
+    (r) => r.mark_type === "feedback_done",
   );
-  const excused = new Set([
-    ...(absentRows || []).map((r) =>
-      String(r.client_name || "").trim().toLowerCase()
-    ),
-    ...(cancelRows || []).map((r) =>
-      String(r.client_name || "").trim().toLowerCase()
-    ),
-  ]);
 
-  const missing: string[] = [];
-  (rosterRows || []).forEach((r) => {
-    const name = String(r.client_name || "").trim();
-    if (!name) return;
-    const key = name.toLowerCase();
-    if (done.has(key) || excused.has(key)) return;
-    if (!missing.includes(name)) missing.push(name);
+  const missing = missingFeedbackClientsForShift(rosterRows || [], shiftDateIso, {
+    feedbackRows: feedbackRows || [],
+    cancelRows: cancelRows || [],
+    absentMarks,
+    feedbackDoneMarks,
   });
 
   if (!missing.length) {
@@ -242,7 +232,7 @@ Deno.serve(async (req) => {
       runDate: londonTodayIso(),
     });
   } catch (e) {
-    console.error("[portal-feedback-9am] send", e);
+    console.error("[portal-feedback-late-digest] send", e);
     return jsonPushResponse({ error: String(e) }, 500);
   }
 });

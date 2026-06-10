@@ -254,7 +254,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
-      .select("portal_session_key, attendance")
+      .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
       .eq("submitted_by_user_id", userId)
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
@@ -273,13 +273,13 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     rosterSessionKeys.length && peerSessionDates.length
       ? supabase
           .from("session_feedback")
-          .select("portal_session_key, attendance")
+          .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
           .in("session_date", peerSessionDates)
           .not("portal_session_key", "is", null)
       : rosterSessionKeys.length
         ? supabase
             .from("session_feedback")
-            .select("portal_session_key, attendance")
+            .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
             .gte("session_date", sinceStr)
             .not("portal_session_key", "is", null)
         : Promise.resolve({ data: null, error: null }),
@@ -297,7 +297,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     catchUpDates.length
       ? supabase
           .from("session_feedback")
-          .select("portal_session_key, attendance")
+          .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
           .eq("submitted_by_user_id", userId)
           .not("portal_session_key", "is", null)
           .in("session_date", catchUpDates)
@@ -470,6 +470,12 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     }
   }
 
+  portalHydrateLiveSessionFeedbackCache([
+    fb.data,
+    fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null,
+    fbPeerShared && !fbPeerShared.error ? fbPeerShared.data : null,
+  ]);
+
   return {
     feedbackKeys: feedbackMerged,
     absentFeedbackKeys,
@@ -478,6 +484,43 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     absentKeys,
     quickFeedbackDoneKeys,
   };
+}
+
+function portalMapDbFeedbackRowToLiveCache(r) {
+  if (!r || typeof r !== "object") return null;
+  const pk = String(r.portal_session_key || "").trim();
+  const date = String(r.session_date || "").trim().slice(0, 10);
+  if (!pk || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return {
+    clientName: r.client_name,
+    date,
+    service: r.service,
+    attendance: r.attendance,
+    instructor: r.completed_by_name,
+    portalSessionKey: pk,
+    portal_session_key: pk,
+    _live: true,
+  };
+}
+
+/** Populate window cache so staff bridge uses Supabase rows for days after static export coverage. */
+function portalHydrateLiveSessionFeedbackCache(dbRowBatches) {
+  if (typeof window === "undefined") return;
+  const liveRows = [];
+  const seen = new Set();
+  for (const batch of dbRowBatches) {
+    if (!Array.isArray(batch)) continue;
+    for (const raw of batch) {
+      const row = portalMapDbFeedbackRowToLiveCache(raw);
+      if (!row) continue;
+      const dedupe = row.portalSessionKey + "|" + row.date;
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+      liveRows.push(row);
+    }
+  }
+  window.__PORTAL_LIVE_SESSION_FEEDBACK_ROWS__ = liveRows;
+  window.__PORTAL_LIVE_SESSION_FEEDBACK_AT__ = new Date().toISOString();
 }
 
 /**

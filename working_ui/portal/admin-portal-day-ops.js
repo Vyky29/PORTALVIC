@@ -168,12 +168,43 @@
     return out;
   }
 
-  /** Portal workbook export is authoritative for feedback rows; edge often returns []. */
+  /** Static export coverage date (rows after this come from Supabase live only). */
+  function portalFeedbackCoverageThroughIso() {
+    try {
+      var meta =
+        typeof window !== 'undefined' &&
+        window.SESSION_FEEDBACK_PORTAL_SOURCE &&
+        window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
+      return String((meta && meta.coverageThroughIso) || '')
+        .trim()
+        .slice(0, 10);
+    } catch (eCov) {
+      return '';
+    }
+  }
+
+  /** Historical workbook rows only — recent days must not override live Supabase. */
+  function staticPortalFeedbackRowsForMerge() {
+    if (!cfg.buildFeedbackFromPortal) return [];
+    var all = cfg.buildFeedbackFromPortal() || [];
+    var thru = portalFeedbackCoverageThroughIso();
+    if (!thru) return all;
+    return all.filter(function (r) {
+      var d = String((r && (r.session_date || r.date)) || '')
+        .trim()
+        .slice(0, 10);
+      return d && d <= thru;
+    });
+  }
+
+  /** Live Supabase first; static export supplements history only. */
   function mergePortalFeedbackIntoPayload() {
-    if (!cfg.buildFeedbackFromPortal) return;
-    var portalRows = cfg.buildFeedbackFromPortal() || [];
-    if (!portalRows.length) return;
-    payload.session_feedback = mergeFeedbackRowLists(portalRows, payload.session_feedback || []);
+    var portalRows = staticPortalFeedbackRowsForMerge();
+    if (!portalRows.length && !(payload.session_feedback || []).length) return;
+    payload.session_feedback = mergeFeedbackRowLists(
+      payload.session_feedback || [],
+      portalRows
+    );
     payload.session_feedback_total = payload.session_feedback.length;
     payload.session_feedback_loaded = payload.session_feedback.length;
   }
@@ -203,7 +234,10 @@
     try {
       var dbFb = await cfg.fetchSessionFeedback();
       if (cfg.buildFeedbackFromPortal) {
-        payload.session_feedback = mergeFeedbackRowLists(cfg.buildFeedbackFromPortal() || [], dbFb || []);
+        payload.session_feedback = mergeFeedbackRowLists(
+          dbFb || [],
+          staticPortalFeedbackRowsForMerge()
+        );
       } else {
         payload.session_feedback = dbFb || [];
       }
