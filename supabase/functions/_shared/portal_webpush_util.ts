@@ -322,10 +322,21 @@ export async function loadStaffLeadUserIds(
   return ids;
 }
 
-/** Apple Web Push rejects topics ending with "-" (BadWebPushTopic / HTTP 400). */
+/**
+ * Apple Web Push returns 400 BadWebPushTopic when the Topic header:
+ * - ends with "-" (common when slicing UUIDs at 24 chars), or
+ * - ends mid-segment e.g. "...-au" from "...-audio" (call room ids).
+ */
 export function normalizeWebPushTopic(raw: string): string {
   let topic = String(raw || "").trim().slice(0, 32);
   topic = topic.replace(/-+$/, "");
+  for (let i = 0; i < 4; i++) {
+    const lastHyphen = topic.lastIndexOf("-");
+    if (lastHyphen <= 0) break;
+    const tail = topic.slice(lastHyphen + 1);
+    if (tail.length >= 3) break;
+    topic = topic.slice(0, lastHyphen).replace(/-+$/, "");
+  }
   return topic;
 }
 

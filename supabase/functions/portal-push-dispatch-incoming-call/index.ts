@@ -306,6 +306,9 @@ Deno.serve(async (req) => {
   }
 
   let sent = 0;
+  let failed = 0;
+  let subs = 0;
+  let lastStatus = 0;
   for (const userId of targetIds) {
     const base = openBaseForProfile(profBy[userId] || null);
     const url = buildNotifyUrl(base, messageId, source);
@@ -333,22 +336,31 @@ Deno.serve(async (req) => {
       topic: `call-${String(callData.room || messageId).slice(0, 24)}`,
     });
     sent += result.sent;
+    failed += result.failed;
+    subs += result.subs;
+    if (result.lastStatus) lastStatus = result.lastStatus;
   }
 
   console.log("[portal-push-incoming-call] done", {
     sent,
+    failed,
+    subs,
     targets: targetIds.length,
     messageId,
     source,
     kind,
+    lastStatus: lastStatus || undefined,
     note: sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
   });
 
   return jsonPushResponse({
     ok: true,
     sent,
+    failed,
+    subs,
     targets: targetIds.length,
     messageId,
     source,
+    lastStatus: lastStatus || undefined,
   });
 });
