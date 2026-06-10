@@ -152,7 +152,7 @@
         bodyHostG.className = "portal-dm-msg-body";
         bodyHostG.style.minWidth = "0";
         if (global.portalStaffChatCalls && global.portalStaffChatCalls.fillMessageBody) {
-          await global.portalStaffChatCalls.fillMessageBody(bodyHostG, gm, client, escapeHtml, me);
+          await global.portalStaffChatCalls.fillMessageBody(bodyHostG, gm, client, escapeHtml, me, arrG);
         } else if (global.portalDmVoice && global.portalDmVoice.fillMessageBody) {
           await global.portalDmVoice.fillMessageBody(bodyHostG, gm, client, escapeHtml);
         } else {

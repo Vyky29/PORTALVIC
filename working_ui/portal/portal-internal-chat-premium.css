@@ -352,6 +352,10 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 .portal-dm-call-card{display:flex;flex-direction:column;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.14)}
 .portal-dm-msg--them .portal-dm-call-card{background:linear-gradient(180deg,#f8fbff,#eef6fc);border:1px solid rgba(45,132,179,.22)}
 .portal-dm-call-join-btn{width:100%;padding:10px;border-radius:12px;border:0;font:inherit;font-weight:800;cursor:pointer;background:var(--portal-chat-blue);color:#fff}
+.portal-dm-call-card--ended{opacity:.88}
+.portal-dm-call-card--ended .portal-dm-call-card-icon{color:#94a3b8}
+.portal-dm-call-card-when--ended{color:#64748b;font-size:12px}
+.portal-dm-call-join-btn:disabled,.portal-dm-call-join-btn[aria-disabled="true"]{cursor:not-allowed;background:#cbd5e1;color:#64748b}
 .portal-dm-top-err{margin:8px 12px 0;font-size:13px;color:#dc2626}
 
 #internalChatSheet{position:relative}

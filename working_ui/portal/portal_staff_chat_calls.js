@@ -727,6 +727,37 @@
     return true;
   }
 
+  function isCallInviteEndedInMessages(messages, inviteRow, data) {
+    if (!messages || !inviteRow || !data) return false;
+    var room = String(data.room || "").trim();
+    if (!room) return false;
+    var inviteMs = NaN;
+    try {
+      inviteMs = new Date(String(inviteRow.created_at || "")).getTime();
+    } catch (_e) {}
+    for (var i = 0; i < messages.length; i++) {
+      var msg = messages[i];
+      if (!msg || !msg.body) continue;
+      if (Number.isFinite(inviteMs)) {
+        try {
+          if (new Date(String(msg.created_at || "")).getTime() <= inviteMs) continue;
+        } catch (_d) {}
+      }
+      var endData = parseCallEndPayload(String(msg.body || ""));
+      if (!endData) continue;
+      if (String(endData.room || "").trim() === room) return true;
+    }
+    return false;
+  }
+
+  async function isCallInviteJoinable(client, row, data, threadMessages) {
+    if (!data) return false;
+    if (isCallInviteEndedInMessages(threadMessages, row, data)) return false;
+    if (data.scheduledAt) return true;
+    if (!isRecentLiveCall(data, row)) return false;
+    return isIncomingCallInviteLive(client, row, data);
+  }
+
   function fetchIncomingRowForRetry(row, attempt, cb) {
     attempt = attempt || 0;
     cb = typeof cb === "function" ? cb : function () {};
@@ -2283,17 +2314,32 @@
     return row;
   }
 
-  function renderCallCard(host, data, mine) {
+  function renderCallCard(host, data, mine, opts) {
+    opts = opts || {};
+    var joinable = opts.joinable !== false;
     var kind = String(data.kind || "video");
     var title = String(data.title || "").trim();
     var label = humanLabel(kind, title);
     var when = data.scheduledAt ? formatWhen(data.scheduledAt) : "";
     var iconHtml = dmIconForKind(kind);
-    var live = !when;
+    var live = !when && joinable;
+    var whenText = when
+      ? when
+      : joinable
+        ? "Tap Join - opens inside the portal"
+        : "This call has ended";
+    var whenClass = when
+      ? "portal-dm-call-card-when"
+      : joinable
+        ? "portal-dm-call-card-when portal-dm-call-card-when--live"
+        : "portal-dm-call-card-when portal-dm-call-card-when--ended";
+    var btnLabel = !joinable ? "Call ended" : live ? "Join now" : "Join";
 
     var card = document.createElement("div");
     card.className =
-      "portal-dm-call-card" + (mine ? " portal-dm-call-card--mine" : " portal-dm-call-card--them");
+      "portal-dm-call-card" +
+      (mine ? " portal-dm-call-card--mine" : " portal-dm-call-card--them") +
+      (joinable ? "" : " portal-dm-call-card--ended");
 
     card.innerHTML =
       '<div class="portal-dm-call-card-head">' +
@@ -2304,16 +2350,20 @@
       '<div class="portal-dm-call-card-label">' +
       esc(label) +
       "</div>" +
-      (when
-        ? '<div class="portal-dm-call-card-when">' + esc(when) + "</div>"
-        : '<div class="portal-dm-call-card-when portal-dm-call-card-when--live">Tap Join - opens inside the portal</div>') +
+      '<div class="' +
+      whenClass +
+      '">' +
+      esc(whenText) +
+      "</div>" +
       "</div></div>" +
-      '<button type="button" class="portal-dm-call-join-btn">' +
-      (live ? "Join now" : "Join") +
+      '<button type="button" class="portal-dm-call-join-btn"' +
+      (joinable ? "" : ' disabled aria-disabled="true"') +
+      ">" +
+      esc(btnLabel) +
       "</button>";
 
     var joinBtn = card.querySelector(".portal-dm-call-join-btn");
-    if (joinBtn) {
+    if (joinBtn && joinable) {
       joinBtn.addEventListener("click", function () {
         openCallFromPayload(data);
       });
@@ -2321,7 +2371,7 @@
     host.appendChild(card);
   }
 
-  async function fillMessageBody(host, m, client, escFn, meId) {
+  async function fillMessageBody(host, m, client, escFn, meId, threadMessages) {
     escFn = escFn || esc;
     host.innerHTML = "";
     var body = String((m && m.body) || "");
@@ -2354,7 +2404,8 @@
         );
       var mine =
         String((m && m.author_id) || "").toLowerCase() === String(me || "").toLowerCase();
-      renderCallCard(host, callData, mine);
+      var joinable = await isCallInviteJoinable(client, m, callData, threadMessages);
+      renderCallCard(host, callData, mine, { joinable: joinable });
       return;
     }
     if (global.portalDmAttachments && (global.portalDmAttachments.isImageMsg(m) || global.portalDmAttachments.isFileMsg(m))) {

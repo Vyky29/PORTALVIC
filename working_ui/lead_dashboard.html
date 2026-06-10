@@ -7412,7 +7412,7 @@
           bodyHost.className = "portal-dm-msg-body";
           bodyHost.style.minWidth = "0";
           if(window.portalStaffChatCalls && window.portalStaffChatCalls.fillMessageBody){
-            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, escapeHtml, me);
+            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, escapeHtml, me, arr);
           }else if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
             await window.portalDmVoice.fillMessageBody(bodyHost, m, client, escapeHtml);
           }else{

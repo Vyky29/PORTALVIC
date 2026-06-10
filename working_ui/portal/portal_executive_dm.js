@@ -2099,7 +2099,7 @@
           bodyHost.className = 'portal-dm-msg-body';
           bodyHost.style.minWidth = '0';
           if(window.portalStaffChatCalls && window.portalStaffChatCalls.fillMessageBody){
-            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, esc, me);
+            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, esc, me, arr);
           }else if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
             await window.portalDmVoice.fillMessageBody(bodyHost, m, client, esc);
           }else{
