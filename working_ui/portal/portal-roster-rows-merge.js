@@ -162,6 +162,14 @@
       } else if (row.day) templates[templateKey(row)] = row;
     });
 
+    function markRosterTimeUpdated(target, baseRow) {
+      if (!target || !baseRow) return target;
+      if (normTimeSlot(target.time_slot) !== normTimeSlot(baseRow.time_slot)) {
+        target.__portal_roster_time_updated = true;
+      }
+      return target;
+    }
+
     var out = [];
     var seenDated = Object.create(null);
     var openedSlots = Object.create(null);
@@ -222,7 +230,12 @@
         return;
       }
       if (dated[sk]) {
-        out.push(Object.assign({}, r, dated[sk], { session_date: iso, day: r.day || dated[sk].day }));
+        out.push(
+          markRosterTimeUpdated(
+            Object.assign({}, r, dated[sk], { session_date: iso, day: r.day || dated[sk].day }),
+            r
+          )
+        );
         seenDated[sk] = true;
         return;
       }
@@ -268,7 +281,7 @@
         var iso = normIso(row.session_date);
         if (iso && occupiedSlots[openedSlotKey(iso, row)]) return;
       }
-      out.push(row);
+      out.push(Object.assign({}, row, { __portal_roster_time_updated: true }));
       seenDated[sk] = true;
     });
 

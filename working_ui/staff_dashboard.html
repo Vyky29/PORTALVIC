@@ -5702,6 +5702,9 @@
       if(pillNorm === 'COMPLETED'){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--completed" aria-label="Completed"><span>COMPLETED</span></span>';
       }
+      if(pillNorm === 'UPDATED'){
+        return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--updated" aria-label="Updated"><span>UPDATED</span></span>';
+      }
       if(pillText){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         return `<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol" aria-label="${display}"><span>${display}</span></span>`;
@@ -5793,7 +5796,8 @@
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const ovTypeCls = portalTodayItemOverrideClass(item);
       const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
-      const ovBadge = ovType === 'slot_update'
+      const showUpdatedBadge = ovType === 'slot_update' || !!item.portalRosterTimeUpdated || String(item.portalOverrideAlertPill || '').trim().toUpperCase() === 'UPDATED';
+      const ovBadge = showUpdatedBadge
         ? '<span class="portal-sched-ov-badge override--updated" title="Session time updated">Updated</span>'
         : item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge
         ? '<span class="portal-sched-ov-badge' + (ovTypeCls ? ' ' + ovTypeCls : '') + '" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>'
@@ -6442,6 +6446,47 @@
     /** Same resolver Today uses (`portalPickScheduleOverrideForSession` + `__PORTAL_SCHEDULE_OVERRIDE_ROWS__`). */
     function portalTodayScheduleOverrideForSession(s, sessionDateIso){
       return portalPickScheduleOverrideForSession(s, sessionDateIso);
+    }
+    function portalClientSlugFromName(nameRaw){
+      return String(nameRaw || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    }
+    /** True when this session time differs from the machine roster (term slot update or slot_update override). */
+    function portalSessionRosterTimeWasUpdated(s, sessionDateIso){
+      if(!s) return false;
+      const iso = normaliseIsoDate(sessionDateIso);
+      const ov = typeof portalTodayScheduleOverrideForSession === 'function'
+        ? portalTodayScheduleOverrideForSession(s, iso)
+        : null;
+      if(ov && String(ov.override_type || '').trim() === 'slot_update') return true;
+      if(s.portalRosterTimeUpdated) return true;
+      const machine = (typeof window !== 'undefined' && window.__STAFF_DASHBOARD_MACHINE_ROWS__) || [];
+      if(!machine.length || !iso) return false;
+      const cid = String(s.clientId || '').trim().toLowerCase();
+      const sid = portalNormKeyStr(s.staffId);
+      const day = String(s.day || '').trim();
+      const curStart = portalCanonicalHmToken(s.start);
+      if(!curStart || !cid || !sid) return false;
+      for(let i = 0; i < machine.length; i++){
+        const m = machine[i];
+        if(!m) continue;
+        const mCid = portalClientSlugFromName(m.client_name);
+        if(mCid !== cid) continue;
+        const mIso = normaliseIsoDate(m.session_date);
+        if(mIso){
+          if(mIso !== iso) continue;
+        }else if(String(m.day || '').trim() !== day){
+          continue;
+        }
+        const mStaff = portalNormKeyStr(String(m.instructors || '').split(/[,/&]|\band\b/i)[0]);
+        if(mStaff && mStaff !== sid) continue;
+        const mStart = portalCanonicalHmToken(parseTimeSlot(String(m.time_slot || ''), m.day || day).start);
+        if(mStart && mStart !== curStart) return true;
+      }
+      return false;
     }
     function portalFindSpreadsheetSessionMatchingOverride(ov, viewDay){
       const list = Array.isArray(sessionsModel) ? sessionsModel : [];
@@ -10213,6 +10258,8 @@
             sessionEndTs,
             sessionKey
           });
+          const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
+            && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
           return Object.assign({
             time,
             kind: 'client',
@@ -10232,10 +10279,11 @@
             sessionStartTs,
             sessionEndTs,
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual),
-            portalOverrideCardTone: makeUpPink ? 'pink' : '',
+            portalOverrideCardTone: slotWasUpdated ? 'blue' : (makeUpPink ? 'pink' : ''),
             portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
             portalOverrideHideAdminBadge: !!hasReplaceOv,
-            portalOverrideAlertPill: ''
+            portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
+            portalRosterTimeUpdated: !!slotWasUpdated
           }, meta);
         })
         .filter(Boolean);
@@ -12750,7 +12798,7 @@
       return false;
     }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
-      const out = { hasMakeUp: false, hasAbsentAnnounced: false, hasCancelled: false };
+      const out = { hasMakeUp: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false };
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const d = String(dayName || '').trim();
@@ -12778,7 +12826,9 @@
           if(t === 'client_replace_in_slot') out.hasMakeUp = true;
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
           if(t === 'slot_clear_client' && ov && ov.payload && ov.payload.cancelled_by_admin) out.hasCancelled = true;
-          if(out.hasMakeUp && out.hasAbsentAnnounced && out.hasCancelled) break;
+          if(t === 'slot_update') out.hasUpdated = true;
+          if(typeof portalSessionRosterTimeWasUpdated === 'function' && portalSessionRosterTimeWasUpdated(baseSession, iso)) out.hasUpdated = true;
+          if(out.hasMakeUp && out.hasAbsentAnnounced && out.hasCancelled && out.hasUpdated) break;
         }
       }catch(_){ }
       return out;
@@ -12935,11 +12985,15 @@
         ariaBits.push('off');
       }
       const tone = weekRowVisualKind(item);
-      if(dayFlags.hasMakeUp || dayFlags.hasAbsentAnnounced || dayFlags.hasCancelled){
+      if(dayFlags.hasMakeUp || dayFlags.hasAbsentAnnounced || dayFlags.hasCancelled || dayFlags.hasUpdated){
         const badgeParts = [];
         if(dayFlags.hasMakeUp){
           badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up Session') + '</span>');
           ariaBits.push('Make Up Session');
+        }
+        if(dayFlags.hasUpdated){
+          badgeParts.push('<span class="week-override-tag week-override-tag--updated">' + escapeHtml('Updated') + '</span>');
+          ariaBits.push('Updated');
         }
         if(dayFlags.hasAbsentAnnounced){
           badgeParts.push('<span class="week-override-tag week-override-tag--absents">' + escapeHtml('Absents') + '</span>');

@@ -551,6 +551,7 @@
       instructor_label: instructors.join(", ") || clean(r.instructors),
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
+      portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
     slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
@@ -839,6 +840,11 @@
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
+  }
+
+  function hubSlotShowsUpdatedChip(slot, slotOv) {
+    if (overrideIsSlotUpdateType(slotOv)) return true;
+    return !!(slot && slot.portalRosterTimeUpdated);
   }
 
   function overrideClientName(ov) {
@@ -5182,7 +5188,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
-        var isUpdated = overrideIsSlotUpdateType(slotOv);
+        var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
         var fbCell;
         if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
@@ -5197,7 +5203,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
             : isUpdated
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
-                esc(hubOverrideLabel(slotOv)) +
+                esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
                 "</span>"
               : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =

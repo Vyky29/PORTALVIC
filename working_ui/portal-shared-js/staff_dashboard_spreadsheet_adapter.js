@@ -373,6 +373,12 @@
       if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
         baseSession.session_date = sessionDate;
       }
+      if (row.__portal_roster_time_updated) {
+        baseSession.portalRosterTimeUpdated = true;
+      }
+      if (row.__portal_roster_row_id) {
+        baseSession.__portal_roster_row_id = row.__portal_roster_row_id;
+      }
 
       if (isClosed) {
         sessionsModel.push(
