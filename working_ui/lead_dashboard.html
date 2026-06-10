@@ -5924,7 +5924,6 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_SCHED_RT_READY = true;
-              try{ console.debug("[portal] Realtime: schedule_overrides (staff)"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -5994,7 +5993,6 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_ANN_RT_READY = true;
-              try{ console.debug("[portal] Realtime: portal_staff_announcements (staff)"); }catch(_){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -7726,7 +7724,6 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_DM_RT_READY = true;
-              try{ console.debug("[portal] Realtime: portal_staff_dm_messages"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -13701,9 +13698,13 @@
         if(k === "luliya" || k === "aida" || k === "stf021") return "lulia";
         return k;
       }
+      var __PORTAL_LEAD_REHYDRATE_BUSY__ = false;
       async function rehydrateFromProfile(){
+        if(__PORTAL_LEAD_REHYDRATE_BUSY__) return;
+        __PORTAL_LEAD_REHYDRATE_BUSY__ = true;
         try{
-          if(window.__PORTAL_GHOST_VERIFY_PROMISE__){
+          try{
+            if(window.__PORTAL_GHOST_VERIFY_PROMISE__){
             await Promise.race([
               window.__PORTAL_GHOST_VERIFY_PROMISE__,
               new Promise(function(r){ setTimeout(r, 6000); }),
@@ -14027,6 +14028,9 @@
             _finishStaffRehydrateUi();
           }
         })();
+        }finally{
+          __PORTAL_LEAD_REHYDRATE_BUSY__ = false;
+        }
       }
 
       window.__PORTAL_LEAD_REHYDRATE__ = rehydrateFromProfile;
@@ -14036,7 +14040,9 @@
           void rehydrateFromProfile();
         }
       });
-      setTimeout(rehydrateFromProfile, 1200);
+      setTimeout(function () {
+        if (!dashboardData || !dashboardData.portalIdentityResolved) void rehydrateFromProfile();
+      }, 1200);
     })();
   </script>
   <script>
