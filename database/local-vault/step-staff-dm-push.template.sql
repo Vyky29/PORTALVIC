@@ -27,7 +27,7 @@ execute function supabase_functions.http_request(
   'POST',
   '{"Content-Type":"application/json","x-portal-webhook-secret":"__PORTAL_PUSH_WEBHOOK_SECRET__"}',
   '{}',
-  '5000'
+  '30000'
 );
 
 commit;

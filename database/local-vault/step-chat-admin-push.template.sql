@@ -23,7 +23,7 @@ execute function supabase_functions.http_request(
   'POST',
   '{"Content-Type":"application/json","x-portal-webhook-secret":"__PORTAL_PUSH_WEBHOOK_SECRET__"}',
   '{}',
-  '5000'
+  '30000'
 );
 
 drop trigger if exists "portal-ceo-group-admin-chat-push" on public.portal_ceo_group_message;
@@ -35,7 +35,7 @@ execute function supabase_functions.http_request(
   'POST',
   '{"Content-Type":"application/json","x-portal-webhook-secret":"__PORTAL_PUSH_WEBHOOK_SECRET__"}',
   '{}',
-  '5000'
+  '30000'
 );
 
 commit;

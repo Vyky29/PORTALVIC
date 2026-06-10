@@ -446,6 +446,24 @@
         reg = await navigator.serviceWorker.ready;
       }
       var keyU8 = portalUrlBase64ToUint8Array(vapid);
+      var box = global.__PORTAL_SUPABASE__;
+      var token =
+        box && box.session && box.session.access_token
+          ? String(box.session.access_token).trim()
+          : "";
+      if (!token) return { ok: false, reason: "no-session" };
+      if (
+        typeof global.portalEnsureFreshPushSubscription === "function" &&
+        box.client
+      ) {
+        var fresh = await global.portalEnsureFreshPushSubscription(
+          reg,
+          vapid,
+          box.client,
+          box.session
+        );
+        return fresh && fresh.ok ? { ok: true } : fresh || { ok: false, reason: "subscribe-failed" };
+      }
       var sub =
         typeof global.portalSubscribePushWithCurrentVapid === "function"
           ? await global.portalSubscribePushWithCurrentVapid(reg, vapid)
@@ -457,12 +475,9 @@
                 applicationServerKey: keyU8,
               });
             })();
-      var box = global.__PORTAL_SUPABASE__;
-      var token =
-        box && box.session && box.session.access_token
-          ? String(box.session.access_token).trim()
-          : "";
-      if (!token) return { ok: false, reason: "no-session" };
+      if (typeof global.portalPostPushSubscriptionToServer === "function" && box.client) {
+        return global.portalPostPushSubscriptionToServer(box.client, box.session, sub);
+      }
       var mod = await import(SUPABASE_CLIENT_MODULE);
       var fnUrl =
         typeof mod.getSupabaseFunctionUrl === "function"

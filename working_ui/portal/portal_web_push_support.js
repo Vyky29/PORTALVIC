@@ -286,27 +286,44 @@
     }
   }
 
-  async function portalEnsureFreshPushSubscription(reg, vapidPublicKey, client, userId) {
-    var sub = await portalSubscribePushWithCurrentVapid(reg, vapidPublicKey);
-    var endpoint = sub && sub.endpoint ? String(sub.endpoint) : "";
-    if (endpoint && client && userId) {
-      var onServer = await portalServerHasPushEndpoint(client, userId, endpoint);
-      if (!onServer) {
-        // #region agent log
-        fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_web_push_support.js:ensureFresh',message:'browser push sub missing on server — resubscribing',data:{endpointPrefix:endpoint.slice(0,48)},timestamp:Date.now(),hypothesisId:'H6'})}).catch(function(){});
-        // #endregion
-        try {
-          await sub.unsubscribe();
-        } catch (_u) {}
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: portalUrlBase64ToUint8Array(String(vapidPublicKey).trim()),
-        });
-        var vapidId = String(global.__PORTAL_VAPID_KEY_ID__ || "").trim();
-        if (vapidId) persistSet("portal_vapid_key_id", vapidId);
-      }
+  async function portalPostPushSubscriptionToServer(client, session, sub) {
+    if (!client || !session || !session.access_token || !sub) {
+      return { ok: false, reason: "no-session" };
     }
-    return sub;
+    var userId = String(session.user && session.user.id ? session.user.id : "").trim();
+    var endpoint = String(sub.endpoint || "").trim();
+    var subJson = sub.toJSON();
+    var fnRes = await client.functions.invoke("portal-push-subscribe", {
+      body: { subscription: subJson },
+    });
+    if (fnRes.error) {
+      var st = Number(
+        fnRes.error.status ||
+          (fnRes.error.context && fnRes.error.context.status) ||
+          0
+      );
+      return { ok: false, reason: "subscribe-fn", status: st || 0 };
+    }
+    var onServer = await portalServerHasPushEndpoint(client, userId, endpoint);
+    // #region agent log
+    fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_web_push_support.js:postPush',message:'push subscribe server verify',data:{onServer:onServer,endpointPrefix:endpoint.slice(0,48),userIdPrefix:userId.slice(0,8)},timestamp:Date.now(),hypothesisId:'H7'})}).catch(function(){});
+    // #endregion
+    if (!onServer) return { ok: false, reason: "server-missing" };
+    return { ok: true };
+  }
+
+  async function portalEnsureFreshPushSubscription(reg, vapidPublicKey, client, session, attempt) {
+    attempt = Number(attempt || 0);
+    var sub = await portalSubscribePushWithCurrentVapid(reg, vapidPublicKey);
+    var posted = await portalPostPushSubscriptionToServer(client, session, sub);
+    if (posted.ok) return { ok: true, sub: sub };
+    if (posted.reason === "server-missing" && attempt < 1) {
+      try {
+        await sub.unsubscribe();
+      } catch (_u) {}
+      return portalEnsureFreshPushSubscription(reg, vapidPublicKey, client, session, attempt + 1);
+    }
+    return posted;
   }
 
   async function portalSubscribePushWithCurrentVapid(reg, vapidPublicKey) {
@@ -421,6 +438,20 @@
       statusEl.textContent = "On — finish sign-in to register this computer.";
       return;
     }
+    if (wp.reason === "server-missing") {
+      statusEl.textContent =
+        "Could not save this device on the server — tap Register this device again." +
+        portalNotifyFrameHint(wp.reason);
+      return;
+    }
+    if (wp.reason === "subscribe-fn" || wp.reason === "subscribe-http") {
+      statusEl.textContent =
+        "Could not register push on the server (error " +
+        String(wp.status || "?") +
+        "). Try again or contact IT." +
+        portalNotifyFrameHint(wp.reason);
+      return;
+    }
     if (env && env.desktop) {
       statusEl.textContent =
         "On in this tab — use Send test alert; for background alerts, check browser notification settings." +
@@ -495,5 +526,6 @@
   global.portalAwaitServiceWorkerReady = portalAwaitServiceWorkerReady;
   global.portalSubscribePushWithCurrentVapid = portalSubscribePushWithCurrentVapid;
   global.portalEnsureFreshPushSubscription = portalEnsureFreshPushSubscription;
+  global.portalPostPushSubscriptionToServer = portalPostPushSubscriptionToServer;
   global.portalServerHasPushEndpoint = portalServerHasPushEndpoint;
 })(typeof window !== "undefined" ? window : globalThis);
