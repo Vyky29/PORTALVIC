@@ -8,7 +8,7 @@
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
   <script src="/portal/portal_web_push_support.js?v=20260610-push-verify-eea3b5"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260607-fb-table-center" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260610-log-week-jump" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260607-lead-table-center" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260607-ops-hub-kpi-center" />
@@ -16575,7 +16575,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260610-emmanuel-timi-17';
+      '/portal/admin-sessions-hub.js?v=20260610-errors-feedback-17';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -20623,11 +20623,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }, 900);
     }
     function portalAdminDmScheduleRealtimeReconnect(){
+      if(typeof document !== 'undefined' && document.hidden) return;
+      if(window.__PORTAL_ADMIN_DM_RT_RECONNECT_COUNT >= 12) return;
       if(window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER) return;
+      window.__PORTAL_ADMIN_DM_RT_RECONNECT_COUNT = (window.__PORTAL_ADMIN_DM_RT_RECONNECT_COUNT || 0) + 1;
       window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER = setTimeout(function(){
         window.__PORTAL_ADMIN_DM_RT_RECONNECT_TIMER = null;
         portalInitAdminDmRealtime({ force: true });
-      }, 2500);
+      }, 5000);
     }
     function portalAdminCsCliqMobileExitToDashboard(){
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
@@ -21843,13 +21846,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .subscribe(function(status, err){
             if(status === 'SUBSCRIBED'){
               window.__PORTAL_ADMIN_DM_RT_READY = true;
+              window.__PORTAL_ADMIN_DM_RT_RECONNECT_COUNT = 0;
               return;
             }
             if(status === 'CLOSED'){
               window.__PORTAL_ADMIN_DM_RT_CH = null;
               window.__PORTAL_ADMIN_DM_RT_READY = false;
-              if(window.__PORTAL_ADMIN_DM_RT_INTENTIONAL_CLOSE) return;
-              portalAdminDmScheduleRealtimeReconnect();
               return;
             }
             if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
@@ -25665,11 +25667,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /**
      * Hand-curated fixes for free-text participant names whose surname is too short to
      * disambiguate automatically. Keyed by normalized spelling → roster-equivalent spelling.
-     * "Adam A" / "Adam A." are Adam Abed (roster "Adam Ab"), NOT Aadam Ahmed ("Adaam Ah").
+     * Roster uses "Adam Ab" (not "Adam A" — that collides with other Adams).
      */
     var ADMIN_PARTICIPANT_NAME_ALIASES = {
-      'adam a': 'adam ab',
-      'adam a.': 'adam ab',
       // Roster / feedback use the short first name only; pin them to the full registration
       // spelling so each links to its own family (brothers Eiji & Hazem → surname BELHADJ).
       'eiji': 'kacem eiji belhadj',

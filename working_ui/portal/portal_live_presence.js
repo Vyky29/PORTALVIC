@@ -291,6 +291,10 @@ async function subscribeAndTrack(supabase, payload) {
       }
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
         clearTimeout(timeout);
+        if (status === "CLOSED") {
+          resolve(false);
+          return;
+        }
         if (typeof globalThis.portalWarnUnlessOffline === "function") {
           globalThis.portalWarnUnlessOffline("[portal] presence channel", status, err);
         } else if (typeof navigator === "undefined" || navigator.onLine !== false) {

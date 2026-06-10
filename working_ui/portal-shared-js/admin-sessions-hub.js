@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260520-portal2026";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260528-aquatic-units";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -34,13 +34,96 @@
     return t.slice(0, max - 1) + "\u2014";
   }
 
+  function hubDayIsClubClosed(hub, iso) {
+    return !!(
+      hub &&
+      hub.opts &&
+      typeof hub.opts.isClubClosedDay === "function" &&
+      hub.opts.isClubClosedDay(iso)
+    );
+  }
+
+  function hubDayIsProgrammeInactive(hub, iso) {
+    return !!(
+      hub &&
+      hub.opts &&
+      typeof hub.opts.isProgrammeWorkDay === "function" &&
+      !hub.opts.isProgrammeWorkDay(iso) &&
+      !hubDayIsClubClosed(hub, iso)
+    );
+  }
+
+  function clampHubWeekStart(hub, weekStartIso) {
+    var ws = mondayOfWeek(weekStartIso || isoToday());
+    var min = hub && hub.opts && hub.opts.minSessionDate;
+    if (!min || !/^\d{4}-\d{2}-\d{2}$/.test(min)) return ws;
+    var minMon = mondayOfWeek(min);
+    return ws < minMon ? minMon : ws;
+  }
+
+  function htmlClosedDayCardInlineStyle() {
+    return "--ash-day-col:#dc2626;--ash-day-bg:rgba(220,38,38,0.2);--ash-col:#dc2626";
+  }
+
+  function htmlWeekDayCardInactive(iso, esc, kind) {
+    var label = kind === "closed" ? "closed" : "not scheduled";
+    return (
+      '<div class="ash-day-card ash-day-card--week ash-day-card--inactive ash-day-card--closed" aria-disabled="true" style="' +
+      htmlClosedDayCardInlineStyle() +
+      '">' +
+      htmlWeekdayLabel(iso, esc) +
+      '<span class="ash-day-card__dt">' +
+      esc(formatShortDate(iso)) +
+      '</span><span class="ash-day-card__bar" style="--ash-pct:0" role="presentation"></span>' +
+      '<span class="ash-day-card__sessions" aria-hidden="false"><strong>\u2014</strong><small>' +
+      esc(label) +
+      "</small></span></div>"
+    );
+  }
+
+  function htmlWeekDayCardClosed(iso, esc, sel, clickable) {
+    var inner =
+      htmlWeekdayLabel(iso, esc) +
+      '<span class="ash-day-card__dt">' +
+      esc(formatShortDate(iso)) +
+      '</span><span class="ash-day-card__bar" style="--ash-pct:0" role="presentation"></span>' +
+      '<span class="ash-day-card__sessions"><strong>\u2014</strong><small>closed</small></span>';
+    if (clickable) {
+      return (
+        '<button type="button" class="ash-day-card ash-day-card--week ash-day-card--closed' +
+        sel +
+        '" data-ash-day="' +
+        esc(iso) +
+        '" style="' +
+        htmlClosedDayCardInlineStyle() +
+        '">' +
+        inner +
+        "</button>"
+      );
+    }
+    return (
+      '<div class="ash-day-card ash-day-card--week ash-day-card--closed" aria-disabled="true" style="' +
+      htmlClosedDayCardInlineStyle() +
+      '">' +
+      inner +
+      "</div>"
+    );
+  }
+
   function htmlWeekDayCard(hub, iso, idx, esc) {
     var sel = iso === hub.selectedDay ? " ash-day-card--sel" : "";
+    if (hubDayIsClubClosed(hub, iso)) {
+      return htmlWeekDayCardClosed(iso, esc, sel, true);
+    }
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return htmlWeekDayCardInactive(iso, esc, "off");
+    }
     var col = DAY_COLORS[idx % DAY_COLORS.length];
     var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
     var innerPct = 0;
     var countLabel;
     var countStrong;
+    var stateCls = "";
     if (hub.tab === "absents") {
       var absentN = hub.absentCountForDate(iso);
       countStrong = String(absentN);
@@ -61,6 +144,17 @@
       countStrong = String(noteN);
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
+    } else if (hub.tab === "feedback" || hub.mode === "feedback") {
+      var dsFb = hub.dayStats(iso);
+      if (dsFb.total) {
+        innerPct = Math.round((100 * dsFb.done) / dsFb.total);
+        if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
+      }
+      countStrong = dsFb.total ? dsFb.done + "/" + dsFb.total : "0";
+      countLabel = "feedbacks";
+      if (dsFb.total && dsFb.done === 0) stateCls = " ash-day-card--none";
+      else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
+      else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
     } else if (hub.tab === "tracking") {
       var dsTrack = hub.dayStats(iso);
       if (dsTrack.total) {
@@ -88,22 +182,14 @@
         '">' +
         '<div class="ash-day-card__top">' +
         htmlWeekdayLabel(iso, esc) +
-        '<span class="ash-day-card__dt">' +
-        esc(formatShortDate(iso)) +
-        '</span></div>' +
+        '</div>' +
         '<div class="ash-day-card__bar" style="--ash-pct:' +
         innerPct +
         ";--ash-col:" +
         col +
         '"></div>' +
-        '<span class="ash-day-card__count">' +
-        '<span class="ash-day-card__count-full">' +
-        esc(countStrong) +
-        " " +
-        esc(countLabel) +
-        '</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-        esc(countStrong) +
-        "</span></span></button>"
+        htmlAshRatioCount(esc, countStrong) +
+        "</button>"
       );
     } else {
       var ds = hub.dayStats(iso);
@@ -117,6 +203,7 @@
     return (
       '<button type="button" class="ash-day-card ash-day-card--week' +
       sel +
+      stateCls +
       '" data-ash-day="' +
       esc(iso) +
       '" style="--ash-day-col:' +
@@ -170,9 +257,10 @@
   }
 
   /** Overview roster table: awaiting feedback first, then submitted, then absent. */
-  function overviewSlotFeedbackRank(isAbsent, fbDone) {
-    if (!isAbsent && !fbDone) return 0;
-    if (fbDone && !isAbsent) return 1;
+  function overviewSlotFeedbackRank(isAbsent, fbDone, isCancelled) {
+    if (isCancelled && !isAbsent) return 2;
+    if (!isAbsent && !fbDone && !isCancelled) return 0;
+    if (fbDone && !isAbsent && !isCancelled) return 1;
     if (isAbsent) return 2;
     return 3;
   }
@@ -232,6 +320,8 @@
     rayyan_f: "rayyan_fi",
     adam_pilcher: "adam_pi",
     adam_a: "adam_ab",
+    steven_ce: "steven_c",
+    steven_c: "steven_c",
     junaid: "junaid_f",
   };
 
@@ -355,6 +445,17 @@
     );
   }
 
+  function htmlAshRatioCount(esc, ratioText) {
+    return (
+      '<span class="ash-day-card__count">' +
+      '<span class="ash-day-card__count-full">' +
+      esc(ratioText) +
+      '</span><span class="ash-day-card__count-short" aria-hidden="true">' +
+      esc(ratioText) +
+      "</span></span>"
+    );
+  }
+
   function isoToday() {
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -446,6 +547,46 @@
     return isoFromDate(d);
   }
 
+  function rosterRowSessionDate(r) {
+    var sd = clean(r && (r.session_date || r.date));
+    return /^\d{4}-\d{2}-\d{2}$/.test(sd) ? sd : "";
+  }
+
+  /** True when this client has any dated roster row in the ISO week containing isoDate. */
+  function clientHasDatedRosterInWeek(rosterRows, clientName, isoDate) {
+    var cid = canonicalClientSlug(clientName);
+    if (!cid || !rosterRows || !rosterRows.length) return false;
+    var ws = mondayOfWeek(isoDate);
+    var we = addDaysIso(ws, 6);
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      var sd = rosterRowSessionDate(o);
+      if (!sd || sd < ws || sd > we) continue;
+      if (canonicalClientSlug(o.client_name) === cid) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Dated week rows only on their calendar day; undated templates only when this client has
+   * no dated rows that week and no dated row on this weekday (matches roster week CSV import).
+   */
+  function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
+    if (clean(r.day) !== wd) return false;
+    var sd = rosterRowSessionDate(r);
+    if (sd) return sd === isoDate;
+    var cid = canonicalClientSlug(r.client_name);
+    if (!cid) return true;
+    if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      if (rosterRowSessionDate(o) !== isoDate) continue;
+      if (clean(o.day) !== wd) continue;
+      if (canonicalClientSlug(o.client_name) === cid) return false;
+    }
+    return true;
+  }
+
   function formatShortDate(iso) {
     var d = parseIso(iso);
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -483,6 +624,17 @@
     var d = new Date(s);
     if (isNaN(d.getTime())) return "";
     return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function feedbackSubmittedAt(fb) {
+    if (!fb) return "";
+    return (
+      fb.created_at ||
+      fb.submittedAt ||
+      fb.submitted_at ||
+      fb.updated_at ||
+      ""
+    );
   }
 
   function formatFbDateTime(isoOrTs) {
@@ -591,6 +743,89 @@
     return m;
   }
 
+  function normTimeShort(v) {
+    var s = String(v == null ? "" : v).trim();
+    if (!s) return "";
+    var m = s.match(/(\d{1,2}):(\d{2})/);
+    if (!m) return s.length >= 5 ? s.slice(0, 5) : s;
+    return String(parseInt(m[1], 10)).padStart(2, "0") + ":" + m[2];
+  }
+
+  function overridePayloadObj(ov) {
+    var p = ov && ov.payload;
+    if (p && typeof p === "string") {
+      try {
+        p = JSON.parse(p);
+      } catch (e) {
+        p = {};
+      }
+    }
+    return p && typeof p === "object" ? p : {};
+  }
+
+  function overrideIsAbsentType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "client_absence_announced" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideIsCancelledType(ov) {
+    var t = String(ov && ov.override_type || "").trim();
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    if (t === "slot_close") return true;
+    var p = overridePayloadObj(ov);
+    return t === "slot_clear_client" && !!p.cancelled_by_admin;
+  }
+
+  function overrideClientName(ov) {
+    var slug = clean(ov && ov.anchor_client_id);
+    return resolveRosterClientName(slug) || slug.replace(/_/g, " ");
+  }
+
+  function overrideToAbsentMark(ov) {
+    if (!ov || !overrideIsAbsentType(ov)) return null;
+    var sd = clean(ov.session_date);
+    var slug = canonicalClientSlug(ov.anchor_client_id);
+    if (!sd || !slug) return null;
+    var st = normTimeShort(ov.anchor_start);
+    return {
+      portal_session_key: st ? sd + "||" + st + "||" + slug : sd + "||" + slug,
+      session_date: sd,
+      session_time: st,
+      client_name: overrideClientName(ov),
+      service: "\u2014",
+      staff_user_id: "",
+      staff_name: clean(ov.reason) ? "Schedule override \u2014 " + clean(ov.reason) : "Schedule override",
+      created_at: ov.created_at || null,
+      mark_type: "absent",
+      source: "schedule_override",
+    };
+  }
+
+  function overrideToCancellationRow(ov) {
+    if (!ov || !overrideIsCancelledType(ov)) return null;
+    var sd = clean(ov.session_date);
+    var slug = canonicalClientSlug(ov.anchor_client_id);
+    if (!sd || !slug) return null;
+    var reason = clean(ov.reason) || "Admin cancellation (schedule override)";
+    return {
+      id: "schedule_override:" + String(ov.id || ""),
+      created_at: ov.created_at || null,
+      session_date: sd,
+      session_time: normTimeShort(ov.anchor_start),
+      client_name: overrideClientName(ov),
+      service: "\u2014",
+      cancellation_timing: "Schedule override",
+      reason_category: reason,
+      submitted_by_name: "Schedule override",
+      portal_session_key: normTimeShort(ov.anchor_start)
+        ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
+        : sd + "||" + slug,
+      _fromScheduleOverride: true,
+    };
+  }
+
   /** Always HH:MM (zero-padded) so roster keys match submitted portal_session_key variants. */
   function normTimeKey(t) {
     var s = clean(t).toLowerCase().replace(/\s+/g, " ");
@@ -652,6 +887,17 @@
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area);
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area + "|" + inst);
       }
+    }
+    if (isAquaticService(slot.service)) {
+      keys.push(feedbackUnitKey(slot));
+      var mergeAquatic = feedbackMergeGroupForSlot(slot);
+      if (mergeAquatic) keys.push(slot.session_date + "|merge|" + mergeAquatic);
+      keys.push(slot.session_date + "|" + cid + "|aquatic");
+      if (!clientNeedsPerSlotAquaticFeedback(slot)) keys.push(base);
+    }
+    if (isPhysicalActivityService(slot.service)) {
+      keys.push(slot.session_date + "|" + cid);
+      keys.push(feedbackUnitKey(slot));
     }
     return keys;
   }
@@ -735,6 +981,10 @@
     }
     if (isDayCentreService(svc)) {
       keys.push(sd + "|" + nm + "|day_centre");
+    }
+    if (isPhysicalActivityService(svc)) {
+      keys.push(broadDateClient);
+      if (normTimeKey(fb.session_time)) keys.push(tk);
     }
     if (isBespokeService(svc)) {
       var bt = normTimeKey(fb.session_time) || parsedPk.time;
@@ -835,18 +1085,6 @@
       .filter(Boolean);
   }
 
-  /** Portal guide (Teflon) demo roster — visible in roster but excluded from session totals. */
-  function isTeflonDemoRosterSlot(slot) {
-    if (!slot) return false;
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
-    if (!insts.length) return false;
-    if (insts.length === 1) return clean(insts[0]).toUpperCase() === "TEFLON";
-    return false;
-  }
-
   function serviceKey(service) {
     return clean(service).toLowerCase();
   }
@@ -896,6 +1134,16 @@
 
   function isClimbingService(service) {
     return serviceKey(service).indexOf("climbing") !== -1;
+  }
+
+  function isPhysicalActivityService(service) {
+    var k = serviceKey(service);
+    return (
+      k.indexOf("physical activity") !== -1 ||
+      k.indexOf("physical activities") !== -1 ||
+      k.indexOf("fitness") !== -1 ||
+      k === "gym"
+    );
   }
 
   /** Monday SwimFarm ACAT block \u2013 group feedback covers these roster names (slug keys). */
@@ -1112,6 +1360,7 @@
   function portalKeyAreaToken(raw) {
     var k = sessionAreaKey(raw);
     if (k === "multi_activity" || k === "multiactivity" || k === "bespoke_programme") return "";
+    /* Unit suffix in portal_session_key (not roster pool/hub area slug). */
     if (k === "aquatic" || k === "day_centre") return "";
     return k;
   }
@@ -1160,7 +1409,7 @@
     return false;
   }
 
-  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks, not one broad key. */
+  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
   function aquaticSlotCountForClientOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return 0;
@@ -1170,7 +1419,7 @@
     var n = 0;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
       if (canonicalClientSlug(r.client_name) !== cid) continue;
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
@@ -1179,7 +1428,7 @@
     return n;
   }
 
-  /** True when the client has 2+ aquatic blocks that day with different instructors (e.g. Eiji Javier then Roberto). */
+  /** True when the client has 2+ aquatic blocks that day with the same instructor (e.g. Serine both with Roberto). */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return false;
@@ -1190,7 +1439,7 @@
     var n = 0;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
       if (canonicalClientSlug(r.client_name) !== cid) continue;
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
@@ -1251,7 +1500,22 @@
     var pk = clean(fb.portal_session_key);
     if (pk) {
       var parts = pk.split("|").map(clean);
+      if (parts.length >= 3 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+        if (!parts[1] && parts[2] && canonicalClientSlug(parts[2]) === canonicalClientSlug(slot.client_name)) {
+          return true;
+        }
+        // feedback_unit_key layout: date|client|time|service|area
+        if (
+          parts[1] &&
+          !normTimeKey(parts[1]) &&
+          normTimeKey(parts[2]) === st &&
+          canonicalClientSlug(parts[1]) === canonicalClientSlug(slot.client_name)
+        ) {
+          return true;
+        }
+      }
       if (parts.length >= 2 && normTimeKey(parts[1]) === st) return true;
+      if (parts.length >= 3 && normTimeKey(parts[2]) === st) return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
     return !ft;
@@ -1280,6 +1544,15 @@
     if (isAquaticService(fb.service) && isAquaticService(slot.service)) {
       return completedByFitsSlotArea(fb.completed_by_name, slot);
     }
+    if (isPhysicalActivityService(fb.service) && isPhysicalActivityService(slot.service)) {
+      return true;
+    }
+    if (isBespokeService(fb.service) && isBespokeService(slot.service)) return true;
+    if (isBespokeService(fb.service) && serviceKey(slot.service).indexOf("group session") !== -1) return true;
+    if (isBespokeService(slot.service) && serviceKey(fb.service).indexOf("group session") !== -1) return true;
+    if (isBespokeService(slot.service) && isMultiActivityService(fb.service)) {
+      return completedByFitsSlotArea(fb.completed_by_name, slot);
+    }
     return false;
   }
 
@@ -1299,6 +1572,30 @@
 
   function isAbsentFeedbackRow(fb) {
     return !!(fb && fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0);
+  }
+
+  function isCancellationFeedbackRow(fb) {
+    return !!(fb && fb._ashCancellationMark);
+  }
+
+  function isTerminalFeedbackRow(fb) {
+    return isAbsentFeedbackRow(fb) || isCancellationFeedbackRow(fb);
+  }
+
+  function isPortalTestClientName(name) {
+    return /^test\s*client$/i.test(String(name || "").trim());
+  }
+
+  /** Portal guide (Teflon) demo roster — visible in roster but excluded from session totals. */
+  function isTeflonDemoRosterSlot(slot) {
+    if (!slot) return false;
+    var insts =
+      slot.instructors && slot.instructors.length
+        ? slot.instructors
+        : parseInstructors(slot.instructor_label || "");
+    if (!insts.length) return false;
+    if (insts.length === 1) return clean(insts[0]).toUpperCase() === "TEFLON";
+    return false;
   }
 
   /** One submitted row covers every slot in a sundayFeedbackMerges group (e.g. Yusuf 9:00 + 9:30 with Roberto). */
@@ -1505,6 +1802,12 @@
         sessionAreaKey(slot.area)
       );
     }
+    if (isAquaticService(slot.service)) {
+      if (clientNeedsPerSlotAquaticFeedback(slot)) {
+        return slot.session_date + "|" + cid + "|" + t + "|aquatic";
+      }
+      return slot.session_date + "|" + cid + "|aquatic";
+    }
     if (isClimbingService(slot.service)) {
       var climbKey =
         slot.session_date +
@@ -1597,6 +1900,97 @@
       if (!shouldOmitOverviewSlot(hub, slots[i])) return slots[i];
     }
     return null;
+  }
+
+  function expectedSessionsByWeekdayConfig() {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    return src && src.expectedSessionsByWeekday ? src.expectedSessionsByWeekday : null;
+  }
+
+  function countOverviewSessionBands(slots) {
+    var am = 0;
+    var pm = 0;
+    for (var i = 0; i < slots.length; i++) {
+      if (slotIsAfternoonSession(slots[i])) pm++;
+      else am++;
+    }
+    return { morning: am, afternoon: pm, total: slots.length };
+  }
+
+  function htmlOverviewSessionCountHint(hub, iso, displaySlots, esc) {
+    var useFeedbackUnits =
+      hub &&
+      typeof hub.getFeedbackUnitsForDate === "function" &&
+      (hub.mode === "feedback" || hub.tab === "tracking");
+    if (useFeedbackUnits) {
+      var units = hub
+        .getFeedbackUnitsForDate(iso)
+        .filter(function (u) {
+          return u.slots.some(function (s) {
+            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+          });
+        });
+      var unitTotal = units.length;
+      var wd = weekdayLongFromIso(iso);
+      var expected = expectedSessionsByWeekdayConfig();
+      var exp = expected && expected[wd];
+      var label = unitTotal + " feedback units";
+      if (!exp) {
+        return (
+          '<span class="ash-badge ash-badge--muted" style="margin-left:0.5rem">' +
+          esc(label) +
+          "</span>"
+        );
+      }
+      var mismatch = unitTotal !== exp.total;
+      var detail = " (expected " + exp.total + " feedback units)";
+      return (
+        '<span class="ash-badge' +
+        (mismatch
+          ? '" style="margin-left:0.5rem;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca"'
+          : ' ash-badge--muted" style="margin-left:0.5rem"') +
+        ">" +
+        esc(label + detail) +
+        "</span>"
+      );
+    }
+    var bands = countOverviewSessionBands(displaySlots);
+    var wd = weekdayLongFromIso(iso);
+    var expected = expectedSessionsByWeekdayConfig();
+    var exp = expected && expected[wd];
+    var label =
+      bands.morning +
+      " morning + " +
+      bands.afternoon +
+      " afternoon = " +
+      bands.total +
+      " sessions";
+    if (!exp) {
+      return (
+        '<span class="ash-badge ash-badge--muted" style="margin-left:0.5rem">' +
+        esc(label) +
+        "</span>"
+      );
+    }
+    var mismatch =
+      bands.total !== exp.total ||
+      bands.morning !== exp.morning ||
+      bands.afternoon !== exp.afternoon;
+    var detail =
+      " (expected " +
+      exp.total +
+      ": " +
+      exp.morning +
+      " AM + " +
+      exp.afternoon +
+      " PM)";
+    return (
+      '<span class="ash-badge' +
+      (mismatch ? '" style="margin-left:0.5rem;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca"' : ' ash-badge--muted" style="margin-left:0.5rem"') +
+      ">" +
+      esc(label + detail) +
+      "</span>"
+    );
   }
 
   function formatInstructorPill(name) {
@@ -1905,14 +2299,15 @@
         '<details class="ash-log-week"' +
         weekOpenAttr +
         '><summary class="ash-log-week__summary">' +
-        '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
-        escFn(week.weekStart) +
-        '">Show week \u2192</button> ' +
         "Week " +
         escFn(week.label) +
         ' <span class="ash-log-count">(' +
         week.items.length +
-        ")</span></summary>";
+        ")</span></summary>" +
+        '<div class="ash-log-week__jump">' +
+        '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
+        escFn(week.weekStart) +
+        '">Show week \u2192</button></div>';
       if (weekBodyHtml) {
         wOut += '<div class="ash-log-week__body">' + weekBodyHtml(week, escFn) + "</div>";
       } else {
@@ -1990,7 +2385,9 @@
     this.opts = opts || {};
     this.escapeHtml = opts.escapeHtml || esc;
     this.mode = (opts && opts.mode) || "full";
-    this.tab = this.mode === "feedback" ? "feedback" : "tracking";
+    this.tab =
+      (opts && opts.tab) ||
+      (this.mode === "feedback" ? "feedback" : "tracking");
     this._modalFb = null;
     this._modalStep = null;
     this._reviewedKeys = {};
@@ -2008,6 +2405,7 @@
     this.rangeTo = addDaysIso(this.weekStart, 6);
     this.clientSearch = "";
     this.instructorFilter = "";
+    this.serviceFilter = "";
     this.feedbackNoteFilter = "";
     this.scheduleDate = isoToday();
     this.payload = {
@@ -2054,6 +2452,15 @@
     for (var i = 0; i < list.length; i++) {
       var dk = absentDedupeKey(list[i]);
       if (dk) seen[dk] = true;
+    }
+    var ovs = this.payload.schedule_overrides || [];
+    for (var oi = 0; oi < ovs.length; oi++) {
+      var ovMark = overrideToAbsentMark(ovs[oi]);
+      if (!ovMark) continue;
+      var ovDk = absentDedupeKey(ovMark);
+      if (ovDk && seen[ovDk]) continue;
+      if (ovDk) seen[ovDk] = true;
+      list.push(ovMark);
     }
     var fbs = this.payload.session_feedback || [];
     for (var j = 0; j < fbs.length; j++) {
@@ -2117,16 +2524,46 @@
   };
 
   AdminSessionsHub.prototype.preferredFeedbackDayInWeek = function (offset) {
-    var days = this.weekDays();
+    var hub = this;
+    var days =
+      hub.opts && hub.opts.showFullWeekDayStrip
+        ? hub.weekDays()
+        : hub.opts && hub.opts.hideEmptyWeekDays
+          ? hub.weekDaysForDisplay()
+          : hub.weekDays();
+    if (!days.length) days = hub.weekDays();
     var off =
       typeof offset === "number" && offset >= 0 && offset < days.length
         ? offset
-        : this.selectedDayOffsetInWeek();
-    if (this.feedbackCountForDate(days[off]) > 0) return days[off];
+        : Math.max(0, days.indexOf(this.selectedDay));
+    if (off < 0) off = 0;
+    function openDay(iso) {
+      if (hubDayIsProgrammeInactive(hub, iso)) return false;
+      return !hubDayIsClubClosed(hub, iso);
+    }
+    if (openDay(days[off]) && this.feedbackCountForDate(days[off]) > 0) return days[off];
     for (var i = 0; i < days.length; i++) {
-      if (this.feedbackCountForDate(days[i]) > 0) return days[i];
+      if (openDay(days[i]) && this.feedbackCountForDate(days[i]) > 0) return days[i];
+    }
+    for (var j = 0; j < days.length; j++) {
+      if (openDay(days[j])) return days[j];
     }
     return days[off] || days[0];
+  };
+
+  /** After week change, keep selectedDay on a navigable programme day. */
+  AdminSessionsHub.prototype.snapSelectedDayToDisplayWeek = function () {
+    var hub = this;
+    if (!hub.opts || (!hub.opts.hideEmptyWeekDays && !hub.opts.showFullWeekDayStrip)) return;
+    var days = hub.weekDaysForDisplay();
+    if (!days.length) return;
+    function selectable(iso) {
+      if (hubDayIsProgrammeInactive(hub, iso)) return false;
+      return days.indexOf(iso) >= 0;
+    }
+    if (selectable(hub.selectedDay)) return;
+    hub.selectedDay = hub.preferredFeedbackDayInWeek(0);
+    if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
   };
 
   /** Pick a day in the current week that has absents (keeps weekday offset when possible). */
@@ -2183,15 +2620,44 @@
     out.sort(function (a, b) {
       return String(b.row.created_at || "").localeCompare(String(a.row.created_at || ""));
     });
+    if (this.opts && typeof this.opts.incidentScopeFilter === "function") {
+      out = out.filter(function (item) {
+        return this.incidentScopeFilter(item.row);
+      }, this);
+    }
     return out;
   };
 
   AdminSessionsHub.prototype.cancellationsForDate = function (iso) {
     var list = this.payload.cancellation_reports || [];
     var out = [];
+    var seen = {};
+    function cancelDedupeKey(row) {
+      return (
+        String(row.portal_session_key || "")
+          .trim()
+          .toLowerCase() ||
+        String(row.session_date || "").trim() +
+          "|" +
+          canonicalClientSlug(row.client_name) +
+          "|" +
+          normTimeShort(row.session_time)
+      );
+    }
     for (var i = 0; i < list.length; i++) {
       if (this.portalReportDateIso(list[i]) !== iso) continue;
+      var k0 = cancelDedupeKey(list[i]);
+      if (k0) seen[k0] = true;
       out.push({ row: list[i], idx: i });
+    }
+    var ovs = this.payload.schedule_overrides || [];
+    for (var oi = 0; oi < ovs.length; oi++) {
+      var ovRow = overrideToCancellationRow(ovs[oi]);
+      if (!ovRow || clean(ovRow.session_date) !== iso) continue;
+      var k1 = cancelDedupeKey(ovRow);
+      if (k1 && seen[k1]) continue;
+      if (k1) seen[k1] = true;
+      out.push({ row: ovRow, idx: "ov-" + String(ovs[oi].id || oi) });
     }
     out.sort(function (a, b) {
       return String(b.row.created_at || "").localeCompare(String(a.row.created_at || ""));
@@ -2243,6 +2709,12 @@
         return hub.feedbackNotesCountForDate(d, noteTab);
       });
     }
+    if (
+      this.mode === "feedback" ||
+      (this.opts && (this.opts.hideEmptyWeekDays || this.opts.showFullWeekDayStrip))
+    ) {
+      return this.preferredFeedbackDayInWeek(offset);
+    }
     return addDaysIso(this.weekStart, offset);
   };
 
@@ -2273,7 +2745,7 @@
   AdminSessionsHub.prototype.goToCalendarDay = function (iso, opts) {
     opts = opts || {};
     if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-    this.weekStart = mondayOfWeek(iso);
+    this.weekStart = clampHubWeekStart(this, iso);
     this.selectedDay = iso;
     if (this.mode === "feedback") {
       this.feedbackMetricsDay = iso;
@@ -2289,7 +2761,7 @@
     opts = opts || {};
     if (!weekStartIso || !/^\d{4}-\d{2}-\d{2}$/.test(weekStartIso)) return;
     if (this.mode === "feedback") this._feedbackRangeCustom = false;
-    this.weekStart = weekStartIso;
+    this.weekStart = clampHubWeekStart(this, weekStartIso);
     if (this.mode === "feedback") {
       this.selectedDay = opts.dayIso || this.preferredFeedbackDayInWeek(0);
       this.feedbackMetricsDay = this.selectedDay;
@@ -2321,6 +2793,7 @@
       this.selectedDay = opts.dayIso || addDaysIso(weekStartIso, 0);
     }
     this.syncWeekRange();
+    this.snapSelectedDayToDisplayWeek();
     if (this.opts && this.opts.externalTabs) this.renderPanels();
     else this.render();
     this.scrollToWeekPicker();
@@ -2336,6 +2809,9 @@
     out.sort(function (a, b) {
       return String(b.created_at || "").localeCompare(String(a.created_at || ""));
     });
+    if (this.opts && typeof this.opts.absentMarkScopeFilter === "function") {
+      out = out.filter(this.opts.absentMarkScopeFilter);
+    }
     return out;
   };
 
@@ -2534,6 +3010,15 @@
       var ck = csd + "|" + canonicalClientSlug(c.client_name);
       if (ck.length > 11) can[ck] = true;
     }
+    var listOv = this.payload.schedule_overrides || [];
+    for (var k = 0; k < listOv.length; k++) {
+      var ovCan = overrideToCancellationRow(listOv[k]);
+      if (!ovCan) continue;
+      var csdOv = rowDateIso(ovCan.session_date);
+      if (!csdOv) continue;
+      var ckOv = csdOv + "|" + canonicalClientSlug(ovCan.client_name);
+      if (ckOv.length > 11) can[ckOv] = true;
+    }
     this._incidentByDateClient = inc;
     this._cancelByDateClient = can;
   };
@@ -2544,6 +3029,8 @@
   };
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
+    var ov = this.overrideForSlot(slot);
+    if (ov && overrideIsCancelledType(ov)) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
   };
@@ -2579,7 +3066,11 @@
     for (var j = 0; j < list.length; j++) {
       if (feedbackFitsSlot(list[j], slot)) return list[j];
     }
-    if (isBespokeService(slot.service) || isDayCentreService(slot.service)) {
+    if (
+      isBespokeService(slot.service) ||
+      isDayCentreService(slot.service) ||
+      isPhysicalActivityService(slot.service)
+    ) {
       var dk = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
       var fb = this._fbByDateClient && this._fbByDateClient[dk];
       if (fb && feedbackFitsSlot(fb, slot)) return fb;
@@ -2647,6 +3138,34 @@
     return false;
   };
 
+  /** Submitted feedback row matches any roster slot in the unit (lead feedback tab parity). */
+  AdminSessionsHub.prototype.feedbackUnitHasSubmitted = function (unit) {
+    if (!unit || !unit.slots || !unit.slots.length) return false;
+    var hub = this;
+    var day = clean(unit.slots[0].session_date);
+    if (!day) return false;
+    var submitted = hub.feedbackLogRowsForDay(day);
+    for (var si = 0; si < unit.slots.length; si++) {
+      var slot = unit.slots[si];
+      if (shouldOmitOverviewSlot(hub, slot)) continue;
+      if (hub.opts && hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(slot)) continue;
+      for (var fi = 0; fi < submitted.length; fi++) {
+        if (feedbackFitsSlot(submitted[fi], slot)) return true;
+      }
+    }
+    return false;
+  };
+
+  /** Unit satisfied for overview stats / roster (matches Feedbacks tab awaiting rules). */
+  AdminSessionsHub.prototype.feedbackUnitResolved = function (unit) {
+    if (this.feedbackUnitAbsent(unit)) return true;
+    if (this.feedbackUnitComplete(unit)) return true;
+    if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
+      return true;
+    }
+    return false;
+  };
+
   function absentFeedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (!isAbsentFeedbackRow(fb)) return false;
@@ -2685,6 +3204,8 @@
 
   AdminSessionsHub.prototype.slotIsAbsent = function (slot) {
     if (!slot) return false;
+    var ov = this.overrideForSlot(slot);
+    if (ov && overrideIsAbsentType(ov)) return true;
     var cid = canonicalClientSlug(slot.client_name);
     var absentMap = this._absentFbByDateClient || {};
     var dk = slot.session_date + "|" + cid;
@@ -2729,7 +3250,7 @@
     var out = [];
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
       if (!isRosterClient(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
@@ -2747,6 +3268,9 @@
     out.sort(function (a, b) {
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
+    if (this.opts && typeof this.opts.slotScopeFilter === "function") {
+      out = out.filter(this.opts.slotScopeFilter);
+    }
     return out;
   };
 
@@ -2756,12 +3280,14 @@
     return days;
   };
 
-  /** When opts.hideEmptyWeekDays, only Mon–Sun dates with roster sessions in scope. */
+  /** Full Mon–Sun strip, or only days with roster / club closed when hideEmptyWeekDays. */
   AdminSessionsHub.prototype.weekDaysForDisplay = function () {
     var hub = this;
     var days = this.weekDays();
+    if (hub.opts && hub.opts.showFullWeekDayStrip) return days;
     if (!hub.opts || !hub.opts.hideEmptyWeekDays) return days;
     return days.filter(function (iso) {
+      if (hubDayIsClubClosed(hub, iso)) return true;
       var st = hub.dayStats(iso);
       return st.total > 0;
     });
@@ -2808,10 +3334,7 @@
     var unitComplete = {};
     var unitAbsent = {};
     for (var ui = 0; ui < units.length; ui++) {
-      unitComplete[units[ui].key] =
-        hub.feedbackUnitResolved && typeof hub.feedbackUnitResolved === "function"
-          ? hub.feedbackUnitResolved(units[ui])
-          : hub.feedbackUnitComplete(units[ui]) || hub.feedbackUnitAbsent(units[ui]);
+      unitComplete[units[ui].key] = hub.feedbackUnitResolved(units[ui]);
       unitAbsent[units[ui].key] = hub.feedbackUnitAbsent(units[ui]);
     }
     var displaySlots = overviewDisplaySlotsFromUnits(hub, slots);
@@ -2831,6 +3354,13 @@
       if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
     if (this.mode === "feedback") {
+      if (units.length > 0) {
+        var unitDoneCount = 0;
+        for (var uj = 0; uj < units.length; uj++) {
+          if (unitAbsent[units[uj].key] || unitComplete[units[uj].key]) unitDoneCount++;
+        }
+        return { total: units.length, done: unitDoneCount };
+      }
       if (total > 0) return { total: total, done: rosterDone };
       var submitted = this.feedbackCountForDate(iso);
       return { total: Math.max(1, submitted), done: submitted };
@@ -2842,7 +3372,7 @@
   AdminSessionsHub.prototype.overviewSlotsForDate = function (iso) {
     var hub = this;
     return this.expandSlotsForDate(iso).filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s);
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
     });
   };
 
@@ -2909,6 +3439,101 @@
     return Object.keys(map).sort(function (a, b) {
       return a.localeCompare(b, "en", { sensitivity: "base" });
     });
+  };
+
+  AdminSessionsHub.prototype.overviewFilterOptionsForDay = function (dayIso) {
+    var hub = this;
+    var instMap = {};
+    var svcMap = {};
+    var slots = this.expandSlotsForDate(dayIso);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (shouldOmitOverviewSlot(hub, s)) continue;
+      if (isTeflonDemoRosterSlot(s)) continue;
+      var svc = clean(s.service);
+      if (svc) svcMap[svc] = true;
+      var labels = (s.instructors || [])
+        .concat(String(s.instructor_label || "").split(/,|\/|&|\band\b/gi))
+        .map(function (x) {
+          return clean(x);
+        })
+        .filter(Boolean);
+      for (var j = 0; j < labels.length; j++) instMap[labels[j]] = true;
+    }
+    return {
+      instructors: Object.keys(instMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
+      services: Object.keys(svcMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
+    };
+  };
+
+  AdminSessionsHub.prototype.slotPassesOverviewFilters = function (slot) {
+    var q = clean(this.clientSearch).toLowerCase();
+    if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
+    var inst = clean(this.instructorFilter);
+    if (inst) {
+      var labels = (slot.instructors || [])
+        .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
+        .map(function (x) {
+          return clean(x);
+        })
+        .filter(Boolean);
+      var hit = false;
+      for (var li = 0; li < labels.length; li++) {
+        if (completedByMatchesInstructor(labels[li], inst)) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) return false;
+    }
+    var svcFilter = clean(this.serviceFilter);
+    if (svcFilter && clean(slot.service) !== svcFilter) return false;
+    return true;
+  };
+
+  AdminSessionsHub.prototype.overviewFilterRowHtml = function () {
+    var esc = this.escapeHtml;
+    var opts = this.overviewFilterOptionsForDay(this.selectedDay);
+    var instHtml = '<option value="">All instructors</option>';
+    for (var i = 0; i < opts.instructors.length; i++) {
+      var n = opts.instructors[i];
+      instHtml +=
+        '<option value="' +
+        esc(n) +
+        '"' +
+        (this.instructorFilter === n ? " selected" : "") +
+        ">" +
+        esc(n) +
+        "</option>";
+    }
+    var svcHtml = '<option value="">All services</option>';
+    for (var j = 0; j < opts.services.length; j++) {
+      var s = opts.services[j];
+      svcHtml +=
+        '<option value="' +
+        esc(s) +
+        '"' +
+        (this.serviceFilter === s ? " selected" : "") +
+        ">" +
+        esc(s) +
+        "</option>";
+    }
+    return (
+      '<div class="ash-filter-row ash-filter-row--feedback">' +
+      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
+      esc(this.clientSearch) +
+      '"></label>' +
+      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
+      instHtml +
+      "</select></label>" +
+      '<label class="ash-filter-label">Service<select id="ashServiceFilter" class="ash-input ash-input--instructor">' +
+      svcHtml +
+      "</select></label></div>"
+    );
   };
 
   AdminSessionsHub.prototype.weekPickerSearchRowHtml = function () {
@@ -2982,9 +3607,10 @@
             kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
           var reviewCls =
             noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-          var reviewTime = formatFbTime(fb.created_at);
+          var submittedAt = feedbackSubmittedAt(fb);
+          var reviewTime = formatFbTime(submittedAt);
           var sessionDay = formatFbDateShort(fb.session_date);
-          var reviewDate = formatFbDate(fb.created_at);
+          var reviewDate = formatFbDate(submittedAt);
           var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
           var noteHtml = noteText
             ? noteText
@@ -3033,18 +3659,17 @@
 
     if (hub.tab === "tracking") {
       var slots = hub.expandSlotsForDate(hub.selectedDay);
-      var q = clean(hub.clientSearch).toLowerCase();
       var units = hub.getFeedbackUnitsForDate(hub.selectedDay);
       var unitComplete = {};
       var unitAbsent = {};
       for (var u = 0; u < units.length; u++) {
-        unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+        unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
         unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
       }
       var trackRows = slots
         .filter(function (s) {
           if (shouldOmitOverviewSlot(hub, s)) return false;
-          return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
+          return hub.slotPassesOverviewFilters(s);
         })
         .map(function (slot) {
           var ukey = feedbackUnitKey(slot);
@@ -3105,6 +3730,9 @@
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
+      if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
+        if (!hub.opts.feedbackRowScopeFilter(fb)) return false;
+      }
       var d = hub.feedbackRowDate(fb);
       if (!d) return true;
       if (d < from || d > to) return false;
@@ -3169,17 +3797,36 @@
     };
   };
 
+  AdminSessionsHub.prototype.overrideMatchesSlot = function (slot, ov) {
+    if (!slot || !ov) return false;
+    if (clean(ov.session_date) !== slot.session_date) return false;
+    if (String(ov.status || "active").trim() !== "active") return false;
+    var oCid = canonicalClientSlug(ov.anchor_client_id);
+    var sCid = canonicalClientSlug(slot.client_name);
+    if (oCid && sCid && oCid !== sCid) return false;
+    var oVen = clean(ov.anchor_venue).toLowerCase();
+    var sVen = clean(slot.venue).toLowerCase();
+    if (oVen && sVen && oVen !== sVen) return false;
+    var oStart = normTimeShort(ov.anchor_start);
+    var sStart = normTimeShort(slot.time_start || slot.time_slot);
+    if (oStart && sStart && oStart !== sStart) return false;
+    return true;
+  };
+
   AdminSessionsHub.prototype.overrideForSlot = function (slot) {
     var ovs = this.payload.schedule_overrides || [];
-    var cid = slugify(slot.client_name);
+    var best = null;
     for (var i = 0; i < ovs.length; i++) {
-      var o = ovs[i];
-      if (clean(o.session_date) !== slot.session_date) continue;
-      if (clean(o.anchor_client_id) && clean(o.anchor_client_id) !== cid) continue;
-      if (clean(o.anchor_venue) && clean(o.anchor_venue).toLowerCase() !== clean(slot.venue).toLowerCase()) continue;
-      return o;
+      if (!this.overrideMatchesSlot(slot, ovs[i])) continue;
+      if (
+        !best ||
+        (ovs[i].created_at &&
+          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+      ) {
+        best = ovs[i];
+      }
     }
-    return null;
+    return best;
   };
 
   AdminSessionsHub.prototype.fbRowKey = function (fb) {
@@ -3505,11 +4152,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     function feedbackLogDedupeKey(row) {
-      return feedbackLogSlotKey(row) + "|" + (isAbsentFeedbackRow(row) ? "absent" : "attended");
+      var kind = isCancellationFeedbackRow(row)
+        ? "cancelled"
+        : isAbsentFeedbackRow(row)
+          ? "absent"
+          : "attended";
+      return feedbackLogSlotKey(row) + "|" + kind;
     }
 
     function pushRow(row) {
       if (isMislabeledRosterAreaClientName(row.client_name)) return;
+      if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
+        if (!hub.opts.feedbackRowScopeFilter(row)) return;
+      }
       var k = feedbackLogDedupeKey(row);
       if (byKey[k]) return;
       byKey[k] = true;
@@ -3555,6 +4210,42 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         _ashAbsentMark: true,
       });
     }
+    var cancels = hub.cancellationsForDate(day);
+    for (var cj = 0; cj < cancels.length; cj++) {
+      var can = cancels[cj].row;
+      var cn = clean(can.client_name);
+      if (!cn || isPortalTestClientName(cn)) continue;
+      var cslug = canonicalClientSlug(cn);
+      for (var rm = out.length - 1; rm >= 0; rm--) {
+        if (
+          canonicalClientSlug(out[rm].client_name) === cslug &&
+          !isAbsentFeedbackRow(out[rm]) &&
+          !isCancellationFeedbackRow(out[rm])
+        ) {
+          delete byKey[feedbackLogDedupeKey(out[rm])];
+          out.splice(rm, 1);
+        }
+      }
+      var reason = clean(can.reason_category) || "\u2014";
+      var timing = clean(can.cancellation_timing);
+      if (timing && reason !== "\u2014") reason = timing + " \u2014 " + reason;
+      else if (timing) reason = timing;
+      pushRow({
+        client_name: cn,
+        service: clean(can.service) || "\u2014",
+        session_date: day,
+        session_time: clean(can.session_time),
+        attendance: "No",
+        completed_by_name: clean(can.submitted_by_name) || "\u2014",
+        created_at: can.created_at || null,
+        engagement_rating: null,
+        client_emotions: null,
+        engagement_patterns: null,
+        positive_feedback: null,
+        relevant_information: reason,
+        _ashCancellationMark: true,
+      });
+    }
     var bySlot = {};
     for (var d = 0; d < out.length; d++) {
       var row = out[d];
@@ -3563,7 +4254,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         bySlot[slotKey] = row;
         continue;
       }
-      if (isAbsentFeedbackRow(row) && !isAbsentFeedbackRow(bySlot[slotKey])) {
+      if (isCancellationFeedbackRow(row) && !isCancellationFeedbackRow(bySlot[slotKey])) {
+        bySlot[slotKey] = row;
+      } else if (isAbsentFeedbackRow(row) && !isTerminalFeedbackRow(bySlot[slotKey])) {
         bySlot[slotKey] = row;
       }
     }
@@ -3574,18 +4267,196 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
+  AdminSessionsHub.prototype.feedbackRowWithDisplaySlot = function (fb, slot) {
+    if (!fb || fb._ashAwaitingSlot) return fb;
+    var row = Object.assign({}, fb);
+    row._ashDisplaySlot = slot;
+    return row;
+  };
+
+  /** Lead MA: each submitted feedback once + awaiting rows (no merge duplicates). */
+  AdminSessionsHub.prototype.feedbackMixRowsLeadUniqueDay = function (day) {
+    var hub = this;
+    day = clean(day || hub.selectedDay);
+    var submitted = hub.feedbackLogRowsForDay(day);
+    var units = hub.getFeedbackUnitsForDate(day);
+    var out = submitted.slice();
+
+    function scopedSlots(unit) {
+      return unit.slots.filter(function (s) {
+        if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+        return true;
+      });
+    }
+
+    for (var u = 0; u < units.length; u++) {
+      var unit = units[u];
+      var slots = scopedSlots(unit);
+      if (!slots.length) continue;
+      var rep = slots[0];
+      if (hub.feedbackUnitAbsent(unit)) {
+        var afb = hub.findAbsentFeedbackForSlot(rep);
+        if (!afb) {
+          for (var ai = 0; ai < submitted.length; ai++) {
+            if (
+              isAbsentFeedbackRow(submitted[ai]) &&
+              canonicalClientSlug(submitted[ai].client_name) ===
+                canonicalClientSlug(rep.client_name)
+            ) {
+              afb = submitted[ai];
+              break;
+            }
+          }
+        }
+        if (afb && out.indexOf(afb) < 0) out.push(afb);
+        continue;
+      }
+      if (!hub.feedbackUnitResolved(unit)) {
+        out.push({ _ashAwaitingSlot: true, slot: rep });
+      }
+    }
+
+    out.sort(function (a, b) {
+      var rankA = a && a._ashAwaitingSlot ? 0 : 1;
+      var rankB = b && b._ashAwaitingSlot ? 0 : 1;
+      if (rankA !== rankB) return rankA - rankB;
+      var ca = canonicalClientSlug(
+        (a && a._ashAwaitingSlot && a.slot ? a.slot.client_name : a.client_name) || ""
+      );
+      var cb = canonicalClientSlug(
+        (b && b._ashAwaitingSlot && b.slot ? b.slot.client_name : b.client_name) || ""
+      );
+      if (ca !== cb) return ca.localeCompare(cb);
+      return String(a.completed_by_name || "").localeCompare(String(b.completed_by_name || ""));
+    });
+    return out;
+  };
+
+  /** Feedback tab: submitted rows plus roster slots still awaiting feedback (lead overview). */
+  AdminSessionsHub.prototype.feedbackMixRowsForDay = function (day) {
+    var hub = this;
+    day = clean(day || hub.selectedDay);
+    var submitted = hub.feedbackLogRowsForDay(day);
+    if (!hub.opts || !hub.opts.feedbackMixAwaitingSlots) return submitted;
+    if (hubDayIsClubClosed(hub, day)) return submitted;
+    if (hub.opts.feedbackMixLeadUnique) return hub.feedbackMixRowsLeadUniqueDay(day);
+
+    var used = {};
+    function markUsed(fb) {
+      if (!fb || fb._ashAwaitingSlot) return;
+      used[hub.fbRowKey(fb)] = true;
+    }
+    function isUsed(fb) {
+      return fb && !fb._ashAwaitingSlot && used[hub.fbRowKey(fb)];
+    }
+
+    var slots = hub.expandSlotsForDate(day);
+    var units = hub.getFeedbackUnitsForDate(day);
+    var unitComplete = {};
+    var unitAbsent = {};
+    for (var u = 0; u < units.length; u++) {
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
+      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    }
+    var displaySlots = hub.sortOverviewSlotsForDisplay(
+      slots.filter(function (s) {
+        if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+        return true;
+      }),
+      unitComplete,
+      unitAbsent
+    );
+
+    var out = [];
+    for (var i = 0; i < displaySlots.length; i++) {
+      var slot = displaySlots[i];
+      var ukey = feedbackUnitKey(slot);
+      var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
+      var isCancelled = hub.slotHasCancellation(slot);
+      if (isAbsent || isCancelled) {
+        var afb = hub.findAbsentFeedbackForSlot(slot);
+        if (!afb) {
+          for (var si = 0; si < submitted.length; si++) {
+            if (
+              isAbsentFeedbackRow(submitted[si]) &&
+              canonicalClientSlug(submitted[si].client_name) === canonicalClientSlug(slot.client_name)
+            ) {
+              afb = submitted[si];
+              break;
+            }
+          }
+        }
+        if (!afb && isCancelled) {
+          for (var sc = 0; sc < submitted.length; sc++) {
+            if (
+              isCancellationFeedbackRow(submitted[sc]) &&
+              canonicalClientSlug(submitted[sc].client_name) === canonicalClientSlug(slot.client_name)
+            ) {
+              afb = submitted[sc];
+              break;
+            }
+          }
+        }
+        if (afb && !isUsed(afb)) {
+          out.push(afb);
+          markUsed(afb);
+        }
+        continue;
+      }
+      if (hub.slotFeedbackComplete(slot)) {
+        var fb = hub.findFeedbackForSlot(slot);
+        if (fb && !isUsed(fb)) {
+          out.push(fb);
+          markUsed(fb);
+        }
+        continue;
+      }
+      out.push({ _ashAwaitingSlot: true, slot: slot });
+    }
+    for (var j = 0; j < submitted.length; j++) {
+      if (!isUsed(submitted[j])) {
+        out.push(submitted[j]);
+        markUsed(submitted[j]);
+      }
+    }
+    return out;
+  };
+
   /** Feedback tab: all rows (incl. absents) for the selected calendar day + search/note filters. */
   AdminSessionsHub.prototype.feedbackRowsForSelectedDay = function () {
     var hub = this;
     var day = clean(this.selectedDay);
     if (!day) return [];
-    var rows = this.feedbackLogRowsForDay(day);
+    var rows =
+      hub.opts && hub.opts.feedbackMixAwaitingSlots
+        ? this.feedbackMixRowsForDay(day)
+        : this.feedbackLogRowsForDay(day);
     var q = clean(this.clientSearch).toLowerCase();
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
     return rows.filter(function (fb) {
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
-      if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) return false;
+      var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
+      if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
+      if (inst && fb._ashAwaitingSlot && fb.slot) {
+        var labels = (fb.slot.instructors || [])
+          .concat(String(fb.slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
+          .map(function (x) {
+            return clean(x);
+          })
+          .filter(Boolean);
+        var hit = false;
+        for (var li = 0; li < labels.length; li++) {
+          if (completedByMatchesInstructor(labels[li], inst)) {
+            hit = true;
+            break;
+          }
+        }
+        if (!hit) return false;
+      } else if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) {
+        return false;
+      }
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
       if (hub.feedbackNoteFilter === "relevant" && !clean(fb.relevant_information)) return false;
       return true;
@@ -3611,6 +4482,35 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     opts = opts || {};
     var esc = escFn || this.escapeHtml;
 
+    if (fb && fb._ashAwaitingSlot && fb.slot) {
+      var awaitSlot = fb.slot;
+      var awaitSvc = clean(awaitSlot.service) || "\u2014";
+      var awaitTime = awaitSlot.time_slot
+        ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
+        : "";
+      var awaitInst =
+        awaitSlot.instructors && awaitSlot.instructors.length
+          ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
+          : esc(awaitSlot.instructor_label || "\u2014");
+      return (
+        '<tr class="ash-fb-row ash-fb-row--awaiting">' +
+        '<td><span class="ash-pill ash-pill--client">' +
+        esc(awaitSlot.client_name) +
+        "</span></td>" +
+        "<td>" +
+        esc(awaitSvc) +
+        awaitTime +
+        "</td>" +
+        '<td colspan="5" class="ash-td-center">' +
+        rosterFeedbackStatusHtml(false, false) +
+        "</td>" +
+        '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+        awaitInst +
+        "</div></td>" +
+        "</tr>"
+      );
+    }
+
     function cellNoteHtml(text) {
       var t = clean(text);
       if (!t) return "\u2014";
@@ -3627,23 +4527,33 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     var absent = isAbsentFeedbackRow(fb);
+    var cancelled = isCancellationFeedbackRow(fb);
+    var terminal = isTerminalFeedbackRow(fb);
     var displaySlot = fb._ashDisplaySlot || null;
     var rawClient = clean((displaySlot && displaySlot.client_name) || fb.client_name);
     var clientLabel =
       rawClient ||
       resolveRosterClientName(canonicalClientSlug(fb.client_name)) ||
       "\u2014";
-    var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
-    var ind = absent ? "N/A" : independenceLabel(fb);
-    var pos = absent ? "N/A" : clean(fb.positive_feedback) || "\u2014";
-    var rel = absent ? "N/A" : clean(fb.relevant_information) || "\u2014";
+    var svcLabel =
+      (displaySlot && clean(displaySlot.service)) ||
+      hub.feedbackDisplayService(fb) ||
+      "\u2014";
+    var svcTimeSub =
+      displaySlot && displaySlot.time_slot
+        ? '<div class="ash-cell-sub">' + esc(displaySlot.time_slot) + "</div>"
+        : "";
+    var ind = terminal ? "N/A" : independenceLabel(fb);
+    var pos = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
+    var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
         ? " ash-fb-row--needs-review"
         : "";
-    var reviewTime = formatFbTime(fb.created_at);
+    var submittedAt = feedbackSubmittedAt(fb);
+    var reviewTime = formatFbTime(submittedAt);
     var sessionDay = formatFbDateShort(fb.session_date) || formatFbDateShort(hub.feedbackRowDate(fb));
-    var reviewDate = formatFbDate(fb.created_at);
+    var reviewDate = formatFbDate(submittedAt);
     var rowIdx = opts.rowIdx;
     var rowAttr =
       opts.clickable !== false && rowIdx != null && !isNaN(rowIdx)
@@ -3655,28 +4565,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td><span class="ash-link">' +
       esc(clientLabel) +
       "</span>" +
-      (absent
-        ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
-        : "") +
+      (cancelled
+        ? '<div class="ash-cell-sub"><span class="ash-status ash-status--cancelled">Submitted (Cancelled)</span></div>'
+        : absent
+          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
+          : "") +
       "</td>" +
       "<td>" +
       esc(svcLabel) +
-      (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
+      svcTimeSub +
+      (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
       "</td>" +
       "<td>" +
-      (absent ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
+      (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
       "</td>" +
       "<td>" +
-      (absent ? cellNa() : emotionFacesHtml(fb, esc)) +
+      (terminal ? cellNa() : emotionFacesHtml(fb, esc)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
+      (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
+      (terminal ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
+      (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
@@ -3728,7 +4641,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " \u2013 " +
         esc(formatLongDate(opts.filterDayIso)) +
         "</summary>" +
-        '<p class="ash-feedback-log__note">Includes attended feedback and <strong>absents</strong> (N/A except Reviewed by). Absents also appear on the Absents tab. Incident and cancellation flags are on the roster table above.</p>' +
+        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). See also Absents and Cancellations tabs.</p>' +
         '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback"><thead><tr>' +
         AdminSessionsHub.FEEDBACK_TABLE_HEAD +
         "</tr></thead><tbody>" +
@@ -3947,13 +4860,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.closest("[data-ash-week-prev]")) {
         ev.preventDefault();
         var offPrev = hub.selectedDayOffsetInWeek();
-        hub.weekStart = addDaysIso(hub.weekStart, -7);
+        hub.weekStart = clampHubWeekStart(hub, addDaysIso(hub.weekStart, -7));
         hub.selectedDay = hub.preferredDayAfterWeekShift(offPrev);
         if (hub.mode === "feedback") {
           hub.feedbackMetricsDay = hub.selectedDay;
           hub._feedbackRangeCustom = false;
         }
         hub.syncWeekRange();
+        hub.snapSelectedDayToDisplayWeek();
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         return;
@@ -3961,13 +4875,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.closest("[data-ash-week-next]")) {
         ev.preventDefault();
         var offNext = hub.selectedDayOffsetInWeek();
-        hub.weekStart = addDaysIso(hub.weekStart, 7);
+        hub.weekStart = clampHubWeekStart(hub, addDaysIso(hub.weekStart, 7));
         hub.selectedDay = hub.preferredDayAfterWeekShift(offNext);
         if (hub.mode === "feedback") {
           hub.feedbackMetricsDay = hub.selectedDay;
           hub._feedbackRangeCustom = false;
         }
         hub.syncWeekRange();
+        hub.snapSelectedDayToDisplayWeek();
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         return;
@@ -4040,6 +4955,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         hub.refreshClientFilterView();
         return;
       }
+      if (t.id === "ashServiceFilter") {
+        hub.serviceFilter = t.value || "";
+        hub.refreshClientFilterView();
+        return;
+      }
       if (t.id === "ashRangeFrom") hub.rangeFrom = t.value || hub.rangeFrom;
       if (t.id === "ashRangeTo") hub.rangeTo = t.value || hub.rangeTo;
       if (t.id === "ashScheduleDate") hub.scheduleDate = t.value || hub.scheduleDate;
@@ -4052,6 +4972,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
     this.root.addEventListener("keydown", function (ev) {
       if (ev.key !== "Enter" && ev.key !== " ") return;
+      var jump = ev.target && ev.target.closest && ev.target.closest("[role='button'].ash-log-jump");
+      if (jump) {
+        ev.preventDefault();
+        jump.click();
+        return;
+      }
       var row = ev.target && ev.target.closest && ev.target.closest("[data-ash-fb-row]");
       if (!row || hub.mode !== "feedback") return;
       ev.preventDefault();
@@ -4124,10 +5050,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var ukeyB = b.feedback_unit_key || feedbackUnitKey(b);
       var absentA = unitAbsent[ukeyA] || hub.slotIsAbsent(a);
       var absentB = unitAbsent[ukeyB] || hub.slotIsAbsent(b);
+      var cancelledA = hub.slotHasCancellation(a);
+      var cancelledB = hub.slotHasCancellation(b);
       var doneA = unitComplete[ukeyA] || hub.slotFeedbackComplete(a);
       var doneB = unitComplete[ukeyB] || hub.slotFeedbackComplete(b);
-      var rankA = overviewSlotFeedbackRank(absentA, doneA);
-      var rankB = overviewSlotFeedbackRank(absentB, doneB);
+      var rankA = overviewSlotFeedbackRank(absentA, doneA, cancelledA);
+      var rankB = overviewSlotFeedbackRank(absentB, doneB, cancelledB);
       if (rankA !== rankB) return rankA - rankB;
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
@@ -4137,19 +5065,32 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlTracking = function () {
     var esc = this.escapeHtml;
     var hub = this;
+    if (hubDayIsClubClosed(hub, this.selectedDay)) {
+      return (
+        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+        this.overviewFilterRowHtml() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(this.selectedDay)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
+        /* closed day — no count hint */
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
+        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+      );
+    }
     var slots = this.expandSlotsForDate(this.selectedDay);
     var units = this.getFeedbackUnitsForDate(this.selectedDay);
     var unitComplete = {};
     var unitAbsent = {};
     for (var u = 0; u < units.length; u++) {
-      unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
-    var q = this.clientSearch.toLowerCase();
+    var scopedSlots = slots.filter(function (s) {
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+    });
     var displaySlots = hub.sortOverviewSlotsForDisplay(
-      slots.filter(function (s) {
-        if (shouldOmitOverviewSlot(hub, s)) return false;
-        return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
+      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
+        return hub.slotPassesOverviewFilters(s);
       }),
       unitComplete,
       unitAbsent
@@ -4159,7 +5100,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ukey = feedbackUnitKey(slot);
         var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-        var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);
+        var isCancelled = hub.slotHasCancellation(slot);
+        var fbCell;
+        if (isAbsent) {
+          fbCell = rosterFeedbackStatusHtml(true, fbDone);
+        } else if (isCancelled) {
+          fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
+        } else {
+          fbCell = rosterFeedbackStatusHtml(false, fbDone);
+        }
+        var statusCell = isCancelled
+          ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
+          : isAbsent
+            ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
+            : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
@@ -4183,7 +5137,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<td class="ash-td-center ash-cell-muted">' +
           esc(notes) +
           "</td>" +
-          '<td class="ash-td-center"><span class="ash-badge ash-badge--booked">Booked</span></td>' +
+          '<td class="ash-td-center">' +
+          statusCell +
+          "</td>" +
           '<td class="ash-td-center">' +
           fbCell +
           "</td>" +
@@ -4191,7 +5147,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           yesNoCell(hub.slotHasIncident(slot)) +
           "</td>" +
           '<td class="ash-td-center">' +
-          yesNoCell(hub.slotHasCancellation(slot)) +
+          yesNoCell(isCancelled) +
           "</td>" +
           "</tr>"
         );
@@ -4207,14 +5163,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-      '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
-      "</div>" +
+      this.overviewFilterRowHtml() +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
-      ' <span class="ash-badge ash-badge--booked">Roster</span></h3>' +
+      ' <span class="ash-badge ash-badge--booked">Roster</span>' +
+      htmlOverviewSessionCountHint(hub, this.selectedDay, displaySlots.filter(function (s) {
+        return !isTeflonDemoRosterSlot(s);
+      }), esc) +
+      "</h3>" +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
       '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Notes</th><th class="ash-td-center">Status</th><th class="ash-td-center">Feedback</th>' +
       TH_ICON_INCIDENT +
@@ -4290,6 +5246,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var iso = this.selectedDay;
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return (
+        this.htmlWeekHeader() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(iso)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Not scheduled</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="4">' +
+        '<div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div>' +
+        "</td></tr></tbody></table></div>" +
+        this.htmlAbsentsTermWeekLog()
+      );
+    }
     var marks = this.absentMarksForDate(iso);
     var rows = marks
       .map(function (mark) {
@@ -4614,6 +5582,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
     var cards = days
       .map(function (iso, idx) {
+        var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
+        if (hubDayIsClubClosed(hub, iso)) {
+          return (
+            "<button type=\"button\" class=\"ash-day-card ash-day-card--feedback ash-day-card--closed" +
+            metricSel +
+            '" ' +
+            dayAttr +
+            '="' +
+            esc(iso) +
+            '" style="' +
+            htmlClosedDayCardInlineStyle() +
+            '">' +
+            '<div class="ash-day-card__top">' +
+            htmlWeekdayLabel(iso, esc) +
+            '<span class="ash-day-card__dt">' +
+            esc(formatShortDate(iso)) +
+            '</span></div>' +
+            '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
+            '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
+            '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
+          );
+        }
         var ds = hub.dayStats(iso);
         var col = DAY_COLORS[idx % DAY_COLORS.length];
         var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
@@ -4622,15 +5612,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           innerPct = Math.round((100 * ds.done) / ds.total);
           if (ds.done > 0 && innerPct < 12) innerPct = 12;
         }
-        var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
         var stateCls = "";
         if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
+        var roCls = hub.opts && hub.opts.readOnlyOverview ? " ash-day-card--readonly" : "";
         return (
           '<button type="button" class="ash-day-card ash-day-card--feedback' +
           metricSel +
           stateCls +
+          roCls +
           '" ' +
           dayAttr +
           '="' +
@@ -4644,24 +5635,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, esc) +
-          '<span class="ash-day-card__dt">' +
-          esc(formatShortDate(iso)) +
-          '</span></div>' +
+          '</div>' +
           '<div class="ash-day-card__bar" style="--ash-pct:' +
           innerPct +
           ";--ash-col:" +
           col +
           '"></div>' +
-          '<span class="ash-day-card__count">' +
-          '<span class="ash-day-card__count-full">' +
-          ds.done +
-          "/" +
-          ds.total +
-          ' feedbacks</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-          ds.done +
-          "/" +
-          ds.total +
-          "</span></span></button>"
+          htmlAshRatioCount(esc, ds.done + "/" + ds.total) +
+          "</button>"
         );
       })
       .join("");
@@ -4717,24 +5698,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, escFn) +
-          '<span class="ash-day-card__dt">' +
-          escFn(formatShortDate(iso)) +
-          '</span></div>' +
+          '</div>' +
           '<div class="ash-day-card__bar" style="--ash-pct:' +
           innerPct +
           ";--ash-col:" +
           col +
           '"></div>' +
-          '<span class="ash-day-card__count">' +
-          '<span class="ash-day-card__count-full">' +
-          ds.done +
-          "/" +
-          ds.total +
-          ' feedbacks</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-          ds.done +
-          "/" +
-          ds.total +
-          "</span></span></button>"
+          htmlAshRatioCount(escFn, ds.done + "/" + ds.total) +
+          "</button>"
       );
     }
     var tableRows = items
@@ -4804,9 +5775,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var noteText = kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
         var reviewCls =
           noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-        var reviewTime = formatFbTime(fb.created_at);
+        var submittedAt = feedbackSubmittedAt(fb);
+        var reviewTime = formatFbTime(submittedAt);
         var sessionDay = formatFbDateShort(fb.session_date);
-        var reviewDate = formatFbDate(fb.created_at);
+        var reviewDate = formatFbDate(submittedAt);
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
         return (
           '<tr class="ash-fb-row' +
@@ -4882,16 +5854,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     var tableRows = rows
       .map(function (fb, rowIdx) {
-        return hub.htmlFeedbackTableRow(fb, esc, { rowIdx: rowIdx, clickable: true });
+        var awaiting = fb && fb._ashAwaitingSlot;
+        return hub.htmlFeedbackTableRow(fb, esc, {
+          rowIdx: awaiting ? null : rowIdx,
+          clickable: !awaiting,
+        });
       })
       .join("");
 
-    if (!tableRows) {
+    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
+      tableRows =
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+    } else if (!tableRows) {
       tableRows =
         '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
-    var weekBlock = this.htmlFeedbackWeekDaysRow();
+    var weekBlock =
+      hub.opts && hub.opts.showFullWeekDayStrip
+        ? this.htmlWeekHeader()
+        : this.htmlFeedbackWeekDaysRow();
 
     var truncateHtml = "";
     var fbTotal = this.payload.session_feedback_total;
@@ -4927,7 +5909,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
-      '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Overview</strong> for the roster table.</p>' +
+      (hub.opts && hub.opts.showFullWeekDayStrip
+        ? ""
+        : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Overview</strong> for the roster table.</p>') +
       this.htmlFeedbackTermWeekLog({
         title: "Session feedback log",
         flatWeeks: true,
@@ -4942,6 +5926,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var iso = this.selectedDay;
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return (
+        this.htmlWeekHeader() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(iso)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Not scheduled</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="6">' +
+        '<div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div>' +
+        "</td></tr></tbody></table></div>" +
+        this.htmlIncidentsTermWeekLog()
+      );
+    }
     var items = this.incidentsForDate(iso);
     var Pfrm = global.PortalFormRecordModal;
     var rows = items
@@ -5322,12 +6318,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (root._ashHubInstance) {
       var existing = root._ashHubInstance;
       if (opts && opts.mode) existing.mode = opts.mode;
+      if (opts && opts.tab) existing.tab = opts.tab;
       if (opts && opts.payload) existing.setPayload(opts.payload);
       return existing;
     }
     var hub = new AdminSessionsHub(root, opts || {});
     root._ashHubInstance = hub;
     if (opts && opts.mode) hub.mode = opts.mode;
+    if (opts && opts.tab) hub.tab = opts.tab;
     hub.bindEvents();
     if (opts && opts.payload) {
       hub.payload = opts.payload;
@@ -5335,22 +6333,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.mode === "feedback") hub.initFeedbackDateRange();
     }
     if (hub.mode === "feedback") {
-      hub.root.innerHTML =
-        '<p class="muted" style="margin:0 0 12px;font-size:13px">Loading session feedback…</p>';
-      var paintFeedback = function () {
-        try {
-          hub.render();
-        } catch (renderErr) {
-          console.error("[AdminSessionsHub] feedback render", renderErr);
-          hub.root.innerHTML =
-            '<p class="submission-state is-error" style="margin:0"><strong>Could not render feedback.</strong> Reload the page.</p>';
-        }
-      };
-      if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(paintFeedback);
-      } else {
-        setTimeout(paintFeedback, 0);
-      }
+      hub.render();
       hub.loadBundle().catch(function () {});
       return hub;
     }

@@ -194,6 +194,7 @@
     .ash-log-term__body { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; }
     .ash-log-week { background: #fff; }
     .ash-log-week__summary { font-size: 12px; font-weight: 700; color: #2d84b3; padding: 10px 12px; }
+    .ash-log-week__jump { padding: 0 12px 8px; }
     .ash-log-count { font-weight: 700; color: var(--muted); }
     .ash-activity-log__tree--flat-weeks { gap: 8px; }
     .ash-activity-log__tree--flat-weeks .ash-log-week {

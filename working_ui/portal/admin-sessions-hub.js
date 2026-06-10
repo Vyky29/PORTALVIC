@@ -1918,7 +1918,11 @@
   }
 
   function htmlOverviewSessionCountHint(hub, iso, displaySlots, esc) {
-    if (hub && hub.mode === "feedback" && typeof hub.getFeedbackUnitsForDate === "function") {
+    var useFeedbackUnits =
+      hub &&
+      typeof hub.getFeedbackUnitsForDate === "function" &&
+      (hub.mode === "feedback" || hub.tab === "tracking");
+    if (useFeedbackUnits) {
       var units = hub
         .getFeedbackUnitsForDate(iso)
         .filter(function (u) {
@@ -2295,14 +2299,15 @@
         '<details class="ash-log-week"' +
         weekOpenAttr +
         '><summary class="ash-log-week__summary">' +
-        '<span role="button" tabindex="0" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
-        escFn(week.weekStart) +
-        '">Show week \u2192</span> ' +
         "Week " +
         escFn(week.label) +
         ' <span class="ash-log-count">(' +
         week.items.length +
-        ")</span></summary>";
+        ")</span></summary>" +
+        '<div class="ash-log-week__jump">' +
+        '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
+        escFn(week.weekStart) +
+        '">Show week \u2192</button></div>';
       if (weekBodyHtml) {
         wOut += '<div class="ash-log-week__body">' + weekBodyHtml(week, escFn) + "</div>";
       } else {

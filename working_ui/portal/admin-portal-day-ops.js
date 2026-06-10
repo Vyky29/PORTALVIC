@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260607-feedback-bespoke-match';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260610-errors-feedback-17';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
