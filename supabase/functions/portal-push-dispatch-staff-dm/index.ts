@@ -128,6 +128,10 @@ Deno.serve(async (req) => {
     return forbidden;
   }
 
+  console.log("[portal-push-staff-dm] webhook accepted", {
+    at: new Date().toISOString(),
+  });
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   if (!initVapidFromEnv() || !supabaseUrl || !serviceKey || !staffPushOpenBase()) {
