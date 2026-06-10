@@ -11,6 +11,8 @@ import {
 const STORAGE_KEY = "portalVisitSessionId_v1";
 const HEARTBEAT_MS = 12000;
 const FLUSH_MS = 45000;
+const MAX_PAGES = 64;
+const MAX_FORM_SUBMITS = 32;
 
 /** @type {string | null} */
 let _sessionId = null;
@@ -32,6 +34,10 @@ let _client = null;
 let _userId = "";
 /** @type {boolean} */
 let _listenersBound = false;
+/** @type {boolean} */
+let _pagesDirty = false;
+/** @type {boolean} */
+let _heartbeatLightMode = false;
 
 const SHEET_VISIT_LABELS = {
   menuSheet: "menu",
@@ -131,14 +137,26 @@ function notePage(label) {
   _lastPageLabel = L;
 }
 
+function capVisitTrail(arr, max) {
+  const list = Array.isArray(arr) ? arr : [];
+  const limit = Number(max || 0);
+  if (!limit || list.length <= limit) return list;
+  return list.slice(-limit);
+}
+
 function appendPageEvent(pages, label) {
-  const arr = Array.isArray(pages) ? pages.slice() : [];
+  const arr = capVisitTrail(Array.isArray(pages) ? pages.slice() : [], MAX_PAGES);
   const L = String(label || "").trim();
   if (!L) return arr;
   const last = arr.length ? arr[arr.length - 1] : null;
   if (last && String(last.label) === L) return arr;
   arr.push({ label: L, at: new Date().toISOString() });
-  return arr;
+  return capVisitTrail(arr, MAX_PAGES);
+}
+
+function visitSessionErrorIsTimeout(error) {
+  const msg = String((error && error.message) || error || "").toLowerCase();
+  return msg.indexOf("statement timeout") >= 0 || msg.indexOf("canceling statement") >= 0;
 }
 
 function isPortalPageContextLabel(label) {
@@ -195,11 +213,15 @@ async function flushPatch(extra) {
     .eq("id", _sessionId)
     .eq("staff_user_id", _userId);
   if (error) {
+    if (visitSessionErrorIsTimeout(error)) _heartbeatLightMode = true;
     if (typeof globalThis.portalWarnUnlessOffline === "function") {
       globalThis.portalWarnUnlessOffline("[portal] visit session update", "", error.message || error);
     } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
       console.warn("[portal] visit session update", error.message || error);
     }
+  } else if (extra && (extra.pages != null || extra.form_submits != null)) {
+    _pagesDirty = false;
+    _heartbeatLightMode = false;
   }
 }
 
@@ -236,10 +258,14 @@ async function ensureSession(opts) {
       .maybeSingle();
     if (!error && data && data.still_open && String(data.session_date) === today) {
       _sessionId = data.id;
-      _pagesLocal = Array.isArray(data.pages) ? data.pages.slice() : [];
-      _formSubmitsLocal = Array.isArray(data.form_submits) ? data.form_submits.slice() : [];
+      _pagesLocal = capVisitTrail(Array.isArray(data.pages) ? data.pages.slice() : [], MAX_PAGES);
+      _formSubmitsLocal = capVisitTrail(
+        Array.isArray(data.form_submits) ? data.form_submits.slice() : [],
+        MAX_FORM_SUBMITS
+      );
       const pagesPatch = appendPageEvent(_pagesLocal, pageLabel);
       _pagesLocal = pagesPatch;
+      _pagesDirty = true;
       await flushPatch({ last_page_label: pageLabel, pages: pagesPatch });
       return;
     }
@@ -280,7 +306,9 @@ async function heartbeat() {
   if (!_client || !_sessionId) return;
   const label = portalVisitPageLabelFromLocation(location);
   notePage(label);
+  const prevLen = _pagesLocal.length;
   _pagesLocal = appendPageEvent(_pagesLocal, label);
+  if (_pagesLocal.length !== prevLen) _pagesDirty = true;
   const now = Date.now();
   if (document.visibilityState === "visible") {
     if (_visibleSince <= 0) _visibleSince = now;
@@ -290,24 +318,29 @@ async function heartbeat() {
     _visibleSince = 0;
   }
   const active = Math.round(_activeTabAccumMs);
+  const payload = {
+    last_seen_at: new Date().toISOString(),
+    last_page_label: label,
+    active_tab_ms: active,
+    total_ms: active,
+    still_open: true,
+  };
+  if (!_heartbeatLightMode && _pagesDirty) payload.pages = _pagesLocal;
   const { error } = await _client
     .from("portal_staff_visit_sessions")
-    .update({
-      last_seen_at: new Date().toISOString(),
-      last_page_label: label,
-      active_tab_ms: active,
-      total_ms: active,
-      pages: _pagesLocal,
-      still_open: true,
-    })
+    .update(payload)
     .eq("id", _sessionId)
     .eq("staff_user_id", _userId);
   if (error) {
+    if (visitSessionErrorIsTimeout(error)) _heartbeatLightMode = true;
     if (typeof globalThis.portalWarnUnlessOffline === "function") {
       globalThis.portalWarnUnlessOffline("[portal] visit session heartbeat", "", error.message || error);
     } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
       console.warn("[portal] visit session heartbeat", error.message || error);
     }
+  } else if (payload.pages != null) {
+    _pagesDirty = false;
+    _heartbeatLightMode = false;
   }
 }
 
@@ -383,6 +416,7 @@ export async function recordPortalVisitPage(label) {
   if (!L) return;
   notePage(L);
   _pagesLocal = appendPageEvent(_pagesLocal, L);
+  _pagesDirty = true;
   await flushPatch({ last_page_label: L, pages: _pagesLocal });
 }
 
@@ -395,7 +429,10 @@ export async function recordPortalFormSubmit(actionLabel, pageLabel) {
   const action = String(actionLabel || "").trim();
   if (!action) return;
   const page = String(pageLabel || _lastPageLabel || portalVisitPageLabelFromLocation(location)).trim();
-  _formSubmitsLocal = appendFormSubmitEvent(_formSubmitsLocal, action, page);
+  _formSubmitsLocal = capVisitTrail(
+    appendFormSubmitEvent(_formSubmitsLocal, action, page),
+    MAX_FORM_SUBMITS
+  );
   await flushPatch({ form_submits: _formSubmitsLocal, last_page_label: page || _lastPageLabel });
 }
 

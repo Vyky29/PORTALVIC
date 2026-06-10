@@ -863,7 +863,7 @@ export function portalClearPersistedSupabaseAuth() {
 export async function portalLogout() {
   try {
     const { endPortalVisitSession } = await import(
-      "./portal_visit_tracker.js?v=20260601-visit-insert-fix"
+      "./portal_visit_tracker.js?v=20260610-visit-heartbeat-light"
     );
     await endPortalVisitSession();
   } catch {

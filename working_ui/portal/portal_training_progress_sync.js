@@ -287,7 +287,9 @@
       p_completed_at: row.completed_at || null,
     });
     if (!rpcRes.error) return;
-    if (String(rpcRes.error.code || "") !== "PGRST202") throw rpcRes.error;
+    try {
+      console.debug("[portal] training progress rpc", rpcRes.error);
+    } catch (_) {}
     var payload = {
       staff_user_id: userId,
       track: row.track,
@@ -302,7 +304,11 @@
     var res = await client
       .from("portal_staff_training_progress")
       .upsert(payload, { onConflict: "staff_user_id,track" });
-    if (res.error) throw res.error;
+    if (res.error) {
+      try {
+        console.debug("[portal] training progress upsert", res.error);
+      } catch (_) {}
+    }
   }
 
   function resolveAuthUserId(opts, box) {
@@ -331,12 +337,18 @@
       p_client_meta: row.client_meta || {},
     });
     if (!rpcRes.error) return;
-    if (String(rpcRes.error.code || "") !== "PGRST202") throw rpcRes.error;
+    try {
+      console.debug("[portal] setup status rpc", rpcRes.error);
+    } catch (_) {}
     var payload = Object.assign({ staff_user_id: userId }, row);
     var res = await client
       .from("portal_staff_setup_status")
       .upsert(payload, { onConflict: "staff_user_id" });
-    if (res.error) throw res.error;
+    if (res.error) {
+      try {
+        console.debug("[portal] setup status upsert", res.error);
+      } catch (_) {}
+    }
   }
 
   global.portalHydrateInductionProgressFromSupabase = async function portalHydrateInductionProgressFromSupabase(opts) {

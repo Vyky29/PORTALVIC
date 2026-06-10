@@ -1098,7 +1098,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260610-offline-quiet"
+          "./portal_visit_tracker.js?v=20260610-visit-heartbeat-light"
         );
         await startPortalVisitTracker({ page, profile, session });
       }
@@ -1107,7 +1107,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
-        await import("./portal_training_progress_sync.js?v=20260604-induction-persist");
+        await import("./portal_training_progress_sync.js?v=20260610-rpc-fallback");
         if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
           await window.portalSyncTrainingProgressToSupabase({
             client: supabase,
