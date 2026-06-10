@@ -330,6 +330,48 @@
     return CLIENT_SLUG_ALIASES[s] || s;
   }
 
+  function isMisnamedAdamAbFeedbackClientName(name) {
+    var s = slugify(name);
+    return s === "adam" || s === "adam_a";
+  }
+
+  function buildAdamAbSessionDateSet(rosterRows, feedbackList) {
+    var set = {};
+    function mark(d) {
+      if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) set[d] = true;
+    }
+    (rosterRows || []).forEach(function (row) {
+      if (canonicalClientSlug(row.client_name) === "adam_ab") mark(rowDateIso(row.session_date));
+    });
+    (feedbackList || []).forEach(function (fb) {
+      if (canonicalClientSlug(fb.client_name) === "adam_ab") mark(feedbackSessionDate(fb));
+    });
+    return set;
+  }
+
+  function normalizeAdamAbFeedbackPortalKey(key) {
+    var k = String(key || "");
+    if (!k) return k;
+    return k
+      .replace(/(^|\|)adam_a\.?(?=\||$)/gi, "$1adam_ab")
+      .replace(/(^|\|)adam(?=\||$)/gi, "$1adam_ab");
+  }
+
+  function normalizeMisnamedAdamAbFeedbackRows(feedbackList, adamAbDates) {
+    if (!Array.isArray(feedbackList) || !adamAbDates) return feedbackList;
+    return feedbackList.map(function (fb) {
+      if (!isMisnamedAdamAbFeedbackClientName(fb.client_name)) return fb;
+      var sd = feedbackSessionDate(fb);
+      if (!sd || !adamAbDates[sd]) return fb;
+      var out = Object.assign({}, fb);
+      out.client_name = "Adam Ab";
+      if (out.portal_session_key) {
+        out.portal_session_key = normalizeAdamAbFeedbackPortalKey(out.portal_session_key);
+      }
+      return out;
+    });
+  }
+
   /** Bad submit: roster area saved as client_name (e.g. "Big Pool" instead of Haneef). */
   function isMislabeledRosterAreaClientName(name) {
     var s = canonicalClientSlug(name);
@@ -2421,6 +2463,13 @@
 
   AdminSessionsHub.prototype.setPayload = function (payload) {
     this.payload = payload || {};
+    var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
+    if (Array.isArray(this.payload.session_feedback)) {
+      this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
+        this.payload.session_feedback,
+        adamDates
+      );
+    }
     this.indexAbsentMarks();
     if (this.mode === "feedback") this.initFeedbackDateRange();
     if (this.opts && this.opts.externalTabs) {
@@ -2914,6 +2963,13 @@
       var src = global.STAFF_DASHBOARD_SOURCE;
       this.rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
       this.bundleError = this.rosterRows.length ? "" : "Roster bundle loaded but has no rows.";
+      if (this.payload && Array.isArray(this.payload.session_feedback)) {
+        var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
+        this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
+          this.payload.session_feedback,
+          adamDates
+        );
+      }
     } catch (e) {
       this.rosterRows = [];
       this.bundleError = e.message || String(e);

@@ -14,7 +14,6 @@
     "arthur manners": "portal/participants/arthur-manners.png",
     ayaan: "portal/participants/ayaan.png",
     "adam ab": "portal/participants/adam-ab.png",
-    "adam a": "portal/participants/adam-ab.png",
     haneef: "portal/participants/haneef.png",
     haneff: "portal/participants/haneef.png",
     "amaar ah": "portal/participants/amaar-ah.png",
