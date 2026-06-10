@@ -241,7 +241,7 @@
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0">
         <div style="min-width:0;flex:1">
           <h3 id="alertsNotificationsTitle">Device notifications</h3>
-          <p>Turn on once on this computer.</p>
+          <p>Turn on once per computer and browser (Mac or Windows). Each machine needs its own setup — mobile and desktop are separate.</p>
         </div>
         <button type="button" class="btn btn--ghost btn--sm" id="portalAdminAlertsSheetClose" aria-label="Close">Close</button>
       </div>
@@ -249,7 +249,11 @@
     <div class="sheet-body">
       <div class="portal-alerts-panel">
         <div class="portal-alerts-block">
-          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite" hidden></p>
+          <h4 class="portal-alerts-section-title">Notifications</h4>
+          <p class="portal-alerts-hint muted">Chat, late submission requests, and activity alerts. On desktop, use Chrome or Edge if Safari does not show banners. The in-app bell still works while you are signed in.</p>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <p id="portalNotifyVapidHint" class="portal-alerts-hint muted" hidden></p>
+          <p id="portalNotifyDeniedHelp" class="portal-alerts-hint muted" hidden>In Arc or Chrome: click the lock icon in the address bar → Site settings → Notifications → Allow, then refresh this page.</p>
           <button type="button" class="btn btn--pri portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="btn btn--sec portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
         </div>
@@ -334,7 +338,7 @@
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
-  <script src="/portal/portal-admin-web-push.js?v=20260610-chat-push-filter"></script>
+  <script src="/portal/portal-admin-web-push.js?v=20260608-admin-notify-ui"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260610-chat-mobile-admin-fix"></script>
 
   <script>

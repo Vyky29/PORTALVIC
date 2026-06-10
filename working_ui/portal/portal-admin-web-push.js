@@ -227,6 +227,9 @@
   }
 
   async function portalAdminRegisterPushAfterGrant(statusEl) {
+    if (statusEl) {
+      statusEl.textContent = "Registering this device for background alerts…";
+    }
     if (typeof global.portalRegisterPortalServiceWorker === "function") {
       try {
         await global.portalRegisterPortalServiceWorker();
@@ -234,12 +237,53 @@
     }
     var hasSession = await portalAdminWaitForSession(15000);
     if (!hasSession) {
+      var noSessionMsg =
+        typeof global.portalSubscribeFailureMessage === "function"
+          ? global.portalSubscribeFailureMessage({ reason: "no-session" })
+          : portalAdminSubscribeFailureMessage({ reason: "no-session" });
+      if (statusEl) statusEl.textContent = noSessionMsg;
+      portalAdminToastFallback(
+        "Sign-in still loading — wait, then tap Turn on again.",
+        5200
+      );
       return { ok: false, reason: "no-session" };
     }
     if (typeof global.portalEnsureWebPushSubscription !== "function") {
       return { ok: false, reason: "no-fn" };
     }
     var wp = await global.portalEnsureWebPushSubscription();
+    if (wp && wp.ok) {
+      var env =
+        typeof global.portalNotifyEnvironment === "function"
+          ? global.portalNotifyEnvironment()
+          : {};
+      var iosCallHint = "";
+      if (
+        env.isIOS &&
+        env.mobile &&
+        typeof global.portalIsStandalonePwa === "function" &&
+        !global.portalIsStandalonePwa()
+      ) {
+        iosCallHint =
+          " For incoming calls when the app is closed, add the portal to your Home Screen and open it from that icon.";
+      }
+      if (statusEl) {
+        statusEl.textContent =
+          "Registered — tap Send test alert below to confirm banners reach this device." +
+          iosCallHint;
+      }
+      portalAdminToastFallback(
+        "Notifications registered on this device." + iosCallHint,
+        iosCallHint ? 7200 : 3600
+      );
+      return wp;
+    }
+    var failMsg =
+      typeof global.portalSubscribeFailureMessage === "function"
+        ? global.portalSubscribeFailureMessage(wp)
+        : portalAdminSubscribeFailureMessage(wp);
+    if (statusEl) statusEl.textContent = failMsg + notifyContextHint(wp && wp.reason);
+    portalAdminToastFallback(failMsg, 5200);
     return wp || { ok: false, reason: "unknown" };
   }
 
@@ -252,7 +296,7 @@
       Notification.permission === "granted" &&
       typeof global.portalEnsureWebPushSubscription === "function"
     ) {
-      void portalAdminRegisterPushAfterGrant(null);
+      void portalAdminRegisterPushAfterGrant(qNotify("portalNotifyStatus"));
     }
   }
 
@@ -416,49 +460,123 @@
     var alertsUiBound = false;
 
     function applyWebPushStatus(statusEl, wp) {
-      /* UI stays silent — button state only */
+      if (!statusEl || !wp) return;
+      if (typeof global.portalApplyWebPushStatus === "function") {
+        global.portalApplyWebPushStatus(statusEl, wp);
+        return;
+      }
+      if (wp.ok) {
+        statusEl.textContent =
+          "On — including alerts when this browser is in the background (Mac or Windows).";
+      }
     }
 
     function syncTestButton(testBtn, permission, opts) {
-      if (testBtn) testBtn.hidden = true;
+      opts = opts || {};
+      if (!testBtn) return;
+      testBtn.classList.remove("portal-alerts-test-btn--ready");
+      if (typeof Notification === "undefined") {
+        testBtn.hidden = true;
+        return;
+      }
+      if (permission !== "granted") {
+        testBtn.hidden = true;
+        testBtn.disabled = true;
+        testBtn.setAttribute("aria-disabled", "true");
+        return;
+      }
+      testBtn.hidden = false;
+      testBtn.disabled = false;
+      testBtn.setAttribute("aria-disabled", "false");
+      testBtn.textContent = "Send test alert";
+      if (opts.highlight) {
+        testBtn.classList.add("portal-alerts-test-btn--ready");
+      }
+    }
+
+    function syncVapidHint() {
+      var vapidEl = qNotify("portalNotifyVapidHint");
+      if (!vapidEl) return;
+      if (typeof global.portalSyncNotifyVapidHint === "function") {
+        global.portalSyncNotifyVapidHint(vapidEl);
+        return;
+      }
+      if (typeof global.portalVapidStatusText === "function") {
+        vapidEl.textContent = global.portalVapidStatusText();
+        vapidEl.hidden = false;
+      }
+    }
+
+    function syncDeniedHelp(show) {
+      var el = qNotify("portalNotifyDeniedHelp");
+      if (el) el.hidden = !show;
     }
 
     function refresh() {
       var statusEl = qNotify("portalNotifyStatus");
       var btn = qNotify("portalNotifyEnableBtn");
       var testBtn = qNotify("portalNotifyTestBtn");
-      if (statusEl) statusEl.textContent = "";
-      syncTestButton(testBtn, "unsupported");
+      if (!statusEl) return;
+      var ctx = notifyContextHint();
+      syncVapidHint();
+      syncDeniedHelp(false);
       if (typeof Notification === "undefined") {
+        statusEl.textContent = "Not supported on this browser." + ctx;
         if (btn) btn.disabled = true;
+        syncTestButton(testBtn, "unsupported");
         return;
       }
       var p = Notification.permission;
       if (p === "granted") {
+        statusEl.textContent =
+          "On — tap Send test alert to confirm banners reach this device.";
+        syncTestButton(testBtn, p);
         if (typeof global.portalEnsureWebPushSubscription === "function") {
           global.portalEnsureWebPushSubscription().then(function (wp) {
+            applyWebPushStatus(statusEl, wp);
+            if (wp && wp.ok) {
+              statusEl.textContent =
+                "On — tap Send test alert to confirm banners reach this device.";
+            }
+            syncTestButton(testBtn, "granted", { highlight: !!(wp && wp.ok) });
             if (btn) {
               if (wp && wp.ok) {
                 btn.textContent = "Notifications on";
                 btn.disabled = true;
               } else {
-                btn.textContent = "Turn on notifications";
+                btn.textContent = "Register this device";
                 btn.disabled = false;
               }
             }
           });
         } else if (btn) {
-          btn.textContent = "Turn on notifications";
+          btn.textContent = "Register this device";
           btn.disabled = false;
         }
       } else if (p === "denied") {
+        syncTestButton(testBtn, p);
+        syncDeniedHelp(true);
+        statusEl.textContent =
+          "Blocked — allow notifications for this site in browser settings." +
+          ctx;
+        if (btn) {
+          btn.textContent = "Check browser settings";
+          btn.disabled = false;
+        }
+      } else {
+        var env =
+          typeof global.portalNotifyEnvironment === "function"
+            ? global.portalNotifyEnvironment()
+            : null;
+        syncTestButton(testBtn, p);
+        statusEl.textContent =
+          "Off — tap Turn on notifications and choose Allow in the browser prompt." +
+          (env && env.desktop ? " Use Chrome or Edge on desktop for best results." : "") +
+          ctx;
         if (btn) {
           btn.textContent = "Turn on notifications";
           btn.disabled = false;
         }
-      } else if (btn) {
-        btn.textContent = "Turn on notifications";
-        btn.disabled = false;
       }
     }
 
@@ -467,16 +585,59 @@
     function onEnableClick() {
       if (typeof Notification === "undefined") return;
       var statusEl = qNotify("portalNotifyStatus");
+      if (Notification.permission === "denied") {
+        syncDeniedHelp(true);
+        if (statusEl) {
+          statusEl.textContent =
+            "Blocked — allow notifications for this site in browser settings." +
+            notifyContextHint("denied");
+        }
+        refresh();
+        return;
+      }
       if (Notification.permission === "granted") {
         void portalAdminRegisterPushAfterGrant(statusEl).then(function () {
           refresh();
         });
         return;
       }
+      if (statusEl) {
+        statusEl.textContent = "Waiting for browser permission…";
+      }
       Notification.requestPermission()
         .then(function (r) {
           if (r === "granted") {
+            try {
+              new Notification("Admin portal alerts on", {
+                body: "Ops alerts and chat on this device.",
+              });
+            } catch (e) {
+              if (statusEl) {
+                statusEl.textContent =
+                  "Permission granted but the browser did not show a banner: " +
+                  (e && e.message ? e.message : String(e)) +
+                  notifyContextHint();
+              }
+            }
             return portalAdminRegisterPushAfterGrant(statusEl);
+          }
+          if (statusEl) {
+            statusEl.textContent =
+              r === "default"
+                ? "No permission yet — tap Allow in the browser prompt, or try again." +
+                  notifyContextHint()
+                : "Notification permission was not granted (" +
+                  String(r) +
+                  ")." +
+                  notifyContextHint();
+          }
+        })
+        .catch(function (err) {
+          if (statusEl) {
+            statusEl.textContent =
+              "Could not request notification permission: " +
+              (err && err.message ? err.message : String(err)) +
+              notifyContextHint();
           }
         })
         .then(function () {
@@ -485,11 +646,75 @@
     }
 
     function sendTestNotification(statusEl) {
+      if (typeof global.portalSendLocalTestNotification === "function") {
+        return global.portalSendLocalTestNotification({
+          title: "Test: admin portal notification",
+          body: "If you see this banner, notifications are working on this device.",
+        }).then(function (result) {
+          var msg =
+            typeof global.portalTestNotificationStatusMessage === "function"
+              ? global.portalTestNotificationStatusMessage(result)
+              : result && result.ok
+                ? "Test sent — if you saw the banner, this device is ready."
+                : "Could not show test notification.";
+          if (statusEl) statusEl.textContent = msg;
+          if (result && result.ok) {
+            portalAdminToastFallback("Test notification sent.", 3200);
+          }
+        });
+      }
+      try {
+        new Notification("Test: admin portal notification", {
+          body: "If you see this banner, notifications are working on this device.",
+          icon: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
+          badge: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
+        });
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        if (statusEl) {
+          statusEl.textContent = "Test sent — if you saw the banner, this device is ready.";
+        }
+        portalAdminToastFallback("Test notification sent.", 3200);
+      } catch (e) {
+        if (statusEl) {
+          statusEl.textContent =
+            "Could not show test notification: " +
+            (e && e.message ? e.message : String(e)) +
+            notifyContextHint();
+        }
+      }
       return Promise.resolve();
     }
 
     function onTestClick() {
-      /* hidden in UI */
+      var statusEl = qNotify("portalNotifyStatus");
+      if (typeof Notification === "undefined") return;
+      if (Notification.permission === "default") {
+        if (statusEl) statusEl.textContent = "Waiting for browser permission…";
+        Notification.requestPermission()
+          .then(function (r) {
+            if (r === "granted") {
+              return portalAdminRegisterPushAfterGrant(statusEl);
+            }
+            if (statusEl) {
+              statusEl.textContent =
+                "Allow notifications to send a test alert." + notifyContextHint();
+            }
+          })
+          .then(function () {
+            refresh();
+            if (Notification.permission === "granted") sendTestNotification(statusEl);
+          })
+          .catch(function () {
+            refresh();
+          });
+        return;
+      }
+      if (Notification.permission === "granted") {
+        void portalAdminRegisterPushAfterGrant(statusEl).then(function () {
+          sendTestNotification(statusEl);
+          refresh();
+        });
+      }
     }
 
     function handleAlertsSheetButtonClick(t) {
