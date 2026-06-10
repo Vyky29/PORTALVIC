@@ -237,20 +237,33 @@
     }
   }
 
+  function portalChatAlertIsMobile() {
+    try {
+      if (global.matchMedia && global.matchMedia("(pointer: coarse)").matches) return true;
+      return /iphone|ipad|ipod|android/i.test(String(global.navigator.userAgent || ""));
+    } catch (_m) {
+      return false;
+    }
+  }
+
   function playChatMessageAlertSound() {
     primeChatAlertAudio();
     global.__PORTAL_CHAT_SOUND_PLAYED__ = false;
+    var mobile = portalChatAlertIsMobile();
+    if (mobile) {
+      playChatMessageAlertSoundHtml5();
+    }
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
       if (!Ctx) {
-        playChatMessageAlertSoundHtml5();
+        if (!mobile) playChatMessageAlertSoundHtml5();
         return false;
       }
       var ctx = global.__PORTAL_CHAT_AUDIO_CTX__ || new Ctx();
       global.__PORTAL_CHAT_AUDIO_CTX__ = ctx;
       function chirp() {
         var gain = ctx.createGain();
-        gain.gain.value = 0.48;
+        gain.gain.value = mobile ? 0.55 : 0.48;
         gain.connect(ctx.destination);
         function beep(freq, start, dur) {
           var osc = ctx.createOscillator();
@@ -263,7 +276,9 @@
         var t = ctx.currentTime;
         beep(880, t, 0.11);
         beep(1174.66, t + 0.13, 0.15);
-        global.__PORTAL_CHAT_SOUND_PLAYED__ = true;
+        setTimeout(function () {
+          global.__PORTAL_CHAT_SOUND_PLAYED__ = true;
+        }, 300);
       }
       if (ctx.state === "suspended") {
         void ctx
@@ -272,12 +287,12 @@
           .catch(function () {
             playChatMessageAlertSoundHtml5();
           });
-      } else {
+      } else if (!mobile) {
         chirp();
       }
       setTimeout(function () {
         if (!global.__PORTAL_CHAT_SOUND_PLAYED__) playChatMessageAlertSoundHtml5();
-      }, 120);
+      }, mobile ? 60 : 140);
       return true;
     } catch (_e) {
       playChatMessageAlertSoundHtml5();

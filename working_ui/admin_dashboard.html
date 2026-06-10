@@ -335,7 +335,7 @@
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260610-chat-push-filter"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-rail"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-mobile-admin-fix"></script>
 
   <script>
   (function(){
@@ -20775,12 +20775,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_INBOX_UNREAD_SYNCED__ = true;
       window.__PORTAL_ADMIN_DM_LIST_KNOWS_UNREAD = total > 0;
       if(total <= 0){
-        window.__PORTAL_ADMIN_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
-        if(typeof window.portalAdminDmDismissChatPushNotifications === 'function'){
-          window.portalAdminDmDismissChatPushNotifications();
+        var keepStaff = !!window.__PORTAL_ADMIN_DM_SCAN_UNREAD_STAFF__;
+        var keepCeo = !!window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO__;
+        var keepCeoGrp = !!window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO_GROUP__;
+        if(!keepStaff && !keepCeo && !keepCeoGrp){
+          window.__PORTAL_ADMIN_DM_UNREAD = false;
+          window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
+          window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
+          window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
+          if(typeof window.portalAdminDmDismissChatPushNotifications === 'function'){
+            window.portalAdminDmDismissChatPushNotifications();
+          }
+        }else{
+          if(keepStaff) window.__PORTAL_ADMIN_DM_UNREAD = true;
+          if(keepCeo) window.__PORTAL_ADMIN_CEO_DM_UNREAD = true;
+          if(keepCeoGrp) window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = true;
+          window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = Math.max(Number(window.__PORTAL_STAFF_DM_UNREAD_COUNT__ || 0), 1);
         }
       }else{
         window.__PORTAL_ADMIN_DM_UNREAD = staffMsgs > 0;
@@ -21177,7 +21187,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UNREAD = hs || hgStaff;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
+        window.__PORTAL_ADMIN_DM_SCAN_UNREAD_STAFF__ = !!(hs || hgStaff);
+        window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO__ = !!hc;
+        window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO_GROUP__ = !!hgCeo;
         await portalAdminDmRefreshChatBadgeFromCachedInbox();
+        try{
+          delete window.__PORTAL_ADMIN_DM_SCAN_UNREAD_STAFF__;
+          delete window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO__;
+          delete window.__PORTAL_ADMIN_DM_SCAN_UNREAD_CEO_GROUP__;
+        }catch(_scanClr){}
         portalAdminDmApplyTeamTileUnreadClass();
         var suppressLoginNotify = !!window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC;
         var nowUnread = portalAdminDmHasUnread();
