@@ -1075,7 +1075,7 @@
   <script src="/portal/portal_dm_roles.js?v=20260610-javi-javier-split"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260610-mgmt-thread-unify"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
@@ -1091,11 +1091,12 @@
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-chat-focus-fix"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-exec-lead-home"></script>
+  <script src="/portal/portal_management_dm_routing.js?v=20260610-exec-lead-home"></script>
   <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-focus-fix"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-mobile-admin-fix"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-logo-alert"></script>
   <script src="/portal/portal_sheet_back.js?v=20260609-dock-menu-nav"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -7358,6 +7359,9 @@
           window.portalStaffNotifyIncomingChat('Admin', preview || 'New message', row);
         }
       }else{
+        if(typeof window.portalStaffNotifyIncomingChat === 'function'){
+          window.portalStaffNotifyIncomingChat('Admin', '', row, { suppressVisual: true });
+        }
         if(typeof portalStaffDmMarkThreadSeenNow === 'function'){
           portalStaffDmMarkThreadSeenNow(openTid || msgTid, row.created_at || undefined);
         }
@@ -8254,6 +8258,8 @@
       }
     }
     window.portalRenderInternalChatSheet = async function portalRenderInternalChatSheet(){
+      if(window.__PORTAL_INTERNAL_CHAT_RENDER_BUSY__) return;
+      window.__PORTAL_INTERNAL_CHAT_RENDER_BUSY__ = true;
       window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH = (window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH || 0) + 1;
       var renderEpoch = window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH;
       try{
@@ -8384,6 +8390,15 @@
             var peer = portalDmPeerIdForThread(me, r);
             return portalStaffInboxPeerAllowed(profBy[peer] || {});
           });
+        }
+        if(
+          window.portalLeadStaffChatDirectory &&
+          typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+          window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+          window.portalCsCliqSupportRoute &&
+          typeof window.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical === 'function'
+        ){
+          rows = await window.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical(client, rows, profBy, me);
         }
         var staffHasDirectory = window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffHasPeerDirectory === 'function' && window.portalLeadStaffChatDirectory.portalStaffHasPeerDirectory(box && box.staff_profile);
         if(staffHasDirectory && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getInboxTab === 'function' && window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
@@ -8517,6 +8532,22 @@
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;
+            var routeClick = window.portalCsCliqSupportRoute || {};
+            var workerPeerClick = routeClick.workerPeerFromThread
+              ? routeClick.workerPeerFromThread(r, profBy, me)
+              : '';
+            if(
+              workerPeerClick &&
+              window.portalLeadStaffChatDirectory &&
+              typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+              window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+              routeClick.isWorkerRecipient &&
+              routeClick.isWorkerRecipient(profBy[workerPeerClick] || {})
+            ){
+              window.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = workerPeerClick;
+              window.__PORTAL_INTERNAL_CHAT_UI.workerId = workerPeerClick;
+              window.__PORTAL_INTERNAL_CHAT_UI.inboxLane = 'ops';
+            }
             void window.portalRenderInternalChatSheet();
           });
           listHost.appendChild(btn);
@@ -8761,7 +8792,34 @@
           : '';
         var dmPeerOpen = portalDmPeerIdForThread(me, tres.data);
         var dmPeerProfOpen = profByOpen[dmPeerOpen] || null;
+        var mgmtMessenger =
+          window.portalLeadStaffChatDirectory &&
+          typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+          window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile);
+        var workerPeerOpen = routeOpen.workerPeerFromThread
+          ? routeOpen.workerPeerFromThread(tres.data, profByOpen, me)
+          : '';
         if(
+          mgmtMessenger &&
+          workerPeerOpen &&
+          routeOpen.isWorkerRecipient &&
+          routeOpen.isWorkerRecipient(profByOpen[workerPeerOpen] || {})
+        ){
+          var canonOpenTid = '';
+          if(typeof routeOpen.findOfficeThreadForWorker === 'function'){
+            canonOpenTid = String(await routeOpen.findOfficeThreadForWorker(client, workerPeerOpen) || '').trim();
+          }
+          if(canonOpenTid){
+            tid = canonOpenTid;
+            window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+          }
+          window.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = workerPeerOpen;
+          window.__PORTAL_INTERNAL_CHAT_UI.workerId = workerPeerOpen;
+          window.__PORTAL_INTERNAL_CHAT_UI.inboxLane = 'ops';
+          peerId = workerPeerOpen;
+          peerProf = profByOpen[workerPeerOpen] || null;
+          peerLabel = portalDmPeerDisplayLabel(workerPeerOpen, peerProf || {});
+        }else if(
           portalStaffIsRestrictedWorkerChat() &&
           (officePeerOpen || portalStaffProfileIsOpsAdminPeer(dmPeerProfOpen))
         ){
@@ -8985,6 +9043,7 @@
         portalSyncInternalChatMobileViewport();
       }
       }finally{
+        window.__PORTAL_INTERNAL_CHAT_RENDER_BUSY__ = false;
         if(portalInternalChatSheetIsOpen()) portalClearInternalChatBooting();
       }
     };
@@ -9058,6 +9117,25 @@
         if(canonSendTid){
           tid = canonSendTid;
           window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+        }
+      }
+      if(
+        tid && !gid &&
+        window.portalLeadStaffChatDirectory &&
+        typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+        window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.resolveManagementSendTarget === 'function'
+      ){
+        var mgmtSend = await window.portalCsCliqSupportRoute.resolveManagementSendTarget(client, me, ui);
+        if(mgmtSend && mgmtSend.threadId){
+          tid = String(mgmtSend.threadId);
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+          if(mgmtSend.workerId){
+            window.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = mgmtSend.workerId;
+            window.__PORTAL_INTERNAL_CHAT_UI.workerId = mgmtSend.workerId;
+            window.__PORTAL_INTERNAL_CHAT_UI.inboxLane = 'ops';
+          }
         }
       }
       if(!body){

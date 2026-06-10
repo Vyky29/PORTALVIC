@@ -49,7 +49,20 @@
 
   function isMissingTableError(err) {
     var msg = String((err && err.message) || err || "");
-    return /does not exist|could not find|schema cache|PGRST205|404/i.test(msg);
+    var code = String((err && err.code) || "").trim();
+    return (
+      /does not exist|could not find|schema cache|PGRST205|404/i.test(msg) ||
+      code === "PGRST205"
+    );
+  }
+
+  function isReadCursorUnavailableError(err) {
+    if (!err) return false;
+    if (isMissingTableError(err)) return true;
+    var status = Number(err.status || err.statusCode || 0);
+    if (status >= 400) return true;
+    var msg = String(err.message || err || "");
+    return /permission denied|JWT|row-level security|42501/i.test(msg);
   }
 
   async function syncTargets(client, threadIds, groupIds) {
@@ -70,7 +83,7 @@
           .select("thread_id,read_at")
           .in("thread_id", threadIds);
         if (tr.error) {
-          if (isMissingTableError(tr.error)) {
+          if (isReadCursorUnavailableError(tr.error)) {
             tableMissing = true;
             return;
           }
@@ -86,7 +99,7 @@
           .select("group_id,read_at")
           .in("group_id", groupIds);
         if (gr.error) {
-          if (isMissingTableError(gr.error)) {
+          if (isReadCursorUnavailableError(gr.error)) {
             tableMissing = true;
             return;
           }
@@ -111,7 +124,7 @@
         p_read_at: iso,
       });
       if (rpc.error) {
-        if (isMissingTableError(rpc.error)) tableMissing = true;
+        if (isReadCursorUnavailableError(rpc.error)) tableMissing = true;
         return;
       }
       if (rpc.data) cacheThread(threadId, rpc.data);
@@ -130,7 +143,7 @@
         p_read_at: iso,
       });
       if (rpc.error) {
-        if (isMissingTableError(rpc.error)) tableMissing = true;
+        if (isReadCursorUnavailableError(rpc.error)) tableMissing = true;
         return;
       }
       if (rpc.data) cacheGroup(groupId, rpc.data);

@@ -198,7 +198,7 @@ export function portalIsOperationsAdminUser(profile, authEmail) {
 
 /**
  * Sevitha-only surfaces (e.g. restricted ops config) — not a block on admin_dashboard access.
- * Victor, Raúl and Javi use admin_dashboard for day-to-day operations.
+ * Victor, Raúl and Javi use lead_dashboard as home; admin remains available via workspace switch.
  */
 export function portalCanAccessAdminDashboardFull(profile, authEmail) {
   return portalIsOperationsAdminUser(profile, authEmail);
@@ -258,13 +258,20 @@ export function portalCanWriteScheduleOverrides(profile, authEmail) {
   return eff === "admin" || eff === "ceo";
 }
 
+/** Victor, Raúl, Javi — home shell is Lead Portal (staff & leads chat + Directors). */
+export function portalIsExecutiveLeadHomeUser(profile, authEmail) {
+  return portalCanAccessCeoDashboard(profile, authEmail);
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
+ * Executive trio skip chooser — land on Lead Portal directly.
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  */
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
+  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
   if (portalIsOperationsAdminUser(profile, authEmail)) return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
@@ -448,13 +455,14 @@ function inferDashboardRoute(profile, authEmail) {
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (fromWorkingUi) {
-    if (portalCanAccessCeoDashboard(profile, authEmail)) return "ceo_dashboard.html";
+    if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "lead_dashboard.html";
+    if (portalIsOperationsAdminUser(profile, authEmail)) return "admin_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
-  const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-  if (portalCanAccessCeoDashboard(profile, authEmail)) return ceoUrl;
+  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return portalPublishedLeadUrl();
+  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedAdminUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();
@@ -958,10 +966,9 @@ export async function bootstrapDashboardSupabase(_opts) {
     if (page === "admin") {
       if (!portalCanAccessAdminDashboard(profile, authEmailGate)) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
-        const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
         const dest = portalNormalizeUrl(
-          eff === "ceo"
-            ? ceoUrl
+          portalIsExecutiveLeadHomeUser(profile, authEmailGate)
+            ? portalPublishedLeadUrl()
             : eff === "lead"
               ? portalPublishedLeadUrl()
               : portalPublishedStaffUrl()

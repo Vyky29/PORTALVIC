@@ -351,8 +351,22 @@
     return String(prof.app_role || "").toLowerCase() === "ceo";
   }
 
+  function isExecutiveTrio(prof) {
+    prof = profileRow(prof);
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsExecutiveCeoTrioMember === "function"
+    ) {
+      return global.portalDmRoles.portalDmIsExecutiveCeoTrioMember(prof);
+    }
+    var ar = String(prof.app_role || "").toLowerCase();
+    var u = normKey(prof.username);
+    return ar === "ceo" && (u === "raul" || u === "victor" || u === "javi");
+  }
+
   function getDirectoryMode(prof) {
     if (portalStaffHasLeadRestrictedInbox(prof)) return "";
+    if (portalStaffOnLeadDashboard() && isExecutiveTrio(prof)) return "csteam";
     if (portalStaffIsCeoTrioOnWorkerDashboard(prof)) return "ceo_exec";
     if (portalStaffIsManagementMessenger(prof)) return "csteam";
     return "";
@@ -2567,7 +2581,31 @@
 
     var threadId = "";
     try {
-      if (typeof global.portalStaffEnsureDmThreadBetween === "function") {
+      var route = global.portalCsCliqSupportRoute || {};
+      var profOpen = profileRow();
+      var peerRow = null;
+      if (box && box.client) {
+        var pr0 = await box.client
+          .from("staff_profiles")
+          .select("id,app_role,staff_role,dashboard_route,is_active,full_name,username")
+          .eq("id", peerId)
+          .maybeSingle();
+        peerRow = !pr0.error && pr0.data ? pr0.data : null;
+      }
+      if (
+        portalStaffIsManagementMessenger(profOpen) &&
+        peerRow &&
+        ((route.isWorkerRecipient && route.isWorkerRecipient(peerRow)) ||
+          (typeof global.portalInternalDmIsWorkerRecipient === "function" &&
+            global.portalInternalDmIsWorkerRecipient(peerRow)))
+      ) {
+        if (typeof route.resolveManagementOpenWorkerThread === "function") {
+          threadId = String(
+            (await route.resolveManagementOpenWorkerThread(box.client, peerId)) || ""
+          ).trim();
+        }
+      }
+      if (!threadId && typeof global.portalStaffEnsureDmThreadBetween === "function") {
         threadId = String((await global.portalStaffEnsureDmThreadBetween(me, peerId)) || "").trim();
       }
     } catch (e) {
@@ -2592,7 +2630,23 @@
     global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
     global.__PORTAL_INTERNAL_CHAT_UI.threadId = threadId;
     global.__PORTAL_INTERNAL_CHAT_UI.groupId = "";
-    var profOpen = profileRow();
+    if (
+      portalStaffIsManagementMessenger(profOpen) &&
+      peerRow &&
+      global.portalCsCliqSupportRoute &&
+      ((global.portalCsCliqSupportRoute.isWorkerRecipient &&
+        global.portalCsCliqSupportRoute.isWorkerRecipient(peerRow)) ||
+        (typeof global.portalInternalDmIsWorkerRecipient === "function" &&
+          global.portalInternalDmIsWorkerRecipient(peerRow)))
+    ) {
+      global.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = peerId;
+      global.__PORTAL_INTERNAL_CHAT_UI.workerId = peerId;
+      global.__PORTAL_INTERNAL_CHAT_UI.inboxLane = "ops";
+    } else {
+      global.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = "";
+      global.__PORTAL_INTERNAL_CHAT_UI.workerId = "";
+      global.__PORTAL_INTERNAL_CHAT_UI.inboxLane = "";
+    }
     if (isDirectoryTab(getInboxTab())) {
       markThreadReturnContext({ pane: "directory" });
     } else if (portalStaffHasSimplifiedInboxTabs(profOpen)) {

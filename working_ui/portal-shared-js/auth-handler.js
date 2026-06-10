@@ -210,13 +210,20 @@ export function portalCanAccessCeoDashboard(profile, authEmail) {
   return PORTAL_CEO_DASHBOARD_ALLOWED_KEYS.has(staffKey);
 }
 
+/** Victor, Raúl, Javi — home shell is Lead Portal (staff & leads chat + Directors). */
+export function portalIsExecutiveLeadHomeUser(profile, authEmail) {
+  return portalCanAccessCeoDashboard(profile, authEmail);
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
+ * Executive trio skip chooser — land on Lead Portal directly.
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  */
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
+  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
   const staffKey = portalInferStaffKey(profile, authEmail);
   if (staffKey === "sevitha" || staffKey === "info") return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
@@ -282,17 +289,19 @@ function resolveDashboardRedirect(route) {
 
 function inferDashboardRoute(profile, authEmail) {
   const effectiveRole = portalInferEffectiveRole(profile, authEmail);
+  const staffKey = portalInferStaffKey(profile, authEmail);
   const fromWorkingUi =
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (fromWorkingUi) {
-    if (portalCanAccessCeoDashboard(profile, authEmail)) return "ceo_dashboard.html";
+    if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "lead_dashboard.html";
+    if (staffKey === "sevitha" || staffKey === "info") return "admin_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
-  const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-  if (portalCanAccessCeoDashboard(profile, authEmail)) return ceoUrl;
+  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return portalPublishedLeadUrl();
+  if (staffKey === "sevitha" || staffKey === "info") return portalPublishedAdminUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();

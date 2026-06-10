@@ -298,6 +298,13 @@
 
   async function collapseStaffDmRowsToCanonical(client, rows, profBy, me) {
     if (!Array.isArray(rows) || rows.length < 2) return rows || [];
+    me = String(me || "").trim();
+    var cacheKey = me + "|" + rows.map(function (r) {
+      return String((r && r.id) || "");
+    }).join(",");
+    global.__PORTAL_DM_COLLAPSE_CACHE__ = global.__PORTAL_DM_COLLAPSE_CACHE__ || {};
+    var hit = global.__PORTAL_DM_COLLAPSE_CACHE__[cacheKey];
+    if (hit && Date.now() - hit.at < 5000 && Array.isArray(hit.rows)) return hit.rows.slice();
     var byWorker = {};
     var other = [];
     rows.forEach(function (r) {
@@ -321,6 +328,8 @@
       var canonical = await resolveCanonicalThreadRow(client, workers[i], list, profBy);
       out.push(canonical || list[0]);
     }
+    global.__PORTAL_DM_COLLAPSE_CACHE__ = global.__PORTAL_DM_COLLAPSE_CACHE__ || {};
+    global.__PORTAL_DM_COLLAPSE_CACHE__[cacheKey] = { at: Date.now(), rows: out.slice() };
     return out;
   }
 
@@ -618,6 +627,68 @@
     } catch (_once) {}
   }
 
+  async function resolveManagementOpenWorkerThread(client, workerId) {
+    workerId = String(workerId || "").trim();
+    if (!client || !workerId || !viewerUsesSharedOpsInbox()) return "";
+    try {
+      var pr = await client
+        .from("staff_profiles")
+        .select("id,app_role,staff_role,dashboard_route,is_active,full_name,username")
+        .eq("id", workerId)
+        .maybeSingle();
+      if (pr.error || !pr.data || !isWorkerRecipient(pr.data)) return "";
+    } catch (_pw) {
+      return "";
+    }
+    var tid = await findOfficeThreadForWorker(client, workerId);
+    if (!tid) tid = await ensureOpsThreadForWorker(client, workerId);
+    return String(tid || "").trim();
+  }
+
+  async function resolveManagementSendTarget(client, me, ui) {
+    ui = ui || {};
+    me = String(me || meId()).trim();
+    var tid = String(ui.threadId || "").trim();
+    if (!client || !me || !viewerUsesSharedOpsInbox()) {
+      return { threadId: tid, workerId: "" };
+    }
+    var workerId = String(ui.managementWorkerId || ui.workerId || "").trim();
+    if (workerId) {
+      try {
+        var prW = await client
+          .from("staff_profiles")
+          .select("id,app_role,staff_role,dashboard_route,is_active,full_name,username")
+          .eq("id", workerId)
+          .maybeSingle();
+        if (prW.error || !prW.data || !isWorkerRecipient(prW.data)) workerId = "";
+      } catch (_pw2) {
+        workerId = "";
+      }
+    }
+    if (!workerId && tid) {
+      try {
+        var tres = await client
+          .from("portal_staff_dm_threads")
+          .select("participant_a,participant_b")
+          .eq("id", tid)
+          .maybeSingle();
+        if (tres.data) {
+          workerId = await resolveWorkerIdInPair(
+            client,
+            tres.data.participant_a,
+            tres.data.participant_b
+          );
+        }
+      } catch (_tr) {}
+    }
+    if (!workerId) return { threadId: tid, workerId: "" };
+    var opsTid = await findOfficeThreadForWorker(client, workerId);
+    if (!opsTid) opsTid = await ensureOpsThreadForWorker(client, workerId);
+    return { threadId: String(opsTid || tid), workerId: workerId };
+  }
+
+  global.portalAdminDmUsesSharedStaffInbox = viewerUsesSharedOpsInbox;
+
   global.portalCsCliqSupportRoute = {
     routeToCeos: routeToCeos,
     buildMessageBody: buildMessageBody,
@@ -638,6 +709,10 @@
     ensureOpsThreadForWorker: ensureOpsThreadForWorker,
     resolveOpsAdminId: resolveOpsAdminId,
     resolveStaffOfficeThreadId: resolveStaffOfficeThreadId,
+    resolveManagementOpenWorkerThread: resolveManagementOpenWorkerThread,
+    resolveManagementSendTarget: resolveManagementSendTarget,
+    workerPeerFromThread: workerPeerFromThread,
+    isWorkerRecipient: isWorkerRecipient,
     SUPPORT_PREFIX: SUPPORT_PREFIX,
     MEETING_PREFIX: MEETING_PREFIX,
   };

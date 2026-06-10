@@ -1062,13 +1062,13 @@
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-mobile-admin-fix"></script>
+  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-logo-alert"></script>
   <script src="/portal/portal_sheet_back.js?v=20260609-dock-menu-nav"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-lead-support-meetings"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260610-mgmt-thread-unify"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
@@ -1088,7 +1088,8 @@
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_lead_team_groups.js?v=20260609-chip-roles"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-chat-focus-fix"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-exec-lead-home"></script>
+  <script src="/portal/portal_management_dm_routing.js?v=20260610-exec-lead-home"></script>
   <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-focus-fix"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260609-lead-teams-v2"></script>
   <script>
@@ -7028,6 +7029,15 @@
             return portalStaffProfileIsOfficePeer(profBy[peer] || {});
           });
         }
+        if(
+          window.portalLeadStaffChatDirectory &&
+          typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+          window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+          window.portalCsCliqSupportRoute &&
+          typeof window.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical === 'function'
+        ){
+          rows = await window.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical(client, rows, profBy, me);
+        }
         if(!rows.length){
           var emptyMsg = portalInternalChatOfficeRestricted()
             ? "No conversations yet. Use <strong>Request support</strong> or <strong>Request meeting</strong> above, or wait for Management to message you."
@@ -7120,6 +7130,22 @@
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;
+            var routeClick = window.portalCsCliqSupportRoute || {};
+            var workerPeerClick = routeClick.workerPeerFromThread
+              ? routeClick.workerPeerFromThread(r, profBy, me)
+              : '';
+            if(
+              workerPeerClick &&
+              window.portalLeadStaffChatDirectory &&
+              typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+              window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+              routeClick.isWorkerRecipient &&
+              routeClick.isWorkerRecipient(profBy[workerPeerClick] || {})
+            ){
+              window.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = workerPeerClick;
+              window.__PORTAL_INTERNAL_CHAT_UI.workerId = workerPeerClick;
+              window.__PORTAL_INTERNAL_CHAT_UI.inboxLane = 'ops';
+            }
             if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.markThreadReturnContext === 'function'){
               window.portalLeadStaffChatDirectory.markThreadReturnContext({ pane: 'chats' });
             }
@@ -7485,6 +7511,25 @@
           window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
         }
       }
+      if(
+        tid && !gid &&
+        window.portalLeadStaffChatDirectory &&
+        typeof window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger === 'function' &&
+        window.portalLeadStaffChatDirectory.portalStaffIsManagementMessenger(box && box.staff_profile) &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.resolveManagementSendTarget === 'function'
+      ){
+        var mgmtSendLead = await window.portalCsCliqSupportRoute.resolveManagementSendTarget(client, me, ui);
+        if(mgmtSendLead && mgmtSendLead.threadId){
+          tid = String(mgmtSendLead.threadId);
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+          if(mgmtSendLead.workerId){
+            window.__PORTAL_INTERNAL_CHAT_UI.managementWorkerId = mgmtSendLead.workerId;
+            window.__PORTAL_INTERNAL_CHAT_UI.workerId = mgmtSendLead.workerId;
+            window.__PORTAL_INTERNAL_CHAT_UI.inboxLane = 'ops';
+          }
+        }
+      }
       if(!client || (!tid && !gid)){
         if(errB) errB.textContent = "Not available.";
         return;
@@ -7562,6 +7607,9 @@
           window.portalStaffNotifyIncomingChat('New message', preview || 'New message', row);
         }
       }else{
+        if(typeof window.portalStaffNotifyIncomingChat === 'function'){
+          window.portalStaffNotifyIncomingChat('New message', '', row, { suppressVisual: true });
+        }
         if(typeof portalStaffDmMarkThreadSeenNow === 'function'){
           portalStaffDmMarkThreadSeenNow(openTid, row.created_at || undefined);
         }

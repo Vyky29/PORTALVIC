@@ -115,6 +115,71 @@
     portalStaffToast(msg);
   }
 
+  var CHAT_LOGO_ICON = "/portal/app-icon/icon-192.png?v=20260624-push-icon";
+
+  function portalShowChatLogoAlert(title, body, opts) {
+    opts = opts || {};
+    if (typeof document === "undefined" || !document.body) return;
+    var now = Date.now();
+    global.__PORTAL_CHAT_LOGO_ALERT_LAST__ = global.__PORTAL_CHAT_LOGO_ALERT_LAST__ || 0;
+    if (now - global.__PORTAL_CHAT_LOGO_ALERT_LAST__ < 1200) return;
+    global.__PORTAL_CHAT_LOGO_ALERT_LAST__ = now;
+    title = String(title || "New message").trim();
+    body = String(body || "").trim();
+    var hostId = opts.hostId || "portalChatLogoAlertHost";
+    var host = document.getElementById(hostId);
+    if (!host) {
+      host = document.createElement("div");
+      host.id = hostId;
+      host.setAttribute("aria-live", "polite");
+      host.style.cssText =
+        "position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:9700;pointer-events:none;display:flex;flex-direction:column;gap:8px;max-width:420px;margin:0 auto;";
+      document.body.appendChild(host);
+    }
+    var el = document.createElement("button");
+    el.type = "button";
+    el.className = "portal-chat-logo-alert";
+    el.style.cssText =
+      "pointer-events:auto;width:100%;margin:0;padding:10px 12px;border:0;border-radius:16px;background:#fff;color:#0f172a;font:inherit;font-size:14px;line-height:1.35;text-align:left;box-shadow:0 10px 28px rgba(15,23,42,.22);cursor:pointer;display:flex;align-items:flex-start;gap:10px;min-width:0;";
+    var img = document.createElement("img");
+    img.src = CHAT_LOGO_ICON;
+    img.alt = "";
+    img.width = 40;
+    img.height = 40;
+    img.style.cssText = "width:40px;height:40px;border-radius:10px;flex:0 0 auto;object-fit:cover;";
+    var copy = document.createElement("span");
+    copy.style.cssText = "min-width:0;flex:1 1 auto;overflow-wrap:break-word;";
+    copy.innerHTML =
+      "<strong style=\"display:block;font-size:14px;margin:0 0 2px;\">" +
+      title.replace(/&/g, "&amp;").replace(/</g, "&lt;") +
+      "</strong>" +
+      (body
+        ? "<span style=\"display:block;font-size:13px;color:#475569;\">" +
+          body.replace(/&/g, "&amp;").replace(/</g, "&lt;") +
+          "</span>"
+        : "");
+    el.appendChild(img);
+    el.appendChild(copy);
+    el.addEventListener("click", function () {
+      try {
+        el.remove();
+      } catch (_r) {}
+      if (typeof opts.onClick === "function") {
+        opts.onClick();
+      } else if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
+        global.portalOpenInternalChatFromHeaderQuickMenu();
+      } else if (typeof global.portalAdminNavigateToCsCliq === "function") {
+        void global.portalAdminNavigateToCsCliq();
+      }
+    });
+    host.appendChild(el);
+    setTimeout(function () {
+      try {
+        el.remove();
+      } catch (_t) {}
+    }, opts.ms || 7000);
+  }
+
   function primeChatAlertAudio() {
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
@@ -249,21 +314,15 @@
   function playChatMessageAlertSound() {
     primeChatAlertAudio();
     global.__PORTAL_CHAT_SOUND_PLAYED__ = false;
-    var mobile = portalChatAlertIsMobile();
-    if (mobile) {
-      playChatMessageAlertSoundHtml5();
-    }
+    playChatMessageAlertSoundHtml5();
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
-      if (!Ctx) {
-        if (!mobile) playChatMessageAlertSoundHtml5();
-        return false;
-      }
+      if (!Ctx) return false;
       var ctx = global.__PORTAL_CHAT_AUDIO_CTX__ || new Ctx();
       global.__PORTAL_CHAT_AUDIO_CTX__ = ctx;
       function chirp() {
         var gain = ctx.createGain();
-        gain.gain.value = mobile ? 0.55 : 0.48;
+        gain.gain.value = 0.52;
         gain.connect(ctx.destination);
         function beep(freq, start, dur) {
           var osc = ctx.createOscillator();
@@ -287,12 +346,12 @@
           .catch(function () {
             playChatMessageAlertSoundHtml5();
           });
-      } else if (!mobile) {
+      } else {
         chirp();
       }
       setTimeout(function () {
         if (!global.__PORTAL_CHAT_SOUND_PLAYED__) playChatMessageAlertSoundHtml5();
-      }, mobile ? 60 : 140);
+      }, 120);
       return true;
     } catch (_e) {
       playChatMessageAlertSoundHtml5();
@@ -315,8 +374,10 @@
     if (typeof global.portalStaffDmBumpUnreadOptimistic === "function") {
       global.portalStaffDmBumpUnreadOptimistic();
     }
-    playChatMessageAlertSound();
-    if (global.navigator && global.navigator.vibrate) {
+    if (notifyOpts.suppressSound !== true) {
+      playChatMessageAlertSound();
+    }
+    if (notifyOpts.suppressVibrate !== true && global.navigator && global.navigator.vibrate) {
       try {
         global.navigator.vibrate([120, 55, 120, 55, 160]);
       } catch (_v) {}
@@ -324,13 +385,11 @@
     var appVisible =
       global.document && String(global.document.visibilityState || "") === "visible";
     var tag = "portal-chat-live-" + String((row && row.id) || Date.now());
-    /* Foreground: sound + unread chrome only — no in-app toast. */
-    if (appVisible) {
-      /* Server Web Push already raised the OS banner via the service worker. */
-    } else if (notifyOpts.fromServerPush) {
+    if (appVisible && notifyOpts.suppressVisual !== true) {
+      portalShowChatLogoAlert(title, preview);
+    } else if (!appVisible && notifyOpts.fromServerPush) {
       /* Background/killed: service worker owns OS notifications — do not duplicate from the page. */
-    } else if (typeof global.portalStaffNotifyOsWhiteTile === "function") {
-      /* Realtime-only fallback while the tab is alive but not focused (no server push). */
+    } else if (!appVisible && typeof global.portalStaffNotifyOsWhiteTile === "function") {
       global.portalStaffNotifyOsWhiteTile(title, preview, tag);
     }
     if (typeof global.syncPortalHeaderAlertChrome === "function") {
@@ -407,6 +466,7 @@
   global.portalOpenInternalChatFromPush = portalOpenInternalChatFromPush;
   global.portalStaffToast = portalStaffToast;
   global.portalStaffShowChatPushToast = portalStaffShowChatPushToast;
+  global.portalShowChatLogoAlert = portalShowChatLogoAlert;
   global.portalStaffNotifyIncomingChat = portalStaffNotifyIncomingChat;
   global.portalPlayChatMessageAlertSound = playChatMessageAlertSound;
   global.portalPrimeChatAlertAudio = primeChatAlertAudio;
