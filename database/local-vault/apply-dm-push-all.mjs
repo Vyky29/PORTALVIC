@@ -6,6 +6,9 @@
  *   node database/local-vault/apply-dm-push-all.mjs
  *   node database/local-vault/apply-dm-push-all.mjs --secrets   # also sync push/VAPID edge secrets
  *   node database/local-vault/apply-dm-push-all.mjs --deploy    # also redeploy push edge functions
+ *
+ * If app-closed chat/call push stops (403 on DB triggers), run:
+ *   node database/local-vault/repair-push-triggers.mjs --deploy
  */
 import { execSync } from "child_process";
 import fs from "fs";
