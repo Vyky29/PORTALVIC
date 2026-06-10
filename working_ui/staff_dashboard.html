@@ -1069,7 +1069,7 @@
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260610-worker-admin-label"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260610-javi-javier-split"></script>
@@ -7199,9 +7199,27 @@
       return parts[0] || t;
     }
     /** One line above bubble: staff workers see unified Admin on the shared ops line. */
-    function portalDmInternalMsgAuthorChip(mine, authorProf){
+    function portalDmInternalMsgAuthorChip(mine, authorProf, msg){
       if(mine) return '';
+      msg = msg || {};
+      var body = String(msg.body || '');
       if(portalStaffIsRestrictedWorkerChat()){
+        var opId = window.portalChatActorIdentity && typeof window.portalChatActorIdentity.parseDmOperatorId === 'function'
+          ? window.portalChatActorIdentity.parseDmOperatorId(body)
+          : '';
+        if(opId) return 'Admin';
+        if(
+          window.portalChatActorIdentity &&
+          typeof window.portalChatActorIdentity.workerPreviewSender === 'function'
+        ){
+          var ws = window.portalChatActorIdentity.workerPreviewSender(authorProf || {}, {
+            mine: false,
+            messageBody: body,
+            authorBy: (window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.lastAuthorBy) || {},
+            audience: 'worker'
+          });
+          if(ws) return ws;
+        }
         if(
           portalStaffProfileIsOfficePeer(authorProf || {}) ||
           (
@@ -7228,6 +7246,7 @@
         return window.portalChatActorIdentity.managementMsgAuthorChip({
           mine: false,
           authorProf: authorProf || {},
+          messageBody: body,
           channel: 'staff_lead',
           peerRole: ar === 'lead' ? 'lead' : 'staff',
           audience: 'worker'
@@ -7559,8 +7578,29 @@
       me = String(me || '').trim();
       var prof = authorBy && aid ? authorBy[aid] : null;
       var mine = !!(me && aid && me.toLowerCase() === aid.toLowerCase());
-      var sender = '';
+      var rawBody = String(m.body || '').trim();
+      var body = rawBody;
       if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        body = window.portalChatActorIdentity.stripDmOperatorTag(body);
+      }
+      var sender = '';
+      if(mine){
+        sender = 'You';
+      }else if(
+        portalStaffIsRestrictedWorkerChat() &&
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.workerPreviewSender === 'function'
+      ){
+        sender = window.portalChatActorIdentity.workerPreviewSender(prof || {}, {
+          mine: false,
+          messageBody: rawBody,
+          authorBy: authorBy,
+          audience: 'worker'
+        }) || 'Admin';
+      }else if(
         portalStaffIsRestrictedWorkerChat() &&
         prof &&
         (
@@ -7573,17 +7613,8 @@
         )
       ){
         sender = 'Admin';
-      }else if(mine){
-        sender = 'You';
       }else{
         sender = prof ? String(prof.full_name || prof.username || '').trim() : '';
-      }
-      var body = String(m.body || '').trim();
-      if(
-        window.portalChatActorIdentity &&
-        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
-      ){
-        body = window.portalChatActorIdentity.stripDmOperatorTag(body);
       }
       if(body.indexOf('[[portal-staff-call:') >= 0) return { sender: sender, preview: 'Voice call' };
       if(body.indexOf('[[portal-staff-call-end:') >= 0) return { sender: sender, preview: 'Call ended' };
@@ -8687,7 +8718,7 @@
             divG.className = 'portal-dm-msg ' + (mineG ? 'portal-dm-msg--mine' : 'portal-dm-msg--them portal-dm-msg--them-read');
             var tlineG = '';
             try{ if(gm.created_at) tlineG = new Date(gm.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }catch(_tg){}
-            var chipG = portalDmInternalMsgAuthorChip(mineG, authorByG[aidG] || {});
+            var chipG = portalDmInternalMsgAuthorChip(mineG, authorByG[aidG] || {}, gm);
             if(chipG){
               var chipElG = document.createElement('div');
               chipElG.className = 'portal-dm-msg-by';
@@ -8945,7 +8976,7 @@
           div.className = "portal-dm-msg " + (mine ? "portal-dm-msg--mine" : (themUnread ? "portal-dm-msg--them portal-dm-msg--them-unread" : "portal-dm-msg--them portal-dm-msg--them-read"));
           var tline = "";
           try{ if(m.created_at) tline = new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }catch(_t){}
-          var chip = portalDmInternalMsgAuthorChip(mine, authorBy[aid] || {});
+          var chip = portalDmInternalMsgAuthorChip(mine, authorBy[aid] || {}, m);
           if(chip){
             var chipEl = document.createElement("div");
             chipEl.className = "portal-dm-msg-by";

@@ -1059,7 +1059,7 @@
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260610-debug-eea3b5"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260610-worker-admin-label"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-inbox-meeting-support"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-logo-alert"></script>
@@ -6440,8 +6440,29 @@
       me = String(me || '').trim();
       var prof = authorBy && aid ? authorBy[aid] : null;
       var mine = !!(me && aid && me.toLowerCase() === aid.toLowerCase());
-      var sender = '';
+      var rawBody = String(m.body || '').trim();
+      var body = rawBody;
       if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        body = String(window.portalChatActorIdentity.stripDmOperatorTag(body) || '').trim();
+      }
+      var sender = '';
+      if(mine){
+        sender = 'You';
+      }else if(
+        portalStaffIsRestrictedWorkerChat() &&
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.workerPreviewSender === 'function'
+      ){
+        sender = window.portalChatActorIdentity.workerPreviewSender(prof || {}, {
+          mine: false,
+          messageBody: rawBody,
+          authorBy: authorBy,
+          audience: 'worker'
+        }) || 'Admin';
+      }else if(
         portalStaffIsRestrictedWorkerChat() &&
         prof &&
         (
@@ -6454,17 +6475,8 @@
         )
       ){
         sender = 'Admin';
-      }else if(mine){
-        sender = 'You';
       }else{
         sender = prof ? String(prof.full_name || prof.username || '').trim() : '';
-      }
-      var body = String(m.body || '').trim();
-      if(
-        window.portalChatActorIdentity &&
-        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
-      ){
-        body = String(window.portalChatActorIdentity.stripDmOperatorTag(body) || '').trim();
       }
       if(body.indexOf('[[portal-staff-call:') >= 0) return { sender: sender, preview: 'Voice call' };
       if(body.indexOf('[[portal-staff-call-end:') >= 0) return { sender: sender, preview: 'Call ended' };

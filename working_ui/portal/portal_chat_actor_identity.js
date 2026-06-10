@@ -263,6 +263,14 @@
     return ar === "admin" || ar === "ceo";
   }
 
+  /** Worker-facing labels: never expose director/ops names — ignore is_active gate. */
+  function isManagementAuthorForWorkerDisplay(row) {
+    if (!row) return false;
+    if (isDirectorAuthor(row) || isOpsAdminAuthor(row)) return true;
+    var ar = String(row.app_role || "").toLowerCase();
+    return ar === "admin" || ar === "ceo";
+  }
+
   function viewerUsesAdminCliq(viewer) {
     viewer = viewer || profileRow();
     return !!(
@@ -310,6 +318,12 @@
     opts = opts || {};
     if (opts.mine) return "";
     var author = opts.authorProf || opts.authorRow || {};
+    // Workers/leads on staff dashboard: always unified Admin — never Victor/Sevitha from operator tag.
+    if (opts.audience === "worker") {
+      if (parseDmOperatorId(opts.messageBody || "")) return "Admin";
+      if (isManagementAuthorForWorkerDisplay(author)) return workerFacingAuthorChip(author);
+      return profileDisplayName(author) || shortName(author.full_name || author.username) || "Team";
+    }
     var opProf = resolveDmOperatorProf(opts.messageBody, author, opts.authorBy);
     if (opProf) {
       return managementFacingAuthorChip(opProf);
@@ -361,6 +375,9 @@
     if (opts.mine) {
       return portalChatActorDisplayName(authorProf) || "You";
     }
+    if (opts.audience === "worker") {
+      return portalChatWorkerPreviewSender(authorProf, opts);
+    }
     var opProf = resolveDmOperatorProf(opts.messageBody, authorProf, opts.authorBy);
     if (opProf) {
       return managementFacingAuthorChip(opProf);
@@ -380,7 +397,11 @@
     opts = opts || {};
     if (!authorProf) return "";
     if (opts.mine) return portalChatActorDisplayName(authorProf) || "You";
-    if (isManagementAuthor(authorProf)) {
+    // #region agent log
+    fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',location:'portal_chat_actor_identity.js:workerPreviewSender',message:'worker preview sender resolve',data:{audience:opts.audience||'',hasOperatorTag:!!parseDmOperatorId(opts.messageBody||''),appRole:String(authorProf.app_role||''),mgmtWorker:isManagementAuthorForWorkerDisplay(authorProf),mgmtStrict:isManagementAuthor(authorProf),isActive:authorProf.is_active},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(function(){});
+    // #endregion
+    if (parseDmOperatorId(opts.messageBody || "")) return "Admin";
+    if (isManagementAuthorForWorkerDisplay(authorProf)) {
       return workerFacingAuthorChip(authorProf);
     }
     return (
