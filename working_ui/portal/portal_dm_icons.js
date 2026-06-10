@@ -77,9 +77,26 @@
       ".portal-dm-voice-play{display:inline-flex;align-items:center;justify-content:center}" +
       ".portal-dm-voice-play .portal-dm-ico{width:14px;height:14px}" +
       ".portal-dm-back-btn,.portal-cs-cliq__back-btn{display:inline-flex;align-items:center;justify-content:center;color:var(--blue,#2d84b3)}" +
-      ".portal-dm-back-btn .portal-dm-ico,.portal-cs-cliq__back-btn .portal-dm-ico{width:20px;height:20px}" +
+      ".portal-dm-back-btn::before,.portal-cs-cliq__back-btn::before{content:none!important;display:none!important}" +
+      ".portal-dm-back-btn .portal-dm-ico,.portal-cs-cliq__back-btn .portal-dm-ico,.portal-cs-cliq__back-icon .portal-dm-ico{width:22px;height:22px}" +
+      ".portal-cs-cliq__back-icon{display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0}" +
       ".portal-dm-file-msg .portal-dm-ico{width:16px;height:16px;color:#64748b}";
     document.head.appendChild(st);
+  }
+
+  function upgradeBackButton(btn) {
+    if (!btn || btn.getAttribute("data-portal-back-icon") === "1") return;
+    var svgHtml = svg("chevronLeft");
+    if (!svgHtml) return;
+    var iconWrap = btn.querySelector(".portal-cs-cliq__back-icon");
+    if (iconWrap) {
+      iconWrap.innerHTML = svgHtml;
+      iconWrap.classList.add("portal-cs-cliq__back-icon--svg");
+    } else if (!btn.querySelector(".portal-dm-ico")) {
+      btn.textContent = "";
+      btn.insertAdjacentHTML("afterbegin", svgHtml);
+    }
+    btn.setAttribute("data-portal-back-icon", "1");
   }
 
   function upgrade(root) {
@@ -88,11 +105,7 @@
       var name = el.getAttribute("data-dm-icon");
       if (name) el.innerHTML = svg(name);
     });
-    root.querySelectorAll(".portal-dm-back-btn, .portal-cs-cliq__back-btn").forEach(function (btn) {
-      if (btn.querySelector(".portal-dm-ico")) return;
-      btn.textContent = "";
-      btn.insertAdjacentHTML("afterbegin", svg("chevronLeft"));
-    });
+    root.querySelectorAll(".portal-dm-back-btn, .portal-cs-cliq__back-btn").forEach(upgradeBackButton);
   }
 
   injectStyles();
@@ -101,6 +114,7 @@
     svg: svg,
     forKind: forKind,
     upgrade: upgrade,
+    upgradeBackButton: upgradeBackButton,
   };
 
   if (document.readyState === "loading") {

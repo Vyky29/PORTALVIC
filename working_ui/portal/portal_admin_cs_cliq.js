@@ -231,7 +231,7 @@
       '<div class="portal-cs-cliq-inbox portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
       '<aside class="portal-cs-cliq-inbox__list-col" id="csCliqListColumn">' +
       '<div class="portal-cs-cliq-inbox__list-head">' +
-      '<button type="button" class="portal-cs-cliq__back-btn portal-cs-cliq__back-btn--inbox-portal" id="csCliqInboxBackBtn" aria-label="Back to dashboard" hidden>‹</button>' +
+      '<button type="button" class="portal-cs-cliq__back-btn portal-cs-cliq__back-btn--inbox-portal" id="csCliqInboxBackBtn" aria-label="Back to dashboard" hidden><span class="portal-cs-cliq__back-icon" aria-hidden="true"></span></button>' +
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
@@ -272,7 +272,7 @@
       '<div id="csCliqThreadPanel" class="portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
       '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" aria-hidden="true">' +
-      '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
+      '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox"><span class="portal-cs-cliq__back-icon" aria-hidden="true"></span></button>' +
       '<div class="portal-cs-cliq-thread-header__identity">' +
       '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true"></span>' +
       '<div class="portal-cs-cliq-thread-header__meta">' +

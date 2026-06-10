@@ -2097,13 +2097,6 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
     font-size: 11px;
   }
 
-  #csCliqRoot .portal-cs-cliq__back-btn::before {
-    content: "‹";
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1;
-  }
-
   /* Thread / compose: hide chrome, use full viewport like a chat app */
   body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-topbar {
     display: none !important;

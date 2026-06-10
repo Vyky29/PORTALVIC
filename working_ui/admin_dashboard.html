@@ -34,7 +34,7 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
-  <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_icons.js?v=20260610-back-icon"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-brand-logo"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-sevitha-admin-photo"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
@@ -51,7 +51,7 @@
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-inbox-back"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-back-icon"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_teams.js?v=20260609-channels-split"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260610-call-ended-join" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260610-inbox-back" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260610-back-icon" />
 </head>
 <body>
   <script>
@@ -264,7 +264,7 @@
   <div id="portalInternalChatBackdrop" aria-hidden="true"></div>
   <section class="sheet sheet--fullscreen sheet--portal-chat-immersive sheet--portal-chat-inbox" id="internalChatSheet" aria-labelledby="internalChatTitle" aria-hidden="true">
     <div class="sheet-head portal-dm-sheet-head">
-      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
+      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats"><span class="portal-cs-cliq__back-icon" aria-hidden="true"></span></button>
       <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
         <div class="portal-dm-inbox-brand__logo-stage" aria-hidden="true">
           <svg class="portal-dm-inbox-brand__orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">

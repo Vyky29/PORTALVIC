@@ -398,9 +398,15 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   -webkit-tap-highlight-color:transparent;
 }
 #internalChatSheet.sheet--portal-chat-thread #internalChatThreadBackBtn .portal-cs-cliq__back-icon{
-  font-size:32px;
-  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:0;
   color:var(--portal-chat-blue,#2d84b3);
+}
+#internalChatSheet.sheet--portal-chat-thread #internalChatThreadBackBtn .portal-cs-cliq__back-icon .portal-dm-ico{
+  width:24px;
+  height:24px;
 }
 #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-body{
   padding-top:0;
@@ -451,8 +457,9 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   border:0;background:transparent;border-radius:0;gap:0;
 }
 #internalChatSheet .portal-cs-cliq__back-icon{
-  font-size:28px;line-height:1;font-weight:400;color:var(--portal-chat-blue);
+  display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;
 }
+#internalChatSheet .portal-cs-cliq__back-icon .portal-dm-ico{width:22px;height:22px}
 #internalChatSheet .portal-cs-cliq__back-unread{
   font-size:16px;font-weight:800;line-height:1;color:var(--portal-chat-blue);
   min-width:0;padding-right:2px;
