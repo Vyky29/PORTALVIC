@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
   <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260601-lead-report-css" />
-  <link rel="stylesheet" href="/portal-shared-js/portal_lead_feedback_theme.css?v=20260601-lead-report-css" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_lead_feedback_theme.css?v=20260610-lead-roster" />
   <style id="portal-lead-feedback-layout">
     html {
       margin: 0;
@@ -201,31 +201,31 @@
               </div>
             </div>
             <div class="field">
-              <label>Participant emotions / regulation <span class="req">*</span></label>
+              <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span> Participant emotions / regulation <span class="req">*</span></label>
               <p class="small">Select all that apply.</p>
               <div class="options options--emotions" role="group">
-                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Withdrawn" /><span class="pill-emotion-label">Withdrawn</span></label>
-                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Happy/Excited" /><span class="pill-emotion-label">Happy / Excited</span></label>
-                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Anxious" /><span class="pill-emotion-label">Anxious</span></label>
-                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Out of control" /><span class="pill-emotion-label">Out of control</span></label>
+                <label class="pill emotion" data-value="Withdrawn"><input type="checkbox" name="lrClientEmotions" value="Withdrawn" /><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 15.5Q12 12.7 16 15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg></span><span class="pill-emotion-label">Withdrawn</span></span></label>
+                <label class="pill emotion" data-value="Happy/Excited"><input type="checkbox" name="lrClientEmotions" value="Happy/Excited" /><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 14Q12 17.2 16 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg></span><span class="pill-emotion-label">Happy / Excited</span></span></label>
+                <label class="pill emotion" data-value="Anxious"><input type="checkbox" name="lrClientEmotions" value="Anxious" /><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l2 1.5M16 8.5l-2 1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M8.5 14.5h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span><span class="pill-emotion-label">Anxious</span></span></label>
+                <label class="pill emotion" data-value="Out of control"><input type="checkbox" name="lrClientEmotions" value="Out of control" /><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l3 2M16 8.5l-3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span><span class="pill-emotion-label">Out of control</span></span></label>
               </div>
             </div>
             <div class="field">
-              <label>Independence <span class="req">*</span></label>
+              <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg></span> Independence <span class="req">*</span></label>
               <p class="small">Pick the level that fits this session.</p>
               <div class="options options--independence" role="radiogroup">
-                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent" /><span class="pill-independence-inner"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></label>
-                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent with prompts" /><span class="pill-independence-inner"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></label>
-                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required regular support" /><span class="pill-independence-inner"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></label>
-                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required full support" /><span class="pill-independence-inner"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout session</span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent" /><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent with prompts" /><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required regular support" /><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required full support" /><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout session</span></span></span></label>
               </div>
             </div>
             <div class="field">
-              <label for="lrPositiveFeedback">Positive feedback <span class="req">*</span></label>
+              <label for="lrPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Positive feedback <span class="req">*</span></label>
               <textarea id="lrPositiveFeedback" name="lrPositiveFeedback" placeholder="What went well in the session"></textarea>
             </div>
             <div class="field">
-              <label for="lrRelevantInformation">Relevant information <span class="req">*</span></label>
+              <label for="lrRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> Relevant information <span class="req">*</span></label>
               <textarea id="lrRelevantInformation" name="lrRelevantInformation" placeholder="Follow-up, safeguarding notes, or write None"></textarea>
             </div>
           </div>
@@ -272,7 +272,7 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <script type="module">
-    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260610-lead-boot2")
+    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260610-lead-roster")
       .then(function (mod) {
         return mod.bootPortalLeadFeedback();
       })

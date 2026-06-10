@@ -5,6 +5,8 @@ const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260615-lead-report";
 const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260609-autofill";
 const PORTAL_AUTOCOMPLETE_SCRIPT = "/portal-shared-js/portal_field_autocomplete.js?v=20260609-autofill";
 const PORTAL_CATALOG_SCRIPT = "/portal-shared-js/participant_services.js?v=20260609-autofill";
+const PORTAL_ROSTER_BUNDLE = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo";
+const PORTAL_LEAD_SCOPE_MODULE = "/portal/portal_lead_session_scope.js?v=20260610-lead-report";
 
 const LEAD_SERVICES = [
   "Bespoke Programme",
@@ -13,8 +15,6 @@ const LEAD_SERVICES = [
   "Aquatic Group Activity",
   "Parents & Babys",
 ];
-
-const VENUE_OPTIONS = ["SwimFarm", "Acton", "Westway", "Other"];
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
 
@@ -89,6 +89,179 @@ function loadScriptOnce(src) {
   });
 }
 
+function weekdayLongFromIso(iso) {
+  const s = String(iso || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const p = s.split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { weekday: "long" });
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normNameKey(v) {
+  return clean(v)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function servicesEquivalent(a, b) {
+  const x = normNameKey(a).replace(/[^a-z0-9]+/g, "");
+  const y = normNameKey(b).replace(/[^a-z0-9]+/g, "");
+  if (!x || !y) return false;
+  if (x === y) return true;
+  if (x.includes("bespoke") && y.includes("bespoke")) return true;
+  if (x.includes("daycentre") && y.includes("daycentre")) return true;
+  if (x.includes("multi") && y.includes("multi")) return true;
+  if (x.includes("aquatic") && y.includes("aquatic")) return true;
+  if (x.includes("parent") && y.includes("parent")) return true;
+  return false;
+}
+
+function rosterRowSessionDate(r) {
+  return String(r.session_date || r.date || "")
+    .trim()
+    .slice(0, 10);
+}
+
+function isRosterClientName(nm) {
+  const n = clean(nm).toLowerCase();
+  return n && n !== "closed" && n !== "available" && n !== "no client";
+}
+
+function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
+  if (clean(r.day) !== wd) return false;
+  const sd = rosterRowSessionDate(r);
+  if (sd) return sd === isoDate;
+  const cid = slugify(r.client_name);
+  if (!cid) return true;
+  for (let i = 0; i < rosterRows.length; i++) {
+    const o = rosterRows[i];
+    if (rosterRowSessionDate(o) !== isoDate) continue;
+    if (clean(o.day) !== wd) continue;
+    if (slugify(o.client_name) === cid) return false;
+  }
+  return true;
+}
+
+function parseInstructorList(raw) {
+  const out = [];
+  String(raw || "")
+    .split(/[,;/&]+|\band\b/gi)
+    .forEach((part) => {
+      const p = clean(part);
+      if (p) out.push(p);
+    });
+  return out;
+}
+
+function parseHmPortal(token) {
+  const t = String(token || "").trim();
+  const parts = t.split(".");
+  const h = parseInt(parts[0], 10) || 0;
+  const m = parts.length > 1 ? parseInt(parts[1], 10) || 0 : 0;
+  return { h, m };
+}
+
+function hourTo24Portal(hour, day) {
+  if (day !== "Sunday" && hour < 8) return hour + 12;
+  if (day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+  return hour;
+}
+
+function parseTimeSlotPortal(timeSlot, day) {
+  const normalized = String(timeSlot || "")
+    .replace(/\s*-\s*/g, " to ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = normalized.split(/\s+to\s+/i);
+  if (parts.length < 2) return { start: "", end: "" };
+  const a = parseHmPortal(parts[0]);
+  const b = parseHmPortal(parts[1]);
+  const ah = hourTo24Portal(a.h, day);
+  const bh = hourTo24Portal(b.h, day);
+  return {
+    start: String(ah).padStart(2, "0") + ":" + String(a.m).padStart(2, "0"),
+    end: String(bh).padStart(2, "0") + ":" + String(b.m).padStart(2, "0"),
+  };
+}
+
+function rosterRowToLeadSlot(iso, wd, r) {
+  return {
+    iso,
+    session_date: iso,
+    day: wd,
+    client_name: clean(r.client_name),
+    service: clean(r.service),
+    time_slot: clean(r.time_slot),
+    venue: clean(r.venue),
+    area: clean(r.area),
+    instructors: parseInstructorList(r.instructors),
+    instructor_label: clean(r.instructors),
+  };
+}
+
+function buildLeadSessionKey(slot) {
+  const iso = slot.session_date;
+  const id = slugify(slot.client_name);
+  if (!iso || !id) return "";
+  const svc = clean(slot.service).toLowerCase();
+  if (svc.indexOf("day centre") !== -1) return `${iso}|${id}|day_centre`;
+  if (svc.indexOf("bespoke") !== -1) {
+    const inst = slot.instructors || [];
+    if (inst.length >= 2 && clean(slot.venue).toLowerCase() === "swimfarm") {
+      return `${iso}|${id}|bespoke_shared`;
+    }
+  }
+  const t = parseTimeSlotPortal(slot.time_slot, slot.day).start;
+  if (t) return `${iso}|${t}|${id}`;
+  return `${iso}|${id}`;
+}
+
+function expandLeadSlots(iso, serviceFilter, scopeFns) {
+  const src = window.STAFF_DASHBOARD_SOURCE;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const wd = weekdayLongFromIso(iso);
+  if (!wd) return [];
+  const out = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i] || {};
+    if (!isRosterClientName(r.client_name)) continue;
+    if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+    const slot = rosterRowToLeadSlot(iso, wd, r);
+    if (serviceFilter && !servicesEquivalent(slot.service, serviceFilter)) continue;
+    if (scopeFns && typeof scopeFns.slotScopeFilter === "function") {
+      if (!scopeFns.slotScopeFilter(slot)) continue;
+    }
+    out.push(slot);
+  }
+  out.sort(
+    (a, b) =>
+      (a.time_slot || "").localeCompare(b.time_slot || "", "en") ||
+      (a.client_name || "").localeCompare(b.client_name || "", "en", { sensitivity: "base" })
+  );
+  return out;
+}
+
+function uniqueParticipantNames(slots) {
+  const map = new Map();
+  slots.forEach((s) => {
+    const nm = clean(s.client_name);
+    if (nm) map.set(normNameKey(nm), nm);
+  });
+  return Array.from(map.values()).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" })
+  );
+}
+
 async function resolveAuthContext() {
   const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
   const supabase = getSupabaseClient();
@@ -103,7 +276,9 @@ async function resolveAuthContext() {
   if (profileErr || !profileRow) return null;
   const submittedByName = clean(profileRow.full_name || profileRow.username || "");
   if (!submittedByName) return null;
-  return { supabase, submittedByUserId: uid, submittedByName, profile: profileRow };
+  const { data: userData } = await supabase.auth.getUser();
+  const authEmail = userData?.user?.email || "";
+  return { supabase, submittedByUserId: uid, submittedByName, profile: profileRow, authEmail };
 }
 
 function getClientNames() {
@@ -118,13 +293,14 @@ function getClientNames() {
   );
 }
 
-function wireNameSuggest(input, listEl) {
+function wireNameSuggest(input, listEl, getNames) {
   if (!input || !listEl) return;
   if (typeof window.portalWireFieldSuggest === "function") {
     window.portalWireFieldSuggest(input, listEl, {
       kind: "participant",
       strict: true,
       match: "startsWith",
+      getNames: typeof getNames === "function" ? getNames : undefined,
     });
     return;
   }
@@ -151,6 +327,7 @@ function wireNameSuggest(input, listEl) {
         input.value = name;
         closeList();
         input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       });
       listEl.appendChild(btn);
     });
@@ -164,7 +341,8 @@ function wireNameSuggest(input, listEl) {
       closeList();
       return;
     }
-    const names = getClientNames().filter((n) => n.toLowerCase().includes(q));
+    const catalog = typeof getNames === "function" ? getNames() : getClientNames();
+    const names = catalog.filter((n) => n.toLowerCase().includes(q));
     openList(names);
   });
   input.addEventListener("blur", () => {
@@ -219,7 +397,7 @@ function buildRow(ctx, data, auth) {
     session_date: ctx.date,
     session_time: ctx.sessionTime || null,
     portal_session_key: ctx.portalSessionKey || null,
-    client_id: null,
+    client_id: ctx.clientId || null,
     client_name: ctx.clientNames.length ? ctx.clientNames.join("; ") : null,
     service: ctx.service,
     is_bespoke_programme: isBespokeService(ctx.service),
@@ -254,6 +432,26 @@ function exitAfterSuccess() {
   } catch (_) {}
 }
 
+function initVoiceInput(staffName) {
+  if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
+  try {
+    window.PortalFeedbackVoiceInput.init({
+      fields: [
+        "lrPositiveFeedback",
+        "lrRelevantInformation",
+        "lrSessionSummary",
+        "lrOtherOptional",
+      ],
+      staffName: staffName || "",
+    });
+    if (typeof window.PortalFeedbackVoiceInput.prefetch === "function") {
+      void window.PortalFeedbackVoiceInput.prefetch();
+    }
+  } catch (voiceErr) {
+    console.warn("[lead-report] voice input", voiceErr);
+  }
+}
+
 export async function bootPortalLeadFeedback() {
   const form = document.getElementById("lrFeedbackForm");
   const clearBtn = document.getElementById("lrClearBtn");
@@ -272,10 +470,17 @@ export async function bootPortalLeadFeedback() {
     venue: clean(qs.get("venue") || qs.get("location") || ""),
     sessionTime: clean(qs.get("time") || qs.get("sessionTime") || ""),
     portalSessionKey: clean(qs.get("sessionKey") || ""),
+    clientId: clean(qs.get("clientId") || qs.get("client") || ""),
     clientNames: [],
     submittedByName: "",
     origin,
   };
+
+  let leadScopeFns = null;
+  let leadProgrammeKey = "";
+  let leadSlotsCache = [];
+  let rosterReady = false;
+  let uiReady = false;
 
   const dateHidden = document.getElementById("lrSessionDate");
   const dateDisplay = document.getElementById("lrSessionDateDisplay");
@@ -283,6 +488,24 @@ export async function bootPortalLeadFeedback() {
   const datePanel = document.getElementById("lrSessionDateEditPanel");
   const dateApply = document.getElementById("lrSessionDateApplyBtn");
   const dateCancel = document.getElementById("lrSessionDateCancelBtn");
+
+  const venueInput = document.getElementById("lrVenue");
+  const timeInput = document.getElementById("lrSessionTime");
+  const sessionKeyHidden = document.getElementById("lrPortalSessionKey");
+  const clientIdHidden = document.getElementById("lrClientId");
+  const singleWrap = document.getElementById("lrParticipantSingleWrap");
+  const dayCentreWrap = document.getElementById("lrDayCentreParticipantsWrap");
+  const detailed = document.getElementById("lrDetailedSection");
+  const general = document.getElementById("lrGeneralSection");
+  const activityWrap = document.getElementById("lrActivityFieldWrap");
+  const timeSlotWrap = document.getElementById("lrTimeSlotWrap");
+  const timeSlotOptions = document.getElementById("lrTimeSlotOptions");
+  const partInp = document.getElementById("lrParticipantName");
+
+  function getLeadParticipantNames() {
+    if (leadSlotsCache.length) return uniqueParticipantNames(leadSlotsCache);
+    return getClientNames();
+  }
 
   function applyDateToUi(iso) {
     ctx.date = iso;
@@ -300,31 +523,167 @@ export async function bootPortalLeadFeedback() {
     serviceEl.appendChild(opt);
   });
 
-  const venueInput = document.getElementById("lrVenue");
   if (venueInput && ctx.venue) venueInput.value = ctx.venue;
+  if (timeInput && ctx.sessionTime) timeInput.value = ctx.sessionTime;
+  if (sessionKeyHidden && ctx.portalSessionKey) sessionKeyHidden.value = ctx.portalSessionKey;
+  if (clientIdHidden && ctx.clientId) clientIdHidden.value = ctx.clientId;
 
-  const singleWrap = document.getElementById("lrParticipantSingleWrap");
-  const dayCentreWrap = document.getElementById("lrDayCentreParticipantsWrap");
-  const detailed = document.getElementById("lrDetailedSection");
-  const general = document.getElementById("lrGeneralSection");
-  const activityWrap = document.getElementById("lrActivityFieldWrap");
+  const qsParticipant = clean(
+    qs.get("participant") || qs.get("name") || qs.get("full_name") || qs.get("client_name") || ""
+  );
+  if (partInp && qsParticipant) partInp.value = qsParticipant;
 
   function refreshServiceUi() {
     const svc = clean(serviceEl.value);
     ctx.service = svc;
     const bespoke = isBespokeService(svc);
     const dayCentre = isDayCentreService(svc);
-    const group = isGroupService(svc);
-    if (singleWrap) singleWrap.hidden = !bespoke;
-    if (dayCentreWrap) dayCentreWrap.hidden = !dayCentre;
-    if (detailed) detailed.hidden = !bespoke;
-    if (general) general.hidden = bespoke;
-    if (activityWrap) activityWrap.hidden = !/multi-activity/i.test(svc);
-    const partInp = document.getElementById("lrParticipantName");
+    const hasService = !!svc;
+
+    if (singleWrap) singleWrap.hidden = !hasService || !bespoke;
+    if (dayCentreWrap) dayCentreWrap.hidden = !hasService || !dayCentre;
+    if (detailed) detailed.hidden = !hasService || !bespoke;
+    if (general) general.hidden = !hasService || bespoke;
+    if (activityWrap) activityWrap.hidden = !hasService || !/multi-activity/i.test(svc);
     if (partInp) partInp.required = bespoke;
   }
-  serviceEl.addEventListener("change", refreshServiceUi);
-  refreshServiceUi();
+
+  function findSlotsForParticipant(participantName) {
+    const want = normNameKey(participantName);
+    if (!want) return [];
+    return leadSlotsCache.filter((s) => normNameKey(s.client_name) === want);
+  }
+
+  function applySlotToForm(slot) {
+    if (!slot) return;
+    ctx.venue = clean(slot.venue);
+    ctx.sessionTime = clean(slot.time_slot);
+    ctx.portalSessionKey = buildLeadSessionKey(slot);
+    ctx.clientId = slugify(slot.client_name);
+    if (venueInput) venueInput.value = ctx.venue;
+    if (timeInput) timeInput.value = ctx.sessionTime;
+    if (sessionKeyHidden) sessionKeyHidden.value = ctx.portalSessionKey;
+    if (clientIdHidden) clientIdHidden.value = ctx.clientId;
+  }
+
+  function rebuildTimeSlotPills(slots) {
+    if (!timeSlotWrap || !timeSlotOptions) return;
+    const times = [];
+    const seen = new Set();
+    slots.forEach((s) => {
+      const t = clean(s.time_slot);
+      if (!t || seen.has(t)) return;
+      seen.add(t);
+      times.push(t);
+    });
+    timeSlotOptions.replaceChildren();
+    if (times.length <= 1) {
+      timeSlotWrap.hidden = true;
+      return;
+    }
+    times.forEach((t) => {
+      const lbl = document.createElement("label");
+      lbl.className = "pill lr-time-slot-pill";
+      lbl.innerHTML =
+        '<input type="radio" name="lrTimeSlotPick" value="' +
+        t.replace(/"/g, "&quot;") +
+        '" /><span>' +
+        t +
+        "</span>";
+      lbl.addEventListener("change", () => {
+        if (timeInput) timeInput.value = t;
+        ctx.sessionTime = t;
+        timeSlotOptions.querySelectorAll(".lr-time-slot-pill").forEach((p) => {
+          p.classList.toggle("isSelected", p.querySelector("input")?.checked);
+        });
+      });
+      timeSlotOptions.appendChild(lbl);
+    });
+    timeSlotWrap.hidden = false;
+  }
+
+  function applyParticipantSlot(participantName) {
+    const matches = findSlotsForParticipant(participantName);
+    if (!matches.length) return;
+    if (matches.length === 1) {
+      applySlotToForm(matches[0]);
+      rebuildTimeSlotPills([]);
+      return;
+    }
+    const venues = [...new Set(matches.map((s) => clean(s.venue)).filter(Boolean))];
+    if (venues.length === 1 && venueInput && !clean(venueInput.value)) {
+      venueInput.value = venues[0];
+      ctx.venue = venues[0];
+    }
+    rebuildTimeSlotPills(matches);
+    const currentTime = clean(timeInput?.value || "");
+    const pick =
+      matches.find((s) => clean(s.time_slot) === currentTime) ||
+      matches.find((s) => clean(s.time_slot) === clean(ctx.sessionTime)) ||
+      matches[0];
+    applySlotToForm(pick);
+  }
+
+  function fillDayCentreParticipants(names) {
+    for (let i = 1; i <= 5; i += 1) {
+      const el = document.getElementById("lrDayCentreParticipant" + i);
+      if (el) el.value = names[i - 1] || "";
+    }
+  }
+
+  function applyServiceContext(opts) {
+    opts = opts || {};
+    const svc = clean(serviceEl.value);
+    refreshServiceUi();
+    if (!svc || !rosterReady) return;
+
+    leadSlotsCache = expandLeadSlots(ctx.date, svc, leadScopeFns);
+
+    const participants = uniqueParticipantNames(leadSlotsCache);
+    const venues = [...new Set(leadSlotsCache.map((s) => clean(s.venue)).filter(Boolean))];
+    const times = [...new Set(leadSlotsCache.map((s) => clean(s.time_slot)).filter(Boolean))];
+
+    if (!opts.keepVenue && venues.length === 1 && venueInput) {
+      venueInput.value = venues[0];
+      ctx.venue = venues[0];
+    }
+
+    if (isBespokeService(svc)) {
+      const typed = clean(partInp?.value || "");
+      const pick =
+        (typed && participants.find((n) => normNameKey(n) === normNameKey(typed))) ||
+        (participants.length === 1 ? participants[0] : "") ||
+        typed;
+      if (partInp && pick && (!typed || participants.length === 1)) {
+        partInp.value = pick;
+      }
+      if (pick) applyParticipantSlot(pick);
+      else if (times.length === 1 && timeInput) {
+        timeInput.value = times[0];
+        ctx.sessionTime = times[0];
+      }
+      rebuildTimeSlotPills(pick ? findSlotsForParticipant(pick) : leadSlotsCache);
+    } else if (isDayCentreService(svc)) {
+      if (participants.length) fillDayCentreParticipants(participants.slice(0, 5));
+      if (times.length === 1 && timeInput) {
+        timeInput.value = times[0];
+        ctx.sessionTime = times[0];
+      }
+      if (leadSlotsCache[0]) {
+        ctx.portalSessionKey = buildLeadSessionKey(leadSlotsCache[0]);
+        if (sessionKeyHidden) sessionKeyHidden.value = ctx.portalSessionKey;
+      }
+      rebuildTimeSlotPills(leadSlotsCache);
+    } else {
+      if (times.length === 1 && timeInput && !clean(timeInput.value)) {
+        timeInput.value = times[0];
+        ctx.sessionTime = times[0];
+      }
+      rebuildTimeSlotPills(leadSlotsCache);
+    }
+  }
+
+  serviceEl.addEventListener("change", () => applyServiceContext());
 
   if (dateDisplay && datePanel) {
     dateDisplay.addEventListener("dblclick", () => {
@@ -334,7 +693,10 @@ export async function bootPortalLeadFeedback() {
   }
   dateApply?.addEventListener("click", () => {
     const iso = clean(datePicker?.value || "");
-    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) applyDateToUi(iso);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      applyDateToUi(iso);
+      applyServiceContext();
+    }
     if (datePanel) datePanel.hidden = true;
   });
   dateCancel?.addEventListener("click", () => {
@@ -342,17 +704,39 @@ export async function bootPortalLeadFeedback() {
   });
 
   try {
+    const { bootstrapDashboardSupabase } = await import(PORTAL_AUTH_MODULE);
+    await bootstrapDashboardSupabase({ page: "lead" });
+  } catch (bootstrapErr) {
+    console.warn("[lead-report] supabase bootstrap", bootstrapErr);
+  }
+
+  const auth = await resolveAuthContext();
+  if (!auth) {
+    alert("Please sign in from the lead dashboard, then open Lead Feedback Report again.");
+    return;
+  }
+  ctx.submittedByName = auth.submittedByName;
+
+  try {
+    await loadScriptOnce(PORTAL_ROSTER_BUNDLE);
     await loadScriptOnce(PORTAL_CLIENTS_SCRIPT);
     await loadScriptOnce(PORTAL_CATALOG_SCRIPT);
     await loadScriptOnce(PORTAL_AUTOCOMPLETE_SCRIPT);
+    const scopeMod = await import(PORTAL_LEAD_SCOPE_MODULE);
+    const scopes = scopeMod.portalLeadSessionScopesForProfile(auth.profile, auth.authEmail);
+    leadProgrammeKey = scopeMod.portalLeadProgrammeKey(auth.profile, auth.authEmail);
+    leadScopeFns = scopeMod.portalLeadSessionScopeFilterFns(scopes, leadProgrammeKey);
+    rosterReady = true;
   } catch (e) {
-    console.warn("[lead-report] clients embed", e);
+    console.warn("[lead-report] roster / scope", e);
   }
-  wireNameSuggest(document.getElementById("lrParticipantName"), document.getElementById("lrParticipantSuggest"));
+
+  wireNameSuggest(partInp, document.getElementById("lrParticipantSuggest"), getLeadParticipantNames);
   for (let i = 1; i <= 5; i += 1) {
     wireNameSuggest(
       document.getElementById("lrDayCentreParticipant" + i),
-      document.getElementById("lrDayCentreSuggest" + i)
+      document.getElementById("lrDayCentreSuggest" + i),
+      getLeadParticipantNames
     );
   }
   const venueSuggest = document.getElementById("lrVenueSuggest");
@@ -363,6 +747,15 @@ export async function bootPortalLeadFeedback() {
       match: "contains",
     });
   }
+
+  partInp?.addEventListener("change", () => {
+    const nm = clean(partInp.value);
+    if (nm) applyParticipantSlot(nm);
+  });
+  partInp?.addEventListener("blur", () => {
+    const nm = clean(partInp.value);
+    if (nm) applyParticipantSlot(nm);
+  });
 
   form.querySelectorAll(".options").forEach((box) => {
     const inp = box.querySelector('input[type="radio"], input[type="checkbox"]');
@@ -385,24 +778,20 @@ export async function bootPortalLeadFeedback() {
     syncPillGroup(box, sel, name);
   });
 
-  try {
-    const { bootstrapDashboardSupabase } = await import(PORTAL_AUTH_MODULE);
-    await bootstrapDashboardSupabase({ page: "lead" });
-  } catch (bootstrapErr) {
-    console.warn("[lead-report] supabase bootstrap", bootstrapErr);
-  }
-
-  const auth = await resolveAuthContext();
-  if (!auth) {
-    alert("Please sign in from the lead dashboard, then open Lead Feedback Report again.");
-    return;
-  }
-  ctx.submittedByName = auth.submittedByName;
+  uiReady = true;
+  applyServiceContext({ keepVenue: !!ctx.venue });
+  initVoiceInput(ctx.submittedByName);
 
   clearBtn.addEventListener("click", () => {
     form.reset();
     applyDateToUi(isoToday());
-    refreshServiceUi();
+    ctx.portalSessionKey = "";
+    ctx.clientId = "";
+    ctx.venue = "";
+    ctx.sessionTime = "";
+    if (sessionKeyHidden) sessionKeyHidden.value = "";
+    if (clientIdHidden) clientIdHidden.value = "";
+    applyServiceContext();
   });
 
   form.addEventListener("submit", async (e) => {
@@ -427,8 +816,10 @@ export async function bootPortalLeadFeedback() {
 
     ctx.service = svc;
     ctx.venue = venue;
-    ctx.sessionTime = clean(document.getElementById("lrSessionTime")?.value || "");
+    ctx.sessionTime = clean(timeInput?.value || "");
     ctx.date = clean(dateHidden?.value || ctx.date) || isoToday();
+    ctx.portalSessionKey = clean(sessionKeyHidden?.value || ctx.portalSessionKey);
+    ctx.clientId = clean(clientIdHidden?.value || ctx.clientId);
 
     let engagement = "";
     let brief = "";
@@ -438,12 +829,13 @@ export async function bootPortalLeadFeedback() {
     let activity = "";
 
     if (isBespokeService(svc)) {
-      const participant = clean(document.getElementById("lrParticipantName")?.value || "");
+      const participant = clean(partInp?.value || "");
       if (!participant) {
         alert("Please enter the participant name.");
         return;
       }
       ctx.clientNames = [participant];
+      if (!ctx.clientId) ctx.clientId = slugify(participant);
       const rating = clean(
         (form.querySelector('input[name="lrEngagementRating"]:checked') || {}).value || ""
       );
@@ -547,20 +939,4 @@ export async function bootPortalLeadFeedback() {
       submitBtn.textContent = "Submit";
     }
   });
-
-  if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
-    try {
-      window.PortalFeedbackVoiceInput.init({
-        fields: [
-          "lrPositiveFeedback",
-          "lrRelevantInformation",
-          "lrSessionSummary",
-          "lrOtherOptional",
-        ],
-        staffName: ctx.submittedByName,
-      });
-    } catch (voiceErr) {
-      console.warn("[lead-report] voice input", voiceErr);
-    }
-  }
 }
