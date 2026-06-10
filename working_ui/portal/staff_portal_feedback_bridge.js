@@ -11,6 +11,33 @@
       .replace(/^_+|_+$/g, "");
   }
 
+  function londonTodayIso() {
+    try {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date());
+      const y = parts.find(function (p) {
+        return p.type === "year";
+      });
+      const m = parts.find(function (p) {
+        return p.type === "month";
+      });
+      const d = parts.find(function (p) {
+        return p.type === "day";
+      });
+      if (y && m && d) return y.value + "-" + m.value + "-" + d.value;
+    } catch (_) {}
+    return "";
+  }
+
+  function isServerTruthFeedbackDay(iso) {
+    const today = londonTodayIso();
+    return !!(iso && today && iso >= today);
+  }
+
   function canonicalStaffRosterKey(value) {
     const k = String(value || "").trim().toLowerCase();
     if (!k) return "";
@@ -955,6 +982,10 @@
 
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
+    if (isServerTruthFeedbackDay(iso)) {
+      if (rec.absent || rec.cancelled) return true;
+      return !!rec.feedbackDone;
+    }
     if (rec.feedbackDone) return true;
     if (rec.absent || rec.cancelled) return true;
     if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;

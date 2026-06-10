@@ -423,6 +423,28 @@
       const day = String(row.day || "").trim();
       const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
 
+      if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) && nameRaw) {
+        const startMap =
+          (typeof window !== "undefined" &&
+            window.STAFF_DASHBOARD_SOURCE &&
+            window.STAFF_DASHBOARD_SOURCE.clientRosterStartDates) ||
+          null;
+        if (startMap) {
+          const slug = nameRaw.toLowerCase();
+          let startIso = startMap[nameRaw] || startMap[slug] || "";
+          if (!startIso) {
+            for (const k of Object.keys(startMap)) {
+              if (String(k).trim().toLowerCase() === slug) {
+                startIso = startMap[k];
+                break;
+              }
+            }
+          }
+          startIso = String(startIso || "").trim().slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(startIso) && sessionDate < startIso) return;
+        }
+      }
+
       const selfKey =
         targets.find((k) => normalizePersonId(k) === wanted) ||
         String(staffIdForMatch || "").trim().toLowerCase();

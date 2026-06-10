@@ -1918,6 +1918,38 @@
   }
 
   function htmlOverviewSessionCountHint(hub, iso, displaySlots, esc) {
+    if (hub && hub.mode === "feedback" && typeof hub.getFeedbackUnitsForDate === "function") {
+      var units = hub
+        .getFeedbackUnitsForDate(iso)
+        .filter(function (u) {
+          return u.slots.some(function (s) {
+            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+          });
+        });
+      var unitTotal = units.length;
+      var wd = weekdayLongFromIso(iso);
+      var expected = expectedSessionsByWeekdayConfig();
+      var exp = expected && expected[wd];
+      var label = unitTotal + " feedback units";
+      if (!exp) {
+        return (
+          '<span class="ash-badge ash-badge--muted" style="margin-left:0.5rem">' +
+          esc(label) +
+          "</span>"
+        );
+      }
+      var mismatch = unitTotal !== exp.total;
+      var detail = " (expected " + exp.total + " feedback units)";
+      return (
+        '<span class="ash-badge' +
+        (mismatch
+          ? '" style="margin-left:0.5rem;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca"'
+          : ' ash-badge--muted" style="margin-left:0.5rem"') +
+        ">" +
+        esc(label + detail) +
+        "</span>"
+      );
+    }
     var bands = countOverviewSessionBands(displaySlots);
     var wd = weekdayLongFromIso(iso);
     var expected = expectedSessionsByWeekdayConfig();
@@ -3317,6 +3349,13 @@
       if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
     if (this.mode === "feedback") {
+      if (units.length > 0) {
+        var unitDoneCount = 0;
+        for (var uj = 0; uj < units.length; uj++) {
+          if (unitAbsent[units[uj].key] || unitComplete[units[uj].key]) unitDoneCount++;
+        }
+        return { total: units.length, done: unitDoneCount };
+      }
       if (total > 0) return { total: total, done: rosterDone };
       var submitted = this.feedbackCountForDate(iso);
       return { total: Math.max(1, submitted), done: submitted };

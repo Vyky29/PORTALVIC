@@ -27,6 +27,9 @@ def mark_bundle_complete(bundle: Path) -> int:
         fieldnames = list(reader.fieldnames or [])
         rows = list(reader)
         for row in rows:
+            date_iso = str(row.get("date") or "").strip()[:10]
+            if date_iso >= "2026-06-09":
+                continue
             oc = str(row.get("overview_status") or "").strip().lower()
             if oc == "absent":
                 continue

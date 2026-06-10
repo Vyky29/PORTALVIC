@@ -1026,8 +1026,8 @@
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260609-tinashe-june"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-feedback-unified-truth"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260610-jun8-swim-revert"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-feedback-server-truth"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1322,7 +1322,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-unified-truth';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-server-truth';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1780,6 +1780,25 @@
         return null;
       }
     }
+    function portalLondonTodayIso(){
+      try{
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Europe/London',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).formatToParts(new Date());
+        const y = parts.find(function(p){ return p.type === 'year'; });
+        const m = parts.find(function(p){ return p.type === 'month'; });
+        const d = parts.find(function(p){ return p.type === 'day'; });
+        if(y && m && d) return y.value + '-' + m.value + '-' + d.value;
+      }catch(_){}
+      return '';
+    }
+    function portalIsServerTruthFeedbackDay(iso){
+      const today = portalLondonTodayIso();
+      return !!(iso && today && iso >= today);
+    }
     /** Pre-fill review map from portal-import-bundle status (admin overview parity on My Term). */
     function portalSeedReviewDoneFromFeedbackStatusBundle(){
       try{
@@ -1787,6 +1806,7 @@
         if(!src || !Array.isArray(src.rows) || !src.rows.length) return false;
         const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         if(!staffId) return false;
+        const todayIso = portalLondonTodayIso();
         let changed = false;
         const byDate = Object.create(null);
         const doneMergeGroups = Object.create(null);
@@ -1808,6 +1828,7 @@
         Object.keys(byDate).forEach(function(iso){ isosToSeed[iso] = true; });
         Object.keys(doneMergeGroups).forEach(function(iso){ isosToSeed[iso] = true; });
         Object.keys(isosToSeed).forEach(function(iso){
+          if(todayIso && iso >= todayIso) return;
           if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
           const exportThru = (function(){
             try{
@@ -1890,6 +1911,8 @@
         src.rows.forEach(function(row){
           const iso = String(row.date || '').trim().substring(0, 10);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          const todayIso = portalLondonTodayIso();
+          if(todayIso && iso >= todayIso) return;
           const exportThru = (function(){
             try{
               const meta = window.SESSION_FEEDBACK_PORTAL_SOURCE && window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
@@ -2017,6 +2040,9 @@
           rosterSessionKeys: rosterKeys,
           catchUpSessionDates: catchUpDates
         });
+        if(dashboardData){
+          dashboardData.portalServerSubmittedFeedbackKeys = new Set(keys.feedbackKeys || []);
+        }
         const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
         const floorIso = typeof portalMachineRosterFeedbackFloorIso === 'function' ? portalMachineRosterFeedbackFloorIso() : '2026-06-01';
         const reconciled = typeof mod.portalReconcileReviewMemoryWithServer === 'function'
@@ -2045,14 +2071,6 @@
         }
       }catch(e){
         console.warn('[portal] server review merge skipped', e);
-      }finally{
-        if(dashboardData && !dashboardData.portalFeedbackReconciled){
-          if(typeof portalMarkFeedbackReconciledAfterServerSync === 'function'){
-            portalMarkFeedbackReconciledAfterServerSync();
-          }else{
-            dashboardData.portalFeedbackReconciled = true;
-          }
-        }
       }
     }
 
@@ -2917,6 +2935,15 @@
         mem = portalGetMergedSessionReviewRecordForRoster(baseS, dayWord, iso);
       }
       if(!iso || !staffId) return mem;
+      if(portalIsServerTruthFeedbackDay(iso)){
+        const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
+        return {
+          feedbackDone: serverSynced ? !!mem.feedbackDone : false,
+          incident: !!mem.incident,
+          absent: !!mem.absent,
+          cancelled: !!mem.cancelled
+        };
+      }
       if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
         const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffId);
         if(ex){
@@ -9664,6 +9691,11 @@
           : String(s && s.clientId || '').trim().toLowerCase();
         if(portalTermCatchUpClientMarkedDone(iso, sid, cid)) return true;
         return !!(rec.feedbackDone || rec.absent || rec.cancelled);
+      }
+      if(portalIsServerTruthFeedbackDay(iso)){
+        if(rec.absent || rec.cancelled) return true;
+        const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
+        return serverSynced && !!rec.feedbackDone;
       }
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)) return true;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;

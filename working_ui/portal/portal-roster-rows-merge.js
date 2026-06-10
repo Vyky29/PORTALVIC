@@ -93,10 +93,44 @@
     };
   }
 
+  function clientFirstSessionIso(clientName) {
+    try {
+      var map =
+        global.STAFF_DASHBOARD_SOURCE &&
+        global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates;
+      if (map && map[clientName]) return normIso(map[clientName]);
+      var slug = String(clientName || "")
+        .trim()
+        .toLowerCase();
+      if (map) {
+        for (var k in map) {
+          if (
+            Object.prototype.hasOwnProperty.call(map, k) &&
+            String(k).trim().toLowerCase() === slug
+          ) {
+            return normIso(map[k]);
+          }
+        }
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function rowEligibleForSessionDate(row, iso) {
+    if (!iso || !row || isNoClientName(row.client_name)) return true;
+    var first = clientFirstSessionIso(row.client_name);
+    return !first || iso >= first;
+  }
+
   function mergePortalRosterRows(baseRows, dbRows) {
     var base = Array.isArray(baseRows) ? baseRows : [];
     var db = Array.isArray(dbRows) ? dbRows : [];
-    if (!db.length) return base.slice();
+    if (!db.length) {
+      return base.filter(function (r) {
+        var iso = normIso(r.session_date);
+        return !iso || rowEligibleForSessionDate(r, iso);
+      });
+    }
 
     var templates = Object.create(null);
     var dated = Object.create(null);
@@ -120,8 +154,11 @@
         } else if (row.day) cancelledTemplates[templateKey(row)] = true;
         return;
       }
-      if (row.session_date) dated[datedSlotKey(row)] = row;
-      else if (row.day) templates[templateKey(row)] = row;
+      if (row.session_date) {
+        var rowIso = normIso(row.session_date);
+        if (rowIso && !rowEligibleForSessionDate(row, rowIso)) return;
+        dated[datedSlotKey(row)] = row;
+      } else if (row.day) templates[templateKey(row)] = row;
     });
 
     var out = [];
@@ -145,6 +182,10 @@
       var iso = normIso(r.session_date);
       var sk = datedSlotKey(r);
       var dayLabel = String(r.day || weekdayLongFromIso(iso) || "").toLowerCase();
+      if (iso && !rowEligibleForSessionDate(r, iso)) {
+        rememberOpenedSlot(iso, r, dayLabel);
+        return;
+      }
       if (cancelledDated[sk]) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
@@ -199,6 +240,8 @@
     Object.keys(dated).forEach(function (sk) {
       if (seenDated[sk]) return;
       var row = dated[sk];
+      var iso = normIso(row.session_date);
+      if (iso && !rowEligibleForSessionDate(row, iso)) return;
       if (isNoClientName(row.client_name)) {
         var iso = normIso(row.session_date);
         if (iso && occupiedSlots[openedSlotKey(iso, row)]) return;

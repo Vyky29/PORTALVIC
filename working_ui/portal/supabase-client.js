@@ -739,9 +739,7 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
       changed = true;
     }
   }
-  const submittedFb = [
-    ...new Set([...(packs.feedbackKeys || []), ...(packs.quickFeedbackDoneKeys || [])]),
-  ].filter((k) => absentFb.indexOf(k) < 0);
+  const submittedFb = portalSubmittedFeedbackKeysForMemory(packs);
   for (const k of submittedFb) {
     const prev = memory[k] || base();
     if (prev.absent) continue;
@@ -790,6 +788,37 @@ function portalReviewKeyDateIso(rosterKey) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
 }
 
+/** London calendar date YYYY-MM-DD (staff feedback “today” boundary). */
+export function portalLondonTodayIso() {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const y = parts.find((p) => p.type === "year")?.value;
+    const m = parts.find((p) => p.type === "month")?.value;
+    const d = parts.find((p) => p.type === "day")?.value;
+    return y && m && d ? `${y}-${m}-${d}` : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Quick marks count as feedback only before London today; today+ needs session_feedback row. */
+function portalSubmittedFeedbackKeysForMemory(packs) {
+  const absentFb = [...new Set(packs.absentFeedbackKeys || [])];
+  const realFb = [...new Set(packs.feedbackKeys || [])].filter((k) => absentFb.indexOf(k) < 0);
+  const today = portalLondonTodayIso();
+  const quick = [...new Set(packs.quickFeedbackDoneKeys || [])].filter((k) => {
+    if (!today) return true;
+    const iso = portalReviewKeyDateIso(k);
+    return iso && iso < today;
+  });
+  return [...new Set([...realFb, ...quick])];
+}
+
 function portalReviewMemoryBase() {
   return { feedbackDone: false, incident: false, absent: false, cancelled: false };
 }
@@ -812,9 +841,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   if (!memory || !Array.isArray(rosterKeys) || !rosterKeys.length) return false;
 
   const absentFb = [...new Set(packs.absentFeedbackKeys || [])];
-  const submittedFb = [
-    ...new Set([...(packs.feedbackKeys || []), ...(packs.quickFeedbackDoneKeys || [])]),
-  ].filter((k) => absentFb.indexOf(k) < 0);
+  const submittedFb = portalSubmittedFeedbackKeysForMemory(packs);
   const absentAll = [...new Set([...absentFb, ...(packs.absentKeys || [])])];
   const cancelledKeys = [...new Set(packs.cancellationKeys || [])];
 

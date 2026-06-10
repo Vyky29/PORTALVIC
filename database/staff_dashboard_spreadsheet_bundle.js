@@ -216,10 +216,14 @@
       "total": 20
     },
     "Wednesday": {
-      "morning": 5,
+      "morning": 2,
       "afternoon": 16,
-      "total": 21
+      "total": 18
     }
+  },
+  "clientRosterStartDates": {
+    "Emmanuel": "2026-06-12",
+    "Timi": "2026-06-15"
   },
   "sundayFeedbackMerges": [
     {
