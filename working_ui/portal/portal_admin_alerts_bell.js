@@ -464,6 +464,8 @@
     }
     if (typeof global.portalAdminDmNotifyIncomingMessageRow === "function") {
       global.portalAdminDmNotifyIncomingMessageRow(row);
+    } else if (typeof global.portalAdminDmPlayIncomingChatAlertSound === "function") {
+      global.portalAdminDmPlayIncomingChatAlertSound(row);
     }
     return false;
   }
