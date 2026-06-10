@@ -734,7 +734,7 @@
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
-        <p class="portal-alerts-lead">Alerts, live map and voice typing for your shift. Turn each section on once — your browser will ask for permission.</p>
+        <p class="portal-alerts-lead">Alerts and voice typing for your shift. Turn on portal features once — your browser will ask for permission.</p>
         <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on portal features</button>
         </div>
@@ -747,12 +747,6 @@
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
         </div>
-        <div class="portal-alerts-block" id="portalLocationBlock">
-          <h4 class="portal-alerts-section-title">Location (live map)</h4>
-          <p class="portal-alerts-hint muted">During your shift (15 min before until 15 min after) and until session feedback is submitted.</p>
-          <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
-        </div>
         <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
           <h4 class="portal-alerts-section-title">Voice typing</h4>
           <p class="portal-alerts-hint muted">Speak to fill session feedback and incident forms — not for video calls.</p>
@@ -762,6 +756,10 @@
         </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
           <p id="portalEnableAllStatus" hidden></p>
+          <div id="portalLocationBlock">
+            <p id="portalLocationStatus"></p>
+            <button type="button" id="portalLocationEnableBtn"></button>
+          </div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>
         </div>

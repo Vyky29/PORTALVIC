@@ -760,8 +760,6 @@ export function portalSyncAlertsSettingsChrome() {
   } else {
     sub.textContent = "Portal features on";
   }
-  const locBlock = document.getElementById("portalLocationBlock");
-  if (locBlock) locBlock.hidden = !locRequired;
   portalRefreshEnableAllUi();
 }
 
