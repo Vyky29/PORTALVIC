@@ -251,6 +251,21 @@ function expandLeadSlots(iso, serviceFilter, scopeFns) {
   return out;
 }
 
+function participantServicesOnDate(iso, participantName, scopeFns) {
+  const want = normNameKey(participantName);
+  if (!want) return [];
+  const seen = new Set();
+  const out = [];
+  expandLeadSlots(iso, null, scopeFns).forEach((s) => {
+    if (normNameKey(s.client_name) !== want) return;
+    const svc = clean(s.service);
+    if (!svc || seen.has(normNameKey(svc))) return;
+    seen.add(normNameKey(svc));
+    out.push(svc);
+  });
+  return out.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+}
+
 function uniqueParticipantNames(slots) {
   const map = new Map();
   slots.forEach((s) => {
@@ -432,9 +447,12 @@ function exitAfterSuccess() {
   } catch (_) {}
 }
 
-function initVoiceInput(staffName) {
+async function initVoiceInput(staffName) {
   if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
   try {
+    if (typeof window.PortalFeedbackVoiceInput.prefetch === "function") {
+      await window.PortalFeedbackVoiceInput.prefetch();
+    }
     window.PortalFeedbackVoiceInput.init({
       fields: [
         "lrPositiveFeedback",
@@ -444,9 +462,6 @@ function initVoiceInput(staffName) {
       ],
       staffName: staffName || "",
     });
-    if (typeof window.PortalFeedbackVoiceInput.prefetch === "function") {
-      void window.PortalFeedbackVoiceInput.prefetch();
-    }
   } catch (voiceErr) {
     console.warn("[lead-report] voice input", voiceErr);
   }
@@ -478,9 +493,10 @@ export async function bootPortalLeadFeedback() {
 
   let leadScopeFns = null;
   let leadProgrammeKey = "";
+  let leadScopes = [];
   let leadSlotsCache = [];
   let rosterReady = false;
-  let uiReady = false;
+  let voiceReady = false;
 
   const dateHidden = document.getElementById("lrSessionDate");
   const dateDisplay = document.getElementById("lrSessionDateDisplay");
@@ -533,6 +549,45 @@ export async function bootPortalLeadFeedback() {
   );
   if (partInp && qsParticipant) partInp.value = qsParticipant;
 
+  function rebuildServiceSelect(allowedServices, selected) {
+    const current = clean(selected != null ? selected : serviceEl.value);
+    const allow =
+      Array.isArray(allowedServices) && allowedServices.length
+        ? allowedServices.slice()
+        : LEAD_SERVICES.slice();
+    serviceEl.innerHTML = "";
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = allow.length > 1 ? "Select service" : "Select a service";
+    serviceEl.appendChild(ph);
+    allow.forEach((label) => {
+      const opt = document.createElement("option");
+      opt.value = label;
+      opt.textContent = label;
+      serviceEl.appendChild(opt);
+    });
+    let chosen = "";
+    if (current && allow.some((s) => servicesEquivalent(s, current))) chosen = current;
+    else if (allow.length === 1) chosen = allow[0];
+    else if (ctx.service && allow.some((s) => servicesEquivalent(s, ctx.service))) chosen = ctx.service;
+    if (chosen) serviceEl.value = chosen;
+    ctx.service = clean(serviceEl.value);
+  }
+
+  function servicesForLeadDay(iso) {
+    const seen = new Set();
+    const out = [];
+    expandLeadSlots(iso, null, leadScopeFns).forEach((s) => {
+      const svc = clean(s.service);
+      if (!svc) return;
+      const k = normNameKey(svc);
+      if (seen.has(k)) return;
+      seen.add(k);
+      if (LEAD_SERVICES.some((l) => servicesEquivalent(l, svc))) out.push(svc);
+    });
+    return out.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+  }
+
   function refreshServiceUi() {
     const svc = clean(serviceEl.value);
     ctx.service = svc;
@@ -546,12 +601,27 @@ export async function bootPortalLeadFeedback() {
     if (general) general.hidden = !hasService || bespoke;
     if (activityWrap) activityWrap.hidden = !hasService || !/multi-activity/i.test(svc);
     if (partInp) partInp.required = bespoke;
+    if (bespoke && !voiceReady) {
+      voiceReady = true;
+      void initVoiceInput(ctx.submittedByName);
+    }
   }
 
-  function findSlotsForParticipant(participantName) {
+  function findSlotsForParticipant(participantName, serviceFilter) {
     const want = normNameKey(participantName);
     if (!want) return [];
-    return leadSlotsCache.filter((s) => normNameKey(s.client_name) === want);
+    const svc = clean(serviceFilter != null ? serviceFilter : serviceEl.value);
+    let slots = leadSlotsCache.filter((s) => normNameKey(s.client_name) === want);
+    if (!slots.length && rosterReady) {
+      slots = expandLeadSlots(ctx.date, svc || null, leadScopeFns).filter(
+        (s) => normNameKey(s.client_name) === want
+      );
+    }
+    if (svc) {
+      const filtered = slots.filter((s) => servicesEquivalent(s.service, svc));
+      if (filtered.length) slots = filtered;
+    }
+    return slots;
   }
 
   function applySlotToForm(slot) {
@@ -603,7 +673,22 @@ export async function bootPortalLeadFeedback() {
   }
 
   function applyParticipantSlot(participantName) {
-    const matches = findSlotsForParticipant(participantName);
+    const nm = clean(participantName);
+    if (!nm) return;
+
+    const partServices = participantServicesOnDate(ctx.date, nm, leadScopeFns);
+    if (partServices.length > 1) {
+      rebuildServiceSelect(
+        partServices.map((s) => LEAD_SERVICES.find((l) => servicesEquivalent(l, s)) || s),
+        clean(serviceEl.value) || partServices[0]
+      );
+      refreshServiceUi();
+    } else if (partServices.length === 1) {
+      rebuildServiceSelect([partServices[0]], partServices[0]);
+      refreshServiceUi();
+    }
+
+    const matches = findSlotsForParticipant(nm, clean(serviceEl.value));
     if (!matches.length) return;
     if (matches.length === 1) {
       applySlotToForm(matches[0]);
@@ -611,9 +696,9 @@ export async function bootPortalLeadFeedback() {
       return;
     }
     const venues = [...new Set(matches.map((s) => clean(s.venue)).filter(Boolean))];
-    if (venues.length === 1 && venueInput && !clean(venueInput.value)) {
-      venueInput.value = venues[0];
+    if (venues.length === 1) {
       ctx.venue = venues[0];
+      if (venueInput) venueInput.value = ctx.venue;
     }
     rebuildTimeSlotPills(matches);
     const currentTime = clean(timeInput?.value || "");
@@ -633,8 +718,8 @@ export async function bootPortalLeadFeedback() {
 
   function applyServiceContext(opts) {
     opts = opts || {};
-    const svc = clean(serviceEl.value);
     refreshServiceUi();
+    const svc = clean(serviceEl.value);
     if (!svc || !rosterReady) return;
 
     leadSlotsCache = expandLeadSlots(ctx.date, svc, leadScopeFns);
@@ -654,15 +739,16 @@ export async function bootPortalLeadFeedback() {
         (typed && participants.find((n) => normNameKey(n) === normNameKey(typed))) ||
         (participants.length === 1 ? participants[0] : "") ||
         typed;
-      if (partInp && pick && (!typed || participants.length === 1)) {
+      if (partInp && pick && (!typed || normNameKey(typed) !== normNameKey(pick))) {
         partInp.value = pick;
       }
       if (pick) applyParticipantSlot(pick);
       else if (times.length === 1 && timeInput) {
         timeInput.value = times[0];
         ctx.sessionTime = times[0];
+      } else {
+        rebuildTimeSlotPills(leadSlotsCache);
       }
-      rebuildTimeSlotPills(pick ? findSlotsForParticipant(pick) : leadSlotsCache);
     } else if (isDayCentreService(svc)) {
       if (participants.length) fillDayCentreParticipants(participants.slice(0, 5));
       if (times.length === 1 && timeInput) {
@@ -723,10 +809,20 @@ export async function bootPortalLeadFeedback() {
     await loadScriptOnce(PORTAL_CATALOG_SCRIPT);
     await loadScriptOnce(PORTAL_AUTOCOMPLETE_SCRIPT);
     const scopeMod = await import(PORTAL_LEAD_SCOPE_MODULE);
-    const scopes = scopeMod.portalLeadSessionScopesForProfile(auth.profile, auth.authEmail);
+    leadScopes = scopeMod.portalLeadSessionScopesForProfile(auth.profile, auth.authEmail);
     leadProgrammeKey = scopeMod.portalLeadProgrammeKey(auth.profile, auth.authEmail);
-    leadScopeFns = scopeMod.portalLeadSessionScopeFilterFns(scopes, leadProgrammeKey);
+    leadScopeFns = leadScopes.length
+      ? scopeMod.portalLeadSessionScopeFilterFns(leadScopes, leadProgrammeKey)
+      : null;
     rosterReady = true;
+    const dayServices = servicesForLeadDay(ctx.date);
+    if (dayServices.length) {
+      rebuildServiceSelect(
+        dayServices.map((s) => LEAD_SERVICES.find((l) => servicesEquivalent(l, s)) || s),
+        ctx.service || dayServices[0]
+      );
+    }
+    applyServiceContext({ keepVenue: !!ctx.venue });
   } catch (e) {
     console.warn("[lead-report] roster / scope", e);
   }
@@ -748,6 +844,13 @@ export async function bootPortalLeadFeedback() {
     });
   }
 
+  partInp?.addEventListener("input", () => {
+    clearTimeout(partInp._lrSlotTimer);
+    partInp._lrSlotTimer = setTimeout(() => {
+      const nm = clean(partInp.value);
+      if (nm && isBespokeService(serviceEl.value)) applyParticipantSlot(nm);
+    }, 200);
+  });
   partInp?.addEventListener("change", () => {
     const nm = clean(partInp.value);
     if (nm) applyParticipantSlot(nm);
@@ -778,9 +881,11 @@ export async function bootPortalLeadFeedback() {
     syncPillGroup(box, sel, name);
   });
 
-  uiReady = true;
   applyServiceContext({ keepVenue: !!ctx.venue });
-  initVoiceInput(ctx.submittedByName);
+  if (isBespokeService(serviceEl.value)) {
+    voiceReady = true;
+    await initVoiceInput(ctx.submittedByName);
+  }
 
   clearBtn.addEventListener("click", () => {
     form.reset();

@@ -700,6 +700,7 @@
  wireScreenshotGuardVoiceRecovery();
  setScreenshotGuardForRecording(true);
 
+ function runCapture() {
  if (prefersWebSpeechOverWhisper()) {
  startWebSpeechCapture(textarea, btn, statusEl);
  return;
@@ -722,7 +723,6 @@
  return;
  }
  if (preferWebSpeechCapture()) {
- if (!whisperProbeDone) probeWhisperAvailability();
  startWebSpeechCapture(textarea, btn, statusEl);
  return;
  }
@@ -736,6 +736,13 @@
  "Voice not supported in this browser - try Chrome on Android or desktop.";
  }
  probeWhisperAvailability();
+ }
+
+ if (!whisperProbeDone) {
+ probeWhisperAvailability().then(runCapture);
+ return;
+ }
+ runCapture();
  }
 
  function startMediaRecorderCapture(textarea, btn, statusEl) {
