@@ -444,7 +444,21 @@
       var titleEl = document.getElementById('internalChatTitle');
       var brandEl = document.getElementById('internalChatInboxBrand');
       var nav = document.getElementById('internalChatAdminChannelNav');
-      if(listWrap) listWrap.hidden = inThread;
+      if(listWrap){
+        if(inThread){
+          if(typeof global.portalDmPrepareHidePanel === 'function'){
+            global.portalDmPrepareHidePanel(listWrap, { fallbackFocusId: 'internalChatInput' });
+          }
+          listWrap.hidden = true;
+          listWrap.setAttribute('aria-hidden', 'true');
+        }else{
+          if(typeof global.portalDmPrepareShowPanel === 'function'){
+            global.portalDmPrepareShowPanel(listWrap);
+          }
+          listWrap.hidden = false;
+          listWrap.setAttribute('aria-hidden', 'false');
+        }
+      }
       if(threadWrap){
         threadWrap.hidden = !inThread;
         threadWrap.setAttribute('aria-hidden', inThread ? 'false' : 'true');

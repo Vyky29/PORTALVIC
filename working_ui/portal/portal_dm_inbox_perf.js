@@ -21,15 +21,28 @@
     try {
       var active = document.activeElement;
       if (!active || !el.contains(active)) return;
-      var fallbackId = String(opts.fallbackFocusId || "internalChatBackBtn").trim();
+      var fallbackId = String(opts.fallbackFocusId || "internalChatInput").trim();
       var fallback =
         (fallbackId && document.getElementById(fallbackId)) ||
+        document.getElementById("internalChatBackBtn") ||
         document.getElementById("internalChatSheet");
       if (fallback && typeof fallback.focus === "function") {
         fallback.focus({ preventScroll: true });
-        return;
+      } else if (active && typeof active.blur === "function") {
+        active.blur();
       }
-      if (active && typeof active.blur === "function") active.blur();
+      if ("inert" in el) {
+        el.inert = true;
+      }
+    } catch (_) {}
+  }
+
+  function portalDmPrepareShowPanel(el) {
+    if (!el) return;
+    try {
+      if ("inert" in el) {
+        el.inert = false;
+      }
     } catch (_) {}
   }
 
@@ -208,6 +221,7 @@
 
   global.portalDmBlurFocusBeforeHide = portalDmBlurFocusBeforeHide;
   global.portalDmPrepareHidePanel = portalDmPrepareHidePanel;
+  global.portalDmPrepareShowPanel = portalDmPrepareShowPanel;
   global.portalDmBlurHiddenSubtree = portalDmBlurHiddenSubtree;
   global.portalDmDebounceAsync = portalDmDebounceAsync;
   global.portalDmAppendThreadTextMessage = portalDmAppendThreadTextMessage;

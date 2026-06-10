@@ -1212,11 +1212,14 @@
         if (inThread) {
           blurFocusWithin(listWrap);
           if (typeof global.portalDmPrepareHidePanel === "function") {
-            global.portalDmPrepareHidePanel(listWrap, { fallbackFocusId: "internalChatBackBtn" });
+            global.portalDmPrepareHidePanel(listWrap, { fallbackFocusId: "internalChatInput" });
           }
           listWrap.hidden = true;
           listWrap.setAttribute("aria-hidden", "true");
         } else {
+          if (typeof global.portalDmPrepareShowPanel === "function") {
+            global.portalDmPrepareShowPanel(listWrap);
+          }
           listWrap.hidden = false;
           listWrap.setAttribute("aria-hidden", "false");
         }

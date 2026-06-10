@@ -8,10 +8,8 @@ import {
   markLocationGranted,
   markLocationDenied,
   portalLocationPermissionGranted,
-  portalLocationPermissionDenied,
   probeLocationPermissionState,
-  tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260610-geo-denied-skip";
+} from "./portal_location_permission.js?v=20260610-console-clean2";
 
 const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;
@@ -329,9 +327,6 @@ export async function startPortalLocationTracker(opts = {}) {
 
   bindPermissionResume();
   await probeLocationPermissionState();
-  if (!portalLocationPermissionGranted() && !portalLocationPermissionDenied()) {
-    await tryProbeLocationGrantedViaGeolocation();
-  }
   if (!portalLocationPermissionGranted()) {
     _pendingStartOpts = opts;
     return;
