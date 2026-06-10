@@ -266,6 +266,74 @@
       color:var(--muted);
       text-align:center;
     }
+
+    @media (min-width: 900px) {
+      body{
+        padding:32px 40px;
+        align-items:stretch;
+        background:linear-gradient(135deg,#f7fbff 0%,#e8f2fa 48%,#edf4fb 100%);
+      }
+      .login-wrap{
+        max-width:min(980px,94vw);
+        margin:0 auto;
+        display:flex;
+        align-items:center;
+        min-height:calc(100dvh - 64px);
+      }
+      .login-card{
+        display:grid;
+        grid-template-columns:minmax(300px,1fr) minmax(340px,1fr);
+        align-items:stretch;
+        width:100%;
+        padding:0;
+        overflow:hidden;
+        min-height:min(640px, calc(100dvh - 80px));
+      }
+      .login-brand{
+        margin:0;
+        padding:48px 40px 40px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        text-align:center;
+        background:linear-gradient(180deg,#fbfdff 0%,#eef6fc 100%);
+        border-right:1px solid var(--line);
+      }
+      .login-logo-stage{
+        width:min(280px,78%);
+        margin-bottom:16px;
+      }
+      .login-portal-text{
+        font-size:1.75rem;
+      }
+      .login-panel{
+        padding:44px 48px 40px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        min-width:0;
+      }
+      .login-hint{
+        text-align:left;
+        font-size:.875rem;
+        margin-bottom:18px;
+      }
+      .login-updated-msg.visible{
+        text-align:left;
+      }
+      .field label{
+        font-size:.875rem;
+      }
+      .field input{
+        padding:13px 15px;
+        font-size:1.02rem;
+      }
+      .btn-login{
+        margin-top:12px;
+        padding:15px 18px;
+        font-size:1.05rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -349,6 +417,7 @@
         <h1 class="login-portal-text">Portal</h1>
       </header>
 
+      <div class="login-panel">
       <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
 
       <p class="login-hint">Staff: your first name and the 4-digit PIN from the office.</p>
@@ -366,6 +435,7 @@
       </form>
 
       <div id="error-msg" class="error-msg" role="alert" aria-live="polite"></div>
+      </div>
     </div>
   </div>
 
