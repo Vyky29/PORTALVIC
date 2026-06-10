@@ -453,15 +453,10 @@ async function initVoiceInput(staffName) {
     if (typeof window.PortalFeedbackVoiceInput.prefetch === "function") {
       await window.PortalFeedbackVoiceInput.prefetch();
     }
-    window.PortalFeedbackVoiceInput.init({
-      fields: [
-        "lrPositiveFeedback",
-        "lrRelevantInformation",
-        "lrSessionSummary",
-        "lrOtherOptional",
-      ],
-      staffName: staffName || "",
-    });
+    const voice = window.PortalFeedbackVoiceInput;
+    const opts = { auto: true, staffName: staffName || "" };
+    if (typeof voice.rescan === "function") voice.rescan(opts);
+    else voice.init(opts);
   } catch (voiceErr) {
     console.warn("[lead-report] voice input", voiceErr);
   }
@@ -496,8 +491,6 @@ export async function bootPortalLeadFeedback() {
   let leadScopes = [];
   let leadSlotsCache = [];
   let rosterReady = false;
-  let voiceReady = false;
-
   const dateHidden = document.getElementById("lrSessionDate");
   const dateDisplay = document.getElementById("lrSessionDateDisplay");
   const datePicker = document.getElementById("lrSessionDatePicker");
@@ -601,10 +594,7 @@ export async function bootPortalLeadFeedback() {
     if (general) general.hidden = !hasService || bespoke;
     if (activityWrap) activityWrap.hidden = !hasService || !/multi-activity/i.test(svc);
     if (partInp) partInp.required = bespoke;
-    if (bespoke && !voiceReady) {
-      voiceReady = true;
-      void initVoiceInput(ctx.submittedByName);
-    }
+    if (hasService) void initVoiceInput(ctx.submittedByName);
   }
 
   function findSlotsForParticipant(participantName, serviceFilter) {
@@ -882,10 +872,7 @@ export async function bootPortalLeadFeedback() {
   });
 
   applyServiceContext({ keepVenue: !!ctx.venue });
-  if (isBespokeService(serviceEl.value)) {
-    voiceReady = true;
-    await initVoiceInput(ctx.submittedByName);
-  }
+  await initVoiceInput(ctx.submittedByName);
 
   clearBtn.addEventListener("click", () => {
     form.reset();

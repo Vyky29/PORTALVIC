@@ -969,6 +969,44 @@
  }
 
  var initDone = false;
+ var LONG_TEXT_MIN_MAXLENGTH = 120;
+
+ function isLongTextEligible(ta) {
+ if (!ta || ta.tagName !== "TEXTAREA") return false;
+ if (ta.readOnly || ta.disabled) return false;
+ if (ta.dataset.portalVoiceSkip === "1" || ta.classList.contains("portal-no-voice")) return false;
+ if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return false;
+ if (ta.closest(".portal-wb-domain-all-clear, .portal-wb-admin-hide")) return false;
+ var maxLen = parseInt(ta.getAttribute("maxlength"), 10);
+ if (!isNaN(maxLen) && maxLen > 0 && maxLen < LONG_TEXT_MIN_MAXLENGTH) return false;
+ var rows = parseInt(ta.getAttribute("rows"), 10);
+ if (!isNaN(rows) && rows <= 1) {
+ var minH = 0;
+ try {
+ minH = parseFloat(global.getComputedStyle(ta).minHeight) || 0;
+ } catch (_) {}
+ if (minH < 64) return false;
+ }
+ return true;
+ }
+
+ function collectLongTextareas(root) {
+ root = root || global.document;
+ var out = [];
+ try {
+ root.querySelectorAll("textarea").forEach(function (ta) {
+ if (isLongTextEligible(ta)) out.push(ta);
+ });
+ } catch (_) {}
+ return out;
+ }
+
+ function resolveTextareaTarget(target) {
+ if (!target) return null;
+ if (typeof target === "string") return global.document.getElementById(target);
+ if (target.tagName === "TEXTAREA") return target;
+ return null;
+ }
 
  function attachVoiceFields(opts) {
  opts = opts || {};
@@ -977,14 +1015,26 @@
  initDone = true;
  }
  applyStaffLanguages(opts.staffName || "");
- var fieldIds = opts.fields || [];
- fieldIds.forEach(function (id) {
- wrapTextarea(document.getElementById(id));
+ var targets = [];
+ if (opts.auto || opts.fields === "auto") {
+ targets = collectLongTextareas(opts.root || global.document);
+ } else if (opts.fields && opts.fields.length) {
+ opts.fields.forEach(function (id) {
+ var el = resolveTextareaTarget(id);
+ if (el) targets.push(el);
+ });
+ }
+ targets.forEach(function (ta) {
+ wrapTextarea(ta);
  });
  }
 
  function init(opts) {
  attachVoiceFields(opts);
+ }
+
+ function rescan(opts) {
+ attachVoiceFields(Object.assign({ auto: true }, opts || {}));
  }
 
  function setStaffName(staffName) {
@@ -994,7 +1044,9 @@
  global.PortalFeedbackVoiceInput = {
  init: init,
  attach: attachVoiceFields,
+ rescan: rescan,
  setStaffName: setStaffName,
  prefetch: probeWhisperAvailability,
+ collectLongTextareas: collectLongTextareas,
  };
 })(typeof window !== "undefined" ? window : this);

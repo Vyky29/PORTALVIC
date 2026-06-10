@@ -483,6 +483,123 @@
     cardEl.appendChild(grid);
   };
 
+  function portalResolveVoiceStaffName() {
+    try {
+      if (typeof window.readPinIdentityName === "function") {
+        var pin = String(window.readPinIdentityName() || "").trim();
+        if (pin) return pin;
+      }
+    } catch (_) {}
+    try {
+      var box = window.__PORTAL_SUPABASE__;
+      var profile = box && box.staff_profile;
+      var nm = profile && (profile.full_name || profile.username);
+      if (nm) return String(nm).trim();
+    } catch (_) {}
+    try {
+      var bar = document.getElementById("portalPinIdentityBar");
+      if (bar) {
+        var txt = String(bar.textContent || "").trim();
+        if (txt) return txt.replace(/^signed in as\s*/i, "").trim();
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  /** Voice transcriptor on all long textareas across portal staff forms. */
+  (function portalFormVoiceBootstrap() {
+    try {
+      var path = String((location && location.pathname) || "").toLowerCase();
+      var formSlugs = [
+        "portal-session-feedback",
+        "cancellation",
+        "portal-expenses",
+        "portal-incident",
+        "portal-venue-review",
+        "portal-lead-feedback",
+        "portal-pickup",
+        "portal-timesheet",
+        "termreview",
+        "swtermreview",
+        "staff_wellbeing_checkin",
+        "staff_wellbeing_review",
+        "performance",
+      ];
+      var isForm = formSlugs.some(function (slug) {
+        return path.indexOf(slug) >= 0;
+      });
+      if (!isForm) return;
+
+      var voiceRescanTimer = null;
+      function scheduleVoiceRescan(staffName) {
+        if (voiceRescanTimer) clearTimeout(voiceRescanTimer);
+        voiceRescanTimer = setTimeout(function () {
+          voiceRescanTimer = null;
+          try {
+            if (
+              typeof window.PortalFeedbackVoiceInput !== "undefined" &&
+              typeof window.PortalFeedbackVoiceInput.rescan === "function"
+            ) {
+              window.PortalFeedbackVoiceInput.rescan({ staffName: staffName || "" });
+            }
+          } catch (_) {}
+        }, 180);
+      }
+
+      function runPortalVoiceInit() {
+        if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
+        var staffName = portalResolveVoiceStaffName();
+        try {
+          window.PortalFeedbackVoiceInput.init({ auto: true, staffName: staffName });
+        } catch (e) {
+          console.warn("[portal] voice init", e);
+        }
+        try {
+          if (typeof MutationObserver !== "undefined" && document.body) {
+            var mo = new MutationObserver(function () {
+              scheduleVoiceRescan(portalResolveVoiceStaffName());
+            });
+            mo.observe(document.body, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ["hidden", "class"],
+            });
+          }
+        } catch (_) {}
+        try {
+          if (
+            typeof window.PortalFeedbackVoiceInput.prefetch === "function"
+          ) {
+            window.PortalFeedbackVoiceInput.prefetch();
+          }
+        } catch (_) {}
+      }
+
+      function startPortalVoice() {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", runPortalVoiceInit, { once: true });
+        } else {
+          runPortalVoiceInit();
+        }
+      }
+
+      var voiceReady =
+        typeof window.PortalFeedbackVoiceInput !== "undefined" &&
+        typeof window.PortalFeedbackVoiceInput.rescan === "function";
+      if (voiceReady) {
+        startPortalVoice();
+      } else {
+        var voiceScript = document.createElement("script");
+        voiceScript.src =
+          "/portal/portal_feedback_voice_input.js?v=20260610-portal-voice-auto";
+        voiceScript.onload = startPortalVoice;
+        voiceScript.onerror = function () {};
+        (document.head || document.documentElement).appendChild(voiceScript);
+      }
+    } catch (_) {}
+  })();
+
   /** Start visit tracking on standalone portal forms (feedback, cancellation, …). */
   (function portalFormVisitBootstrap() {
     try {
