@@ -7824,24 +7824,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function findOverrideForSlot(slot, overrideRows){
       var rows = Array.isArray(overrideRows) ? overrideRows : sched.overrides;
       var best = null;
+      var slotStaff = normalizeSchedAnchorStaffId(slot.staffRosterId);
       for(var i=0;i<rows.length;i++){
         var o = rows[i];
         if(String(o.session_date)!==String(slot.sessionDate)) continue;
         if(normTimeShort(o.anchor_start)!==normTimeShort(slot.anchorStart)) continue;
         if(normTimeShort(o.anchor_end)!==normTimeShort(slot.anchorEnd)) continue;
         if(String(o.anchor_venue||'').trim().toLowerCase()!==String(slot.venue||'').trim().toLowerCase()) continue;
-        if(String(o.anchor_staff_id||'').trim().toLowerCase()!==String(slot.staffRosterId||'').trim().toLowerCase()) continue;
+        if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== slotStaff) continue;
         if(String(o.anchor_client_id||'').trim().toLowerCase()!==String(slot.clientSlug||'').trim().toLowerCase()) continue;
         if(String(o.status||'active')!=='active') continue;
         if(!best || (o.created_at && (!best.created_at || new Date(o.created_at) > new Date(best.created_at)))) best = o;
       }
       return best;
     }
+    function schedFindSlotByDemoId(demoId){
+      var id = String(demoId || '').trim();
+      if(!id) return null;
+      if(sched.slotsById && sched.slotsById[id]) return sched.slotsById[id];
+      var pool = sched.cachedDaySlots || [];
+      for(var i = 0; i < pool.length; i++){
+        if(String(pool[i].demoId || '') === id) return pool[i];
+      }
+      return null;
+    }
     function bookingEffectiveParticipantLabel(slot, ov){
       if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
         var repName = String(ov.payload && (ov.payload.to_client_name || ov.payload.replacement_client_name) || '').trim();
         var repSlug = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim();
         return repName || repSlug || String(slot.clientDisplay || 'Replacement');
+      }
+      if(ov && String(ov.override_type || '').trim() === 'slot_clear_client'){
+        var moveOut = ov.payload && ov.payload.client_move;
+        if(moveOut) return 'Open slot';
+        if(ov.payload && ov.payload.cancelled_by_admin) return 'Cancelled';
+        return 'No participant';
       }
       return String(slot.clientDisplay || '');
     }
@@ -8187,9 +8204,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = ov && ov.payload ? ov.payload : {};
       if(t === 'slot_open') return { label:'Open slot', cls:'chip--ok' };
       if(t === 'slot_close') return { label:'Closed', cls:'chip--urg' };
+      if(t === 'slot_clear_client' && payload && payload.client_move) return { label:'Moved out', cls:'chip--pend' };
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return { label:'Cancelled', cls:'chip--urg' };
       if(t === 'slot_clear_client') return { label:'No Participant', cls:'chip--pend' };
       if(t === 'client_absence_announced') return { label:'Absent', cls:'chip--pend' };
+      if(t === 'client_replace_in_slot' && payload && payload.client_move) return { label:'Moved in', cls:'chip--makeup' };
       if(t === 'client_replace_in_slot') return { label:'MakeUp', cls:'chip--makeup' };
       var baseClient = String(slot.clientSlug || '').trim().toLowerCase();
       if(baseClient === 'available' || baseClient === 'noclient' || baseClient === '') return { label:'No Participant', cls:'chip--pend' };
@@ -10815,7 +10834,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost" id="schedDrawerCancel">Cancel</button>'+
         '<button type="button" class="btn btn--pri" id="schedSaveBtn">Save override</button>';
       $('schedDrawerCancel').onclick = closeSchedDrawer;
-      $('schedSaveBtn').onclick = saveSchedOverrideFromDrawer;
+      $('schedSaveBtn').onclick = function(){
+        void saveSchedOverrideFromDrawer().catch(function(err){
+          var errEl = $('schedFormErr');
+          var detail = err && err.message ? String(err.message) : String(err || 'Unknown error');
+          if(errEl) errEl.textContent = 'Save failed: ' + detail;
+          console.error('[portal] schedule override save', err);
+          try{ if(typeof portalAdminToast === 'function') portalAdminToast('Save failed — ' + detail); }catch(_t){}
+        });
+      };
       var undoBtn = $('schedUndoOverrideBtn');
       if(undoBtn) undoBtn.onclick = function(){ void undoSchedOverrideFromDrawer(slot); };
       $('schedDrawerBackdrop').classList.add('open');
@@ -10909,6 +10936,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     async function saveSchedClientMoveFromDrawer(){
       var msgEl = $('schedFormErr');
+      var saveBtn = $('schedSaveBtn');
       if(msgEl) msgEl.textContent = '';
       var sourceSlot = sched.activeSlot;
       if(!sourceSlot){ if(msgEl) msgEl.textContent = 'No slot selected.'; return; }
@@ -10920,9 +10948,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(msgEl) msgEl.textContent = 'Choose the target slot for this move.';
         return;
       }
-      var targetSlot = sched.slotsById[targetDemoId];
+      var targetSlot = schedFindSlotByDemoId(targetDemoId);
       if(!targetSlot){
         if(msgEl) msgEl.textContent = 'Target slot not found — refresh the day and try again.';
+        return;
+      }
+      var sourceStaffId = normalizeSchedAnchorStaffId(sourceSlot.staffRosterId);
+      var targetStaffId = normalizeSchedAnchorStaffId(targetSlot.staffRosterId);
+      if(!sourceStaffId || !targetStaffId){
+        if(msgEl) msgEl.textContent = 'Instructor roster id missing on source or target slot — cannot save this move.';
         return;
       }
       var reason = ($('schedFormReason') && $('schedFormReason').value) || '';
@@ -10933,10 +10967,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         participantSlug = String(srcOv.payload && (srcOv.payload.to_client_id || srcOv.payload.replacement_client_id) || participantSlug).trim().toLowerCase();
         participantName = String(srcOv.payload && (srcOv.payload.to_client_name || srcOv.payload.replacement_client_name) || participantName).trim() || participantName;
       }
-      if(!participantSlug || participantSlug === 'available' || participantSlug === 'closed'){
+      if(!participantSlug || participantSlug === 'available' || participantSlug === 'closed' || participantSlug === 'noclient' || participantSlug === 'no client'){
         if(msgEl) msgEl.textContent = 'This row has no booked participant to move.';
         return;
       }
+      if(saveBtn){
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+      }
+      try{
       var movePayloadCommon = {
         client_move: true,
         moved_client_id: participantSlug,
@@ -10944,7 +10983,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       var clearRow = {
         session_date: sourceSlot.sessionDate,
-        anchor_staff_id: normalizeSchedAnchorStaffId(sourceSlot.staffRosterId),
+        anchor_staff_id: sourceStaffId,
         anchor_start: sourceSlot.anchorStart,
         anchor_end: sourceSlot.anchorEnd,
         anchor_venue: sourceSlot.venue,
@@ -10955,7 +10994,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           moved_to_demo_id: targetDemoId,
           moved_to_time: targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart),
           moved_to_venue: targetSlot.venue,
-          moved_to_staff_id: normalizeSchedAnchorStaffId(targetSlot.staffRosterId),
+          moved_to_staff_id: targetStaffId,
           moved_to_staff_name: schedStaffDisplayName(targetSlot.staffRosterId, targetSlot.staffName)
         }),
         reason: reason || null,
@@ -10965,7 +11004,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       var replaceRow = {
         session_date: targetSlot.sessionDate,
-        anchor_staff_id: normalizeSchedAnchorStaffId(targetSlot.staffRosterId),
+        anchor_staff_id: targetStaffId,
         anchor_start: targetSlot.anchorStart,
         anchor_end: targetSlot.anchorEnd,
         anchor_venue: targetSlot.venue,
@@ -10988,12 +11027,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       var insClear = await client.from('schedule_overrides').insert([clearRow]).select('id,created_at,created_by');
       if(insClear.error){
-        if(msgEl) msgEl.textContent = 'Move failed (clear source): ' + esc(String(insClear.error.message || insClear.error));
+        if(msgEl) msgEl.textContent = 'Move failed (clear source): ' + esc(String(insClear.error.message || insClear.error)) + (insClear.error.hint ? (' — ' + esc(insClear.error.hint)) : '');
+        return;
+      }
+      if(!insClear.data || !insClear.data[0] || !insClear.data[0].id){
+        if(msgEl) msgEl.textContent = 'Move did not save (source clear). Check RLS: admin or CEO profile required.';
         return;
       }
       var insRep = await client.from('schedule_overrides').insert([replaceRow]).select('id,created_at,created_by');
       if(insRep.error){
-        if(msgEl) msgEl.textContent = 'Source cleared but target move failed: ' + esc(String(insRep.error.message || insRep.error));
+        try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', insClear.data[0].id); }catch(_rb){}
+        if(msgEl) msgEl.textContent = 'Source cleared but target move failed: ' + esc(String(insRep.error.message || insRep.error)) + (insRep.error.hint ? (' — ' + esc(insRep.error.hint)) : '');
+        await refreshSchedulingModule();
+        return;
+      }
+      if(!insRep.data || !insRep.data[0] || !insRep.data[0].id){
+        try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', insClear.data[0].id); }catch(_rb2){}
+        if(msgEl) msgEl.textContent = 'Move did not save (target fill). Check RLS: admin or CEO profile required.';
         await refreshSchedulingModule();
         return;
       }
@@ -11021,8 +11071,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_ev){}
       closeSchedDrawer();
       sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
+      try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
       adminInvalidateSessionsHubLiveCaches();
       await refreshSchedulingModule();
+      }finally{
+        if(saveBtn){
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save override';
+        }
+      }
     }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
@@ -12353,11 +12410,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return schedStaffPillHtml(lab, slot.staffRosterId, schedIso, 'booked');
     }
     function schedParticipantCellHtml(slot, ov){
+      if(ov && String(ov.override_type || '').trim() === 'slot_clear_client'){
+        var movedOut = ov.payload && ov.payload.client_move;
+        var origLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
+        if(movedOut){
+          return (
+            '<div class="sched-pax-pill-row">' +
+            schedParticipantPillHtml(origLab, slot.demoId, 'out', 'demo') +
+            '<span class="sched-pax-pill-sep">→</span>' +
+            schedParticipantPillHtml('Open slot', slot.demoId, 'in', 'demo') +
+            '</div>'
+          );
+        }
+      }
       if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
         var replSlug = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         var replName = String(ov.payload && (ov.payload.to_client_name || ov.payload.replacement_client_name) || '').trim();
+        var movedIn = ov.payload && ov.payload.client_move;
         var origLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
         var replLab = replName || replSlug || 'replacement';
+        if(movedIn){
+          var fromTime = String(ov.payload.moved_from_time || '').trim();
+          var fromHint = fromTime ? (' from ' + fromTime) : '';
+          return (
+            '<div class="sched-pax-pill-row">' +
+            schedParticipantPillHtml('Open slot', slot.demoId, 'out', 'demo') +
+            '<span class="sched-pax-pill-sep">→</span>' +
+            schedParticipantPillHtml(replLab + fromHint, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
+            '</div>'
+          );
+        }
         return (
           '<div class="sched-pax-pill-row">' +
           schedParticipantPillHtml(origLab, slot.demoId, 'out', 'demo') +
