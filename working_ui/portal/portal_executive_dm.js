@@ -1104,10 +1104,6 @@
       else if(tid) portalAdminDmSetThreadAck(tid, iso);
     }
     function portalAdminDmRefreshInboxLists(){
-      // #region agent log
-      global.__DBG_INBOX_REFRESH_N__ = (global.__DBG_INBOX_REFRESH_N__ || 0) + 1;
-      fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H4',location:'portal_executive_dm.js:portalAdminDmRefreshInboxLists',message:'refreshInboxLists',data:{count:global.__DBG_INBOX_REFRESH_N__},timestamp:Date.now()})}).catch(function(){});
-      // #endregion
       if(global.__PORTAL_DM_INBOX_REFRESH_DEB){
         clearTimeout(global.__PORTAL_DM_INBOX_REFRESH_DEB);
       }
@@ -1363,6 +1359,12 @@
       if(mt === 'image') return 'Photo';
       if(mt === 'file') return 'Document';
       var body = String(row.body || '').trim();
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        body = String(window.portalChatActorIdentity.stripDmOperatorTag(body) || '').trim();
+      }
       if(body.indexOf('[[portal-staff-call:') >= 0) return 'Call invite';
       if(body.indexOf('[[portal-staff-call-end:') >= 0){
         if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.parseCallEndPayload === 'function'){
@@ -2136,9 +2138,6 @@
       portalAdminDmBindAttachmentControls();
     }
     async function portalAdminDmSendReply(){
-      // #region agent log
-      fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H2',location:'portal_executive_dm.js:portalAdminDmSendReply',message:'sendReply start',data:{panel:String((window.__PORTAL_ADMIN_DM_UI||{}).panel||''),hasTid:!!(window.__PORTAL_ADMIN_DM_UI||{}).threadId,hasGid:!!(window.__PORTAL_ADMIN_DM_UI||{}).groupId},timestamp:Date.now()})}).catch(function(){});
-      // #endregion
       var client = getSchedSupabaseClient();
       if(
         window.portalChatActorIdentity &&
@@ -2170,14 +2169,10 @@
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
-          var _dbgUseOps = !!(window.portalCeoGodModeAdmin && typeof window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin === 'function' && window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin(ui));
-          // #region agent log
-          fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H2',location:'portal_executive_dm.js:portalAdminDmSendReply:branch',message:'send branch',data:{useOpsInsert:_dbgUseOps,inboxLane:String(ui.inboxLane||''),workerId:String(ui.workerId||ui.managementWorkerId||'').slice(0,8)},timestamp:Date.now()})}).catch(function(){});
-          // #endregion
           if(
             window.portalCeoGodModeAdmin &&
             typeof window.portalCeoGodModeAdmin.insertDmMessage === 'function' &&
-            _dbgUseOps
+            window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin(ui)
           ){
             await window.portalCeoGodModeAdmin.insertDmMessage(client, tid, body, 'text');
           }else{
@@ -2202,9 +2197,6 @@
           void portalAdminDmRenderList();
         }
       }catch(e){
-        // #region agent log
-        fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eea3b5'},body:JSON.stringify({sessionId:'eea3b5',runId:'pre-fix',hypothesisId:'H5',location:'portal_executive_dm.js:portalAdminDmSendReply:catch',message:'sendReply error',data:{errMsg:String((e&&e.message)||e||'').slice(0,120),errName:String(e&&e.name||'')},timestamp:Date.now()})}).catch(function(){});
-        // #endregion
         if(errB) errB.textContent = String((e && e.message) || e || 'Send failed');
       }finally{
         if(sendBtn) sendBtn.disabled = false;
