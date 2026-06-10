@@ -672,7 +672,8 @@
       var el = document.getElementById('portalAdminChatBanner');
       if(el) el.remove();
     }
-    function portalAdminDmOnUnreadAttentionChanged(prevUnread){
+    function portalAdminDmOnUnreadAttentionChanged(prevUnread, opts){
+      opts = opts || {};
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
       var nowUnread = portalAdminDmHasUnread();
       if(prevUnread === nowUnread) return;
@@ -686,7 +687,7 @@
           }
         }
       }catch(_op){}
-      if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
+      if(!prevUnread && nowUnread && !opts.suppressNotify) portalAdminDmNotifyIncomingChat();
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
         window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
@@ -813,7 +814,8 @@
       }
       return hints;
     }
-    async function portalAdminDmSyncIncomingAttention(){
+    async function portalAdminDmSyncIncomingAttention(opts){
+      opts = opts || {};
       var prevUnread = portalAdminDmHasUnread();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
@@ -942,14 +944,36 @@
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
         portalAdminDmApplyTeamTileUnreadClass();
-        portalAdminDmOnUnreadAttentionChanged(prevUnread);
+        portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
         if(hs || hgStaff) portalAdminDmTryOsNotifyIncoming('staff');
         if(hc || hgCeo) portalAdminDmTryOsNotifyIncoming('ceo');
       }catch(_e){
         try{ console.warn('[portal] portalAdminDmSyncIncomingAttention', _e); }catch(_log){}
         portalAdminDmApplyTeamTileUnreadClass();
-        portalAdminDmOnUnreadAttentionChanged(prevUnread);
+        portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
       }
+    }
+    function portalAdminDmNotifyIncomingRowIfNeeded(row, viewingSame){
+      if(!row || viewingSame || !portalAdminDmMessageCountsAsUnread(row)) return;
+      if(typeof global.portalAdminDmNotifyIncomingMessageRow === 'function'){
+        global.portalAdminDmNotifyIncomingMessageRow(row);
+        return;
+      }
+      if(typeof global.portalStaffNotifyIncomingChat !== 'function') return;
+      var preview = String(row.body || '').trim();
+      if(
+        global.portalChatActorIdentity &&
+        typeof global.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        preview = global.portalChatActorIdentity.stripDmOperatorTag(preview);
+      }
+      if(global.portalStaffChatCalls && typeof global.portalStaffChatCalls.previewText === 'function'){
+        var callPreview = global.portalStaffChatCalls.previewText(preview);
+        if(callPreview) preview = callPreview;
+      }
+      preview = String(preview || '').trim();
+      if(preview.length > 72) preview = preview.slice(0, 72) + '…';
+      global.portalStaffNotifyIncomingChat('New message', preview || 'New message', row);
     }
     function portalAdminDmChatSurfaceActive(){
       if(window.__PORTAL_ADMIN_DM_OPEN) return true;
@@ -1023,7 +1047,10 @@
                 var changedTid = row && row.thread_id ? String(row.thread_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingThread = portalAdminDmViewingThread(changedTid);
-                if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
+                if(portalAdminDmMessageCountsAsUnread(row)){
+                  portalAdminDmNotifyIncomingRowIfNeeded(row, viewingThread);
+                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+                }
                 if(!surfaceActive) return;
                 if(viewingThread){
                   if(typeof portalAdminDmLoadMessages === 'function') void portalAdminDmLoadMessages();
@@ -1052,7 +1079,10 @@
                 var changedGid = row && row.group_id ? String(row.group_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingGroup = portalAdminDmViewingGroup(changedGid);
-                if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
+                if(portalAdminDmMessageCountsAsUnread(row)){
+                  portalAdminDmNotifyIncomingRowIfNeeded(row, viewingGroup);
+                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+                }
                 if(!surfaceActive) return;
                 if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
                   void portalAdminDmLoadMessages();

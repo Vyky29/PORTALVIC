@@ -404,31 +404,7 @@
   }
 
   async function isIncomingCallDmForMe(row) {
-    var me = meUserId();
-    if (!me || !row) return false;
-    var tid = String(row.thread_id || "").trim();
-    if (!tid) return false;
-    var cached = callParticipantCache[tid];
-    if (cached && Date.now() - cached.ts < 120000) {
-      return cached.a === me || cached.b === me;
-    }
-    var box = global.__PORTAL_SUPABASE__;
-    var client = box && box.client;
-    if (!client) return null;
-    try {
-      var res = await client
-        .from("portal_staff_dm_threads")
-        .select("participant_a,participant_b")
-        .eq("id", tid)
-        .maybeSingle();
-      if (res.error || !res.data) return false;
-      var a = String(res.data.participant_a || "");
-      var b = String(res.data.participant_b || "");
-      callParticipantCache[tid] = { a: a, b: b, ts: Date.now() };
-      return a === me || b === me;
-    } catch (_callDm) {
-      return false;
-    }
+    return isIncomingDmForMe(row);
   }
 
   async function isIncomingGroupCallForMe(row) {
