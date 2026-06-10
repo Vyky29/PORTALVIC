@@ -12,7 +12,7 @@ function queueSync() {
 async function bootInductionProgressRuntime() {
   try {
     await bootstrapDashboardSupabase({ page: "general_induction" });
-    await import("./portal_training_progress_sync.js?v=20260604-induction-persist");
+    await import("./portal_training_progress_sync.js?v=20260610-rpc-fallback");
     if (typeof window.portalHydrateInductionProgressFromSupabase === "function") {
       await window.portalHydrateInductionProgressFromSupabase();
     }

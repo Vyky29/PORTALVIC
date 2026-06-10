@@ -1093,7 +1093,7 @@
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-exec-lead-home"></script>
   <script src="/portal/portal_management_dm_routing.js?v=20260610-exec-lead-home"></script>
-  <script src="/portal/portal_dm_inbox_perf.js?v=20260610-chat-focus-fix"></script>
+  <script src="/portal/portal_dm_inbox_perf.js?v=20260610-call-end-append"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-logo-alert"></script>
@@ -1321,7 +1321,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260609-feedback-history';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260610-feedback-server-truth';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1639,6 +1639,9 @@
                 absent: false,
                 cancelled: false
               };
+            }
+            if(dashboardData && dashboardData.portalFeedbackServerSynced){
+              return portalReviewFlagsForResolvedSession(iso, sid, s);
             }
             if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
               return portalReviewFlagsForResolvedSession(iso, sid, s);
@@ -1961,16 +1964,23 @@
       }
       return changed;
     }
-    /** Apply static export + roster reconciliation before showing orange feedback reminders (avoids login flash). */
+    /** Seed static export rows into review map (historical days). Does not mark server sync complete. */
     function portalMarkFeedbackReconciledFromExports(){
       try{
         if(typeof portalSeedAllReviewDoneFromPortalExports === 'function'){
           portalSeedAllReviewDoneFromPortalExports();
         }
+      }catch(_){}
+    }
+    function portalMarkFeedbackReconciledAfterServerSync(){
+      try{
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
           rebuildTermShiftAndFeedbackFromSessionModel();
         }
-        if(dashboardData) dashboardData.portalFeedbackReconciled = true;
+        if(dashboardData){
+          dashboardData.portalFeedbackServerSynced = true;
+          dashboardData.portalFeedbackReconciled = true;
+        }
       }catch(_){}
     }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
@@ -1993,11 +2003,21 @@
           catchUpSessionDates: catchUpDates
         });
         const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
-        if(seeded || merged){
+        const floorIso = typeof portalMachineRosterFeedbackFloorIso === 'function' ? portalMachineRosterFeedbackFloorIso() : '2026-06-01';
+        const reconciled = typeof mod.portalReconcileReviewMemoryWithServer === 'function'
+          ? mod.portalReconcileReviewMemoryWithServer(sessionReviewMapMemory, rosterKeys, keys, {
+              serverTruthFromIso: floorIso,
+              catchUpSessionDates: catchUpDates
+            })
+          : false;
+        if(seeded || merged || reconciled){
           persistSessionReviewMap();
           if(typeof portalEnrichClientNotesFromPortalFeedback === 'function') portalEnrichClientNotesFromPortalFeedback();
-          if(typeof portalMarkFeedbackReconciledFromExports === 'function') portalMarkFeedbackReconciledFromExports();
-          else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+        }
+        if(typeof portalMarkFeedbackReconciledAfterServerSync === 'function'){
+          portalMarkFeedbackReconciledAfterServerSync();
+        }
+        if(seeded || merged || reconciled){
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
           if(typeof renderClientsSheetList === 'function'){
@@ -2007,15 +2027,16 @@
               : (myBtn && myBtn.classList.contains('is-active') ? 'my' : 'my');
             renderClientsSheetList(mode, '');
           }
-        }else if(dashboardData && !dashboardData.portalFeedbackReconciled){
-          if(typeof portalMarkFeedbackReconciledFromExports === 'function') portalMarkFeedbackReconciledFromExports();
         }
       }catch(e){
         console.warn('[portal] server review merge skipped', e);
       }finally{
         if(dashboardData && !dashboardData.portalFeedbackReconciled){
-          if(typeof portalMarkFeedbackReconciledFromExports === 'function') portalMarkFeedbackReconciledFromExports();
-          else dashboardData.portalFeedbackReconciled = true;
+          if(typeof portalMarkFeedbackReconciledAfterServerSync === 'function'){
+            portalMarkFeedbackReconciledAfterServerSync();
+          }else{
+            dashboardData.portalFeedbackReconciled = true;
+          }
         }
       }
     }
@@ -2914,8 +2935,9 @@
         }
         const floorIso = portalMachineRosterFeedbackFloorIso();
         if(iso >= floorIso && !portalStaffInGhostView()){
+          const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
           return {
-            feedbackDone: !!mem.feedbackDone,
+            feedbackDone: serverSynced ? !!mem.feedbackDone : false,
             incident: !!mem.incident,
             absent: !!mem.absent,
             cancelled: !!mem.cancelled
@@ -7372,6 +7394,10 @@
         if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'){
           preview = window.portalChatActorIdentity.stripDmOperatorTag(preview);
         }
+        if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.previewText === 'function'){
+          var callPreview = window.portalStaffChatCalls.previewText(preview);
+          if(callPreview) preview = callPreview;
+        }
         preview = String(preview || '').trim();
         if(preview.length > 72) preview = preview.slice(0, 72) + '…';
         if(typeof window.portalStaffNotifyIncomingChat === 'function'){
@@ -10471,6 +10497,7 @@
       staffName: '',
       portalIdentityResolved: false,
       portalFeedbackReconciled: false,
+      portalFeedbackServerSynced: false,
       portalAnnouncementAcksMerged: false,
       avatarFile: (__spreadsheetBoot && __spreadsheetBoot.avatarFile) ? __spreadsheetBoot.avatarFile : '',
       /* Role training row colour: swimming | climbing | support | admin (support tint) | lead | manager | fitness */

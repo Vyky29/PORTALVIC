@@ -742,6 +742,73 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
   return changed;
 }
 
+function portalReviewKeyDateIso(rosterKey) {
+  const d = String(rosterKey || "").split("|")[0].trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+}
+
+function portalReviewMemoryBase() {
+  return { feedbackDone: false, incident: false, absent: false, cancelled: false };
+}
+
+/**
+ * Drop stale tablet greens: after server sync, roster keys on/after `serverTruthFromIso`
+ * must be backed by Supabase (feedback, absent, cancellation, or quick mark).
+ * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
+ * @param {string[]} rosterKeys
+ * @param {{ feedbackKeys?: string[], absentFeedbackKeys?: string[], incidentKeys?: string[], cancellationKeys?: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * @param {{ serverTruthFromIso?: string, catchUpSessionDates?: string[] }} [opts]
+ */
+export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs, opts = {}) {
+  const serverTruthFromIso = String(opts.serverTruthFromIso || "2026-06-01").trim();
+  const catchUp = new Set(
+    (Array.isArray(opts.catchUpSessionDates) ? opts.catchUpSessionDates : [])
+      .map((d) => String(d || "").trim().slice(0, 10))
+      .filter(Boolean)
+  );
+  if (!memory || !Array.isArray(rosterKeys) || !rosterKeys.length) return false;
+
+  const absentFb = [...new Set(packs.absentFeedbackKeys || [])];
+  const submittedFb = [
+    ...new Set([...(packs.feedbackKeys || []), ...(packs.quickFeedbackDoneKeys || [])]),
+  ].filter((k) => absentFb.indexOf(k) < 0);
+  const absentAll = [...new Set([...absentFb, ...(packs.absentKeys || [])])];
+  const cancelledKeys = [...new Set(packs.cancellationKeys || [])];
+
+  /** @type {Set<string>} */
+  const resolved = new Set();
+  function markResolved(keys) {
+    for (const rk of rosterKeys) {
+      const rosterKey = String(rk || "").trim();
+      if (!rosterKey) continue;
+      for (const fk of keys || []) {
+        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) {
+          resolved.add(rosterKey);
+        }
+      }
+    }
+  }
+  markResolved(submittedFb);
+  markResolved(absentAll);
+  markResolved(cancelledKeys);
+
+  let changed = false;
+  for (const rk of rosterKeys) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    const iso = portalReviewKeyDateIso(rosterKey);
+    if (!iso || iso < serverTruthFromIso || catchUp.has(iso)) continue;
+    if (resolved.has(rosterKey)) continue;
+    const prev = memory[rosterKey] || portalReviewMemoryBase();
+    if (prev.absent || prev.cancelled) continue;
+    if (prev.feedbackDone) {
+      memory[rosterKey] = { ...prev, feedbackDone: false };
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 /**
  * Polls `auth_session_generation`; when server value exceeds the cached value, signs out (another terminal logged in).
  * @returns {() => void}

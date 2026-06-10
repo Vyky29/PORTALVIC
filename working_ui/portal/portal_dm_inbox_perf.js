@@ -96,7 +96,43 @@
     }
     body = String(body || "").trim();
     if (!body) return false;
-    if (body.indexOf("[[portal-staff-call:") >= 0) return false;
+
+    var hasCallEnd = body.indexOf("[[portal-staff-call-end:") >= 0;
+    var hasCallInvite =
+      body.indexOf("[[portal-staff-call:") >= 0 && body.indexOf("[[portal-staff-call-end:") < 0;
+
+    if (hasCallEnd) {
+      if (
+        global.portalStaffChatCalls &&
+        typeof global.portalStaffChatCalls.renderCallEndRow === "function"
+      ) {
+        var callEndRow = global.portalStaffChatCalls.renderCallEndRow({ body: body });
+        if (callEndRow) {
+          var emptyCallEnd = msgsBox.querySelector(".muted");
+          if (emptyCallEnd && /no messages yet/i.test(String(emptyCallEnd.textContent || ""))) {
+            emptyCallEnd.remove();
+          }
+          msgsBox.appendChild(callEndRow);
+          try {
+            msgsBox.dataset.portalDmLastMsgAt = opts.createdAt
+              ? String(opts.createdAt)
+              : new Date().toISOString();
+          } catch (_) {}
+          if (typeof opts.scrollToBottom === "function") {
+            opts.scrollToBottom();
+          } else if (typeof global.portalStaffDmScrollThreadMessagesToBottom === "function") {
+            global.portalStaffDmScrollThreadMessagesToBottom();
+          } else {
+            requestAnimationFrame(function () {
+              msgsBox.scrollTop = msgsBox.scrollHeight;
+            });
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+    if (hasCallInvite) return false;
 
     var row = document.createElement("div");
     row.className =
