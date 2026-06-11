@@ -118,6 +118,13 @@
       .toLowerCase();
     var mine =
       opts.isMine != null ? !!opts.isMine : !!(me && authorId && me === authorId);
+    var msgId = String(opts.messageId || opts.id || "").trim();
+    if (msgId) {
+      if (msgsBox.querySelector('[data-msg-id="' + msgId.replace(/"/g, "") + '"]')) {
+        return true;
+      }
+    }
+
     var body = String(opts.body || "");
     if (
       opts.stripOperatorTag &&
@@ -169,6 +176,7 @@
     var row = document.createElement("div");
     row.className =
       "portal-dm-msg-row " + (mine ? "portal-dm-msg-row--mine" : "portal-dm-msg-row--them");
+    if (msgId) row.setAttribute("data-msg-id", msgId);
     var div = document.createElement("div");
     div.className =
       "portal-dm-msg " +

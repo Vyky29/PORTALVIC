@@ -186,8 +186,84 @@ export function portalPushIsExecAppRole(
   return app === "admin" || app === "ceo";
 }
 
+/** Named directors (Raul, Victor, Javi) — not ops admin Sevitha. */
+export function portalPushIsDirectorProfile(
+  row: PushProfileRow | null | undefined,
+): boolean {
+  if (!row || row.is_active === false) return false;
+  const ar = String(row.app_role ?? "").toLowerCase();
+  if (ar === "staff") return false;
+  const u = normProfileKey(row.username);
+  const parts = String(row.full_name ?? "").trim().split(/\s+/).filter(Boolean);
+  const first = normProfileKey(parts[0] ?? "");
+  const full = normProfileKey(row.full_name);
+  if (u === "raul" || u === "victor" || u === "javi") return true;
+  if (u === "javier") return false;
+  if (u.includes("palan")) return true;
+  if (full.includes("marquez") && first === "javier") return false;
+  if (full.includes("palan") || full.includes("arranz")) return true;
+  if (first === "raul" || first === "victor" || first === "javi") return true;
+  if (ar === "ceo" && (u === "raul" || u === "victor" || u === "javi")) {
+    return true;
+  }
+  return false;
+}
+
+/** Operations admin (e.g. Sevitha) — app_role admin, not a named director. */
+export function portalPushIsOperationsAdminProfile(
+  row: PushProfileRow | null | undefined,
+): boolean {
+  if (!row || row.is_active === false) return false;
+  if (String(row.app_role ?? "").toLowerCase() !== "admin") return false;
+  return !portalPushIsDirectorProfile(row);
+}
+
+/** Staff ops channels: worker/leads pool — alert ops admin only, not directors. */
+export function portalPushGroupIsStaffOpsChannel(
+  slugOrTitle: string | null | undefined,
+): boolean {
+  const s = normProfileKey(String(slugOrTitle ?? "").replace(/-/g, "_"));
+  if (!s) return false;
+  return (
+    s === "staff_leads_ops" ||
+    s === "staffleadsops" ||
+    s === "session_leads" ||
+    s === "sessionleads" ||
+    s === "swimming_instructors" ||
+    s === "climbing_instructors" ||
+    s === "support_staff" ||
+    s === "pool_leads" ||
+    s.includes("staffleadsops") ||
+    s.includes("sessionleads")
+  );
+}
+
+async function resolveOperationsAdminUserIds(
+  admin: SupabaseClient,
+  candidateIds: string[],
+): Promise<string[]> {
+  candidateIds = candidateIds.filter(Boolean);
+  if (!candidateIds.length) return [];
+  const { data, error } = await admin
+    .from("staff_profiles")
+    .select("id,app_role,is_active,username,full_name")
+    .in("id", candidateIds);
+  if (error) {
+    console.error("[portal-webpush] ops admin lookup", error);
+    return [];
+  }
+  const out: string[] = [];
+  for (const row of data ?? []) {
+    const id = String((row as PushProfileRow).id ?? "").trim();
+    if (id && portalPushIsOperationsAdminProfile(row as PushProfileRow)) {
+      out.push(id);
+    }
+  }
+  return out;
+}
+
 /**
- * DM push: worker↔admin ops threads → all admin/ceo (shared line).
+ * DM push: worker↔admin ops threads → ops admin only (Sevitha lane).
  * Other DMs → only admin/ceo thread participants (not every admin).
  */
 export async function resolveAdminDmPushRecipientIds(
@@ -243,7 +319,8 @@ export async function resolveAdminDmPushRecipientIds(
 
   let recipients: string[];
   if (workerOps) {
-    recipients = adminCeoIds.filter((id) => id !== authorId);
+    const opsAdmins = await resolveOperationsAdminUserIds(admin, adminCeoIds);
+    recipients = opsAdmins.filter((id) => id !== authorId);
   } else {
     const set = new Set<string>();
     if (aExec && pa && pa !== authorId) set.add(pa);

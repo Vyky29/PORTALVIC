@@ -7704,6 +7704,7 @@
             openThreadId: openTid || msgTid,
             me: me,
             authorId: row.author_id,
+            messageId: row.id,
             body: body,
             createdAt: row.created_at,
             authorLabel: isOffice ? 'Admin' : '',
@@ -8027,7 +8028,7 @@
           if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
           return;
         }
-        var msgRes = await client.from('portal_staff_dm_messages').select('thread_id,author_id,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(500);
+        var msgRes = await client.from('portal_staff_dm_messages').select('thread_id,author_id,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(120);
         if(msgRes.error){
           portalStaffDmSetUnreadCount(0);
           if(typeof syncPortalHeaderAlertChrome === 'function'){
@@ -9606,7 +9607,7 @@
           void window.portalStaffDmSyncUnreadChrome();
         }
       };
-      setInterval(tick, portalStaffIsRestrictedWorkerChat() ? 8000 : 12000);
+      setInterval(tick, portalStaffIsRestrictedWorkerChat() ? 12000 : 20000);
       document.addEventListener("visibilitychange", function(){
         if(document.visibilityState === "visible") tick();
       });

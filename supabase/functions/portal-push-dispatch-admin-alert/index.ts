@@ -35,6 +35,7 @@ import {
   jsonPushResponse,
   loadAdminCeoUserIds,
   PORTAL_PUSH_CORS_HEADERS,
+  portalPushGroupIsStaffOpsChannel,
   resolveAdminDmPushRecipientIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
@@ -384,6 +385,23 @@ Deno.serve(async (req) => {
         String(record.created_at ?? ""),
         recipientIds,
       );
+    }
+  } else if (table === "portal_ceo_group_message" && authorId) {
+    const groupId = String(record.group_id ?? "").trim();
+    let slug = "";
+    if (groupId) {
+      const { data: grp } = await admin
+        .from("portal_ceo_group")
+        .select("slug,title")
+        .eq("id", groupId)
+        .maybeSingle();
+      slug = String(grp?.slug ?? grp?.title ?? "").trim();
+    }
+    if (portalPushGroupIsStaffOpsChannel(slug)) {
+      const opsAdmins = await resolveOperationsAdminUserIds(admin, adminIds);
+      recipientIds = opsAdmins.filter((id) => id !== authorId);
+    } else {
+      recipientIds = adminIds.filter((id) => id !== authorId);
     }
   } else if (CHAT_TABLES.has(table) && authorId) {
     recipientIds = adminIds.filter((id) => id !== authorId);
