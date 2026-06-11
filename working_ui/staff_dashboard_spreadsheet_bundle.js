@@ -4452,7 +4452,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -5122,7 +5122,7 @@
     {
       "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -5562,7 +5562,7 @@
     {
       "client_name": "Ikram",
       "day": "Wednesday",
-      "instructors": "LULIA",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -5962,7 +5962,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -6632,7 +6632,7 @@
     {
       "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -7072,7 +7072,7 @@
     {
       "client_name": "Ikram",
       "day": "Wednesday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -7472,7 +7472,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -8142,7 +8142,7 @@
     {
       "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -8582,7 +8582,7 @@
     {
       "client_name": "Ikram",
       "day": "Wednesday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -8982,7 +8982,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -9652,7 +9652,7 @@
     {
       "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -10092,7 +10092,7 @@
     {
       "client_name": "Ikram",
       "day": "Wednesday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -10492,7 +10492,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -11162,7 +11162,7 @@
     {
       "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -11602,7 +11602,7 @@
     {
       "client_name": "Ikram",
       "day": "Wednesday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -12002,7 +12002,7 @@
     {
       "client_name": "Ikram",
       "day": "Friday",
-      "instructors": "LULIA, MICHELLE",
+      "instructors": "LULIA, YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -13533,6 +13533,106 @@
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
       "venue": "Acton"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-15"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-17"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-22"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-24"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-01"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-08"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-15"
     }
   ],
   "clientsInfo": [
