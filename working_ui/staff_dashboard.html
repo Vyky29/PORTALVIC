@@ -6526,10 +6526,11 @@
         return empty;
       }
     }
-    function portalPickScheduleOverrideForSession(s, sessionDateIso){
-      if(!s) return null;
+    function portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType){
+      if(!s) return [];
       const iso = normaliseIsoDate(sessionDateIso);
-      if(!iso) return null;
+      if(!iso) return [];
+      const wantType = overrideType ? String(overrideType || '').trim() : '';
       function rowMatchesSession(r, requireSlotLabel){
         if(String(r.status || 'active') !== 'active') return false;
         const rowIso = normaliseIsoDate(r.session_date);
@@ -6541,15 +6542,29 @@
         if(!portalTimeAnchorsMatch(r.anchor_end, s.end)) return false;
         if(requireSlotLabel && !portalOverrideSlotLabelMatchesRow(r, s)) return false;
         if(String(r.override_type || '').trim() === 'override_void') return false;
+        if(wantType && String(r.override_type || '').trim() !== wantType) return false;
         return true;
       }
       const all = portalScheduleOverrideRowsAll();
       let rows = all.filter(function(r){ return rowMatchesSession(r, true); });
       if(!rows.length){
         const loose = all.filter(function(r){ return rowMatchesSession(r, false); });
-        // Fallback only when slot-label is the sole mismatch and candidate is unique.
         if(loose.length === 1) rows = loose;
+        else if(loose.length > 1){
+          loose.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+          rows = [loose[0]];
+        }
       }
+      rows.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      return rows;
+    }
+    function portalScheduleOverrideForSessionByType(s, sessionDateIso, overrideType){
+      const rows = portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType);
+      return rows[0] || null;
+    }
+    function portalPickScheduleOverrideForSession(s, sessionDateIso){
+      const rows = portalScheduleOverridesMatchingSession(s, sessionDateIso, null);
+      if(!rows.length) return null;
       const typePri = {
         client_replace_in_slot: 30,
         slot_update: 25,
@@ -6570,6 +6585,78 @@
     /** Same resolver Today uses (`portalPickScheduleOverrideForSession` + `__PORTAL_SCHEDULE_OVERRIDE_ROWS__`). */
     function portalTodayScheduleOverrideForSession(s, sessionDateIso){
       return portalPickScheduleOverrideForSession(s, sessionDateIso);
+    }
+    function portalBuildAdminAbsentSessionItem(s, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote){
+      if(!s || !absentOv) return null;
+      const activity = (s.activity || 'Swimming').trim();
+      const time = rosterSlotTimeLabel(s);
+      const baseId = String(s.clientId || '').trim().toLowerCase();
+      const cAbs = clientNotesById[baseId];
+      if(!cAbs) return null;
+      const showSpec = !isBespokeActivity(activity);
+      let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activity, cAbs, viewDay);
+      if(supportHidePoolNote) poolLocationAbs = null;
+      const areaAbs = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
+      const _rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+      const sessionVenue = String(s.venue || '').trim() || '—';
+      return {
+        time,
+        kind: 'client',
+        clientId: baseId,
+        name: cAbs.name || 'Participant',
+        activity,
+        areaLabel: areaAbs,
+        poolLocationLabel: poolLocationAbs,
+        poolTier: poolTierForAreaNoteRow(s, activity, cAbs, viewDay, supportHidePoolNote),
+        showPoolSymbol: !!(poolLocationAbs || areaAbs),
+        showSpecialty: showSpec,
+        specialtyLabel: specialtyInfoTitle(activity),
+        general: `Absent. ${clientGeneralBodyFromNotes(cAbs, s)}`.trim(),
+        specialty: showSpec ? pickSpecialtyBody(cAbs, activity) : '',
+        openSheet: true,
+        sessionKey: `${sessionDateKey}|${s.start}|${baseId}`,
+        sessionStartTs: _rowTs.sessionStartTs,
+        sessionEndTs: _rowTs.sessionEndTs,
+        noSessionFeedbackRequired: true,
+        actionsDisabled: true,
+        detailsOpenAllowed: true,
+        portalOverrideSuppressReviewOrange: true,
+        portalOverrideCardTone: 'green',
+        portalOverrideAlertPill: 'ABSENT',
+        __portalBaseSession: s,
+        sessionVenue,
+        scheduleAdminAdjusted: true,
+        __portalScheduleOverride: absentOv
+      };
+    }
+    /** When admin marks absent + make-up on the same slot, show both cards (Aqsa green + replacement pink). */
+    function portalInjectAbsentCardsAlongsideMakeup(items, sessionDateKey, viewDay, anchor, supportHidePoolNote){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      const seen = Object.create(null);
+      items.forEach(function(it){
+        if(it && it.clientId && it.portalOverrideAlertPill === 'ABSENT'){
+          seen[String(it.clientId).toLowerCase()] = true;
+        }
+      });
+      const out = [];
+      items.forEach(function(it){
+        if(it && it.portalOverrideMakeUpTag){
+          const base = it.__portalBaseSession;
+          const origId = base ? String(base.clientId || '').trim().toLowerCase() : '';
+          if(base && origId && !seen[origId]){
+            const absentOv = portalScheduleOverrideForSessionByType(base, sessionDateKey, 'client_absence_announced');
+            if(absentOv){
+              const absentItem = portalBuildAdminAbsentSessionItem(base, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote);
+              if(absentItem){
+                seen[origId] = true;
+                out.push(absentItem);
+              }
+            }
+          }
+        }
+        out.push(it);
+      });
+      return out;
     }
     function portalClientSlugFromName(nameRaw){
       return String(nameRaw || '')
@@ -10086,7 +10173,8 @@
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord);
       });
-      const primary = todaySessionsAfterFilter
+      const primary = portalInjectAbsentCardsAlongsideMakeup(
+        todaySessionsAfterFilter
         .sort((a, b) => Number(normalizeTimeForSort(a.start)) - Number(normalizeTimeForSort(b.start)))
         .map(s => {
           const ov = portalTodayScheduleOverrideForSession(s, sessionDateKey);
@@ -10423,7 +10511,12 @@
             portalRosterTimeUpdated: !!slotWasUpdated
           }, meta);
         })
-        .filter(Boolean);
+        .filter(Boolean),
+        sessionDateKey,
+        viewDay,
+        anchor,
+        supportHidePoolNote
+      );
       const extra = [];
       portalScheduleOverrideRowsAll().forEach(function(ov){
         if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
