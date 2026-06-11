@@ -79,6 +79,8 @@
   global.portalTodayDayOffPanelSignature = function portalTodayDayOffPanelSignature(opts) {
     opts = opts || {};
     if (opts.loading) return "loading";
+    var mode = String(opts.mode || "").trim();
+    if (mode) return "mode:" + mode;
     var preview = opts.preview;
     if (!preview) return "solo";
     var parts = [

@@ -10558,6 +10558,28 @@
       const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       return d0 === t0;
     }
+    /** Live Today: staff has a dated shift on the anchor calendar day (Summer Term 2 timetable). */
+    function portalStaffLiveTodayHasScheduledShift(staffId, anchorDate){
+      try{
+        const sid = String(staffId || '').trim().toLowerCase();
+        if(!sid) return false;
+        const anchor = anchorDate instanceof Date && !isNaN(anchorDate.getTime())
+          ? anchorDate
+          : (typeof portalResolveTodaySectionCalendarDate === 'function' ? portalResolveTodaySectionCalendarDate() : null);
+        if(!anchor || isNaN(anchor.getTime())) return false;
+        const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+        if(!iso) return false;
+        if(typeof portalStaffHasShiftOnCalendarDate === 'function'){
+          const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
+          if(onShift === true) return true;
+        }
+        if(typeof portalStaffClientSessionsOnCalendarDate === 'function'){
+          const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+          if(portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return true;
+        }
+        return false;
+      }catch(_){ return false; }
+    }
     /** Same rules as This week “Off” (vacation, bank holiday, term red day) — live Today only; never block next-session preview builds. */
     function portalStaffTodayBlockIsOff(staffId){
       try{
@@ -10568,15 +10590,30 @@
           ? portalResolveTodaySectionCalendarDate()
           : null;
         if(!anchor || isNaN(anchor.getTime())) return false;
-        const dayName = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
         const dd = (typeof dashboardData !== 'undefined' && dashboardData) ? dashboardData : null;
         const halfWeeks = dd && Array.isArray(dd.termHalfTermWeekStarts) ? dd.termHalfTermWeekStarts : [];
         if(typeof isHalfTermDay === 'function' && isHalfTermDay(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), halfWeeks)) return true;
         const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
-        if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(dayName, sid)) return true;
+        if(typeof portalTermCalendarDayIsRed === 'function'
+          && portalTermCalendarDayIsRed(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), sid, halfWeeks)){
+          return true;
+        }
+        if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
         return false;
       }catch(_){ return false; }
+    }
+    /** Panel under Today when there are no session cards: off vs roster still loading. */
+    function portalStaffLiveTodayEmptyPanelMode(staffId, opts){
+      opts = opts || {};
+      if(opts.loading) return 'loading';
+      const sid = String(staffId || '').trim().toLowerCase();
+      const live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(live && sid && typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return 'off';
+      if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
+        return 'sync';
+      }
+      return live ? 'empty' : 'empty';
     }
     function portalBuildTodayRowsForIso(isoYmd){
       const iso = String(isoYmd || '').trim().slice(0, 10);
@@ -10660,14 +10697,19 @@
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       dashboardData.portalTodayNextSessionPreview = null;
-      const todayOff = id && typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday()
+      const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      const todayOff = id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id);
+      const emptyPanelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
+        ? portalStaffLiveTodayEmptyPanelMode(id, { loading: dashboardData.portalIdentityResolved === false })
+        : (todayOff ? 'off' : 'empty');
+      dashboardData.portalTodayEmptyPanelMode = emptyPanelMode;
       if(todayOff) rows = [];
-      if((!rows.length || todayOff)
+      const showLiveEmptyPanel = liveToday
         && dashboardData.portalIdentityResolved !== false
-        && typeof portalIsViewingLiveCalendarToday === 'function'
-        && portalIsViewingLiveCalendarToday()){
+        && (todayOff || (!rows.length && emptyPanelMode !== 'sync'));
+      if(showLiveEmptyPanel){
         const preview = portalBuildTodayNextSessionPreview(id);
         dashboardData.portalTodayNextSessionPreview = preview;
         dashboardData.today = [];
@@ -12355,17 +12397,28 @@
       opts = opts || {};
       const loading = !!opts.loading;
       const preview = opts.preview;
-      if(loading){
+      const mode = String(opts.mode || '').trim() || (loading ? 'loading' : 'off');
+      if(loading || mode === 'loading'){
         return '<div class="today-day-panel today-day-panel--loading" role="status">' +
           '<p class="today-day-panel__loading">Loading your schedule…</p></div>';
       }
       const hasNext = !!(preview && (Number(preview.sessionCount) || 0));
       let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + '" role="status">';
       html += '<div class="today-day-panel__off">';
-      html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
-      html += '<div class="today-day-panel__off-copy">';
-      html += '<p class="today-day-panel__off-title">Day off</p>';
-      html += '<p class="today-day-panel__off-sub">No sessions today</p></div></div>';
+      if(mode === 'sync'){
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">Loading sessions</p>';
+        html += '<p class="today-day-panel__off-sub">Your roster for today is syncing…</p></div></div>';
+      }else if(mode === 'off'){
+        html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">Day off</p>';
+        html += '<p class="today-day-panel__off-sub">No sessions today</p></div></div>';
+      }else{
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">No sessions</p>';
+        html += '<p class="today-day-panel__off-sub">Nothing scheduled for this day</p></div></div>';
+      }
       if(hasNext){
         const chips = Array.isArray(preview.participants) ? preview.participants : [];
         const aria = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
@@ -12539,8 +12592,16 @@
         applyTodayGridSizing(grid, 0);
         const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
+        const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const panelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
+          ? portalStaffLiveTodayEmptyPanelMode(sid, { loading: loading })
+          : (dashboardData && dashboardData.portalTodayEmptyPanelMode) || (loading ? 'loading' : 'off');
         const dayOffSig = typeof portalTodayDayOffPanelSignature === 'function'
-          ? portalTodayDayOffPanelSignature({ preview: preview && !loading ? preview : null, loading: loading })
+          ? portalTodayDayOffPanelSignature({
+            preview: preview && !loading && panelMode !== 'sync' ? preview : null,
+            loading: loading,
+            mode: panelMode
+          })
           : '';
         if(dayOffSig && grid.getAttribute('data-day-off-sig') === dayOffSig && grid.querySelector('.today-day-panel')){
           grid.classList.add('today-grid--day-off');
@@ -12557,8 +12618,9 @@
         grid.style.setProperty('--today-rows-fill', '1');
         grid.setAttribute('data-day-off-sig', dayOffSig || '');
         grid.innerHTML = portalTodayDayOffPanelHtml({
-          preview: preview && !loading ? preview : null,
-          loading: loading
+          preview: preview && !loading && panelMode !== 'sync' ? preview : null,
+          loading: loading,
+          mode: panelMode
         });
         portalBindTodayDayOffPanel(grid);
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
@@ -16169,6 +16231,7 @@
       }
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
+        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
         if (typeof renderHeader === "function") renderHeader();
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
