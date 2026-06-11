@@ -93,7 +93,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-10"
     ],
     "roberto": [
-      "2026-06-11"
+      "2026-06-10"
     ]
   },
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
@@ -226,14 +226,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-10": [
         "fadi",
         "vithura",
-        "amar_ra",
-        "amber"
+        "amar_ra"
       ],
       "2026-06-11": [
         "fadi",
         "tom",
         "yassir",
-        "yossi"
+        "yossi",
+        "mohammed"
       ]
     },
     "javier": {

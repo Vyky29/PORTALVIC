@@ -17,7 +17,7 @@ const TERM_SHARED = path.join(ROOT, "portal-shared-js/term_from_timetable.js");
 const ASSUME_COMPLETE_THRU = "2026-06-09";
 const CATCHUP_STAFF = ["youssef", "dan", "roberto", "javier"];
 const JUN10_PENDING_STAFF = ["youssef", "dan", "javier"];
-const JUN11_ROBERTO_AMBER = { date: "2026-06-11", time: "5.30 to 6" };
+const JUN10_ROBERTO_AMBER = { date: "2026-06-10", time: "5.30 to 6" };
 const RAYYAN_RE = /rayaan|rayyan/i;
 
 /** Only outstanding Rayyan feedback in term: Youssef · Tue 9 Jun 2026 (Sun 7 Jun Giuseppe+Javier done). */
@@ -29,10 +29,10 @@ function isPendingRayyanFeedback(row) {
   );
 }
 
-/** Amber moved to 5.30–6 on Thu 11 Jun only — Roberto feedback still due. */
-function isPendingRobertoAmberJun11(row) {
+/** Amber adelantada 5.30–6 solo Wed 10 Jun (Amar Ra absent; era 6–6.30) — feedback Roberto pendiente. */
+function isPendingRobertoAmberJun10(row) {
   return (
-    row.session_date === JUN11_ROBERTO_AMBER.date &&
+    row.session_date === JUN10_ROBERTO_AMBER.date &&
     slug(row.client_name) === "amber" &&
     instKeys(row.instructors).indexOf("roberto") >= 0
   );
@@ -41,7 +41,7 @@ function isPendingRobertoAmberJun11(row) {
 function isExplicitPendingFeedback(row) {
   if (isNoFeedbackClient(row.client_name)) return false;
   if (isPendingRayyanFeedback(row)) return true;
-  if (isPendingRobertoAmberJun11(row)) return true;
+  if (isPendingRobertoAmberJun10(row)) return true;
   if (row.session_date === "2026-06-10") {
     return JUN10_PENDING_STAFF.some(function (s) {
       return instKeys(row.instructors).indexOf(s) >= 0;
@@ -50,29 +50,51 @@ function isExplicitPendingFeedback(row) {
   return false;
 }
 
-function patchSeedAmberJun11(seed) {
+/** Wed 10 Jun: Amber 5.30–6 (not 6–6.30). Thu 11 Jun: restore Mohammed 5.30–6.30. */
+function patchSeedRobertoAmberSlots(seed) {
   seed.weeks.forEach(function (w) {
     w.staff.forEach(function (st) {
       if (st.staffKey !== "roberto") return;
       st.days.forEach(function (d) {
-        if (d.sessionDate !== JUN11_ROBERTO_AMBER.date) return;
-        d.slots = (d.slots || []).filter(function (s) {
-          return slug(s.client_name) !== "mohammed";
-        });
-        var hasAmber = d.slots.some(function (s) {
-          return slug(s.client_name) === "amber";
-        });
-        if (!hasAmber) {
-          d.slots.push({
-            time_slot: JUN11_ROBERTO_AMBER.time,
-            client_name: "Amber",
-            service: "Aquatic Activity",
-            area: "Teaching Pool",
-            pool_note: "Teaching Pool",
-            venue: "Acton",
-            instructors: "ROBERTO",
-            participant_info: "",
+        if (d.sessionDate === JUN10_ROBERTO_AMBER.date) {
+          d.slots = (d.slots || []).filter(function (s) {
+            return !(slug(s.client_name) === "amber" && String(s.time_slot || "").indexOf("6 to 6") >= 0);
           });
+          var hasAmberEarly = d.slots.some(function (s) {
+            return slug(s.client_name) === "amber" && String(s.time_slot || "").indexOf("5.30") >= 0;
+          });
+          if (!hasAmberEarly) {
+            d.slots.push({
+              time_slot: JUN10_ROBERTO_AMBER.time,
+              client_name: "Amber",
+              service: "Aquatic Activity",
+              area: "Teaching Pool",
+              pool_note: "Teaching Pool",
+              venue: "Acton",
+              instructors: "ROBERTO",
+              participant_info: "",
+            });
+          }
+        }
+        if (d.sessionDate === "2026-06-11") {
+          d.slots = (d.slots || []).filter(function (s) {
+            return slug(s.client_name) !== "amber";
+          });
+          var hasMohammed = d.slots.some(function (s) {
+            return slug(s.client_name) === "mohammed";
+          });
+          if (!hasMohammed) {
+            d.slots.push({
+              time_slot: "5.30 to 6.30",
+              client_name: "Mohammed",
+              service: "Aquatic Activity",
+              area: "Teaching Pool",
+              pool_note: "Teaching Pool",
+              venue: "Acton",
+              instructors: "ROBERTO",
+              participant_info: "",
+            });
+          }
         }
         d.slots.sort(function (a, b) {
           return String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
@@ -238,7 +260,7 @@ function patchTermConfig(catchUpDone) {
       youssef: ["2026-06-09", "2026-06-10"],
       javier: ["2026-06-10"],
       dan: ["2026-06-10"],
-      roberto: ["2026-06-11"],
+      roberto: ["2026-06-10"],
     };
     cfg.termStaffCatchUpFeedbackDoneClientsByDateByProfileKey = catchUpDone;
     const body =
@@ -250,7 +272,7 @@ function patchTermConfig(catchUpDone) {
   });
 }
 
-const seed = patchSeedAmberJun11(JSON.parse(fs.readFileSync(SEED, "utf8")));
+const seed = patchSeedRobertoAmberSlots(JSON.parse(fs.readFileSync(SEED, "utf8")));
 fs.writeFileSync(SEED, JSON.stringify(seed, null, 2), "utf8");
 const adapterRows = seedToAdapterRows(seed);
 const statusRows = buildStatusRows(adapterRows);
@@ -270,7 +292,7 @@ const statusPayload = {
     rowCount: statusRows.length,
     logicDoc: "portal-import-bundle/FEEDBACK-COMPLETION-LOGIC.md",
     sourceNote:
-      "Pending: Youssef·Rayyan Tue 9 Jun; Dan+Javier+Youssef all Wed 10 Jun; Roberto·Amber Thu 11 Jun 5.30–6. Rest Jun 1–9 complete.",
+      "Pending: Youssef·Rayyan Tue 9 Jun; Dan+Javier+Youssef all Wed 10 Jun; Roberto·Amber Wed 10 Jun 5.30–6 (Amar Ra absent). Rest Jun 1–9 complete.",
     coverageThroughIso: "2026-06-11",
   },
   rows: statusRows,
@@ -316,6 +338,12 @@ console.log(
       return a.indexOf(v) === i;
     })
     .join(", ")
+);
+console.log(
+  "Jun10 Roberto Amber pending:",
+  statusRows.some(function (r) {
+    return r.date === "2026-06-10" && r.client === "Amber" && r.instructor === "ROBERTO" && !r.feedbackComplete;
+  })
 );
 console.log(
   "Jun11 Roberto Amber pending:",
