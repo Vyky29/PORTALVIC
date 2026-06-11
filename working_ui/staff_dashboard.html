@@ -1035,7 +1035,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260610-aquatic-merge"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260609-roberto-merge-cards"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -1504,6 +1504,37 @@
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
+    function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday){
+      try{
+        const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+        const merges = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+        if(!merges.length || !s) return true;
+        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const day = String(weekday || s.day || '').trim();
+        const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
+        const ts = String(s.timeSlotLabel || '').trim();
+        const svc = String(s.rosterService || s.activity || '').trim();
+        for(let i = 0; i < merges.length; i++){
+          const m = merges[i];
+          if(m.day && String(m.day).trim() !== day) continue;
+          if(portalSlugifyClientKey(m.client_name) !== slug) continue;
+          const sub = Array.isArray(m.slots) ? m.slots : [];
+          for(let j = 0; j < sub.length; j++){
+            const sl = sub[j];
+            if(sl.time_slot && String(sl.time_slot).trim() !== ts) continue;
+            if(sl.service && String(sl.service).trim() !== svc) continue;
+            if(!sid) return true;
+            const inst = String(m.instructors || '').trim().toUpperCase();
+            if(!inst) return true;
+            if(inst.indexOf(sid.toUpperCase()) >= 0) return true;
+            if(sid === 'roberto' && inst.indexOf('ROBERTO') >= 0) return true;
+            if(sid === 'javier' && inst.indexOf('JAVIER') >= 0) return true;
+            return false;
+          }
+        }
+      }catch(_){}
+      return true;
+    }
     /** Hide merged duplicate slots on Today (e.g. Cyrus Aquatic 4–4.30 when MA pool row covers swimming). */
     function portalStaffDashboardOmitSpreadsheetSession(s, weekday){
       try{
@@ -1520,6 +1551,7 @@
           if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
           if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
           if(r.service && String(r.service).trim() !== svc) continue;
+          if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day)) return false;
           return true;
         }
       }catch(_){}
@@ -9926,9 +9958,21 @@
       const anchorDayWord = anchor && !isNaN(anchor.getTime())
         ? anchor.toLocaleDateString('en-GB', { weekday: 'long' })
         : viewDay;
-      const baseModel = (Array.isArray(modelOverride) && modelOverride.length)
+      let baseModel = (Array.isArray(modelOverride) && modelOverride.length)
         ? modelOverride
         : (Array.isArray(sessionsModel) ? sessionsModel : []);
+      if(staffId && !baseModel.length && typeof window.portalBootstrapFromMachineFallback === 'function'){
+        try{
+          const fb = window.portalBootstrapFromMachineFallback(staffId);
+          if(fb && fb.boot && Array.isArray(fb.boot.sessionsModel) && fb.boot.sessionsModel.length){
+            baseModel = fb.boot.sessionsModel;
+            sessionsModel = fb.boot.sessionsModel;
+            if(fb.boot.clientNotesById){
+              clientNotesById = Object.assign({}, clientNotesById || {}, fb.boot.clientNotesById);
+            }
+          }
+        }catch(_fb){}
+      }
       if(staffId && baseModel.length && !useIsoPin){
         const hasStaffOnIso = baseModel.some(function(s){
           return String(s.staffId || '').toLowerCase() === staffId
@@ -10534,10 +10578,14 @@
       var sortedToday = primary.concat(extra).sort(function(a, b){
         return Number(normalizeTimeForSort(portalTodayItemSortKey(a))) - Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
       });
+      var mergedToday = sortedToday;
       if(typeof portalMergeStaffLeadTodayAquaticCards === 'function'){
-        return portalMergeStaffLeadTodayAquaticCards(sortedToday, sessionDateKey, anchorDayWord);
+        mergedToday = portalMergeStaffLeadTodayAquaticCards(mergedToday, sessionDateKey, anchorDayWord);
       }
-      return sortedToday;
+      if(typeof portalMergeStaffTodayFeedbackMergeGroups === 'function'){
+        mergedToday = portalMergeStaffTodayFeedbackMergeGroups(mergedToday, sessionDateKey, anchorDayWord, staffId);
+      }
+      return mergedToday;
     }
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
@@ -10610,8 +10658,17 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       if(live && sid && typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return 'off';
+      let todayRows = [];
+      try{
+        if(typeof buildSelectedDayViewFromLauraModel === 'function'){
+          todayRows = buildSelectedDayViewFromLauraModel(null) || [];
+        }
+      }catch(_){}
+      if(todayRows.length) return 'empty';
+      const hydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
-        return 'sync';
+        if(!hydrated) return 'sync';
+        return 'empty';
       }
       return live ? 'empty' : 'empty';
     }
@@ -10753,6 +10810,14 @@
           if(rosterClient) void window.portalRefreshPortalRosterRowsFromSupabase(rosterClient);
         }
         if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function') window.portalRebootstrapSessionsForPinnedStaff();
+        else if(typeof window.portalBootstrapFromMachineFallback === 'function'){
+          const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+          const fb = sid ? window.portalBootstrapFromMachineFallback(sid) : null;
+          if(fb && fb.boot && Array.isArray(fb.boot.sessionsModel) && fb.boot.sessionsModel.length){
+            sessionsModel = fb.boot.sessionsModel;
+            if(fb.boot.clientNotesById) clientNotesById = Object.assign({}, clientNotesById || {}, fb.boot.clientNotesById);
+          }
+        }
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
         if(typeof renderToday === 'function') renderToday();
       }, 2000);
@@ -16144,8 +16209,8 @@
       var _rehydrateRun = 0;
       var _staffRosterHydratedOk = false;
       function portalRebootstrapSessionsForPinnedStaff() {
-        if (!_staffRosterHydratedOk || !String(STAFF_DASHBOARD_ID || "").trim()) return;
         var sid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);
+        if (!String(sid || "").trim()) return;
         var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
         var source =
           typeof window.portalResolveStaffDashboardSource === "function"
@@ -16167,6 +16232,8 @@
         try { window.STAFF_DASHBOARD_ID = sid; } catch (_) {}
         sessionsModel = boot.sessionsModel;
         clientNotesById = boot.clientNotesById || clientNotesById;
+        _staffRosterHydratedOk = true;
+        try { window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; } catch (_) {}
         if(sid === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function') portalApplyTeflonGuideDemoRoster();
         portalApplyClientsInfoToNotes();
         portalSyncTodaySectionDisplay(sessionsModel);
@@ -16309,6 +16376,7 @@
           STAFF_DASHBOARD_ID = "";
           try { window.STAFF_DASHBOARD_ID = ""; } catch (_) {}
           _staffRosterHydratedOk = false;
+          try { window.__PORTAL_STAFF_ROSTER_HYDRATED__ = false; } catch (_) {}
           __spreadsheetBoot = null;
           sessionsModel = [];
           clientNotesById = {};
@@ -16394,6 +16462,7 @@
           }
           portalApplyClientsInfoToNotes();
           _staffRosterHydratedOk = true;
+          try { window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; } catch (_) {}
           dashboardData.week = buildWeekRows(staffId);
           if (typeof window.portalApplyTermCalendarForStaff === "function") {
             window.portalApplyTermCalendarForStaff(staffId);
@@ -16408,6 +16477,7 @@
         try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
         sessionsModel = newSessions;
         _staffRosterHydratedOk = true;
+        try { window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; } catch (_) {}
         clientNotesById = boot.clientNotesById || {};
         if(staffId === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function'){
           portalApplyTeflonGuideDemoRoster();
