@@ -8411,7 +8411,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         anchor_end: slot.anchorEnd,
         anchor_venue: slot.venue,
         anchor_client_id: slot.clientSlug,
-        anchor_time_slot_label: slot.whenLabel || slot.anchorTimeLabel || '',
+        anchor_time_slot_label: slot.anchorTimeLabel || slot.whenLabel || '',
         override_type: ovType,
         payload: payload,
         reason: reason || null,

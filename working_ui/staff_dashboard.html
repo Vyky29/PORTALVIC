@@ -6020,14 +6020,52 @@
     }
     function portalNormSlotLabelLoose(str){
       const raw = String(str == null ? '' : str).trim();
-      const t = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(raw) : raw;
+      let t = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(raw) : raw;
+      t = t.replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[·•|:\-–—]\s*/i, '');
+      function portalNormSlotLabelTimeToken(part){
+        const p = String(part || '').trim().toLowerCase();
+        if(!p) return '';
+        const mDot = p.match(/^(\d{1,2})\.(\d{2})$/);
+        if(mDot){
+          let h = parseInt(mDot[1], 10);
+          const mm = mDot[2];
+          if(h >= 13 && h <= 23) h -= 12;
+          if(h === 0) h = 12;
+          return h + '.' + mm;
+        }
+        const mHm = p.match(/^(\d{1,2}):(\d{2})$/);
+        if(mHm){
+          let h = parseInt(mHm[1], 10);
+          const mm = mHm[2];
+          if(h >= 13 && h <= 23) h -= 12;
+          if(h === 0) h = 12;
+          return h + '.' + mm;
+        }
+        const mHour = p.match(/^(\d{1,2})$/);
+        if(mHour){
+          let h = parseInt(mHour[1], 10);
+          if(h >= 13 && h <= 23) h -= 12;
+          if(h === 0) h = 12;
+          return String(h);
+        }
+        return p;
+      }
+      const parts = t.split(/\s+to\s+/i);
+      if(parts.length >= 2){
+        t = portalNormSlotLabelTimeToken(parts[0]) + ' to ' + portalNormSlotLabelTimeToken(parts.slice(1).join(' to '));
+      }
       return t.toLowerCase().replace(/\s+/g, ' ').trim();
     }
     function portalOverrideSlotLabelMatchesRow(r, s){
       const lab = String(r.anchor_time_slot_label == null ? '' : r.anchor_time_slot_label).trim();
       if(!lab) return true;
       const sLab = typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(s) : '';
-      return portalNormSlotLabelLoose(lab) === portalNormSlotLabelLoose(sLab);
+      const a = portalNormSlotLabelLoose(lab);
+      const b = portalNormSlotLabelLoose(sLab);
+      if(a === b) return true;
+      const startA = a.split(/\s+to\s+/)[0];
+      const startB = b.split(/\s+to\s+/)[0];
+      return !!(startA && startB && startA === startB);
     }
     function portalScheduleOverrideRowsAll(){ return Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__) ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ : []; }
     /** Spreadsheet / rota row is a closed block (hidden from staff unless a matching slot_open override exists). */
@@ -6512,7 +6550,21 @@
         // Fallback only when slot-label is the sole mismatch and candidate is unique.
         if(loose.length === 1) rows = loose;
       }
-      rows.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      const typePri = {
+        client_replace_in_slot: 30,
+        slot_update: 25,
+        client_absence_announced: 20,
+        instructor_reassign: 15,
+        slot_open: 10,
+        slot_clear_client: 10,
+        slot_close: 5
+      };
+      rows.sort(function(a, b){
+        const pa = typePri[String(a.override_type || '').trim()] || 0;
+        const pb = typePri[String(b.override_type || '').trim()] || 0;
+        if(pb !== pa) return pb - pa;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
       return rows[0] || null;
     }
     /** Same resolver Today uses (`portalPickScheduleOverrideForSession` + `__PORTAL_SCHEDULE_OVERRIDE_ROWS__`). */
