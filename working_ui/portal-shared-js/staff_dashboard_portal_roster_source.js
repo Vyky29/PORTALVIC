@@ -79,16 +79,25 @@
   }
 
   function snapshotMachineRows() {
-    if (typeof window === "undefined") return [];
-    if (
-      Array.isArray(window.__STAFF_DASHBOARD_MACHINE_ROWS__) &&
-      window.__STAFF_DASHBOARD_MACHINE_ROWS__.length
-    ) {
-      return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+    if (typeof window !== "undefined") {
+      if (
+        Array.isArray(window.ROSTER_TERM_MASTER_DASHBOARD_ROWS) &&
+        window.ROSTER_TERM_MASTER_DASHBOARD_ROWS.length
+      ) {
+        return window.ROSTER_TERM_MASTER_DASHBOARD_ROWS;
+      }
+      if (
+        Array.isArray(window.__STAFF_DASHBOARD_MACHINE_ROWS__) &&
+        window.__STAFF_DASHBOARD_MACHINE_ROWS__.length
+      ) {
+        return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+      }
     }
-    var src = window.STAFF_DASHBOARD_SOURCE;
+    var src = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
     if (src && Array.isArray(src.rows) && src.rows.length) {
-      window.__STAFF_DASHBOARD_MACHINE_ROWS__ = src.rows.slice();
+      if (typeof window !== "undefined") {
+        window.__STAFF_DASHBOARD_MACHINE_ROWS__ = src.rows.slice();
+      }
       return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
     }
     return [];
@@ -299,9 +308,11 @@
     return Object.assign({}, base, {
       rows: mergedRows,
       rosterSourceNote:
+        (Array.isArray(typeof window !== "undefined" && window.ROSTER_TERM_MASTER_DASHBOARD_ROWS) &&
+        window.ROSTER_TERM_MASTER_DASHBOARD_ROWS.length
+          ? "roster MADRE seed from " + floor + "; "
+          : "machine roster from " + floor + "; ") +
         "portal status before " +
-        floor +
-        "; machine roster from " +
         floor +
         "; ref " +
         REF_START +

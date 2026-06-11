@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Roster MADRE · Staff · 1 Jun – 17 Jul 2026</title>
+<style>
+  :root { --bg:#d8dce0; --text:#111; --line:#0d0d0d; --day-bar:#b0b0b0; --staff-bar:#dcdcdc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:13px/1.35 Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); }
+  .top { position:sticky; top:0; z-index:40; background:#fff; border-bottom:3px solid var(--line); padding:.6rem 1rem .75rem; box-shadow:0 2px 10px rgba(0,0,0,.12); }
+  .top h1 { margin:0; font-size:1.1rem; font-weight:800; }
+  .sub { margin:.2rem 0 0; font-size:.8rem; color:#333; max-width:960px; }
+  .stats { font-size:.75rem; color:#555; margin-top:.25rem; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.55rem; }
+  .toolbar label { font-size:.78rem; font-weight:700; display:flex; align-items:center; gap:.25rem; }
+  .toolbar select, .toolbar input[type=search] { padding:.3rem .45rem; border:2px solid #666; font:inherit; border-radius:3px; }
+  button { cursor:pointer; border:2px solid #333; background:#eee; border-radius:3px; padding:.32rem .6rem; font:inherit; font-weight:600; }
+  button.primary { background:#1565c0; color:#fff; border-color:#0a3d7a; }
+  button.ok { background:#388e3c; color:#fff; border-color:#1b5e20; }
+  button.danger { background:#c62828; color:#fff; border-color:#7f0000; font-size:.65rem; padding:.08rem .3rem; font-weight:800; }
+  button.ghost { background:#fff; font-size:.72rem; padding:.2rem .4rem; }
+  .status { font-size:.76rem; color:#444; flex:1 1 140px; min-width:0; overflow-wrap:anywhere; }
+  .status.warn { color:#bf360c; font-weight:700; }
+  .status.ok { color:#1b5e20; font-weight:700; }
+  main { padding:.65rem .4rem 2.5rem; }
+  .term-week { margin-bottom:1.75rem; }
+  .week-banner {
+    background:#333; color:#fff; font-weight:800; font-size:.9rem;
+    padding:.4rem .75rem; margin:0 0 .5rem; text-transform:uppercase; letter-spacing:.05em;
+  }
+  .day-block { margin-bottom:1rem; min-width:min-content; }
+  .day-bar {
+    background:var(--day-bar); border:2px solid var(--line); border-bottom:none;
+    text-align:center; font-weight:800; font-size:.92rem; padding:.32rem .5rem; text-transform:uppercase;
+  }
+  .day-grid {
+    display:flex; flex-wrap:nowrap; align-items:stretch;
+    border:2px solid var(--line); border-top:none; background:#fff; overflow-x:auto;
+  }
+  .staff-col {
+    flex:0 0 auto; width:148px; min-width:130px; max-width:180px;
+    border-right:2px solid var(--line); display:flex; flex-direction:column;
+  }
+  .staff-col:last-child { border-right:none; }
+  .act-head {
+    text-align:center; font-weight:800; font-size:.65rem; line-height:1.2;
+    padding:.35rem .2rem; color:#fff; border-bottom:2px solid var(--line);
+    min-height:2.55rem; display:flex; flex-direction:column; justify-content:center;
+    text-transform:uppercase; overflow-wrap:anywhere;
+  }
+  .act-head .venue { font-size:.6rem; margin-top:.08rem; opacity:.95; }
+  .staff-name {
+    background:var(--staff-bar); text-align:center; font-weight:800; font-size:.76rem;
+    padding:.25rem .15rem; border-bottom:2px solid var(--line); text-transform:uppercase;
+    overflow-wrap:anywhere; min-width:0;
+  }
+  .slots { flex:1; display:flex; flex-direction:column; }
+  .slot-row {
+    display:grid; grid-template-columns:48px 1fr; border-bottom:1px solid var(--line);
+    min-height:2.75rem;
+  }
+  .slot-time { border-right:1px solid var(--line); display:flex; align-items:center; padding:0 .05rem; }
+  .slot-client {
+    padding:.1rem 1.2rem .1rem .15rem; min-width:0; position:relative;
+    display:flex; flex-direction:column; justify-content:center; gap:0;
+  }
+  .slot-client.cell-closed { background:#d32f2f; }
+  .slot-client.cell-noclient { background:#ffeb3b; }
+  .slot-client.cell-casa { background:#eceff1; }
+  .slot-client.cell-manager { background:#fff3e0; }
+  .inp-time, .inp-name, .inp-note {
+    width:100%; min-width:0; border:none; background:transparent; font:inherit;
+    padding:.08rem .04rem; overflow-wrap:anywhere;
+  }
+  .inp-time { font-size:.58rem; font-weight:800; text-align:center; }
+  .inp-name { font-weight:800; font-size:.7rem; }
+  .inp-note { font-size:.58rem; font-weight:700; color:#0d47a1; text-transform:uppercase; }
+  .inp:focus { outline:2px solid #1565c0; background:#fff; }
+  .cell-closed .inp { color:#fff; }
+  .cell-closed .inp:focus { color:#111; }
+  .row-actions { position:absolute; top:0; right:0; display:flex; gap:1px; }
+  .col-foot { border-top:1px dashed #666; padding:.2rem; text-align:center; }
+  .col-foot button { width:100%; font-size:.62rem; padding:.2rem; }
+  .svc-aquatic { background:#1565c0; }
+  .svc-bespoke { background:#7b1fa2; }
+  .svc-physical { background:#2e7d32; }
+  .svc-multi { background:#c62828; }
+  .svc-daycentre { background:#455a64; }
+  .svc-climbing { background:#512da8; }
+  .svc-default { background:#37474f; }
+  .legend { display:flex; flex-wrap:wrap; gap:.25rem .4rem; margin-top:.4rem; font-size:.68rem; }
+  .legend i { display:inline-block; width:.85rem; height:.85rem; border:1px solid #000; vertical-align:middle; margin-right:.15rem; }
+  .empty { padding:2rem; text-align:center; color:#555; }
+  @media print { .top { position:static; } button { display:none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Roster MADRE — todos los trabajadores · grid editable</h1>
+  <p class="sub">Como la hoja del club: día → columnas por instructor + venue + servicio. Edita hora, participante y nota (Big Pool, Lane (DE), Hub Room…). <strong>Cada fila = 30 min</strong>. Tras exportar MADRE: <code>node portal/build_portal_summer2_roster_feedback.js</code></p>
+  <div class="stats" id="statsLine">—</div>
+  <div class="legend">
+    <span><i style="background:#1565c0"></i>Aquatic</span>
+    <span><i style="background:#c62828"></i>Multi-Activity</span>
+    <span><i style="background:#455a64"></i>Day Centre</span>
+    <span><i style="background:#7b1fa2"></i>Bespoke</span>
+    <span><i style="background:#512da8"></i>Climbing</span>
+    <span><i style="background:#2e7d32"></i>Physical</span>
+  </div>
+  <div class="toolbar">
+    <label>Vista
+      <select id="viewMode">
+        <option value="week">Una semana</option>
+        <option value="term">Term completo (7 semanas)</option>
+      </select>
+    </label>
+    <label>Semana <select id="weekSelect"></select></label>
+    <label>Staff
+      <select id="staffPick">
+        <option value="">Todos</option>
+      </select>
+    </label>
+    <input id="filter" type="search" placeholder="Buscar cliente, pool, venue…" style="min-width:140px"/>
+    <button type="button" id="btnLoadSeed" class="primary">Cargar seed</button>
+    <button type="button" id="btnLoadFile">JSON…</button>
+    <button type="button" id="btnSave" class="ok">Guardar borrador</button>
+    <button type="button" id="btnExport">Exportar MADRE</button>
+    <button type="button" id="btnReset">Reset</button>
+    <span id="status" class="status"></span>
+  </div>
+  <input id="fileInput" type="file" accept=".json" hidden/>
+</header>
+<datalist id="dl-pools"></datalist>
+<main id="app"><div class="empty">Cargando seed…</div></main>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'portal_roster_term_master_grid_v2';
+  var SEED_URL = 'portal/roster_term_master_seed.json';
+  var DEFAULT_POOLS = ['Big Pool','Small Pool','Teaching Pool','Lane (SE)','Lane (DE)','Lane (DE)/(SE)','Hub Room','Wall','Gym','Room 2','Pools'];
+  var STAFF_ORDER = ['alex','andres','angel','aurora','berta','bismark','carlos','dan','giuseppe','godsway','javi','javier','john','lulia','michelle','raul','roberto','sandra','sevitha','simon','teflon','victor','youssef'];
+
+  var state = null, seedSnapshot = null, weekIdx = 0, dirty = false;
+  var app = document.getElementById('app');
+  var weekSelect = document.getElementById('weekSelect');
+  var staffPick = document.getElementById('staffPick');
+  var viewMode = document.getElementById('viewMode');
+  var filterEl = document.getElementById('filter');
+  var statusEl = document.getElementById('status');
+  var statsLine = document.getElementById('statsLine');
+  var fileInput = document.getElementById('fileInput');
+  var dlPools = document.getElementById('dl-pools');
+
+  var SVC_CLASS = {
+    'aquatic activity':'svc-aquatic','multi-activity':'svc-multi','multi activity':'svc-multi',
+    'bespoke programme':'svc-bespoke','physical activity':'svc-physical',
+    'day centre':'svc-daycentre','climbing activity':'svc-climbing'
+  };
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function fmtDate(iso){ var p=String(iso||'').split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  function normSvc(s){ return String(s||'').trim().toLowerCase(); }
+  function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+  function setStatus(m,k){ statusEl.textContent=m; statusEl.className='status'+(k?' '+k:''); }
+  function markDirty(){ dirty=true; setStatus('Sin guardar — pulsa Guardar borrador.', 'warn'); }
+  function isClosed(n){ return String(n||'').trim().toUpperCase()==='CLOSED'; }
+  function isNoClient(n){ var x=String(n||'').trim().toUpperCase(); return !x||x==='NO CLIENT'||x==='NO_CLIENT'; }
+  function cellCls(n){
+    var x=String(n||'').trim().toUpperCase();
+    if(isClosed(n)) return 'cell-closed';
+    if(isNoClient(n)) return 'cell-noclient';
+    if(x==='CASA') return 'cell-casa';
+    if(x==='MANAGER') return 'cell-manager';
+    return '';
+  }
+  function normalizeSlot(s){
+    if(!s) return s;
+    var p=String(s.pool_note||s.area||'').trim();
+    s.pool_note=p; s.area=p;
+    if(!s.service) s.service='Aquatic Activity';
+    return s;
+  }
+  function normalizeState(d){
+    (d.weeks||[]).forEach(function(w){
+      (w.staff||[]).forEach(function(st){
+        (st.days||[]).forEach(function(day){ (day.slots||[]).forEach(normalizeSlot); });
+      });
+    });
+    return d;
+  }
+  function timeKey(t){
+    var m=String(t||'').match(/(\d{1,2})(?:\.(\d{2}))?/);
+    return m ? parseInt(m[1],10)*60+parseInt(m[2]||'0',10) : 9999;
+  }
+  function svcClass(s){ return SVC_CLASS[normSvc(s)]||'svc-default'; }
+
+  function updateStats(){
+    if(!state) return;
+    var staffSet = Object.create(null), totalSlots = 0;
+    state.weeks.forEach(function(w){
+      w.staff.forEach(function(st){
+        staffSet[st.staffKey]=st.staffName;
+        st.days.forEach(function(d){ totalSlots+=d.slots.length; });
+      });
+    });
+    statsLine.textContent = Object.keys(staffSet).length+' trabajadores · '+state.weeks.length+' semanas · '+totalSlots+' slots de 30 min (term) · fuente: bundle + clients_info';
+  }
+
+  function fillStaffPick(){
+    if(!state) return;
+    var seen = Object.create(null), list = [];
+    state.weeks.forEach(function(w){
+      w.staff.forEach(function(st){
+        if(!seen[st.staffKey]){ seen[st.staffKey]=true; list.push({k:st.staffKey,n:st.staffName}); }
+      });
+    });
+    list.sort(function(a,b){
+      var ia=STAFF_ORDER.indexOf(a.k), ib=STAFF_ORDER.indexOf(b.k);
+      if(ia>=0&&ib>=0) return ia-ib;
+      return String(a.n).localeCompare(String(b.n));
+    });
+    var cur = staffPick.value;
+    staffPick.innerHTML = '<option value="">Todos</option>' + list.map(function(x){
+      return '<option value="'+esc(x.k)+'">'+esc(x.n)+'</option>';
+    }).join('');
+    staffPick.value = cur || '';
+  }
+
+  function fillDatalists(){
+    var pools = (state&&state.meta&&state.meta.poolAreas) ? state.meta.poolAreas : DEFAULT_POOLS;
+    dlPools.innerHTML = pools.map(function(p){ return '<option value="'+esc(p)+'">'; }).join('');
+  }
+
+  function buildDayColumns(week, dayIso, q, staffOnly){
+    var cols = [];
+    (week.staff||[]).forEach(function(st, si){
+      if(staffOnly && st.staffKey !== staffOnly) return;
+      var stBlob = (st.staffKey+' '+st.staffName).toLowerCase();
+      (st.days||[]).forEach(function(day, di){
+        if(day.sessionDate !== dayIso) return;
+        var groups = Object.create(null);
+        (day.slots||[]).forEach(function(slot, slotIdx){
+          normalizeSlot(slot);
+          var venue = String(slot.venue||'—').trim();
+          var svc = String(slot.service||'').trim();
+          var gk = st.staffKey+'|'+venue+'|'+normSvc(svc);
+          if(!groups[gk]){
+            groups[gk] = { si:si, di:di, staffName:String(st.staffName||'').toUpperCase(), venue:venue, service:svc, refs:[] };
+          }
+          groups[gk].refs.push({ slot:slot, slotIdx:slotIdx });
+        });
+        Object.keys(groups).forEach(function(gk){
+          var g = groups[gk];
+          g.refs.sort(function(a,b){ return timeKey(a.slot.time_slot)-timeKey(b.slot.time_slot); });
+          var blob = (stBlob+' '+g.venue+' '+g.service+' '+g.refs.map(function(r){
+            return (r.slot.client_name+' '+(r.slot.pool_note||'')).toLowerCase();
+          }).join(' ')).toLowerCase();
+          if(q && blob.indexOf(q)<0) return;
+          cols.push(g);
+        });
+      });
+    });
+    var venueOrder = ['SwimFarm','Acton','Northolt','Westway','—'];
+    cols.sort(function(a,b){
+      var va=venueOrder.indexOf(a.venue), vb=venueOrder.indexOf(b.venue);
+      if(va<0) va=99; if(vb<0) vb=99;
+      if(va!==vb) return va-vb;
+      return String(a.staffName).localeCompare(String(b.staffName));
+    });
+    return cols;
+  }
+
+  function renderSlotRow(ref, col, wi){
+    var slot = ref.slot;
+    var pool = String(slot.pool_note||slot.area||'').trim();
+    return '<div class="slot-row" data-wi="'+wi+'" data-si="'+col.si+'" data-di="'+col.di+'" data-slot="'+ref.slotIdx+'">'+
+      '<div class="slot-time"><input class="inp inp-time" data-f="time_slot" value="'+esc(slot.time_slot||'')+'"/></div>'+
+      '<div class="slot-client '+cellCls(slot.client_name)+'">'+
+        '<div class="row-actions">'+
+          '<button type="button" class="ghost btn-dup" title="Duplicar fila 30\'">+</button>'+
+          '<button type="button" class="danger btn-del" title="Quitar">×</button>'+
+        '</div>'+
+        '<input class="inp inp-name" data-f="client_name" value="'+esc(slot.client_name||'')+'" placeholder="Nombre"/>'+
+        '<input class="inp inp-note" data-f="pool_note" list="dl-pools" value="'+esc(pool)+'" placeholder="Big Pool…"/>'+
+      '</div></div>';
+  }
+
+  function renderColumn(col, wi){
+    return '<div class="staff-col">'+
+      '<div class="act-head '+svcClass(col.service)+'">'+esc(String(col.service||'').toUpperCase())+
+        '<span class="venue">('+esc(String(col.venue).toUpperCase())+')</span></div>'+
+      '<div class="staff-name">'+esc(col.staffName)+'</div>'+
+      '<div class="slots">'+col.refs.map(function(r){ return renderSlotRow(r,col,wi); }).join('')+'</div>'+
+      '<div class="col-foot"><button type="button" class="btn-add" data-wi="'+wi+'" data-si="'+col.si+'" data-di="'+col.di+'" '+
+        'data-venue="'+esc(col.venue)+'" data-service="'+esc(col.service)+'">+ slot 30\'</button></div>'+
+      '</div>';
+  }
+
+  function renderWeek(week, wi, q, staffOnly, showBanner){
+    var html = '';
+    if(showBanner){
+      html += '<div class="week-banner">Semana '+week.weekNum+' · '+fmtDate(week.start)+' – '+fmtDate(week.end)+'</div>';
+    }
+    var dayIsos=[], seen=Object.create(null);
+    (week.staff||[]).forEach(function(st){
+      (st.days||[]).forEach(function(d){
+        if(!seen[d.sessionDate]){ seen[d.sessionDate]=1; dayIsos.push({iso:d.sessionDate, wd:d.weekday}); }
+      });
+    });
+    dayIsos.sort(function(a,b){ return a.iso.localeCompare(b.iso); });
+    var any = false;
+    dayIsos.forEach(function(d){
+      var cols = buildDayColumns(week, d.iso, q, staffOnly);
+      if(!cols.length) return;
+      any = true;
+      html += '<section class="day-block">'+
+        '<div class="day-bar">'+esc(String(d.wd||'').toUpperCase())+' · '+fmtDate(d.iso)+'</div>'+
+        '<div class="day-grid">'+cols.map(function(c){ return renderColumn(c,wi); }).join('')+'</div></section>';
+    });
+    return any ? html : '';
+  }
+
+  function render(){
+    if(!state||!state.weeks.length){ app.innerHTML='<div class="empty">Sin datos.</div>'; return; }
+    fillDatalists();
+    var q = String(filterEl.value||'').trim().toLowerCase();
+    var staffOnly = String(staffPick.value||'').trim();
+    var mode = viewMode.value;
+    var html = '';
+
+    if(mode === 'term'){
+      state.weeks.forEach(function(w, wi){
+        var chunk = renderWeek(w, wi, q, staffOnly, true);
+        if(chunk) html += '<div class="term-week">'+chunk+'</div>';
+      });
+    } else {
+      var w = state.weeks[weekIdx];
+      if(w){
+        html = '<div class="term-week">'+renderWeek(w, weekIdx, q, staffOnly, true)+'</div>';
+      }
+    }
+    if(!html || html.indexOf('day-block')<0){
+      html = '<div class="empty">Nada que mostrar — cambia filtro o staff.</div>';
+    }
+    app.innerHTML = html;
+    bindEdits();
+  }
+
+  function slotAt(wi, si, di, idx){
+    var w=state.weeks[wi]; if(!w||!w.staff[si]||!w.staff[si].days[di]) return null;
+    return w.staff[si].days[di].slots[idx]||null;
+  }
+
+  function bindEdits(){
+    app.querySelectorAll('input[data-f]').forEach(function(inp){
+      inp.onchange = inp.oninput = function(){
+        var row = inp.closest('.slot-row'); if(!row||!state) return;
+        var slot = slotAt(+row.dataset.wi, +row.dataset.si, +row.dataset.di, +row.dataset.slot);
+        if(!slot) return;
+        slot[inp.dataset.f] = inp.value;
+        if(inp.dataset.f==='pool_note') slot.area = inp.value;
+        if(inp.dataset.f==='client_name'){
+          var wrap = inp.closest('.slot-client');
+          if(wrap){ wrap.className = 'slot-client '+cellCls(inp.value); }
+        }
+        markDirty();
+      };
+    });
+    app.querySelectorAll('.btn-del').forEach(function(btn){
+      btn.onclick = function(){
+        var row = btn.closest('.slot-row');
+        if(!row||!confirm('¿Quitar este slot de 30 min?')) return;
+        state.weeks[+row.dataset.wi].staff[+row.dataset.si].days[+row.dataset.di].slots.splice(+row.dataset.slot,1);
+        markDirty(); render();
+      };
+    });
+    app.querySelectorAll('.btn-dup').forEach(function(btn){
+      btn.onclick = function(){
+        var row = btn.closest('.slot-row');
+        var slot = slotAt(+row.dataset.wi, +row.dataset.si, +row.dataset.di, +row.dataset.slot);
+        if(!slot) return;
+        var copy = deepClone(slot);
+        copy.time_slot = '';
+        state.weeks[+row.dataset.wi].staff[+row.dataset.si].days[+row.dataset.di].slots.splice(+row.dataset.slot+1, 0, copy);
+        markDirty(); render();
+      };
+    });
+    app.querySelectorAll('.btn-add').forEach(function(btn){
+      btn.onclick = function(){
+        var wi=+btn.dataset.wi, si=+btn.dataset.si, di=+btn.dataset.di;
+        var st = state.weeks[wi].staff[si];
+        st.days[di].slots.push({
+          time_slot:'', client_name:'', service:btn.dataset.service||'Aquatic Activity',
+          pool_note:'', area:'', venue:btn.dataset.venue||'',
+          instructors:st.staffName||'', participant_info:''
+        });
+        markDirty(); render();
+      };
+    });
+  }
+
+  function fillWeekSelect(){
+    weekSelect.innerHTML='';
+    (state.weeks||[]).forEach(function(w,i){
+      var o=document.createElement('option');
+      o.value=String(i);
+      o.textContent='S'+w.weekNum+' ('+fmtDate(w.start)+'–'+fmtDate(w.end)+')';
+      weekSelect.appendChild(o);
+    });
+    weekSelect.value=String(weekIdx);
+    weekSelect.disabled = viewMode.value==='term';
+  }
+
+  function applyData(data, msg){
+    state = normalizeState(deepClone(data));
+    fillWeekSelect(); fillStaffPick(); updateStats();
+    dirty=false; render();
+    setStatus(msg||'OK','ok');
+  }
+
+  function loadSeed(){
+    setStatus('Cargando…');
+    fetch(SEED_URL).then(function(r){
+      if(!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(function(data){
+      seedSnapshot = normalizeState(deepClone(data));
+      try{
+        var d = localStorage.getItem(STORAGE_KEY);
+        if(d && confirm('¿Restaurar borrador guardado?')){ applyData(JSON.parse(d),'Borrador OK'); return; }
+      }catch(_){}
+      applyData(data, 'Seed: 20 staff · 7 semanas · slots 30\' separados');
+    }).catch(function(e){
+      setStatus('Error '+e.message,'warn');
+      app.innerHTML='<div class="empty"><strong>Servidor local:</strong><br><code>cd working_ui && python3 -m http.server 8765</code><br>'+
+        'Luego abre <code>/roster_term_master_review.html</code><br>O usa JSON… → <code>portal/roster_term_master_seed.json</code></div>';
+    });
+  }
+
+  document.getElementById('btnLoadSeed').onclick = loadSeed;
+  document.getElementById('btnLoadFile').onclick = function(){ fileInput.click(); };
+  document.getElementById('btnSave').onclick = function(){
+    if(!state) return;
+    normalizeState(state);
+    state.meta = state.meta||{}; state.meta.lastEditedAt = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    dirty=false; setStatus('Guardado '+new Date().toLocaleString(),'ok');
+  };
+  document.getElementById('btnExport').onclick = function(){
+    if(!state) return;
+    normalizeState(state);
+    state.meta = state.meta||{}; state.meta.exportedAt = new Date().toISOString(); state.meta.approved = false;
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
+    a.download='roster_term_master.json'; a.click();
+    setStatus('Exportado roster_term_master.json','ok');
+  };
+  document.getElementById('btnReset').onclick = function(){
+    if(!seedSnapshot||!confirm('¿Reset al seed original?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    applyData(seedSnapshot,'Reset OK');
+  };
+  fileInput.onchange = function(){
+    var f=fileInput.files[0]; if(!f) return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{ applyData(JSON.parse(rd.result), f.name); if(!seedSnapshot) seedSnapshot=normalizeState(deepClone(state)); }
+      catch(e){ setStatus('JSON inválido','warn'); }
+    };
+    rd.readAsText(f); fileInput.value='';
+  };
+
+  weekSelect.onchange = function(){ weekIdx=+weekSelect.value||0; render(); };
+  viewMode.onchange = function(){ fillWeekSelect(); render(); };
+  staffPick.onchange = render;
+  filterEl.oninput = render;
+
+  loadSeed();
+})();
+</script>
+</body>
+</html>
