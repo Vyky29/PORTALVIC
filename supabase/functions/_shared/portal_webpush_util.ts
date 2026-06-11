@@ -239,6 +239,32 @@ export function portalPushIsDirectorProfile(
   return false;
 }
 
+/** Same human across relinked staff_profiles / auth ids (Victor PC auth vs legacy row). */
+export function portalPushSamePerson(
+  a: PushProfileRow | null | undefined,
+  b: PushProfileRow | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  const idA = String(a.id ?? "").trim();
+  const idB = String(b.id ?? "").trim();
+  if (idA && idB && idA === idB) return true;
+  const ua = normProfileKey(a.username);
+  const ub = normProfileKey(b.username);
+  if (ua && ub && ua === ub) return true;
+  const fa = normProfileKey(String(a.full_name ?? "").split(/\s+/).filter(Boolean)[0] ?? "");
+  const fb = normProfileKey(String(b.full_name ?? "").split(/\s+/).filter(Boolean)[0] ?? "");
+  if (
+    fa &&
+    fb &&
+    fa === fb &&
+    (portalPushIsDirectorProfile(a) || portalPushIsExecAppRole(a)) &&
+    (portalPushIsDirectorProfile(b) || portalPushIsExecAppRole(b))
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /** Operations admin (e.g. Sevitha) — app_role admin, not a named director. */
 export function portalPushIsOperationsAdminProfile(
   row: PushProfileRow | null | undefined,
@@ -339,6 +365,31 @@ export async function resolveAdminDmPushRecipientIds(
     if (id) profBy[id] = row as PushProfileRow;
   }
 
+  let authorProf = profBy[authorId] ?? null;
+  if (!authorProf) {
+    const { data: authorRow } = await admin
+      .from("staff_profiles")
+      .select(
+        "id,app_role,staff_role,dashboard_route,is_active,username,full_name",
+      )
+      .eq("id", authorId)
+      .maybeSingle();
+    if (authorRow) {
+      authorProf = authorRow as PushProfileRow;
+      const aid = String(authorProf.id ?? "").trim();
+      if (aid) profBy[aid] = authorProf;
+    }
+  }
+
+  const authorIdentity = new Set<string>([authorId]);
+  if (authorProf) {
+    for (const id of Object.keys(profBy)) {
+      if (portalPushSamePerson(authorProf, profBy[id])) {
+        authorIdentity.add(id);
+      }
+    }
+  }
+
   const profA = profBy[pa] ?? null;
   const profB = profBy[pb] ?? null;
   const aWorker = portalPushIsWorkerRecipient(profA);
@@ -350,17 +401,17 @@ export async function resolveAdminDmPushRecipientIds(
   let recipients: string[];
   if (workerOps) {
     const opsAdmins = await resolveOperationsAdminUserIds(admin, adminCeoIds);
-    recipients = opsAdmins.filter((id) => id !== authorId);
+    recipients = opsAdmins.filter((id) => !authorIdentity.has(id));
   } else {
     const set = new Set<string>();
     for (const pid of [pa, pb]) {
-      if (!pid || pid === authorId) continue;
+      if (!pid || authorIdentity.has(pid)) continue;
       set.add(pid);
     }
     recipients = [...set];
   }
 
-  recipients = recipients.filter((id) => id && id !== authorId);
+  recipients = recipients.filter((id) => id && !authorIdentity.has(id));
 
   return recipients;
 }

@@ -81,6 +81,19 @@
     client = client || box().client;
     if (!client) return profileRow();
     var sid = sessionUserId();
+    if (
+      !sid &&
+      client.auth &&
+      typeof client.auth.getSession === "function"
+    ) {
+      try {
+        var sessRes = await client.auth.getSession();
+        if (sessRes && sessRes.data && sessRes.data.session) {
+          box().session = sessRes.data.session;
+          sid = sessionUserId();
+        }
+      } catch (_gs) {}
+    }
     if (!sid) return profileRow();
     if (profilesMatchSession() && profileRow()) return profileRow();
     try {
@@ -174,14 +187,22 @@
     return { id: uid, name: name || "Staff" };
   }
 
+  function portalChatSelfIdentityIds() {
+    var ids = [];
+    var sid = sessionUserId();
+    if (sid) ids.push(String(sid).trim().toLowerCase());
+    var p = profileRow();
+    if (p && p.id) {
+      var pid = String(p.id).trim().toLowerCase();
+      if (ids.indexOf(pid) < 0) ids.push(pid);
+    }
+    return ids;
+  }
+
   function portalChatIsSelfUserId(userId) {
     userId = String(userId || "").trim().toLowerCase();
     if (!userId) return false;
-    var sid = sessionUserId().toLowerCase();
-    if (sid && sid === userId) return true;
-    var p = profileRow();
-    var pid = p && p.id ? String(p.id).trim().toLowerCase() : "";
-    return !!(pid && pid === userId);
+    return portalChatSelfIdentityIds().indexOf(userId) >= 0;
   }
 
   function portalDmPeerIdForThread(me, row) {

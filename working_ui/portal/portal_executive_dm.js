@@ -1129,6 +1129,115 @@
       var inThreadUi = panel === 'thread' || threadVisible || admVisible || internalVisible;
       return inThreadUi && gid === String(changedGid);
     }
+    async function portalAdminDmRowFromSelf(row){
+      if(!row) return false;
+      var authorId = String(row.author_id || '').trim();
+      if(!authorId) return false;
+      var client = getSchedSupabaseClient();
+      if(
+        global.portalChatActorIdentity &&
+        typeof global.portalChatActorIdentity.ensureSessionProfile === 'function' &&
+        client
+      ){
+        await global.portalChatActorIdentity.ensureSessionProfile(client);
+      }
+      if(portalAdminDmIsMyMessage(authorId)) return true;
+      var meProf = (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
+      var myUser = String(meProf.username || '').trim().toLowerCase();
+      if(!client || !myUser) return false;
+      try{
+        var ap = await client.from('staff_profiles').select('id,username,full_name').eq('id', authorId).maybeSingle();
+        if(ap.error || !ap.data) return false;
+        var au = String(ap.data.username || '').trim().toLowerCase();
+        if(au === 'javier') au = 'javi';
+        if(myUser === 'javier') myUser = 'javi';
+        return !!(au && myUser && au === myUser);
+      }catch(_same){}
+      return false;
+    }
+    function portalAdminDmHandleDmInsert(payload){
+      if(window.__PORTAL_ADMIN_DM_RT_DEB) clearTimeout(window.__PORTAL_ADMIN_DM_RT_DEB);
+      window.__PORTAL_ADMIN_DM_RT_DEB = setTimeout(function(){
+        window.__PORTAL_ADMIN_DM_RT_DEB = null;
+        void (async function(){
+          var row = payload && (payload.new || payload.record);
+          if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
+            window.portalStaffChatCalls.onDmMessageInsert(row);
+          }
+          var changedTid = row && row.thread_id ? String(row.thread_id) : '';
+          var surfaceActive = portalAdminDmChatSurfaceActive();
+          var viewingThread = portalAdminDmViewingThread(changedTid);
+          var isMine = await portalAdminDmRowFromSelf(row);
+          if(isMine){
+            if(surfaceActive){
+              if(viewingThread && typeof portalAdminDmLoadMessages === 'function'){
+                void portalAdminDmLoadMessages();
+              }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+                void portalAdminDmRefreshInboxLists();
+              }else if(typeof portalAdminDmRenderList === 'function'){
+                void portalAdminDmRenderList();
+              }
+            }
+            return;
+          }
+          if(portalAdminDmMessageCountsAsUnread(row)){
+            portalAdminDmNotifyIncomingRowIfNeeded(row, viewingThread);
+            void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+          }
+          if(!surfaceActive) return;
+          if(viewingThread){
+            if(typeof portalAdminDmLoadMessages === 'function') void portalAdminDmLoadMessages();
+            if(portalAdminDmMessageCountsAsUnread(row) && typeof global.portalPlayChatMessageAlertSound === 'function'){
+              global.portalPlayChatMessageAlertSound();
+            }
+          }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+            void portalAdminDmRefreshInboxLists();
+          }else if(typeof portalAdminDmRenderList === 'function'){
+            void portalAdminDmRenderList();
+          }
+        })();
+      }, 320);
+    }
+    function portalAdminDmHandleGroupInsert(payload){
+      if(window.__PORTAL_ADMIN_DM_RT_DEB2) clearTimeout(window.__PORTAL_ADMIN_DM_RT_DEB2);
+      window.__PORTAL_ADMIN_DM_RT_DEB2 = setTimeout(function(){
+        window.__PORTAL_ADMIN_DM_RT_DEB2 = null;
+        void (async function(){
+          var row = payload && (payload.new || payload.record);
+          if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === 'function'){
+            window.portalStaffChatCalls.onGroupMessageInsert(row);
+          }
+          var changedGid = row && row.group_id ? String(row.group_id) : '';
+          var surfaceActive = portalAdminDmChatSurfaceActive();
+          var viewingGroup = portalAdminDmViewingGroup(changedGid);
+          if(await portalAdminDmRowFromSelf(row)){
+            if(surfaceActive){
+              if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
+                void portalAdminDmLoadMessages();
+              }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+                void portalAdminDmRefreshInboxLists();
+              }else if(typeof portalAdminDmRenderList === 'function'){
+                void portalAdminDmRenderList();
+              }
+            }
+            return;
+          }
+          if(portalAdminDmMessageCountsAsUnread(row)){
+            portalAdminDmNotifyIncomingRowIfNeeded(row, viewingGroup);
+            void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
+          }
+          if(!surfaceActive) return;
+          if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
+            void portalAdminDmLoadMessages();
+          }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+            void portalAdminDmRefreshInboxLists();
+          }else if(typeof portalAdminDmRenderList === 'function'){
+            void portalAdminDmRenderList();
+          }
+        })();
+      }, 320);
+    }
+    }
     function portalAdminDmBindRealtimeVisibilityRefresh(){
       if(window.__PORTAL_ADMIN_DM_VISIBILITY_BOUND) return;
       window.__PORTAL_ADMIN_DM_VISIBILITY_BOUND = true;
@@ -1152,88 +1261,12 @@
           .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'portal_staff_dm_messages' },
-            function(payload){
-              if(window.__PORTAL_ADMIN_DM_RT_DEB) clearTimeout(window.__PORTAL_ADMIN_DM_RT_DEB);
-              window.__PORTAL_ADMIN_DM_RT_DEB = setTimeout(function(){
-                window.__PORTAL_ADMIN_DM_RT_DEB = null;
-                var row = payload && (payload.new || payload.record);
-                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
-                  window.portalStaffChatCalls.onDmMessageInsert(row);
-                }
-                var changedTid = row && row.thread_id ? String(row.thread_id) : '';
-                var surfaceActive = portalAdminDmChatSurfaceActive();
-                var viewingThread = portalAdminDmViewingThread(changedTid);
-                var isMine = row && portalAdminDmIsMyMessage(row.author_id);
-                if(isMine){
-                  if(surfaceActive){
-                    if(viewingThread && typeof portalAdminDmLoadMessages === 'function'){
-                      void portalAdminDmLoadMessages();
-                    }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
-                      void portalAdminDmRefreshInboxLists();
-                    }else if(typeof portalAdminDmRenderList === 'function'){
-                      void portalAdminDmRenderList();
-                    }
-                  }
-                  return;
-                }
-                if(portalAdminDmMessageCountsAsUnread(row)){
-                  portalAdminDmNotifyIncomingRowIfNeeded(row, viewingThread);
-                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
-                }
-                if(!surfaceActive) return;
-                if(viewingThread){
-                  if(typeof portalAdminDmLoadMessages === 'function') void portalAdminDmLoadMessages();
-                  if(portalAdminDmMessageCountsAsUnread(row) && typeof global.portalPlayChatMessageAlertSound === 'function'){
-                    global.portalPlayChatMessageAlertSound();
-                  }
-                }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
-                  void portalAdminDmRefreshInboxLists();
-                }else if(typeof portalAdminDmRenderList === 'function'){
-                  void portalAdminDmRenderList();
-                }
-              }, 320);
-            }
+            portalAdminDmHandleDmInsert
           )
           .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'portal_ceo_group_message' },
-            function(payload){
-              if(window.__PORTAL_ADMIN_DM_RT_DEB2) clearTimeout(window.__PORTAL_ADMIN_DM_RT_DEB2);
-              window.__PORTAL_ADMIN_DM_RT_DEB2 = setTimeout(function(){
-                window.__PORTAL_ADMIN_DM_RT_DEB2 = null;
-                var row = payload && (payload.new || payload.record);
-                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === 'function'){
-                  window.portalStaffChatCalls.onGroupMessageInsert(row);
-                }
-                var changedGid = row && row.group_id ? String(row.group_id) : '';
-                var surfaceActive = portalAdminDmChatSurfaceActive();
-                var viewingGroup = portalAdminDmViewingGroup(changedGid);
-                if(row && portalAdminDmIsMyMessage(row.author_id)){
-                  if(surfaceActive){
-                    if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
-                      void portalAdminDmLoadMessages();
-                    }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
-                      void portalAdminDmRefreshInboxLists();
-                    }else if(typeof portalAdminDmRenderList === 'function'){
-                      void portalAdminDmRenderList();
-                    }
-                  }
-                  return;
-                }
-                if(portalAdminDmMessageCountsAsUnread(row)){
-                  portalAdminDmNotifyIncomingRowIfNeeded(row, viewingGroup);
-                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
-                }
-                if(!surfaceActive) return;
-                if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
-                  void portalAdminDmLoadMessages();
-                }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
-                  void portalAdminDmRefreshInboxLists();
-                }else if(typeof portalAdminDmRenderList === 'function'){
-                  void portalAdminDmRenderList();
-                }
-              }, 320);
-            }
+            portalAdminDmHandleGroupInsert
           )
           .subscribe(function(status, err){
             if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){

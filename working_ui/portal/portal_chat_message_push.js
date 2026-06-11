@@ -361,6 +361,15 @@
 
   function portalStaffNotifyIncomingChat(title, preview, row, notifyOpts) {
     notifyOpts = notifyOpts || {};
+    var authorId = String((row && row.author_id) || "").trim();
+    if (
+      authorId &&
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.isSelfUserId === "function" &&
+      global.portalChatActorIdentity.isSelfUserId(authorId)
+    ) {
+      return;
+    }
     title = String(title || "Admin").trim();
     preview = String(preview || "New message").trim();
     var dedupeKey = String((row && row.id) || title + "|" + preview).trim();
