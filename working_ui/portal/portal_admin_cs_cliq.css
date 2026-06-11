@@ -530,6 +530,28 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   display: none !important;
 }
 
+#csCliqRoot .portal-cs-cliq-ceo-quick__peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-btn--peer {
+  flex: 0 1 auto;
+  min-width: 72px;
+  padding: 10px 14px;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-direct-peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
 #csCliqRoot #csCliqListPanel {
   flex: 1 1 auto;
   min-height: 0;

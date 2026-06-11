@@ -244,6 +244,12 @@ export function portalCanAccessCeoDashboard(profile, authEmail) {
   return PORTAL_CEO_DASHBOARD_ALLOWED_KEYS.has(staffKey);
 }
 
+/** CS Cliq standalone app — directors (Victor/Raúl/Javi), ops admin, CEO. */
+export function portalCanAccessCsCliq(profile, authEmail) {
+  if (!profile) return false;
+  return portalCanAccessAdminDashboard(profile, authEmail) || portalCanAccessCeoDashboard(profile, authEmail);
+}
+
 /**
  * Schedule & Covers writes (schedule_overrides RLS): admin/ceo in staff_profiles,
  * or portal username overrides (Victor/Javi/Raúl → ceo, Sevitha → admin).
@@ -822,6 +828,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       page === "lead" ||
       page === "lead_overview" ||
       page === "ceo" ||
+      page === "cs_cliq" ||
       page === "choose"
     );
   }
@@ -984,6 +991,18 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (page === "ceo") {
       if (!portalCanAccessCeoDashboard(profile, authEmailGate)) {
+        const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
+        try {
+          window.location.replace(dest);
+        } catch {
+          window.location.href = dest;
+        }
+        return;
+      }
+    }
+
+    if (page === "cs_cliq") {
+      if (!portalCanAccessCsCliq(profile, authEmailGate)) {
         const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
         try {
           window.location.replace(dest);

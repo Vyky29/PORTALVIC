@@ -43,13 +43,34 @@
     return false;
   }
 
-  function shouldUseCategorizedInbox() {
-    if (!global.__PORTAL_CS_CLIQ_ACTIVE) return false;
+  function portalCsCliqPageActive() {
     try {
-      if (!/admin_dashboard\.html/i.test(String(global.location.pathname || ""))) return false;
+      var path = String(global.location.pathname || "").toLowerCase();
+      return /admin_dashboard\.html|cs_cliq\.html/i.test(path);
     } catch (_e) {
       return false;
     }
+  }
+
+  function shouldUseCategorizedInbox() {
+    if (!global.__PORTAL_CS_CLIQ_ACTIVE) return false;
+    if (global.__PORTAL_CS_CLIQ_STANDALONE) {
+      if (
+        global.portalCsCliqHubRoles &&
+        typeof global.portalCsCliqHubRoles.isManagementProfile === "function"
+      ) {
+        return global.portalCsCliqHubRoles.isManagementProfile();
+      }
+      if (
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmUsesAdminCliq === "function"
+      ) {
+        return global.portalDmRoles.portalDmUsesAdminCliq();
+      }
+      var app = String(profileRow().app_role || "").toLowerCase();
+      return app === "admin" || app === "ceo";
+    }
+    if (!portalCsCliqPageActive()) return false;
     if (global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.isManagementProfile === "function") {
       return global.portalCsCliqHubRoles.isManagementProfile();
     }
@@ -57,13 +78,24 @@
     return app === "admin" || app === "ceo";
   }
 
+  function usesDirectorLaneNav() {
+    return (
+      managementSharedWorkerOpsInbox() &&
+      String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() === "ceo_exec"
+    );
+  }
+
   function syncInboxChrome() {
     var quick = document.getElementById("csCliqCeoQuickWrap");
+    var groupRow = document.getElementById("csCliqCeoGroupRow");
+    var laneNav = usesDirectorLaneNav();
     if (quick) {
-      quick.hidden = !(
-        managementSharedWorkerOpsInbox() &&
-        String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() === "ceo_exec"
-      );
+      quick.hidden = laneNav || String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() !== "ceo_exec";
+      quick.setAttribute("aria-hidden", quick.hidden ? "true" : "false");
+    }
+    if (groupRow) {
+      groupRow.hidden = laneNav;
+      groupRow.setAttribute("aria-hidden", laneNav ? "true" : "false");
     }
     var nav = document.getElementById("csCliqChannelNav");
     if (nav) {
@@ -89,9 +121,9 @@
 
   function ceoInboxLaneHintText(activeCat) {
     if (activeCat === "ops") {
-      return "Shared Sevitha\u2194staff line with Raul, Javi & Sevitha (Admin). Your replies are signed with your name.";
+      return "Shared staff line (Sevitha \u2194 workers). You can read and reply as yourself.";
     }
-    return "Directors and Admin — your leadership circle. CEO groups are under Channels.";
+    return "1:1 with Ra\u00fal, Javi or Sevitha. Group chats (All CEOs, Sev + CEOs) are in Channels.";
   }
 
   function renderCeoInboxLaneHint(activeCat, show) {
@@ -546,7 +578,7 @@
       '<span class="portal-cs-cliq-inbox-cat-btn__label">' +
       directLabel +
       "</span>" +
-      '<span class="portal-cs-cliq-inbox-cat-btn__sub">CEOs &amp; Admin</span>' +
+      '<span class="portal-cs-cliq-inbox-cat-btn__sub">1:1</span>' +
       "</button>" +
       '<button type="button" class="portal-cs-cliq-inbox-cat-btn portal-cs-cliq-inbox-lane-btn' +
       (activeCat === "ops" ? " is-active" : "") +
@@ -557,7 +589,7 @@
       '<span class="portal-cs-cliq-inbox-cat-btn__label">' +
       opsLabel +
       "</span>" +
-      '<span class="portal-cs-cliq-inbox-cat-btn__sub">Sevitha line</span>' +
+      '<span class="portal-cs-cliq-inbox-cat-btn__sub">Staff line</span>' +
       "</button>";
     if (!bar.dataset.portalCeoInboxNavBound) {
       bar.dataset.portalCeoInboxNavBound = "1";
@@ -572,21 +604,151 @@
   }
 
   function rerenderAdminInbox() {
+    var renderList =
+      typeof global.portalAdminDmRenderList === "function"
+        ? global.portalAdminDmRenderList
+        : typeof global.portalExecutiveDmRenderList === "function"
+          ? global.portalExecutiveDmRenderList
+          : null;
+    if (renderList) {
+      void renderList();
+      return;
+    }
     var host = document.getElementById("csCliqListWrap");
     if (host && lastInboxCtx) {
       void renderAdminInbox(host, lastInboxCtx);
-      return;
-    }
-    if (typeof global.portalAdminDmRenderList === "function") {
-      void global.portalAdminDmRenderList();
     }
   }
 
   function emptyInboxMessage(activeCat) {
     if (activeCat === "ops") {
-      return "No staff ops threads yet. Tap a staff name when one appears, or wait for the shared roster to load.";
+      return "No staff threads yet. The roster loads here when staff message the shared line.";
     }
-    return "No direct chats yet. Message Raul, Javi, or Admin — CEO groups are in Channels.";
+    return "No 1:1 chats yet. Tap a director in the list to start.";
+  }
+
+  function directorPeerLabel(row) {
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.inboxPeerLabel === "function"
+    ) {
+      var label = String(global.portalChatActorIdentity.inboxPeerLabel(row) || "").trim();
+      if (label) return label;
+    }
+    return String(row.full_name || row.username || "").trim() || "Contact";
+  }
+
+  function isSelfStaffId(staffId) {
+    staffId = String(staffId || "").trim();
+    if (!staffId) return false;
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.isSelfUserId === "function"
+    ) {
+      return global.portalChatActorIdentity.isSelfUserId(staffId);
+    }
+    var me = String((profileRow() && profileRow().id) || "").trim();
+    return !!(me && me === staffId);
+  }
+
+  async function loadDirectorDirectPeerItems(client, me, existingItems) {
+    if (!client) return [];
+    if (!managementSharedWorkerOpsInbox() && !global.__PORTAL_CS_CLIQ_STANDALONE) return [];
+    me = String(me || "").trim();
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.actorId === "function"
+    ) {
+      me = String(global.portalChatActorIdentity.actorId() || me).trim();
+    }
+    var seen = Object.create(null);
+    (existingItems || []).forEach(function (item) {
+      if (!item || item.kind !== "dm") return;
+      var pid = String(item.peerId || item.workerId || "").trim();
+      if (pid) seen[pid] = true;
+    });
+    var res = await client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,staff_role,is_active")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(200);
+    if (res.error || !Array.isArray(res.data)) return [];
+    var items = [];
+    res.data.forEach(function (row) {
+      if (!row || !row.id) return;
+      var id0 = String(row.id);
+      if (isSelfStaffId(id0) || seen[id0]) return;
+      var isDirector =
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+        global.portalDmRoles.portalDmIsDirectorProfile(row);
+      var isAdmin =
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
+        global.portalDmRoles.portalDmIsAdminProfile(row);
+      if (!isDirector && !isAdmin) return;
+      items.push({
+        kind: "dm",
+        id: "",
+        label: directorPeerLabel(row),
+        when: null,
+        peerId: id0,
+        peerProf: row,
+        isTeamChat: false,
+        synthetic: true,
+        inboxLane: "personal",
+      });
+    });
+    return items;
+  }
+
+  async function fillDirectPeerPicks(host) {
+    if (!host) return;
+    host.innerHTML = "";
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var client = box.client;
+    var me = String((box.staff_profile && box.staff_profile.id) || "").trim();
+    if (!client || !me) return;
+    if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return;
+    var res = await client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,is_active")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(200);
+    if (res.error || !Array.isArray(res.data)) return;
+    var added = 0;
+    res.data.forEach(function (row) {
+      if (!row || !row.id) return;
+      var id0 = String(row.id);
+      if (id0 === me) return;
+      var isDirector =
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+        global.portalDmRoles.portalDmIsDirectorProfile(row);
+      var isAdmin =
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
+        global.portalDmRoles.portalDmIsAdminProfile(row);
+      if (!isDirector && !isAdmin) return;
+      var lab =
+        ((row.full_name || row.username || "").trim() || id0.slice(0, 8)).split(/\s+/)[0] ||
+        "Contact";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer";
+      btn.textContent = lab;
+      btn.addEventListener("click", function () {
+        void global.portalAdminDmEnsureDmThreadAndOpen(id0);
+      });
+      host.appendChild(btn);
+      added += 1;
+    });
+    if (!added) {
+      host.innerHTML =
+        '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px">Director contacts could not load.</p>';
+    }
   }
 
   async function renderAdminInbox(host, ctx) {
@@ -596,6 +758,20 @@
     var renderItem = ctx.renderItem;
     var me = ctx.me;
     var ch = ctx.ch;
+    var inboxClient =
+      ctx.client || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) || null;
+    if (
+      inboxClient &&
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.ensureSessionProfile === "function"
+    ) {
+      await global.portalChatActorIdentity.ensureSessionProfile(inboxClient);
+      me =
+        (global.portalChatActorIdentity &&
+          typeof global.portalChatActorIdentity.actorId === "function" &&
+          global.portalChatActorIdentity.actorId()) ||
+        me;
+    }
     var sharedWorkerOps = managementSharedWorkerOpsInbox();
     var split = splitDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
     var activeCat = sharedWorkerOps ? getCeoInboxCategory() : "direct";
@@ -608,17 +784,20 @@
     var dmItems = buildVisibleInboxItems(ctx.merged, ctx.splitSections, ctx.teamDmItems, activeCat);
     if (groupsBelongInChannelsOnly()) {
       dmItems = dmItems.filter(function (item) {
-        if (!item || item.kind !== "group") return true;
-        return isDirectorDirectGroup(item);
+        return !item || item.kind !== "group";
       });
+    }
+    if (activeCat === "direct" && inboxClient) {
+      var directorExtras = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
+      if (directorExtras.length) {
+        dmItems = sortDmItems(dmItems.concat(directorExtras));
+      }
     }
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
-        (sharedWorkerOps
-          ? emptyInboxMessage(activeCat)
-          : "No conversations here yet. Staff names appear in this list as soon as profiles are loaded \u2014 tap anyone to message.") +
+        (sharedWorkerOps ? emptyInboxMessage(activeCat) : "No conversations here yet.") +
         "</p>";
       return;
     }
@@ -653,6 +832,9 @@
   global.portalCsCliqAdminInbox = {
     groupsBelongInChannelsOnly: groupsBelongInChannelsOnly,
     shouldUseCategorizedInbox: shouldUseCategorizedInbox,
+    usesDirectorLaneNav: usesDirectorLaneNav,
+    loadDirectorDirectPeerItems: loadDirectorDirectPeerItems,
+    fillDirectPeerPicks: fillDirectPeerPicks,
     managementInboxFullStaffRoster: managementInboxFullStaffRoster,
     managementSharedWorkerOpsInbox: managementSharedWorkerOpsInbox,
     loadSessionLeads: loadSessionLeads,

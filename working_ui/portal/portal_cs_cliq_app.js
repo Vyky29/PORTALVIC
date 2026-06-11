@@ -19,6 +19,12 @@
     ) {
       return global.portalCsCliqHubRoles.isManagementProfile(prof);
     }
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmUsesAdminCliq === "function"
+    ) {
+      return global.portalDmRoles.portalDmUsesAdminCliq(prof);
+    }
     var app = String((prof && prof.app_role) || "").toLowerCase();
     return app === "admin" || app === "ceo";
   }
