@@ -357,9 +357,37 @@
     return merged;
   }
 
+  /** Day-only keys (date||client) are for merged same-instructor aquatic, day centre, bespoke — not per-slot multi-instructor days. */
+  function reviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord) {
+    if (
+      typeof global.portalRosterSessionIsDayCentre === "function" &&
+      global.portalRosterSessionIsDayCentre(s)
+    ) {
+      return true;
+    }
+    if (
+      typeof global.portalRosterSessionIsBespokeShared === "function" &&
+      global.portalRosterSessionIsBespokeShared(s)
+    ) {
+      return true;
+    }
+    var activity = String(
+      (s && (s.activity || s.rosterService || s.service)) || ""
+    ).trim();
+    if (isAquaticActivity(activity)) {
+      var cid = slugClient(s && s.clientId);
+      if (clientNeedsPerSlotAquaticFeedbackOnDate(iso, cid, dayWord)) return false;
+      return true;
+    }
+    var st = String((s && s.start) || "").trim();
+    if (st && /^\d{1,2}:\d{2}$/.test(st)) return false;
+    return true;
+  }
+
   global.portalStaffLeadIsAquaticActivity = isAquaticActivity;
   global.portalStaffLeadAquaticSessionReviewKey = buildAquaticSessionReviewKey;
   global.portalStaffLeadClientNeedsPerSlotAquaticFeedback = clientNeedsPerSlotAquaticFeedbackOnDate;
+  global.portalStaffLeadReviewKeyAllowsDateClientOnlyAlias = reviewKeyAllowsDateClientOnlyAlias;
   global.portalMergeStaffLeadTodayAquaticCards = mergeTodayAquaticCards;
   global.portalMergeStaffTodayFeedbackMergeGroups = mergeTodayFeedbackMergeGroups;
   global.portalStaffFeedbackMergeGroupForTodayItem = feedbackMergeGroupForTodayItem;

@@ -1036,7 +1036,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260609-roberto-merge-cards"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -1578,6 +1578,14 @@
       }
       return rosterKey === statusKey;
     }
+    function portalStatusRowMatchesRosterSession(st, s){
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+      if(bridge && typeof bridge.statusRowMatchesRosterSession === 'function'){
+        return bridge.statusRowMatchesRosterSession(st, s, notes);
+      }
+      return portalStatusRowMatchesRosterClient(st, s);
+    }
     function portalStatusRowIsDoneForCalendar(st){
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.statusRowDone === 'function') return bridge.statusRowDone(st);
@@ -1656,7 +1664,10 @@
             const tr = String(s && s.start != null ? s.start : '').trim();
             if(cid && tc) tryK(iso + '|' + tc + '|' + cid);
             if(cid && tr && tr !== tc) tryK(iso + '|' + tr + '|' + cid);
-            if(cid) tryK(iso + '||' + cid);
+            if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+              || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
+              tryK(iso + '||' + cid);
+            }
             return o;
           })();
           if(memOnly.absent || memOnly.cancelled){
@@ -1804,7 +1815,10 @@
             return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
         }
-        if(matches.some(portalStatusRowIsDoneForCalendar)){
+        if(matches.some(function(st){
+          if(!portalStatusRowIsDoneForCalendar(st)) return false;
+          return portalStatusRowMatchesRosterSession(st, s);
+        })){
           return portalReviewFlagsForResolvedSession(iso, sid, s);
         }
         if(matches.some(function(st){ return !portalStatusRowIsDoneForCalendar(st); })){
@@ -1863,7 +1877,10 @@
       if(areaSuffix && cid && tRaw && tRaw !== tCanon) add(iso + '|' + tRaw + '|' + cid + areaSuffix);
       if(cid && tCanon) add(iso + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) add(iso + '|' + tRaw + '|' + cid);
-      if(cid) add(iso + '||' + cid);
+      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+        || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
+        add(iso + '||' + cid);
+      }
       return keys;
     }
     /** Today+: green only when Supabase has feedback / absent / cancel for this roster key. */
@@ -1951,10 +1968,10 @@
               : '';
             if(!sk) return;
             let hit = byDate[iso] && byDate[iso].some(function(st){
-              return portalStatusRowMatchesRosterClient(st, s);
+              return portalStatusRowMatchesRosterSession(st, s);
             });
             let stRow = hit ? byDate[iso].find(function(st){
-              return portalStatusRowMatchesRosterClient(st, s);
+              return portalStatusRowMatchesRosterSession(st, s);
             }) : null;
             if(!hit && doneMergeGroups[iso]){
               let mg = '';
@@ -2076,7 +2093,7 @@
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const resetV = '20260608-bespoke-trio-shared';
-        const machineResetV = '20260611-aquatic-fallback-fix';
+        const machineResetV = '20260611-hazem-per-slot-aquatic';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}
@@ -3278,7 +3295,10 @@
       if(areaSuffix && cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid + areaSuffix);
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
-      if(cid) tryKey(String(sessionDateIso) + '||' + cid);
+      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+        || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, sessionDateIso, dayWord))){
+        tryKey(String(sessionDateIso) + '||' + cid);
+      }
       const scid0 = String(s && s.clientId || '').trim().toLowerCase();
       if(scid0 && scid0 !== cid){
         if(tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + scid0);

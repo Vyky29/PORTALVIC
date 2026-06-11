@@ -1029,7 +1029,7 @@
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260610-aquatic-merge"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
@@ -2276,7 +2276,10 @@
           ? portalEffectiveClientIdForReview(baseS, iso)
           : String(baseS.clientId || '').trim().toLowerCase();
         if(cid){
-          tryK(iso + '||' + cid);
+          if(typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+            || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(baseS, iso, dayWord)){
+            tryK(iso + '||' + cid);
+          }
           if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(baseS)){
             tryK(iso + '|' + cid + '|day_centre');
           }

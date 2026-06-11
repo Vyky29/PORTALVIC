@@ -699,7 +699,13 @@
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const rKey = slug(r && r.clientName);
     if (!rosterKey || !rKey) return false;
-    return clientSlugTokensEquivalent(rosterKey, rKey);
+    if (!clientSlugTokensEquivalent(rosterKey, rKey)) return false;
+    const rosterTime = rosterSessionStartHm(s);
+    if (!rosterTime) return true;
+    const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+    const rTime = portalRowTimeTokenFromKey(pk);
+    if (rTime && rosterTime && rTime !== rosterTime) return false;
+    return true;
   }
 
   function normalizeHmToken(v) {

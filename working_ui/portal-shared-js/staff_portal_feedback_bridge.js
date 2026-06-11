@@ -584,9 +584,18 @@
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const rKey = slug(r && r.clientName);
     if (!rosterKey || !rKey) return false;
-    if (rosterKey === rKey) return true;
-    if (/_ah$/.test(rosterKey) && /_ah$/.test(rKey) && rosterKey !== rKey) return false;
-    return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+    let clientOk = false;
+    if (rosterKey === rKey) clientOk = true;
+    else if (!(/_ah$/.test(rosterKey) && /_ah$/.test(rKey) && rosterKey !== rKey)) {
+      clientOk = rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+    }
+    if (!clientOk) return false;
+    const rosterTime = rosterSessionStartHm(s);
+    if (!rosterTime) return true;
+    const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+    const rTime = portalRowTimeTokenFromKey(pk);
+    if (rTime && rosterTime && rTime !== rosterTime) return false;
+    return true;
   }
 
   function normalizeHmToken(v) {

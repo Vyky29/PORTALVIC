@@ -452,6 +452,8 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   const rTime = portalSessionKeyTimeToken(r);
   const sTime = portalSessionKeyTimeToken(s);
   if (rTime && sTime && sTime !== rTime) return false;
+  /* date||client must not absorb a timed submission from another slot the same day. */
+  if (sTime && !rTime && rParts[1] === "" && rParts[2] && !rParts[3]) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;
   const rClient = String(rParts[2] || rParts[1] || "")
