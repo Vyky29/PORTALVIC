@@ -13,6 +13,7 @@ import {
   jsonPushResponse,
   loadAdminCeoUserIds,
   loadStaffLeadUserIds,
+  resolveAdminDmPushRecipientIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
   verifyPortalPushWebhook,
@@ -121,42 +122,29 @@ async function resolveTargetUserIds(
   }
   if (!authorId) return [];
 
-  const { data: authorProf } = await admin
-    .from("staff_profiles")
-    .select("id,app_role")
-    .eq("id", authorId)
-    .maybeSingle();
-  const authorRole = String(authorProf?.app_role || "").toLowerCase();
-
-  const targets = new Set<string>();
-
   if (table === "portal_staff_dm_messages") {
     const threadId = String(record.thread_id || "").trim();
     if (!threadId) return [];
+    const adminCeoIds = await loadAdminCeoUserIds(admin);
+    const dmRecipients = await resolveAdminDmPushRecipientIds(
+      admin,
+      threadId,
+      authorId,
+      adminCeoIds,
+    );
     const { data: thread, error } = await admin
       .from("portal_staff_dm_threads")
       .select("participant_a,participant_b")
       .eq("id", threadId)
       .maybeSingle();
-    if (error || !thread) return [];
+    if (error || !thread) return dmRecipients;
     const a = String(thread.participant_a || "").trim();
     const b = String(thread.participant_b || "").trim();
     let peer = "";
     if (a === authorId) peer = b;
     else if (b === authorId) peer = a;
-    else {
-      if (a && a !== authorId) targets.add(a);
-      if (b && b !== authorId) targets.add(b);
-    }
+    const targets = new Set<string>(dmRecipients);
     if (peer && peer !== authorId) targets.add(peer);
-
-    // Fan-out to all admins only when staff/lead initiates (oversight). Director/admin DM calls ring the peer only.
-    if (authorRole === "staff" || authorRole === "lead") {
-      const admins = await loadAdminCeoUserIds(admin);
-      admins.forEach((id) => {
-        if (id && id !== authorId) targets.add(id);
-      });
-    }
     return [...targets];
   }
 

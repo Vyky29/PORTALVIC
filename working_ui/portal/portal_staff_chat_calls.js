@@ -442,10 +442,7 @@
     var cached = threadParticipantCache[tid];
     if (cached && Date.now() - cached.ts < 120000) {
       if (cached.a === me || cached.b === me) return true;
-      if (cached.sharedInbox && usesAdminSharedInbox()) return true;
-      // Never reject from cache for exec shared inbox until profile is loaded
-      // (early poll before staff_profile caused 2min false negatives).
-      if (!usesAdminSharedInbox() && profileReadyForInbox()) return false;
+      return false;
     }
     try {
       var res = await client
@@ -456,35 +453,9 @@
       if (res.error || !res.data) return false;
       var a = String(res.data.participant_a || "");
       var b = String(res.data.participant_b || "");
-      if (a === me || b === me) {
-        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
-        return true;
-      }
-      if (usesAdminSharedInbox()) {
-        var pr = await client
-          .from("staff_profiles")
-          .select("id,app_role,staff_role,is_active,full_name,username")
-          .in("id", [a, b]);
-        var profBy = {};
-        if (!pr.error && Array.isArray(pr.data)) {
-          pr.data.forEach(function (p) {
-            if (p && p.id) profBy[String(p.id)] = p;
-          });
-        }
-      if (isManagementWorkerThreadPair(profBy, a, b)) {
-        if (!profileReadyForInbox()) return null;
-        if (usesAdminSharedInbox()) {
-          threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: true };
-          return true;
-        }
-        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
-        return false;
-      }
-      }
-      if (profileReadyForInbox() && !usesAdminSharedInbox()) {
-        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
-      }
-      return false;
+      var mine = a === me || b === me;
+      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      return mine;
     } catch (_part) {
       return false;
     }

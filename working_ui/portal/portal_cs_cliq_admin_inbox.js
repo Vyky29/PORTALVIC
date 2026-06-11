@@ -59,7 +59,12 @@
 
   function syncInboxChrome() {
     var quick = document.getElementById("csCliqCeoQuickWrap");
-    if (quick) quick.hidden = true;
+    if (quick) {
+      quick.hidden = !(
+        managementSharedWorkerOpsInbox() &&
+        String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() === "ceo_exec"
+      );
+    }
     var nav = document.getElementById("csCliqChannelNav");
     if (nav) {
       nav.hidden = true;
@@ -603,7 +608,8 @@
     var dmItems = buildVisibleInboxItems(ctx.merged, ctx.splitSections, ctx.teamDmItems, activeCat);
     if (groupsBelongInChannelsOnly()) {
       dmItems = dmItems.filter(function (item) {
-        return item && item.kind !== "group";
+        if (!item || item.kind !== "group") return true;
+        return isDirectorDirectGroup(item);
       });
     }
     host.innerHTML = "";

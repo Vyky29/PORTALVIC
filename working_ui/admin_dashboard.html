@@ -44,7 +44,7 @@
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260610-god-mode-boot"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260610-groups-channels"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260611-director-chat-routing"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260610-groups-channels"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -20428,16 +20428,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(prof) return portalAdminDmIsWorkerRecipient(prof);
       return false;
     }
+    function portalAdminDmDirectorChatSurfaceOpen(){
+      return !!(portalAdminDmIsCsCliqViewActive() || window.__PORTAL_ADMIN_DM_OPEN);
+    }
     function portalAdminDmDirectorShouldMuteOpsAlert(row){
       if(!portalAdminDmIsDirectorViewer()) return false;
       row = row || {};
-      if(row.group_id) return true;
+      if(!portalAdminDmDirectorChatSurfaceOpen()) return true;
+      var inboxCat = 'direct';
+      if(
+        window.portalCsCliqAdminInbox &&
+        typeof window.portalCsCliqAdminInbox.getCeoInboxCategory === 'function'
+      ){
+        inboxCat = window.portalCsCliqAdminInbox.getCeoInboxCategory();
+      }
+      if(inboxCat === 'ops') return false;
       var aid = String(row.author_id || '').trim();
       if(!aid || portalAdminDmIsMyMessage(aid)) return false;
       if(portalAdminDmCachedAuthorIsWorker(aid)) return true;
       var prof = (window.__PORTAL_ADMIN_DM_PROF_CACHE__ || {})[aid];
-      if(prof && !portalAdminDmIsWorkerRecipient(prof)) return false;
-      if(row.thread_id) return true;
+      if(prof && portalAdminDmIsOpsAdminPeer(prof)) return true;
+      if(row.group_id) return true;
+      if(row.thread_id && prof && portalAdminDmIsWorkerRecipient(prof)) return true;
+      if(row.thread_id){
+        var me = portalAdminDmMe();
+        var ctx = window.__PORTAL_ADMIN_DM_CHANNEL_CTX || {};
+        var rows = ctx.allThreadRows || [];
+        var hit = rows.find(function(t){ return t && String(t.id) === String(row.thread_id); });
+        if(hit){
+          var a = String(hit.participant_a || '');
+          var b = String(hit.participant_b || '');
+          if(me && a !== me && b !== me) return true;
+        }
+      }
       return false;
     }
     function portalAdminDmIsOpsAdminPeer(prof){
@@ -21110,6 +21133,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalAdminDmSyncCsCliqRailUnread();
     }
     function portalAdminDmHasUnread(){
+      if(portalAdminDmIsDirectorViewer() && !portalAdminDmDirectorChatSurfaceOpen()) return false;
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
     function portalAdminDmIsCsCliqViewActive(){
@@ -21666,6 +21690,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!t || !t.id) return;
             if(allT.some(function(x){ return String(x.id) === String(t.id); })) return;
             allT.push(t);
+          });
+        }
+        if(portalAdminDmIsDirectorViewer()){
+          allT = allT.filter(function(t){
+            if(!t) return false;
+            return String(t.participant_a || '') === me || String(t.participant_b || '') === me;
           });
         }
         if(allT.length){
@@ -23365,6 +23395,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       var allThreadRows = Array.isArray(res.data) ? res.data.slice() : [];
+      window.__PORTAL_ADMIN_DM_CHANNEL_CTX = window.__PORTAL_ADMIN_DM_CHANNEL_CTX || {};
+      window.__PORTAL_ADMIN_DM_CHANNEL_CTX.allThreadRows = allThreadRows;
       var rows = allThreadRows.slice();
       var names = {};
       var profBy = {};
@@ -29062,7 +29094,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260610-admin-inbox-notify"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260611-director-call-peer"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260609-inbox-direct-ops"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-inbox-unread-badge"></script>
   <script>
