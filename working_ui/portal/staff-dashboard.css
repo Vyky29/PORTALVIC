@@ -1740,6 +1740,7 @@
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-copy strong{color:#fff}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-sub,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-sub{color:rgba(255,255,255,.92)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-chev,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-chev{color:rgba(255,255,255,.92)}
@@ -4141,6 +4142,80 @@
       margin-left:0;
       max-width:100%;
       box-sizing:border-box;
+    }
+    .section-card--today .session-line--name .session-chips-below-name{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      margin-top:4px;
+    }
+    .section-card--today .session-chips-below-name .portal-session-slot-chip,
+    .section-card--today .session-chips-below-name .portal-sched-ov-badge{
+      max-width:100%;
+      min-width:0;
+    }
+    .portal-session-slot-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:5px 11px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.02em;
+      line-height:1.15;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      text-transform:capitalize;
+    }
+    .portal-session-slot-chip > span{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
+    }
+    .portal-session-slot-chip--updated{
+      color:#1e4a8a;
+      background:linear-gradient(180deg,#dbeafe 0%,#bfdbfe 100%);
+      border:1px solid rgba(59,130,246,.45);
+      box-shadow:0 1px 4px rgba(37,99,235,.16);
+      font-weight:800;
+    }
+    .portal-session-slot-chip--pending{
+      color:#fff;
+      background:linear-gradient(145deg,#e8872a,#c86a12);
+      border:1px solid rgba(160,80,20,.48);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(200,106,18,.22);
+    }
+    .portal-session-slot-chip--submitted,
+    .portal-session-slot-chip--absent{
+      color:#fff;
+      background:linear-gradient(145deg,#157347,#0f5b37);
+      border:1px solid rgba(11,85,51,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(15,91,55,.22);
+    }
+    .portal-session-slot-chip--cancelled{
+      color:#fff;
+      background:#b71c1c;
+      border:1px solid rgba(123,18,18,.92);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(123,18,18,.24);
+    }
+    .portal-session-slot-chip--makeup{
+      color:#fff;
+      background:linear-gradient(180deg,#d94f93,#c2185b);
+      border:1px solid rgba(140,24,70,.34);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
+    }
+    .portal-session-slot-chip--plain{
+      color:var(--muted);
+      background:rgba(23,50,71,.06);
+      border:1px solid rgba(45,132,179,.22);
     }
     .section-card--today .session-card-body--today-ov-split .session-line--name .session-name-stack{
       gap:2px;

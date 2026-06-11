@@ -4270,9 +4270,10 @@
           }
         }
       }
-      const sessionFeedbackCount = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
+      const termFbCount = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
         ? portalOutstandingSessionFeedbackCountAcrossTerm()
-        : stats.pending.length;
+        : 0;
+      const sessionFeedbackCount = Math.max(termFbCount, stats.pending.length);
       const sessionFeedbackTodayNeed = sessionFeedbackCount > 0;
       const sessionFeedbackNeed = sessionFeedbackCount > 0;
       if(!sessionFeedbackNeed){
@@ -4570,12 +4571,13 @@
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
       const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
+      const sub = need ? 'Complete session feedback' : 'All caught up through today';
       const aria = need
         ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
         : 'Outstanding feedbacks — none pending through today, tap to review sessions';
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
-        '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong></div>' +
+        '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong><span class="menu-btn-sub">' + escapeHtml(sub) + '</span></div>' +
         '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
     }
     function syncPortalOutstandingFeedbackSlot(){
@@ -5721,7 +5723,97 @@
       }
       return String(nm == null ? '' : nm).trim();
     }
-    /** Override detail column (separate from pool/room notes). */
+    function isSessionStartedForItem(item){
+      if(STAFF_DASH_FORCE_SESSIONS_ENDED) return true;
+      try{
+        if(portalStaffIsDemoAccount() && item && item.sessionKey && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__.has(item.sessionKey)){
+          return false;
+        }
+      }catch(_e){}
+      const t = item && item.sessionStartTs;
+      if(t == null) return false;
+      return Date.now() >= t;
+    }
+    function portalSessionItemRosterTimeUpdated(item){
+      if(!item) return false;
+      if(!!item.portalRosterTimeUpdated) return true;
+      const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
+      if(ovType === 'slot_update') return true;
+      return String(item.portalOverrideAlertPill || '').trim().toUpperCase() === 'UPDATED';
+    }
+
+    /** Single status chip below participant name (override + feedback + slot time change). */
+    function todaySessionChipBelowNameHtml(item){
+      if(!item) return '';
+      const pillText = String(item.portalOverrideAlertPill || '').trim();
+      const pillNorm = pillText.toUpperCase();
+      const sym = String(item.portalOverrideSymbolText || '').trim();
+      const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
+      const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
+
+      if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent"><span>Absent</span></span>';
+      }
+      if(pillNorm === 'CANCELLED'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>';
+      }
+      if(pillNorm === 'COMPLETED'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
+      }
+      if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>';
+      }
+      if(pillText && pillNorm !== 'UPDATED'){
+        const display = escapeHtml(pillText).replace(/\n/g, ' ');
+        return '<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>';
+      }
+      if(sym && !isMakeUpSym){
+        const tx = escapeHtml(sym);
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>';
+      }
+
+      if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+        const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
+        if(r.absent){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Absent recorded"><span>Absent</span></span>';
+        }
+        if(r.cancelled){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Cancelled"><span>Cancelled</span></span>';
+        }
+        if(r.feedbackDone){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
+        }
+        const timeUpdated = portalSessionItemRosterTimeUpdated(item);
+        const started = isSessionStartedForItem(item);
+        const ended = isSessionEndedForFeedback(item);
+        if(timeUpdated && !started){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Session time updated"><span>Updated</span></span>';
+        }
+        const showPending = timeUpdated ? started : ended;
+        if(showPending){
+          if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return '';
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+        }
+      }
+
+      if(item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+        const ovTypeCls = portalTodayItemOverrideClass(item);
+        return '<span class="portal-sched-ov-badge' + (ovTypeCls ? ' ' + ovTypeCls : '') + '" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>';
+      }
+      return '';
+    }
+
+    /** @deprecated use todaySessionChipBelowNameHtml */
+    function todaySessionScheduleOverrideBelowNameHtml(item){
+      return todaySessionChipBelowNameHtml(item);
+    }
+
+    /** @deprecated use todaySessionChipBelowNameHtml */
+    function todaySessionFeedbackStatusChipHtml(item){
+      return '';
+    }
+
+    /** Override detail column (legacy); schedule chips now live below the name. */
     function todaySessionOverrideDetailHtml(item){
       const pillText = String(item && item.portalOverrideAlertPill || '').trim();
       const pillNorm = pillText.toUpperCase();
@@ -5756,33 +5848,12 @@
       if(!!item.portalOverrideMakeUpTag){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--makeup" aria-label="Make up"><span>MAKE UP</span></span>';
       }
-      if(!item.portalOverrideSuppressReviewOrange){
-        const rr = (typeof getSessionReviewRecord === 'function') ? (getSessionReviewRecord(item) || {}) : {};
-        if(rr.absent){
-          return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--absent" aria-label="Absent"><span>ABSENT</span></span>';
-        }
-        if(rr.cancelled){
-          return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--cancelled" aria-label="Cancelled"><span>CANCELLED</span></span>';
-        }
-      }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
 
-    /** Pool/room details column. */
+    /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
       if(item.kind === 'closed') return '<span class="session-pool-na" aria-hidden="true">—</span>';
-      const pillNorm = String(item && item.portalOverrideAlertPill || '').trim().toUpperCase();
-      if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY' || pillNorm === 'CANCELLED'){
-        return todaySessionOverrideDetailHtml(item);
-      }
-      if(String(item && item.portalOverrideAlertPill || '').trim()){
-        return todaySessionOverrideDetailHtml(item);
-      }
-      const symNormRow = String(item && item.portalOverrideSymbolText || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      const isMakeUpRowThird = !!item.portalOverrideMakeUpTag || symNormRow === 'make up' || symNormRow === 'make up session';
-      if(isMakeUpRowThird){
-        return '<span class="session-pool-na" aria-hidden="true">—</span>';
-      }
       return todaySessionPoolColumnHtml(item);
     }
     function todaySessionSingleLineNoteText(item){
@@ -5795,16 +5866,8 @@
       const v = item && item.sessionVenue != null ? String(item.sessionVenue).trim() : '';
       return v || '—';
     }
-    /** True when override chip/symbol occupies the right column (area PNG hidden to avoid clutter). */
+    /** Pool note stays in the right column; overrides moved below the name. */
     function portalTodaySessionOverrideMovesPoolToCenter(item){
-      if(!item) return false;
-      if(!item.portalOverrideSuppressReviewOrange && typeof getSessionReviewRecord === 'function'){
-        const rr = getSessionReviewRecord(item) || {};
-        if(rr.absent || rr.cancelled) return true;
-      }
-      if(String(item.portalOverrideAlertPill || '').trim()) return true;
-      if(String(item.portalOverrideSymbolText || '').trim()) return true;
-      if(item.portalOverrideMakeUpTag) return true;
       return false;
     }
     /** Pool / room label HTML (right column when no override; under name when override splits layout). */
@@ -5827,38 +5890,14 @@
       const time = escapeHtml(String(item.time || '').trim());
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
-      const ovTypeCls = portalTodayItemOverrideClass(item);
-      const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
-      const showUpdatedBadge = ovType === 'slot_update' || !!item.portalRosterTimeUpdated || String(item.portalOverrideAlertPill || '').trim().toUpperCase() === 'UPDATED';
-      const ovBadge = showUpdatedBadge
-        ? '<span class="portal-sched-ov-badge override--updated" title="Session time updated">Updated</span>'
-        : item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge
-        ? '<span class="portal-sched-ov-badge' + (ovTypeCls ? ' ' + ovTypeCls : '') + '" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>'
-        : '';
-      const symNorm = String(item.portalOverrideSymbolText || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      const isMakeUpOverride = !!item.portalOverrideMakeUpTag || symNorm === 'make up' || symNorm === 'make up session';
-      const inlineOverrideTop = '';
-      const split = portalTodaySessionOverrideMovesPoolToCenter(item);
-      const hasAlertPill = !!String(item.portalOverrideAlertPill || '').trim();
-      const makeUpNoteHtml = !split && isMakeUpOverride
-        ? (function(){
-            const lbl = todaySessionSingleLineNoteText(item);
-            return lbl && typeof portalAreaNoteIconHtml === 'function' ? portalAreaNoteIconHtml(lbl) : '';
-          })()
-        : '';
-      const makeUpPillHtml = !split && isMakeUpOverride && !hasAlertPill
-        ? '<span class="session-makeup-pill" aria-label="Make up session"><span>MAKEUP</span></span>'
-        : '';
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
-      const poolCenterHtml = '';
-      const namePart = `<span class="session-name-stack">${inlineOverrideTop}${ovBadge}${nameCore}${poolCenterHtml}${makeUpNoteHtml}${makeUpPillHtml}</span>`;
-      const bodyCls = split ? 'session-card-body session-card-body--today-ov-split' : 'session-card-body';
-      const rightColInner = split
-        ? `<span class="session-right-status">${todaySessionOverrideDetailHtml(item)}</span>`
-        : `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
-      return `<div class="${bodyCls}">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
+      const chip = todaySessionChipBelowNameHtml(item);
+      const chipsRow = chip ? '<div class="session-chips-below-name">' + chip + '</div>' : '';
+      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
+      return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
 
     function staffRoleTrackForTodayBuild(){
@@ -15883,7 +15922,12 @@
     }
     setInterval(() => {
       if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-    }, 60 * 1000);
+      try{
+        const sel = typeof portalSelectedViewCalendarIsoYmd === 'function' ? portalSelectedViewCalendarIsoYmd() : '';
+        const todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(new Date()) : '';
+        if(sel && todayIso && sel === todayIso && typeof renderToday === 'function') renderToday();
+      }catch(_){}
+    }, 30 * 1000);
     function portalOnStaffAppBackgrounded(){
       try{
         if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function') portalMaybeNotifyUnsignedAnnouncementPending();
