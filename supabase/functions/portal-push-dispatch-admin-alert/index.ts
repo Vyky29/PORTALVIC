@@ -400,7 +400,11 @@ Deno.serve(async (req) => {
   }
 
   let recipientIds = adminIds;
-  if (table === "portal_staff_dm_messages" && authorId) {
+  if (table === "portal_staff_dm_messages") {
+    if (!authorId) {
+      console.log("[portal-push-admin] skip", { reason: "no author", table });
+      return jsonPushResponse({ skipped: true, reason: "no author" });
+    }
     const threadIdForPush = String(record.thread_id ?? "").trim();
     recipientIds = await resolveAdminDmPushRecipientIds(
       admin,
@@ -435,6 +439,9 @@ Deno.serve(async (req) => {
     }
   } else if (CHAT_TABLES.has(table) && authorId) {
     recipientIds = adminIds.filter((id) => id !== authorId);
+  }
+  if (authorId) {
+    recipientIds = recipientIds.filter((id) => id && id !== authorId);
   }
   if (!recipientIds.length) {
     console.log("[portal-push-admin] skip", {
@@ -519,6 +526,8 @@ Deno.serve(async (req) => {
       const pushPayload = JSON.stringify({
         ...pushPayloadBase,
         url: userUrl,
+        senderUserId: authorId || "",
+        targetUserId: userId,
       });
       const topicKey = CHAT_TABLES.has(table)
         ? (threadId || groupId || alert.sourceId)

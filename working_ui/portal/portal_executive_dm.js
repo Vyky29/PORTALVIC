@@ -97,8 +97,15 @@
       return ids;
     }
     function portalAdminDmIsMyMessage(authorId){
-      authorId = String(authorId || '').trim().toLowerCase();
+      authorId = String(authorId || '').trim();
       if(!authorId) return false;
+      if(
+        global.portalChatActorIdentity &&
+        typeof global.portalChatActorIdentity.isSelfUserId === 'function'
+      ){
+        return global.portalChatActorIdentity.isSelfUserId(authorId);
+      }
+      authorId = authorId.toLowerCase();
       return portalAdminDmAuthorIds().some(function(id){
         return String(id || '').trim().toLowerCase() === authorId;
       });
@@ -1156,6 +1163,19 @@
                 var changedTid = row && row.thread_id ? String(row.thread_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingThread = portalAdminDmViewingThread(changedTid);
+                var isMine = row && portalAdminDmIsMyMessage(row.author_id);
+                if(isMine){
+                  if(surfaceActive){
+                    if(viewingThread && typeof portalAdminDmLoadMessages === 'function'){
+                      void portalAdminDmLoadMessages();
+                    }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+                      void portalAdminDmRefreshInboxLists();
+                    }else if(typeof portalAdminDmRenderList === 'function'){
+                      void portalAdminDmRenderList();
+                    }
+                  }
+                  return;
+                }
                 if(portalAdminDmMessageCountsAsUnread(row)){
                   portalAdminDmNotifyIncomingRowIfNeeded(row, viewingThread);
                   void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
@@ -1188,6 +1208,18 @@
                 var changedGid = row && row.group_id ? String(row.group_id) : '';
                 var surfaceActive = portalAdminDmChatSurfaceActive();
                 var viewingGroup = portalAdminDmViewingGroup(changedGid);
+                if(row && portalAdminDmIsMyMessage(row.author_id)){
+                  if(surfaceActive){
+                    if(viewingGroup && typeof portalAdminDmLoadMessages === 'function'){
+                      void portalAdminDmLoadMessages();
+                    }else if(typeof portalAdminDmRefreshInboxLists === 'function'){
+                      void portalAdminDmRefreshInboxLists();
+                    }else if(typeof portalAdminDmRenderList === 'function'){
+                      void portalAdminDmRenderList();
+                    }
+                  }
+                  return;
+                }
                 if(portalAdminDmMessageCountsAsUnread(row)){
                   portalAdminDmNotifyIncomingRowIfNeeded(row, viewingGroup);
                   void portalAdminDmSyncIncomingAttention({ suppressNotify: true });

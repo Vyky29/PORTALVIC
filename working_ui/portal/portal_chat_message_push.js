@@ -402,9 +402,28 @@
     }
   }
 
+  function portalChatPushShouldIgnore(data) {
+    data = data || {};
+    var senderId = String(data.senderUserId || data.authorId || "").trim();
+    var targetUserId = String(data.targetUserId || "").trim();
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.isSelfUserId === "function"
+    ) {
+      if (senderId && global.portalChatActorIdentity.isSelfUserId(senderId)) {
+        return true;
+      }
+      if (targetUserId && !global.portalChatActorIdentity.isSelfUserId(targetUserId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function handleChatPushMessage(data, opts) {
     opts = opts || {};
     if (!data || data.portalOpen !== "chat") return;
+    if (portalChatPushShouldIgnore(data)) return;
     var chat = data.chat || {};
     var threadId = String(chat.threadId || chat.thread_id || "").trim();
     var groupId = String(chat.groupId || chat.group_id || "").trim();

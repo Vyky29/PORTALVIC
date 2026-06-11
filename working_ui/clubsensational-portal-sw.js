@@ -51,7 +51,8 @@ function portalPushIconUrl() {
   return PORTAL_PUSH_ICON_PATH;
 }
 
-function portalNotifyOpenClients(title, body, portalOpen, callData, chatData) {
+function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, meta) {
+  meta = meta || {};
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
     clientList.forEach(function (client) {
       try {
@@ -62,6 +63,8 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData) {
           portalOpen: portalOpen,
           call: callData || null,
           chat: chatData || null,
+          senderUserId: meta.senderUserId || '',
+          targetUserId: meta.targetUserId || '',
         });
         if (portalOpen === 'incoming_call' && typeof client.focus === 'function') {
           try {
@@ -113,6 +116,8 @@ self.addEventListener('push', function (event) {
   var vibrate = undefined;
   var callData = null;
   var chatData = null;
+  var senderUserId = '';
+  var targetUserId = '';
   try {
     if (event.data) {
       var j = event.data.json();
@@ -125,6 +130,8 @@ self.addEventListener('push', function (event) {
       if (j && j.vibrate && j.vibrate.length) vibrate = j.vibrate;
       if (j && j.call) callData = j.call;
       if (j && j.chat) chatData = j.chat;
+      if (j && j.senderUserId) senderUserId = String(j.senderUserId);
+      if (j && j.targetUserId) targetUserId = String(j.targetUserId);
     }
   } catch (e) {
     try {
@@ -155,7 +162,10 @@ self.addEventListener('push', function (event) {
   event.waitUntil(
     portalHasVisiblePortalClient().then(function (hasVisibleClient) {
       var tasks = [
-        portalNotifyOpenClients(title, body, portalOpen, callData, chatData),
+        portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
+          senderUserId: senderUserId,
+          targetUserId: targetUserId,
+        }),
       ];
       /* Foreground: page plays sound/vibration + halo/badges — no OS heads-up banner.
          Background/locked: OS notification (SMS-style at top of phone). */

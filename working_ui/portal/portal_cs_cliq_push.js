@@ -114,30 +114,6 @@
     global.addEventListener("portal:supabase-ready", run, { once: true });
   }
 
-  function handleForegroundPush(d) {
-    if (!d) return;
-    if (d.portalOpen === "incoming_call") {
-      if (typeof global.portalHandleIncomingCallPush === "function") {
-        void global.portalHandleIncomingCallPush({
-          msgId: (d.call && (d.call.messageId || d.call.msgId)) || "",
-          src: (d.call && (d.call.source || d.call.src)) || "dm",
-        });
-      }
-      return;
-    }
-    if (d.portalOpen === "chat") {
-      if (typeof global.portalStaffNotifyIncomingChat === "function") {
-        global.portalStaffNotifyIncomingChat(d.title, d.body, { id: d.tag || "" }, {
-          fromServerPush: true,
-        });
-      }
-      if (global.document && global.document.visibilityState === "visible") {
-        return;
-      }
-      void openChatFromPush(d.chat || {});
-    }
-  }
-
   function bindServiceWorkerMessages() {
     if (!("serviceWorker" in global.navigator)) return;
     if (global.__PORTAL_CS_CLIQ_PUSH_SW_BOUND__) return;
@@ -146,10 +122,6 @@
       try {
         var d = ev.data;
         if (!d || !d.type) return;
-        if (d.type === "portal-push-received") {
-          handleForegroundPush(d);
-          return;
-        }
         if (d.type === "portal-notification-click" && d.portalOpen === "chat") {
           void openChatFromPush(d.chat || {});
         }

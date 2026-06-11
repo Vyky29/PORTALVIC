@@ -355,13 +355,12 @@ export async function resolveAdminDmPushRecipientIds(
     const set = new Set<string>();
     for (const pid of [pa, pb]) {
       if (!pid || pid === authorId) continue;
-      const prof = profBy[pid];
-      if (portalPushIsExecAppRole(prof) || portalPushIsDirectorProfile(prof)) {
-        set.add(pid);
-      }
+      set.add(pid);
     }
     recipients = [...set];
   }
+
+  recipients = recipients.filter((id) => id && id !== authorId);
 
   return recipients;
 }
