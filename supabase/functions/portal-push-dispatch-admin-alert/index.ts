@@ -34,8 +34,10 @@ import {
   insertDedupeOrSkip,
   jsonPushResponse,
   loadAdminCeoUserIds,
+  loadChatPushEligibleUserIds,
   PORTAL_PUSH_CORS_HEADERS,
   portalPushGroupIsStaffOpsChannel,
+  portalPushIsDirectorProfile,
   resolveAdminDmPushRecipientIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
@@ -59,12 +61,29 @@ const CHAT_TABLES = new Set([
   "portal_ceo_group_message",
 ]);
 
+function csCliqPushOpenBase(): string {
+  const admin = adminPushOpenBase();
+  if (/admin_dashboard\.html/i.test(admin)) {
+    return admin.replace(/admin_dashboard\.html/i, "cs_cliq.html");
+  }
+  const staff = staffPushOpenBase();
+  if (staff && /\.html$/i.test(staff)) {
+    return staff.replace(/\/[^/]+\.html$/i, "/cs_cliq.html");
+  }
+  if (staff) return `${staff.replace(/\/$/, "")}/cs_cliq.html`;
+  return "";
+}
+
 function openBaseForProfile(prof: {
   app_role?: string | null;
   dashboard_route?: string | null;
+  username?: string | null;
+  full_name?: string | null;
 } | null): string {
   const staff = staffPushOpenBase();
   const admin = adminPushOpenBase();
+  const csCliq = csCliqPushOpenBase();
+  if (portalPushIsDirectorProfile(prof) && csCliq) return csCliq;
   const role = String(prof?.app_role || "").toLowerCase();
   const dr = String(prof?.dashboard_route || "").toLowerCase();
   if (role === "admin" || role === "ceo") {
@@ -74,7 +93,7 @@ function openBaseForProfile(prof: {
         return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
       }
     }
-    return admin || staff;
+    return csCliq || admin || staff;
   }
   if (dr.includes("lead_dashboard") && staff) {
     if (/staff_dashboard\.html/i.test(staff)) {
@@ -90,6 +109,15 @@ function buildChatNotifyUrl(
   groupId: string,
 ): string {
   const root = String(base || "").replace(/\/$/, "");
+  if (/cs_cliq\.html/i.test(root)) {
+    if (threadId) {
+      return `${root}?portal_chat_thread=${encodeURIComponent(threadId)}`;
+    }
+    if (groupId) {
+      return `${root}?portal_chat_group=${encodeURIComponent(groupId)}`;
+    }
+    return root;
+  }
   if (/admin_dashboard\.html/i.test(root)) {
     if (threadId) {
       return `${root}?portal_open=cs_cliq&portal_chat_thread=${encodeURIComponent(threadId)}`;
@@ -359,7 +387,9 @@ Deno.serve(async (req) => {
 
   let adminIds: string[];
   try {
-    adminIds = await loadAdminCeoUserIds(admin);
+    adminIds = CHAT_TABLES.has(table)
+      ? await loadChatPushEligibleUserIds(admin)
+      : await loadAdminCeoUserIds(admin);
   } catch (e) {
     return jsonPushResponse({ error: String(e) }, 500);
   }

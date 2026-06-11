@@ -25,6 +25,35 @@ html.cs-cliq-app-body body {
   overflow-wrap: break-word;
 }
 
+.cs-cliq-notify-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding: 10px 14px;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+  min-width: 0;
+}
+
+.cs-cliq-notify-banner__text {
+  margin: 0;
+  flex: 1 1 200px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #9a3412;
+  overflow-wrap: break-word;
+}
+
+.cs-cliq-notify-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .cs-cliq-app-topbar {
   display: flex;
   align-items: center;

@@ -1055,7 +1055,20 @@
         global.portalAdminDmNotifyIncomingMessageRow(row);
         return;
       }
-      if(typeof global.portalStaffNotifyIncomingChat !== 'function') return;
+      if(typeof global.portalStaffNotifyIncomingChat !== 'function'){
+        if(typeof global.portalShowChatLogoAlert === 'function'){
+          var previewFallback = String(row.body || '').trim();
+          if(
+            global.portalChatActorIdentity &&
+            typeof global.portalChatActorIdentity.stripDmOperatorTag === 'function'
+          ){
+            previewFallback = global.portalChatActorIdentity.stripDmOperatorTag(previewFallback);
+          }
+          if(previewFallback.length > 72) previewFallback = previewFallback.slice(0, 72) + '…';
+          global.portalShowChatLogoAlert('New message', previewFallback || 'New message');
+        }
+        return;
+      }
       var preview = String(row.body || '').trim();
       if(
         global.portalChatActorIdentity &&

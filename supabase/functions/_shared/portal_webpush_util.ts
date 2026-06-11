@@ -118,6 +118,36 @@ export async function loadAdminCeoUserIds(
   return ids;
 }
 
+/** Admin/CEO + named directors (Victor/Raúl/Javi) for CS Cliq DM push. */
+export async function loadChatPushEligibleUserIds(
+  admin: SupabaseClient,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from("staff_profiles")
+    .select("id,is_active,app_role,username,full_name")
+    .or("is_active.is.null,is_active.eq.true");
+  if (error) {
+    console.error("[portal-webpush] chat push profiles", error);
+    throw error;
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const row of data ?? []) {
+    const r = row as PushProfileRow;
+    if (r.is_active === false) continue;
+    const id = String(r.id ?? "").trim();
+    if (!id || seen.has(id)) continue;
+    if (
+      portalPushIsExecAppRole(r) ||
+      portalPushIsDirectorProfile(r)
+    ) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 type PushProfileRow = {
   id?: string;
   app_role?: string | null;
@@ -323,9 +353,14 @@ export async function resolveAdminDmPushRecipientIds(
     recipients = opsAdmins.filter((id) => id !== authorId);
   } else {
     const set = new Set<string>();
-    if (aExec && pa && pa !== authorId) set.add(pa);
-    if (bExec && pb && pb !== authorId) set.add(pb);
-    recipients = [...set].filter((id) => adminCeoIds.includes(id));
+    for (const pid of [pa, pb]) {
+      if (!pid || pid === authorId) continue;
+      const prof = profBy[pid];
+      if (portalPushIsExecAppRole(prof) || portalPushIsDirectorProfile(prof)) {
+        set.add(pid);
+      }
+    }
+    recipients = [...set];
   }
 
   return recipients;
