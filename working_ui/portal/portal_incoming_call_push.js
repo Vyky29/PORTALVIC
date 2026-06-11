@@ -142,10 +142,23 @@
     var row = await fetchCallMessageRow(client, msgId, src);
     if (!row) return false;
 
+    if (typeof calls.isOwnCallAuthor === "function" && calls.isOwnCallAuthor(row.author_id)) {
+      try {
+        global.sessionStorage.removeItem(PENDING_CALL_KEY);
+      } catch (_self) {}
+      return false;
+    }
+
     var data =
       calls.parseCallPayload && typeof calls.parseCallPayload === "function"
         ? calls.parseCallPayload(String(row.body || ""))
         : null;
+    if (data && data.callerId && typeof calls.isOwnCallAuthor === "function" && calls.isOwnCallAuthor(data.callerId)) {
+      try {
+        global.sessionStorage.removeItem(PENDING_CALL_KEY);
+      } catch (_self2) {}
+      return false;
+    }
     if (
       typeof calls.isIncomingCallInviteLive === "function" &&
       !(await calls.isIncomingCallInviteLive(client, row, data))

@@ -11,7 +11,7 @@
   var path = String((global.location && global.location.pathname) || "").toLowerCase();
   var isLogin = /(?:^|\/)login(?:\.html)?(?:$|[?#])/.test(path) || !!doc.getElementById("login-form");
   var isDashboard =
-    /staff_dashboard|lead_dashboard|admin_dashboard|ceo_dashboard|portal_choose/i.test(path);
+    /staff_dashboard|lead_dashboard|admin_dashboard|ceo_dashboard|cs_cliq|portal_choose/i.test(path);
 
   var STYLE_ID = "portal-auth-page-gate-css";
 

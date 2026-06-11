@@ -24,6 +24,7 @@
 
   function portalAdminDmCsCliqEmbedActive() {
     if (global.__PORTAL_CS_CLIQ_EMBED_OPEN) return true;
+    if (global.__PORTAL_CS_CLIQ_STANDALONE && global.__PORTAL_CS_CLIQ_ACTIVE) return true;
     return !!(global.__PORTAL_CS_CLIQ_ACTIVE && global.__PORTAL_CS_CLIQ_EMBED_SHEET);
   }
   function portalAdminDmPremiumSheetActive() {

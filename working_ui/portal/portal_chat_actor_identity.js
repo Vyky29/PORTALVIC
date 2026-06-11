@@ -188,6 +188,8 @@
     me = String(me || "").trim();
     var a = String(row && row.participant_a || "").trim();
     var b = String(row && row.participant_b || "").trim();
+    if (portalChatIsSelfUserId(a)) return b;
+    if (portalChatIsSelfUserId(b)) return a;
     if (me && a === me) return b;
     if (me && b === me) return a;
     return b || a;
@@ -416,6 +418,12 @@
     var a = String(row.participant_a || "").trim();
     var b = String(row.participant_b || "").trim();
     if (a && b && a !== b) {
+      if (portalChatIsSelfUserId(a)) {
+        return nameFromProfile(profBy[b] || {}, b) || "Colleague";
+      }
+      if (portalChatIsSelfUserId(b)) {
+        return nameFromProfile(profBy[a] || {}, a) || "Colleague";
+      }
       if (me && (a === me || b === me)) {
         var peer = a === me ? b : a;
         return nameFromProfile(profBy[peer] || {}, peer) || "Colleague";

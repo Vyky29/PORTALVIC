@@ -16,6 +16,8 @@ import {
   resolveAdminDmPushRecipientIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
+  portalPushIsExecAppRole,
+  portalPushIsWorkerRecipient,
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
 
@@ -125,27 +127,73 @@ async function resolveTargetUserIds(
   if (table === "portal_staff_dm_messages") {
     const threadId = String(record.thread_id || "").trim();
     if (!threadId) return [];
-    const adminCeoIds = await loadAdminCeoUserIds(admin);
-    const dmRecipients = await resolveAdminDmPushRecipientIds(
-      admin,
-      threadId,
-      authorId,
-      adminCeoIds,
-    );
+    const callerId = String(
+      (callData && callData.callerId) || authorId || "",
+    ).trim();
+    if (!callerId) return [];
+
     const { data: thread, error } = await admin
       .from("portal_staff_dm_threads")
       .select("participant_a,participant_b")
       .eq("id", threadId)
       .maybeSingle();
-    if (error || !thread) return dmRecipients;
+    if (error || !thread) return [];
+
     const a = String(thread.participant_a || "").trim();
     const b = String(thread.participant_b || "").trim();
     let peer = "";
-    if (a === authorId) peer = b;
-    else if (b === authorId) peer = a;
-    const targets = new Set<string>(dmRecipients);
-    if (peer && peer !== authorId) targets.add(peer);
-    return [...targets];
+    if (a === callerId) peer = b;
+    else if (b === callerId) peer = a;
+    else if (authorId) {
+      if (a === authorId) peer = b;
+      else if (b === authorId) peer = a;
+    }
+
+    const profileIds = [...new Set([a, b, callerId, authorId].filter(Boolean))];
+    const { data: profRows } = await admin
+      .from("staff_profiles")
+      .select(
+        "id,app_role,staff_role,dashboard_route,is_active,username,full_name",
+      )
+      .in("id", profileIds);
+
+    const profBy: Record<string, {
+      id?: string;
+      app_role?: string | null;
+      staff_role?: string | null;
+      dashboard_route?: string | null;
+      is_active?: boolean | null;
+      username?: string | null;
+      full_name?: string | null;
+    }> = {};
+    for (const row of profRows ?? []) {
+      const id = String((row as { id?: string }).id || "").trim();
+      if (id) profBy[id] = row as typeof profBy[string];
+    }
+
+    const profA = profBy[a] ?? null;
+    const profB = profBy[b] ?? null;
+    const aWorker = portalPushIsWorkerRecipient(profA);
+    const bWorker = portalPushIsWorkerRecipient(profB);
+    const aExec = portalPushIsExecAppRole(profA);
+    const bExec = portalPushIsExecAppRole(profB);
+    const workerOps = (aWorker && bExec) || (bWorker && aExec);
+
+    if (workerOps) {
+      const adminCeoIds = await loadAdminCeoUserIds(admin);
+      const opsAdmins = await resolveAdminDmPushRecipientIds(
+        admin,
+        threadId,
+        callerId,
+        adminCeoIds,
+      );
+      return opsAdmins.filter((id) => id && id !== callerId && id !== authorId);
+    }
+
+    if (peer && peer !== callerId && peer !== authorId) {
+      return [peer];
+    }
+    return [];
   }
 
   if (table === "portal_ceo_group_message") {
@@ -268,7 +316,11 @@ Deno.serve(async (req) => {
     ? clampPushBody(`${callerName} — ${groupTitle}`)
     : clampPushBody(`${callerName} is calling`);
 
-  const targetIds = await resolveTargetUserIds(admin, table, record, callData);
+  const targetIdsRaw = await resolveTargetUserIds(admin, table, record, callData);
+  const callerCanon = String(callData.callerId || authorId || "").trim();
+  const targetIds = targetIdsRaw.filter(
+    (id) => id && id !== callerCanon && id !== authorId,
+  );
   if (!targetIds.length) {
     console.log("[portal-push-incoming-call] done", {
       sent: 0,

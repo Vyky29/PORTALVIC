@@ -34,36 +34,11 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
-  <script src="/portal/portal_dm_icons.js?v=20260610-back-icon"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-brand-logo"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-sevitha-admin-photo"></script>
-  <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
-  <script src="/portal/portal_dm_read_cursor.js?v=20260610-read-cursor-fallback"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260610-ops-inbox-fix"></script>
-  <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
-  <script src="/portal/portal_ceo_god_mode_admin.js?v=20260610-god-mode-boot"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260611-director-chat-routing"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260610-groups-channels"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
-  <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
-  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
-  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
-  <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260610-groups-channels"></script>
-  <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
-  <script src="/portal/portal_cs_cliq_teams.js?v=20260609-channels-split"></script>
-  <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260610-meetings-desktop"></script>
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260609-portal-white-chat" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260610-meetings-desktop" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_paused.css?v=20260611-under-construction" />
+  <script src="/portal/portal_cs_cliq_paused.js?v=20260611-under-construction"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
-  <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260609-dm-operator-strip"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/admin-hr.js?v=20260610-hr-person-active"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
@@ -87,8 +62,6 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260610-call-ended-join" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260610-back-icon" />
 </head>
 <body>
   <script>
@@ -339,7 +312,6 @@
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260610-alerts-sheet-a11y"></script>
-  <script src="/portal/portal_chat_message_push.js?v=20260610-chat-sound-logo-alert"></script>
 
   <script>
   (function(){
@@ -2050,6 +2022,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_chatBn){}
       try{ history.replaceState(null,'','#'+id); }catch(e){}
     }
+    window.portalAdminSetView = setView;
     window.portalAdminOpenTermSlotEdit = function(prefill){
       window.__PORTAL_TERM_SLOT_PREFILL__ = prefill || null;
       setView('term_roster_edit');
@@ -18801,13 +18774,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function viewCsCliq(){
-      portalAdminCsCliqConfigureOnce();
-      return window.PortalAdminCsCliq ? window.PortalAdminCsCliq.viewHtml() : '<p class="page-intro">CS Cliq module failed to load.</p>';
+      if(window.portalCsCliqPaused && typeof window.portalCsCliqPaused.adminViewHtml === 'function'){
+        return window.portalCsCliqPaused.adminViewHtml();
+      }
+      return '<p class="page-intro">CS Cliq is under construction. Please use Zoho Cliq for now.</p>';
     }
     function bindCsCliqModule(){
-      portalAdminCsCliqConfigureOnce();
-      if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.bindModule === 'function'){
-        window.PortalAdminCsCliq.bindModule();
+      if(window.portalCsCliqPaused && typeof window.portalCsCliqPaused.bindAdminView === 'function'){
+        window.portalCsCliqPaused.bindAdminView();
       }
     }
     function viewPoliciesSignoffs(){
@@ -21133,6 +21107,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalAdminDmSyncCsCliqRailUnread();
     }
     function portalAdminDmHasUnread(){
+      if(window.PORTAL_CS_CLIQ_PAUSED) return false;
       if(portalAdminDmIsDirectorViewer() && !portalAdminDmDirectorChatSurfaceOpen()) return false;
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
@@ -21630,6 +21605,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return hints;
     }
     async function portalAdminDmSyncIncomingAttention(opts){
+      if(window.PORTAL_CS_CLIQ_PAUSED) return;
       opts = opts || {};
       var prevUnread = portalAdminDmHasUnread();
       var client = getSchedSupabaseClient();
@@ -21841,6 +21817,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function portalInitAdminDmRealtime(opts){
+      if(window.PORTAL_CS_CLIQ_PAUSED) return;
       opts = opts || {};
       try{
         var box = window.__PORTAL_SUPABASE__;
@@ -21950,6 +21927,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function portalAdminBootDmWatchers(){
+      if(window.PORTAL_CS_CLIQ_PAUSED) return;
       try{
         portalAdminDmBindRealtimeVisibilityRefresh();
         portalInitAdminDmRealtime();
@@ -24675,18 +24653,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return pullPage();
     }
     function openInternalDmChatModal(){
-      if(document.getElementById('internalChatSheet')){
-        openAdminPremiumInternalChat('staff_lead');
-        return;
-      }
-      openAdminDmChannelModal('staff_lead');
+      closeSidebarMob();
+      setView('cs_cliq');
     }
     function openCeoExecDmChatModal(){
-      if(document.getElementById('internalChatSheet')){
-        openAdminPremiumInternalChat('ceo_exec');
-        return;
-      }
-      openAdminDmChannelModal('ceo_exec');
+      closeSidebarMob();
+      setView('cs_cliq');
     }
     function openAdminDmChannelModal(channel){
       openAdminPremiumInternalChat(channel);
@@ -27979,21 +27951,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_badgeAlert){}
       var tab = String(meta.view || '').trim();
-      if(tab === 'chat'){
-        var hintIdx = meta.chatHintIdx;
-        if(hintIdx !== '' && hintIdx !== undefined && hintIdx !== null){
-          void portalAdminDmOpenFromHint(hintIdx);
-        }else{
-          openDayOpsAdminChatHubModal();
-        }
-        return;
-      }
-      if(tab === 'cs_cliq'){
+      if(tab === 'chat' || tab === 'cs_cliq'){
         setView('cs_cliq');
-        var supportThreadId = String(meta.recordId || '').trim();
-        if(supportThreadId && typeof portalAdminDmOpenThread === 'function'){
-          void portalAdminDmOpenThread(supportThreadId);
-        }
         return;
       }
       if(tab === 'wellbeing'){
@@ -28974,20 +28933,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
           }catch(_storedCliq){}
           setView('cs_cliq');
-          openAdminPremiumInternalChat(portalCliqChannel || 'staff_lead');
-          if(portalChatGroup){
-            setTimeout(function(){
-              if(typeof portalAdminDmOpenGroupThread === 'function'){
-                void portalAdminDmOpenGroupThread(String(portalChatGroup));
-              }
-            }, 450);
-          }else if(portalChatThread){
-            setTimeout(function(){
-              if(typeof portalAdminDmOpenThread === 'function'){
-                void portalAdminDmOpenThread(String(portalChatThread));
-              }
-            }, 450);
-          }
           if(history.replaceState){
             var cleanUrl = new URL(location.href);
             cleanUrl.searchParams.delete('portal_open');
@@ -29094,11 +29039,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260611-director-call-peer"></script>
-  <script src="/portal/portal_incoming_call_push.js?v=20260609-inbox-direct-ops"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260609-inbox-unread-badge"></script>
   <script>
     (function(){
+      if(window.PORTAL_CS_CLIQ_PAUSED) return;
       if(typeof window.portalAdminBootDmWatchers === 'function'){
         try{ window.portalAdminBootDmWatchers(); }catch(_e){}
       }

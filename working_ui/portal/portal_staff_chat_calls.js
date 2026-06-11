@@ -404,7 +404,50 @@
   }
 
   async function isIncomingCallDmForMe(row) {
-    return isIncomingDmForMe(row);
+    var me = meUserId();
+    if (!me || !row) return false;
+    if (isOwnCallAuthor(row.author_id)) return false;
+
+    var body = String(row.body || "");
+    var data = parseCallPayload(body);
+    if (data && data.callerId && isOwnCallAuthor(data.callerId)) return false;
+
+    var tid = String(row.thread_id || "").trim();
+    if (!tid) return false;
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client) return null;
+
+    var cached = threadParticipantCache[tid];
+    var a = "";
+    var b = "";
+    if (cached && Date.now() - cached.ts < 120000) {
+      a = cached.a;
+      b = cached.b;
+    } else {
+      try {
+        var res = await client
+          .from("portal_staff_dm_threads")
+          .select("participant_a,participant_b")
+          .eq("id", tid)
+          .maybeSingle();
+        if (res.error || !res.data) return false;
+        a = String(res.data.participant_a || "");
+        b = String(res.data.participant_b || "");
+        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      } catch (_part) {
+        return false;
+      }
+    }
+
+    if (a !== me && b !== me) return false;
+
+    var callerId = String((data && data.callerId) || row.author_id || "").trim();
+    if (!callerId) return true;
+    if (isOwnCallAuthor(callerId)) return false;
+
+    var other = a === me ? b : a;
+    return callerId === other;
   }
 
   async function isIncomingGroupCallForMe(row) {
