@@ -3864,6 +3864,7 @@
     .override--slot-open{background:#f3e8ff;color:#7e22ce;border:1px solid rgba(126,34,206,.32)}
     .sched-tbl .chip.sched-roster-original{background:var(--successSoft);color:var(--success);border:1px solid rgba(21,128,61,.22)}
     .sched-tbl .sched-roster-changed{color:var(--ink);font-size:12px;font-weight:600;line-height:1.35;overflow-wrap:break-word}
+    .sched-tbl .sched-roster-changed-at{font-weight:500;color:var(--muted);white-space:nowrap}
     .sched-pax-pill-row{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:5px;max-width:100%;min-width:0}
     .sched-pax-pill-sep{color:var(--muted);font-size:12px;font-weight:700;line-height:1}
     .sched-pax-pill{

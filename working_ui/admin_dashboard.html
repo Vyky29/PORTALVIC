@@ -10688,11 +10688,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(me && String(me.id) === id) return schedFirstDisplayName(me.full_name, me.username);
       return 'Admin';
     }
+    function schedFormatOverrideWhenShort(ov){
+      if(!ov) return '';
+      var raw = ov.updated_at || ov.created_at;
+      if(!raw) return '';
+      try{
+        return new Date(raw).toLocaleString('en-GB', {
+          timeZone: 'Europe/London',
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }catch(_e){
+        return String(raw).slice(0, 16).replace('T', ' ');
+      }
+    }
     /** Roster column: Original (green) when unchanged; Changed by: Name (black) when overridden. */
     function schedRosterCellHtml(slot, ov){
       if(ov){
         var who = schedResolveOverrideAuthorName(ov);
-        return '<span class="sched-roster-changed">Changed by: '+esc(who)+'</span>';
+        var when = schedFormatOverrideWhenShort(ov);
+        var title = when ? ('Override saved ' + when + ' (London)') : 'Schedule override';
+        var whenHtml = when ? ' · <span class="sched-roster-changed-at">'+esc(when)+'</span>' : '';
+        return '<span class="sched-roster-changed" title="'+esc(title)+'">Changed by: '+esc(who)+whenHtml+'</span>';
       }
       return '<span class="chip chip--ok sched-roster-original">Original</span>';
     }
@@ -10825,7 +10844,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
-        ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
+        ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+(schedFormatOverrideWhenShort(ov) ? ' · '+esc(schedFormatOverrideWhenShort(ov)) : '')+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
         : '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p class="muted" style="margin:6px 0 0">None for this anchor on the selected date.</p></div>';
       $('schedDrawerBody').innerHTML =
         '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Base slot (spreadsheet)</div>'+
