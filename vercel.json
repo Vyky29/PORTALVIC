@@ -32,5 +32,13 @@
     { "source": "/general-induction", "destination": "/general-induction/index.html" },
     { "source": "/sw-term-review", "destination": "/swtermreview.html" },
     { "source": "/sw-term-review/", "destination": "/swtermreview.html" }
+  ],
+  "headers": [
+    {
+      "source": "/cs_cliq.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
   ]
 }

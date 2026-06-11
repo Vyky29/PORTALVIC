@@ -4,6 +4,34 @@
 (function (global) {
   "use strict";
 
+  /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
+  var PORTAL_CS_CLIQ_BUILD = "20260611-own-send-mark";
+
+  function portalCsCliqMaybeApplyBuildUpdate() {
+    var key = "portal_cs_cliq_build";
+    var prev = "";
+    try {
+      prev = String(global.localStorage.getItem(key) || "").trim();
+    } catch (_e) {}
+    if (prev && prev !== PORTAL_CS_CLIQ_BUILD) {
+      try {
+        global.localStorage.setItem(key, PORTAL_CS_CLIQ_BUILD);
+      } catch (_e2) {}
+      try {
+        global.location.reload();
+        return true;
+      } catch (_e3) {}
+    }
+    if (!prev) {
+      try {
+        global.localStorage.setItem(key, PORTAL_CS_CLIQ_BUILD);
+      } catch (_e4) {}
+    }
+    return false;
+  }
+
+  if (portalCsCliqMaybeApplyBuildUpdate()) return;
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -118,6 +146,11 @@
     if ("serviceWorker" in global.navigator) {
       global.navigator.serviceWorker
         .register("/clubsensational-portal-sw.js", { scope: "/" })
+        .then(function (reg) {
+          try {
+            reg.update();
+          } catch (_u) {}
+        })
         .catch(function () {});
     }
   }
