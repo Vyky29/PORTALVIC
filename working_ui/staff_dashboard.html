@@ -1029,7 +1029,7 @@
   <script src="/portal/session_feedback_status_portal_data.js?v=20260610-emmanuel-timi-purge"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260611-aquatic-fallback-fix"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260611-roberto-roster-merge-fix"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
@@ -1039,7 +1039,7 @@
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260610-javi-javier-split"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260611-roberto-roster-fallback"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
@@ -10726,7 +10726,38 @@
         : ('No participants — ' + dw);
       return rows;
     }
-    try{ window.portalSyncTodaySectionDisplay = portalSyncTodaySectionDisplay; }catch(_){}
+    /** While Today shows roster sync, retry Supabase merge + rebootstrap until sessions appear. */
+    function portalStaffScheduleTodaySyncRetry(){
+      if(typeof window === 'undefined' || window.__PORTAL_TODAY_SYNC_RETRY__) return;
+      window.__PORTAL_TODAY_SYNC_RETRY__ = true;
+      var tries = 0;
+      var maxTries = 12;
+      var timer = setInterval(function(){
+        tries += 1;
+        var sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        if(!sid || tries > maxTries){
+          clearInterval(timer);
+          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          return;
+        }
+        var mode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
+          ? portalStaffLiveTodayEmptyPanelMode(sid, { loading: !!(dashboardData && dashboardData.portalIdentityResolved === false) })
+          : '';
+        if(mode !== 'sync'){
+          clearInterval(timer);
+          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          return;
+        }
+        if(typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
+          var rosterClient = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+          if(rosterClient) void window.portalRefreshPortalRosterRowsFromSupabase(rosterClient);
+        }
+        if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function') window.portalRebootstrapSessionsForPinnedStaff();
+        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        if(typeof renderToday === 'function') renderToday();
+      }, 2000);
+    }
+    try{ window.portalStaffScheduleTodaySyncRetry = portalStaffScheduleTodaySyncRetry; }catch(_){}
 
     /** Staff/lead topbar brand orbits use F-02-1 crest. Dock centre uses FOOTERLOGO.png. */
     const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = '/portal/F-02-1.png';
@@ -12623,6 +12654,9 @@
           mode: panelMode
         });
         portalBindTodayDayOffPanel(grid);
+        if(panelMode === 'sync' && typeof portalStaffScheduleTodaySyncRetry === 'function'){
+          portalStaffScheduleTodaySyncRetry();
+        }
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
@@ -16119,6 +16153,14 @@
             : window.STAFF_DASHBOARD_SOURCE;
         if (!Adapter || !source || !sid) return;
         var boot = Adapter.bootstrap({ source: source, staffId: sid });
+        if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) {
+          if (typeof window.portalBootstrapFromMachineFallback === "function") {
+            var fb = window.portalBootstrapFromMachineFallback(sid);
+            if (fb && fb.boot && Array.isArray(fb.boot.sessionsModel) && fb.boot.sessionsModel.length) {
+              boot = fb.boot;
+            }
+          }
+        }
         if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) return;
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = sid;
@@ -16138,6 +16180,7 @@
         if (typeof renderLists === "function") renderLists();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
       }
+      window.portalRebootstrapSessionsForPinnedStaff = portalRebootstrapSessionsForPinnedStaff;
       function portalStaffKeyForRotaFromProfile(p){
         var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = sess && sess.user ? sess.user : null;
@@ -16318,6 +16361,15 @@
         var staffId = portalLocalCanonicalStaffKey(rosterHit.staffId);
         var boot = rosterHit.boot;
         var newSessions = boot.sessionsModel || [];
+        if (!newSessions.length) {
+          if (typeof window.portalBootstrapFromMachineFallback === "function") {
+            var machineHit = window.portalBootstrapFromMachineFallback(staffId);
+            if (machineHit && machineHit.boot && Array.isArray(machineHit.boot.sessionsModel) && machineHit.boot.sessionsModel.length) {
+              boot = machineHit.boot;
+              newSessions = boot.sessionsModel;
+            }
+          }
+        }
         if (!newSessions.length) {
           if (_staffRosterHydratedOk && Array.isArray(sessionsModel) && sessionsModel.length) {
             var prevSid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);

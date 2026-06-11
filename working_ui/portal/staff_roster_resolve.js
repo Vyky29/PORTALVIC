@@ -59,6 +59,7 @@
   var PORTAL_AUTH_EMAIL_TO_ROSTER_KEY = {
     "b.traperocasado@gmail.com": "berta",
     "johnnyosti37@gmail.com": "john",
+    "stf002@staff.import.pending": "roberto",
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
@@ -205,6 +206,36 @@
     return typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
   }
 
+  function portalMachineRowsSnapshot() {
+    if (typeof window === "undefined") return [];
+    if (
+      Array.isArray(window.__STAFF_DASHBOARD_MACHINE_ROWS__) &&
+      window.__STAFF_DASHBOARD_MACHINE_ROWS__.length
+    ) {
+      return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+    }
+    var src = window.STAFF_DASHBOARD_SOURCE;
+    if (src && Array.isArray(src.rows) && src.rows.length) {
+      window.__STAFF_DASHBOARD_MACHINE_ROWS__ = src.rows.slice();
+      return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+    }
+    return [];
+  }
+
+  /** When DB merge empties a roster, fall back to bundled machine export rows. */
+  function portalBootstrapFromMachineFallback(staffId) {
+    var Adapter =
+      typeof window !== "undefined" ? window.StaffDashboardSpreadsheetAdapter : null;
+    var machine = portalMachineRowsSnapshot();
+    var base = portalDashboardSource() || (typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null) || {};
+    var key = portalProfileRosterKey(staffId);
+    if (!Adapter || !machine.length || !key) return null;
+    var source = Object.assign({}, base, { rows: machine });
+    var boot = Adapter.bootstrap({ source: source, staffId: key });
+    if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) return null;
+    return { staffId: key, boot: boot };
+  }
+
   /**
    * @returns {{ staffId: string, boot: object } | null}
    */
@@ -223,6 +254,8 @@
       }
     }
     var useKey = portalProfileRosterKey(keys[0]);
+    var machineHit = portalBootstrapFromMachineFallback(useKey);
+    if (machineHit) return machineHit;
     var boot0 = Adapter.bootstrap({ source: source, staffId: useKey });
     if (!boot0) return null;
     return { staffId: useKey, boot: boot0 };
@@ -231,6 +264,7 @@
   window.portalPrimaryStaffRosterKey = portalPrimaryStaffRosterKey;
   window.portalStaffRosterKeyCandidates = portalStaffRosterKeyCandidates;
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
+  window.portalBootstrapFromMachineFallback = portalBootstrapFromMachineFallback;
   window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
   window.portalStaffIsExecOrAdminProfile = portalStaffIsExecOrAdminProfile;
   window.portalStaffShouldIgnoreTeflonPreview = portalStaffShouldIgnoreTeflonPreview;

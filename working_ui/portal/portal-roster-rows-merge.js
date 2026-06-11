@@ -123,6 +123,25 @@
     return !first || iso >= first;
   }
 
+  function normInstructorTokens(raw) {
+    return String(raw || "")
+      .split(/,|\/|&|\band\b/gi)
+      .map(function (s) {
+        return String(s || "").trim().toLowerCase();
+      })
+      .filter(Boolean);
+  }
+
+  function instructorSetsOverlap(a, b) {
+    var ta = normInstructorTokens(a);
+    var tb = normInstructorTokens(b);
+    if (!ta.length || !tb.length) return true;
+    for (var i = 0; i < ta.length; i++) {
+      if (tb.indexOf(ta[i]) >= 0) return true;
+    }
+    return false;
+  }
+
   function mergePortalRosterRows(baseRows, dbRows) {
     var base = Array.isArray(baseRows) ? baseRows : [];
     var db = Array.isArray(dbRows) ? dbRows : [];
@@ -210,17 +229,14 @@
         if (
           moved &&
           normTimeSlot(moved.time_slot) !== normTimeSlot(r.time_slot) &&
-          String(moved.service || "").trim().toLowerCase() === String(r.service || "").trim().toLowerCase()
+          String(moved.service || "").trim().toLowerCase() === String(r.service || "").trim().toLowerCase() &&
+          instructorSetsOverlap(moved.instructors, r.instructors)
         ) {
           rememberOpenedSlot(iso, r, dayLabel);
           return;
         }
       }
       if (cancelledDated[sk]) {
-        rememberOpenedSlot(iso, r, dayLabel);
-        return;
-      }
-      if (iso && cancelledClientDay[iso + "|" + String(r.client_name || "").toLowerCase() + "|" + dayLabel]) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
       }
