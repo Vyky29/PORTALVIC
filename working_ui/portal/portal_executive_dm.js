@@ -96,6 +96,27 @@
       if(pid && ids.indexOf(pid) < 0) ids.push(pid);
       return ids;
     }
+    function portalAdminDmMarkOwnSendRecent(tid, gid, me, body){
+      window.__PORTAL_OWN_DM_SENT_RECENT__ = {
+        threadId: String(tid || '').trim(),
+        groupId: String(gid || '').trim(),
+        authorId: String(me || '').trim(),
+        bodyPrefix: String(body || '').trim().slice(0, 160),
+        at: Date.now()
+      };
+    }
+    function portalAdminDmMatchesRecentOwnSend(row){
+      var mark = window.__PORTAL_OWN_DM_SENT_RECENT__;
+      if(!mark || !row) return false;
+      if(Date.now() - mark.at > 20000) return false;
+      var tid = String(row.thread_id || '').trim();
+      var gid = String(row.group_id || '').trim();
+      if(mark.threadId && tid && mark.threadId === tid) return true;
+      if(mark.groupId && gid && mark.groupId === gid) return true;
+      var authorId = String(row.author_id || '').trim();
+      if(authorId && mark.authorId && authorId === mark.authorId && (tid || gid)) return true;
+      return false;
+    }
     function portalAdminDmIsMyMessage(authorId){
       authorId = String(authorId || '').trim();
       if(!authorId) return false;
@@ -1131,6 +1152,7 @@
     }
     async function portalAdminDmRowFromSelf(row){
       if(!row) return false;
+      if(portalAdminDmMatchesRecentOwnSend(row)) return true;
       var authorId = String(row.author_id || '').trim();
       if(!authorId) return false;
       var client = getSchedSupabaseClient();
@@ -1161,6 +1183,9 @@
         window.__PORTAL_ADMIN_DM_RT_DEB = null;
         void (async function(){
           var row = payload && (payload.new || payload.record);
+          if(portalAdminDmMatchesRecentOwnSend(row)){
+            return;
+          }
           if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
             window.portalStaffChatCalls.onDmMessageInsert(row);
           }
@@ -1204,6 +1229,9 @@
         window.__PORTAL_ADMIN_DM_RT_DEB2 = null;
         void (async function(){
           var row = payload && (payload.new || payload.record);
+          if(portalAdminDmMatchesRecentOwnSend(row)){
+            return;
+          }
           if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === 'function'){
             window.portalStaffChatCalls.onGroupMessageInsert(row);
           }
@@ -1338,6 +1366,7 @@
     }
     function portalAdminDmMessageCountsAsUnread(m){
       if(!m) return false;
+      if(portalAdminDmMatchesRecentOwnSend(m)) return false;
       if(portalAdminDmIsMyMessage(m.author_id)) return false;
       var body = String(m.body || '');
       if(body.indexOf('[[portal-staff-call:') >= 0 || body.indexOf('[[portal-staff-call-end:') >= 0) return false;
@@ -2556,6 +2585,11 @@
       if(sendBtn) sendBtn.disabled = true;
       try{
         if(gid){
+          portalAdminDmMarkOwnSendRecent('', gid, me, body);
+        }else if(tid){
+          portalAdminDmMarkOwnSendRecent(tid, '', me, body);
+        }
+        if(gid){
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
@@ -2581,7 +2615,7 @@
         await portalAdminDmLoadMessages();
         if(tid) portalAdminDmSetThreadAck(tid, new Date().toISOString());
         else if(gid) portalAdminDmSetGroupAck(gid, new Date().toISOString());
-        void portalAdminDmSyncIncomingAttention();
+        void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
         var uiAfter = window.__PORTAL_ADMIN_DM_UI || {};
         if(String(uiAfter.panel || '') === 'list' && typeof portalAdminDmRenderList === 'function'){
           void portalAdminDmRenderList();
@@ -3035,6 +3069,7 @@
       portalAdminCsCliqInitChat(channel || "staff_lead");
     }
   };
+  global.portalAdminDmMatchesRecentOwnSend = portalAdminDmMatchesRecentOwnSend;
   global.portalExecutiveDmRenderList = portalAdminDmRenderList;
   global.portalAdminDmRenderList = portalAdminDmRenderList;
   global.portalExecutiveDmOpenThread = portalAdminDmOpenThread;

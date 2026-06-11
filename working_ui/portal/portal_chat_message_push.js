@@ -361,6 +361,14 @@
 
   function portalStaffNotifyIncomingChat(title, preview, row, notifyOpts) {
     notifyOpts = notifyOpts || {};
+    if (
+      global.__PORTAL_OWN_DM_SENT_RECENT__ &&
+      row &&
+      typeof global.portalAdminDmMatchesRecentOwnSend === "function" &&
+      global.portalAdminDmMatchesRecentOwnSend(row)
+    ) {
+      return;
+    }
     var authorId = String((row && row.author_id) || "").trim();
     if (
       authorId &&
@@ -413,6 +421,13 @@
 
   function portalChatPushShouldIgnore(data) {
     data = data || {};
+    var mark = global.__PORTAL_OWN_DM_SENT_RECENT__;
+    if (mark && Date.now() - mark.at < 20000) {
+      var body = String(data.body || "").trim();
+      if (body && mark.bodyPrefix && body.indexOf(mark.bodyPrefix.slice(0, 40)) === 0) {
+        return true;
+      }
+    }
     var senderId = String(data.senderUserId || data.authorId || "").trim();
     var targetUserId = String(data.targetUserId || "").trim();
     if (
