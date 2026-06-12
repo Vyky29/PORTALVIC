@@ -2175,6 +2175,13 @@
         await global.portalCsCliqAdminInbox.renderAdminInbox(host, Object.assign({}, channelCtx, {
           renderItem: portalAdminDmRenderThreadListItem
         }));
+        if (
+          global.__PORTAL_CS_CLIQ_STANDALONE &&
+          global.portalCsCliqAdminInbox &&
+          typeof global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts === "function"
+        ) {
+          await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(false);
+        }
         return;
       }
       if (
