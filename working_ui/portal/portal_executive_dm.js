@@ -1542,14 +1542,23 @@
         liaisonBtn.hidden = !gidLiaison;
       }
       var me = portalAdminDmMe();
-      var lr = await client
-        .from('staff_profiles')
-        .select('id,full_name,username,app_role,is_active')
-        .or('is_active.is.null,is_active.eq.true')
-        .order('full_name', { ascending: true })
-        .limit(200);
-      if(!lr.error && Array.isArray(lr.data) && host){
-        lr.data.forEach(function(row){
+      var peerRows = [];
+      if(
+        global.portalCsCliqAdminInbox &&
+        typeof global.portalCsCliqAdminInbox.fetchLeadershipPeerProfiles === 'function'
+      ){
+        peerRows = await global.portalCsCliqAdminInbox.fetchLeadershipPeerProfiles(client);
+      }else{
+        var lr = await client
+          .from('staff_profiles')
+          .select('id,full_name,username,app_role,is_active')
+          .or('is_active.is.null,is_active.eq.true')
+          .order('full_name', { ascending: true })
+          .limit(200);
+        if(!lr.error && Array.isArray(lr.data)) peerRows = lr.data;
+      }
+      if(Array.isArray(peerRows) && host){
+        peerRows.forEach(function(row){
           if(!row || !row.id) return;
           var id0 = String(row.id);
           if(me && id0 === me) return;

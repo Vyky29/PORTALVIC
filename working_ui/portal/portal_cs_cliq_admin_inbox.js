@@ -676,6 +676,99 @@
     return !!(me && me === staffId);
   }
 
+  function isLeadershipPeerRow(row) {
+    if (!row || row.is_active === false) return false;
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
+      global.portalDmRoles.portalDmIsAdminProfile(row)
+    ) {
+      return true;
+    }
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+      global.portalDmRoles.portalDmIsDirectorProfile(row)
+    ) {
+      return true;
+    }
+    var ar = String(row.app_role || "").toLowerCase();
+    return ar === "admin" || ar === "ceo";
+  }
+
+  function mergeLeadershipPeerRows(into, rows, seen) {
+    seen = seen || Object.create(null);
+    (rows || []).forEach(function (row) {
+      if (!row || !row.id) return;
+      var id0 = String(row.id);
+      if (seen[id0]) return;
+      seen[id0] = true;
+      into.push(row);
+    });
+    return seen;
+  }
+
+  async function fetchLeadershipPeerProfiles(client) {
+    if (!client) return [];
+    var merged = [];
+    var seen = Object.create(null);
+    try {
+      var rpc = await client.rpc("portal_cs_cliq_leadership_peers");
+      if (!rpc.error && Array.isArray(rpc.data) && rpc.data.length) {
+        mergeLeadershipPeerRows(merged, rpc.data, seen);
+        return merged;
+      }
+    } catch (_rpcErr) {}
+    var adminRes = await client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,staff_role,is_active")
+      .in("app_role", ["admin", "ceo"])
+      .or("is_active.is.null,is_active.eq.true");
+    if (!adminRes.error) mergeLeadershipPeerRows(merged, adminRes.data, seen);
+    var usernames = ["raul", "victor", "javi", "javier", "sevitha", "info"];
+    for (var ui = 0; ui < usernames.length; ui++) {
+      var uname = usernames[ui];
+      var one = await client
+        .from("staff_profiles")
+        .select("id,full_name,username,app_role,staff_role,is_active")
+        .ilike("username", uname)
+        .or("is_active.is.null,is_active.eq.true")
+        .limit(4);
+      if (!one.error) mergeLeadershipPeerRows(merged, one.data, seen);
+    }
+    if (!merged.length) {
+      var broad = await client
+        .from("staff_profiles")
+        .select("id,full_name,username,app_role,staff_role,is_active")
+        .or("is_active.is.null,is_active.eq.true")
+        .order("full_name", { ascending: true })
+        .limit(200);
+      if (!broad.error && Array.isArray(broad.data)) {
+        broad.data.forEach(function (row) {
+          if (isLeadershipPeerRow(row)) mergeLeadershipPeerRows(merged, [row], seen);
+        });
+      }
+    }
+    return merged;
+  }
+
+  function appendPeerPickButton(host, row) {
+    if (!host || !row || !row.id) return 0;
+    if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return 0;
+    var id0 = String(row.id);
+    var lab =
+      (directorPeerLabel(row).split(/\s+/)[0] || "Contact").trim() || "Contact";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer";
+    btn.textContent = lab;
+    btn.addEventListener("click", function () {
+      void global.portalAdminDmEnsureDmThreadAndOpen(id0);
+    });
+    host.appendChild(btn);
+    return 1;
+  }
+
   async function loadDirectorDirectPeerItems(client, me, existingItems) {
     if (!client) return [];
     if (!managementSharedWorkerOpsInbox() && !global.__PORTAL_CS_CLIQ_STANDALONE) return [];
@@ -692,27 +785,13 @@
       var pid = String(item.peerId || item.workerId || "").trim();
       if (pid) seen[pid] = true;
     });
-    var res = await client
-      .from("staff_profiles")
-      .select("id,full_name,username,app_role,staff_role,is_active")
-      .or("is_active.is.null,is_active.eq.true")
-      .order("full_name", { ascending: true })
-      .limit(200);
-    if (res.error || !Array.isArray(res.data)) return [];
+    var rows = await fetchLeadershipPeerProfiles(client);
     var items = [];
-    res.data.forEach(function (row) {
+    rows.forEach(function (row) {
       if (!row || !row.id) return;
       var id0 = String(row.id);
       if (isSelfStaffId(id0) || seen[id0]) return;
-      var isDirector =
-        global.portalDmRoles &&
-        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
-        global.portalDmRoles.portalDmIsDirectorProfile(row);
-      var isAdmin =
-        global.portalDmRoles &&
-        typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
-        global.portalDmRoles.portalDmIsAdminProfile(row);
-      if (!isDirector && !isAdmin) return;
+      if (!isLeadershipPeerRow(row)) return;
       items.push({
         kind: "dm",
         id: "",
@@ -733,46 +812,50 @@
     host.innerHTML = "";
     var box = global.__PORTAL_SUPABASE__ || {};
     var client = box.client;
-    var me = String((box.staff_profile && box.staff_profile.id) || "").trim();
-    if (!client || !me) return;
+    if (!client) return;
     if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return;
-    var res = await client
-      .from("staff_profiles")
-      .select("id,full_name,username,app_role,is_active")
-      .or("is_active.is.null,is_active.eq.true")
-      .order("full_name", { ascending: true })
-      .limit(200);
-    if (res.error || !Array.isArray(res.data)) return;
+    var rows = await fetchLeadershipPeerProfiles(client);
     var added = 0;
-    res.data.forEach(function (row) {
+    rows.forEach(function (row) {
       if (!row || !row.id) return;
-      var id0 = String(row.id);
-      if (id0 === me) return;
-      var isDirector =
-        global.portalDmRoles &&
-        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
-        global.portalDmRoles.portalDmIsDirectorProfile(row);
-      var isAdmin =
-        global.portalDmRoles &&
-        typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
-        global.portalDmRoles.portalDmIsAdminProfile(row);
-      if (!isDirector && !isAdmin) return;
-      var lab =
-        ((row.full_name || row.username || "").trim() || id0.slice(0, 8)).split(/\s+/)[0] ||
-        "Contact";
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer";
-      btn.textContent = lab;
-      btn.addEventListener("click", function () {
-        void global.portalAdminDmEnsureDmThreadAndOpen(id0);
-      });
-      host.appendChild(btn);
-      added += 1;
+      if (isSelfStaffId(String(row.id))) return;
+      if (!isLeadershipPeerRow(row)) return;
+      added += appendPeerPickButton(host, row);
     });
     if (!added) {
       host.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px">Director contacts could not load.</p>';
+    }
+  }
+
+  async function ensureStandaloneLeadershipPeers() {
+    if (!global.__PORTAL_CS_CLIQ_STANDALONE) return;
+    var list = document.getElementById("csCliqListWrap");
+    var quick = document.getElementById("csCliqCeoQuickWrap");
+    var quickHost = document.getElementById("csCliqQCeosHost");
+    var hasListPeers =
+      list &&
+      list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer");
+    var hasQuickPeers = quickHost && quickHost.querySelector(".portal-cs-cliq-channel-btn--peer");
+    if (hasListPeers || hasQuickPeers) return;
+    if (quick) {
+      quick.hidden = false;
+      quick.setAttribute("aria-hidden", "false");
+    }
+    if (quickHost) await fillDirectPeerPicks(quickHost);
+    if (list && !list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer")) {
+      var hint =
+        '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>';
+      if (!list.innerHTML.trim()) list.innerHTML = hint + '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
+      var picks = document.getElementById("csCliqStandalonePeerPicks");
+      if (picks && !picks.children.length) await fillDirectPeerPicks(picks);
+    }
+    if (
+      typeof global.portalAdminDmRenderList === "function" &&
+      list &&
+      !list.querySelector(".portal-dm-thread-item")
+    ) {
+      await global.portalAdminDmRenderList();
     }
   }
 
@@ -830,7 +913,8 @@
           '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>' +
           '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
         await fillDirectPeerPicks(document.getElementById("csCliqStandalonePeerPicks"));
-        if (document.getElementById("csCliqStandalonePeerPicks").children.length) return;
+        var picksHost = document.getElementById("csCliqStandalonePeerPicks");
+        if (picksHost && picksHost.children.length) return;
       }
       host.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
@@ -872,6 +956,8 @@
     usesDirectorLaneNav: usesDirectorLaneNav,
     loadDirectorDirectPeerItems: loadDirectorDirectPeerItems,
     fillDirectPeerPicks: fillDirectPeerPicks,
+    ensureStandaloneLeadershipPeers: ensureStandaloneLeadershipPeers,
+    fetchLeadershipPeerProfiles: fetchLeadershipPeerProfiles,
     managementInboxFullStaffRoster: managementInboxFullStaffRoster,
     managementSharedWorkerOpsInbox: managementSharedWorkerOpsInbox,
     loadSessionLeads: loadSessionLeads,

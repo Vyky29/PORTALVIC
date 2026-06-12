@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260609-inbox-fix";
+  var PORTAL_CS_CLIQ_BUILD = "20260609-peers-v2";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -251,6 +251,18 @@
     if (typeof global.portalAdminDmRenderList === "function") {
       void global.portalAdminDmRenderList();
     }
+    function retryStandalonePeers(ms) {
+      global.setTimeout(function () {
+        if (
+          global.portalCsCliqAdminInbox &&
+          typeof global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers === "function"
+        ) {
+          void global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers();
+        }
+      }, ms);
+    }
+    retryStandalonePeers(400);
+    retryStandalonePeers(1800);
     return true;
   }
 
