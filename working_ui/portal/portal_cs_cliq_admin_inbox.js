@@ -55,19 +55,34 @@
   function shouldUseCategorizedInbox() {
     if (!global.__PORTAL_CS_CLIQ_ACTIVE) return false;
     if (global.__PORTAL_CS_CLIQ_STANDALONE) {
+      var prof = profileRow();
+      if (
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+        global.portalDmRoles.portalDmIsDirectorProfile(prof)
+      ) {
+        return true;
+      }
+      if (
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
+        global.portalDmRoles.portalDmIsAdminProfile(prof)
+      ) {
+        return true;
+      }
       if (
         global.portalCsCliqHubRoles &&
         typeof global.portalCsCliqHubRoles.isManagementProfile === "function"
       ) {
-        return global.portalCsCliqHubRoles.isManagementProfile();
+        return global.portalCsCliqHubRoles.isManagementProfile(prof);
       }
       if (
         global.portalDmRoles &&
         typeof global.portalDmRoles.portalDmUsesAdminCliq === "function"
       ) {
-        return global.portalDmRoles.portalDmUsesAdminCliq();
+        return global.portalDmRoles.portalDmUsesAdminCliq(prof);
       }
-      var app = String(profileRow().app_role || "").toLowerCase();
+      var app = String(prof.app_role || "").toLowerCase();
       return app === "admin" || app === "ceo";
     }
     if (!portalCsCliqPageActive()) return false;
@@ -404,6 +419,16 @@
 
   function managementSharedWorkerOpsInbox() {
     if (!shouldUseCategorizedInbox()) return false;
+    if (global.__PORTAL_CS_CLIQ_STANDALONE) {
+      var prof = profileRow();
+      if (
+        global.portalDmRoles &&
+        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+        global.portalDmRoles.portalDmIsDirectorProfile(prof)
+      ) {
+        return true;
+      }
+    }
     if (
       global.portalCsCliqManagementInbox &&
       typeof global.portalCsCliqManagementInbox.isCeoViewer === "function" &&
@@ -486,6 +511,13 @@
     function pushDirect(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
       if (item.inboxLane === "ops") return;
+      if (item.synthetic && String(item.peerId || item.workerId || "").trim()) {
+        var synWk = String(item.peerId || item.workerId || "").trim();
+        if (directSeen["w:" + synWk]) return;
+        directSeen["w:" + synWk] = true;
+        directItems.push(item);
+        return;
+      }
       if (sharedWorkerOps && isWorkerPeerItem(item)) return;
       if (!shouldShowPersonalDm(item)) return;
       var tid = String(item.id || "").trim();

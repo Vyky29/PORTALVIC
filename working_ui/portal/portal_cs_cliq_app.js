@@ -5,7 +5,18 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-standalone";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-mobile-inbox";
+
+  if (typeof global.adminTouchCompactLayoutActive !== "function") {
+    global.adminTouchCompactLayoutActive = function () {
+      try {
+        var w = global.innerWidth || document.documentElement.clientWidth || 0;
+        return w > 0 && w <= 899;
+      } catch (_e) {
+        return false;
+      }
+    };
+  }
 
   function portalCsCliqMaybeApplyBuildUpdate() {
     var key = "portal_cs_cliq_build";
@@ -153,12 +164,42 @@
     return "";
   }
 
-  function bootCsCliqApp() {
-    var box = global.__PORTAL_SUPABASE__ || {};
-    var prof = box.staff_profile || {};
-    if (!box.client || !prof.id) return false;
+  function canRunCsCliqStandalone(prof) {
+    if (isManagementProfile(prof)) return true;
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+      global.portalDmRoles.portalDmIsDirectorProfile(prof)
+    ) {
+      return true;
+    }
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsAdminProfile === "function" &&
+      global.portalDmRoles.portalDmIsAdminProfile(prof)
+    ) {
+      return true;
+    }
+    return false;
+  }
 
-    if (!isManagementProfile(prof)) {
+  async function bootCsCliqApp() {
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var client = box.client;
+    if (
+      client &&
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.ensureSessionProfile === "function"
+    ) {
+      try {
+        await global.portalChatActorIdentity.ensureSessionProfile(client);
+      } catch (_sess) {}
+    }
+    box = global.__PORTAL_SUPABASE__ || {};
+    var prof = box.staff_profile || {};
+    if (!client || !prof.id) return false;
+
+    if (!canRunCsCliqStandalone(prof)) {
       var app = String(prof.app_role || "").toLowerCase();
       var dest =
         app === "lead"
@@ -205,6 +246,9 @@
     }
 
     bindPushAndCalls();
+    if (typeof global.portalAdminDmRenderList === "function") {
+      void global.portalAdminDmRenderList();
+    }
     return true;
   }
 

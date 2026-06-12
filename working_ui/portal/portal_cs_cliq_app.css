@@ -108,7 +108,41 @@ html.cs-cliq-app-body body {
   min-width: 0;
 }
 
+body.cs-cliq-app {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+body.cs-cliq-app .cs-cliq-app-root {
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
 .cs-cliq-app-root #csCliqRoot {
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq__layout {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__list-col {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+}
+
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox.portal-cs-cliq__chat-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
 }

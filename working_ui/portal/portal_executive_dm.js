@@ -2166,6 +2166,34 @@
         }));
         return;
       }
+      if (
+        global.__PORTAL_CS_CLIQ_STANDALONE &&
+        global.portalCsCliqAdminInbox &&
+        typeof global.portalCsCliqAdminInbox.loadDirectorDirectPeerItems === "function"
+      ) {
+        var dmOnly = merged.filter(function (it) {
+          return it && it.kind === "dm";
+        });
+        var standExtras = await global.portalCsCliqAdminInbox.loadDirectorDirectPeerItems(
+          client,
+          me,
+          dmOnly
+        );
+        if (Array.isArray(standExtras) && standExtras.length) {
+          merged = merged.concat(standExtras);
+          merged.sort(function (a, b) {
+            var ta = 0;
+            var tb = 0;
+            try {
+              if (a.when) ta = new Date(a.when).getTime();
+            } catch (_e) {}
+            try {
+              if (b.when) tb = new Date(b.when).getTime();
+            } catch (_e2) {}
+            return tb - ta;
+          });
+        }
+      }
       host.innerHTML = '';
       if(merged.length){
         var groups = merged.filter(function(item){ return item.kind === 'group'; });
