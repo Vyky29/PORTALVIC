@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-clean-red";
+  var PORTAL_CS_CLIQ_BUILD = "20260609-bootfix";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -29,7 +29,11 @@
         global.localStorage.setItem(key, PORTAL_CS_CLIQ_BUILD);
       } catch (_e2) {}
       try {
-        global.location.reload();
+        global.setTimeout(function () {
+          try {
+            global.location.reload();
+          } catch (_r) {}
+        }, 0);
         return true;
       } catch (_e3) {}
     }
@@ -40,8 +44,6 @@
     }
     return false;
   }
-
-  if (portalCsCliqMaybeApplyBuildUpdate()) return;
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -253,4 +255,5 @@
   }
 
   global.portalCsCliqAppBoot = bootCsCliqApp;
+  if (portalCsCliqMaybeApplyBuildUpdate()) return;
 })(typeof window !== "undefined" ? window : globalThis);

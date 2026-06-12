@@ -428,10 +428,21 @@ export function enforceAppVersion() {
   }
 
   if (!(window.location.pathname || "").toLowerCase().includes("login")) {
+    let dest = "login.html?updated=1";
     try {
-      window.location.href = "login.html?updated=1";
+      if (portalUrlIsCsCliqPage(window.location.href)) {
+        dest = portalLoginUrlWithReturn(window.location.href);
+        const login = new URL(dest, window.location.href);
+        login.searchParams.set("updated", "1");
+        dest = login.href;
+      }
     } catch {
-      window.location.replace("login.html?updated=1");
+      /* keep default */
+    }
+    try {
+      window.location.href = dest;
+    } catch {
+      window.location.replace(dest);
     }
     return true;
   }
@@ -861,7 +872,8 @@ export async function bootstrapDashboardSupabase(_opts) {
       : page === "cs_cliq" && typeof window !== "undefined"
         ? portalLoginUrlWithReturn(window.location.href)
         : loginRedirect;
-  const sessionWaitMs = isLeadOverview ? 7000 : 2800;
+  const sessionWaitMs =
+    isLeadOverview || page === "cs_cliq" ? 7000 : 2800;
 
   /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
