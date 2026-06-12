@@ -400,31 +400,54 @@
         void portalAdminDmRenderList();
       });
       bindClick('csCliqComposeSend', function(){ void portalSendInternalDmFirstMessage(); });
-      bindClick('csCliqQCeoGroup', function(){
-        void (async function(){
-          var cl = getSchedSupabaseClient();
-          if(!cl) return;
-          var gid = await portalAdminDmResolveInternalCeoGroupId(cl);
-          if(!gid){
-            try{ alert('CEO group is not set up yet. Apply portal_ceo_group migrations in Supabase.'); }catch(_a){}
-            return;
-          }
-          await portalAdminDmOpenGroupThread(gid);
-        })();
-      });
-      bindClick('csCliqQCeoLiaisonGroup', function(){
-        void (async function(){
-          var cl = getSchedSupabaseClient();
-          if(!cl) return;
-          var gid = await portalAdminDmResolveLiaisonCeoGroupId(cl);
-          if(!gid){
-            try{ alert('Sev + CEOs group is not set up yet. Apply portal_ceo_group migrations in Supabase.'); }catch(_a){}
-            return;
-          }
-          await portalAdminDmOpenGroupThread(gid);
-        })();
-      });
+      portalAdminDmBindCeoQuickGroupButtons();
       portalWireAdminDmPeerAutocomplete();
+    }
+    async function portalAdminDmOpenCeoQuickGroup(kind){
+      kind = String(kind || '').trim();
+      var client = getSchedSupabaseClient();
+      if(!client){
+        try{ alert('Sign-in still loading — wait a moment and try again.'); }catch(_s){}
+        return;
+      }
+      window.__PORTAL_ADMIN_DM_CHANNEL = 'ceo_exec';
+      var gid = '';
+      if(kind === 'liaison'){
+        gid = await portalAdminDmResolveLiaisonCeoGroupId(client);
+        if(!gid){
+          try{ alert('Sev + CEOs group is not set up yet. Apply portal_ceo_group migrations in Supabase.'); }catch(_a){}
+          return;
+        }
+      }else{
+        gid = await portalAdminDmResolveInternalCeoGroupId(client);
+        if(!gid){
+          try{ alert('CEO group is not set up yet. Apply portal_ceo_group migrations in Supabase.'); }catch(_b){}
+          return;
+        }
+      }
+      var ceoBtn = document.getElementById('csCliqQCeoGroup');
+      var liaisonBtn = document.getElementById('csCliqQCeoLiaisonGroup');
+      if(ceoBtn) ceoBtn.classList.toggle('is-active', kind !== 'liaison');
+      if(liaisonBtn) liaisonBtn.classList.toggle('is-active', kind === 'liaison');
+      await portalAdminDmOpenGroupThread(gid);
+    }
+    function portalAdminDmBindCeoQuickGroupButtons(){
+      if(!portalAdminDmCsCliqEmbedActive()) return;
+      var wrap = document.getElementById('csCliqCeoQuickWrap');
+      if(!wrap || wrap.dataset.portalCeoQuickBound === '1') return;
+      wrap.dataset.portalCeoQuickBound = '1';
+      wrap.addEventListener('click', function(ev){
+        var ceoBtn = ev.target && ev.target.closest ? ev.target.closest('#csCliqQCeoGroup') : null;
+        var liaisonBtn = ev.target && ev.target.closest ? ev.target.closest('#csCliqQCeoLiaisonGroup') : null;
+        if(!ceoBtn && !liaisonBtn) return;
+        ev.preventDefault();
+        var btn = ceoBtn || liaisonBtn;
+        if(btn.disabled) return;
+        btn.disabled = true;
+        void portalAdminDmOpenCeoQuickGroup(liaisonBtn ? 'liaison' : 'internal').finally(function(){
+          btn.disabled = false;
+        });
+      });
     }
     function portalAdminCsCliqInitChat(channel){
       channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
@@ -437,6 +460,7 @@
       portalInitAdminDmRealtime({ force: true });
       portalAdminDmBindRealtimeVisibilityRefresh();
       portalAdminCsCliqBindControls();
+      portalAdminDmBindCeoQuickGroupButtons();
       portalAdminDmBindVoiceControls();
       portalAdminDmPremiumSyncView();
       portalAdminDmTogglePanels('list');
@@ -3242,4 +3266,6 @@
   global.portalAdminDmRenderList = portalAdminDmRenderList;
   global.portalExecutiveDmOpenThread = portalAdminDmOpenThread;
   global.portalAdminDmCsCliqBindControls = portalAdminCsCliqBindControls;
+  global.portalAdminDmBindCeoQuickGroupButtons = portalAdminDmBindCeoQuickGroupButtons;
+  global.portalAdminDmOpenCeoQuickGroup = portalAdminDmOpenCeoQuickGroup;
 })(typeof window !== "undefined" ? window : globalThis);

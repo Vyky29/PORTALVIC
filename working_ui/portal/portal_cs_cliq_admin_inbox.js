@@ -114,6 +114,13 @@
       groupRow.hidden = laneNav;
       groupRow.setAttribute("aria-hidden", laneNav ? "true" : "false");
     }
+    if (
+      typeof global.portalAdminDmBindCeoQuickGroupButtons === "function" &&
+      quick &&
+      !quick.hidden
+    ) {
+      global.portalAdminDmBindCeoQuickGroupButtons();
+    }
     var nav = document.getElementById("csCliqChannelNav");
     if (nav) {
       nav.hidden = true;
