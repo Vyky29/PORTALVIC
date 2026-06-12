@@ -43,3 +43,17 @@ group by 1;
 select source_table, count(*) as sends, max(sent_at) as last_sent
 from portal_webpush_incoming_call_sent
 group by 1;
+
+-- 6) Trigger HTTP failures — 401 = Edge Function still requires JWT (redeploy with --no-verify-jwt)
+select status_code, count(*) as n, max(created) as last_at
+from net._http_response
+where created > now() - interval '24 hours'
+group by 1
+order by 1;
+
+select created, status_code, left(content::text, 160) as content
+from net._http_response
+where created > now() - interval '2 hours'
+  and (status_code >= 400 or content::text ilike '%sent%')
+order by created desc
+limit 12;

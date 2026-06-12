@@ -415,3 +415,22 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # GET probe is public; POST enforces staff JWT inside the function.
 [functions.portal-feedback-voice-transcribe]
 verify_jwt = false
+
+# DB triggers (pg_net / http_request) send x-portal-webhook-secret only — no Supabase JWT.
+[functions.portal-push-dispatch-admin-alert]
+verify_jwt = false
+
+[functions.portal-push-dispatch-incoming-call]
+verify_jwt = false
+
+[functions.portal-push-dispatch-staff-dm]
+verify_jwt = false
+
+[functions.portal-push-dispatch-schedule-override]
+verify_jwt = false
+
+[functions.portal-push-dispatch-announcement]
+verify_jwt = false
+
+[functions.portal-push-feedback-9pm-digest]
+verify_jwt = false

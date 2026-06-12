@@ -589,6 +589,27 @@ function sortPushSubsNewestFirst(rows: PushSubRow[]): PushSubRow[] {
   });
 }
 
+/** One best endpoint per user — newest Apple PWA sub, else newest overall. */
+function pickActivePushSubs(rows: PushSubRow[]): PushSubRow[] {
+  const byUser = new Map<string, PushSubRow[]>();
+  for (const row of rows) {
+    const uid = String(row.user_id ?? "").trim();
+    if (!uid) continue;
+    const list = byUser.get(uid) ?? [];
+    list.push(row);
+    byUser.set(uid, list);
+  }
+  const picked: PushSubRow[] = [];
+  for (const userRows of byUser.values()) {
+    const sorted = sortPushSubsNewestFirst(userRows);
+    const apple = sorted.find((r) =>
+      String(r.endpoint ?? "").includes("web.push.apple.com")
+    );
+    picked.push(apple ?? sorted[0]);
+  }
+  return picked.filter(Boolean);
+}
+
 export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],
@@ -609,7 +630,7 @@ export async function sendPushPayloadToUserIds(
     throw subErr;
   }
 
-  const subs = sortPushSubsNewestFirst((subsRaw ?? []) as PushSubRow[]);
+  const subs = pickActivePushSubs(sortPushSubsNewestFirst((subsRaw ?? []) as PushSubRow[]));
 
   if (!subs.length) {
     console.log("[portal-webpush] no subscriptions for targets", {
