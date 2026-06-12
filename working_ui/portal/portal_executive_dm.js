@@ -78,7 +78,13 @@
   function portalAdminDmCsCliqEmbedActive() {
     if (global.__PORTAL_CS_CLIQ_EMBED_OPEN) return true;
     if (global.__PORTAL_CS_CLIQ_STANDALONE && global.__PORTAL_CS_CLIQ_ACTIVE) return true;
-    return !!(global.__PORTAL_CS_CLIQ_ACTIVE && global.__PORTAL_CS_CLIQ_EMBED_SHEET);
+    if (global.__PORTAL_CS_CLIQ_ACTIVE && global.__PORTAL_CS_CLIQ_EMBED_SHEET) return true;
+    if (global.__PORTAL_CS_CLIQ_ACTIVE && document.getElementById("csCliqRoot")) return true;
+    try {
+      return /cs_cliq\.html/i.test(String(global.location.pathname || ""));
+    } catch (_csCliqPath) {
+      return false;
+    }
   }
   function portalAdminDmPremiumSheetActive() {
     return false;
@@ -232,7 +238,10 @@
       return '';
     }
     async function portalAdminDmFetchStaffDmThreads(client, me, ch){
-      if(ch === 'staff_lead' && portalAdminDmUsesSharedStaffInbox()){
+      var sharedInbox =
+        portalAdminDmUsesSharedStaffInbox() &&
+        (ch === 'staff_lead' || (global.__PORTAL_CS_CLIQ_STANDALONE && ch === 'ceo_exec'));
+      if(sharedInbox){
         return client
           .from('portal_staff_dm_threads')
           .select('id,participant_a,participant_b,updated_at')
@@ -540,6 +549,40 @@
         return;
       }
     }
+    function portalAdminDmSyncCsCliqLayoutNow(){
+      if(!document.getElementById('csCliqRoot')) return;
+      portalAdminCsCliqSyncChatView();
+    }
+    function portalAdminDmApplyCsCliqPanelDom(panel){
+      if(!portalAdminDmCsCliqEmbedActive()) return;
+      panel = String(panel || 'list');
+      var inThread = panel === 'thread';
+      var inCompose = panel === 'compose';
+      var chatBody = document.querySelector('#csCliqChatsPane .portal-cs-cliq__chat-body');
+      var empty = document.getElementById('csCliqInboxEmpty');
+      var thread = document.getElementById('csCliqThreadPanel');
+      var compose = document.getElementById('csCliqComposePanel');
+      var convCol = document.getElementById('csCliqConversationCol');
+      if(chatBody) chatBody.setAttribute('data-cs-cliq-panel', panel);
+      if(empty){
+        empty.hidden = inThread || inCompose;
+        empty.setAttribute('aria-hidden', inThread || inCompose ? 'true' : 'false');
+      }
+      if(thread){
+        thread.hidden = !inThread;
+        thread.setAttribute('aria-hidden', inThread ? 'false' : 'true');
+      }
+      if(compose){
+        compose.hidden = !inCompose;
+        compose.setAttribute('aria-hidden', inCompose ? 'false' : 'true');
+      }
+      if(convCol) convCol.classList.toggle('portal-cs-cliq-inbox__conversation-col--active', inThread || inCompose);
+      var threadHeader = document.getElementById('csCliqThreadHeader');
+      if(threadHeader){
+        threadHeader.classList.toggle('is-open', inThread);
+        threadHeader.setAttribute('aria-hidden', inThread ? 'false' : 'true');
+      }
+    }
     function portalAdminDmPremiumSyncView(){
       if(portalAdminDmCsCliqEmbedActive()){
         portalAdminCsCliqSyncChatView();
@@ -694,7 +737,9 @@
       if(L) L.hidden = panel !== 'list';
       if(C) C.hidden = panel !== 'compose';
       if(T) T.hidden = panel !== 'thread';
+      portalAdminDmApplyCsCliqPanelDom(panel);
       portalAdminDmPremiumSyncView();
+      portalAdminDmSyncCsCliqLayoutNow();
     }
     function portalAdminDmApplyTeamTileUnreadClass(){
       var onStaff = !!window.__PORTAL_ADMIN_DM_UNREAD;
@@ -1440,9 +1485,19 @@
       var me = portalAdminDmMe();
       peerId = String(peerId || '').trim();
       function showOpenErr(msg){
+        msg = String(msg || 'Could not open chat. Try again.');
         try{
           var errB = portalAdminDmReplyErrEl();
-          if(errB) errB.textContent = String(msg || 'Could not open chat. Try again.');
+          if(errB) errB.textContent = msg;
+          var empty = document.getElementById('csCliqInboxEmpty');
+          if(empty && portalAdminDmCsCliqEmbedActive()){
+            empty.hidden = false;
+            empty.setAttribute('aria-hidden', 'false');
+            var title = empty.querySelector('.portal-cs-cliq-inbox-empty__title');
+            var sub = empty.querySelector('.portal-cs-cliq-inbox-empty__sub');
+            if(title) title.textContent = 'Could not open chat';
+            if(sub) sub.textContent = msg;
+          }
         }catch(_show){}
       }
       if(!client || !peerId){
@@ -1465,9 +1520,12 @@
       ){
         try{
           var rpcLead = await client.rpc('portal_cs_cliq_ensure_leadership_dm_thread', { p_peer_id: peerId });
-          if(!rpcLead.error && rpcLead.data){
+          var rpcTid = rpcLead && rpcLead.data != null ? String(rpcLead.data).trim() : '';
+          if(!rpcLead.error && rpcTid){
             window.__PORTAL_ADMIN_DM_OPEN = true;
-            await portalAdminDmOpenThread(String(rpcLead.data));
+            await portalAdminDmOpenThread(rpcTid);
+            portalAdminDmApplyCsCliqPanelDom('thread');
+            portalAdminDmSyncCsCliqLayoutNow();
             return;
           }
           if(rpcLead.error){
@@ -1521,6 +1579,8 @@
       }
       window.__PORTAL_ADMIN_DM_OPEN = true;
       await portalAdminDmOpenThread(tid);
+      portalAdminDmApplyCsCliqPanelDom('thread');
+      portalAdminDmSyncCsCliqLayoutNow();
     }
     try{
       window.portalAdminDmOpenGroupThread = portalAdminDmOpenGroupThread;
@@ -2440,6 +2500,8 @@
       portalAdminDmPremiumSyncView();
       if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
       await portalAdminDmLoadMessages();
+      portalAdminDmApplyCsCliqPanelDom('thread');
+      portalAdminDmSyncCsCliqLayoutNow();
     }
     function portalAdminDmMarkChannelReadFromMessages(arr, opts){
       opts = opts || {};

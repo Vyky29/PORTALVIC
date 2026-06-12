@@ -192,3 +192,24 @@ body.cs-cliq-app #csCliqRoot #csCliqListWrap {
     display: none !important;
   }
 }
+
+/* Desktop + mobile: when a thread is open, hide placeholder and show chat panel */
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqInboxEmpty,
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active #csCliqInboxEmpty {
+  display: none !important;
+}
+
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqThreadPanel,
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active #csCliqThreadPanel {
+  display: flex !important;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__conv-host,
+body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active .portal-cs-cliq-inbox__conv-host {
+  display: flex !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}

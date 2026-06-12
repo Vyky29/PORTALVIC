@@ -813,18 +813,31 @@
     btn.className = "portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer";
     btn.textContent = lab;
     btn.addEventListener("click", function () {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      function done() {
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+      }
+      function openPeer() {
+        if (typeof global.portalAdminDmEnsureDmThreadAndOpen === "function") {
+          return global.portalAdminDmEnsureDmThreadAndOpen(id0).finally(done);
+        }
+        done();
+        return Promise.resolve();
+      }
       if (typeof global.portalAdminDmEnsureDmThreadAndOpen === "function") {
-        void global.portalAdminDmEnsureDmThreadAndOpen(id0);
+        void openPeer();
         return;
       }
       if (typeof global.portalExecutiveDmInit === "function") {
         global.portalExecutiveDmInit("ceo_exec");
         global.setTimeout(function () {
-          if (typeof global.portalAdminDmEnsureDmThreadAndOpen === "function") {
-            void global.portalAdminDmEnsureDmThreadAndOpen(id0);
-          }
+          void openPeer();
         }, 300);
+        return;
       }
+      done();
     });
     host.appendChild(btn);
     return 1;
