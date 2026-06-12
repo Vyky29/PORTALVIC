@@ -311,9 +311,32 @@
 
   async function portalEnsureFreshPushSubscription(reg, vapidPublicKey, client, session, attempt) {
     attempt = Number(attempt || 0);
+    var env = portalNotifyEnvironment();
+    var standalone =
+      typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
+    var buildKey = "portal_cs_cliq_push_build";
+    var buildVal = "20260612-closed-push-v1";
+    var prevBuild = persistGet(buildKey);
+    if (
+      env.isIOS &&
+      env.mobile &&
+      standalone &&
+      prevBuild &&
+      prevBuild !== buildVal &&
+      reg &&
+      reg.pushManager
+    ) {
+      try {
+        var oldSub = await reg.pushManager.getSubscription();
+        if (oldSub) await oldSub.unsubscribe();
+      } catch (_u) {}
+    }
     var sub = await portalSubscribePushWithCurrentVapid(reg, vapidPublicKey);
     var posted = await portalPostPushSubscriptionToServer(client, session, sub);
-    if (posted.ok) return { ok: true, sub: sub };
+    if (posted.ok) {
+      if (env.isIOS && env.mobile && standalone) persistSet(buildKey, buildVal);
+      return { ok: true, sub: sub };
+    }
     if (posted.reason === "server-missing" && attempt < 1) {
       try {
         await sub.unsubscribe();

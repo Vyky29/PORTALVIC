@@ -502,29 +502,128 @@ export function normalizeWebPushTopic(raw: string): string {
   return topic;
 }
 
+/**
+ * Map thread/profile recipient ids → every auth id that may hold push subs
+ * (relinked staff_profiles for the same director, etc.).
+ */
+export async function expandPushSubscriptionUserIds(
+  admin: SupabaseClient,
+  userIds: string[],
+): Promise<string[]> {
+  const seedIds = [...new Set(userIds.map((id) => String(id ?? "").trim()).filter(Boolean))];
+  if (!seedIds.length) return [];
+
+  const expanded = new Set<string>(seedIds);
+  const { data: seedRows, error: seedErr } = await admin
+    .from("staff_profiles")
+    .select("id,app_role,is_active,username,full_name")
+    .in("id", seedIds);
+  if (seedErr) {
+    console.warn("[portal-webpush] expand seeds", seedErr);
+    return seedIds;
+  }
+
+  const matchKeys = new Set<string>();
+  for (const row of seedRows ?? []) {
+    const prof = row as PushProfileRow;
+    const id = String(prof.id ?? "").trim();
+    if (id) expanded.add(id);
+    const u = normProfileKey(prof.username);
+    const first = normProfileKey(
+      String(prof.full_name ?? "").split(/\s+/).filter(Boolean)[0] ?? "",
+    );
+    if (u) matchKeys.add(u);
+    if (
+      first &&
+      (portalPushIsDirectorProfile(prof) || portalPushIsExecAppRole(prof))
+    ) {
+      matchKeys.add(first);
+    }
+  }
+  if (!matchKeys.size) return [...expanded];
+
+  const { data: aliasRows, error: aliasErr } = await admin
+    .from("staff_profiles")
+    .select("id,app_role,is_active,username,full_name")
+    .or("is_active.is.null,is_active.eq.true");
+  if (aliasErr) {
+    console.warn("[portal-webpush] expand aliases", aliasErr);
+    return [...expanded];
+  }
+
+  for (const row of aliasRows ?? []) {
+    const prof = row as PushProfileRow;
+    if (prof.is_active === false) continue;
+    const u = normProfileKey(prof.username);
+    const first = normProfileKey(
+      String(prof.full_name ?? "").split(/\s+/).filter(Boolean)[0] ?? "",
+    );
+    if (!matchKeys.has(u) && !matchKeys.has(first)) continue;
+    for (const seed of seedRows ?? []) {
+      if (portalPushSamePerson(seed as PushProfileRow, prof)) {
+        const id = String(prof.id ?? "").trim();
+        if (id) expanded.add(id);
+      }
+    }
+    const id = String(prof.id ?? "").trim();
+    if (id && (matchKeys.has(u) || matchKeys.has(first))) {
+      expanded.add(id);
+    }
+  }
+
+  return [...expanded];
+}
+
+type PushSubRow = {
+  user_id?: string;
+  endpoint?: string;
+  subscription_json?: Record<string, unknown> | null;
+  updated_at?: string | null;
+};
+
+function sortPushSubsNewestFirst(rows: PushSubRow[]): PushSubRow[] {
+  return [...rows].sort((a, b) => {
+    const ta = Date.parse(String(a.updated_at ?? "")) || 0;
+    const tb = Date.parse(String(b.updated_at ?? "")) || 0;
+    return tb - ta;
+  });
+}
+
 export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],
   pushPayload: string,
   options?: { TTL?: number; urgency?: string; topic?: string },
-): Promise<{ sent: number; targets: number; subs: number; failed: number; lastStatus?: number }> {
+): Promise<{ sent: number; targets: number; subs: number; failed: number; lastStatus?: number; expandedTargets?: number }> {
   if (!userIds.length) return { sent: 0, targets: 0, subs: 0, failed: 0 };
 
-  const { data: subs, error: subErr } = await admin
+  const expandedIds = await expandPushSubscriptionUserIds(admin, userIds);
+
+  const { data: subsRaw, error: subErr } = await admin
     .from("portal_push_subscriptions")
-    .select("user_id, endpoint, subscription_json")
-    .in("user_id", userIds);
+    .select("user_id, endpoint, subscription_json, updated_at")
+    .in("user_id", expandedIds);
 
   if (subErr) {
     console.error("[portal-webpush] subs", subErr);
     throw subErr;
   }
 
-  if (!subs?.length) {
+  const subs = sortPushSubsNewestFirst((subsRaw ?? []) as PushSubRow[]);
+
+  if (!subs.length) {
     console.log("[portal-webpush] no subscriptions for targets", {
       targets: userIds.length,
+      expandedTargets: expandedIds.length,
+      expandedIds,
     });
-    return { sent: 0, targets: userIds.length, subs: 0, failed: 0 };
+    return {
+      sent: 0,
+      targets: userIds.length,
+      subs: 0,
+      failed: 0,
+      expandedTargets: expandedIds.length,
+    };
   }
 
   let sent = 0;
@@ -533,11 +632,14 @@ export async function sendPushPayloadToUserIds(
   const ttl = options?.TTL ?? 86400;
   const urgency = options?.urgency ?? "high";
   const topic = options?.topic ? normalizeWebPushTopic(options.topic) : "";
+  const seenEndpoints = new Set<string>();
   for (const row of subs) {
     const raw = row.subscription_json as Record<string, unknown> | null;
     const endpoint = String(
       raw?.endpoint ?? (row as { endpoint?: string }).endpoint ?? "",
     ).trim();
+    if (endpoint && seenEndpoints.has(endpoint)) continue;
+    if (endpoint) seenEndpoints.add(endpoint);
     const keys = raw?.keys as Record<string, unknown> | undefined;
     const p256dh = String(keys?.p256dh ?? "").trim();
     const auth = String(keys?.auth ?? "").trim();
@@ -572,7 +674,14 @@ export async function sendPushPayloadToUserIds(
     }
   }
 
-  return { sent, targets: userIds.length, subs: subs.length, failed, lastStatus: lastStatus || undefined };
+  return {
+    sent,
+    targets: userIds.length,
+    subs: subs.length,
+    failed,
+    lastStatus: lastStatus || undefined,
+    expandedTargets: expandedIds.length,
+  };
 }
 
 export async function insertDedupeOrSkip(

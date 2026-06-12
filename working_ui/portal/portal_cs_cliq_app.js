@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-peers-v7";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-inbox-boot-v1";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -275,18 +275,21 @@
     }
 
     bindPushAndCalls();
-    if (
-      global.portalCsCliqAdminInbox &&
-      typeof global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts === "function"
-    ) {
-      try {
-        await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(true);
-      } catch (_peerPre) {}
-    }
     if (typeof global.portalAdminDmRenderList === "function") {
       try {
         await global.portalAdminDmRenderList();
       } catch (_renderBoot) {}
+    }
+    if (
+      global.portalCsCliqAdminInbox &&
+      typeof global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts === "function"
+    ) {
+      var bootList = document.getElementById("csCliqListWrap");
+      if (bootList && !bootList.querySelector(".portal-dm-thread-item")) {
+        try {
+          await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(true);
+        } catch (_peerPre) {}
+      }
     }
     if (
       global.portalCsCliqAdminInbox &&

@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   if (!supabaseUrl || !anonKey) {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), {
       status: 500,
@@ -38,6 +39,9 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
+  const admin = serviceKey
+    ? createClient(supabaseUrl, serviceKey)
+    : null;
 
   const { data: userData, error: userErr } = await supabase.auth.getUser();
   const user = userData?.user;
@@ -92,7 +96,37 @@ Deno.serve(async (req) => {
     });
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
+  let pruned = 0;
+  if (admin) {
+    try {
+      const { data: rows, error: listErr } = await admin
+        .from("portal_push_subscriptions")
+        .select("endpoint, updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+      if (!listErr && rows?.length) {
+        const keep = new Set<string>([endpoint]);
+        for (const row of rows) {
+          const ep = String((row as { endpoint?: string }).endpoint ?? "").trim();
+          if (!ep || keep.has(ep)) continue;
+          if (keep.size >= 3) {
+            const { error: delErr } = await admin
+              .from("portal_push_subscriptions")
+              .delete()
+              .eq("user_id", user.id)
+              .eq("endpoint", ep);
+            if (!delErr) pruned++;
+          } else {
+            keep.add(ep);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[portal-push-subscribe] prune", e);
+    }
+  }
+
+  return new Response(JSON.stringify({ ok: true, pruned }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });

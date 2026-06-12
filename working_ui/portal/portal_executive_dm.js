@@ -465,7 +465,9 @@
       portalAdminDmPremiumSyncView();
       portalAdminDmTogglePanels('list');
       void portalLoadDmPeerUserSelect();
-      void portalAdminDmRenderList();
+      if (!global.__PORTAL_CS_CLIQ_STANDALONE) {
+        void portalAdminDmRenderList();
+      }
       var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
       var laneNav =
         global.portalCsCliqAdminInbox &&
@@ -1673,40 +1675,45 @@
       if(liaisonBtn){
         liaisonBtn.hidden = !gidLiaison;
       }
-      var me = portalAdminDmMe();
-      var peerRows = [];
-      if(
-        global.portalCsCliqAdminInbox &&
-        typeof global.portalCsCliqAdminInbox.fetchLeadershipPeerProfiles === 'function'
-      ){
-        peerRows = await global.portalCsCliqAdminInbox.fetchLeadershipPeerProfiles(client);
-      }else{
-        var lr = await client
-          .from('staff_profiles')
-          .select('id,full_name,username,app_role,is_active')
-          .or('is_active.is.null,is_active.eq.true')
-          .order('full_name', { ascending: true })
-          .limit(200);
-        if(!lr.error && Array.isArray(lr.data)) peerRows = lr.data;
-      }
-      if(Array.isArray(peerRows) && host){
-        peerRows.forEach(function(row){
-          if(!row || !row.id) return;
-          var id0 = String(row.id);
-          if(me && id0 === me) return;
-          var isDirector = global.portalDmRoles && typeof global.portalDmRoles.portalDmIsDirectorProfile === 'function' && global.portalDmRoles.portalDmIsDirectorProfile(row);
-          var isAdmin = global.portalDmRoles && typeof global.portalDmRoles.portalDmIsAdminProfile === 'function' && global.portalDmRoles.portalDmIsAdminProfile(row);
-          if(!isDirector && !isAdmin) return;
-          var lab = ((row.full_name || row.username || '').trim() || id0.slice(0, 8)).split(/\s+/)[0] || 'Contact';
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer';
-          btn.textContent = lab;
-          btn.addEventListener('click', function(){
-            void portalAdminDmEnsureDmThreadAndOpen(id0);
+      if(host){
+        if(
+          global.portalCsCliqAdminInbox &&
+          typeof global.portalCsCliqAdminInbox.fillDirectPeerPicks === 'function'
+        ){
+          await global.portalCsCliqAdminInbox.fillDirectPeerPicks(host);
+        }else{
+          var me = portalAdminDmMe();
+          var peerRows = [];
+          var lr = await client
+            .from('staff_profiles')
+            .select('id,full_name,username,app_role,is_active')
+            .or('is_active.is.null,is_active.eq.true')
+            .order('full_name', { ascending: true })
+            .limit(200);
+          if(!lr.error && Array.isArray(lr.data)) peerRows = lr.data;
+          host.innerHTML = '';
+          var btnPerson = Object.create(null);
+          peerRows.forEach(function(row){
+            if(!row || !row.id) return;
+            var id0 = String(row.id);
+            if(me && id0 === me) return;
+            var isDirector = global.portalDmRoles && typeof global.portalDmRoles.portalDmIsDirectorProfile === 'function' && global.portalDmRoles.portalDmIsDirectorProfile(row);
+            var isAdmin = global.portalDmRoles && typeof global.portalDmRoles.portalDmIsAdminProfile === 'function' && global.portalDmRoles.portalDmIsAdminProfile(row);
+            if(!isDirector && !isAdmin) return;
+            var lab = ((row.full_name || row.username || '').trim() || id0.slice(0, 8)).split(/\s+/)[0] || 'Contact';
+            var pk = String(lab).trim().toLowerCase();
+            if(btnPerson[pk]) return;
+            btnPerson[pk] = true;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--peer';
+            btn.textContent = lab;
+            btn.addEventListener('click', function(){
+              void portalAdminDmEnsureDmThreadAndOpen(id0);
+            });
+            host.appendChild(btn);
           });
-          host.appendChild(btn);
-        });
+        }
       }
       if(wrap) wrap.hidden = false;
     }
@@ -2093,6 +2100,10 @@
       return btn;
     }
     async function portalAdminDmRenderList(){
+      var renderGen = (window.__PORTAL_ADMIN_DM_RENDER_GEN__ = (Number(window.__PORTAL_ADMIN_DM_RENDER_GEN__ || 0) + 1));
+      function renderStale(){
+        return renderGen !== window.__PORTAL_ADMIN_DM_RENDER_GEN__;
+      }
       var host = portalAdminDmListHostEl();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
@@ -2303,15 +2314,20 @@
           formatWhen: portalAdminDmFormatListWhen
         };
         global.__PORTAL_ADMIN_DM_CHANNEL_CTX = channelCtx;
+        if (renderStale()) return;
         await global.portalCsCliqAdminInbox.renderAdminInbox(host, Object.assign({}, channelCtx, {
           renderItem: portalAdminDmRenderThreadListItem
         }));
+        if (renderStale()) return;
         if (
           global.__PORTAL_CS_CLIQ_STANDALONE &&
           global.portalCsCliqAdminInbox &&
           typeof global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts === "function"
         ) {
-          await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(false);
+          var listEl = document.getElementById("csCliqListWrap");
+          if (listEl && !listEl.querySelector(".portal-dm-thread-item")) {
+            await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(true);
+          }
         }
         return;
       }

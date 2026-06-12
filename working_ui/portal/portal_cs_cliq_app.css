@@ -37,6 +37,15 @@ html.cs-cliq-app-body body {
   min-width: 0;
 }
 
+.cs-cliq-notify-banner--warn {
+  background: #fef2f2;
+  border-bottom-color: #fecaca;
+}
+
+.cs-cliq-notify-banner--warn .cs-cliq-notify-banner__text {
+  color: #991b1b;
+}
+
 .cs-cliq-notify-banner__text {
   margin: 0;
   flex: 1 1 200px;

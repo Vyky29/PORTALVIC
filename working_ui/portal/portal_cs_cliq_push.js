@@ -20,6 +20,43 @@
     return outputArray;
   }
 
+  function ensureStandalonePwaBanner() {
+    if (typeof global.portalIsStandalonePwa === "function" && global.portalIsStandalonePwa()) {
+      return;
+    }
+    var env =
+      typeof global.portalNotifyEnvironment === "function"
+        ? global.portalNotifyEnvironment()
+        : null;
+    if (!env || !env.isIOS || !env.mobile) return;
+    if (global.__PORTAL_CS_CLIQ_STANDALONE_BANNER__) return;
+    if (global.localStorage && global.localStorage.getItem("portal_cs_cliq_standalone_dismiss") === "1") {
+      return;
+    }
+    var host = document.getElementById("csCliqAppRoot");
+    if (!host || !host.parentNode) return;
+    global.__PORTAL_CS_CLIQ_STANDALONE_BANNER__ = true;
+    var bar = document.createElement("div");
+    bar.className = "cs-cliq-notify-banner cs-cliq-notify-banner--warn";
+    bar.setAttribute("role", "region");
+    bar.setAttribute("aria-label", "Install CS Cliq");
+    bar.innerHTML =
+      '<p class="cs-cliq-notify-banner__text"><strong>Alerts when the app is closed</strong> only work from the Home Screen icon. In Safari: Share → Add to Home Screen, open CS Cliq from that icon, then turn on alerts.</p>' +
+      '<div class="cs-cliq-notify-banner__actions">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="csCliqStandaloneDismissBtn">Got it</button>' +
+      "</div>";
+    host.parentNode.insertBefore(bar, host);
+    var dismiss = document.getElementById("csCliqStandaloneDismissBtn");
+    if (dismiss) {
+      dismiss.addEventListener("click", function () {
+        try {
+          global.localStorage.setItem("portal_cs_cliq_standalone_dismiss", "1");
+        } catch (_ls) {}
+        bar.remove();
+      });
+    }
+  }
+
   async function ensureWebPushSubscription() {
     if (global.__PORTAL_WPS_IN_FLIGHT) return { ok: true, reason: "in-flight" };
     global.__PORTAL_WPS_IN_FLIGHT = true;
@@ -29,6 +66,11 @@
       }
       if (!VAPID) return { ok: false, reason: "no-vapid" };
       if (!("serviceWorker" in global.navigator)) return { ok: false, reason: "no-sw" };
+      if (typeof global.portalRegisterPortalServiceWorker === "function") {
+        try {
+          await global.portalRegisterPortalServiceWorker();
+        } catch (_swReg) {}
+      }
       var reg =
         typeof global.portalAwaitServiceWorkerReady === "function"
           ? await global.portalAwaitServiceWorkerReady(15000)
@@ -50,7 +92,17 @@
               applicationServerKey: urlBase64ToUint8Array(VAPID),
             });
       if (typeof global.portalPostPushSubscriptionToServer === "function" && box.client) {
-        return global.portalPostPushSubscriptionToServer(box.client, box.session, sub);
+        var posted = await global.portalPostPushSubscriptionToServer(box.client, box.session, sub);
+        if (posted && posted.ok && typeof global.portalSendLocalTestNotification === "function") {
+          try {
+            await global.portalSendLocalTestNotification({
+              title: "CS Cliq alerts on",
+              body: "This device is registered. Lock the phone or close the app to test real push.",
+              tag: "portal-cs-cliq-subscribed",
+            });
+          } catch (_test) {}
+        }
+        return posted;
       }
       return { ok: false, reason: "no-post-fn" };
     } catch (e) {
@@ -185,6 +237,7 @@
 
   function onSupabaseReady() {
     bindServiceWorkerMessages();
+    ensureStandalonePwaBanner();
     ensureNotifyBanner();
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       void ensureWebPushSubscription();
@@ -207,6 +260,9 @@
 
   bindServiceWorkerMessages();
   bindVisibilityPushRefresh();
+  if (typeof global.portalRegisterPortalServiceWorker === "function") {
+    void global.portalRegisterPortalServiceWorker();
+  }
   global.addEventListener("portal:supabase-ready", onSupabaseReady);
   if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session) {
     onSupabaseReady();

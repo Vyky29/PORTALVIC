@@ -708,16 +708,42 @@
     return false;
   }
 
-  function mergeLeadershipPeerRows(into, rows, seen) {
-    seen = seen || Object.create(null);
+  function leadershipPeerPersonKey(row) {
+    if (!row) return "";
+    var un = String(row.username || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (un === "javier") un = "javi";
+    if (un) return "u:" + un;
+    var first = String(row.full_name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)[0] || "";
+    first = first
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (first === "javier") first = "javi";
+    if (first) return "f:" + first;
+    return "id:" + String(row.id || "");
+  }
+
+  function mergeLeadershipPeerRows(into, rows, seenIds, seenPerson) {
+    seenIds = seenIds || Object.create(null);
+    seenPerson = seenPerson || Object.create(null);
     (rows || []).forEach(function (row) {
       if (!row || !row.id) return;
       var id0 = String(row.id);
-      if (seen[id0]) return;
-      seen[id0] = true;
+      if (seenIds[id0]) return;
+      var personKey = leadershipPeerPersonKey(row);
+      if (personKey && seenPerson[personKey]) return;
+      seenIds[id0] = true;
+      if (personKey) seenPerson[personKey] = true;
       into.push(row);
     });
-    return seen;
+    return seenIds;
   }
 
   var LEADERSHIP_PEER_USERNAMES = ["Raul", "Victor", "Javi", "Javier", "Sevitha", "Info"];
@@ -739,7 +765,8 @@
     client = await ensureInboxClientReady(client);
     if (!client) return [];
     var merged = [];
-    var seen = Object.create(null);
+    var seenIds = Object.create(null);
+    var seenPerson = Object.create(null);
     try {
       var rpc = await client.rpc("portal_cs_cliq_leadership_peers");
       if (rpc.error) {
@@ -747,7 +774,7 @@
           console.warn("[CS Cliq] portal_cs_cliq_leadership_peers", rpc.error);
         } catch (_logRpc) {}
       } else if (Array.isArray(rpc.data) && rpc.data.length) {
-        mergeLeadershipPeerRows(merged, rpc.data, seen);
+        mergeLeadershipPeerRows(merged, rpc.data, seenIds, seenPerson);
       }
     } catch (rpcErr) {
       try {
@@ -765,7 +792,7 @@
           console.warn("[CS Cliq] staff_profiles admin/ceo fetch", adminRes.error);
         } catch (_logAd) {}
       } else {
-        mergeLeadershipPeerRows(merged, adminRes.data, seen);
+        mergeLeadershipPeerRows(merged, adminRes.data, seenIds, seenPerson);
       }
     }
     if (!merged.length) {
@@ -777,7 +804,7 @@
         .select("id,full_name,username,app_role,staff_role,is_active")
         .or(orParts)
         .or("is_active.is.null,is_active.eq.true");
-      if (!byName.error) mergeLeadershipPeerRows(merged, byName.data, seen);
+      if (!byName.error) mergeLeadershipPeerRows(merged, byName.data, seenIds, seenPerson);
     }
     if (!merged.length) {
       var usernames = ["raul", "victor", "javi", "javier", "sevitha", "info"];
@@ -789,7 +816,7 @@
           .ilike("username", uname)
           .or("is_active.is.null,is_active.eq.true")
           .limit(4);
-        if (!one.error) mergeLeadershipPeerRows(merged, one.data, seen);
+        if (!one.error) mergeLeadershipPeerRows(merged, one.data, seenIds, seenPerson);
       }
     }
     if (!merged.length) {
@@ -801,7 +828,9 @@
         .limit(200);
       if (!broad.error && Array.isArray(broad.data)) {
         broad.data.forEach(function (row) {
-          if (isLeadershipPeerRow(row)) mergeLeadershipPeerRows(merged, [row], seen);
+          if (isLeadershipPeerRow(row)) {
+            mergeLeadershipPeerRows(merged, [row], seenIds, seenPerson);
+          }
         });
       }
     }
@@ -888,30 +917,59 @@
     return items;
   }
 
+  var fillDirectPeerPicksInflight = null;
+
   async function fillDirectPeerPicks(host) {
     if (!host) return;
-    host.innerHTML = "";
-    var box = global.__PORTAL_SUPABASE__ || {};
-    var client = box.client;
-    if (!client) return;
-    if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return;
-    var rows = await fetchLeadershipPeerProfiles(client);
-    var added = 0;
-    rows.forEach(function (row) {
-      if (!row || !row.id) return;
-      if (isSelfStaffId(String(row.id))) return;
-      if (!isLeadershipPeerRow(row)) return;
-      added += appendPeerPickButton(host, row);
-    });
-    if (!added) {
-      host.innerHTML =
-        '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px">Director contacts could not load.</p>';
+    if (
+      fillDirectPeerPicksInflight &&
+      fillDirectPeerPicksInflight.host === host
+    ) {
+      return fillDirectPeerPicksInflight.promise;
     }
+    var run = (async function () {
+      host.innerHTML = "";
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var client = box.client;
+      if (!client) return;
+      if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return;
+      var rows = await fetchLeadershipPeerProfiles(client);
+      var added = 0;
+      var btnPerson = Object.create(null);
+      rows.forEach(function (row) {
+        if (!row || !row.id) return;
+        if (isSelfStaffId(String(row.id))) return;
+        if (!isLeadershipPeerRow(row)) return;
+        var pk = leadershipPeerPersonKey(row);
+        if (pk && btnPerson[pk]) return;
+        if (pk) btnPerson[pk] = true;
+        added += appendPeerPickButton(host, row);
+      });
+      if (!added) {
+        host.innerHTML =
+          '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px">Director contacts could not load.</p>';
+      }
+    })();
+    fillDirectPeerPicksInflight = { host: host, promise: run };
+    try {
+      await run;
+    } finally {
+      if (
+        fillDirectPeerPicksInflight &&
+        fillDirectPeerPicksInflight.promise === run
+      ) {
+        fillDirectPeerPicksInflight = null;
+      }
+    }
+  }
+
+  function standaloneInboxHasListContent() {
+    return !!document.querySelector("#csCliqListWrap .portal-dm-thread-item");
   }
 
   function standaloneInboxHasPeerButtons() {
     return !!document.querySelector(
-      "#csCliqListWrap .portal-dm-thread-item, #csCliqListWrap .portal-cs-cliq-channel-btn--peer, #csCliqQCeosHost .portal-cs-cliq-channel-btn--peer"
+      "#csCliqListWrap .portal-dm-thread-item, #csCliqListWrap .portal-cs-cliq-channel-btn--peer"
     );
   }
 
@@ -941,7 +999,7 @@
       global.__PORTAL_CS_CLIQ_STANDALONE ||
       /cs_cliq\.html/i.test(String(global.location.pathname || ""));
     if (!onStandalone) return 0;
-    if (!force && standaloneInboxHasPeerButtons()) return 0;
+    if (!force && standaloneInboxHasListContent()) return 0;
     var list = document.getElementById("csCliqListWrap");
     var quick = document.getElementById("csCliqCeoQuickWrap");
     var quickHost = document.getElementById("csCliqQCeosHost");
@@ -962,8 +1020,50 @@
       await fillDirectPeerPicks(quickHost);
       added += quickHost.querySelectorAll(".portal-cs-cliq-channel-btn--peer").length;
     }
-    if (list && rows.length) {
-      added += await paintStandalonePeerList(list, rows);
+    if (list && rows.length && !standaloneInboxHasListContent()) {
+      if (
+        lastInboxCtx &&
+        typeof lastInboxCtx.renderItem === "function"
+      ) {
+        var me0 = lastInboxCtx.me;
+        var ch0 = lastInboxCtx.ch;
+        var cardItems = [];
+        rows.forEach(function (row) {
+          if (!row || !row.id) return;
+          if (isSelfStaffId(String(row.id))) return;
+          if (!isLeadershipPeerRow(row)) return;
+          var pk = leadershipPeerPersonKey(row);
+          if (pk && cardItems.some(function (it) {
+            return leadershipPeerPersonKey(it.peerProf) === pk;
+          })) {
+            return;
+          }
+          cardItems.push({
+            kind: "dm",
+            id: "",
+            label: directorPeerLabel(row),
+            when: null,
+            peerId: String(row.id),
+            peerProf: row,
+            isTeamChat: false,
+            synthetic: true,
+            inboxLane: "personal",
+          });
+        });
+        list.innerHTML = "";
+        cardItems.forEach(function (item) {
+          try {
+            var el =
+              lastInboxCtx.renderItem.length > 1
+                ? lastInboxCtx.renderItem(item, me0, ch0)
+                : lastInboxCtx.renderItem(item);
+            if (el) list.appendChild(el);
+          } catch (_card) {}
+        });
+        added += cardItems.length;
+      } else {
+        added += await paintStandalonePeerList(list, rows);
+      }
     } else if (list && !rows.length) {
       list.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No director contacts found. Check connection and refresh.</p>';
@@ -1011,15 +1111,16 @@
         return !item || item.kind !== "group";
       });
     }
-    if (activeCat === "direct" && inboxClient) {
-      var directorExtras = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
-      if (directorExtras.length) {
-        dmItems = sortDmItems(dmItems.concat(directorExtras));
+    if (inboxClient && (activeCat === "direct" || global.__PORTAL_CS_CLIQ_STANDALONE)) {
+      var peerExtras = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
+      if (!peerExtras.length && global.__PORTAL_CS_CLIQ_STANDALONE) {
+        await new Promise(function (resolve) {
+          global.setTimeout(resolve, 450);
+        });
+        peerExtras = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
       }
-    } else if (global.__PORTAL_CS_CLIQ_STANDALONE && inboxClient) {
-      var standPeers = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
-      if (standPeers.length) {
-        dmItems = sortDmItems(dmItems.concat(standPeers));
+      if (peerExtras.length) {
+        dmItems = sortDmItems(dmItems.concat(peerExtras));
       }
     }
     host.innerHTML = "";
