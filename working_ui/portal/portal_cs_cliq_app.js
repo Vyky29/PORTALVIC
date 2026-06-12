@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260609-peers-v3";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-peers-v4";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -253,6 +253,14 @@
     }
 
     bindPushAndCalls();
+    if (
+      global.portalCsCliqAdminInbox &&
+      typeof global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts === "function"
+    ) {
+      try {
+        await global.portalCsCliqAdminInbox.paintStandaloneLeadershipContacts(true);
+      } catch (_peerPre) {}
+    }
     if (typeof global.portalAdminDmRenderList === "function") {
       try {
         await global.portalAdminDmRenderList();
