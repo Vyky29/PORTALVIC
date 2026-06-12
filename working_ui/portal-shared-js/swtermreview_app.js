@@ -14,143 +14,151 @@
 const LEVEL_DATA = {
       1: [
         { title: "Water Familiarisation I", items: [
-          { id:"l1_1", text:"Become comfortable entering the aquatic environment with support" },
-          { id:"l1_2", text:"Build positive relationships with adults in the water" },
-          { id:"l1_3", text:"Participate in familiar swimming routines and activities" },
-          { id:"l1_4", text:"Engage confidently in structured water based experiences" },
+          { id:"l1_1", text:"Accept water contact on the body during aquatic activities, such as pouring water, splashing water or water running over the body." },
+          { id:"l1_2", text:"Remain within an aquatic environment whilst water is present around the body, such as the shower, poolside or shallow water." },
+          { id:"l1_3", text:"Interact with water through simple aquatic activities, such as touching, moving or playing with water." },
         ]},
         { title: "Water Adaptation I", items: [
-          { id:"l1_5", text:"Move through the water with adult or equipment support" },
-          { id:"l1_6", text:"Explore different movements and body positions in water" },
-          { id:"l1_7", text:"Maintain balance during simple aquatic activities" },
-          { id:"l1_8", text:"Participate in basic fitness and movement activities in water" },
+          { id:"l1_4", text:"Travel through the water using forward and backward movement patterns." },
+          { id:"l1_5", text:"Change direction within the water, such as moving sideways or turning." },
+          { id:"l1_6", text:"Travel through the water using environmental features or equipment, such as a wall, rail or float." },
         ]},
         { title: "Breathing Control I", items: [
-          { id:"l1_9", text:"Tolerate water contact around the face" },
-          { id:"l1_10", text:"Explore blowing and breathing activities in water" },
-          { id:"l1_11", text:"Place the chin and mouth in the water when supported" },
-          { id:"l1_12", text:"Attempt to place the eyes in the water when ready" },
+          { id:"l1_7", text:"Blow air from the mouth whilst water is poured over the head." },
+          { id:"l1_8", text:"Blow bubbles at the water surface." },
+          { id:"l1_9", text:"Use exhalation to create movement in the water or towards a floating object, such as moving a floating toy across the water surface." },
         ]},
         { title: "Water Safety I", items: [
-          { id:"l1_13", text:"Enter the water safely with adult support" },
-          { id:"l1_14", text:"Exit the water safely using appropriate pool access points" },
-          { id:"l1_15", text:"Follow adult guidance during entry and exit routines" },
-          { id:"l1_16", text:"Demonstrate early awareness of pool boundaries and safe behaviours" },
+          { id:"l1_10", text:"Enter the water safely." },
+          { id:"l1_11", text:"Exit the water safely." },
+          { id:"l1_12", text:"Move towards and reach a point of safety, such as the poolside, wall, steps, ladder or appropriate support equipment." },
         ]},
       ],
       2: [
         { title: "Water Familiarisation II", items: [
-          { id:"l2_1", text:"Enters water with reduced hesitation" },
-          { id:"l2_2", text:"Submerges face briefly with support" },
-          { id:"l2_3", text:"Transitions between familiar tasks smoothly" },
+          { id:"l2_1", text:"Accept water contact on the head and face during aquatic activities, such as pouring water over the head or water running across the face." },
+          { id:"l2_2", text:"Interact with water around the head and face during aquatic activities, such as splashing water towards the face or washing the face with water." },
+          { id:"l2_3", text:"Continue aquatic activities whilst experiencing changes in water conditions, such as splashing, moving water or small waves." },
         ]},
         { title: "Water Adaptation II", items: [
-          { id:"l2_4", text:"Maintains supported float position" },
-          { id:"l2_5", text:"Rotates body with support and control" },
-          { id:"l2_6", text:"Travels short distance with reduced support" },
+          { id:"l2_4", text:"Travel through the water with both feet off the pool floor, using the arms, legs or a combination of both." },
+          { id:"l2_5", text:"Move into forward and backward body positions within the water, such as leaning forwards or leaning backwards." },
+          { id:"l2_6", text:"Combine a range of aquatic movement patterns within a single activity, such as travelling, turning and changing body position during an obstacle course or aquatic game." },
         ]},
         { title: "Breathing Control II", items: [
-          { id:"l2_7", text:"Performs repeatable exhale pattern" },
-          { id:"l2_8", text:"Coordinates breath with simple movement" },
-          { id:"l2_9", text:"Recovers breathing after submersion with support" },
+          { id:"l2_7", text:"Blow bubbles with the face in the water." },
+          { id:"l2_8", text:"Combine aquatic movement with blowing bubbles, such as walking or kicking whilst blowing bubbles." },
+          { id:"l2_9", text:"Submerge below the water surface to reach or retrieve an object." },
         ]},
         { title: "Water Safety II", items: [
-          { id:"l2_10", text:"Responds to safety cues with reduced prompting" },
-          { id:"l2_11", text:"Returns to wall with reduced support" },
-          { id:"l2_12", text:"Maintains safe poolside behaviour with reminders" },
+          { id:"l2_10", text:"Enter and exit the water using a range of access points, such as the poolside, steps, ladder, ramp or hoist." },
+          { id:"l2_11", text:"Travel away from and return to a point of safety, such as the poolside, wall, steps, ladder or appropriate support equipment." },
+          { id:"l2_12", text:"Recover to a standing position following loss of balance." },
         ]},
       ],
 
-      /* If you want Level 3 text to match your official list, replace only this block. */
       3: [
-        { title: "Floating and Balance I", items: [
-          { id:"l3_1", text:"Maintains float position with reduced support" },
-          { id:"l3_2", text:"Transitions between supported positions with confidence" },
-          { id:"l3_3", text:"Maintains balance during simple challenge tasks" },
+        { title: "Floating & Balance I", items: [
+          { id:"l3_1", text:"Maintain a back floating position using a wide shape, such as a star shape." },
+          { id:"l3_2", text:"Maintain a front floating position using a wide shape, such as a star shape." },
+          { id:"l3_3", text:"Maintain a back floating position using a narrow shape, such as a soldier shape." },
+          { id:"l3_4", text:"Maintain a front floating position using a narrow shape, such as a soldier shape." },
         ]},
-        { title: "Streamlining and Rotation I", items: [
-          { id:"l3_4", text:"Glides with emerging streamline position" },
-          { id:"l3_5", text:"Initiates rotation with minimal support" },
-          { id:"l3_6", text:"Maintains body alignment for short travel" },
+        { title: "Streamlining & Rotation I", items: [
+          { id:"l3_5", text:"Maintain a back glide position using an open shape." },
+          { id:"l3_6", text:"Maintain a front glide position using an open shape." },
+          { id:"l3_7", text:"Perform a rotation from a back position to a front position using an open shape, such as a star shape." },
+          { id:"l3_8", text:"Perform a rotation from a front position to a back position using an open shape, such as a star shape." },
         ]},
         { title: "Propulsion I", items: [
-          { id:"l3_7", text:"Creates propulsion with guided pattern" },
-          { id:"l3_8", text:"Coordinates breathing with effort with prompting" },
-          { id:"l3_9", text:"Travels with basic directional support" },
+          { id:"l3_9", text:"Use leg actions to create propulsion through the water in a front position, such as flutter kicking, breaststroke kicking or other recognised leg actions." },
+          { id:"l3_10", text:"Use leg actions to create propulsion through the water in a back position, such as flutter kicking, breaststroke kicking or other recognised leg actions." },
+          { id:"l3_11", text:"Use arm actions to create propulsion through the water, such as paddling or scooping actions." },
+          { id:"l3_12", text:"Combine arm and leg actions to create continuous propulsion through the water." },
         ]},
         { title: "Water Safety III", items: [
-          { id:"l3_10", text:"Performs a supported recovery sequence" },
-          { id:"l3_11", text:"Maintains calm response during recovery" },
-          { id:"l3_12", text:"Returns to safety point with minimal support" },
+          { id:"l3_13", text:"Perform jump entries into the water from the poolside." },
+          { id:"l3_14", text:"Attempt to signal for help when prompted, such as shouting, waving, raising a hand or using an agreed signal." },
+          { id:"l3_15", text:"Recover to a standing position from any horizontal position in the water, such as floating, gliding or travelling." },
         ]},
       ],
 
       4: [
-        { title: "Floating and Balance II", items: [
-          { id:"l4_1", text:"Holds float positions independently" },
-          { id:"l4_2", text:"Transitions between float positions smoothly" },
-          { id:"l4_3", text:"Maintains balance during challenge tasks" },
+        { title: "Floating & Balance II", items: [
+          { id:"l4_1", text:"Maintain a back floating position using a narrow shape with the arms extended above the head, such as a pencil shape." },
+          { id:"l4_2", text:"Maintain a front floating position using a narrow shape with the arms extended above the head, such as a pencil shape." },
+          { id:"l4_3", text:"Maintain a floating position using a tuck shape, such as a mushroom float." },
+          { id:"l4_4", text:"Move between different floating shapes whilst maintaining a floating position, such as star, soldier, pencil or tuck shapes." },
         ]},
-        { title: "Streamlining and Rotation II", items: [
-          { id:"l4_4", text:"Glide with improved streamline" },
-          { id:"l4_5", text:"Controls rotation without support" },
-          { id:"l4_6", text:"Maintains body alignment for longer travel" },
+        { title: "Streamlining & Rotation II", items: [
+          { id:"l4_5", text:"Push off and glide on the back whilst maintaining a narrow body shape, such as a soldier shape." },
+          { id:"l4_6", text:"Push off and glide on the front whilst maintaining a narrow body shape, such as a soldier shape." },
+          { id:"l4_7", text:"Perform rotations from back to front and front to back using a narrow body shape, such as a soldier shape." },
+          { id:"l4_8", text:"Combine gliding and rotational movements within the same action, such as rotating from front to back or back to front whilst gliding." },
         ]},
         { title: "Propulsion II", items: [
-          { id:"l4_7", text:"Improves propulsion efficiency" },
-          { id:"l4_8", text:"Coordinates breathing with propulsion consistently" },
-          { id:"l4_9", text:"Demonstrates directional control" },
+          { id:"l4_9", text:"Refine front crawl kicking actions and combine them with front crawl arm actions (catch up)." },
+          { id:"l4_10", text:"Refine backstroke kicking actions and combine them with backstroke double arm actions." },
+          { id:"l4_11", text:"Perform breaststroke propulsion patterns (kick-glide) on the front and back." },
+          { id:"l4_12", text:"Perform dolphin kick with arms on the side." },
         ]},
-        { title: "Water Safety IV (Swim Float Swim)", items: [
-          { id:"l4_10", text:"Performs supported swim float swim sequence" },
-          { id:"l4_11", text:"Demonstrates calm float recovery" },
-          { id:"l4_12", text:"Returns independently to safety point" },
+        { title: "Water Safety IV", items: [
+          { id:"l4_13", text:"Perform a controlled dive entry into the water." },
+          { id:"l4_14", text:"Move into a back floating position following immersion and maintain the float." },
+          { id:"l4_15", text:"Complete a Swim-Float-Kick sequence, moving through the water, rolling onto the back to float and breathe, rolling onto the front and continuing movement." },
         ]},
       ],
 
       5: [
-        { title: "Streamlining and Rotation III", items: [
-          { id:"l5_1", text:"Maintains streamline during longer sequences" },
-          { id:"l5_2", text:"Controls rotation within continuous movement" },
-          { id:"l5_3", text:"Adjusts body position independently" },
+        { title: "Streamlining & Rotation III", items: [
+          { id:"l5_1", text:"Push off and glide on the back using a pencil shape and roll onto the front." },
+          { id:"l5_2", text:"Push off and glide on the front using a pencil shape and roll onto the back." },
+          { id:"l5_3", text:"Push off and glide whilst combining front to back and back to front rotations using a pencil shape." },
+          { id:"l5_4", text:"Push off and glide underwater and perform rotational movements using any body shape." },
         ]},
-        { title: "Swimming Strokes", items: [
-          { id:"l5_4", text:"Demonstrates refined stroke pattern" },
-          { id:"l5_5", text:"Maintains technique under fatigue" },
-          { id:"l5_6", text:"Applies stroke choice appropriately" },
+        { title: "Propulsion III", items: [
+          { id:"l5_5", text:"Combine front crawl arm actions with a roll onto the back to breathe and continue movement through the water." },
+          { id:"l5_6", text:"Combine backstroke kicking actions with single arm backstroke actions." },
+          { id:"l5_7", text:"Combine recognised breaststroke arm actions with a refined kick-glide sequence." },
+          { id:"l5_8", text:"Combine recognised butterfly arm actions with refined dolphin kick actions from a rocket glide position." },
         ]},
-        { title: "Dive, Starts and Turns I", items: [
-          { id:"l5_7", text:"Performs safe and controlled start" },
-          { id:"l5_8", text:"Executes turn sequence with reduced support" },
-          { id:"l5_9", text:"Pushes off with strong streamlined position" },
+        { title: "Dives, Starts & Turns I", items: [
+          { id:"l5_9", text:"Perform a controlled kneeling dive entry into a glide followed by propulsion." },
+          { id:"l5_10", text:"Perform a head first dive and retrieve an object from the water." },
+          { id:"l5_11", text:"Perform basic turning actions in the water, such as a somersault." },
+          { id:"l5_12", text:"Perform a tumble turn next to the wall." },
         ]},
-        { title: "Integrated Water Safety V", items: [
-          { id:"l5_10", text:"Applies safe decision making independently" },
-          { id:"l5_11", text:"Maintains safety behaviour during excitement" },
-          { id:"l5_12", text:"Demonstrates independent safety routine awareness" },
+        { title: "Integrated Water Safety & Recovery", items: [
+          { id:"l5_13", text:"Maintain treading water whilst signalling or shouting for help." },
+          { id:"l5_14", text:"Apply Swim-Float-Kick over a full pool length." },
+          { id:"l5_15", text:"Reach for and hold a rescue aid whilst remaining afloat." },
         ]},
       ],
 
       6: [
-        { title: "Stroke Refinement", items: [
-          { id:"l6_1", text:"Demonstrates clearer stroke pattern" },
-          { id:"l6_2", text:"Coordinates arms and legs more consistently" },
-          { id:"l6_3", text:"Maintains improved body alignment" },
+        { title: "Swimming Strokes", items: [
+          { id:"l6_1", text:"Perform front crawl single arm actions with lateral breathing and continuous leg actions." },
+          { id:"l6_2", text:"Perform recognised backstroke alternating arm actions from an arms on the side position with continuous leg actions." },
+          { id:"l6_3", text:"Combine recognised breaststroke arm and leg actions using a 1 pull-breathe and 2 kick-glide sequence." },
+          { id:"l6_4", text:"Combine recognised butterfly arm actions with two dolphin kick actions between arm cycles." },
         ]},
-        { title: "Timing and Rhythm Control", items: [
-          { id:"l6_4", text:"Repeats movement with consistent rhythm" },
-          { id:"l6_5", text:"Adjusts pace appropriately" },
-          { id:"l6_6", text:"Maintains sequence across repetitions" },
+        { title: "Timing & Coordination", items: [
+          { id:"l6_5", text:"Coordinate front crawl arm actions and breathing to maintain continuous swimming." },
+          { id:"l6_6", text:"Coordinate backstroke windmill arm timing, maintaining a continuous rhythm between both arms." },
+          { id:"l6_7", text:"Coordinate breaststroke pull-breathe-kick-glide timing." },
+          { id:"l6_8", text:"Coordinate butterfly breathing timing with arm actions, breathing every 2 arm cycles." },
         ]},
-        { title: "Distance and Endurance", items: [
-          { id:"l6_7", text:"Increases distance within ability" },
-          { id:"l6_8", text:"Maintains effort without dysregulation" },
-          { id:"l6_9", text:"Recovers breathing efficiently between lengths" },
+        { title: "Distance & Endurance", items: [
+          { id:"l6_9", text:"Swim front crawl continuously for at least one pool length or 10 arm cycles, using lateral or bilateral breathing whilst maintaining rhythm and control." },
+          { id:"l6_10", text:"Swim backstroke continuously for at least one pool length or 10 arm cycles whilst maintaining rhythm and control." },
+          { id:"l6_11", text:"Swim breaststroke continuously for at least one pool length or 6 pull-breathe-kick-glide cycles whilst maintaining rhythm and control." },
+          { id:"l6_12", text:"Swim butterfly continuously for at least one pool length or 6 arm cycles whilst maintaining rhythm, control and body undulation." },
         ]},
-        { title: "Dive, Starts and Turns II", items: [
-          { id:"l6_10", text:"Demonstrates controlled start entry" },
-          { id:"l6_11", text:"Performs turn sequence with coordination" },
-          { id:"l6_12", text:"Pushes off wall with consistent alignment" },
+        { title: "Dives, Starts & Turns II", items: [
+          { id:"l6_13", text:"Perform a standing dive entry and continue swimming using a recognised stroke." },
+          { id:"l6_14", text:"Perform a racing start from the poolside or starting block and continue swimming using a recognised stroke." },
+          { id:"l6_15", text:"Perform a backward somersault in the water." },
+          { id:"l6_16", text:"Perform a swim-tumble turn-glide-swim sequence." },
         ]},
       ],
     };
