@@ -160,11 +160,16 @@
       global.portalConsumeIncomingCallPushQuery();
     }
     if ("serviceWorker" in global.navigator) {
-      global.navigator.serviceWorker
-        .register("/clubsensational-portal-sw.js", { scope: "/" })
+      var registerSw =
+        typeof global.portalRegisterPortalServiceWorker === "function"
+          ? global.portalRegisterPortalServiceWorker()
+          : global.navigator.serviceWorker.register("/clubsensational-portal-sw.js?v=20260612-bg-push-fix", {
+              scope: "/",
+            });
+      registerSw
         .then(function (reg) {
           try {
-            reg.update();
+            if (reg && reg.update) reg.update();
           } catch (_u) {}
         })
         .catch(function () {});

@@ -1,6 +1,6 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260610-chat-push-restore
+ * v20260612-bg-push-fix
  * v20260608-incoming-call-dismiss
  * v20260609-foreground-no-os-banner
  */
@@ -79,11 +79,10 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
 
 function portalHasVisiblePortalClient() {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+    if (!clientList || !clientList.length) return false;
     for (var i = 0; i < clientList.length; i++) {
       var client = clientList[i];
-      if (!client) continue;
-      if (client.visibilityState === 'visible') return true;
-      if (client.focused) return true;
+      if (client && client.visibilityState === 'visible') return true;
     }
     return false;
   });

@@ -506,6 +506,43 @@
     vapidEl.hidden = false;
   }
 
+  async function portalShowBackgroundChatNotification(title, body, tag, data) {
+    if (typeof global.Notification === "undefined") return false;
+    if (global.Notification.permission !== "granted") return false;
+    title = String(title || "New message").trim();
+    body = String(body || "").trim();
+    tag = String(tag || "portal-chat-bg-" + Date.now()).trim();
+    data = data || {};
+    var icon = "/portal/app-icon/icon-192.png?v=20260624-push-icon";
+    var opts = {
+      body: body,
+      icon: icon,
+      badge: icon,
+      tag: tag,
+      renotify: true,
+      silent: false,
+      vibrate: [120, 55, 120, 55, 160],
+      data: data,
+    };
+    try {
+      var reg =
+        typeof global.portalRegisterPortalServiceWorker === "function"
+          ? await global.portalRegisterPortalServiceWorker()
+          : global.navigator && global.navigator.serviceWorker
+            ? await global.navigator.serviceWorker.ready
+            : null;
+      if (reg && typeof reg.showNotification === "function") {
+        await reg.showNotification(title, opts);
+        return true;
+      }
+    } catch (_sw) {}
+    try {
+      new global.Notification(title, opts);
+      return true;
+    } catch (_n) {}
+    return false;
+  }
+
   global.portalVapidConfigured = portalVapidConfigured;
   global.portalVapidStatusText = portalVapidStatusText;
   global.portalSubscribeFailureMessage = portalSubscribeFailureMessage;
@@ -525,4 +562,5 @@
   global.portalEnsureFreshPushSubscription = portalEnsureFreshPushSubscription;
   global.portalPostPushSubscriptionToServer = portalPostPushSubscriptionToServer;
   global.portalServerHasPushEndpoint = portalServerHasPushEndpoint;
+  global.portalShowBackgroundChatNotification = portalShowBackgroundChatNotification;
 })(typeof window !== "undefined" ? window : globalThis);

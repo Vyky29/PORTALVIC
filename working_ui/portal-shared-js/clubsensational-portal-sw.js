@@ -78,11 +78,10 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
 
 function portalHasVisiblePortalClient() {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+    if (!clientList || !clientList.length) return false;
     for (var i = 0; i < clientList.length; i++) {
       var client = clientList[i];
-      if (!client) continue;
-      if (client.visibilityState === 'visible') return true;
-      if (client.focused) return true;
+      if (client && client.visibilityState === 'visible') return true;
     }
     return false;
   });

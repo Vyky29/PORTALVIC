@@ -192,10 +192,21 @@
     consumeChatDeepLink();
   }
 
+  function bindVisibilityPushRefresh() {
+    if (global.__PORTAL_CS_CLIQ_VIS_PUSH__) return;
+    global.__PORTAL_CS_CLIQ_VIS_PUSH__ = true;
+    global.document.addEventListener("visibilitychange", function () {
+      if (global.document.visibilityState !== "visible") return;
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      void ensureWebPushSubscription();
+    });
+  }
+
   global.portalEnsureWebPushSubscription = ensureWebPushSubscription;
   global.portalCsCliqOpenChatFromPush = openChatFromPush;
 
   bindServiceWorkerMessages();
+  bindVisibilityPushRefresh();
   global.addEventListener("portal:supabase-ready", onSupabaseReady);
   if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session) {
     onSupabaseReady();

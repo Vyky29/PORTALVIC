@@ -404,10 +404,12 @@
     var tag = "portal-chat-live-" + String((row && row.id) || Date.now());
     if (appVisible && notifyOpts.suppressVisual !== true) {
       portalShowChatLogoAlert(title, preview);
-    } else if (!appVisible && notifyOpts.fromServerPush) {
-      /* Background/killed: service worker owns OS notifications — do not duplicate from the page. */
-    } else if (!appVisible && typeof global.portalStaffNotifyOsWhiteTile === "function") {
-      global.portalStaffNotifyOsWhiteTile(title, preview, tag);
+    } else if (!appVisible) {
+      if (typeof global.portalShowBackgroundChatNotification === "function") {
+        void global.portalShowBackgroundChatNotification(title, preview, tag, {
+          portalOpen: "chat",
+        });
+      }
     }
     if (typeof global.syncPortalHeaderAlertChrome === "function") {
       global.syncPortalHeaderAlertChrome(
