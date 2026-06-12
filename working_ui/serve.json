@@ -1,0 +1,9 @@
+{
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/portal-choose", "destination": "/portal_choose.html" },
+    { "source": "/cs_cliq", "destination": "/cs_cliq.html" }
+  ]
+}

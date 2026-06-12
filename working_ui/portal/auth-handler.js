@@ -167,9 +167,24 @@ function portalLoginUrlWithReturn(returnHref) {
 function portalUrlIsCsCliqPage(href) {
   if (typeof window === "undefined") return false;
   try {
-    return /cs_cliq\.html/i.test(new URL(href, window.location.href).pathname);
+    const path = new URL(href, window.location.href).pathname.toLowerCase();
+    return /cs_cliq\.html$/i.test(path) || /\/cs_cliq\/?$/i.test(path);
   } catch {
     return false;
+  }
+}
+
+function portalNormalizeCsCliqUrl(href) {
+  if (typeof window === "undefined") return href;
+  try {
+    if (!portalUrlIsCsCliqPage(href)) return href;
+    const u = new URL(href, window.location.href);
+    if (!/cs_cliq\.html$/i.test(u.pathname)) {
+      u.pathname = u.pathname.replace(/\/?cs_cliq\/?$/i, "/cs_cliq.html");
+    }
+    return u.href;
+  } catch {
+    return href;
   }
 }
 
@@ -317,8 +332,76 @@ export function portalShouldShowPortalChooser(profile, authEmail) {
 
 function portalOriginBase(host) {
   return String(host || "")
+    .trim()
     .toLowerCase()
     .replace(/^www\./, "");
+}
+
+function portalOriginSameForRedirect(hostA, hostB) {
+  const a = portalOriginBase(hostA);
+  const b = portalOriginBase(hostB);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const loopback = { localhost: true, "127.0.0.1": true, "[::1]": true };
+  return !!(loopback[a] && loopback[b]);
+}
+
+const PORTAL_LOGIN_REDIRECT_NEXT_KEY = "portal_login_redirect_next";
+const PORTAL_LOGIN_APP_KEY = "portal_login_app";
+
+function portalPersistLoginRedirectIntent() {
+  if (typeof window === "undefined") return;
+  try {
+    const u = new URL(window.location.href);
+    const app = String(u.searchParams.get("app") || "").trim().toLowerCase();
+    const raw = String(u.searchParams.get("next") || u.searchParams.get("return") || "").trim();
+    const isCsCliq =
+      app === "cs_cliq" ||
+      /cs_cliq(?:\.html)?(?:\?|#|$)/i.test(raw) ||
+      /portal_open=cs_cliq/i.test(raw);
+    if (!isCsCliq) return;
+    const dest = raw
+      ? new URL(raw, window.location.href).href
+      : new URL("cs_cliq.html", window.location.href).href;
+    sessionStorage.setItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY, dest);
+    sessionStorage.setItem(PORTAL_LOGIN_APP_KEY, "cs_cliq");
+  } catch {
+    /* ignore */
+  }
+}
+
+function portalClearLoginRedirectIntent() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY);
+    sessionStorage.removeItem(PORTAL_LOGIN_APP_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** CS Cliq login intent from ?app=cs_cliq and/or persisted sessionStorage. */
+function portalReadCsCliqLoginIntent() {
+  if (typeof window === "undefined") return null;
+  try {
+    const fromNext = readSafePostLoginRedirect();
+    if (fromNext && portalUrlIsCsCliqPage(fromNext)) return fromNext;
+    const u = new URL(window.location.href);
+    const app = String(u.searchParams.get("app") || "").trim().toLowerCase();
+    if (app === "cs_cliq") {
+      return new URL("cs_cliq.html", window.location.href).href;
+    }
+    const stored = String(sessionStorage.getItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY) || "").trim();
+    if (stored && portalUrlIsCsCliqPage(stored)) {
+      return new URL(stored, window.location.href).href;
+    }
+    if (String(sessionStorage.getItem(PORTAL_LOGIN_APP_KEY) || "").trim().toLowerCase() === "cs_cliq") {
+      return new URL("cs_cliq.html", window.location.href).href;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
 }
 
 /**
@@ -339,9 +422,8 @@ function readSafePostLoginRedirect() {
       decoded = raw;
     }
     const target = new URL(decoded, window.location.href);
-    const here = portalOriginBase(window.location.hostname);
-    const there = portalOriginBase(target.hostname);
-    if (here !== there || !/^https?:$/i.test(target.protocol)) return null;
+    if (!portalOriginSameForRedirect(window.location.hostname, target.hostname)) return null;
+    if (!/^https?:$/i.test(target.protocol)) return null;
     const path = target.pathname.toLowerCase();
     if (path.endsWith("/login") || path.endsWith("login.html")) {
       return null;
@@ -515,6 +597,7 @@ function inferDashboardRoute(profile, authEmail) {
 
 function bindLogin() {
   if (!isSupabaseConfigured()) return;
+  portalPersistLoginRedirectIntent();
 
   const errorEl = document.getElementById("error-msg");
   const nameInput = document.getElementById("name");
@@ -625,16 +708,20 @@ function bindLogin() {
     // - local working_ui uses local html routes
     // - published web uses fixed public routes by role
     // This avoids stale/broken dashboard_route values in DB causing 404.
-    const nextUrl = readSafePostLoginRedirect();
+    const nextUrlRaw = portalReadCsCliqLoginIntent() || readSafePostLoginRedirect();
+    const nextUrl = nextUrlRaw ? portalNormalizeCsCliqUrl(nextUrlRaw) : null;
     let url;
-    if (nextUrl) {
-      if (portalUrlIsCsCliqPage(nextUrl) && !portalCanAccessCsCliq(profile, authEmail)) {
+    if (nextUrl && portalUrlIsCsCliqPage(nextUrl)) {
+      if (portalCanAccessCsCliq(profile, authEmail)) {
+        url = nextUrl;
+        portalClearLoginRedirectIntent();
+      } else {
         url = portalShouldShowPortalChooser(profile, authEmail)
           ? portalPublishedChooseUrl()
           : resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
-      } else {
-        url = nextUrl;
       }
+    } else if (nextUrl) {
+      url = nextUrl;
     } else {
       url = portalShouldShowPortalChooser(profile, authEmail)
         ? portalPublishedChooseUrl()
@@ -755,8 +842,7 @@ function bindLogin() {
         registeredLogin: portalIsRegisteredPortalLoginEmail(sessionEmail),
       });
       if (!url) return;
-      const nextUrl = readSafePostLoginRedirect();
-      window.location.replace(nextUrl || url);
+      window.location.replace(url);
     } catch (e) {
       clearPortalStaffContext();
       showError(errorMessage(e, "Could not load your profile"));
@@ -806,8 +892,7 @@ function bindLogin() {
         registeredLogin: true,
       });
       if (!url) return;
-      const nextUrl = readSafePostLoginRedirect();
-      window.location.href = nextUrl || url;
+      window.location.href = url;
     } catch (err) {
       clearPortalStaffContext();
       showError(errorMessage(err, "Could not load your profile"));
