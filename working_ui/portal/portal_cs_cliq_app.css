@@ -90,8 +90,41 @@ html.cs-cliq-app-body body {
 }
 
 .cs-cliq-app-topbar--standalone {
-  justify-content: center;
+  justify-content: space-between;
+}
+
+.cs-cliq-app-topbar__brand {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cs-cliq-app-topbar__signout {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cs-cliq-app-topbar__signout:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.cs-cliq-app-topbar__signout:disabled {
+  opacity: 0.72;
+  cursor: wait;
 }
 
 .cs-cliq-app-topbar__logo {

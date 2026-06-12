@@ -139,6 +139,20 @@
       back.hidden = true;
       back.setAttribute("aria-hidden", "true");
     }
+    var signOut = document.getElementById("csCliqSignOutBtn");
+    if (signOut && !signOut.dataset.portalCsCliqAppBound) {
+      signOut.dataset.portalCsCliqAppBound = "1";
+      signOut.addEventListener("click", function () {
+        if (signOut.disabled) return;
+        signOut.disabled = true;
+        signOut.textContent = "Signing out…";
+        if (typeof global.portalLogoutRedirectToLogin === "function") {
+          void global.portalLogoutRedirectToLogin();
+          return;
+        }
+        global.location.replace("login.html?portal_logout=1&app=cs_cliq");
+      });
+    }
   }
 
   function bindPushAndCalls() {
@@ -229,8 +243,11 @@
 
     host.innerHTML =
       '<header class="cs-cliq-app-topbar cs-cliq-app-topbar--standalone">' +
+      '<div class="cs-cliq-app-topbar__brand">' +
       '<img class="cs-cliq-app-topbar__logo" src="/portal/announcements_logo_red_clean.png?v=20260612-clean-red" alt="" width="32" height="32" decoding="async" />' +
       '<span class="cs-cliq-app-topbar__title">CS Cliq</span>' +
+      "</div>" +
+      '<button type="button" class="cs-cliq-app-topbar__signout" id="csCliqSignOutBtn" aria-label="Sign out and switch account">Sign out</button>' +
       "</header>" +
       global.PortalAdminCsCliq.viewHtml();
 

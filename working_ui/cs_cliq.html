@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260611-cs-cliq-app" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260611-cs-cliq-app" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260611-cs-cliq-app" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_app.css?v=20260612-peers-v7" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_app.css?v=20260612-signout-v1" />
   <script src="/portal/portal_dm_icons.js?v=20260611-cs-cliq-app"></script>
   <script src="/portal/portal_dm_roles.js?v=20260611-cs-cliq-app"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260611-cs-cliq-app"></script>
@@ -54,7 +54,7 @@
   <script src="/portal/portal_incoming_call_push.js?v=20260611-cs-cliq-app"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260611-own-send-mark"></script>
   <script src="/portal/portal_cs_cliq_push.js?v=20260611-own-send-mark"></script>
-  <script src="/portal/portal_cs_cliq_app.js?v=20260612-peers-v7"></script>
+  <script src="/portal/portal_cs_cliq_app.js?v=20260612-signout-v1"></script>
 </head>
 <body class="cs-cliq-app-body">
   <div id="csCliqAppRoot" class="cs-cliq-app-root" aria-live="polite">
@@ -70,14 +70,16 @@
       } catch (_e) {}
     }
 
-    window.portalResolveLoginHref = function () {
+    window.portalResolveLoginHref = function (afterLogout) {
       try {
         var login = new URL("login.html", location.href);
         login.searchParams.set("next", location.href);
         login.searchParams.set("app", "cs_cliq");
+        if (afterLogout) login.searchParams.set("portal_logout", "1");
         return login.href;
       } catch (_e) {
-        return "login.html?app=cs_cliq&next=" + encodeURIComponent("cs_cliq.html");
+        var base = "login.html?app=cs_cliq&next=" + encodeURIComponent("cs_cliq.html");
+        return afterLogout ? base + "&portal_logout=1" : base;
       }
     };
 
@@ -85,7 +87,12 @@
       try {
         await portalLogout();
       } catch (_lo) {}
-      window.location.replace(window.portalResolveLoginHref());
+      try {
+        localStorage.removeItem("portal_login_cs_cliq_dest_v1");
+        sessionStorage.removeItem("portal_login_redirect_next");
+        sessionStorage.removeItem("portal_login_app");
+      } catch (_clear) {}
+      window.location.replace(window.portalResolveLoginHref(true));
     };
 
     async function boot() {
