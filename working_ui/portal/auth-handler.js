@@ -290,7 +290,21 @@ export function portalCanAccessCeoDashboard(profile, authEmail) {
 /** CS Cliq standalone app — directors (Victor/Raúl/Javi), ops admin, CEO. */
 export function portalCanAccessCsCliq(profile, authEmail) {
   if (!profile) return false;
-  return portalCanAccessAdminDashboard(profile, authEmail) || portalCanAccessCeoDashboard(profile, authEmail);
+  if (portalCanAccessAdminDashboard(profile, authEmail) || portalCanAccessCeoDashboard(profile, authEmail)) {
+    return true;
+  }
+  const staffKey = portalInferStaffKey(profile, authEmail);
+  if (staffKey === "victor" || staffKey === "raul" || staffKey === "javi" || staffKey === "sevitha") {
+    return true;
+  }
+  if (
+    typeof window !== "undefined" &&
+    window.portalDmRoles &&
+    typeof window.portalDmRoles.portalDmUsesAdminCliq === "function"
+  ) {
+    return window.portalDmRoles.portalDmUsesAdminCliq(profile);
+  }
+  return false;
 }
 
 /**
@@ -348,6 +362,49 @@ function portalOriginSameForRedirect(hostA, hostB) {
 
 const PORTAL_LOGIN_REDIRECT_NEXT_KEY = "portal_login_redirect_next";
 const PORTAL_LOGIN_APP_KEY = "portal_login_app";
+const PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY = "portal_login_cs_cliq_dest_v1";
+
+function portalCsCliqDefaultUrl() {
+  return new URL("cs_cliq.html", window.location.href).href;
+}
+
+/** Login screen is CS Cliq (red theme) even if query/session was lost on mobile. */
+function portalLoginPageCsCliqIntent() {
+  if (typeof window === "undefined") return false;
+  if (window.__PORTAL_LOGIN_CS_CLIQ__ === true) return true;
+  try {
+    const hidden = document.getElementById("portalLoginApp");
+    if (hidden && String(hidden.value || "").trim().toLowerCase() === "cs_cliq") return true;
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (document.documentElement.getAttribute("data-portal-login-app") === "cs_cliq") return true;
+    if (document.documentElement.classList.contains("login-theme-cs-cliq")) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+function portalMarkCsCliqLoginIntent(destHref) {
+  if (typeof window === "undefined") return;
+  const dest = destHref || portalCsCliqDefaultUrl();
+  window.__PORTAL_LOGIN_CS_CLIQ__ = true;
+  try {
+    sessionStorage.setItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY, dest);
+    sessionStorage.setItem(PORTAL_LOGIN_APP_KEY, "cs_cliq");
+    localStorage.setItem(PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY, dest);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const hidden = document.getElementById("portalLoginApp");
+    if (hidden) hidden.value = "cs_cliq";
+  } catch {
+    /* ignore */
+  }
+}
 
 function portalPersistLoginRedirectIntent() {
   if (typeof window === "undefined") return;
@@ -358,13 +415,13 @@ function portalPersistLoginRedirectIntent() {
     const isCsCliq =
       app === "cs_cliq" ||
       /cs_cliq(?:\.html)?(?:\?|#|$)/i.test(raw) ||
-      /portal_open=cs_cliq/i.test(raw);
+      /portal_open=cs_cliq/i.test(raw) ||
+      portalLoginPageCsCliqIntent();
     if (!isCsCliq) return;
     const dest = raw
       ? new URL(raw, window.location.href).href
-      : new URL("cs_cliq.html", window.location.href).href;
-    sessionStorage.setItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY, dest);
-    sessionStorage.setItem(PORTAL_LOGIN_APP_KEY, "cs_cliq");
+      : portalCsCliqDefaultUrl();
+    portalMarkCsCliqLoginIntent(dest);
   } catch {
     /* ignore */
   }
@@ -372,9 +429,11 @@ function portalPersistLoginRedirectIntent() {
 
 function portalClearLoginRedirectIntent() {
   if (typeof window === "undefined") return;
+  window.__PORTAL_LOGIN_CS_CLIQ__ = false;
   try {
     sessionStorage.removeItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY);
     sessionStorage.removeItem(PORTAL_LOGIN_APP_KEY);
+    localStorage.removeItem(PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY);
   } catch {
     /* ignore */
   }
@@ -389,14 +448,21 @@ function portalReadCsCliqLoginIntent() {
     const u = new URL(window.location.href);
     const app = String(u.searchParams.get("app") || "").trim().toLowerCase();
     if (app === "cs_cliq") {
-      return new URL("cs_cliq.html", window.location.href).href;
+      return portalCsCliqDefaultUrl();
     }
     const stored = String(sessionStorage.getItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY) || "").trim();
     if (stored && portalUrlIsCsCliqPage(stored)) {
       return new URL(stored, window.location.href).href;
     }
     if (String(sessionStorage.getItem(PORTAL_LOGIN_APP_KEY) || "").trim().toLowerCase() === "cs_cliq") {
-      return new URL("cs_cliq.html", window.location.href).href;
+      return portalCsCliqDefaultUrl();
+    }
+    const localStored = String(localStorage.getItem(PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY) || "").trim();
+    if (localStored && portalUrlIsCsCliqPage(localStored)) {
+      return new URL(localStored, window.location.href).href;
+    }
+    if (portalLoginPageCsCliqIntent()) {
+      return portalCsCliqDefaultUrl();
     }
   } catch {
     /* ignore */
@@ -708,7 +774,9 @@ function bindLogin() {
     // - local working_ui uses local html routes
     // - published web uses fixed public routes by role
     // This avoids stale/broken dashboard_route values in DB causing 404.
-    const nextUrlRaw = portalReadCsCliqLoginIntent() || readSafePostLoginRedirect();
+    portalPersistLoginRedirectIntent();
+    const csCliqIntentRaw = portalReadCsCliqLoginIntent();
+    const nextUrlRaw = csCliqIntentRaw || readSafePostLoginRedirect();
     const nextUrl = nextUrlRaw ? portalNormalizeCsCliqUrl(nextUrlRaw) : null;
     let url;
     if (nextUrl && portalUrlIsCsCliqPage(nextUrl)) {
@@ -887,6 +955,7 @@ function bindLogin() {
       );
     }
     try {
+      portalPersistLoginRedirectIntent();
       const url = await redirectUrlForUser(supabase, data.user.id, {
         email,
         registeredLogin: true,

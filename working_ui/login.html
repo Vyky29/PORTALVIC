@@ -420,6 +420,7 @@
           } catch (_ss) {}
         }
         if (!csCliq) return;
+        window.__PORTAL_LOGIN_CS_CLIQ__ = true;
         document.documentElement.classList.add("login-theme-cs-cliq");
         document.documentElement.setAttribute("data-portal-login-app", "cs_cliq");
         try {
@@ -428,6 +429,7 @@
             : new URL("cs_cliq.html", window.location.href).href;
           sessionStorage.setItem("portal_login_redirect_next", dest);
           sessionStorage.setItem("portal_login_app", "cs_cliq");
+          localStorage.setItem("portal_login_cs_cliq_dest_v1", dest);
         } catch (_store) {}
       } catch (_e) {}
     })();
@@ -523,6 +525,7 @@
       <p class="login-hint">Staff: your first name and the 4-digit PIN from the office.</p>
 
       <form id="login-form" novalidate method="post" action="">
+        <input type="hidden" id="portalLoginApp" name="portal_login_app" value="" />
         <div class="field">
           <label for="name">Name or email</label>
           <input id="name" name="name" type="text" autocomplete="username" placeholder="First name or email" />
@@ -542,6 +545,14 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function () {
+      if (window.__PORTAL_LOGIN_CS_CLIQ__ !== true) return;
+      var hiddenApp = document.getElementById("portalLoginApp");
+      if (hiddenApp) hiddenApp.value = "cs_cliq";
+    })();
+  </script>
 
   <!-- Name→email map inlined so the login page does not need a separate staff_login_map fetch. Keep in sync with database/auth-map.js. -->
   <script>
@@ -662,7 +673,7 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260609-cs-cliq-login";
+      var portalJsVer = "20260612-cs-cliq-login2";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");
