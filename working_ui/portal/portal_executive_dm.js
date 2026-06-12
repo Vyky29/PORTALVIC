@@ -441,7 +441,7 @@
       if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec' || laneNav;
       var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
       if(wrapSl) wrapSl.hidden = channel !== 'staff_lead';
-      if(channel === 'ceo_exec' && !laneNav) void portalAdminDmFillCeoQuickPicks();
+      if(channel === 'ceo_exec' && (!laneNav || global.__PORTAL_CS_CLIQ_STANDALONE)) void portalAdminDmFillCeoQuickPicks();
       if(channel === 'staff_lead') void portalAdminDmFillStaffLeadsQuickPicks();
       if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
       window.__PORTAL_DM_REFRESH_THREAD = function(){ return portalAdminDmLoadMessages(); };
@@ -1961,6 +1961,7 @@
         host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">Sign in to load conversations.</p>';
         return;
       }
+      try {
       if(
         global.portalChatActorIdentity &&
         typeof global.portalChatActorIdentity.ensureSessionProfile === 'function'
@@ -2219,6 +2220,13 @@
       }
       if(!host.children.length){
         host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No conversations yet. Use <strong>New message</strong> to start.</p>';
+      }
+      } catch (renderErr) {
+        host.innerHTML =
+          '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">Could not load inbox. Try refreshing the page.</p>';
+        try {
+          console.error("[CS Cliq] inbox render failed", renderErr);
+        } catch (_log) {}
       }
     }
     async function portalAdminDmOpenManagementWorker(workerId, lane){

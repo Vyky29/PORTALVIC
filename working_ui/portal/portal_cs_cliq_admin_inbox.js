@@ -105,7 +105,9 @@
     var groupRow = document.getElementById("csCliqCeoGroupRow");
     var laneNav = usesDirectorLaneNav();
     if (quick) {
-      quick.hidden = laneNav || String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() !== "ceo_exec";
+      quick.hidden =
+        (laneNav && !global.__PORTAL_CS_CLIQ_STANDALONE) ||
+        String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() !== "ceo_exec";
       quick.setAttribute("aria-hidden", quick.hidden ? "true" : "false");
     }
     if (groupRow) {
@@ -418,17 +420,8 @@
   }
 
   function managementSharedWorkerOpsInbox() {
+    if (global.__PORTAL_CS_CLIQ_STANDALONE) return false;
     if (!shouldUseCategorizedInbox()) return false;
-    if (global.__PORTAL_CS_CLIQ_STANDALONE) {
-      var prof = profileRow();
-      if (
-        global.portalDmRoles &&
-        typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
-        global.portalDmRoles.portalDmIsDirectorProfile(prof)
-      ) {
-        return true;
-      }
-    }
     if (
       global.portalCsCliqManagementInbox &&
       typeof global.portalCsCliqManagementInbox.isCeoViewer === "function" &&
@@ -824,9 +817,21 @@
       if (directorExtras.length) {
         dmItems = sortDmItems(dmItems.concat(directorExtras));
       }
+    } else if (global.__PORTAL_CS_CLIQ_STANDALONE && inboxClient) {
+      var standPeers = await loadDirectorDirectPeerItems(inboxClient, me, dmItems);
+      if (standPeers.length) {
+        dmItems = sortDmItems(dmItems.concat(standPeers));
+      }
     }
     host.innerHTML = "";
     if (!dmItems.length) {
+      if (global.__PORTAL_CS_CLIQ_STANDALONE && inboxClient) {
+        host.innerHTML =
+          '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>' +
+          '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
+        await fillDirectPeerPicks(document.getElementById("csCliqStandalonePeerPicks"));
+        if (document.getElementById("csCliqStandalonePeerPicks").children.length) return;
+      }
       host.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         (sharedWorkerOps ? emptyInboxMessage(activeCat) : "No conversations here yet.") +
