@@ -249,8 +249,11 @@
       return;
     }
     try {
-      var res = await c.from("portal_ceo_group").insert([{ slug: slug, title: title }]).select("id").maybeSingle();
+      var res = await c.from("portal_ceo_group").insert([{ slug: slug, title: title }]).select("id");
       if (res.error) throw new Error(res.error.message || String(res.error));
+      var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : res.data;
+      var gid = row0 && row0.id ? String(row0.id) : "";
+      if (!gid) throw new Error("Group created but could not open it. Check Channels list.");
       closeCreateModal();
       if (typeof global.portalAdminDmRenderList === "function") {
         await global.portalAdminDmRenderList();
@@ -262,8 +265,7 @@
       } else {
         await refresh();
       }
-      var gid = res.data && res.data.id ? String(res.data.id) : "";
-      if (gid) await openCreatedGroupOnPortal(gid);
+      await openCreatedGroupOnPortal(gid);
     } catch (e) {
       if (err) {
         err.textContent = String((e && e.message) || e || "Could not create group.");

@@ -1311,7 +1311,6 @@
         })();
       }, 320);
     }
-    }
     function portalAdminDmBindRealtimeVisibilityRefresh(){
       if(window.__PORTAL_ADMIN_DM_VISIBILITY_BOUND) return;
       window.__PORTAL_ADMIN_DM_VISIBILITY_BOUND = true;
@@ -1620,6 +1619,8 @@
       portalAdminDmPremiumSyncView();
       if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
       await portalAdminDmLoadMessages();
+      portalAdminDmApplyCsCliqPanelDom('thread');
+      portalAdminDmSyncCsCliqLayoutNow();
     }
     function openCeoExecDmChatModalToAllCeoGroup(){
       portalAdminDmApplyTeamTileUnreadClass();

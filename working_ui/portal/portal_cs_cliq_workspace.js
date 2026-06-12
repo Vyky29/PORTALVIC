@@ -23,6 +23,7 @@
     try {
       var p = String((global.location && global.location.pathname) || "").toLowerCase();
       if (/admin_dashboard\.html/.test(p)) return "admin";
+      if (/cs_cliq\.html/.test(p)) return "admin";
       if (/ceo_dashboard\.html/.test(p)) return "ceo";
       if (/lead_dashboard\.html/.test(p)) return "lead";
       if (/staff_dashboard\.html/.test(p)) return "staff";
