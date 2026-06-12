@@ -139,7 +139,8 @@ export async function loadChatPushEligibleUserIds(
     if (!id || seen.has(id)) continue;
     if (
       portalPushIsExecAppRole(r) ||
-      portalPushIsDirectorProfile(r)
+      portalPushIsDirectorProfile(r) ||
+      portalPushIsOperationsAdminProfile(r)
     ) {
       seen.add(id);
       ids.push(id);
@@ -274,6 +275,47 @@ export function portalPushIsOperationsAdminProfile(
   return !portalPushIsDirectorProfile(row);
 }
 
+/** Admin / CEO / director / ops admin — not staff, lead, or worker roster. */
+export function portalPushIsLeadershipParticipant(
+  row: PushProfileRow | null | undefined,
+): boolean {
+  if (!row || row.is_active === false) return false;
+  if (portalPushIsWorkerRecipient(row)) return false;
+  return (
+    portalPushIsExecAppRole(row) ||
+    portalPushIsDirectorProfile(row) ||
+    portalPushIsOperationsAdminProfile(row)
+  );
+}
+
+/** 1:1 DM between leadership only (CEO ↔ CEO, admin ↔ CEO, etc.). */
+export function portalPushIsLeadershipOnlyDmThread(
+  profA: PushProfileRow | null | undefined,
+  profB: PushProfileRow | null | undefined,
+): boolean {
+  return (
+    portalPushIsLeadershipParticipant(profA) &&
+    portalPushIsLeadershipParticipant(profB)
+  );
+}
+
+/** CEO CS Cliq groups for directors + ops admin (not staff/leads ops channels). */
+export function portalPushIsLeadershipCeoGroupSlug(
+  slugOrTitle: string | null | undefined,
+): boolean {
+  const s = normProfileKey(String(slugOrTitle ?? "").replace(/-/g, "_"));
+  if (!s) return false;
+  return (
+    s === "all_ceos" ||
+    s === "allceos" ||
+    s === "ceo_liaison" ||
+    s === "ceoliaison" ||
+    s === "ceos" ||
+    s.includes("allceos") ||
+    s.includes("ceoliaison")
+  );
+}
+
 /** Staff ops channels: worker/leads pool — alert ops admin only, not directors. */
 export function portalPushGroupIsStaffOpsChannel(
   slugOrTitle: string | null | undefined,
@@ -402,13 +444,15 @@ export async function resolveAdminDmPushRecipientIds(
   if (workerOps) {
     const opsAdmins = await resolveOperationsAdminUserIds(admin, adminCeoIds);
     recipients = opsAdmins.filter((id) => !authorIdentity.has(id));
-  } else {
+  } else if (portalPushIsLeadershipOnlyDmThread(profA, profB)) {
     const set = new Set<string>();
     for (const pid of [pa, pb]) {
       if (!pid || authorIdentity.has(pid)) continue;
       set.add(pid);
     }
     recipients = [...set];
+  } else {
+    recipients = [];
   }
 
   recipients = recipients.filter((id) => id && !authorIdentity.has(id));

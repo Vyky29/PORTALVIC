@@ -12,9 +12,12 @@ import {
   insertDedupeOrSkip,
   jsonPushResponse,
   loadAdminCeoUserIds,
+  loadChatPushEligibleUserIds,
   loadStaffLeadUserIds,
   portalPushGroupIsStaffOpsChannel,
   portalPushIsDirectorProfile,
+  portalPushIsLeadershipCeoGroupSlug,
+  portalPushIsLeadershipOnlyDmThread,
   portalPushIsWorkerRecipient,
   resolveAdminDmPushRecipientIds,
   resolveOperationsAdminUserIds,
@@ -200,7 +203,7 @@ async function resolveTargetUserIds(
     const workerOps = (aWorker && bExec) || (bWorker && aExec);
 
     if (workerOps) {
-      const adminCeoIds = await loadAdminCeoUserIds(admin);
+      const adminCeoIds = await loadChatPushEligibleUserIds(admin);
       const opsAdmins = await resolveAdminDmPushRecipientIds(
         admin,
         threadId,
@@ -210,9 +213,13 @@ async function resolveTargetUserIds(
       return opsAdmins.filter((id) => id && id !== callerId && id !== authorId);
     }
 
-    if (peer && peer !== callerId && peer !== authorId) {
-      return [peer];
+    if (portalPushIsLeadershipOnlyDmThread(profA, profB)) {
+      if (peer && peer !== callerId && peer !== authorId) {
+        return [peer];
+      }
+      return [];
     }
+
     return [];
   }
 
@@ -249,12 +256,16 @@ async function resolveTargetUserIds(
     }
 
     if (portalPushGroupIsStaffOpsChannel(slug) && authorIsWorker) {
-      const adminCeoIds = await loadAdminCeoUserIds(admin);
+      const adminCeoIds = await loadChatPushEligibleUserIds(admin);
       return resolveOperationsAdminUserIds(admin, adminCeoIds);
     }
 
-    const admins = await loadAdminCeoUserIds(admin);
-    return admins.filter((id) => id && id !== authorId);
+    if (portalPushIsLeadershipCeoGroupSlug(slug)) {
+      const leadershipIds = await loadChatPushEligibleUserIds(admin);
+      return leadershipIds.filter((id) => id && id !== authorId);
+    }
+
+    return [];
   }
 
   return [];

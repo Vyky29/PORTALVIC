@@ -38,6 +38,7 @@ import {
   PORTAL_PUSH_CORS_HEADERS,
   portalPushGroupIsStaffOpsChannel,
   portalPushIsDirectorProfile,
+  portalPushIsLeadershipCeoGroupSlug,
   resolveAdminDmPushRecipientIds,
   resolveOperationsAdminUserIds,
   sendPushPayloadToUserIds,
@@ -435,8 +436,10 @@ Deno.serve(async (req) => {
     if (portalPushGroupIsStaffOpsChannel(slug)) {
       const opsAdmins = await resolveOperationsAdminUserIds(admin, adminIds);
       recipientIds = opsAdmins.filter((id) => id !== authorId);
-    } else {
+    } else if (portalPushIsLeadershipCeoGroupSlug(slug)) {
       recipientIds = adminIds.filter((id) => id !== authorId);
+    } else {
+      recipientIds = [];
     }
   } else if (CHAT_TABLES.has(table) && authorId) {
     recipientIds = adminIds.filter((id) => id !== authorId);
