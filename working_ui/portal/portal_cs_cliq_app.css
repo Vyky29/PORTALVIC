@@ -89,6 +89,19 @@ html.cs-cliq-app-body body {
   white-space: nowrap;
 }
 
+.cs-cliq-app-topbar--standalone {
+  justify-content: center;
+  gap: 10px;
+}
+
+.cs-cliq-app-topbar__logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
 .cs-cliq-app-root .portal-cs-cliq {
   flex: 1;
   min-height: 0;

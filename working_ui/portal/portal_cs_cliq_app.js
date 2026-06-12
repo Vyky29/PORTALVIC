@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-cliq-icon";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-standalone";
 
   function portalCsCliqMaybeApplyBuildUpdate() {
     var key = "portal_cs_cliq_build";
@@ -123,19 +123,8 @@
     var back = document.getElementById("csCliqInboxBackBtn");
     if (back && !back.dataset.portalCsCliqAppBound) {
       back.dataset.portalCsCliqAppBound = "1";
-      back.hidden = false;
-      back.setAttribute("aria-hidden", "false");
-      back.addEventListener("click", function () {
-        global.location.href = operationsAdminUrl();
-      });
-    }
-    var opsLink = document.getElementById("csCliqAppOpsLink");
-    if (opsLink && !opsLink.dataset.bound) {
-      opsLink.dataset.bound = "1";
-      opsLink.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        global.location.href = operationsAdminUrl();
-      });
+      back.hidden = true;
+      back.setAttribute("aria-hidden", "true");
     }
   }
 
@@ -196,10 +185,8 @@
     if (!host) return false;
 
     host.innerHTML =
-      '<header class="cs-cliq-app-topbar">' +
-      '<a class="cs-cliq-app-topbar__ops" id="csCliqAppOpsLink" href="' +
-      esc(operationsAdminUrl()) +
-      '">← Operations</a>' +
+      '<header class="cs-cliq-app-topbar cs-cliq-app-topbar--standalone">' +
+      '<img class="cs-cliq-app-topbar__logo" src="/portal/app-icon/cs-cliq/icon-192.png?v=20260612-cliq-icon" alt="" width="32" height="32" decoding="async" />' +
       '<span class="cs-cliq-app-topbar__title">CS Cliq</span>' +
       "</header>" +
       global.PortalAdminCsCliq.viewHtml();

@@ -144,6 +144,31 @@ function portalPublishedLoginUrl() {
 function portalPublishedChooseUrl() {
   return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
 }
+function portalPublishedCsCliqUrl() {
+  return portalPublishedPageUrl("cs_cliq.html", "PORTAL_CS_CLIQ_URL");
+}
+
+/** Login URL that returns to `returnHref` after sign-in (same origin). */
+function portalLoginUrlWithReturn(returnHref) {
+  if (typeof window === "undefined") return portalPublishedLoginUrl();
+  try {
+    const login = new URL(portalPublishedLoginUrl(), window.location.href);
+    const ret = String(returnHref || window.location.href || "").trim();
+    if (ret) login.searchParams.set("next", ret);
+    return login.href;
+  } catch {
+    return portalPublishedLoginUrl();
+  }
+}
+
+function portalUrlIsCsCliqPage(href) {
+  if (typeof window === "undefined") return false;
+  try {
+    return /cs_cliq\.html/i.test(new URL(href, window.location.href).pathname);
+  } catch {
+    return false;
+  }
+}
 
 /** Username → effective role for post-login routing. */
 const PORTAL_USERNAME_ROLE_OVERRIDES = {
@@ -587,11 +612,20 @@ function bindLogin() {
     // - published web uses fixed public routes by role
     // This avoids stale/broken dashboard_route values in DB causing 404.
     const nextUrl = readSafePostLoginRedirect();
-    let url = nextUrl
-      ? nextUrl
-      : portalShouldShowPortalChooser(profile, authEmail)
+    let url;
+    if (nextUrl) {
+      if (portalUrlIsCsCliqPage(nextUrl) && !portalCanAccessCsCliq(profile, authEmail)) {
+        url = portalShouldShowPortalChooser(profile, authEmail)
+          ? portalPublishedChooseUrl()
+          : resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
+      } else {
+        url = nextUrl;
+      }
+    } else {
+      url = portalShouldShowPortalChooser(profile, authEmail)
         ? portalPublishedChooseUrl()
         : resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
+    }
     // On published deploy, avoid stale DB dashboard_route paths that 404.
     if (!url && fromWorkingUi) {
       const profileRoute = String(profile.dashboard_route || "").trim();
@@ -818,7 +852,12 @@ export async function bootstrapDashboardSupabase(_opts) {
   const isLeadOverview = page === "lead_overview";
   const leadHubUrl = portalPublishedLeadUrl();
   /** Programme-lead session overview: return to lead hub, not login, when auth is not ready yet. */
-  const authFailureRedirect = isLeadOverview ? leadHubUrl : loginRedirect;
+  const authFailureRedirect =
+    page === "lead_overview"
+      ? leadHubUrl
+      : page === "cs_cliq" && typeof window !== "undefined"
+        ? portalLoginUrlWithReturn(window.location.href)
+        : loginRedirect;
   const sessionWaitMs = isLeadOverview ? 7000 : 2800;
 
   /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */

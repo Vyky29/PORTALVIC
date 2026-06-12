@@ -44,7 +44,7 @@
 
   function isManagementProfile(prof) {
     prof = prof || profileRow();
-    if (/admin_dashboard\.html/.test(portalPath())) return true;
+    if (/admin_dashboard\.html|cs_cliq\.html/.test(portalPath())) return true;
     if (global.portalDmRoles) {
       if (typeof global.portalDmRoles.portalDmUsesAdminCliq === "function" && global.portalDmRoles.portalDmUsesAdminCliq(prof)) {
         return true;
