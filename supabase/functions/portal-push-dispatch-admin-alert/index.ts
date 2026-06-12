@@ -39,6 +39,7 @@ import {
   portalPushGroupIsStaffOpsChannel,
   portalPushIsDirectorProfile,
   resolveAdminDmPushRecipientIds,
+  resolveOperationsAdminUserIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
   verifyPortalPushWebhook,
@@ -490,11 +491,13 @@ Deno.serve(async (req) => {
 
   const { data: profRows } = await admin
     .from("staff_profiles")
-    .select("id,app_role,dashboard_route")
+    .select("id,app_role,dashboard_route,username,full_name")
     .in("id", recipientIds);
 
-  const profBy: Record<string, { app_role?: string; dashboard_route?: string }> =
-    {};
+  const profBy: Record<
+    string,
+    { app_role?: string; dashboard_route?: string; username?: string; full_name?: string }
+  > = {};
   for (const row of profRows ?? []) {
     const id = String((row as { id?: string }).id || "").trim();
     if (id) profBy[id] = row as { app_role?: string; dashboard_route?: string };

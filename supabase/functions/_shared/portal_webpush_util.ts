@@ -294,7 +294,7 @@ export function portalPushGroupIsStaffOpsChannel(
   );
 }
 
-async function resolveOperationsAdminUserIds(
+export async function resolveOperationsAdminUserIds(
   admin: SupabaseClient,
   candidateIds: string[],
 ): Promise<string[]> {

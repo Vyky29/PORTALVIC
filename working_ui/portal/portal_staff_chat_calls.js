@@ -403,6 +403,42 @@
     callParticipantCache = Object.create(null);
   }
 
+  function isExecutiveDirectorViewer() {
+    var sp = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    if (!sp) return false;
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsExecutiveCeoTrioMember === "function"
+    ) {
+      return global.portalDmRoles.portalDmIsExecutiveCeoTrioMember(sp);
+    }
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsDirectorProfile === "function"
+    ) {
+      return global.portalDmRoles.portalDmIsDirectorProfile(sp);
+    }
+    return false;
+  }
+
+  async function loadThreadParticipantProfiles(client, a, b) {
+    var ids = [String(a || "").trim(), String(b || "").trim()].filter(Boolean);
+    var profBy = {};
+    if (!client || !ids.length) return profBy;
+    try {
+      var res = await client
+        .from("staff_profiles")
+        .select("id,app_role,staff_role,dashboard_route,is_active,username,full_name")
+        .in("id", ids);
+      if (!res.error && Array.isArray(res.data)) {
+        res.data.forEach(function (p) {
+          if (p && p.id) profBy[String(p.id)] = p;
+        });
+      }
+    } catch (_prof) {}
+    return profBy;
+  }
+
   async function isIncomingCallDmForMe(row) {
     var me = meUserId();
     if (!me || !row) return false;
@@ -440,13 +476,20 @@
       }
     }
 
-    if (a !== me && b !== me) return false;
-
     var callerId = String((data && data.callerId) || row.author_id || "").trim();
-    if (!callerId) return true;
-    if (isOwnCallAuthor(callerId)) return false;
+    if (callerId && isOwnCallAuthor(callerId)) return false;
+
+    if (a !== me && b !== me) {
+      if (!usesAdminSharedInbox() || !isExecutiveDirectorViewer()) return false;
+      var profByShared = await loadThreadParticipantProfiles(client, a, b);
+      if (!isManagementWorkerThreadPair(profByShared, a, b)) return false;
+      var workerId = isWorkerRecipientProfile(profByShared[a]) ? a : b;
+      if (!workerId || callerId !== workerId) return false;
+      return true;
+    }
 
     var other = a === me ? b : a;
+    if (!callerId) return true;
     return callerId === other;
   }
 
@@ -466,7 +509,18 @@
       var prof = (box && box.staff_profile) || {};
       var role = String(prof.app_role || "").toLowerCase();
       if (slug === "staff_leads_ops") {
-        return role === "staff" || role === "lead";
+        if (role === "staff" || role === "lead") return true;
+        if (authorId && usesAdminSharedInbox() && isExecutiveDirectorViewer()) {
+          try {
+            var ap = await client
+              .from("staff_profiles")
+              .select("id,app_role,staff_role,dashboard_route,is_active,username,full_name")
+              .eq("id", authorId)
+              .maybeSingle();
+            if (ap.data && isWorkerRecipientProfile(ap.data)) return true;
+          } catch (_authProf) {}
+        }
+        return false;
       }
       return role === "admin" || role === "ceo";
     } catch (_callGrp) {

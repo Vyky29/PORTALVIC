@@ -13,11 +13,14 @@ import {
   jsonPushResponse,
   loadAdminCeoUserIds,
   loadStaffLeadUserIds,
+  portalPushGroupIsStaffOpsChannel,
+  portalPushIsDirectorProfile,
+  portalPushIsWorkerRecipient,
   resolveAdminDmPushRecipientIds,
+  resolveOperationsAdminUserIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
   portalPushIsExecAppRole,
-  portalPushIsWorkerRecipient,
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
 
@@ -60,15 +63,32 @@ function callKindLabel(kind: string): string {
   return "Incoming call";
 }
 
+function csCliqPushOpenBase(): string {
+  const admin = adminPushOpenBase();
+  if (/admin_dashboard\.html/i.test(admin)) {
+    return admin.replace(/admin_dashboard\.html/i, "cs_cliq.html");
+  }
+  const staff = staffPushOpenBase();
+  if (staff && /\.html$/i.test(staff)) {
+    return staff.replace(/\/[^/]+\.html$/i, "/cs_cliq.html");
+  }
+  if (staff) return `${staff.replace(/\/$/, "")}/cs_cliq.html`;
+  return "";
+}
+
 function openBaseForProfile(prof: {
   app_role?: string | null;
   dashboard_route?: string | null;
+  username?: string | null;
+  full_name?: string | null;
 } | null): string {
   const staff = staffPushOpenBase();
   const admin = adminPushOpenBase();
+  const csCliq = csCliqPushOpenBase();
+  if (portalPushIsDirectorProfile(prof) && csCliq) return csCliq;
   const role = String(prof?.app_role || "").toLowerCase();
   const dr = String(prof?.dashboard_route || "").toLowerCase();
-  if (role === "admin" || role === "ceo") return admin || staff;
+  if (role === "admin" || role === "ceo") return csCliq || admin || staff;
   if (dr.includes("lead_dashboard")) {
     if (/staff_dashboard\.html/i.test(staff)) {
       return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
@@ -198,18 +218,41 @@ async function resolveTargetUserIds(
 
   if (table === "portal_ceo_group_message") {
     const groupId = String(record.group_id || "").trim();
+    let slug = "";
     if (groupId) {
       const { data: grp } = await admin
         .from("portal_ceo_group")
-        .select("slug")
+        .select("slug,title")
         .eq("id", groupId)
         .maybeSingle();
-      const slug = String(grp?.slug || "").toLowerCase();
-      if (slug === "staff_leads_ops") {
-        const workers = await loadStaffLeadUserIds(admin);
-        return workers.filter((id) => id && id !== authorId);
-      }
+      slug = String(grp?.slug ?? grp?.title ?? "").trim();
     }
+
+    const { data: authorProf } = await admin
+      .from("staff_profiles")
+      .select(
+        "id,app_role,staff_role,dashboard_route,is_active,username,full_name",
+      )
+      .eq("id", authorId)
+      .maybeSingle();
+    const authorIsWorker = portalPushIsWorkerRecipient(
+      authorProf as Parameters<typeof portalPushIsWorkerRecipient>[0],
+    );
+
+    if (slug === "staff_leads_ops") {
+      if (authorIsWorker) {
+        const adminCeoIds = await loadAdminCeoUserIds(admin);
+        return resolveOperationsAdminUserIds(admin, adminCeoIds);
+      }
+      const workers = await loadStaffLeadUserIds(admin);
+      return workers.filter((id) => id && id !== authorId);
+    }
+
+    if (portalPushGroupIsStaffOpsChannel(slug) && authorIsWorker) {
+      const adminCeoIds = await loadAdminCeoUserIds(admin);
+      return resolveOperationsAdminUserIds(admin, adminCeoIds);
+    }
+
     const admins = await loadAdminCeoUserIds(admin);
     return admins.filter((id) => id && id !== authorId);
   }
@@ -335,7 +378,7 @@ Deno.serve(async (req) => {
 
   const { data: profRows } = await admin
     .from("staff_profiles")
-    .select("id,app_role,dashboard_route")
+    .select("id,app_role,dashboard_route,username,full_name")
     .in("id", targetIds);
 
   const profBy: Record<string, { app_role?: string; dashboard_route?: string }> =
