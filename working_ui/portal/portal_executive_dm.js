@@ -477,6 +477,7 @@
     }
     function portalAdminDmListHostEl(){
       if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqListWrap');
+      if(/cs_cliq\.html/i.test(String(global.location.pathname || ''))) return document.getElementById('csCliqListWrap');
       if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatListWrap');
       return $('admDmListHost');
     }
@@ -2236,6 +2237,12 @@
         try {
           console.error("[CS Cliq] inbox render failed", renderErr);
         } catch (_log) {}
+        if (
+          global.portalCsCliqAdminInbox &&
+          typeof global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers === "function"
+        ) {
+          void global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers();
+        }
       }
     }
     async function portalAdminDmOpenManagementWorker(workerId, lane){

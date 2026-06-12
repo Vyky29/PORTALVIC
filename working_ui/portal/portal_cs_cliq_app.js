@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260609-peers-v2";
+  var PORTAL_CS_CLIQ_BUILD = "20260609-peers-v3";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -234,7 +234,12 @@
       "</header>" +
       global.PortalAdminCsCliq.viewHtml();
 
-    document.body.classList.add("cs-cliq-app", "admin-view-cs-cliq", "admin-touch-compact");
+    document.body.classList.add("cs-cliq-app", "admin-view-cs-cliq");
+    try {
+      if (global.adminTouchCompactLayoutActive && global.adminTouchCompactLayoutActive()) {
+        document.body.classList.add("admin-touch-compact");
+      }
+    } catch (_touch) {}
 
     if (typeof global.PortalAdminCsCliq.bindModule === "function") {
       global.PortalAdminCsCliq.bindModule();
@@ -249,7 +254,17 @@
 
     bindPushAndCalls();
     if (typeof global.portalAdminDmRenderList === "function") {
-      void global.portalAdminDmRenderList();
+      try {
+        await global.portalAdminDmRenderList();
+      } catch (_renderBoot) {}
+    }
+    if (
+      global.portalCsCliqAdminInbox &&
+      typeof global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers === "function"
+    ) {
+      try {
+        await global.portalCsCliqAdminInbox.ensureStandaloneLeadershipPeers();
+      } catch (_peerBoot) {}
     }
     function retryStandalonePeers(ms) {
       global.setTimeout(function () {
@@ -263,6 +278,7 @@
     }
     retryStandalonePeers(400);
     retryStandalonePeers(1800);
+    retryStandalonePeers(4000);
     return true;
   }
 

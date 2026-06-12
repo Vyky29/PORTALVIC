@@ -693,7 +693,12 @@
       return true;
     }
     var ar = String(row.app_role || "").toLowerCase();
-    return ar === "admin" || ar === "ceo";
+    if (ar === "admin" || ar === "ceo") return true;
+    var un = String(row.username || "").trim().toLowerCase();
+    if (un === "raul" || un === "victor" || un === "javi" || un === "javier" || un === "sevitha" || un === "info") {
+      return true;
+    }
+    return false;
   }
 
   function mergeLeadershipPeerRows(into, rows, seen) {
@@ -828,32 +833,65 @@
     }
   }
 
+  async function paintStandalonePeerList(list, rows) {
+    if (!list || !Array.isArray(rows) || !rows.length) return 0;
+    if (typeof global.portalAdminDmEnsureDmThreadAndOpen !== "function") return 0;
+    list.innerHTML =
+      '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>' +
+      '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
+    var picks = document.getElementById("csCliqStandalonePeerPicks");
+    if (!picks) return 0;
+    var added = 0;
+    rows.forEach(function (row) {
+      if (!row || !row.id) return;
+      if (isSelfStaffId(String(row.id))) return;
+      if (!isLeadershipPeerRow(row)) return;
+      added += appendPeerPickButton(picks, row);
+    });
+    return added;
+  }
+
+  function standaloneListNeedsPeers(list) {
+    if (!list) return false;
+    if (list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer")) return false;
+    var text = String(list.textContent || "").trim().toLowerCase();
+    if (!text) return true;
+    if (text.indexOf("loading") >= 0) return true;
+    return true;
+  }
+
   async function ensureStandaloneLeadershipPeers() {
-    if (!global.__PORTAL_CS_CLIQ_STANDALONE) return;
+    var onStandalone =
+      global.__PORTAL_CS_CLIQ_STANDALONE ||
+      /cs_cliq\.html/i.test(String(global.location.pathname || ""));
+    if (!onStandalone) return;
     var list = document.getElementById("csCliqListWrap");
     var quick = document.getElementById("csCliqCeoQuickWrap");
     var quickHost = document.getElementById("csCliqQCeosHost");
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var client = box.client;
+    if (!client) return;
     var hasListPeers =
       list &&
       list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer");
     var hasQuickPeers = quickHost && quickHost.querySelector(".portal-cs-cliq-channel-btn--peer");
-    if (hasListPeers || hasQuickPeers) return;
+    if (hasListPeers && hasQuickPeers) return;
+    var rows = await fetchLeadershipPeerProfiles(client);
     if (quick) {
       quick.hidden = false;
       quick.setAttribute("aria-hidden", "false");
     }
-    if (quickHost) await fillDirectPeerPicks(quickHost);
-    if (list && !list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer")) {
-      var hint =
-        '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>';
-      if (!list.innerHTML.trim()) list.innerHTML = hint + '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
-      var picks = document.getElementById("csCliqStandalonePeerPicks");
-      if (picks && !picks.children.length) await fillDirectPeerPicks(picks);
+    if (quickHost && !hasQuickPeers) await fillDirectPeerPicks(quickHost);
+    if (list && standaloneListNeedsPeers(list)) {
+      var painted = await paintStandalonePeerList(list, rows);
+      if (!painted && rows.length) {
+        await paintStandalonePeerList(list, rows);
+      }
     }
     if (
-      typeof global.portalAdminDmRenderList === "function" &&
       list &&
-      !list.querySelector(".portal-dm-thread-item")
+      !list.querySelector(".portal-dm-thread-item, .portal-cs-cliq-channel-btn--peer") &&
+      typeof global.portalAdminDmRenderList === "function"
     ) {
       await global.portalAdminDmRenderList();
     }
@@ -937,6 +975,9 @@
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         "Could not render conversations. Try <strong>Channels</strong> or reload the page.</p>";
+    }
+    if (global.__PORTAL_CS_CLIQ_STANDALONE || /cs_cliq\.html/i.test(String(global.location.pathname || ""))) {
+      void ensureStandaloneLeadershipPeers();
     }
   }
 
