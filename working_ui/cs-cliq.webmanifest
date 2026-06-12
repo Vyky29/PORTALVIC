@@ -1,0 +1,43 @@
+{
+  "name": "CS Cliq",
+  "short_name": "CS Cliq",
+  "id": "clubsensational-cs-cliq",
+  "start_url": "./cs_cliq.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#edf4fb",
+  "theme_color": "#edf4fb",
+  "description": "clubSENsational internal chat for directors and ops",
+  "icons": [
+    {
+      "src": "/portal/app-icon/cs-cliq/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/portal/app-icon/cs-cliq/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/portal/app-icon/cs-cliq/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/portal/app-icon/cs-cliq/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/portal/app-icon/cs-cliq/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

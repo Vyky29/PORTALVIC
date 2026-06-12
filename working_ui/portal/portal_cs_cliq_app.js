@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260611-own-send-mark";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-cliq-icon";
 
   function portalCsCliqMaybeApplyBuildUpdate() {
     var key = "portal_cs_cliq_build";
