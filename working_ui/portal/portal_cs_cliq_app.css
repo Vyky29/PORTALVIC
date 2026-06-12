@@ -177,9 +177,18 @@ body.cs-cliq-app #csCliqRoot #csCliqListWrap {
 }
 
 @media (max-width: 899px) {
-  body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__list-col {
+  body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__list-col--hidden-mobile {
+    display: none !important;
+  }
+
+  body.cs-cliq-app #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__conversation-col,
+  body.cs-cliq-app #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active {
+    display: flex !important;
     flex: 1 1 auto;
     min-height: 0;
-    width: auto;
+  }
+
+  body.cs-cliq-app #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqInboxEmpty {
+    display: none !important;
   }
 }

@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-peers-v4";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-peers-v5";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {

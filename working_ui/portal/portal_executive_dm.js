@@ -1439,7 +1439,16 @@
       }
       var me = portalAdminDmMe();
       peerId = String(peerId || '').trim();
-      if(!client || !peerId) return;
+      function showOpenErr(msg){
+        try{
+          var errB = portalAdminDmReplyErrEl();
+          if(errB) errB.textContent = String(msg || 'Could not open chat. Try again.');
+        }catch(_show){}
+      }
+      if(!client || !peerId){
+        showOpenErr('Sign in to open chats.');
+        return;
+      }
       if(
         global.portalChatActorIdentity &&
         typeof global.portalChatActorIdentity.isSelfUserId === 'function' &&
@@ -1448,6 +1457,27 @@
         return;
       }
       if(peerId === me) return;
+
+      if(
+        portalAdminDmCsCliqEmbedActive() ||
+        global.__PORTAL_CS_CLIQ_STANDALONE ||
+        /cs_cliq\.html/i.test(String(global.location.pathname || ''))
+      ){
+        try{
+          var rpcLead = await client.rpc('portal_cs_cliq_ensure_leadership_dm_thread', { p_peer_id: peerId });
+          if(!rpcLead.error && rpcLead.data){
+            window.__PORTAL_ADMIN_DM_OPEN = true;
+            await portalAdminDmOpenThread(String(rpcLead.data));
+            return;
+          }
+          if(rpcLead.error){
+            try{ console.warn('[CS Cliq] portal_cs_cliq_ensure_leadership_dm_thread', rpcLead.error); }catch(_logRpc){}
+          }
+        }catch(rpcErr){
+          try{ console.warn('[CS Cliq] portal_cs_cliq_ensure_leadership_dm_thread failed', rpcErr); }catch(_logRpc2){}
+        }
+      }
+
       var guess = portalDmCanonThreadParticipantsGuess(me, peerId);
       var a = guess.participant_a;
       var b = guess.participant_b;
@@ -1456,7 +1486,14 @@
         return row0 && row0.id ? String(row0.id) : '';
       }
       var r = await client.from('portal_staff_dm_threads').select('id').eq('participant_a', a).eq('participant_b', b).maybeSingle();
-      if(r.error) return;
+      if(!r.error && !(r.data && r.data.id)){
+        var rFlip = await client.from('portal_staff_dm_threads').select('id').eq('participant_a', b).eq('participant_b', a).maybeSingle();
+        if(!rFlip.error && rFlip.data && rFlip.data.id) r = rFlip;
+      }
+      if(r.error){
+        showOpenErr(r.error.message || 'Could not open chat.');
+        return;
+      }
       var tid = r.data && r.data.id ? String(r.data.id) : '';
       if(!tid){
         var ins = await client.from('portal_staff_dm_threads').insert([{ participant_a: a, participant_b: b }]).select('id');
@@ -1473,8 +1510,17 @@
           var r3 = await client.from('portal_staff_dm_threads').select('id').eq('participant_a', b).eq('participant_b', a).maybeSingle();
           tid = r3.data && r3.data.id ? String(r3.data.id) : '';
         }
+        if(!tid && ins.error){
+          showOpenErr(ins.error.message || 'Could not start chat.');
+          return;
+        }
       }
-      if(tid) await portalAdminDmOpenThread(tid);
+      if(!tid){
+        showOpenErr('Could not start chat.');
+        return;
+      }
+      window.__PORTAL_ADMIN_DM_OPEN = true;
+      await portalAdminDmOpenThread(tid);
     }
     try{
       window.portalAdminDmOpenGroupThread = portalAdminDmOpenGroupThread;
