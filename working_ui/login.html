@@ -147,16 +147,17 @@
     .login-theme-cs-cliq .login-logo-shell{
       overflow:visible;
       background:transparent;
-      border-radius:16px;
-      box-shadow:
-        0 0 0 2px rgba(220,38,38,.22),
-        0 0 22px rgba(220,38,38,.28),
-        0 0 44px rgba(248,113,113,.18);
+      border:none;
+      border-radius:50%;
+      box-shadow:none;
+      width:68%;
+      max-width:168px;
     }
     .login-theme-cs-cliq .login-logo-shell .login-logo{
       transform:none;
       object-fit:contain;
-      border-radius:12px;
+      border-radius:50%;
+      background:transparent;
     }
     .login-theme-cs-cliq .login-portal-text{
       color:var(--cliq-red-dark);
@@ -471,7 +472,7 @@
               id="loginBrandLogo"
               src="/portal/F-02-1.png"
               data-portal-logo-default="/portal/F-02-1.png"
-              data-portal-logo-cs-cliq="/portal/announcements_logo_red.png?v=20260612-cliq-login"
+              data-portal-logo-cs-cliq="/portal/announcements_logo_red_clean.png?v=20260612-clean-red"
               width="200"
               height="200"
               alt="clubSENsational - Autism Consultancy Services"
@@ -592,7 +593,7 @@
       if (!document.documentElement.classList.contains("login-theme-cs-cliq")) return;
       var logo = document.getElementById("loginBrandLogo");
       if (logo) {
-        logo.src = logo.getAttribute("data-portal-logo-cs-cliq") || "/portal/announcements_logo_red.png";
+        logo.src = logo.getAttribute("data-portal-logo-cs-cliq") || "/portal/announcements_logo_red_clean.png";
         logo.alt = "CS Cliq";
       }
       var title = document.getElementById("loginBrandTitle");

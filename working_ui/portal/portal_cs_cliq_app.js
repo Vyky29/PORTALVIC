@@ -5,7 +5,7 @@
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-mobile-inbox";
+  var PORTAL_CS_CLIQ_BUILD = "20260612-clean-red";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -227,7 +227,7 @@
 
     host.innerHTML =
       '<header class="cs-cliq-app-topbar cs-cliq-app-topbar--standalone">' +
-      '<img class="cs-cliq-app-topbar__logo" src="/portal/app-icon/cs-cliq/icon-192.png?v=20260612-cliq-icon" alt="" width="32" height="32" decoding="async" />' +
+      '<img class="cs-cliq-app-topbar__logo" src="/portal/announcements_logo_red_clean.png?v=20260612-clean-red" alt="" width="32" height="32" decoding="async" />' +
       '<span class="cs-cliq-app-topbar__title">CS Cliq</span>' +
       "</header>" +
       global.PortalAdminCsCliq.viewHtml();
