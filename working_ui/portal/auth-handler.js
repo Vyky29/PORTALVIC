@@ -155,6 +155,9 @@ function portalLoginUrlWithReturn(returnHref) {
     const login = new URL(portalPublishedLoginUrl(), window.location.href);
     const ret = String(returnHref || window.location.href || "").trim();
     if (ret) login.searchParams.set("next", ret);
+    if (portalUrlIsCsCliqPage(ret || window.location.href)) {
+      login.searchParams.set("app", "cs_cliq");
+    }
     return login.href;
   } catch {
     return portalPublishedLoginUrl();

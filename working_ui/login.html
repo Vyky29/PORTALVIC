@@ -122,6 +122,54 @@
       .orbit-layer--cw,.orbit-layer--ccw,.orbit-layer--slow-ccw{animation:none}
     }
 
+    /* CS Cliq PWA sign-in (login.html?next=…cs_cliq.html) */
+    .login-theme-cs-cliq{
+      --cliq-red:#dc2626;
+      --cliq-red-dark:#b91c1c;
+      --cliq-red-light:#f87171;
+      --cliq-red-soft:#fecaca;
+    }
+    .login-theme-cs-cliq .login-orbit-svg circle{
+      fill:var(--cliq-red);
+    }
+    .login-theme-cs-cliq .orbit-layer--cw circle:nth-child(odd),
+    .login-theme-cs-cliq .orbit-layer--slow-ccw circle:nth-child(odd){
+      fill:var(--cliq-red-dark);
+    }
+    .login-theme-cs-cliq .orbit-layer--cw circle:nth-child(even),
+    .login-theme-cs-cliq .orbit-layer--ccw circle:nth-child(odd),
+    .login-theme-cs-cliq .orbit-layer--slow-ccw circle:nth-child(even){
+      fill:var(--cliq-red-light);
+    }
+    .login-theme-cs-cliq .orbit-layer--ccw circle:nth-child(even){
+      fill:var(--cliq-red-soft);
+    }
+    .login-theme-cs-cliq .login-logo-shell{
+      overflow:visible;
+      background:transparent;
+      border-radius:16px;
+      box-shadow:
+        0 0 0 2px rgba(220,38,38,.22),
+        0 0 22px rgba(220,38,38,.28),
+        0 0 44px rgba(248,113,113,.18);
+    }
+    .login-theme-cs-cliq .login-logo-shell .login-logo{
+      transform:none;
+      object-fit:contain;
+      border-radius:12px;
+    }
+    .login-theme-cs-cliq .login-portal-text{
+      color:var(--cliq-red-dark);
+    }
+    .login-theme-cs-cliq .btn-login{
+      background:linear-gradient(180deg,var(--cliq-red) 0%,var(--cliq-red-dark) 100%);
+      box-shadow:0 4px 14px rgba(220,38,38,.28);
+    }
+    .login-theme-cs-cliq .field input:focus{
+      border-color:rgba(220,38,38,.4);
+      box-shadow:0 0 0 3px rgba(254,202,202,.85);
+    }
+
     /* Official PNG has a black square canvas around the round mark — crop to the circle */
     .login-logo-shell{
       position:relative;
@@ -335,6 +383,22 @@
       }
     }
   </style>
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(String(window.location.search || ""));
+        var next = String(params.get("next") || params.get("return") || "").trim();
+        var app = String(params.get("app") || "").trim().toLowerCase();
+        var csCliq =
+          app === "cs_cliq" ||
+          /cs_cliq\.html/i.test(next) ||
+          /portal_open=cs_cliq/i.test(next);
+        if (!csCliq) return;
+        document.documentElement.classList.add("login-theme-cs-cliq");
+        document.documentElement.setAttribute("data-portal-login-app", "cs_cliq");
+      } catch (_e) {}
+    })();
+  </script>
 </head>
 <body>
   <script>
@@ -404,7 +468,10 @@
           <div class="login-logo-shell">
             <img
               class="login-logo"
+              id="loginBrandLogo"
               src="/portal/F-02-1.png"
+              data-portal-logo-default="/portal/F-02-1.png"
+              data-portal-logo-cs-cliq="/portal/announcements_logo_red.png?v=20260612-cliq-login"
               width="200"
               height="200"
               alt="clubSENsational - Autism Consultancy Services"
@@ -414,7 +481,7 @@
             />
           </div>
         </div>
-        <h1 class="login-portal-text">Portal</h1>
+        <h1 class="login-portal-text" id="loginBrandTitle">Portal</h1>
       </header>
 
       <div class="login-panel">
@@ -518,6 +585,23 @@
           }, 80);
         }
       } catch (e) {}
+    })();
+  </script>
+  <script>
+    (function () {
+      if (!document.documentElement.classList.contains("login-theme-cs-cliq")) return;
+      var logo = document.getElementById("loginBrandLogo");
+      if (logo) {
+        logo.src = logo.getAttribute("data-portal-logo-cs-cliq") || "/portal/announcements_logo_red.png";
+        logo.alt = "CS Cliq";
+      }
+      var title = document.getElementById("loginBrandTitle");
+      if (title) title.textContent = "CS Cliq";
+      try {
+        document.title = "clubSENsational — CS Cliq — Sign in";
+      } catch (_t) {}
+      var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (appleTitle) appleTitle.setAttribute("content", "CS Cliq");
     })();
   </script>
   <script>

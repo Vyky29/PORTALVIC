@@ -74,9 +74,10 @@
       try {
         var login = new URL("login.html", location.href);
         login.searchParams.set("next", location.href);
+        login.searchParams.set("app", "cs_cliq");
         return login.href;
       } catch (_e) {
-        return "login.html?next=" + encodeURIComponent("cs_cliq.html");
+        return "login.html?app=cs_cliq&next=" + encodeURIComponent("cs_cliq.html");
       }
     };
 
