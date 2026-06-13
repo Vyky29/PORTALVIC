@@ -1090,7 +1090,7 @@
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal/portal_lead_team_groups.js?v=20260609-chip-roles"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260610-console-clean2"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260613-lead-no-my-team"></script>
   <script src="/portal/portal_management_dm_routing.js?v=20260610-exec-lead-home"></script>
   <script src="/portal/portal_dm_inbox_perf.js?v=20260610-console-clean2"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260609-lead-teams-v2"></script>
@@ -7375,6 +7375,25 @@
         window.portalLeadStaffChatDirectory &&
         typeof window.portalLeadStaffChatDirectory.portalStaffHasLeadRestrictedInbox === "function" &&
         window.portalLeadStaffChatDirectory.portalStaffHasLeadRestrictedInbox(box && box.staff_profile);
+      if(
+        gid &&
+        !tid &&
+        leadRestrictedPre &&
+        window.portalLeadStaffChatDirectory &&
+        typeof window.portalLeadStaffChatDirectory.portalLeadStripGroupInboxIfRestricted === "function" &&
+        window.portalLeadStaffChatDirectory.portalLeadStripGroupInboxIfRestricted(box && box.staff_profile)
+      ){
+        if(typeof window.portalLeadStaffChatDirectory.renderSimplifiedInboxList === "function"){
+          var okStripGroup = await window.portalLeadStaffChatDirectory.renderSimplifiedInboxList();
+          if(okStripGroup){
+            if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
+              void window.portalStaffDmSyncUnreadChrome();
+            }
+            return;
+          }
+        }
+        gid = "";
+      }
       if(gid && !tid){
         if(window.portalWorkerGroupThread && typeof window.portalWorkerGroupThread.renderPane === 'function'){
           await window.portalWorkerGroupThread.renderPane({

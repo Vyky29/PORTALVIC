@@ -118,7 +118,7 @@
     return ar === "admin" || ar === "ceo";
   }
 
-  /** Session leads: Admin + assigned groups + meetings only (UI). */
+  /** Session leads: Admin + support/meeting requests only (UI). */
   function portalStaffHasLeadRestrictedInbox(prof) {
     if (
       global.portalAdminSurfaceMap &&
@@ -141,7 +141,6 @@
 
   var LEAD_SIMPLIFIED_TABS = [
     { id: "admin", label: "Admin", icon: "brand", theme: "admin" },
-    { id: "groups", label: "My team", icon: "users", theme: "groups" },
     {
       id: "meetings",
       label: SIMPLIFIED_SUPPORT_MEETINGS_LABEL,
@@ -155,7 +154,7 @@
 
   var LEAD_SIMPLIFIED_SUPPORT_MEETINGS_HINT =
     SIMPLIFIED_SUPPORT_MEETINGS_HINT +
-    " For someone on your programme team, use <strong>Support worker concern</strong> or <strong>Meeting about a support worker</strong>.";
+    " To flag a support worker issue, use <strong>Support worker concern</strong> or <strong>Meeting about a support worker</strong>.";
 
   function leadSupportMeetingsSections() {
     return [
@@ -918,7 +917,6 @@
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
     var t = String(ui.workerInboxTab || "admin").toLowerCase();
     if (portalStaffHasLeadRestrictedInbox(prof)) {
-      if (t === "groups" || t === "group") return "groups";
       if (t === "meetings" || t === "meeting") return "meetings";
       return "admin";
     }
@@ -932,8 +930,7 @@
     global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
     tab = String(tab || "admin").toLowerCase();
     if (portalStaffHasLeadRestrictedInbox(prof)) {
-      if (tab === "groups" || tab === "group") tab = "groups";
-      else if (tab === "meetings" || tab === "meeting") tab = "meetings";
+      if (tab === "meetings" || tab === "meeting") tab = "meetings";
       else tab = "admin";
     } else {
       if (tab === "support") tab = "support";
@@ -1044,10 +1041,6 @@
     }
     if (tabId === "meetings") {
       renderMeetingsAccordionBody(bodyEl);
-      return;
-    }
-    if (tabId === "groups" && portalStaffHasLeadRestrictedInbox(prof)) {
-      await renderLeadGroupsPane(client, me, bodyEl);
       return;
     }
     bodyEl.innerHTML =
@@ -2400,6 +2393,21 @@
     syncInboxChrome({ profile: prof, workerInboxTabs: true, inThread: false });
   }
 
+  function portalLeadStripGroupInboxIfRestricted(prof) {
+    prof = profileRow(prof);
+    if (!portalStaffHasLeadRestrictedInbox(prof)) return false;
+    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var ui = global.__PORTAL_INTERNAL_CHAT_UI;
+    var hadGroup =
+      !!String(ui.groupId || "").trim() ||
+      String(ui.workerInboxTab || "").toLowerCase() === "groups";
+    if (!hadGroup) return false;
+    ui.groupId = null;
+    ui.groupSlug = "";
+    setWorkerInboxTab("admin", prof);
+    return true;
+  }
+
   async function renderSimplifiedInboxList() {
     var box = global.__PORTAL_SUPABASE__ || {};
     var client = box.client;
@@ -2408,6 +2416,8 @@
     var listHost = document.getElementById("internalChatListWrap");
     var errTop = document.getElementById("internalChatTopErr");
     if (!listHost) return false;
+
+    portalLeadStripGroupInboxIfRestricted(prof);
 
     ensureSimplifiedInboxSheetChrome(prof, false);
 
@@ -2585,8 +2595,7 @@
         if (!portalStaffWorkerMgmtPeerAllowed(peerRow)) {
           var errBlock = document.getElementById("internalChatTopErr");
           if (errBlock) {
-            errBlock.textContent =
-              "You can message Admin from the Admin tab. Programme groups are under My groups.";
+            errBlock.textContent = "You can message Admin from the Admin tab.";
             errBlock.hidden = false;
           }
           return;
@@ -2692,6 +2701,14 @@
 
   async function openGroupChat(entry) {
     entry = entry || {};
+    if (portalStaffHasLeadRestrictedInbox(profileRow())) {
+      var errLeadGroup = document.getElementById("internalChatTopErr");
+      if (errLeadGroup) {
+        errLeadGroup.textContent = "Use the Admin tab to message Management.";
+        errLeadGroup.hidden = false;
+      }
+      return;
+    }
     var box = global.__PORTAL_SUPABASE__;
     var client = box && box.client;
     var gid = String(entry.groupId || "").trim();
@@ -3100,6 +3117,7 @@
     portalStaffIsSessionLead: portalStaffIsSessionLead,
     portalStaffIsManagementMessenger: portalStaffIsManagementMessenger,
     portalStaffHasLeadRestrictedInbox: portalStaffHasLeadRestrictedInbox,
+    portalLeadStripGroupInboxIfRestricted: portalLeadStripGroupInboxIfRestricted,
     portalStaffHasSimplifiedInboxTabs: portalStaffHasSimplifiedInboxTabs,
     renderSimplifiedInboxList: renderSimplifiedInboxList,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
