@@ -3038,6 +3038,12 @@
     }
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift{
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+      border-color:rgba(37,99,235,.28);
+    }
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#1d4ed8}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#2563eb}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
       border-color:rgba(220,38,38,.4);
       background:linear-gradient(180deg,rgba(254,226,226,.96) 0%,rgba(255,255,255,.99) 100%);

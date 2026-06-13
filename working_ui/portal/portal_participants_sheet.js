@@ -204,12 +204,39 @@
     return s === "rest_of_term" || s === "weekday_term";
   }
 
+  function overridePayloadScope(pl) {
+    return String((pl && pl.scope) || "").trim();
+  }
+
+  /** One-off / picked dates: group every client into a single “New shift” card for that day. */
+  function overrideIsNewShiftDayUpdate(row) {
+    const t = String(row && row.override_type || "").trim();
+    if (t !== "slot_update") return false;
+    const pl = overridePayload(row);
+    if (!pl || !pl.term_roster_edit) return false;
+    if (pl._portal_new_shift_day_group) return true;
+    const scope = overridePayloadScope(pl);
+    return scope === "single_day" || scope === "pick_sessions";
+  }
+
+  function overrideNewShiftDayGroupKey(row) {
+    if (!overrideIsNewShiftDayUpdate(row)) return "";
+    const staff = normKey(row && row.anchor_staff_id);
+    const iso = normIso(row && row.session_date);
+    if (!staff || !iso) return "";
+    return "new-shift-day|" + staff + "|" + iso;
+  }
+
   /** Term intake: one halo / quick-menu line for the whole term — not every calendar day. */
   function overrideIsTermNewParticipant(row) {
     const t = String(row && row.override_type || "").trim();
     const pl = overridePayload(row);
     if (!pl) return false;
-    if (pl.term_new_participant === true) return true;
+    if (pl.term_new_participant === true) {
+      const scope = overridePayloadScope(pl);
+      if (scope === "single_day" || scope === "pick_sessions") return false;
+      return true;
+    }
     if (t === "slot_update" && pl.term_roster_edit && overrideScopeIsTerm(pl)) return true;
     return false;
   }
@@ -249,6 +276,8 @@
   }
 
   function scheduleOverrideAttentionDismissKey(row) {
+    const shiftGk = overrideNewShiftDayGroupKey(row);
+    if (shiftGk) return "new-shift-day:" + shiftGk.replace(/\|/g, ":");
     const gk = overrideTermIntakeGroupKey(row);
     if (gk) return "term-intake:" + gk.replace(/\|/g, ":");
     return "";
@@ -258,9 +287,26 @@
     ctx = ctx || buildContext();
     const keep = [];
     const termGroups = Object.create(null);
+    const newShiftDayGroups = Object.create(null);
 
     (rows || []).forEach(function (row) {
       if (!rowApplies(row, ctx)) return;
+      if (overrideIsNewShiftDayUpdate(row)) {
+        const gk = overrideNewShiftDayGroupKey(row);
+        if (!gk) {
+          keep.push(row);
+          return;
+        }
+        const iso = normIso(row.session_date);
+        const prev = newShiftDayGroups[gk];
+        if (!prev) {
+          newShiftDayGroups[gk] = { row: row, iso: iso, count: 1 };
+        } else {
+          prev.count += 1;
+          if (iso && (!prev.iso || iso < prev.iso)) prev.iso = iso;
+        }
+        return;
+      }
       if (!overrideIsTermNewParticipant(row)) {
         keep.push(row);
         return;
@@ -274,6 +320,20 @@
       if (!termGroups[gk] || (iso && (!termGroups[gk].iso || iso < termGroups[gk].iso))) {
         termGroups[gk] = { row: row, iso: iso };
       }
+    });
+
+    Object.keys(newShiftDayGroups).forEach(function (gk) {
+      const pack = newShiftDayGroups[gk];
+      const src = pack.row;
+      const pl = overridePayload(src) || {};
+      keep.push(
+        Object.assign({}, src, {
+          payload: Object.assign({}, pl, {
+            _portal_new_shift_day_group: true,
+            _portal_new_shift_participant_count: pack.count,
+          }),
+        })
+      );
     });
 
     Object.keys(termGroups).forEach(function (gk) {
@@ -393,6 +453,7 @@
         if (cid) add(cid, row.session_date);
         return;
       }
+      if (overrideIsNewShiftDayUpdate(row)) return;
       if (overrideIsTermNewParticipant(row)) {
         const cid = overrideTermIntakeClientSlug(row);
         if (cid) add(cid, clientFirstSessionDateIso(cid, ctx) || row.session_date);
@@ -596,6 +657,7 @@
     buildPortalRosterFirstSessionMap: buildPortalRosterFirstSessionMap,
     clientFirstSessionDateIso: clientFirstSessionDateIso,
     overrideIsTermNewParticipant: overrideIsTermNewParticipant,
+    overrideIsNewShiftDayUpdate: overrideIsNewShiftDayUpdate,
     overrideIsTrialSession: overrideIsTrialSession,
     overrideShouldShowOnCalendarDate: overrideShouldShowOnCalendarDate,
     overrideTermIntakeClientSlug: overrideTermIntakeClientSlug,

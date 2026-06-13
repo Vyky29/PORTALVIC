@@ -889,7 +889,7 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260612-youssef-roster"></script>
+  <script src="/portal/term_from_timetable.js?v=20260612-luliya-new-shift"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260612-youssef-roster"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260611-madre"></script>
@@ -901,7 +901,7 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260611-madre-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260613-term-new-participant-notify"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260612-luliya-new-shift"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
@@ -4311,7 +4311,7 @@
         const dl = String(dayLabel || '').trim();
         const sub = escapeHtml((dl ? (dl + ' · ') : '') + String(item.sub || ''));
         const k = String(item.kind || 'other');
-        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other')))));
+        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : (k === 'new_shift' ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
         rows.push(
           '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note" data-action="open-roster-override-attention" data-portal-override-id="' + idEsc + '" data-portal-override-nav-iso="' + isoEsc + '" aria-label="' + title + ' ' + isoEsc + '">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></span>' +
@@ -6180,6 +6180,7 @@
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
+      if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return 'new_shift';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
       if(t === 'client_replace_in_slot') return 'makeup';
@@ -6260,6 +6261,27 @@
         return {
           id: dismissId || portalScheduleOverrideRowDismissKey(row),
           iso: normaliseIsoDate(row && row.session_date),
+          title: title,
+          sub: sub,
+          kind: kind
+        };
+      }
+      if(kind === 'new_shift'){
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const dayLabel = isoNav && typeof portalOverrideSessionDateDisplayLabel === 'function'
+          ? portalOverrideSessionDateDisplayLabel(isoNav)
+          : isoNav;
+        title = 'New shift';
+        sub = dayLabel
+          ? ('Your roster for ' + dayLabel + '. Tap to view participants for this day.')
+          : 'Tap to view your roster for this day.';
+        const P = window.PortalParticipantsSheet;
+        const dismissId = P && typeof P.scheduleOverrideAttentionDismissKey === 'function'
+          ? P.scheduleOverrideAttentionDismissKey(row)
+          : '';
+        return {
+          id: dismissId || portalScheduleOverrideRowDismissKey(row),
+          iso: isoNav,
           title: title,
           sub: sub,
           kind: kind
@@ -10895,13 +10917,40 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalRosterRowAppliesToStaffId(row, staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid || !row) return false;
+      const raw = String(row.instructors || '');
+      const parts = raw.split(/[,/&]|\band\b/gi);
+      for(let i = 0; i < parts.length; i++){
+        const tok = String(parts[i] || '').trim().toLowerCase();
+        if(!tok) continue;
+        const first = tok.split(/\s+/)[0] || tok;
+        if(first === sid || tok === sid) return true;
+        if((sid === 'lulia' || sid === 'luliya' || sid === 'aida') && (first === 'lulia' || first === 'luliya' || first === 'aida')) return true;
+      }
+      return String(raw || '').trim().toLowerCase() === sid;
+    }
     function portalTermStaffExtraCalendarDates(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffExtraCalendarDatesByProfileKey;
       const id = String(staffId || '').trim().toLowerCase();
       const raw = map && map[id];
-      if(!Array.isArray(raw)) return [];
-      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+      const extra = new Set((Array.isArray(raw) ? raw : []).map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean));
+      const shiftDates = portalTermStaffShiftDatesFor(id);
+      const shiftSet = shiftDates ? new Set(shiftDates) : null;
+      const cache = Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE) ? window.PORTAL_ROSTER_ROWS_CACHE : [];
+      cache.forEach(function(row){
+        if(String(row.status || 'active') !== 'active') return;
+        if(!portalRosterRowAppliesToStaffId(row, id)) return;
+        const nm = String(row.client_name || '').trim().toLowerCase();
+        if(!nm || nm === 'no client' || nm === 'closed') return;
+        const iso = normaliseIsoDate(row.session_date);
+        if(!iso) return;
+        if(shiftSet && shiftSet.has(iso)) return;
+        extra.add(iso);
+      });
+      return Array.from(extra).sort();
     }
     function portalTermStaffCatchUpFeedbackDates(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;

@@ -79,7 +79,13 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
-    "javier": []
+    "javier": [],
+    "lulia": [
+      "2026-06-14"
+    ],
+    "luliya": [
+      "2026-06-14"
+    ]
   },
   "termStaffCatchUpFeedbackDatesByProfileKey": {
     "youssef": [
