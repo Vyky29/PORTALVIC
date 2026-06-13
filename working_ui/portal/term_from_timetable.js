@@ -85,6 +85,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "luliya": [
       "2026-06-14"
+    ],
+    "aida": [
+      "2026-06-14"
     ]
   },
   "termStaffCatchUpFeedbackDatesByProfileKey": {

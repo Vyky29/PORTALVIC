@@ -889,7 +889,7 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260612-luliya-new-shift"></script>
+  <script src="/portal/term_from_timetable.js?v=20260613-lulia-next-session-cover"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260612-youssef-roster"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260611-madre"></script>
@@ -9411,11 +9411,24 @@
         }
         return part(start) + ' to ' + part(end) + ' ' + (Number(String(end || '').split(':')[0] || 0) >= 12 ? 'pm' : 'am');
       }
+      function portalNextSessionCandidateRows(staffId, weekdayName, isoYmd){
+        var id = String(staffId || '').trim().toLowerCase();
+        var iso = String(isoYmd || '').trim().slice(0, 10);
+        var wname = String(weekdayName || '').trim();
+        if(!id || !iso || !wname) return [];
+        var isReal = function(s){
+          return portalIsRealClientSession(s, iso);
+        };
+        var rows = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(wname, iso, id, isReal)
+          : [];
+        if(typeof portalStaffDashboardOmitSpreadsheetSession !== 'function') return rows;
+        return rows.filter(function(s){
+          return !portalStaffDashboardOmitSpreadsheetSession(s, wname);
+        });
+      }
       function portalFindNextSessionCalendarInfo(staffId, fromNow, model){
         var id = String(staffId || '').trim().toLowerCase();
-        var modelSrc = (Array.isArray(model) && model.length)
-          ? model
-          : (Array.isArray(typeof sessionsModel !== 'undefined' ? sessionsModel : null) ? sessionsModel : []);
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
         var viewFrom = '';
         var viewTo = '';
@@ -9438,45 +9451,19 @@
           if(viewFrom && iso && iso < viewFrom) continue;
           if(viewTo && iso && iso > viewTo) continue;
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
-          var has = modelSrc.some(function(s){
-            if(String(s.staffId || '').toLowerCase() !== id) return false;
-            if(!portalIsRealClientSession(s, iso)) return false;
-            if(typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-              || !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, wname)) return false;
-            var ovN = typeof portalTodayScheduleOverrideForSession === 'function'
-              ? portalTodayScheduleOverrideForSession(s, iso)
-              : null;
-            if(ovN && ovN.override_type === 'instructor_reassign' && String(ovN.payload && ovN.payload.covering_staff_id || '').trim()) return false;
-            return true;
-          });
-          if(has) return { date: d, weekdayName: wname };
+          if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
         }
         return null;
       }
       function portalBuildNextSessionRows(staffId, fromNow, model, notes){
-        var modelSrc = (Array.isArray(model) && model.length)
-          ? model
-          : (Array.isArray(typeof sessionsModel !== 'undefined' ? sessionsModel : null) ? sessionsModel : []);
-        var info = portalFindNextSessionCalendarInfo(staffId, fromNow, modelSrc);
+        var info = portalFindNextSessionCalendarInfo(staffId, fromNow, model);
         if(!info) return [];
         var w = info.weekdayName;
         var id = String(staffId || '').trim().toLowerCase();
         var sessionDateIso = info && info.date && typeof portalIsoYmdFromDate === 'function'
           ? portalIsoYmdFromDate(info.date)
           : '';
-        var nextSessionsAfterFilter = modelSrc.filter(function(s){
-          if(String(s.staffId || '').toLowerCase() !== id) return false;
-          if(!portalIsRealClientSession(s, sessionDateIso)) return false;
-          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-            || !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateIso, w)) return false;
-          var ovF = typeof portalTodayScheduleOverrideForSession === 'function'
-            ? portalTodayScheduleOverrideForSession(s, sessionDateIso)
-            : null;
-          if(ovF && ovF.override_type === 'instructor_reassign' && String(ovF.payload && ovF.payload.covering_staff_id || '').trim()) return false;
-          if(typeof portalStaffDashboardOmitSpreadsheetSession === 'function'
-            && portalStaffDashboardOmitSpreadsheetSession(s, w)) return false;
-          return true;
-        });
+        var nextSessionsAfterFilter = portalNextSessionCandidateRows(id, w, sessionDateIso);
         var nextSessionRows = nextSessionsAfterFilter
           .sort(function(a, b){ return portalParseTimeSortVal(a.start) - portalParseTimeSortVal(b.start); })
           .map(function(s){
