@@ -134,19 +134,8 @@ def clean_auth_handler(path: Path) -> None:
 
 
 def clean_sw(path: Path) -> None:
-    if not path.exists():
-        return
-    text = path.read_text(encoding="utf-8")
-    orig = text
-    text = text.replace("portalOpen === 'chat'", "false")
-    text = text.replace("openChat ? 'chat'", "''")
-    text = text.replace("'chat'", "''")
-    text = re.sub(r"var chatData = null;\s*", "", text)
-    text = re.sub(r"if \(j && j\.chat\) chatData = j\.chat;\s*", "", text)
-    text = re.sub(r", chat: chatData", "", text)
-    text = re.sub(r"chat: chatData \|\| null,\s*", "", text)
-    if text != orig:
-        path.write_text(text, encoding="utf-8")
+    """Service worker left intact — chat fields in push payloads are harmless without chat UI."""
+    return
 
 
 def patch_admin_dashboard(path: Path) -> None:
