@@ -6683,6 +6683,41 @@
         if(!portalOverrideSlotLabelMatchesRow(ov, s)) continue;
         return s;
       }
+      const iso = normaliseIsoDate(ov && ov.session_date);
+      const srcRows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+      const adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+      for(let j = 0; j < srcRows.length; j++){
+        const row = srcRows[j];
+        if(!row) continue;
+        if(String(row.day || '').trim() !== vw) continue;
+        if(!portalStaffMatchesStatusInstructor(aid, row.instructors)) continue;
+        const rowIso = normaliseIsoDate(row.session_date || row.sessionDate);
+        if(iso){
+          if(rowIso && rowIso !== iso) continue;
+          if(!rowIso && typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function' && portalCalendarIsoUsesSummerDatedRosterOnly(iso)) continue;
+        }
+        const clientId = adapter && typeof adapter.canonicalParticipantClientId === 'function'
+          ? adapter.canonicalParticipantClientId(row.client_name)
+          : portalSlugifyClientKey(row.client_name);
+        if(portalNormKeyStr(clientId) !== portalNormKeyStr(ov.anchor_client_id)) continue;
+        if(portalNormKeyStr(row.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
+        const start = portalHmFromDbTime(ov.anchor_start) || '09:00';
+        const end = portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00';
+        return {
+          staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
+          day: vw,
+          start: start,
+          end: end,
+          venue: String(row.venue || ov.anchor_venue || '').trim(),
+          clientId: String(clientId || '').trim().toLowerCase(),
+          activity: String(row.service || 'Swimming').trim(),
+          rosterService: String(row.service || '').trim(),
+          rosterArea: row.area != null ? String(row.area).trim() : '',
+          timeSlotLabel: String(row.time_slot || ov.anchor_time_slot_label || '').trim(),
+          session_date: iso || rowIso || '',
+          status: 'scheduled'
+        };
+      }
       return null;
     }
     function portalIsoYmdFromDate(d){
@@ -6965,6 +7000,19 @@
         if(out.indexOf(x) < 0) out.push(x);
       };
       try{
+        const now = new Date();
+        for(let i = 0; i <= 14; i++){
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+          add(portalIsoYmdFromDate(d));
+        }
+      }catch(_){}
+      try{
+        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        if(sid && typeof portalTermStaffExtraCalendarDates === 'function'){
+          portalTermStaffExtraCalendarDates(sid).forEach(add);
+        }
+      }catch(_){}
+      try{
         const vd = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
         if(vd && typeof getViewAnchorCalendarDate === 'function'){
           const a = getViewAnchorCalendarDate(vd);
@@ -7053,6 +7101,12 @@
         window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
+      try{
+        if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
+        if(typeof renderLists === 'function') renderLists();
+        if(typeof renderMiniCounts === 'function') renderMiniCounts();
+        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+      }catch(_syncOv){}
     };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
@@ -9655,18 +9709,11 @@
       const extraDates = (id === 'javier' || id === 'youssef') ? [] : portalTermStaffExtraCalendarDates(id);
       if(extraDates.length){
         const months = new Set((dashboardData.termCalendarMonths || []).map(Number));
-        const fd = dashboardData.termCalendarFirstDom && typeof dashboardData.termCalendarFirstDom === 'object'
-          ? Object.assign({}, dashboardData.termCalendarFirstDom) : {};
         extraDates.forEach(function(iso){
           const m = parseInt(String(iso).slice(5, 7), 10) - 1;
-          const day = parseInt(String(iso).slice(8, 10), 10);
           if(Number.isFinite(m) && m >= 0 && m <= 11) months.add(m);
-          if(Number.isFinite(m) && Number.isFinite(day) && day > 1){
-            if(!Object.prototype.hasOwnProperty.call(fd, m) || Number(fd[m]) > day) fd[m] = day;
-          }
         });
         dashboardData.termCalendarMonths = Array.from(months).sort(function(a, b){ return a - b; });
-        dashboardData.termCalendarFirstDom = fd;
       }
     };
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
