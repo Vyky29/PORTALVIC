@@ -268,6 +268,7 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
   const override = PORTAL_USERNAME_ROLE_OVERRIDES[staffKey];
   const eff = portalInferEffectiveRole(profile, authEmail);
   if (eff === "ceo" || app === "ceo" || override === "ceo") return true;
+  if (portalIsProgrammeLeadUser(profile, authEmail)) return true;
   if (override === "admin" || app === "admin") return true;
   if (staff === "manager" || staff === "admin") return true;
   return false;
@@ -333,6 +334,28 @@ export function portalIsExecutiveLeadHomeUser(profile, authEmail) {
   return portalCanAccessCeoDashboard(profile, authEmail);
 }
 
+/** John, Berta, Michelle — programme leads (admin home; lead tools on staff shell). */
+const PORTAL_STAFF_HOME_PROGRAMME_LEAD_KEYS = new Set(["john", "berta", "michelle"]);
+
+export function portalIsStaffHomeProgrammeLead(profile, authEmail) {
+  if (!profile) return false;
+  const key = portalInferStaffKey(profile, authEmail);
+  if (PORTAL_STAFF_HOME_PROGRAMME_LEAD_KEYS.has(key)) return true;
+  const em = String(authEmail || "")
+    .trim()
+    .toLowerCase();
+  return (
+    em === "johnnyosti37@gmail.com" ||
+    em === "b.traperocasado@gmail.com" ||
+    em === "michelle@youtimecounselling.com"
+  );
+}
+
+/** Alias — same allowlist as staff-shell programme lead tools. */
+export function portalIsProgrammeLeadUser(profile, authEmail) {
+  return portalIsStaffHomeProgrammeLead(profile, authEmail);
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
  * Executive trio skip chooser — land on Lead Portal directly.
@@ -343,6 +366,7 @@ export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
   if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
   if (portalIsOperationsAdminUser(profile, authEmail)) return false;
+  if (portalIsProgrammeLeadUser(profile, authEmail)) return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
@@ -664,6 +688,9 @@ function inferDashboardRoute(profile, authEmail) {
   const fromWorkingUi =
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
+  if (portalIsProgrammeLeadUser(profile, authEmail)) {
+    return fromWorkingUi ? "admin_dashboard.html" : portalPublishedAdminUrl();
+  }
   if (fromWorkingUi) {
     if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "lead_dashboard.html";
     if (portalIsOperationsAdminUser(profile, authEmail)) return "admin_dashboard.html";
@@ -1177,19 +1204,23 @@ export async function bootstrapDashboardSupabase(_opts) {
           "./portal_lead_session_scope.js"
         );
         if (!portalCanAccessLeadSessionOverview(profile, authEmailGate)) {
+          const hubUrl =
+            resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) || leadHubUrl;
           try {
-            window.location.replace(leadHubUrl);
+            window.location.replace(hubUrl);
           } catch {
-            window.location.href = leadHubUrl;
+            window.location.href = hubUrl;
           }
           return;
         }
       } catch (scopeErr) {
         console.warn("[portal] lead_overview scope check", scopeErr);
+        const hubUrl =
+          resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) || leadHubUrl;
         try {
-          window.location.replace(leadHubUrl);
+          window.location.replace(hubUrl);
         } catch {
-          window.location.href = leadHubUrl;
+          window.location.href = hubUrl;
         }
         return;
       }
@@ -1293,6 +1324,10 @@ export async function bootstrapDashboardSupabase(_opts) {
         } catch {
           /* ignore */
         }
+      }
+      if (portalIsProgrammeLeadUser(profile, authEmail)) {
+        window.location.replace(portalPublishedAdminUrl());
+        return;
       }
       const eff = portalInferEffectiveRole(profile, authEmail);
       if (eff !== "lead" && eff !== "admin" && eff !== "ceo") {

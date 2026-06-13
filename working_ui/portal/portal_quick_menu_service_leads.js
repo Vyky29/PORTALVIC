@@ -1,17 +1,29 @@
 /**
- * Quick menu � Service Leads section (lead dashboard only: Berta, John, Victor, Javier, Ra�l).
+ * Quick menu — Service Leads section.
+ * Lead shell: Victor, Javi, Raúl.
+ * Staff shell: John, Berta, Michelle (programme leads).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
+import { portalLeadProgrammeKey } from "./portal_lead_session_scope.js";
 
-/** Programme leads who use the lead dashboard shell � not shown on staff dashboard. */
-const LEAD_DASHBOARD_SERVICE_LEAD_KEYS = new Set([
-  "berta",
-  "john",
-  "michelle",
-  "victor",
-  "javi",
-  "raul",
-]);
+/** Executive leads on lead_dashboard.html */
+const LEAD_SHELL_SERVICE_LEAD_KEYS = new Set(["victor", "javi", "raul"]);
+
+/** Programme leads on staff_dashboard.html */
+const STAFF_SHELL_PROGRAMME_LEAD_KEYS = new Set(["berta", "john", "michelle"]);
+
+const STAFF_SERVICE_LEAD_BTN_IDS = [
+  "quickMenuLeadFeedbackReport",
+  "quickMenuStaffSessionsOverview",
+  "quickMenuStaffLeadPerformanceReview",
+  "quickMenuStaffLeadTermReview",
+];
+
+const LEAD_SERVICE_LEAD_BTN_IDS = [
+  "quickMenuLeadSessionOverview",
+  "quickMenuLeadPerformanceReview",
+  "quickMenuLeadTermReview",
+];
 
 export function portalIsLeadDashboardShell() {
   try {
@@ -24,9 +36,28 @@ export function portalIsLeadDashboardShell() {
   }
 }
 
+export function portalIsStaffDashboardShell() {
+  try {
+    const path = String(
+      (typeof window !== "undefined" && window.location && window.location.pathname) || "",
+    ).toLowerCase();
+    return path.indexOf("staff_dashboard") >= 0;
+  } catch {
+    return false;
+  }
+}
+
 export function portalCanAccessServiceLeadsMenu(profile, authEmail) {
-  if (!portalIsLeadDashboardShell()) return false;
-  return LEAD_DASHBOARD_SERVICE_LEAD_KEYS.has(portalInferStaffKey(profile, authEmail));
+  const key = portalInferStaffKey(profile, authEmail);
+  if (portalIsLeadDashboardShell()) {
+    return LEAD_SHELL_SERVICE_LEAD_KEYS.has(key);
+  }
+  if (portalIsStaffDashboardShell()) {
+    return (
+      STAFF_SHELL_PROGRAMME_LEAD_KEYS.has(key) || !!portalLeadProgrammeKey(profile, authEmail)
+    );
+  }
+  return false;
 }
 
 function portalAuthEmailFromContext() {
@@ -39,6 +70,13 @@ function portalAuthEmailFromContext() {
   }
 }
 
+function setQuickMenuBtnVisible(id, visible) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.hidden = !visible;
+  btn.setAttribute("aria-hidden", visible ? "false" : "true");
+}
+
 export function portalSyncServiceLeadsQuickMenu() {
   const profile =
     typeof window !== "undefined" && window.__PORTAL_SUPABASE__
@@ -46,6 +84,8 @@ export function portalSyncServiceLeadsQuickMenu() {
       : null;
   const email = portalAuthEmailFromContext();
   const show = portalCanAccessServiceLeadsMenu(profile, email);
+  const isStaffShell = portalIsStaffDashboardShell();
+  const btnIds = isStaffShell ? STAFF_SERVICE_LEAD_BTN_IDS : LEAD_SERVICE_LEAD_BTN_IDS;
 
   const grp = document.getElementById("portalQuickMenuServiceLeadsGroup");
   if (grp) {
@@ -53,14 +93,9 @@ export function portalSyncServiceLeadsQuickMenu() {
     grp.setAttribute("aria-hidden", show ? "false" : "true");
   }
 
-  ["quickMenuStaffSessionsOverview", "quickMenuStaffLeadPerformanceReview", "quickMenuStaffLeadTermReview"].forEach(
-    (id) => {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      btn.hidden = true;
-      btn.setAttribute("aria-hidden", "true");
-    },
-  );
+  btnIds.forEach((id) => {
+    setQuickMenuBtnVisible(id, show);
+  });
 
   try {
     if (typeof window.portalInitQuickMenuAccordion === "function") {
@@ -71,6 +106,7 @@ export function portalSyncServiceLeadsQuickMenu() {
 
 if (typeof window !== "undefined") {
   window.portalIsLeadDashboardShell = portalIsLeadDashboardShell;
+  window.portalIsStaffDashboardShell = portalIsStaffDashboardShell;
   window.portalCanAccessServiceLeadsMenu = portalCanAccessServiceLeadsMenu;
   window.portalSyncServiceLeadsQuickMenu = portalSyncServiceLeadsQuickMenu;
 }

@@ -1,7 +1,7 @@
 /**
  * Standalone Session overview for programme leads (John, Berta, Michelle).
  */
-import { bootstrapDashboardSupabase } from "./auth-handler.js";
+import { bootstrapDashboardSupabase, portalIsStaffHomeProgrammeLead } from "./auth-handler.js";
 import { portalCanAccessServiceLeadsMenu } from "./portal_quick_menu_service_leads.js";
 import {
   portalCanAccessLeadSessionOverview,
@@ -21,7 +21,11 @@ import {
 } from "./portal_lead_session_scope.js";
 
 const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260607-feedback-bespoke-match";
-const LEAD_URL = "lead_dashboard.html";
+
+function portalProgrammeLeadHubUrl(profile, authEmail) {
+  if (portalIsProgrammeLeadUser(profile, authEmail)) return "admin_dashboard.html";
+  return "lead_dashboard.html";
+}
 
 const state = { tab: "feedback", scopes: [] };
 
@@ -618,12 +622,19 @@ export async function portalInitLeadSessionOverviewPage() {
       "[lead session overview] access denied",
       { email: email || "(empty)", username: profile && profile.username, full_name: profile && profile.full_name }
     );
-    window.location.replace(LEAD_URL);
+    window.location.replace(portalProgrammeLeadHubUrl(profile, email));
     return;
   }
   const scopes = portalLeadSessionScopesForProfile(profile, email);
   const leadKey = portalLeadProgrammeKey(profile, email);
   state.scopes = scopes;
+  const back = $("plsoBack");
+  if (back) {
+    const hub = portalProgrammeLeadHubUrl(profile, email);
+    back.setAttribute("href", hub);
+    back.textContent =
+      hub.indexOf("admin_dashboard") >= 0 ? "← Admin portal" : "← Lead dashboard";
+  }
   const hint = $("plsoScopeHint");
   if (hint) {
     const labels = portalLeadSessionScopeLabels(profile, email);
@@ -675,13 +686,15 @@ export async function portalInitLeadSessionOverviewPage() {
 }
 
 export async function portalSyncLeadSessionOverviewButton() {
-  const btn = document.getElementById("quickMenuLeadSessionOverview");
-  if (!btn) return;
   await awaitPortalSupabaseReady(5000);
   const ctx = window.__PORTAL_SUPABASE__ || {};
   const profile = ctx.staff_profile;
   const email = await portalResolveLeadAuthEmail(ctx);
   const show = portalCanAccessServiceLeadsMenu(profile, email);
-  btn.hidden = !show;
-  btn.setAttribute("aria-hidden", show ? "false" : "true");
+  ["quickMenuLeadSessionOverview", "quickMenuStaffSessionsOverview"].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.hidden = !show;
+    btn.setAttribute("aria-hidden", show ? "false" : "true");
+  });
 }
