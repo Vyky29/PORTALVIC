@@ -80,25 +80,27 @@
     opts = opts || {};
     if (opts.loading) return "loading";
     var mode = String(opts.mode || "").trim();
-    if (mode) return "mode:" + mode;
     var preview = opts.preview;
-    if (!preview) return "solo";
-    var parts = [
-      String(preview.weekday || ""),
-      String(preview.dateLabel || ""),
-      String(preview.sessionCount || "0"),
-      String(preview.venueLabel || ""),
-    ];
-    (preview.participants || []).forEach(function (p) {
-      parts.push(
-        String((p && p.clientId) || "") +
-          "|" +
-          String((p && p.name) || "") +
-          "|" +
-          normalizePhotoUrl(p && p.photoUrl)
-      );
-    });
-    return parts.join(";");
+    var previewSig = "solo";
+    if (preview) {
+      var parts = [
+        String(preview.weekday || ""),
+        String(preview.dateLabel || ""),
+        String(preview.sessionCount || "0"),
+        String(preview.venueLabel || ""),
+      ];
+      (preview.participants || []).forEach(function (p) {
+        parts.push(
+          String((p && p.clientId) || "") +
+            "|" +
+            String((p && p.name) || "") +
+            "|" +
+            normalizePhotoUrl(p && p.photoUrl)
+        );
+      });
+      previewSig = parts.join(";");
+    }
+    return (mode ? "mode:" + mode + "|" : "") + previewSig;
   };
 
   global.portalTomorrowListSignature = function portalTomorrowListSignature(rows) {
