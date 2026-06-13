@@ -889,9 +889,9 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260611-madre-feedback"></script>
+  <script src="/portal/term_from_timetable.js?v=20260612-youssef-roster"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260612-youssef-roster"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260611-madre"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260611-madre-feedback"></script>
@@ -6184,6 +6184,13 @@
       if(t === 'client_absence_announced') return 'absent';
       if(t === 'client_replace_in_slot') return 'makeup';
       if(t === 'slot_open') return 'slot_opened';
+      if(t === 'slot_clear_client'){
+        let pl = null;
+        try{
+          pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+        }catch(_){ pl = null; }
+        if(pl && pl.cancelled_by_admin) return 'cancelled';
+      }
       return 'other';
     }
     /** First name (or first token) for quick-menu titles such as "Absent - Mary". */
