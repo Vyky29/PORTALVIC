@@ -3697,6 +3697,21 @@
       padding:8px 10px 10px;
       min-height:0;
     }
+    .today-grid.today-grid--promoted-next{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:8px 10px 10px;
+      min-height:0;
+    }
+    .today-grid__dayoff-banner.today-day-panel{
+      flex:0 0 auto;
+      margin:0;
+    }
+    .today-grid--promoted-next .today-grid-rows{
+      flex:1 1 auto;
+      min-height:0;
+    }
     .today-day-panel{
       display:flex;
       flex-direction:column;
