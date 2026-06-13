@@ -54,16 +54,42 @@
     yoan: "portal/participants/yoan.png",
   };
 
-  /** Files actually shipped under working_ui/portal/participants/ — avoids 404 + empty avatars. */
+  /** Files actually shipped under working_ui/portal/participants/ — avoids 404 on slug guesses. */
   var PARTICIPANT_PHOTO_FILES_ON_DISK = {
     "/portal/participants/adaam-ah.png": true,
-    "/portal/participants/amaar-ah.png": true,
-    "/portal/participants/ayden-w.png": true,
     "/portal/participants/adam-ab.png": true,
-    "/portal/participants/gabriel.png": true,
+    "/portal/participants/amaar-ah.png": true,
+    "/portal/participants/amir.png": true,
     "/portal/participants/anas.png": true,
+    "/portal/participants/arthur-manners.png": true,
+    "/portal/participants/arthur-mo.png": true,
+    "/portal/participants/ayaan.png": true,
     "/portal/participants/aydaan-ah.png": true,
+    "/portal/participants/ayden-w.png": true,
     "/portal/participants/cyrus.png": true,
+    "/portal/participants/eiji.png": true,
+    "/portal/participants/erik.png": true,
+    "/portal/participants/fadi.png": true,
+    "/portal/participants/faris.png": true,
+    "/portal/participants/gabriel.png": true,
+    "/portal/participants/haneef.png": true,
+    "/portal/participants/hazem.png": true,
+    "/portal/participants/ikram.png": true,
+    "/portal/participants/jack-s.png": true,
+    "/portal/participants/jack-w.jpg": true,
+    "/portal/participants/kamy.png": true,
+    "/portal/participants/kate.png": true,
+    "/portal/participants/rayaan-fi.png": true,
+    "/portal/participants/rodin.png": true,
+    "/portal/participants/samer.png": true,
+    "/portal/participants/scott.png": true,
+    "/portal/participants/serine.png": true,
+    "/portal/participants/stephanie.png": true,
+    "/portal/participants/timi.png": true,
+    "/portal/participants/tinashe.png": true,
+    "/portal/participants/yassir.png": true,
+    "/portal/participants/yusef-ah.png": true,
+    "/portal/participants/zaid.png": true,
   };
 
   function photoKey(name) {
