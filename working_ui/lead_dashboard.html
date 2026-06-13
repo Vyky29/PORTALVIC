@@ -927,34 +927,6 @@
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script>
-    // #region agent log
-    (function portalAgentDebugHarness(){
-      window.__PORTAL_AGENT_DEBUG__ = window.__PORTAL_AGENT_DEBUG__ || { milestones: [], errors: [], runId: 'post-fix' };
-      function agentLog(hypothesisId, location, message, data){
-        try{
-          var entry = { sessionId: 'f8eb64', runId: window.__PORTAL_AGENT_DEBUG__.runId, hypothesisId: hypothesisId, location: location, message: message, data: data || {}, timestamp: Date.now() };
-          window.__PORTAL_AGENT_DEBUG__.milestones.push(entry);
-          fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f8eb64'},body:JSON.stringify(entry)}).catch(function(){});
-        }catch(_){}
-      }
-      window.portalAgentLog = agentLog;
-      window.addEventListener('error', function(ev){
-        try{
-          var err = { msg: String(ev.message || ''), file: String(ev.filename || ''), line: ev.lineno, col: ev.colno };
-          window.__PORTAL_AGENT_DEBUG__.errors.push(err);
-          agentLog('H1', 'global:onerror', 'uncaught error', err);
-        }catch(_){}
-      });
-      window.addEventListener('unhandledrejection', function(ev){
-        try{
-          var err = { msg: String(ev.reason && (ev.reason.message || ev.reason) || 'rejection') };
-          window.__PORTAL_AGENT_DEBUG__.errors.push(err);
-          agentLog('H1', 'global:unhandledrejection', 'unhandled rejection', err);
-        }catch(_){}
-      });
-      agentLog('H1', 'lead_dashboard.html:boot', 'main script block started', { href: location.href });
-    })();
-    // #endregion
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
       return new Date(d).toLocaleDateString('en-GB', { weekday: 'long' });
@@ -10331,11 +10303,6 @@
     }
     function openSheet(id, opts){
       if(id === 'internalChatSheet') return; /* chat removed — see archive/chat-full-removal-20260609 */
-      // #region agent log
-      if(typeof window.portalAgentLog === 'function'){
-        window.portalAgentLog('H2', 'lead_dashboard:openSheet', 'openSheet invoked', { id: id });
-      }
-      // #endregion
       opts = opts || {};
       if(typeof portalRecordSheetNavigation === 'function' && !opts.skipNavRecord){
         portalRecordSheetNavigation(id);
@@ -11239,15 +11206,6 @@
         openId();
       });
     });
-    // #region agent log
-    if(typeof window.portalAgentLog === 'function'){
-      window.portalAgentLog('H2', 'lead_dashboard:bind-data-open', 'data-open listeners bound', {
-        count: $$('[data-open]').length,
-        openSheet: typeof openSheet,
-        menuSheet: !!document.getElementById('menuSheet')
-      });
-    }
-    // #endregion
     document.addEventListener('change', function(e){
       const chk = e.target && e.target.id === 'safeguardingPolicyReadConfirm' ? e.target : null;
       if(!chk) return;
@@ -11712,18 +11670,6 @@
     if(STAFF_DASH_HIDE_DEV_VIEW_TOGGLE) document.body.classList.add('staff-dashboard-ready');
     renderHeader();
     renderToday();
-    // #region agent log
-    if(typeof window.portalAgentLog === 'function'){
-      var _ddInit = window.dashboardData;
-      window.portalAgentLog('H3', 'lead_dashboard:init-render', 'initial render complete', {
-        staffName: _ddInit && _ddInit.staffName,
-        todayLen: _ddInit && _ddInit.today && _ddInit.today.length,
-        deferRoster: !!_portalDeferRosterUntilAuth,
-        staffId: typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '',
-        todayGridChildren: document.getElementById('todayGrid') ? document.getElementById('todayGrid').children.length : -1
-      });
-    }
-    // #endregion
     if(!_portalDeferRosterUntilAuth){
       renderMiniCounts();
       renderLists();
@@ -11872,17 +11818,6 @@
         txt += line('portalIdentityResolved', dd ? dd.portalIdentityResolved : '(no dashboardData)');
         txt += line('DEMO_VIEW_DAY', typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '(n/a)');
         txt += line('portal:supabase-ready fired', window.__PORTAL_DEBUG_SUPABASE_READY_FIRED__ ? 'yes' : 'no');
-        var ad = window.__PORTAL_AGENT_DEBUG__;
-        txt += line('agent JS errors', ad && ad.errors ? ad.errors.length : 0);
-        if(ad && ad.errors && ad.errors.length){
-          var le = ad.errors[ad.errors.length - 1];
-          txt += line('last JS error', le.msg || le.message || JSON.stringify(le));
-        }
-        try{
-          txt += line('data-open buttons', typeof $$ === 'function' ? $$('[data-open]').length : '(no $$)');
-        }catch(_dc){ txt += line('data-open buttons', 'query failed'); }
-        txt += line('openSheet fn', typeof openSheet);
-        txt += line('todayGrid children', document.getElementById('todayGrid') ? document.getElementById('todayGrid').children.length : '(missing)');
         pre.textContent = txt;
       }
       tick();
