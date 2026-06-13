@@ -248,7 +248,7 @@ export function portalIsOperationsAdminUser(profile, authEmail) {
 
 /**
  * Sevitha-only surfaces (e.g. restricted ops config) — not a block on admin_dashboard access.
- * Victor, Raúl and Javi use lead_dashboard as home; admin remains available via workspace switch.
+ * Victor, Raúl and Javi use admin_dashboard as home; lead/staff/CEO remain via workspace switch.
  */
 export function portalCanAccessAdminDashboardFull(profile, authEmail) {
   return portalIsOperationsAdminUser(profile, authEmail);
@@ -268,7 +268,6 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
   const override = PORTAL_USERNAME_ROLE_OVERRIDES[staffKey];
   const eff = portalInferEffectiveRole(profile, authEmail);
   if (eff === "ceo" || app === "ceo" || override === "ceo") return true;
-  if (portalIsProgrammeLeadUser(profile, authEmail)) return true;
   if (override === "admin" || app === "admin") return true;
   if (staff === "manager" || staff === "admin") return true;
   return false;
@@ -329,12 +328,17 @@ export function portalCanWriteScheduleOverrides(profile, authEmail) {
   return eff === "admin" || eff === "ceo";
 }
 
-/** Victor, Raúl, Javi — home shell is Lead Portal (staff & leads chat + Directors). */
+/** Victor, Raúl, Javi — login home is Admin portal (not lead shell). */
 export function portalIsExecutiveLeadHomeUser(profile, authEmail) {
   return portalCanAccessCeoDashboard(profile, authEmail);
 }
 
-/** John, Berta, Michelle — programme leads (admin home; lead tools on staff shell). */
+/** Same trio — explicit alias for admin-home routing/docs. */
+export function portalIsAdminHomeExecutiveUser(profile, authEmail) {
+  return portalCanAccessCeoDashboard(profile, authEmail);
+}
+
+/** John, Berta, Michelle — programme leads (staff home; lead tools on staff shell). */
 const PORTAL_STAFF_HOME_PROGRAMME_LEAD_KEYS = new Set(["john", "berta", "michelle"]);
 
 export function portalIsStaffHomeProgrammeLead(profile, authEmail) {
@@ -358,7 +362,7 @@ export function portalIsProgrammeLeadUser(profile, authEmail) {
 
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
- * Executive trio skip chooser — land on Lead Portal directly.
+ * Executive trio skip chooser — land on Admin portal directly.
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  */
@@ -689,16 +693,16 @@ function inferDashboardRoute(profile, authEmail) {
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (portalIsProgrammeLeadUser(profile, authEmail)) {
-    return fromWorkingUi ? "admin_dashboard.html" : portalPublishedAdminUrl();
+    return fromWorkingUi ? "staff_dashboard.html" : portalPublishedStaffUrl();
   }
   if (fromWorkingUi) {
-    if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "lead_dashboard.html";
+    if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return "admin_dashboard.html";
     if (portalIsOperationsAdminUser(profile, authEmail)) return "admin_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
-  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return portalPublishedLeadUrl();
+  if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return portalPublishedAdminUrl();
   if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedAdminUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
@@ -1230,8 +1234,8 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (!portalCanAccessAdminDashboard(profile, authEmailGate)) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
         const dest = portalNormalizeUrl(
-          portalIsExecutiveLeadHomeUser(profile, authEmailGate)
-            ? portalPublishedLeadUrl()
+          portalIsAdminHomeExecutiveUser(profile, authEmailGate)
+            ? portalPublishedAdminUrl()
             : eff === "lead"
               ? portalPublishedLeadUrl()
               : portalPublishedStaffUrl()
@@ -1326,6 +1330,10 @@ export async function bootstrapDashboardSupabase(_opts) {
         }
       }
       if (portalIsProgrammeLeadUser(profile, authEmail)) {
+        window.location.replace(portalPublishedStaffUrl());
+        return;
+      }
+      if (portalIsAdminHomeExecutiveUser(profile, authEmail)) {
         window.location.replace(portalPublishedAdminUrl());
         return;
       }

@@ -23,7 +23,7 @@ import {
 const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260607-feedback-bespoke-match";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
-  if (portalIsProgrammeLeadUser(profile, authEmail)) return "admin_dashboard.html";
+  if (portalIsProgrammeLeadUser(profile, authEmail)) return "staff_dashboard.html";
   return "lead_dashboard.html";
 }
 
@@ -633,7 +633,7 @@ export async function portalInitLeadSessionOverviewPage() {
     const hub = portalProgrammeLeadHubUrl(profile, email);
     back.setAttribute("href", hub);
     back.textContent =
-      hub.indexOf("admin_dashboard") >= 0 ? "← Admin portal" : "← Lead dashboard";
+      hub.indexOf("staff_dashboard") >= 0 ? "← Staff portal" : "← Lead dashboard";
   }
   const hint = $("plsoScopeHint");
   if (hint) {

@@ -115,7 +115,7 @@
       profileKey: key,
       cohort: cohort,
       layout: mobile ? "mobile_compact" : "desktop",
-      homeDashboard: ceo ? "lead_dashboard.html" : "admin_dashboard.html",
+      homeDashboard: "admin_dashboard.html",
       chatExperience: "cs_cliq_admin",
       csCliq: {
         defaultChannel: "staff_lead",

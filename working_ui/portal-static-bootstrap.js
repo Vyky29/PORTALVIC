@@ -312,11 +312,23 @@
         typeof window.portalIsProgrammeLeadUser === "function" &&
         window.portalIsProgrammeLeadUser(profile, email)
       ) {
-        return "admin_dashboard.html";
+        return "staff_dashboard.html";
       }
       if (
         typeof window.portalIsStaffHomeProgrammeLead === "function" &&
         window.portalIsStaffHomeProgrammeLead(profile, email)
+      ) {
+        return "staff_dashboard.html";
+      }
+      if (
+        typeof window.portalIsAdminHomeExecutiveUser === "function" &&
+        window.portalIsAdminHomeExecutiveUser(profile, email)
+      ) {
+        return "admin_dashboard.html";
+      }
+      if (
+        typeof window.portalCanAccessCeoDashboard === "function" &&
+        window.portalCanAccessCeoDashboard(profile, email)
       ) {
         return "admin_dashboard.html";
       }
