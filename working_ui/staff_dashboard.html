@@ -901,7 +901,7 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260611-madre-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260612-luliya-new-shift"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260612-slot-dedupe"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
@@ -6321,6 +6321,14 @@
       const slot = t0 && t1 ? (t0 + ' – ' + t1) : (t0 || t1 || '');
       return [iso, slot.toLowerCase(), venue].join('|');
     }
+    function portalOverrideQuickMenuSlotKeyFromItem(it){
+      return String(it && it.sub || '').trim().toLowerCase();
+    }
+    function portalOverrideQuickMenuTitleHasName(title, baseTitle){
+      const t = String(title || '').trim();
+      const base = String(baseTitle || '').trim();
+      return t.length > base.length && t.indexOf(base + ' - ') === 0;
+    }
     /** One absent card per slot — prefer "Absent - Amar" over generic "Absent". */
     function portalDedupeAbsentOverrideQuickMenuItems(items){
       if(!items || !items.length) return items || [];
@@ -6332,17 +6340,57 @@
           rest.push(it);
           continue;
         }
-        const slot = String(it.sub || '').trim().toLowerCase();
-        const named = String(it.title || '').trim() !== 'Absent';
+        const slot = portalOverrideQuickMenuSlotKeyFromItem(it);
+        const named = portalOverrideQuickMenuTitleHasName(it.title, 'Absent');
         const prev = absentBySlot[slot];
         if(!prev){
           absentBySlot[slot] = it;
           continue;
         }
-        const prevNamed = String(prev.title || '').trim() !== 'Absent';
+        const prevNamed = portalOverrideQuickMenuTitleHasName(prev.title, 'Absent');
         if(named && !prevNamed) absentBySlot[slot] = it;
       }
       return rest.concat(Object.keys(absentBySlot).map(function(k){ return absentBySlot[k]; }));
+    }
+    /** One schedule-change card per slot — prefer "Schedule change - Rayyan" over bare "Schedule change". */
+    function portalDedupeScheduleChangeOverrideQuickMenuItems(items){
+      if(!items || !items.length) return items || [];
+      const changeBySlot = Object.create(null);
+      const rest = [];
+      for(let i = 0; i < items.length; i++){
+        const it = items[i];
+        if(String(it && it.kind || '') !== 'other'){
+          rest.push(it);
+          continue;
+        }
+        const title = String(it && it.title || '').trim();
+        if(title.indexOf('Schedule change') !== 0){
+          rest.push(it);
+          continue;
+        }
+        const slot = portalOverrideQuickMenuSlotKeyFromItem(it);
+        const named = portalOverrideQuickMenuTitleHasName(title, 'Schedule change');
+        const prev = changeBySlot[slot];
+        if(!prev){
+          changeBySlot[slot] = it;
+          continue;
+        }
+        const prevNamed = portalOverrideQuickMenuTitleHasName(prev.title, 'Schedule change');
+        if(named && !prevNamed) changeBySlot[slot] = it;
+      }
+      return rest.concat(Object.keys(changeBySlot).map(function(k){ return changeBySlot[k]; }));
+    }
+    /** When a day has a grouped new-shift card, hide per-client schedule-change noise for that day. */
+    function portalHideScheduleChangesWhenNewShiftDay(items){
+      if(!items || !items.length) return items || [];
+      if(!items.some(function(it){ return String(it && it.kind || '') === 'new_shift'; })) return items;
+      return items.filter(function(it){ return String(it && it.kind || '') !== 'other'; });
+    }
+    function portalFinalizeOverrideQuickMenuItems(items){
+      let out = portalDedupeAbsentOverrideQuickMenuItems(items || []);
+      out = portalDedupeScheduleChangeOverrideQuickMenuItems(out);
+      out = portalHideScheduleChangesWhenNewShiftDay(out);
+      return out;
     }
     function portalStaffRosterOverrideAttentionState(){
       const empty = { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
@@ -6419,7 +6467,7 @@
           const items = byIso[iso];
           items.sort(function(a, b){ return (b._sort || 0) - (a._sort || 0); });
           for(let a = 0; a < items.length; a++) delete items[a]._sort;
-          const dedupedItems = portalDedupeAbsentOverrideQuickMenuItems(items);
+          const dedupedItems = portalFinalizeOverrideQuickMenuItems(items);
           n += dedupedItems.length;
           rosterOverrideDayGroups.push({
             iso: iso,

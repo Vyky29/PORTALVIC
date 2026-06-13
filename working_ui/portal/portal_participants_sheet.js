@@ -213,10 +213,31 @@
     const t = String(row && row.override_type || "").trim();
     if (t !== "slot_update") return false;
     const pl = overridePayload(row);
-    if (!pl || !pl.term_roster_edit) return false;
+    if (!pl) return false;
     if (pl._portal_new_shift_day_group) return true;
     const scope = overridePayloadScope(pl);
-    return scope === "single_day" || scope === "pick_sessions";
+    if (scope === "rest_of_term" || scope === "weekday_term") return false;
+    if (scope === "single_day" || scope === "pick_sessions") return true;
+    if (pl.term_roster_edit && normIso(row && row.session_date)) return true;
+    return false;
+  }
+
+  function overrideSlotAttentionKey(row) {
+    const iso = normIso(row && row.session_date);
+    const staff = normKey(row && row.anchor_staff_id);
+    const start = String(row && row.anchor_start != null ? row.anchor_start : "");
+    const end = String(row && row.anchor_end != null ? row.anchor_end : "");
+    const venue = normKey(row && row.anchor_venue);
+    return [iso, staff, start, end, venue].join("|");
+  }
+
+  function overrideSlotAttentionScore(row) {
+    let score = 0;
+    if (String(row && row.anchor_client_id || "").trim()) score += 2;
+    const pl = overridePayload(row);
+    if (pl && String(pl.to_client_name || "").trim()) score += 2;
+    if (pl && pl.term_roster_edit) score += 1;
+    return score;
   }
 
   function overrideNewShiftDayGroupKey(row) {
@@ -288,13 +309,31 @@
     const keep = [];
     const termGroups = Object.create(null);
     const newShiftDayGroups = Object.create(null);
+    const slotUpdateByKey = Object.create(null);
+
+    function queueKeep(row) {
+      const t = String(row && row.override_type || "").trim();
+      if (t !== "slot_update") {
+        keep.push(row);
+        return;
+      }
+      const sk = overrideSlotAttentionKey(row);
+      if (!sk || sk.indexOf("|") <= 0) {
+        keep.push(row);
+        return;
+      }
+      const prev = slotUpdateByKey[sk];
+      if (!prev || overrideSlotAttentionScore(row) > overrideSlotAttentionScore(prev)) {
+        slotUpdateByKey[sk] = row;
+      }
+    }
 
     (rows || []).forEach(function (row) {
       if (!rowApplies(row, ctx)) return;
       if (overrideIsNewShiftDayUpdate(row)) {
         const gk = overrideNewShiftDayGroupKey(row);
         if (!gk) {
-          keep.push(row);
+          queueKeep(row);
           return;
         }
         const iso = normIso(row.session_date);
@@ -308,12 +347,12 @@
         return;
       }
       if (!overrideIsTermNewParticipant(row)) {
-        keep.push(row);
+        queueKeep(row);
         return;
       }
       const gk = overrideTermIntakeGroupKey(row);
       if (!gk) {
-        keep.push(row);
+        queueKeep(row);
         return;
       }
       const iso = normIso(row.session_date);
@@ -338,6 +377,10 @@
 
     Object.keys(termGroups).forEach(function (gk) {
       keep.push(termGroups[gk].row);
+    });
+
+    Object.keys(slotUpdateByKey).forEach(function (sk) {
+      keep.push(slotUpdateByKey[sk]);
     });
 
     return keep;
