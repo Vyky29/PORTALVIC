@@ -1,0 +1,23 @@
+PORTALVIC — Roster review export (area notes)
+Source: working_ui/portal/staff_dashboard_spreadsheet_bundle.js
+Rows: 1321
+Date range: 2026-05-13 → 2026-07-17
+
+Edit column 'notes' only (or fix client/time/venue if wrong).
+Then run: python database/roster_review/apply_participants_by_day_csv.py
+
+Area counts:
+  Teaching Pool: 402
+  Hub Room: 297
+  Big Pool: 150
+  Lane (SE): 127
+  Lane (DE): 117
+  Wall: 70
+  Small Pool: 66
+  Room 2: 41
+  Gym: 18
+  Lane: 14
+  Climbing Wall: 8
+  Lane (DE)/(SE): 8
+  Swallow End: 2
+  Pools: 1

@@ -134,6 +134,7 @@
 <datalist id="dl-pools"></datalist>
 <main id="app"><div class="empty">Cargando seed…</div></main>
 
+<script src="portal/roster_term_master_seed.boot.js"></script>
 <script>
 (function(){
   var STORAGE_KEY = 'portal_roster_term_master_grid_v2';
@@ -419,22 +420,31 @@
     setStatus(msg||'OK','ok');
   }
 
+  function useSeedData(data, msg){
+    seedSnapshot = normalizeState(deepClone(data));
+    try{
+      var d = localStorage.getItem(STORAGE_KEY);
+      if(d && confirm('¿Restaurar borrador guardado?')){ applyData(JSON.parse(d),'Borrador OK'); return; }
+    }catch(_){}
+    applyData(data, msg || 'Seed OK');
+  }
+
   function loadSeed(){
     setStatus('Cargando…');
+    if(window.PORTAL_ROSTER_TERM_MASTER_SEED){
+      useSeedData(window.PORTAL_ROSTER_TERM_MASTER_SEED, 'Seed: 20 staff · 7 semanas · slots 30\' separados');
+      return;
+    }
     fetch(SEED_URL).then(function(r){
       if(!r.ok) throw new Error(r.status);
       return r.json();
     }).then(function(data){
-      seedSnapshot = normalizeState(deepClone(data));
-      try{
-        var d = localStorage.getItem(STORAGE_KEY);
-        if(d && confirm('¿Restaurar borrador guardado?')){ applyData(JSON.parse(d),'Borrador OK'); return; }
-      }catch(_){}
-      applyData(data, 'Seed: 20 staff · 7 semanas · slots 30\' separados');
+      useSeedData(data, 'Seed: 20 staff · 7 semanas · slots 30\' separados');
     }).catch(function(e){
       setStatus('Error '+e.message,'warn');
-      app.innerHTML='<div class="empty"><strong>Servidor local:</strong><br><code>cd working_ui && python3 -m http.server 8765</code><br>'+
-        'Luego abre <code>/roster_term_master_review.html</code><br>O usa JSON… → <code>portal/roster_term_master_seed.json</code></div>';
+      app.innerHTML='<div class="empty"><strong>No se pudo cargar el seed.</strong><br>'+
+        'Usa <strong>JSON…</strong> → <code>portal/roster_term_master_seed.json</code><br>'+
+        'O regenera el boot: <code>python database/roster_review/build_roster_term_master_seed_boot.py</code></div>';
     });
   }
 

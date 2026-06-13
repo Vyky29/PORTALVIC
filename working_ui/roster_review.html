@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PORTALVIC — Roster review</title>
+  <style>
+    :root {
+      --ink: #0f2942;
+      --muted: #5a7189;
+      --line: #d8e3ef;
+      --bg: #f4f8fc;
+      --card: #fff;
+      --blue: #1d4f8f;
+      --blue-soft: #e8f0fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 16px 16px 48px; }
+    h1 { font-size: 1.35rem; margin: 0 0 6px; }
+    .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 16px; max-width: 72ch; }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+    }
+    .tab {
+      border: 1px solid var(--line); background: var(--card); color: var(--ink);
+      padding: 10px 16px; border-radius: 999px; cursor: pointer; font-weight: 600;
+    }
+    .tab[aria-selected="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .panel {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px; box-shadow: 0 8px 24px rgba(15, 41, 66, 0.06);
+    }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px;
+    }
+    .toolbar input, .toolbar select {
+      min-width: 140px; padding: 8px 10px; border: 1px solid var(--line);
+      border-radius: 8px; font: inherit;
+    }
+    .toolbar .grow { flex: 1 1 220px; min-width: 200px; }
+    .btn {
+      border: 0; background: var(--blue); color: #fff; font-weight: 600;
+      padding: 9px 14px; border-radius: 8px; cursor: pointer; font: inherit;
+    }
+    .btn--ghost { background: var(--blue-soft); color: var(--blue); }
+    .meta { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+    .scroll { overflow: auto; max-height: min(72vh, 900px); border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    thead th {
+      position: sticky; top: 0; z-index: 2;
+      background: var(--blue-soft); color: var(--ink);
+      text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 6px 10px; border-bottom: 1px solid var(--line);
+      vertical-align: top; min-width: 72px;
+    }
+    tbody tr:nth-child(even) td { background: #fafcfe; }
+    tbody td[contenteditable="true"]:focus {
+      outline: 2px solid var(--blue); outline-offset: -2px; background: #fff;
+    }
+    .col-notes { min-width: 120px; font-weight: 600; }
+    .help {
+      margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+      background: var(--blue-soft); font-size: 0.88rem;
+    }
+    .help code { font-size: 0.85em; }
+    .err { color: #b42318; font-weight: 600; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Roster review — tablas editables</h1>
+    <p class="sub">
+      Para <strong>participantes y notas de pool</strong>, usa el grid MADRE (más fácil de ver y editar):
+      <a href="roster_term_master_review.html"><strong>roster_term_master_review.html</strong></a>.
+      Aquí: turnos de staff (CSV) y tabla plana de participantes.
+    </p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" id="tabStaff" aria-selected="true" aria-controls="panelStaff">Staff shifts</button>
+      <button type="button" class="tab" role="tab" id="tabParticipants" aria-selected="false" aria-controls="panelParticipants">Participants &amp; shifts</button>
+    </div>
+
+    <section class="panel" id="panelStaff" role="tabpanel" aria-labelledby="tabStaff">
+      <div class="toolbar">
+        <input type="search" class="grow" id="filterStaff" placeholder="Filtrar (fecha, staff, venue, hora…)" autocomplete="off" />
+        <select id="filterStaffDay" aria-label="Día">
+          <option value="">Todos los días</option>
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+        <button type="button" class="btn btn--ghost" id="reloadStaff">Recargar</button>
+        <button type="button" class="btn" id="downloadStaff">Descargar staff-shifts.csv</button>
+        <span class="meta" id="metaStaff"></span>
+      </div>
+      <div class="scroll">
+        <table id="tableStaff">
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="panelParticipants" role="tabpanel" aria-labelledby="tabParticipants" hidden>
+      <div class="toolbar">
+        <input type="search" class="grow" id="filterParticipants" placeholder="Filtrar (cliente, instructor, notes, venue…)" autocomplete="off" />
+        <select id="filterParticipantsDay" aria-label="Día">
+          <option value="">Todos los días</option>
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+        <button type="button" class="btn btn--ghost" id="reloadParticipants">Recargar</button>
+        <button type="button" class="btn" id="downloadParticipants">Descargar participants-by-day-area-notes.csv</button>
+        <span class="meta" id="metaParticipants"></span>
+      </div>
+      <div class="scroll">
+        <table id="tableParticipants">
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="help">
+      <strong>Después de editar:</strong>
+      <ol style="margin:8px 0 0; padding-left: 1.2rem;">
+        <li>Descarga el CSV de la pestaña que cambiaste.</li>
+        <li>Reemplaza el archivo en <code>database/roster_review/</code> (mismo nombre).</li>
+        <li>Participantes/notas: <code>python database/roster_review/apply_participants_by_day_csv.py</code></li>
+        <li>Staff: guarda <code>staff-shifts.csv</code> y pide en Cursor que lo aplique al timetable.</li>
+      </ol>
+    </div>
+    <p id="loadError" class="err" hidden></p>
+  </div>
+
+  <script>
+(function () {
+  "use strict";
+
+  var STAFF_COLS = ["date", "weekday", "staff_name", "time_range", "venue", "raw_assignment"];
+  var PART_COLS = ["date", "weekday", "client", "service", "time_slot", "instructor", "venue", "notes"];
+  var STAFF_KEY = ["date", "weekday", "staff_name", "venue", "time_range"];
+  var PART_KEY = ["date", "weekday", "client", "service", "time_slot", "venue"];
+  var STAFF_URL = "portal/roster_review/staff-shifts.csv";
+  var PART_URL = "portal/roster_review/participants-by-day-area-notes.csv";
+
+  var staffRows = [];
+  var partRows = [];
+
+  function rowKey(r, keys) {
+    return keys.map(function (k) { return norm(r[k]); }).join("|");
+  }
+
+  function parseCsv(text) {
+    var lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(function (l) { return l.length; });
+    if (!lines.length) return [];
+    var headers = splitCsvLine(lines[0]);
+    var out = [];
+    for (var i = 1; i < lines.length; i++) {
+      var cells = splitCsvLine(lines[i]);
+      if (!cells.length) continue;
+      var row = {};
+      headers.forEach(function (h, ix) { row[h] = cells[ix] != null ? cells[ix] : ""; });
+      out.push(row);
+    }
+    return out;
+  }
+
+  function splitCsvLine(line) {
+    var res = [], cur = "", q = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (q) {
+        if (c === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else q = false;
+        } else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { res.push(cur); cur = ""; }
+      else cur += c;
+    }
+    res.push(cur);
+    return res;
+  }
+
+  function escapeCsv(v) {
+    var s = String(v == null ? "" : v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function rowsToCsv(cols, rows) {
+    var lines = [cols.join(",")];
+    rows.forEach(function (r) {
+      lines.push(cols.map(function (c) { return escapeCsv(r[c]); }).join(","));
+    });
+    return lines.join("\n") + "\n";
+  }
+
+  function downloadCsv(filename, cols, rows) {
+    var blob = new Blob([rowsToCsv(cols, rows)], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+  }
+
+  function norm(s) { return String(s || "").toLowerCase(); }
+
+  function filterRows(rows, q, dayKey, dayVal) {
+    var needle = norm(q);
+    return rows.filter(function (r) {
+      if (dayVal && String(r[dayKey] || "") !== dayVal) return false;
+      if (!needle) return true;
+      return STAFF_COLS.concat(PART_COLS).some(function (k) {
+        return r[k] != null && norm(r[k]).indexOf(needle) >= 0;
+      }) || Object.keys(r).some(function (k) { return norm(r[k]).indexOf(needle) >= 0; });
+    });
+  }
+
+  function renderTable(tableEl, cols, rows, notesCol, keyCols) {
+    var thead = tableEl.querySelector("thead tr");
+    var tbody = tableEl.querySelector("tbody");
+    thead.innerHTML = cols.map(function (c) {
+      var label = c === "notes" ? "notes (área)" : c.replace(/_/g, " ");
+      return "<th scope=\"col\">" + label + "</th>";
+    }).join("");
+    tbody.innerHTML = rows.map(function (r) {
+      var rk = rowKey(r, keyCols);
+      return "<tr data-row-key=\"" + escapeHtml(rk) + "\">" + cols.map(function (c) {
+        var cls = c === notesCol ? " col-notes" : "";
+        return "<td contenteditable=\"true\" data-col=\"" + c + "\" class=\"" + cls.trim() + "\">" +
+          escapeHtml(String(r[c] || "")) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function readTable(tableEl, cols) {
+    var out = [];
+    tableEl.querySelectorAll("tbody tr").forEach(function (tr) {
+      var row = {};
+      tr.querySelectorAll("td[data-col]").forEach(function (td) {
+        row[td.getAttribute("data-col")] = td.textContent.trim();
+      });
+      cols.forEach(function (c) { if (row[c] == null) row[c] = ""; });
+      out.push(row);
+    });
+    return out;
+  }
+
+  function showStaff() {
+    var q = document.getElementById("filterStaff").value;
+    var day = document.getElementById("filterStaffDay").value;
+    var filtered = filterRows(staffRows, q, "weekday", day);
+    renderTable(document.getElementById("tableStaff"), STAFF_COLS, filtered, "", STAFF_KEY);
+    document.getElementById("metaStaff").textContent = filtered.length + " / " + staffRows.length + " filas";
+  }
+
+  function showParticipants() {
+    var q = document.getElementById("filterParticipants").value;
+    var day = document.getElementById("filterParticipantsDay").value;
+    var filtered = filterRows(partRows, q, "weekday", day);
+    renderTable(document.getElementById("tableParticipants"), PART_COLS, filtered, "notes", PART_KEY);
+    document.getElementById("metaParticipants").textContent = filtered.length + " / " + partRows.length + " filas";
+  }
+
+  function fetchText(url) {
+    return fetch(url, { cache: "no-store" }).then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status + " for " + url);
+      return res.text();
+    });
+  }
+
+  function loadAll() {
+    var err = document.getElementById("loadError");
+    err.hidden = true;
+    return Promise.all([
+      fetchText(STAFF_URL),
+      fetchText(PART_URL)
+    ]).then(function (parts) {
+      staffRows = parseCsv(parts[0]);
+      partRows = parseCsv(parts[1]);
+      showStaff();
+      showParticipants();
+    }).catch(function (e) {
+      err.hidden = false;
+      err.textContent = "No se pudieron cargar los CSV. ¿Estás en Vercel o con servidor local? " + e.message;
+    });
+  }
+
+  document.getElementById("tabStaff").addEventListener("click", function () {
+    document.getElementById("tabStaff").setAttribute("aria-selected", "true");
+    document.getElementById("tabParticipants").setAttribute("aria-selected", "false");
+    document.getElementById("panelStaff").hidden = false;
+    document.getElementById("panelParticipants").hidden = true;
+  });
+  document.getElementById("tabParticipants").addEventListener("click", function () {
+    document.getElementById("tabParticipants").setAttribute("aria-selected", "true");
+    document.getElementById("tabStaff").setAttribute("aria-selected", "false");
+    document.getElementById("panelParticipants").hidden = false;
+    document.getElementById("panelStaff").hidden = true;
+  });
+
+  ["filterStaff", "filterStaffDay"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", showStaff);
+    document.getElementById(id).addEventListener("change", showStaff);
+  });
+  ["filterParticipants", "filterParticipantsDay"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", showParticipants);
+    document.getElementById(id).addEventListener("change", showParticipants);
+  });
+
+  document.getElementById("reloadStaff").addEventListener("click", loadAll);
+  document.getElementById("reloadParticipants").addEventListener("click", loadAll);
+
+  document.getElementById("downloadStaff").addEventListener("click", function () {
+    document.querySelectorAll("#tableStaff tbody tr[data-row-key]").forEach(function (tr) {
+      syncRowFromDom(tr, STAFF_COLS, staffRows, STAFF_KEY);
+    });
+    downloadCsv("staff-shifts.csv", STAFF_COLS, staffRows);
+  });
+
+  document.getElementById("downloadParticipants").addEventListener("click", function () {
+    document.querySelectorAll("#tableParticipants tbody tr[data-row-key]").forEach(function (tr) {
+      syncRowFromDom(tr, PART_COLS, partRows, PART_KEY);
+    });
+    downloadCsv("participants-by-day-area-notes.csv", PART_COLS, partRows);
+  });
+
+  function syncRowFromDom(tr, cols, store, keyCols) {
+    var rk = tr.getAttribute("data-row-key");
+    if (!rk) return;
+    var updated = {};
+    tr.querySelectorAll("td[data-col]").forEach(function (td) {
+      updated[td.getAttribute("data-col")] = td.textContent.trim();
+    });
+    for (var i = 0; i < store.length; i++) {
+      if (rowKey(store[i], keyCols) === rk) {
+        cols.forEach(function (c) { store[i][c] = updated[c] != null ? updated[c] : store[i][c]; });
+        break;
+      }
+    }
+  }
+
+  function bindEditSync(tableId, cols, getStore, keyCols) {
+    document.getElementById(tableId).addEventListener("focusout", function (e) {
+      var td = e.target.closest("td[data-col]");
+      if (!td) return;
+      var tr = td.closest("tr[data-row-key]");
+      if (!tr) return;
+      syncRowFromDom(tr, cols, getStore(), keyCols);
+    });
+  }
+
+  bindEditSync("tableStaff", STAFF_COLS, function () { return staffRows; }, STAFF_KEY);
+  bindEditSync("tableParticipants", PART_COLS, function () { return partRows; }, PART_KEY);
+
+  loadAll();
+})();
+  </script>
+</body>
+</html>
