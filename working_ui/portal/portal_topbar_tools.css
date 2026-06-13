@@ -373,6 +373,10 @@ header.topbar .topbar-profile-card h1.topbar-name,
 .topbar-tool-cell--participants .topbar-tool-label{
   font-size:var(--topbar-tool-label-size);
   letter-spacing:.02em;
+  color:var(--blue,#2d84b3);
+}
+body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
+  color:rgba(45,132,179,.88);
 }
 .topbar-tools-grid--lead .topbar-tool-cell--participants .topbar-tool-label,
 .topbar-tools-grid--eight .topbar-tool-cell--participants .topbar-tool-label,
@@ -454,14 +458,26 @@ header.topbar .topbar-profile-card h1.topbar-name,
   border-color:rgba(45,132,179,.45);
 }
 .topbar-tool-btn--participants{
-  background:rgba(51,65,85,.1) !important;
-  color:#334155 !important;
-  border-color:rgba(71,85,105,.34);
+  background:var(--blue,#2d84b3) !important;
+  color:#fff !important;
+  border-color:rgba(45,132,179,.48);
 }
 .topbar-tool-btn--participants:hover,
 .topbar-tool-btn--participants:focus-visible{
-  background:rgba(51,65,85,.16) !important;
-  border-color:rgba(71,85,105,.44);
+  background:#2676a0 !important;
+  border-color:rgba(38,118,160,.58);
+  color:#fff !important;
+}
+body.dock-context-menu .topbar-tool-btn--participants{
+  background:var(--blueSoft,#eaf5fb) !important;
+  color:var(--blue,#2d84b3) !important;
+  border-color:rgba(45,132,179,.28);
+}
+body.dock-context-menu .topbar-tool-btn--participants:hover,
+body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
+  background:rgba(45,132,179,.16) !important;
+  border-color:rgba(45,132,179,.38);
+  color:var(--blue,#2d84b3) !important;
 }
 .topbar-tool-btn--venue{
   background:rgba(34,197,94,.16) !important;

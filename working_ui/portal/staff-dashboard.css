@@ -7977,9 +7977,47 @@
       flex-shrink:0;
       transition:background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--quick-menu):not(.dock-nav-item--chat) .dock-nav-item__icon{
+    .dock-nav-item:hover:not(.dock-nav-item--quick-menu):not(.dock-nav-item--chat):not(.dock-nav-item--participants) .dock-nav-item__icon{
       background:rgba(23,50,71,.14);
       color:var(--ink);
+    }
+    /* My participants — corporate blue on dashboard; softer blue while Quick menu is open */
+    .dock-nav-item--participants{
+      border-color:rgba(45,132,179,.38);
+    }
+    .dock-nav-item--participants .dock-nav-item__icon{
+      background:var(--blue);
+      color:#fff;
+    }
+    .dock-nav-item--participants .dock-nav-item__label{
+      color:var(--blue);
+    }
+    .dock-nav-item--participants:hover .dock-nav-item__icon,
+    .dock-nav-item--participants:focus-visible .dock-nav-item__icon{
+      background:#2676a0;
+      color:#fff;
+    }
+    body.dock-context-menu .dock-nav-item--participants{
+      border-color:rgba(45,132,179,.22);
+    }
+    body.dock-context-menu .dock-nav-item--participants .dock-nav-item__icon{
+      background:var(--blueSoft);
+      color:var(--blue);
+    }
+    body.dock-context-menu .dock-nav-item--participants .dock-nav-item__label{
+      color:rgba(45,132,179,.92);
+    }
+    body.dock-context-menu .dock-nav-item--participants:hover .dock-nav-item__icon,
+    body.dock-context-menu .dock-nav-item--participants:focus-visible .dock-nav-item__icon{
+      background:rgba(45,132,179,.16);
+      color:var(--blue);
+    }
+    body.dock-context-clients .dock-nav-item--participants .dock-nav-item__icon{
+      background:var(--blue);
+      color:#fff;
+    }
+    body.dock-context-clients .dock-nav-item--participants .dock-nav-item__label{
+      color:var(--blue);
     }
     .dock-nav-item__icon svg{width:14px;height:14px;display:block}
     .dock-nav-item__label{
@@ -8012,8 +8050,11 @@
       pointer-events:none;
     }
     #menuSheet .menu-btn.menu-btn--work-participants .menu-btn-icon{
-      background:rgba(23,50,71,.1);
-      color:var(--ink);
+      background:var(--blueSoft);
+      color:var(--blue);
+    }
+    #menuSheet .menu-btn.menu-btn--work-participants .menu-btn-copy strong{
+      color:var(--blue);
     }
     #internalChatSheet.sheet--portal-chat-immersive{
       background:#fff;
