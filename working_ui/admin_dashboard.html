@@ -1847,8 +1847,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }catch(_ghostDestroy){}
       }
-        }catch(_csCliqDestroy){}
-      }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
       if(id === 'novo_orders') id = 'orders_all';
@@ -19300,7 +19298,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }else if(s.action==='notify') openComposeModal('reminder');
           else if(s.action==='session') openShiftModal('');
           else if(s.action==='jump' && s.target) setView(s.target);
-          else
           else if(s.action==='client' && s.clientId){ setView('clients'); setTimeout(function(){ openClientDrawer(s.clientId); }, 0); }
           else if(s.action==='report') openReportModal(null, s.reportId||null);
           else openReportModal(null);
@@ -20201,6 +20198,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalDmIsCheckOrderedPairError(err){
       if(!err) return false;
+      var c = err.code;
+      if(c === '23514' || c === 23514 || String(c) === '23514') return true;
+      var msg = String(err.message || err.details || err.hint || '').toLowerCase();
+      return msg.indexOf('check constraint') !== -1 && (msg.indexOf('ordered_pair') !== -1 || msg.indexOf('portal_staff_dm_threads_ordered') !== -1);
+    }
 
     /* Chat removed 2026-06-09 — archived under working_ui/archive/chat-full-removal-20260609/ */
     window.portalRenderInternalChatSheet = async function(){};
@@ -20216,6 +20218,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.portalAdminBellResolveChatHints = function(){ return []; };
     window.portalPlayChatMessageAlertSound = function(){};
 
+    function bindView(id){
+      portalAdminEnsureScriptsForView(id);
+      var root = $('workspace');
+      root.querySelectorAll('[data-client]').forEach(function(b){
+        b.addEventListener('click', function(){ openClientDrawer(b.getAttribute('data-client')); });
+      });
+      root.querySelectorAll('[data-staff-roster]').forEach(function(b){
+        var rk = b.getAttribute('data-staff-roster');
+        if(!rk) return;
+        b.addEventListener('click', function(){
+          openStaffDrawerByRosterKey(rk, {
+            sessionIso: b.getAttribute('data-staff-session-iso') || '',
             label: b.getAttribute('data-staff-label') || ''
           });
         });

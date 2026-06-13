@@ -6006,6 +6006,8 @@
     window.portalAdminBellResolveChatHints = function(){ return []; };
     window.portalPlayChatMessageAlertSound = function(){};
 
+    window.portalWaitForSupabaseClientReady = async function portalWaitForSupabaseClientReady(timeoutMs){
+      const doneNow = function(){
         const box = window.__PORTAL_SUPABASE__;
         return !!(box && box.client);
       };
