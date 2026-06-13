@@ -114,6 +114,15 @@
       groupRow.hidden = laneNav;
       groupRow.setAttribute("aria-hidden", laneNav ? "true" : "false");
     }
+    var peersHost = document.getElementById("csCliqQCeosHost");
+    if (peersHost) {
+      var hidePeerPills =
+        !!global.__PORTAL_CS_CLIQ_STANDALONE ||
+        String(global.__PORTAL_ADMIN_DM_CHANNEL || "").trim() === "ceo_exec";
+      peersHost.hidden = hidePeerPills;
+      peersHost.setAttribute("aria-hidden", hidePeerPills ? "true" : "false");
+      if (hidePeerPills) peersHost.innerHTML = "";
+    }
     if (
       typeof global.portalAdminDmBindCeoQuickGroupButtons === "function" &&
       quick &&
@@ -1016,10 +1025,6 @@
       quick.setAttribute("aria-hidden", "false");
     }
     var added = 0;
-    if (quickHost && !quickHost.querySelector(".portal-cs-cliq-channel-btn--peer")) {
-      await fillDirectPeerPicks(quickHost);
-      added += quickHost.querySelectorAll(".portal-cs-cliq-channel-btn--peer").length;
-    }
     if (list && rows.length && !standaloneInboxHasListContent()) {
       if (
         lastInboxCtx &&
@@ -1068,6 +1073,7 @@
       list.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No director contacts found. Check connection and refresh.</p>';
     }
+    syncInboxChrome();
     return added;
   }
 
@@ -1126,12 +1132,8 @@
     host.innerHTML = "";
     if (!dmItems.length) {
       if (global.__PORTAL_CS_CLIQ_STANDALONE && inboxClient) {
-        host.innerHTML =
-          '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word">Tap a contact to start chatting.</p>' +
-          '<div class="portal-cs-cliq-inbox-direct-peers" id="csCliqStandalonePeerPicks"></div>';
-        await fillDirectPeerPicks(document.getElementById("csCliqStandalonePeerPicks"));
-        var picksHost = document.getElementById("csCliqStandalonePeerPicks");
-        if (picksHost && picksHost.children.length) return;
+        await paintStandaloneLeadershipContacts(true);
+        return;
       }
       host.innerHTML =
         '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +

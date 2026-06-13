@@ -317,6 +317,59 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   text-align: left;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-you {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 46%;
+  min-width: 0;
+  margin-left: auto;
+  padding: 3px 8px 3px 3px;
+  border-radius: 999px;
+  background: rgba(45, 132, 179, 0.1);
+  border: 1px solid rgba(45, 132, 179, 0.18);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-you__avatar {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1d4f8f;
+  background: rgba(45, 132, 179, 0.16);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-you__avatar .portal-dm-thread-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-you__name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #173247;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #csCliqRoot .portal-cs-cliq-inbox__list-head .portal-cs-cliq__new-btn {
   flex: 0 0 auto;
   margin-left: auto;
@@ -541,6 +594,11 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   gap: 8px;
   margin-top: 10px;
   min-width: 0;
+}
+
+/* Standalone New Chat: 1:1 contacts are inbox cards only — no duplicate peer pills. */
+.cs-cliq-app-body #csCliqQCeosHost {
+  display: none !important;
 }
 
 #csCliqRoot .portal-cs-cliq-channel-btn--peer {
@@ -2265,10 +2323,35 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__status,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__members,
-  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open .portal-cs-cliq-thread-header__status,
-  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open .portal-cs-cliq-thread-header__members {
+  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open .portal-cs-cliq-thread-header__status {
     display: none !important;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__members:not([hidden]),
+  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open .portal-cs-cliq-thread-header__members:not([hidden]) {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open:has(.portal-cs-cliq-thread-header__members:not([hidden])) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open:has(.portal-cs-cliq-thread-header__members:not([hidden])) .portal-cs-cliq-thread-header__members {
+    order: 10;
+    flex: 1 1 100%;
+    padding-left: 38px;
+    box-sizing: border-box;
+  }
+
+  #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open:has(.portal-cs-cliq-thread-header__members:not([hidden])) .portal-cs-cliq-thread-header__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar,

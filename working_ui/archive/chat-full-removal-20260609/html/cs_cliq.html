@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="0;url=new_chat.html" />
+  <title>Redirecting to New Chat…</title>
+  <script>
+    (function () {
+      try {
+        var dest = new URL("new_chat.html", location.href);
+        dest.search = location.search || "";
+        dest.hash = location.hash || "";
+        location.replace(dest.href);
+      } catch (_e) {
+        location.replace("new_chat.html");
+      }
+    })();
+  </script>
+</head>
+<body>
+  <p><a href="new_chat.html">Continue to New Chat</a></p>
+</body>
+</html>

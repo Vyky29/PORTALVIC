@@ -151,17 +151,23 @@
     var res = await supabase
       .from("staff_profiles")
       .select("id,full_name,username,app_role,is_active")
-      .eq("app_role", "ceo")
       .or("is_active.is.null,is_active.eq.true")
       .order("full_name", { ascending: true })
-      .limit(10);
+      .limit(80);
     if (res.error || !Array.isArray(res.data)) return [];
-    return res.data
+    var chips = res.data
       .filter(isExecutiveCeoProfile)
       .map(function (row) {
         return chipFromProfile(row);
       })
       .filter(Boolean);
+    var order = { victor: 1, javi: 2, raul: 3, raúl: 3 };
+    chips.sort(function (a, b) {
+      var ka = normKey(a && a.label);
+      var kb = normKey(b && b.label);
+      return (order[ka] || 99) - (order[kb] || 99);
+    });
+    return chips;
   }
 
   async function loadLiaisonChips(supabase) {
@@ -342,7 +348,7 @@
       .join("");
   }
 
-  function renderChips(container, members) {
+  function renderChips(container, members, opts) {
     if (!container) return;
     members = Array.isArray(members) ? members : [];
     if (!members.length) {
@@ -353,7 +359,7 @@
     }
     container.hidden = false;
     container.setAttribute("aria-hidden", "false");
-    container.innerHTML = chipsHtml(members);
+    container.innerHTML = chipsHtml(members, opts || {});
   }
 
   function hideChips(container) {
@@ -385,7 +391,8 @@
       hideChips(host);
       return;
     }
-    renderChips(host, members);
+    var chipTone = slug === "all_ceos" || slug === "ceo_liaison" ? "ceo" : "";
+    renderChips(host, members, { tone: chipTone });
   }
 
   global.portalCsCliqGroupMembers = {

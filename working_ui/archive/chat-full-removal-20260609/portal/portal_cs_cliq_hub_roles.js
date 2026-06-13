@@ -42,9 +42,13 @@
     return app === "lead";
   }
 
+  function isStandaloneNewChatApp() {
+    return /new_chat\.html|cs_cliq\.html/.test(portalPath());
+  }
+
   function isManagementProfile(prof) {
     prof = prof || profileRow();
-    if (/admin_dashboard\.html|cs_cliq\.html/.test(portalPath())) return true;
+    if (/admin_dashboard\.html|new_chat\.html|cs_cliq\.html/.test(portalPath())) return true;
     if (global.portalDmRoles) {
       if (typeof global.portalDmRoles.portalDmUsesAdminCliq === "function" && global.portalDmRoles.portalDmUsesAdminCliq(prof)) {
         return true;
@@ -68,6 +72,9 @@
 
   function railConfig(tier) {
     tier = tier || getTier();
+    if (tier === "management" && isStandaloneNewChatApp()) {
+      return [{ id: "chats", label: "Inbox", icon: "inbox" }];
+    }
     if (tier === "management") {
       return [
         { id: "chats", label: "Inbox", icon: "inbox" },

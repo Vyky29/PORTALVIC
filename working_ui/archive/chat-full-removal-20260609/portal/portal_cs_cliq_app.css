@@ -107,7 +107,31 @@ html.cs-cliq-app-body body {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+}
+
+.cs-cliq-app-topbar__you {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 42%;
+  min-width: 0;
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 3px 8px 3px 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.cs-cliq-app-topbar__you .portal-cs-cliq-inbox-you__name {
+  color: #f8fafc;
+}
+
+.cs-cliq-app-topbar__you .portal-cs-cliq-inbox-you__avatar {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .cs-cliq-app-topbar__signout {

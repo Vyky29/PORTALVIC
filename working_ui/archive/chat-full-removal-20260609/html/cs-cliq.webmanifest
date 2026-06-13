@@ -1,13 +1,13 @@
 {
-  "name": "CS Cliq",
-  "short_name": "CS Cliq",
-  "id": "clubsensational-cs-cliq",
-  "start_url": "./cs_cliq.html",
+  "name": "New Chat",
+  "short_name": "New Chat",
+  "id": "clubsensational-new-chat",
+  "start_url": "./new_chat.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#edf4fb",
   "theme_color": "#edf4fb",
-  "description": "clubSENsational internal chat for directors and ops",
+  "description": "clubSENsational messaging for admin and leadership",
   "icons": [
     {
       "src": "/portal/app-icon/cs-cliq/icon-192.png",

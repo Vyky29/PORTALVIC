@@ -141,7 +141,7 @@
     syncAvatarEl(avatarEl, label, ui);
     if (roleEl) {
       if (ui.groupId && global.portalCsCliqGroupMembers && global.portalCsCliqGroupMembers.slugShowsMembers(ui.groupSlug)) {
-        roleEl.textContent = "Members";
+        roleEl.textContent = "In this chat";
       } else if (ui.groupId) {
         roleEl.textContent = "Group";
       } else {

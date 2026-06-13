@@ -1,11 +1,11 @@
 /**
- * Standalone CS Cliq app (cs_cliq.html) — full-page inbox for directors / ops admin.
+ * Standalone New Chat app (new_chat.html) — full-page inbox for directors / ops admin.
  */
 (function (global) {
   "use strict";
 
   /** Bump when chat/push logic changes — PWA auto-reloads once on open. */
-  var PORTAL_CS_CLIQ_BUILD = "20260612-inbox-boot-v1";
+  var PORTAL_CS_CLIQ_BUILD = "20260613-you-and-members";
 
   if (typeof global.adminTouchCompactLayoutActive !== "function") {
     global.adminTouchCompactLayoutActive = function () {
@@ -250,8 +250,9 @@
       '<header class="cs-cliq-app-topbar cs-cliq-app-topbar--standalone">' +
       '<div class="cs-cliq-app-topbar__brand">' +
       '<img class="cs-cliq-app-topbar__logo" src="/portal/announcements_logo_red_clean.png?v=20260612-clean-red" alt="" width="32" height="32" decoding="async" />' +
-      '<span class="cs-cliq-app-topbar__title">CS Cliq</span>' +
+      '<span class="cs-cliq-app-topbar__title">New Chat</span>' +
       "</div>" +
+      '<div class="cs-cliq-app-topbar__you" id="csCliqTopbarYou" hidden aria-hidden="true"></div>' +
       '<button type="button" class="cs-cliq-app-topbar__signout" id="csCliqSignOutBtn" aria-label="Sign out and switch account">Sign out</button>' +
       "</header>" +
       global.PortalAdminCsCliq.viewHtml();
@@ -268,6 +269,10 @@
     }
 
     bindShellChrome();
+
+    if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.syncInboxYou === "function") {
+      global.PortalAdminCsCliq.syncInboxYou();
+    }
 
     var channel = parseDeepLinkChannel() || defaultChannelForProfile(prof);
     if (typeof global.portalExecutiveDmInit === "function") {

@@ -144,8 +144,12 @@ function portalPublishedLoginUrl() {
 function portalPublishedChooseUrl() {
   return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
 }
+function portalPublishedNewChatUrl() {
+  return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_URL");
+}
+/** @deprecated use portalPublishedNewChatUrl */
 function portalPublishedCsCliqUrl() {
-  return portalPublishedPageUrl("cs_cliq.html", "PORTAL_CS_CLIQ_URL");
+  return portalPublishedNewChatUrl();
 }
 
 /** Login URL that returns to `returnHref` after sign-in (same origin). */
@@ -155,8 +159,8 @@ function portalLoginUrlWithReturn(returnHref) {
     const login = new URL(portalPublishedLoginUrl(), window.location.href);
     const ret = String(returnHref || window.location.href || "").trim();
     if (ret) login.searchParams.set("next", ret);
-    if (portalUrlIsCsCliqPage(ret || window.location.href)) {
-      login.searchParams.set("app", "cs_cliq");
+    if (portalUrlIsNewChatPage(ret || window.location.href)) {
+      login.searchParams.set("app", "new_chat");
     }
     return login.href;
   } catch {
@@ -164,28 +168,31 @@ function portalLoginUrlWithReturn(returnHref) {
   }
 }
 
-function portalUrlIsCsCliqPage(href) {
-  if (typeof window === "undefined") return false;
-  try {
-    const path = new URL(href, window.location.href).pathname.toLowerCase();
-    return /cs_cliq\.html$/i.test(path) || /\/cs_cliq\/?$/i.test(path);
-  } catch {
-    return false;
-  }
+function portalUrlIsNewChatPage(href) {
+  return false; /* chat removed 2026-06-09 */
 }
 
-function portalNormalizeCsCliqUrl(href) {
+/** @deprecated */
+function portalUrlIsCsCliqPage(href) {
+  return portalUrlIsNewChatPage(href);
+}
+
+function portalNormalizeNewChatUrl(href) {
   if (typeof window === "undefined") return href;
   try {
-    if (!portalUrlIsCsCliqPage(href)) return href;
+    if (!portalUrlIsNewChatPage(href)) return href;
     const u = new URL(href, window.location.href);
-    if (!/cs_cliq\.html$/i.test(u.pathname)) {
-      u.pathname = u.pathname.replace(/\/?cs_cliq\/?$/i, "/cs_cliq.html");
+    if (!/new_chat\.html$/i.test(u.pathname)) {
+      u.pathname = u.pathname.replace(/\/?(?:cs_cliq|new_chat)\/?$/i, "/new_chat.html");
     }
     return u.href;
   } catch {
     return href;
   }
+}
+
+function portalNormalizeCsCliqUrl(href) {
+  return portalNormalizeNewChatUrl(href);
 }
 
 /** Username → effective role for post-login routing. */
@@ -362,23 +369,30 @@ function portalOriginSameForRedirect(hostA, hostB) {
 
 const PORTAL_LOGIN_REDIRECT_NEXT_KEY = "portal_login_redirect_next";
 const PORTAL_LOGIN_APP_KEY = "portal_login_app";
-const PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY = "portal_login_cs_cliq_dest_v1";
+const PORTAL_LOGIN_NEW_CHAT_LOCAL_KEY = "portal_login_new_chat_dest_v1";
+const PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY = PORTAL_LOGIN_NEW_CHAT_LOCAL_KEY;
+
+function portalNewChatDefaultUrl() {
+  return new URL("admin_dashboard.html", window.location.href).href;
+}
 
 function portalCsCliqDefaultUrl() {
-  return new URL("cs_cliq.html", window.location.href).href;
+  return portalNewChatDefaultUrl();
 }
 
 /** Login screen is CS Cliq (red theme) even if query/session was lost on mobile. */
 function portalLoginPageCsCliqIntent() {
   if (typeof window === "undefined") return false;
-  if (window.__PORTAL_LOGIN_CS_CLIQ__ === true) return true;
+  if (window.false === true || window.false === true) return true;
   try {
     const hidden = document.getElementById("portalLoginApp");
-    if (hidden && String(hidden.value || "").trim().toLowerCase() === "cs_cliq") return true;
+    const appVal = hidden ? String(hidden.value || "").trim().toLowerCase() : "";
+    if (appVal === "new_chat" || appVal === "cs_cliq") return true;
   } catch {
     /* ignore */
   }
   try {
+    if (document.documentElement.getAttribute("data-portal-login-app") === "new_chat") return true;
     if (document.documentElement.getAttribute("data-portal-login-app") === "cs_cliq") return true;
     if (document.documentElement.classList.contains("login-theme-cs-cliq")) return true;
   } catch {
@@ -390,7 +404,7 @@ function portalLoginPageCsCliqIntent() {
 function portalMarkCsCliqLoginIntent(destHref) {
   if (typeof window === "undefined") return;
   const dest = destHref || portalCsCliqDefaultUrl();
-  window.__PORTAL_LOGIN_CS_CLIQ__ = true;
+  window.false = true;
   try {
     sessionStorage.setItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY, dest);
     sessionStorage.setItem(PORTAL_LOGIN_APP_KEY, "cs_cliq");
@@ -412,12 +426,14 @@ function portalPersistLoginRedirectIntent() {
     const u = new URL(window.location.href);
     const app = String(u.searchParams.get("app") || "").trim().toLowerCase();
     const raw = String(u.searchParams.get("next") || u.searchParams.get("return") || "").trim();
-    const isCsCliq =
-      app === "cs_cliq" ||
+    const isNewChat =
+      false /* chat removed */ ||
+      false /* chat removed */ ||
+      /new_chat(?:\.html)?(?:\?|#|$)/i.test(raw) ||
       /cs_cliq(?:\.html)?(?:\?|#|$)/i.test(raw) ||
-      /portal_open=cs_cliq/i.test(raw) ||
+      /portal_open=(?:new_chat|cs_cliq)/i.test(raw) ||
       portalLoginPageCsCliqIntent();
-    if (!isCsCliq) return;
+    if (!isNewChat) return;
     const dest = raw
       ? new URL(raw, window.location.href).href
       : portalCsCliqDefaultUrl();
@@ -429,7 +445,7 @@ function portalPersistLoginRedirectIntent() {
 
 function portalClearLoginRedirectIntent() {
   if (typeof window === "undefined") return;
-  window.__PORTAL_LOGIN_CS_CLIQ__ = false;
+  window.false = false;
   try {
     sessionStorage.removeItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY);
     sessionStorage.removeItem(PORTAL_LOGIN_APP_KEY);
@@ -444,21 +460,22 @@ function portalReadCsCliqLoginIntent() {
   if (typeof window === "undefined") return null;
   try {
     const fromNext = readSafePostLoginRedirect();
-    if (fromNext && portalUrlIsCsCliqPage(fromNext)) return fromNext;
+    if (fromNext && portalUrlIsNewChatPage(fromNext)) return fromNext;
     const u = new URL(window.location.href);
     const app = String(u.searchParams.get("app") || "").trim().toLowerCase();
-    if (app === "cs_cliq") {
-      return portalCsCliqDefaultUrl();
+    if (false /* chat removed */ || false /* chat removed */) {
+      return portalNewChatDefaultUrl();
     }
     const stored = String(sessionStorage.getItem(PORTAL_LOGIN_REDIRECT_NEXT_KEY) || "").trim();
-    if (stored && portalUrlIsCsCliqPage(stored)) {
+    if (stored && portalUrlIsNewChatPage(stored)) {
       return new URL(stored, window.location.href).href;
     }
-    if (String(sessionStorage.getItem(PORTAL_LOGIN_APP_KEY) || "").trim().toLowerCase() === "cs_cliq") {
-      return portalCsCliqDefaultUrl();
+    const appStored = String(sessionStorage.getItem(PORTAL_LOGIN_APP_KEY) || "").trim().toLowerCase();
+    if (appStored === "new_chat" || appStored === "cs_cliq") {
+      return portalNewChatDefaultUrl();
     }
-    const localStored = String(localStorage.getItem(PORTAL_LOGIN_CS_CLIQ_LOCAL_KEY) || "").trim();
-    if (localStored && portalUrlIsCsCliqPage(localStored)) {
+    const localStored = String(localStorage.getItem(PORTAL_LOGIN_NEW_CHAT_LOCAL_KEY) || "").trim();
+    if (localStored && portalUrlIsNewChatPage(localStored)) {
       return new URL(localStored, window.location.href).href;
     }
     if (portalLoginPageCsCliqIntent()) {
@@ -1210,15 +1227,13 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     if (page === "cs_cliq") {
-      if (!portalCanAccessCsCliq(profile, authEmailGate)) {
-        const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
-        try {
-          window.location.replace(dest);
-        } catch {
-          window.location.href = dest;
-        }
-        return;
+      const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
+      try {
+        window.location.replace(dest);
+      } catch {
+        window.location.href = dest;
       }
+      return;
     }
 
     if (page === "choose") {

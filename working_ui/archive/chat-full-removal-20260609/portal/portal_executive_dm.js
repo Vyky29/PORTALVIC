@@ -1676,12 +1676,16 @@
         liaisonBtn.hidden = !gidLiaison;
       }
       if(host){
-        if(
-          global.portalCsCliqAdminInbox &&
-          typeof global.portalCsCliqAdminInbox.fillDirectPeerPicks === 'function'
-        ){
-          await global.portalCsCliqAdminInbox.fillDirectPeerPicks(host);
-        }else{
+        host.hidden = true;
+        host.innerHTML = '';
+        if(!global.__PORTAL_CS_CLIQ_STANDALONE){
+          host.hidden = false;
+          if(
+            global.portalCsCliqAdminInbox &&
+            typeof global.portalCsCliqAdminInbox.fillDirectPeerPicks === 'function'
+          ){
+            await global.portalCsCliqAdminInbox.fillDirectPeerPicks(host);
+          }else{
           var me = portalAdminDmMe();
           var peerRows = [];
           var lr = await client
@@ -1713,6 +1717,7 @@
             });
             host.appendChild(btn);
           });
+          }
         }
       }
       if(wrap) wrap.hidden = false;

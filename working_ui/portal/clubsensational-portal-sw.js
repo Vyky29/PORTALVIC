@@ -63,7 +63,6 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
           body: body,
           portalOpen: portalOpen,
           call: callData || null,
-          chat: chatData || null,
           senderUserId: meta.senderUserId || '',
           targetUserId: meta.targetUserId || '',
         });
@@ -115,7 +114,6 @@ self.addEventListener('push', function (event) {
   var requireInteraction = false;
   var vibrate = undefined;
   var callData = null;
-  var chatData = null;
   var senderUserId = '';
   var targetUserId = '';
   try {
@@ -129,7 +127,6 @@ self.addEventListener('push', function (event) {
       if (j && j.requireInteraction) requireInteraction = true;
       if (j && j.vibrate && j.vibrate.length) vibrate = j.vibrate;
       if (j && j.call) callData = j.call;
-      if (j && j.chat) chatData = j.chat;
       if (j && j.senderUserId) senderUserId = String(j.senderUserId);
       if (j && j.targetUserId) targetUserId = String(j.targetUserId);
     }
@@ -139,7 +136,7 @@ self.addEventListener('push', function (event) {
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
   }
-  if (portalOpen === 'alerts' || portalOpen === 'chat') {
+  if (portalOpen === 'alerts' || false) {
     requireInteraction = true;
     if (!vibrate) vibrate = PORTAL_ALERT_VIBRATE;
   }
@@ -156,7 +153,7 @@ self.addEventListener('push', function (event) {
     renotify: true,
     requireInteraction: requireInteraction,
     silent: false,
-    data: { url: url, portalOpen: portalOpen, call: callData, chat: chatData },
+    data: { url: url, portalOpen: portalOpen, call: callData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
   event.waitUntil(
@@ -184,7 +181,7 @@ self.addEventListener('notificationclick', function (event) {
   var portalOpen = String(data.portalOpen || '');
   var openAlerts = portalOpen === 'alerts';
   var openCall = portalOpen === 'incoming_call';
-  var openChat = portalOpen === 'chat';
+  var openChat = false;
   var callData = data.call || null;
   var chatData = data.chat || null;
   event.waitUntil(
@@ -194,7 +191,7 @@ self.addEventListener('notificationclick', function (event) {
           try {
             list[i].postMessage({
               type: 'portal-notification-click',
-              portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : (openChat ? 'chat' : '')),
+              portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : ('' : '')),
               call: callData,
               chat: chatData,
               url: u,

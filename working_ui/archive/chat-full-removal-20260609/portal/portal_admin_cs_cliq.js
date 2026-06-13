@@ -232,7 +232,10 @@
       '<aside class="portal-cs-cliq-inbox__list-col" id="csCliqListColumn">' +
       '<div class="portal-cs-cliq-inbox__list-head">' +
       '<button type="button" class="portal-cs-cliq__back-btn portal-cs-cliq__back-btn--inbox-portal" id="csCliqInboxBackBtn" aria-label="Back to dashboard" hidden><span class="portal-cs-cliq__back-icon" aria-hidden="true"></span></button>' +
+      '<div class="portal-cs-cliq-inbox__title-row">' +
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
+      '<div class="portal-cs-cliq-inbox-you" id="csCliqInboxYou" hidden aria-hidden="true"></div>' +
+      "</div>" +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
       '<div id="csCliqChannelNav" class="portal-dm-inbox-nav" hidden aria-hidden="true">' +
@@ -506,6 +509,77 @@
     bindMobileResize();
   }
 
+  function renderYouIdentity(host, prof, label) {
+    if (!host) return;
+    if (!prof || !prof.id || !label) {
+      host.hidden = true;
+      host.setAttribute("aria-hidden", "true");
+      host.innerHTML = "";
+      return;
+    }
+    var esc =
+      cfg.esc && typeof cfg.esc === "function"
+        ? cfg.esc
+        : function (s) {
+            return String(s == null ? "" : s);
+          };
+    var username = String(prof.username || label).trim();
+    var avatarHtml = "";
+    if (global.portalStaffAvatarInnerHtml) {
+      avatarHtml = global.portalStaffAvatarInnerHtml(username, {
+        esc: esc,
+        displayName: label,
+        username: username,
+        className: "portal-cs-cliq-inbox-you__avatar portal-dm-thread-avatar portal-dm-thread-avatar--staff",
+        imgClass: "portal-dm-thread-avatar__img",
+      });
+    }
+    if (!avatarHtml && global.portalCsCliqThreadHeader && global.portalCsCliqThreadHeader.initials) {
+      avatarHtml =
+        '<span class="portal-cs-cliq-inbox-you__avatar portal-cs-cliq-inbox-you__avatar--initials" aria-hidden="true">' +
+        esc(global.portalCsCliqThreadHeader.initials(label)) +
+        "</span>";
+    }
+    host.innerHTML =
+      avatarHtml +
+      '<span class="portal-cs-cliq-inbox-you__name">' +
+      esc(label) +
+      "</span>";
+    host.hidden = false;
+    host.setAttribute("aria-hidden", "false");
+    host.setAttribute("aria-label", "Signed in as " + label);
+    host.title = "Signed in as " + label;
+  }
+
+  function syncInboxYou() {
+    var prof =
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || null;
+    var label = "";
+    if (prof && prof.id) {
+      if (
+        global.portalCsCliqGroupMembers &&
+        typeof global.portalCsCliqGroupMembers.profileChipLabel === "function"
+      ) {
+        label = String(global.portalCsCliqGroupMembers.profileChipLabel(prof) || "").trim();
+      }
+      if (!label && global.portalChatActorIdentity) {
+        if (typeof global.portalChatActorIdentity.displayName === "function") {
+          label = String(global.portalChatActorIdentity.displayName(prof) || "").trim();
+        }
+        if (!label && typeof global.portalChatActorIdentity.profileDisplayName === "function") {
+          label = String(global.portalChatActorIdentity.profileDisplayName(prof) || "").trim();
+        }
+      }
+      if (!label) {
+        label = String(prof.full_name || prof.username || "")
+          .trim()
+          .split(/\s+/)[0];
+      }
+    }
+    renderYouIdentity(document.getElementById("csCliqInboxYou"), prof, label);
+    renderYouIdentity(document.getElementById("csCliqTopbarYou"), prof, label);
+  }
+
   function syncInboxLayout(hooks) {
     hooks = hooks || {};
     var ui = global.__PORTAL_ADMIN_DM_UI || {};
@@ -673,6 +747,7 @@
       }
     }
     syncPhonePaneContext();
+    syncInboxYou();
   }
 
   function destroyModule() {
@@ -692,6 +767,7 @@
     destroyModule: destroyModule,
     setRailPane: setRailPane,
     syncInboxLayout: syncInboxLayout,
+    syncInboxYou: syncInboxYou,
     syncPhonePaneContext: syncPhonePaneContext,
     syncMobileSubscreen: syncMobileSubscreen,
     mobileLayoutActive: mobileLayoutActive,
