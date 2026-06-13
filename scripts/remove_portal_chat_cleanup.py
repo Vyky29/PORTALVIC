@@ -35,6 +35,7 @@ STUB = """
     window.portalStaffDmOnRealtimeInsert = async function(){ return false; };
     window.portalSyncInternalChatSheetView = function(){};
     window.portalSyncInternalChatMobileViewport = function(){};
+    window.syncPortalInternalChatImmersive = function(){};
     window.portalInitStaffDmRealtime = function(){};
     window.portalInitStaffDmUnreadPoll = function(){};
     window.portalAdminBootDmWatchers = function(){};

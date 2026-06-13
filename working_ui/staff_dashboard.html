@@ -936,7 +936,7 @@
   <script>
     // #region agent log
     (function portalAgentDebugHarness(){
-      window.__PORTAL_AGENT_DEBUG__ = window.__PORTAL_AGENT_DEBUG__ || { milestones: [], errors: [], runId: 'pre-fix' };
+      window.__PORTAL_AGENT_DEBUG__ = window.__PORTAL_AGENT_DEBUG__ || { milestones: [], errors: [], runId: 'post-fix' };
       function agentLog(hypothesisId, location, message, data){
         try{
           var entry = { sessionId: 'f8eb64', runId: window.__PORTAL_AGENT_DEBUG__.runId, hypothesisId: hypothesisId, location: location, message: message, data: data || {}, timestamp: Date.now() };
@@ -7186,6 +7186,7 @@
     window.portalStaffDmOnRealtimeInsert = async function(){ return false; };
     window.portalSyncInternalChatSheetView = function(){};
     window.portalSyncInternalChatMobileViewport = function(){};
+    window.syncPortalInternalChatImmersive = function(){};
     window.portalInitStaffDmRealtime = function(){};
     window.portalInitStaffDmUnreadPoll = function(){};
     window.portalAdminBootDmWatchers = function(){};
