@@ -3,6 +3,15 @@
 
 begin;
 
+create temp table _portal_actor on commit drop as
+select sp.id
+from public.staff_profiles sp
+where sp.app_role in ('ceo', 'admin', 'lead')
+order by case sp.app_role when 'ceo' then 0 when 'admin' then 1 else 2 end, sp.created_at
+limit 1;
+
+alter table public.schedule_overrides disable trigger schedule_overrides_set_updated_trg;
+
 -- ---------------------------------------------------------------------------
 -- 1. Cancelled overrides must anchor Joel (not Anas).
 -- ---------------------------------------------------------------------------
@@ -10,7 +19,8 @@ update public.schedule_overrides
 set
   anchor_client_id = 'joel',
   reason = coalesce(nullif(trim(reason), ''), 'Term roster · Joel cancelled from slot'),
-  updated_at = now()
+  updated_at = now(),
+  updated_by = (select id from _portal_actor)
 where status = 'active'
   and override_type = 'slot_clear_client'
   and coalesce((payload->>'cancelled_by_admin')::boolean, false) = true
@@ -24,7 +34,10 @@ where status = 'active'
 
 -- Remove erroneous clear-slot on Joel's last session (shows duplicate No participant + Joel).
 update public.schedule_overrides
-set status = 'cancelled', updated_at = now()
+set
+  status = 'cancelled',
+  updated_at = now(),
+  updated_by = (select id from _portal_actor)
 where status = 'active'
   and override_type = 'slot_clear_client'
   and lower(trim(anchor_staff_id)) = 'youssef'
@@ -35,7 +48,10 @@ where status = 'active'
 
 -- Any active clear on Anas for the same slot/dates (wrong participant cleared).
 update public.schedule_overrides
-set status = 'cancelled', updated_at = now()
+set
+  status = 'cancelled',
+  updated_at = now(),
+  updated_by = (select id from _portal_actor)
 where status = 'active'
   and override_type = 'slot_clear_client'
   and lower(trim(anchor_staff_id)) = 'youssef'
@@ -45,6 +61,8 @@ where status = 'active'
   and lower(trim(anchor_client_id)) = 'anas'
   and session_date >= '2026-06-15'::date
   and session_date <= '2026-07-13'::date;
+
+alter table public.schedule_overrides enable trigger schedule_overrides_set_updated_trg;
 
 -- ---------------------------------------------------------------------------
 -- 2. portal_roster_rows: Anas on covered Mondays; suppress Joel except last slot.
@@ -106,13 +124,6 @@ where status = 'active'
 -- ---------------------------------------------------------------------------
 -- 3. Absent announcements (Abodi P 1 Jun; Emani Sat 13 Jun — next Youssef session).
 -- ---------------------------------------------------------------------------
-with portal_actor as (
-  select sp.id
-  from public.staff_profiles sp
-  where sp.app_role in ('ceo', 'admin', 'lead')
-  order by case sp.app_role when 'ceo' then 0 when 'admin' then 1 else 2 end, sp.created_at
-  limit 1
-)
 insert into public.schedule_overrides (
   session_date,
   anchor_staff_id,
@@ -142,8 +153,8 @@ select
   v.reason,
   'active',
   'migration:20260612120000_youssef_absent',
-  portal_actor.id,
-  portal_actor.id
+  (select id from _portal_actor),
+  (select id from _portal_actor)
 from (
   values
     (
@@ -176,8 +187,7 @@ from (
   anchor_time_slot_label,
   reason
 )
-cross join portal_actor
-where portal_actor.id is not null
+where exists (select 1 from _portal_actor)
   and not exists (
     select 1
     from public.schedule_overrides so
