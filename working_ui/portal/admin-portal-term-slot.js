@@ -909,7 +909,21 @@
       .split(/[,/&]|\band\b/i)[0]
       .trim();
     var prevTimes = before ? parseTimeSlotBounds(before.time_slot, p.day || before.day) : null;
-    var rows = dates.map(function (iso) {
+    var beforeName = before ? String(before.client_name || "").trim() : "";
+    var isNewTermParticipant =
+      !beforeName ||
+      /^no[\s_-]*client$/i.test(beforeName) ||
+      rosterSlug(beforeName) === rosterSlug(NO_CLIENT_PARTICIPANT);
+    var scope = String(p.scope || "").trim();
+    var notifyDates = dates;
+    if (
+      isNewTermParticipant &&
+      (scope === "rest_of_term" || scope === "weekday_term") &&
+      normIso(p.anchorDate)
+    ) {
+      notifyDates = [normIso(p.anchorDate)];
+    }
+    var rows = notifyDates.map(function (iso) {
       return {
         session_date: iso,
         anchor_staff_id: rosterSlug(staffTok),
@@ -921,6 +935,8 @@
         override_type: "slot_update",
         payload: {
           term_roster_edit: true,
+          term_new_participant: isNewTermParticipant,
+          to_client_name: paxName,
           scope: p.scope,
           anchor_date: p.anchorDate,
           previous_time_slot: before ? String(before.time_slot || "").trim() : null,
@@ -930,7 +946,8 @@
           instructors: String(p.instructors || "").trim(),
           area: String(p.area || "").trim(),
         },
-        reason: String(p.reason || "").trim() || "Term roster · slot updated",
+        reason: String(p.reason || "").trim() ||
+          (isNewTermParticipant ? "Term roster · new participant" : "Term roster · slot updated"),
         status: "active",
         superseded_by: null,
         spreadsheet_revision: "admin-dashboard:term_roster_edit",

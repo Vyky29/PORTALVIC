@@ -896,7 +896,7 @@
   <script src="portal/staff_dashboard_portal_roster_source.js?v=20260611-madre-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260613-term-new-participant-notify"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -3360,7 +3360,7 @@
         const dl = String(dayLabel || '').trim();
         const sub = escapeHtml((dl ? (dl + ' · ') : '') + String(item.sub || ''));
         const k = String(item.kind || 'other');
-        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))));
+        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other')))));
         rows.push(
           '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note" data-action="open-roster-override-attention" data-portal-override-id="' + idEsc + '" data-portal-override-nav-iso="' + isoEsc + '" aria-label="' + title + ' ' + isoEsc + '">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></span>' +
@@ -4159,7 +4159,7 @@
       return ids.sort((a, b) => clientNotesById[a].name.localeCompare(clientNotesById[b].name, 'en'));
     }
     const CLIENT_DIRECTORY_PREP_LINE = 'Preparation view before session';
-    const CLIENT_NEW_PARTICIPANTS_PREP_LINE = 'New participant — scheduled make-up or replacement';
+    const CLIENT_NEW_PARTICIPANTS_PREP_LINE = 'New participant — for the term or a single trial session';
 
     function clientsGridMedicalIconSvg(){
       return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Medical condition</title><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
@@ -4184,7 +4184,7 @@
       }
       return ids;
     }
-    function clientsParticipantRowInnerHtml(clientId, c, scheduleIso){
+    function clientsParticipantRowInnerHtml(clientId, c, scheduleIso, scheduleLabelOpts){
       const name = escapeHtml(c.name);
       const avatar = '<span class="clients-grid-avatar" aria-hidden="true">' + clientAvatarInner(c.name, clientId) + '</span>';
       const medInner = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
@@ -4193,7 +4193,7 @@
       let schedHtml = '';
       const P = window.PortalParticipantsSheet;
       if(scheduleIso && P && typeof P.formatScheduleLabel === 'function'){
-        const lbl = P.formatScheduleLabel(scheduleIso);
+        const lbl = P.formatScheduleLabel(scheduleIso, scheduleLabelOpts || null);
         if(lbl) schedHtml = '<span class="clients-grid-sched">' + escapeHtml(lbl) + '</span>';
       }
       const nameCol = '<span class="clients-grid-name-col"><span class="clients-grid-name">' + name + '</span>' + schedHtml + '</span>';
@@ -4247,6 +4247,7 @@
         return;
       }
       grid.style.removeProperty('display');
+      const P = window.PortalParticipantsSheet;
       grid.innerHTML = ids.map(clientId => {
         const c = (isNew || !clientNotesById[clientId])
           ? portalClientNoteForParticipantsSheet(clientId)
@@ -4256,7 +4257,10 @@
         const myCls = (!isAll && !isNew) ? ' clients-grid-card--my' : '';
         const listMode = isAll ? 'all' : (isNew ? 'new' : 'my');
         const schedIso = isNew ? scheduleBy[clientId] : '';
-        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c, schedIso)}</button>`;
+        const schedOpts = isNew && P && typeof P.newParticipantScheduleLabelOpts === 'function'
+          ? P.newParticipantScheduleLabelOpts(clientId, typeof P.buildContext === 'function' ? P.buildContext() : undefined)
+          : null;
+        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c, schedIso, schedOpts)}</button>`;
       }).join('');
     }
     function getClientsDirectoryQuery(){
@@ -5147,6 +5151,8 @@
       if(sid.indexOf('revert:') === 0) portalStaffRevertQueueRemoveByRevertId(sid);
     };
     function portalOverrideQuickMenuKind(row){
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
       if(t === 'client_replace_in_slot') return 'makeup';
@@ -5204,6 +5210,27 @@
           kind: kind
         };
       }
+      if(kind === 'new_participant'){
+        let pl = null;
+        try{
+          pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+        }catch(_){ pl = null; }
+        const who = String(pl && pl.to_client_name || '').trim()
+          || portalClientFirstNameTokenForOverride(row);
+        title = who ? ('New participant — ' + who) : 'New participant for the term';
+        sub = 'On your roster for the term. You will see them on their session days.';
+        const P = window.PortalParticipantsSheet;
+        const dismissId = P && typeof P.scheduleOverrideAttentionDismissKey === 'function'
+          ? P.scheduleOverrideAttentionDismissKey(row)
+          : '';
+        return {
+          id: dismissId || portalScheduleOverrideRowDismissKey(row),
+          iso: normaliseIsoDate(row && row.session_date),
+          title: title,
+          sub: sub,
+          kind: kind
+        };
+      }
       if(kind === 'cancelled'){
         const nm = portalClientDisplayNameForOverride(row) || portalClientFirstNameTokenForOverride(row);
         title = nm ? ('Session Cancelled - ' + nm) : 'Session Cancelled';
@@ -5240,7 +5267,12 @@
         today.setHours(0, 0, 0, 0);
         const todayStr = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(today) : '';
         if(!todayStr) return empty;
-        const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        const listRaw = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        let list = listRaw;
+        const P = window.PortalParticipantsSheet;
+        if(P && typeof P.collapseScheduleOverrideRowsForAttention === 'function'){
+          list = P.collapseScheduleOverrideRowsForAttention(list, P.buildContext ? P.buildContext() : undefined);
+        }
         const byIso = {};
         const seen = {};
         for(let i = 0; i < list.length; i++){
@@ -5621,6 +5653,11 @@
       return iso;
     }
     function portalClientFirstSessionDateIso(clientKey){
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.clientFirstSessionDateIso === 'function'){
+        const fromRoster = P.clientFirstSessionDateIso(clientKey, P.buildContext ? P.buildContext() : undefined);
+        if(fromRoster) return fromRoster;
+      }
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termClientFirstSessionDate;
       if(!map || typeof map !== 'object') return '';

@@ -1,5 +1,6 @@
 /**
- * Participants sheet: My roster only; optional "New participants" from schedule overrides (make-up / replace).
+ * Participants sheet: My roster only; optional "New participants" from schedule overrides
+ * (make-up / replace) and live portal_roster_rows (term intake / trial).
  */
 (function (global) {
   const REPLACE_TYPES = new Set(["client_replace_in_slot", "replace_participant"]);
@@ -69,6 +70,267 @@
     }
   }
 
+  function isNoClientName(name) {
+    const n = String(name || "").trim().toLowerCase();
+    return !n || n === "no client" || n === "noclient" || n === "no_client";
+  }
+
+  function clientSlugFromName(name) {
+    return normKey(name);
+  }
+
+  function rosterRowsCache() {
+    return Array.isArray(global.PORTAL_ROSTER_ROWS_CACHE) ? global.PORTAL_ROSTER_ROWS_CACHE : [];
+  }
+
+  function rosterRowAppliesToStaff(row, staffId) {
+    const sid = normKey(staffId);
+    if (!sid || !row) return false;
+    const raw = String(row.instructors || "");
+    const parts = raw.split(/[,/&]|\band\b/gi);
+    for (let i = 0; i < parts.length; i++) {
+      if (normKey(parts[i]) === sid) return true;
+    }
+    return normKey(raw) === sid;
+  }
+
+  function machineRosterClientSlugsForStaff(staffId) {
+    const sid = normKey(staffId);
+    const machine = Array.isArray(global.__STAFF_DASHBOARD_MACHINE_ROWS__)
+      ? global.__STAFF_DASHBOARD_MACHINE_ROWS__
+      : [];
+    const out = new Set();
+    machine.forEach(function (r) {
+      if (!r || isNoClientName(r.client_name)) return;
+      const inst = String(r.instructors || "").split(/[,/&]|\band\b/gi)[0];
+      if (normKey(inst) !== sid) return;
+      out.add(clientSlugFromName(r.client_name));
+    });
+    return out;
+  }
+
+  function termResumeIso() {
+    const t = global.PORTAL_TERM_FROM_TIMETABLE;
+    return normIso(t && (t.termResumeDate || t.termDashboardCalendarFrom)) || "2026-06-01";
+  }
+
+  function weekdayLongFromIso(iso) {
+    const key = normIso(iso);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return "";
+    try {
+      return new Date(key + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" });
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function firstWeekdayOnOrAfterIso(weekdayLong, fromIso) {
+    const want = String(weekdayLong || "").trim();
+    const start = normIso(fromIso);
+    if (!want || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return "";
+    try {
+      const cur = new Date(start + "T12:00:00");
+      for (let i = 0; i < 14; i++) {
+        const iso = normIso(
+          cur.getFullYear() +
+            "-" +
+            String(cur.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(cur.getDate()).padStart(2, "0")
+        );
+        if (weekdayLongFromIso(iso) === want) return iso;
+        cur.setDate(cur.getDate() + 1);
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function buildPortalRosterFirstSessionMap(ctx) {
+    ctx = ctx || buildContext();
+    const staffId = ctx.staffId;
+    const map = Object.create(null);
+    const templates = Object.create(null);
+
+    rosterRowsCache().forEach(function (row) {
+      if (String(row.status || "active") !== "active") return;
+      if (!rosterRowAppliesToStaff(row, staffId)) return;
+      if (isNoClientName(row.client_name)) return;
+      const slug = clientSlugFromName(row.client_name);
+      const iso = normIso(row.session_date);
+      if (iso) {
+        if (!map[slug] || iso < map[slug]) map[slug] = iso;
+      } else if (row.day) {
+        templates[slug] = String(row.day || "").trim();
+      }
+    });
+
+    Object.keys(templates).forEach(function (slug) {
+      if (map[slug]) return;
+      const first = firstWeekdayOnOrAfterIso(templates[slug], termResumeIso());
+      if (first) map[slug] = first;
+    });
+
+    return map;
+  }
+
+  function clientFirstSessionDateIso(clientKey, ctx) {
+    const k = normKey(clientKey);
+    if (!k) return "";
+    const t = global.PORTAL_TERM_FROM_TIMETABLE;
+    const staticMap = t && t.termClientFirstSessionDate;
+    if (staticMap && typeof staticMap === "object") {
+      if (staticMap[k]) return normIso(staticMap[k]);
+      for (const key of Object.keys(staticMap)) {
+        if (normKey(key) === k) return normIso(staticMap[key]);
+      }
+    }
+    const startMap =
+      global.STAFF_DASHBOARD_SOURCE &&
+      global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates;
+    if (startMap && typeof startMap === "object") {
+      for (const key of Object.keys(startMap)) {
+        if (normKey(key) === k) return normIso(startMap[key]);
+      }
+    }
+    return normIso(buildPortalRosterFirstSessionMap(ctx)[k]) || "";
+  }
+
+  function overridePayload(row) {
+    return parsePayload(row && row.payload);
+  }
+
+  function overrideScopeIsTerm(pl) {
+    const s = String((pl && pl.scope) || "").trim();
+    return s === "rest_of_term" || s === "weekday_term";
+  }
+
+  /** Term intake: one halo / quick-menu line for the whole term — not every calendar day. */
+  function overrideIsTermNewParticipant(row) {
+    const t = String(row && row.override_type || "").trim();
+    const pl = overridePayload(row);
+    if (!pl) return false;
+    if (pl.term_new_participant === true) return true;
+    if (t === "slot_update" && pl.term_roster_edit && overrideScopeIsTerm(pl)) return true;
+    return false;
+  }
+
+  function overrideIsTrialSession(row) {
+    const pl = overridePayload(row);
+    if (!pl) return false;
+    const scope = String(pl.scope || "").trim();
+    return scope === "single_day" || scope === "pick_sessions";
+  }
+
+  function overrideTermIntakeClientSlug(row) {
+    const pl = overridePayload(row);
+    if (pl && pl.to_client_id) return normKey(pl.to_client_id);
+    if (pl && pl.replacement_client_id) return normKey(pl.replacement_client_id);
+    if (pl && pl.moved_client_id) return normKey(pl.moved_client_id);
+    return normKey(row && row.anchor_client_id);
+  }
+
+  function overrideTermIntakeGroupKey(row) {
+    if (!overrideIsTermNewParticipant(row)) return "";
+    const staff = normKey(row && row.anchor_staff_id);
+    const client = overrideTermIntakeClientSlug(row);
+    const slot = normKey(row && row.anchor_time_slot_label);
+    return "term-intake|" + staff + "|" + client + "|" + slot;
+  }
+
+  function overrideShouldShowOnCalendarDate(row, iso) {
+    if (!overrideIsTermNewParticipant(row)) return true;
+    const first = clientFirstSessionDateIso(
+      overrideTermIntakeClientSlug(row),
+      buildContext()
+    );
+    const key = normIso(iso);
+    if (first && key) return key === first;
+    return normIso(row && row.session_date) === key;
+  }
+
+  function scheduleOverrideAttentionDismissKey(row) {
+    const gk = overrideTermIntakeGroupKey(row);
+    if (gk) return "term-intake:" + gk.replace(/\|/g, ":");
+    return "";
+  }
+
+  function collapseScheduleOverrideRowsForAttention(rows, ctx) {
+    ctx = ctx || buildContext();
+    const keep = [];
+    const termGroups = Object.create(null);
+
+    (rows || []).forEach(function (row) {
+      if (!rowApplies(row, ctx)) return;
+      if (!overrideIsTermNewParticipant(row)) {
+        keep.push(row);
+        return;
+      }
+      const gk = overrideTermIntakeGroupKey(row);
+      if (!gk) {
+        keep.push(row);
+        return;
+      }
+      const iso = normIso(row.session_date);
+      if (!termGroups[gk] || (iso && (!termGroups[gk].iso || iso < termGroups[gk].iso))) {
+        termGroups[gk] = { row: row, iso: iso };
+      }
+    });
+
+    Object.keys(termGroups).forEach(function (gk) {
+      keep.push(termGroups[gk].row);
+    });
+
+    return keep;
+  }
+
+  function collectNewParticipantsFromPortalRoster(ctx) {
+    ctx = ctx || buildContext();
+    const staffId = ctx.staffId;
+    const machineSlugs = machineRosterClientSlugsForStaff(staffId);
+    const bySlug = Object.create(null);
+
+    rosterRowsCache().forEach(function (row) {
+      if (String(row.status || "active") !== "active") return;
+      if (!rosterRowAppliesToStaff(row, staffId)) return;
+      if (isNoClientName(row.client_name)) return;
+      const slug = clientSlugFromName(row.client_name);
+      if (!slug || machineSlugs.has(slug)) return;
+      if (!bySlug[slug]) {
+        bySlug[slug] = {
+          slug: slug,
+          name: String(row.client_name || "").trim(),
+          dates: [],
+          hasTemplate: false,
+        };
+      }
+      const iso = normIso(row.session_date);
+      if (iso) bySlug[slug].dates.push(iso);
+      else bySlug[slug].hasTemplate = true;
+    });
+
+    const scheduleByClientId = Object.create(null);
+    const ids = [];
+
+    Object.keys(bySlug).forEach(function (slug) {
+      const pack = bySlug[slug];
+      let iso = "";
+      if (pack.dates.length === 1) {
+        iso = pack.dates[0];
+      } else if (pack.dates.length > 1 || pack.hasTemplate) {
+        pack.dates.sort();
+        iso = pack.dates[0] || clientFirstSessionDateIso(slug, ctx);
+      }
+      if (!iso && pack.hasTemplate) {
+        iso = clientFirstSessionDateIso(slug, ctx);
+      }
+      if (!iso) return;
+      ids.push(slug);
+      scheduleByClientId[slug] = iso;
+    });
+
+    return { ids: ids, scheduleByClientId: scheduleByClientId, namesBySlug: bySlug };
+  }
+
   function isMakeUpDashboardRow(item) {
     if (!item || String(item.kind || "") !== "client") return false;
     if (item.portalOverrideMakeUpTag) return true;
@@ -125,11 +387,22 @@
     rowsAll(ctx).forEach(function (row) {
       if (!rowApplies(row, ctx)) return;
       const t = String(row.override_type || "").trim();
-      if (!REPLACE_TYPES.has(t)) return;
-      const pl = parsePayload(row.payload);
-      const cid = replacementClientId(pl, ctx);
-      if (!cid) return;
-      add(cid, row.session_date);
+      if (REPLACE_TYPES.has(t)) {
+        const pl = parsePayload(row.payload);
+        const cid = replacementClientId(pl, ctx);
+        if (cid) add(cid, row.session_date);
+        return;
+      }
+      if (overrideIsTermNewParticipant(row)) {
+        const cid = overrideTermIntakeClientSlug(row);
+        if (cid) add(cid, clientFirstSessionDateIso(cid, ctx) || row.session_date);
+        return;
+      }
+    });
+
+    const rosterPack = collectNewParticipantsFromPortalRoster(ctx);
+    rosterPack.ids.forEach(function (slug) {
+      add(slug, rosterPack.scheduleByClientId[slug]);
     });
 
     function scanDayList(list) {
@@ -157,9 +430,11 @@
     return { ids: ids, scheduleByClientId: scheduleByClientId };
   }
 
-  function formatScheduleLabel(iso) {
+  function formatScheduleLabel(iso, opts) {
+    opts = opts || {};
     const key = normIso(iso);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return "";
+    if (opts.termOnly) return "For the term";
     try {
       const d = new Date(key + "T12:00:00");
       if (isNaN(d.getTime())) return key;
@@ -237,18 +512,37 @@
     let name = "";
     rowsAll(ctx).forEach(function (row) {
       if (!rowApplies(row, ctx)) return;
-      if (!REPLACE_TYPES.has(String(row.override_type || "").trim())) return;
-      const pl = parsePayload(row.payload);
-      const cid = replacementClientId(pl, ctx);
-      if (cid !== id) return;
-      if (typeof global.portalOverrideReplacementClientName === "function") {
-        name = global.portalOverrideReplacementClientName(pl) || name;
-      } else if (pl) {
+      const t = String(row.override_type || "").trim();
+      if (REPLACE_TYPES.has(t)) {
+        const pl = parsePayload(row.payload);
+        const cid = replacementClientId(pl, ctx);
+        if (cid !== id) return;
+        if (typeof global.portalOverrideReplacementClientName === "function") {
+          name = global.portalOverrideReplacementClientName(pl) || name;
+        } else if (pl) {
+          name =
+            String(pl.to_client_name || pl.replacement_client_name || "").trim() ||
+            name;
+        }
+        return;
+      }
+      if (overrideIsTermNewParticipant(row)) {
+        const cid = overrideTermIntakeClientSlug(row);
+        if (cid !== id) return;
+        const pl = parsePayload(row.payload);
         name =
-          String(pl.to_client_name || pl.replacement_client_name || "").trim() ||
+          String(pl && (pl.to_client_name || pl.moved_client_name || pl.replacement_client_name) || "").trim() ||
           name;
       }
     });
+
+    if (!name) {
+      rosterRowsCache().forEach(function (row) {
+        if (!rosterRowAppliesToStaff(row, ctx.staffId)) return;
+        if (clientSlugFromName(row.client_name) !== id) return;
+        name = String(row.client_name || "").trim() || name;
+      });
+    }
 
     if (!name) {
       name = id.replace(/[-_]+/g, " ").replace(/\b\w/g, function (ch) {
@@ -266,6 +560,30 @@
     return notes[id];
   }
 
+  function newParticipantScheduleLabelOpts(clientId, ctx) {
+    ctx = ctx || buildContext();
+    const slug = normKey(clientId);
+    if (!slug) return null;
+    let dated = 0;
+    let templ = false;
+    rosterRowsCache().forEach(function (row) {
+      if (String(row.status || "active") !== "active") return;
+      if (!rosterRowAppliesToStaff(row, ctx.staffId)) return;
+      if (clientSlugFromName(row.client_name) !== slug) return;
+      if (normIso(row.session_date)) dated++;
+      else templ = true;
+    });
+    if (templ || dated > 1) return { termOnly: true };
+    let fromOverride = false;
+    rowsAll(ctx).forEach(function (row) {
+      if (fromOverride || !rowApplies(row, ctx)) return;
+      if (!overrideIsTermNewParticipant(row)) return;
+      if (overrideTermIntakeClientSlug(row) === slug) fromOverride = true;
+    });
+    if (fromOverride) return { termOnly: true };
+    return null;
+  }
+
   global.PortalParticipantsSheet = {
     REPLACE_TYPES: REPLACE_TYPES,
     participantsSheetStaffOnly: participantsSheetStaffOnly,
@@ -275,5 +593,14 @@
     isMakeUpDashboardRow: isMakeUpDashboardRow,
     formatScheduleLabel: formatScheduleLabel,
     clientNoteForSheet: clientNoteForSheet,
+    buildPortalRosterFirstSessionMap: buildPortalRosterFirstSessionMap,
+    clientFirstSessionDateIso: clientFirstSessionDateIso,
+    overrideIsTermNewParticipant: overrideIsTermNewParticipant,
+    overrideIsTrialSession: overrideIsTrialSession,
+    overrideShouldShowOnCalendarDate: overrideShouldShowOnCalendarDate,
+    overrideTermIntakeClientSlug: overrideTermIntakeClientSlug,
+    scheduleOverrideAttentionDismissKey: scheduleOverrideAttentionDismissKey,
+    collapseScheduleOverrideRowsForAttention: collapseScheduleOverrideRowsForAttention,
+    newParticipantScheduleLabelOpts: newParticipantScheduleLabelOpts,
   };
 })(typeof window !== "undefined" ? window : globalThis);
