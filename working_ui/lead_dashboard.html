@@ -4413,7 +4413,24 @@
       if(/\blane\s*\(\s*de\s*\)|\(\s*de\s*\)|\bdeep\s+end\b/i.test(blob)) return 'DE';
       return null;
     }
-    function inferPoolTierFromRosterArea(sessionRow){
+    /** Sunday SwimFarm aquatic: 9–9.30 = Small Pool; 2–3 block = Big Pool (never Teaching Pool). */
+    function portalCorrectSundaySwimFarmPoolArea(sessionRow, viewDay){
+      const day = String(viewDay || (sessionRow && sessionRow.day) || '').trim().toLowerCase();
+      if(day !== 'sunday') return null;
+      if(normalizeVenueKey(sessionRow && sessionRow.venue) !== 'swimfarm') return null;
+      const act = normalizeActivityKey(sessionRow && (sessionRow.activity || sessionRow.rosterService || sessionRow.service));
+      if(act !== 'aquatic activity' && act !== 'aquatic activities') return null;
+      const slot = String(sessionRow && (sessionRow.timeSlotLabel || sessionRow.time_slot) || '').trim().toLowerCase();
+      if(slot === '9 to 9.30') return 'Small Pool';
+      if(slot === '2 to 2.30' || slot === '2.30 to 3') return 'Big Pool';
+      return null;
+    }
+    function inferPoolTierFromRosterArea(sessionRow, viewDay){
+      const corrected = portalCorrectSundaySwimFarmPoolArea(sessionRow, viewDay);
+      if(corrected){
+        if(corrected === 'Small Pool') return 'small';
+        if(corrected === 'Big Pool') return 'shark';
+      }
       const area = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim().toLowerCase();
       if(area === 'teaching pool') return 'fish';
       if(area === 'small pool') return 'small';
@@ -4422,7 +4439,9 @@
       if(/^lane\s*\(\s*de\s*\)$/i.test(area)) return 'dolphin';
       return null;
     }
-    function rosterAreaToPoolLabel(sessionRow){
+    function rosterAreaToPoolLabel(sessionRow, viewDay){
+      const corrected = portalCorrectSundaySwimFarmPoolArea(sessionRow, viewDay);
+      if(corrected) return corrected;
       const raw = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim();
       if(!raw) return null;
       const low = raw.toLowerCase();
@@ -4457,7 +4476,7 @@
     function resolvePoolLocationLabelFromSession(s, activity, clientNotes, viewDay){
       const fromSvc = parseRosterPoolServiceString(s && s.service);
       if(fromSvc) return fromSvc;
-      const fromArea = rosterAreaToPoolLabel(s);
+      const fromArea = rosterAreaToPoolLabel(s, viewDay);
       if(fromArea) return fromArea;
       if(!shouldShowPoolSymbolForSession(s, activity, viewDay) || !isPoolTierActivity(activity)) return null;
       const tier = resolvePoolTier(s, activity, clientNotes, viewDay);
@@ -4507,8 +4526,11 @@
         const t = String(sessionRow.poolTier).toLowerCase();
         if(POOL_TIER_META[t]) return t;
       }
-      const fromArea = inferPoolTierFromRosterArea(sessionRow);
+      const fromArea = inferPoolTierFromRosterArea(sessionRow, viewDay);
       if(fromArea) return fromArea;
+      const sundayFallback = portalCorrectSundaySwimFarmPoolArea(sessionRow, viewDay);
+      if(sundayFallback === 'Big Pool') return 'shark';
+      if(sundayFallback === 'Small Pool') return 'small';
       return inferPoolTierFromNotes(clientNotes) || 'fish';
     }
 
@@ -4749,8 +4771,10 @@
       return raw || formatSlotRange(s.start, s.end);
     }
     /** Support workers: roster room (Hub Room, Room 2). Swimming instructors: roster pool area or activity fallback. */
-    function rosterAreaLabelForSession(s, activity, supportWorkerMode){
+    function rosterAreaLabelForSession(s, activity, supportWorkerMode, viewDay){
       let a = String(s.rosterArea != null ? s.rosterArea : '').trim();
+      const sundayPool = portalCorrectSundaySwimFarmPoolArea(s, viewDay);
+      if(sundayPool && (!a || /^teaching pool$/i.test(a))) a = sundayPool;
       if(!a){
         if(supportWorkerMode) return '';
         a = String(activity || '').trim();
