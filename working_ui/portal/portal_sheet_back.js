@@ -142,6 +142,10 @@
     backNavActive = true;
     try {
       if (entry && entry.from) {
+        if (portalIsDockFooterSheet(current) && portalIsDockFooterSheet(entry.from)) {
+          portalCloseToDashboard();
+          return true;
+        }
         if (open) open(entry.from, { skipNavRecord: true });
         portalSyncQuickMenuDockChrome();
         portalSyncParticipantsDockChrome();
@@ -176,16 +180,7 @@
   }
 
   function portalCloseParticipantsFlow() {
-    closeNestedClientSheets();
-    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
-    if (close) {
-      close({ bypassAnnouncementLock: true });
-      clearStack();
-      portalSyncParticipantsDockChrome();
-      portalSyncQuickMenuDockChrome();
-      return true;
-    }
-    return false;
+    return portalCloseToDashboard();
   }
 
   function portalSyncParticipantsDockChrome() {
@@ -204,9 +199,14 @@
       portalCloseParticipantsFlow();
       return "closed";
     }
+    if (portalIsQuickMenuSheetOpen()) {
+      clearStack();
+    }
     if (typeof global.openSheet === "function") {
-      global.openSheet("clientsSheet", opts.openOpts || {});
+      var openOpts = Object.assign({ skipNavRecord: true }, opts.openOpts || {});
+      global.openSheet("clientsSheet", openOpts);
       portalSyncParticipantsDockChrome();
+      portalSyncQuickMenuDockChrome();
       return "opened";
     }
     return "noop";
@@ -250,8 +250,28 @@
     }
   }
 
-    var menu = global.document.getElementById("menuSheet");
-    if (menu && menu.classList.contains("open")) return true;
+  function portalIsDockFooterSheet(sheetId) {
+    var id = String(sheetId || "").trim();
+    return id === "menuSheet" || id === "clientsSheet";
+  }
+
+  /** Close every sheet and return to the main dashboard (footer home). */
+  function portalCloseToDashboard() {
+    closeNestedClientSheets();
+    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
+    if (close) {
+      close({ bypassAnnouncementLock: true });
+      clearStack();
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
+      return true;
+    }
+    return false;
+  }
+
+  /** True when a sub-sheet was opened from Quick menu (footer back goes to menu, not dashboard). */
+  function portalQuickMenuDockShouldBack() {
+    if (portalIsQuickMenuSheetOpen()) return false;
     var current = getTopOpenSheetId();
     if (!current) return false;
     return portalGetSheetBackTarget(current) === "menuSheet";
@@ -264,14 +284,7 @@
 
   function portalCloseQuickMenuSheet() {
     if (!portalIsQuickMenuSheetOpen()) return false;
-    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
-    if (close) {
-      close({ bypassAnnouncementLock: true });
-      return true;
-    }
-    var menu = global.document.getElementById("menuSheet");
-    if (menu) menu.classList.remove("open");
-    return true;
+    return portalCloseToDashboard();
   }
 
   function portalSyncQuickMenuDockChrome() {
@@ -293,10 +306,9 @@
     } catch (_mode) {}
     if (portalIsQuickMenuSheetOpen()) {
       portalCloseQuickMenuSheet();
-      portalSyncQuickMenuDockChrome();
       return "closed";
     }
-    if (typeof global.portalQuickMenuDockShouldBack === "function" && global.portalQuickMenuDockShouldBack()) {
+    if (portalQuickMenuDockShouldBack()) {
       if (typeof global.portalNavigateSheetBack === "function") {
         global.portalNavigateSheetBack();
       } else {
@@ -305,9 +317,14 @@
       portalSyncQuickMenuDockChrome();
       return "back";
     }
+    if (portalIsParticipantsFlowActive()) {
+      clearStack();
+    }
     if (typeof global.openSheet === "function") {
-      global.openSheet("menuSheet", opts.openOpts || {});
+      var openOpts = Object.assign({ skipNavRecord: true }, opts.openOpts || {});
+      global.openSheet("menuSheet", openOpts);
       portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
       return "opened";
     }
     return "noop";
@@ -426,6 +443,8 @@
   global.portalCloseQuickMenuSheet = portalCloseQuickMenuSheet;
   global.portalSyncQuickMenuDockChrome = portalSyncQuickMenuDockChrome;
   global.portalToggleQuickMenuFromDock = portalToggleQuickMenuFromDock;
+  global.portalCloseToDashboard = portalCloseToDashboard;
+  global.portalIsDockFooterSheet = portalIsDockFooterSheet;
   global.portalGetSheetBackTarget = portalGetSheetBackTarget;
   global.portalInitSheetBackNavigation = portalInitSheetBackNavigation;
   global.portalClearSheetNavigation = clearStack;
