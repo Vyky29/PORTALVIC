@@ -95,7 +95,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260613-luliya-next-session" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-staff-photo-change" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-label-space" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -4492,28 +4492,34 @@
       const titleEl = document.getElementById('portalQuickMenuGuideGroupTitle');
       if(!host || !guideGrp) return false;
       if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
+      const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
       const ovHtml = typeof portalBuildQuickMenuOverrideStackHtml === 'function' ? portalBuildQuickMenuOverrideStackHtml(st) : '';
       const hasOv = !!ovHtml;
-      if(hasOv){
+      const showGuideHeader = !logoLite && typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
+
+      if(logoLite && hasOv){
         host.innerHTML = ovHtml;
         host.hidden = false;
         if(titleEl) titleEl.textContent = 'Schedule changes';
         if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Schedule changes');
-      }else{
-        host.innerHTML = '';
-        host.hidden = true;
-        if(titleEl) titleEl.textContent = 'Getting started';
-        if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Getting started');
-      }
-      const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
-      const showGuideHeader = !logoLite && typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
-      if(guideGrid) guideGrid.hidden = logoLite || !showGuideHeader;
-      guideGrp.hidden = logoLite ? !hasOv : (!showGuideHeader && !hasOv);
-      if(logoLite){
+        guideGrp.hidden = false;
+        if(guideGrid) guideGrid.hidden = true;
         const panel = guideGrp.querySelector('.menu-group-panel');
         if(panel) panel.hidden = false;
+        return true;
       }
-      return hasOv;
+
+      host.innerHTML = '';
+      host.hidden = true;
+      if(titleEl) titleEl.textContent = 'Getting started';
+      if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Getting started');
+      if(logoLite){
+        guideGrp.hidden = true;
+      }else{
+        guideGrp.hidden = !showGuideHeader;
+        if(guideGrid) guideGrid.hidden = !showGuideHeader;
+      }
+      return false;
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
@@ -7607,6 +7613,8 @@
       const sid = String(staffId || '').trim().toLowerCase();
       if(String(s.staffId || '').toLowerCase() !== sid) return false;
       if(String(s.day || '').trim() !== String(dayName || '').trim()) return false;
+      if(typeof portalStaffDashboardOmitSpreadsheetSession === 'function'
+        && portalStaffDashboardOmitSpreadsheetSession(s, dayName)) return false;
       const st = sessionModelStatus(s);
       if(st === 'Available') return false;
       const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
@@ -7633,7 +7641,8 @@
         const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
         if(!cov || cov !== sid) return;
         const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function' ? portalFindSpreadsheetSessionMatchingOverride(ov, dayName) : null;
-        const s = base ? Object.assign({}, base, { staffId: cov }) : { rosterService: '', activity: 'Swimming', venue: ov.anchor_venue || '—' };
+        if(!base) return;
+        const s = Object.assign({}, base, { staffId: cov });
         const venue = String(s.venue || '—');
         const lab = weekServiceCatFn(s);
         const key = venue + '\0' + lab;
@@ -10290,6 +10299,8 @@
           profGrp.hidden = true;
           profGrp.setAttribute('aria-hidden', 'true');
         }
+        const stFull = typeof portalReminderState === 'function' ? portalReminderState() : null;
+        if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(stFull);
         if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
       }
     }
@@ -11729,6 +11740,56 @@
       }
       return applicable > 0 || list.length > 0;
     }
+    function portalTermResolveDayFeedbackState(dayWord, isoKey, staffId, relPick, curDate, catchUpDay){
+      const key = String(isoKey || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const list = Array.isArray(relPick) ? relPick : [];
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      if(typeof portalTermDayAllSessionsComplete === 'function'
+        && portalTermDayAllSessionsComplete(dayWord, key, sid, list, curDate)){
+        return 'complete';
+      }
+      if(catchUpDay && key <= todayKey) return 'late';
+      if(key === todayKey){
+        let minStart = Infinity;
+        list.forEach(function(s){
+          if(typeof portalRosterSessionFeedbackExempt === 'function'
+            && portalRosterSessionFeedbackExempt(s, key, sid)) return;
+          const sm = buildSessionStartMsForCalendarDate(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), s.start);
+          if(Number.isFinite(sm) && sm < minStart) minStart = sm;
+        });
+        if(minStart !== Infinity && termCalendarNowMs() < minStart) return 'pending';
+      }
+      if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+        && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, sid, list, curDate)){
+        return 'pending';
+      }
+      const nowMs = termCalendarNowMs();
+      let anyEndedIncomplete = false;
+      const y = curDate.getFullYear();
+      const mo = curDate.getMonth();
+      const da = curDate.getDate();
+      list.forEach(function(s){
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, key, sid)) return;
+        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+          ? portalSessionReviewKeyForModelRow(s, dayWord, key)
+          : `${key}|${s.start}|${s.clientId}`;
+        if(!sk) return;
+        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+          && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, sid)) return;
+        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+          ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
+          : (getSessionReviewRecord({ sessionKey: sk }) || {});
+        if(rec.feedbackDone || rec.absent || rec.cancelled) return;
+        const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
+        if(!Number.isFinite(endMs)) return;
+        const lead = typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
+          ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
+        if(nowMs >= (endMs - lead)) anyEndedIncomplete = true;
+      });
+      return anyEndedIncomplete ? 'late' : 'pending';
+    }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
@@ -12005,14 +12066,7 @@
         if(!relAllExtra.length) return;
         const relPick = relFbExtra.length ? relFbExtra : relAllExtra;
         const catchUpDay = portalTermIsCatchUpFeedbackDate(isoKey, staffId);
-        if(typeof portalTermDayAllSessionsComplete === 'function'
-          && portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, relPick, curExtra)){
-          fbMap[isoKey] = 'complete';
-        } else if(catchUpDay || isoKey <= portalTermLocalYmdFromMs(termCalendarNowMs())) {
-          fbMap[isoKey] = 'late';
-        } else {
-          fbMap[isoKey] = 'pending';
-        }
+        fbMap[isoKey] = portalTermResolveDayFeedbackState(dayWord, isoKey, staffId, relPick, curExtra, catchUpDay);
       });
       dashboardData.termShiftEndByDate = endMap;
       dashboardData.termFeedbackByDate = fbMap;
@@ -14200,6 +14254,7 @@
             return { day: day, segments: [{ count: 0, venue: "", serviceLabel: "" }] };
           }
           var bucket = {};
+          var seenCount = Object.create(null);
           var cell = typeof calendarDateForWeekListDay === "function" ? calendarDateForWeekListDay(day) : null;
           var iso = cell && typeof portalIsoYmdFromDate === "function" ? portalIsoYmdFromDate(cell) : "";
           var isReal = function (s) {
@@ -14217,6 +14272,17 @@
             if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, sid)) return;
             var venue = String(s.venue || "—");
             var lab = weekServiceCat(s);
+            if (day === "Sunday" && lab === "Aquatic Activities") {
+              var cidAqu = String(s.clientId || "").trim().toLowerCase();
+              if (cidAqu && sessions.some(function (o) {
+                return o !== s
+                  && String(o.clientId || "").trim().toLowerCase() === cidAqu
+                  && weekServiceCat(o) === "Multi-Activity";
+              })) return;
+            }
+            var dedupeKey = lab + "\0" + venue + "\0" + String(s.clientId || "").trim().toLowerCase();
+            if (seenCount[dedupeKey]) return;
+            seenCount[dedupeKey] = true;
             var key = venue + "\0" + lab;
             if (!bucket[key]) bucket[key] = { count: 0, venue: venue, serviceLabel: lab };
             bucket[key].count += 1;
