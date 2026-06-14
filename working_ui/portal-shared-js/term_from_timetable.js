@@ -112,9 +112,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "stephanie",
         "scott"
       ],
-      "2026-06-05": [
-        "fadi"
-      ],
       "2026-06-06": [
         "emani",
         "matthias",

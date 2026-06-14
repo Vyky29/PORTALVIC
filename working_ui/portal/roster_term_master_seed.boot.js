@@ -112,7 +112,10 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
           "raul": "casa"
         }
       }
-    }
+    },
+    "lastEditedAt": "2026-06-14T00:59:25.169Z",
+    "exportedAt": "2026-06-14T01:01:59.989Z",
+    "approved": false
   },
   "weeks": [
     {
@@ -729,8 +732,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Zakariya",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 5 years (born December 2019)\n2. Medical: No diagnosed medical conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Building activities, Playdough, sensory play, Disney Cars.\n4. Dislikes/Avoids: Changing activities.\n5. Known Triggers: Waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal – limited words or scripts; uses gestures or non-verbal cues (pointing, taking adult to item); broken speech with gestures helps.\n9. Preferred Communication: Short, broken-up speech supported with gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Needs preparation or countdowns for transitions.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively – needs supervision.\n15. Other Notes: Generally cautious around water, but grows in confidence when supported by an adult."
@@ -739,8 +742,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Faris",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 12 years (born December 2011)\n2. Medical: No diagnosed conditions. No regular medication. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), YouTube videos.\n4. Dislikes/Avoids: Loud noise.\n5. Known Triggers: Loud/unexpected noise, waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Uses PECS/visuals to express needs; uses gestural/non-verbal cues (pointing, leading adult).\n9. Preferred Communication: Visual supports (symbols, schedules, first/then boards).\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Requires 1:1 support to complete most activities.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: —"
@@ -749,8 +752,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "9 to 9.30",
                   "client_name": "Simon",
                   "service": "Aquatic Activity",
-                  "area": "Small Pool",
-                  "pool_note": "Small Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 8 years (born 20 June 2017)\n2. Medical: Asthma. Uses a brown inhaler twice daily (morning and evening). Hay fever in spring. No food allergies. Health/Emergency Plan in place.\n3. Likes/Motivators: Swinging, swimming, trampolining, building toys, number and alphabet puzzles, messy play (slime, Playdoh).\n4. Dislikes/Avoids: New or disrupted routines and unexpected situations; loud or high pitched noises; crowded spaces and social events; some food textures/tastes; clothing tags; hair brushing and teeth brushing; transitions without warning.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told “no”; fatigue/hunger; physical proximity/touch; group/crowded settings.\n6. Regulation Strategies: Movement breaks; deep pressure; chewy toys; hugs; preferred toy/object; visual supports (first then, countdowns); quiet break space; supportive adult nearby.\n7. Level of Support: Requires 1:1 support when regulated. When dysregulated, needs active adult support and continuous supervision, and may require two adults to safely regulate.\n8. Communication: Gestural/non-verbal cues with very limited verbal language (e.g., food, water, toilet, sleep).\n9. Preferred Communication: Verbal cues plus gestures supported with PECS/visuals (first then, now next) for clarity and consistency.\n10. Mobility: Walks independently; needs adult assistance with transitions or moving between spaces.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs 1:1 support to complete most activities; engagement improves with clear structure and motivators.\n13. Transitions/Flexibility: Struggles with unexpected changes and waiting; requires preparation and warnings before moving on.\n14. Safety: No awareness of danger – constant supervision required, especially in open spaces and around water.\n15. Other Notes: Frustration increases when needs cannot be expressed; consistent use of PECS alongside calm verbal cues helps reduce escalation."
@@ -1142,8 +1145,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Max",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Small Pool",
+                  "pool_note": "Small Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
                   "participant_info": "1. Age: 6 years (born October 2017)\n2. Medical: Born with one kidney (health needs must be considered). No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), YouTube videos, books, trains (visiting stations, watching trains).\n4. Dislikes/Avoids: Public hand dryers.\n5. Known Triggers: Being told “no” / denied access, fatigue or hunger.\n6. Regulation Strategies: Supportive adult nearby; responds well to hugs and gentle comfort.\n7. Level of Support: Needs adult nearby and occasional guidance.\n8. Communication: Verbal – limited words or scripts.\n9. Preferred Communication: Clear, simple language supported by visuals or demonstrations, delivered calmly and gently.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; needs visual/verbal prompts to stay on task; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: No awareness of danger — constant 1:1 required.\n15. Other Notes: Health needs should always be considered due to being born with one kidney."
@@ -1152,8 +1155,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Shaan",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Small Pool",
+                  "pool_note": "Small Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
                   "participant_info": "1. Age: 15 years (born June 2009)\n2. Medical: History of epilepsy (currently in recovery, no medication). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), dancing/rhythmic activities, drawing, painting, crafts, puzzles, pattern-based games, iPad/tablet apps, YouTube videos, movies.\n4. Dislikes/Avoids: Small children and babies crying; people entering his personal space.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told “no”/denied access, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Uses PECS/visuals; uses gestures and non-verbal cues (pointing, leading adult).\n9. Preferred Communication: Short, clear sentences and keywords (e.g. “sit down,” “pick it up,” “turn the light off,” “close the door”). Supported with gestures and visual prompts.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Requires 1:1 support to complete most activities; easily distracted and needs frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: Usually a happy and calm boy but prefers personal space."
@@ -1849,8 +1852,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Rodin",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 6 years (born March 2018)\n2. Medical: Asthma. Takes Melatonin (5mg). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, trains.\n4. Dislikes/Avoids: Wet clothes, dirty hands, being shouted at, long series of verbal instructions he cannot decode.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told “no”/denied access, fatigue or hunger, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, preferred toy/object, quiet space or break, supportive adult nearby, drinking water, chewelries, lollipops.\n7. Level of Support: Needs adult nearby and occasional guidance; often requires active adult support; may require 1:1 continuous supervision when distressed.\n8. Communication: Verbal – limited words or scripts.\n9. Preferred Communication: Verbal + visual supports + game-based approaches; benefits from symbols, schedules, first/then boards; needs 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs support on uneven surfaces or stairs.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs visual/verbal prompts; requires 1:1 support for most activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: Very poor sense of danger — constant 1:1 required. Can read safety signs (e.g. “Do not run”) but does not follow them.\n15. Other Notes: His poor danger awareness is not easily recognised by others until too late — staff must be vigilant."
@@ -1859,8 +1862,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Yoan",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 9 years (born September 2014)\n2. Medical: Epilepsy controlled with Keppra and Lamotrigine twice daily (morning and evening). No allergies. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), puzzles, pattern-based games, YouTube videos, music, lights, bubbles.\n4. Dislikes/Avoids: Loud noises.\n5. Known Triggers: Loud/unexpected noise.\n6. Regulation Strategies: Quiet space or break, supportive adult nearby.\n7. Level of Support: Can self-regulate with minimal prompts; requires 1:1 supervision for safety.\n8. Communication: Mainly communicates through behaviour.\n9. Preferred Communication: Verbal instructions supported with gestures and pictures.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: Needs consistent adult supervision due to lack of danger awareness."
@@ -1869,8 +1872,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "9 to 10.15",
                   "client_name": "Yusuf Ah",
                   "service": "Aquatic Activity",
-                  "area": "Small Pool",
-                  "pool_note": "Small Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 10 years (born July 2014)\n2. Medical: One kidney. Primary immune deficiency. Takes prophylactic antibiotics (Azithromycin three times a week). Cannot drink cow’s milk. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing walls/soft play, dancing/rhythmic activities, drawing, painting, crafts, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, books, music and dramas.\n4. Dislikes/Avoids: Cats.\n5. Known Triggers: Loud/unexpected noise, waiting or delays, fatigue or hunger.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby, calming/breathing prompts.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal – full sentences; verbal – limited words or scripts; uses gestures and non-verbal cues (pointing, taking adult to item).\n9. Preferred Communication: Responds best when told the plan; verbal + gestures with visual supports (symbols, schedules, first-then boards).\n10. Mobility: Walks independently; may need adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: May act impulsively – needs supervision.\n15. Other Notes: —"
@@ -2185,18 +2188,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-06-05",
               "weekday": "Friday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-06-06",
@@ -2948,8 +2940,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Zakariya",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 5 years (born December 2019)\n2. Medical: No diagnosed medical conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Building activities, Playdough, sensory play, Disney Cars.\n4. Dislikes/Avoids: Changing activities.\n5. Known Triggers: Waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal – limited words or scripts; uses gestures or non-verbal cues (pointing, taking adult to item); broken speech with gestures helps.\n9. Preferred Communication: Short, broken-up speech supported with gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Needs preparation or countdowns for transitions.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively – needs supervision.\n15. Other Notes: Generally cautious around water, but grows in confidence when supported by an adult."
@@ -2958,8 +2950,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Faris",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 12 years (born December 2011)\n2. Medical: No diagnosed conditions. No regular medication. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), YouTube videos.\n4. Dislikes/Avoids: Loud noise.\n5. Known Triggers: Loud/unexpected noise, waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Uses PECS/visuals to express needs; uses gestural/non-verbal cues (pointing, leading adult).\n9. Preferred Communication: Visual supports (symbols, schedules, first/then boards).\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Requires 1:1 support to complete most activities.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: —"
@@ -2968,8 +2960,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "9 to 9.30",
                   "client_name": "Simon",
                   "service": "Aquatic Activity",
-                  "area": "Small Pool",
-                  "pool_note": "Small Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "DAN",
                   "participant_info": "1. Age: 8 years (born 20 June 2017)\n2. Medical: Asthma. Uses a brown inhaler twice daily (morning and evening). Hay fever in spring. No food allergies. Health/Emergency Plan in place.\n3. Likes/Motivators: Swinging, swimming, trampolining, building toys, number and alphabet puzzles, messy play (slime, Playdoh).\n4. Dislikes/Avoids: New or disrupted routines and unexpected situations; loud or high pitched noises; crowded spaces and social events; some food textures/tastes; clothing tags; hair brushing and teeth brushing; transitions without warning.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told “no”; fatigue/hunger; physical proximity/touch; group/crowded settings.\n6. Regulation Strategies: Movement breaks; deep pressure; chewy toys; hugs; preferred toy/object; visual supports (first then, countdowns); quiet break space; supportive adult nearby.\n7. Level of Support: Requires 1:1 support when regulated. When dysregulated, needs active adult support and continuous supervision, and may require two adults to safely regulate.\n8. Communication: Gestural/non-verbal cues with very limited verbal language (e.g., food, water, toilet, sleep).\n9. Preferred Communication: Verbal cues plus gestures supported with PECS/visuals (first then, now next) for clarity and consistency.\n10. Mobility: Walks independently; needs adult assistance with transitions or moving between spaces.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs 1:1 support to complete most activities; engagement improves with clear structure and motivators.\n13. Transitions/Flexibility: Struggles with unexpected changes and waiting; requires preparation and warnings before moving on.\n14. Safety: No awareness of danger – constant supervision required, especially in open spaces and around water.\n15. Other Notes: Frustration increases when needs cannot be expressed; consistent use of PECS alongside calm verbal cues helps reduce escalation."
@@ -3361,8 +3353,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Max",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Small Pool",
+                  "pool_note": "Small Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
                   "participant_info": "1. Age: 6 years (born October 2017)\n2. Medical: Born with one kidney (health needs must be considered). No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), YouTube videos, books, trains (visiting stations, watching trains).\n4. Dislikes/Avoids: Public hand dryers.\n5. Known Triggers: Being told “no” / denied access, fatigue or hunger.\n6. Regulation Strategies: Supportive adult nearby; responds well to hugs and gentle comfort.\n7. Level of Support: Needs adult nearby and occasional guidance.\n8. Communication: Verbal – limited words or scripts.\n9. Preferred Communication: Clear, simple language supported by visuals or demonstrations, delivered calmly and gently.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; needs visual/verbal prompts to stay on task; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: No awareness of danger — constant 1:1 required.\n15. Other Notes: Health needs should always be considered due to being born with one kidney."
@@ -3371,8 +3363,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Shaan",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Small Pool",
+                  "pool_note": "Small Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
                   "participant_info": "1. Age: 15 years (born June 2009)\n2. Medical: History of epilepsy (currently in recovery, no medication). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), dancing/rhythmic activities, drawing, painting, crafts, puzzles, pattern-based games, iPad/tablet apps, YouTube videos, movies.\n4. Dislikes/Avoids: Small children and babies crying; people entering his personal space.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told “no”/denied access, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Uses PECS/visuals; uses gestures and non-verbal cues (pointing, leading adult).\n9. Preferred Communication: Short, clear sentences and keywords (e.g. “sit down,” “pick it up,” “turn the light off,” “close the door”). Supported with gestures and visual prompts.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Requires 1:1 support to complete most activities; easily distracted and needs frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: Usually a happy and calm boy but prefers personal space."
@@ -3970,8 +3962,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2 to 2.30",
                   "client_name": "Rodin",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 6 years (born March 2018)\n2. Medical: Asthma. Takes Melatonin (5mg). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, trains.\n4. Dislikes/Avoids: Wet clothes, dirty hands, being shouted at, long series of verbal instructions he cannot decode.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told “no”/denied access, fatigue or hunger, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, preferred toy/object, quiet space or break, supportive adult nearby, drinking water, chewelries, lollipops.\n7. Level of Support: Needs adult nearby and occasional guidance; often requires active adult support; may require 1:1 continuous supervision when distressed.\n8. Communication: Verbal – limited words or scripts.\n9. Preferred Communication: Verbal + visual supports + game-based approaches; benefits from symbols, schedules, first/then boards; needs 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs support on uneven surfaces or stairs.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs visual/verbal prompts; requires 1:1 support for most activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: Very poor sense of danger — constant 1:1 required. Can read safety signs (e.g. “Do not run”) but does not follow them.\n15. Other Notes: His poor danger awareness is not easily recognised by others until too late — staff must be vigilant."
@@ -3980,8 +3972,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "2.30 to 3",
                   "client_name": "Yoan",
                   "service": "Aquatic Activity",
-                  "area": "Teaching Pool",
-                  "pool_note": "Teaching Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 9 years (born September 2014)\n2. Medical: Epilepsy controlled with Keppra and Lamotrigine twice daily (morning and evening). No allergies. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), puzzles, pattern-based games, YouTube videos, music, lights, bubbles.\n4. Dislikes/Avoids: Loud noises.\n5. Known Triggers: Loud/unexpected noise.\n6. Regulation Strategies: Quiet space or break, supportive adult nearby.\n7. Level of Support: Can self-regulate with minimal prompts; requires 1:1 supervision for safety.\n8. Communication: Mainly communicates through behaviour.\n9. Preferred Communication: Verbal instructions supported with gestures and pictures.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: No awareness of danger — requires constant 1:1 supervision.\n15. Other Notes: Needs consistent adult supervision due to lack of danger awareness."
@@ -3990,8 +3982,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "9 to 10.15",
                   "client_name": "Yusuf Ah",
                   "service": "Aquatic Activity",
-                  "area": "Small Pool",
-                  "pool_note": "Small Pool",
+                  "area": "Big pool",
+                  "pool_note": "Big pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 10 years (born July 2014)\n2. Medical: One kidney. Primary immune deficiency. Takes prophylactic antibiotics (Azithromycin three times a week). Cannot drink cow’s milk. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing walls/soft play, dancing/rhythmic activities, drawing, painting, crafts, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, books, music and dramas.\n4. Dislikes/Avoids: Cats.\n5. Known Triggers: Loud/unexpected noise, waiting or delays, fatigue or hunger.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby, calming/breathing prompts.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal – full sentences; verbal – limited words or scripts; uses gestures and non-verbal cues (pointing, taking adult to item).\n9. Preferred Communication: Responds best when told the plan; verbal + gestures with visual supports (symbols, schedules, first-then boards).\n10. Mobility: Walks independently; may need adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: May act impulsively – needs supervision.\n15. Other Notes: —"
@@ -5710,8 +5702,18 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "11 to 4",
+                  "time_slot": "11 to 12.30",
                   "client_name": "Emmanuel",
+                  "service": "Day Centre",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "MICHELLE",
+                  "participant_info": ""
+                },
+                {
+                  "time_slot": "12.30 to 4",
+                  "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5783,8 +5785,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
+                  "time_slot": "1.30 to 4",
+                  "client_name": "Emmanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5802,7 +5804,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "RAUL",
@@ -6380,7 +6382,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "VICTOR",
@@ -6419,8 +6421,28 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "11 to 4",
+                  "time_slot": "11 to 12.30",
                   "client_name": "Ikram",
+                  "service": "Day Centre",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "LULIA, YOUSSEF",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told “no”; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first–then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal – limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger – constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
+                },
+                {
+                  "time_slot": "12.30 to 1.30",
+                  "client_name": "Emmanuel",
+                  "service": "Day Centre",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "LULIA, YOUSSEF",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told “no”; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first–then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal – limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger – constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
+                },
+                {
+                  "time_slot": "1.30 to 3 ",
+                  "client_name": "Fadi",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8099,7 +8121,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "RAUL",
@@ -10313,7 +10335,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "RAUL",
@@ -10891,7 +10913,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "VICTOR",
@@ -12624,7 +12646,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "RAUL",
@@ -14316,7 +14338,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "RAUL",
@@ -14798,7 +14820,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "time_slot": "11 to 4",
                   "client_name": "MANAGER",
                   "service": "Day Centre",
-                  "area": "Hub Room",
+                  "area": "Hub · Manager",
                   "pool_note": "Hub · Manager",
                   "venue": "SwimFarm",
                   "instructors": "VICTOR",

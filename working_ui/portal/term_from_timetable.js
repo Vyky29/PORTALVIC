@@ -109,7 +109,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "youssef": {
       "2026-06-01": [
         "eddie",
-        "joel"
+        "joel",
+        "abodi_p"
       ],
       "2026-06-02": [
         "ayman",
@@ -121,6 +122,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "scott"
       ],
       "2026-06-06": [
+        "emani",
         "matthias",
         "saaib"
       ],
