@@ -3830,6 +3830,43 @@
         it.sessionStartTs != null && it.sessionEndTs != null
       );
     }
+    /** Feedback reminders/notifications only after the full today shift (+15 min), not between back-to-back sessions. Orange cards still use isSessionEndedForFeedback per session. */
+    function portalStaffTodayShiftEndedForFeedbackReminders(){
+      try{
+        const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
+        const todayKey = getLocalDateKey();
+        const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const dayWord = typeof portalWeekdayLongEnGB === 'function'
+          ? portalWeekdayLongEnGB(new Date())
+          : new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+        const todayRows = (dashboardData && dashboardData.today) || [];
+        const shift = typeof portalTodayShiftSessions === 'function' ? portalTodayShiftSessions() : [];
+        const hasWorkToday = todayRows.some(function(it){
+          return it && it.kind === 'client' && !it.noSessionFeedbackRequired;
+        }) || shift.some(function(it){
+          return it && (it.kind === 'client' || it.kind === 'available') && !it.noSessionFeedbackRequired;
+        });
+        if(!hasWorkToday) return true;
+        if(staffId && typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+          && portalTermCalendarDayHasNotEndedClientSession(todayKey, dayWord, staffId)){
+          return false;
+        }
+        let dayShiftEndMs = NaN;
+        function scanEnd(item){
+          if(!item || item.noSessionFeedbackRequired) return;
+          if(item.kind !== 'client' && item.kind !== 'available') return;
+          const t = item.sessionEndTs;
+          if(typeof t === 'number' && Number.isFinite(t)){
+            if(!Number.isFinite(dayShiftEndMs) || t > dayShiftEndMs) dayShiftEndMs = t;
+          }
+        }
+        todayRows.forEach(scanEnd);
+        if(!Number.isFinite(dayShiftEndMs)) shift.forEach(scanEnd);
+        if(!Number.isFinite(dayShiftEndMs)) return true;
+        return Date.now() >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
+      }catch(_){ return true; }
+    }
+    try{ window.portalStaffTodayShiftEndedForFeedbackReminders = portalStaffTodayShiftEndedForFeedbackReminders; }catch(_){}
     function portalVenueReportScopeApplies(){
       return false;
     }
@@ -4122,7 +4159,12 @@
       const termFbCount = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
         ? portalOutstandingSessionFeedbackCountAcrossTerm()
         : 0;
-      const sessionFeedbackCount = Math.max(termFbCount, stats.pending.length);
+      const shiftEndedForReminders = typeof portalStaffTodayShiftEndedForFeedbackReminders === 'function'
+        ? portalStaffTodayShiftEndedForFeedbackReminders()
+        : true;
+      const sessionFeedbackCount = shiftEndedForReminders
+        ? Math.max(termFbCount, stats.pending.length)
+        : termFbCount;
       const sessionFeedbackTodayNeed = sessionFeedbackCount > 0;
       const sessionFeedbackNeed = sessionFeedbackCount > 0;
       if(!sessionFeedbackNeed){
