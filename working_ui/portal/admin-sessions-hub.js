@@ -840,6 +840,38 @@
     );
   }
 
+  function statusExportRowsForDate(iso) {
+    var src = global.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) return [];
+    var want = clean(iso).substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(want)) return [];
+    return src.rows.filter(function (r) {
+      return String(r.date || "").trim().substring(0, 10) === want;
+    });
+  }
+
+  function statusExportRowMatchesSlot(stRow, slot) {
+    if (!stRow || !slot) return false;
+    var want = String(slot.session_date || "").trim().substring(0, 10);
+    if (String(stRow.date || "").trim().substring(0, 10) !== want) return false;
+    if (canonicalClientSlug(stRow.client) !== canonicalClientSlug(slot.client_name)) return false;
+    var slotTs = clean(slot.time_slot).toLowerCase();
+    var rowTs = clean(stRow.timeSlot || stRow.time_slot).toLowerCase();
+    if (slotTs && rowTs && slotTs !== rowTs) return false;
+    return true;
+  }
+
+  function statusExportRowIsAbsent(stRow) {
+    return String(stRow && stRow.overviewStatus || "").trim().toLowerCase() === "absent";
+  }
+
+  function statusExportRowIsResolved(stRow) {
+    if (!stRow) return false;
+    var st = String(stRow.overviewStatus || "").trim().toLowerCase();
+    if (st === "absent" || st === "cancelled") return true;
+    return !!stRow.feedbackComplete;
+  }
+
   function overrideIsCancelledType(ov) {
     var t = String(ov && ov.override_type || "").trim();
     if (String(ov && ov.status || "active").trim() !== "active") return false;
@@ -2049,10 +2081,16 @@
     if (useFeedbackUnits) {
       var units = hub
         .getFeedbackUnitsForDate(iso)
+        .map(function (u) {
+          return {
+            key: u.key,
+            slots: u.slots.filter(function (s) {
+              return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s) && hub.slotIncludedInDayStats(s);
+            }),
+          };
+        })
         .filter(function (u) {
-          return u.slots.some(function (s) {
-            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
-          });
+          return u.slots.length > 0;
         });
       var unitTotal = units.length;
       var wd = weekdayLongFromIso(iso);
@@ -3162,6 +3200,31 @@
     this.indexPortalReports();
   };
 
+  AdminSessionsHub.prototype.statusExportRowForSlot = function (slot) {
+    if (!slot) return null;
+    var rows = statusExportRowsForDate(slot.session_date);
+    for (var i = 0; i < rows.length; i++) {
+      if (statusExportRowMatchesSlot(rows[i], slot)) return rows[i];
+    }
+    var ukey = clean(feedbackUnitKey(slot)).toLowerCase();
+    if (ukey) {
+      for (var j = 0; j < rows.length; j++) {
+        var fk = clean(rows[j].feedbackUnitKey || rows[j].feedback_unit_key).toLowerCase();
+        if (fk && fk === ukey) return rows[j];
+      }
+    }
+    return null;
+  };
+
+  AdminSessionsHub.prototype.slotIncludedInDayStats = function (slot) {
+    if (!slot) return false;
+    if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
+    if (clean(this.instructorFilter) || clean(this.serviceFilter) || clean(this.clientSearch)) {
+      return this.slotPassesOverviewFilters(slot);
+    }
+    return true;
+  };
+
   AdminSessionsHub.prototype.indexPortalReports = function () {
     var inc = {};
     var can = {};
@@ -3331,6 +3394,10 @@
   AdminSessionsHub.prototype.feedbackUnitResolved = function (unit) {
     if (this.feedbackUnitAbsent(unit)) return true;
     if (this.feedbackUnitComplete(unit)) return true;
+    for (var si = 0; si < unit.slots.length; si++) {
+      var stEx = this.statusExportRowForSlot(unit.slots[si]);
+      if (stEx && statusExportRowIsResolved(stEx)) return true;
+    }
     if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
       return true;
     }
@@ -3394,6 +3461,8 @@
 
   AdminSessionsHub.prototype.slotIsAbsent = function (slot) {
     if (!slot) return false;
+    var stEx = this.statusExportRowForSlot(slot);
+    if (stEx && statusExportRowIsAbsent(stEx)) return true;
     var ov = this.overrideForSlot(slot);
     if (ov && overrideIsAbsentType(ov)) return true;
     var cid = canonicalClientSlug(slot.client_name);
@@ -3554,14 +3623,14 @@
       }
     }
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+      return hub.slotIncludedInDayStats(s);
     });
     var units = this.getFeedbackUnitsForDate(iso)
       .map(function (u) {
         return {
           key: u.key,
           slots: u.slots.filter(function (s) {
-            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+            return hub.slotIncludedInDayStats(s);
           }),
         };
       })
@@ -3650,6 +3719,18 @@
     if (this.feedbackMetricsDay) {
       rows = rows.filter(function (fb) {
         return hub.feedbackRowDate(fb) === hub.feedbackMetricsDay;
+      });
+    }
+    var inst = clean(this.instructorFilter);
+    if (inst) {
+      rows = rows.filter(function (fb) {
+        return completedByMatchesInstructor(fb.completed_by_name, inst);
+      });
+    }
+    var svcFilter = clean(this.serviceFilter);
+    if (svcFilter) {
+      rows = rows.filter(function (fb) {
+        return clean(hub.feedbackDisplayService(fb)) === svcFilter;
       });
     }
     return rows;
