@@ -1,6 +1,13 @@
 PORTALVIC — Revisión de participantes por día (notas de área)
 =============================================================
 
+GUÍA PDF PARA ADMIN (fuentes de verdad)
+---------------------------------------
+  database/roster_review/FUENTES_DE_VERDAD_PORTAL.pdf
+
+  Regenerar tras cambiar el contenido:
+    python database/roster_review/generate_fuentes_verdad_pdf.py
+
 GRID MADRE (recomendado — como la hoja del club)
 ------------------------------------------------
   Abre directamente en el navegador (doble clic, sin servidor):
