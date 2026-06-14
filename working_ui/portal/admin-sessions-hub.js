@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-youssef-anas";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -3048,6 +3048,16 @@
   AdminSessionsHub.prototype.loadBundle = async function () {
     try {
       await loadScriptOnce(BUNDLE_SRC);
+      this.refreshRosterRowsFromResolvedSource();
+    } catch (e) {
+      this.rosterRows = [];
+      this.bundleError = e.message || String(e);
+    }
+    if (this.root && this.root.isConnected) this.render();
+  };
+
+  AdminSessionsHub.prototype.refreshRosterRowsFromResolvedSource = function () {
+    try {
       if (typeof global.portalResolveStaffDashboardSource === "function") {
         global.portalResolveStaffDashboardSource();
       }
@@ -3065,8 +3075,22 @@
       this.rosterRows = [];
       this.bundleError = e.message || String(e);
     }
-    if (this.root && this.root.isConnected) this.render();
   };
+
+  function bindAdminSessionsHubRosterSourceListener() {
+    if (global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__) return;
+    global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__ = true;
+    global.addEventListener("portal:staff-dashboard-source-updated", function () {
+      if (!global.document) return;
+      var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
+      for (var i = 0; i < roots.length; i++) {
+        var hub = roots[i]._ashHubInstance;
+        if (!hub || typeof hub.refreshRosterRowsFromResolvedSource !== "function") continue;
+        hub.refreshRosterRowsFromResolvedSource();
+        if (hub.root && hub.root.isConnected) hub.render();
+      }
+    });
+  }
 
   AdminSessionsHub.prototype.feedbackCountForDate = function (iso) {
     var hub = this;
@@ -6558,6 +6582,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var hub = new AdminSessionsHub(root, opts || {});
     root._ashHubInstance = hub;
+    bindAdminSessionsHubRosterSourceListener();
     if (opts && opts.mode) hub.mode = opts.mode;
     if (opts && opts.tab) hub.tab = opts.tab;
     hub.bindEvents();
