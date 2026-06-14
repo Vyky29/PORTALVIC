@@ -372,16 +372,35 @@
     });
   }
 
-  /** Bad submit: roster area saved as client_name (e.g. "Big Pool" instead of Haneef). */
+  /** Bad submit: roster area saved as client_name (e.g. "Big Pool" / "Wall" instead of Scott). */
   function isMislabeledRosterAreaClientName(name) {
     var s = canonicalClientSlug(name);
     return (
+      s === "wall" ||
       s === "big_pool" ||
       s === "hub_room" ||
       s === "small_pool" ||
       s === "teaching_pool" ||
-      s === "climbing_wall"
+      s === "climbing_wall" ||
+      s === "room_2" ||
+      s === "room_3" ||
+      s === "pools"
     );
+  }
+
+  function portalSessionKeyAreaSlugTokens() {
+    return {
+      wall: true,
+      big_pool: true,
+      hub_room: true,
+      small_pool: true,
+      teaching_pool: true,
+      climbing_wall: true,
+      room_2: true,
+      room_3: true,
+      pools: true,
+      default: true,
+    };
   }
 
   /** Session date for roster match \u2013 never use created_at (late submit on another day). */
@@ -735,6 +754,7 @@
     var date = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : "";
     var time = "";
     var clientSlug = "";
+    var areaSlugs = portalSessionKeyAreaSlugTokens();
     for (var i = 1; i < parts.length; i++) {
       var p = parts[i];
       if (!p) continue;
@@ -743,14 +763,19 @@
         time = tk;
         continue;
       }
-      if (!clientSlug) clientSlug = slugify(p);
+      var sl = slugify(p);
+      if (!sl || areaSlugs[sl]) continue;
+      if (!clientSlug) clientSlug = sl;
     }
     if (!clientSlug) {
-      for (var j = parts.length - 1; j >= 1; j--) {
-        if (parts[j]) {
-          clientSlug = slugify(parts[j]);
-          break;
-        }
+      for (var j = 1; j < parts.length; j++) {
+        if (!parts[j]) continue;
+        var tk2 = normTimeKey(parts[j]);
+        if (tk2 && /^\d{2}:\d{2}$/.test(tk2)) continue;
+        var sl2 = slugify(parts[j]);
+        if (!sl2 || areaSlugs[sl2]) continue;
+        clientSlug = sl2;
+        break;
       }
     }
     if (clientSlug) clientSlug = canonicalClientSlug(clientSlug);
@@ -759,7 +784,7 @@
 
   function resolveRosterClientName(slug) {
     var s = canonicalClientSlug(slug);
-    if (!s) return "";
+    if (!s || isMislabeledRosterAreaClientName(s)) return "";
     var rows =
       global.STAFF_DASHBOARD_SOURCE && Array.isArray(global.STAFF_DASHBOARD_SOURCE.rows)
         ? global.STAFF_DASHBOARD_SOURCE.rows
@@ -767,6 +792,7 @@
     for (var i = 0; i < rows.length; i++) {
       if (canonicalClientSlug(rows[i].client_name) === s) return clean(rows[i].client_name);
     }
+    if (isMislabeledRosterAreaClientName(s)) return "";
     return s.replace(/_/g, " ").replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });

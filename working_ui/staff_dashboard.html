@@ -1926,7 +1926,7 @@
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const resetV = '20260608-bespoke-trio-shared';
-        const machineResetV = '20260612-yusuf-per-instructor-feedback';
+        const machineResetV = '20260612-wall-area-absent-fix';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}
@@ -13152,7 +13152,9 @@
         can.disabled = true;
         return;
       }
-      const rec = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
       const ended = isSessionEndedForFeedback(item);
       const terminal = !!(rec.absent || rec.cancelled);
       const actionsDisabledByOverride = !!(item && item.actionsDisabled);
@@ -13191,7 +13193,9 @@
       if(!item || !item.sessionKey) return;
       if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.feedbackDone || rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       if(!confirm('Mark feedback as completed for this session?')) return;
@@ -13204,7 +13208,9 @@
       if(!item || !item.sessionKey) return;
       if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.feedbackDone || rec.absent || rec.cancelled) return;
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'feedback');
@@ -13261,7 +13267,9 @@
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.cancelled || rec.absent || rec.feedbackDone) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       if(!confirm('Mark this session as absent? Feedback will no longer be required.')) return;
@@ -13274,7 +13282,9 @@
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.cancelled || rec.absent) return;
       if(rec.feedbackDone){
         alert('Feedback already exists for this session. Absence cannot be recorded.');
@@ -13288,7 +13298,9 @@
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
@@ -13312,7 +13324,9 @@
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       runAfterDemoQuickGate(executeClientQuickIncident);
@@ -13323,7 +13337,9 @@
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
       if(sessionModelStatus(item) === 'Available') return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
@@ -13348,7 +13364,9 @@
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
       if(sessionModelStatus(item) === 'Available') return;
-      const rec = getSessionReviewRecord(item) || {};
+      const rec = (typeof getEffectiveSessionReviewRecord === 'function'
+        ? getEffectiveSessionReviewRecord(item)
+        : getSessionReviewRecord(item)) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
       const itemSnapshot = {

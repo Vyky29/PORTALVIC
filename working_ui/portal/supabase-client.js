@@ -588,6 +588,7 @@ function portalFeedbackNonParticipantSlugToken(token) {
   if (!s) return true;
   if (
     s === "merge" ||
+    s === "wall" ||
     s === "aquatic" ||
     s === "day_centre" ||
     s === "bespoke_shared" ||

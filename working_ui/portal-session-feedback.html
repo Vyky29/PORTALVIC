@@ -1100,6 +1100,63 @@ button{
   portalName = clean(portalName.replace(/\+/g, " "));
   /** Only prefill the participant field when the URL explicitly names a client (not after roster enrichment). */
   const portalParticipantQueryPrefill = portalName;
+
+  function portalFeedbackAreaSlugTokens() {
+    return {
+      wall: true,
+      big_pool: true,
+      hub_room: true,
+      small_pool: true,
+      teaching_pool: true,
+      climbing_wall: true,
+      room_2: true,
+      room_3: true,
+      pools: true,
+      default: true,
+    };
+  }
+
+  function portalFeedbackNameIsRosterAreaToken(name) {
+    const s = slugifyPortal(String(name || "").trim());
+    return !!(s && portalFeedbackAreaSlugTokens()[s]);
+  }
+
+  function portalResolveFeedbackParticipantName(clientName, clientId) {
+    let name = clean(clientName);
+    const cid = slugifyPortal(String(clientId || "").trim());
+    if (name && !portalFeedbackNameIsRosterAreaToken(name)) {
+      if (typeof window.portalResolveParticipantCanonicalName === "function") {
+        const canon = clean(window.portalResolveParticipantCanonicalName(name));
+        if (canon && !portalFeedbackNameIsRosterAreaToken(canon)) return canon;
+      }
+      return name;
+    }
+    if (cid && !portalFeedbackAreaSlugTokens()[cid]) {
+      try {
+        const notes = window.PORTAL_CLIENTS_INFO_ROWS;
+        if (Array.isArray(notes)) {
+          for (let i = 0; i < notes.length; i++) {
+            const nm = clean(notes[i] && notes[i].client_name);
+            if (nm && slugifyPortal(nm) === cid) return nm;
+          }
+        }
+      } catch (_) {}
+      try {
+        const rows =
+          window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+            ? window.STAFF_DASHBOARD_SOURCE.rows
+            : [];
+        for (let j = 0; j < rows.length; j++) {
+          const nm2 = clean(rows[j] && rows[j].client_name);
+          if (nm2 && slugifyPortal(nm2) === cid) return nm2;
+        }
+      } catch (_) {}
+      return cid.replace(/_/g, " ").replace(/\b\w/g, function (c) {
+        return c.toUpperCase();
+      });
+    }
+    return name;
+  }
   let portalDate = (qs.get("date") || "").trim();
   try{
     if(portalDate.indexOf("%") !== -1) portalDate = decodeURIComponent(portalDate);
@@ -1895,7 +1952,13 @@ button{
     const fbDt = document.getElementById("fbSessionDate");
     const fromKey = parseSessionKey(portalSessionKeyFromUrl);
     if(fbPn && !clean(fbPn.value) && portalParticipantQueryPrefill){
-      fbPn.value = portalParticipantQueryPrefill;
+      fbPn.value = portalResolveFeedbackParticipantName(
+        portalParticipantQueryPrefill,
+        portalClientId || fromKey.client_id
+      );
+    }
+    if(fbPn && portalClientId && portalFeedbackNameIsRosterAreaToken(fbPn.value)){
+      fbPn.value = portalResolveFeedbackParticipantName("", portalClientId || fromKey.client_id);
     }
     const pnm = fbPn ? clean(fbPn.value) : "";
     const wantSvc = (fbSv && clean(fbSv.value)) || portalService.trim();
@@ -1928,7 +1991,10 @@ button{
     }
     const session_time = (portalTime || fromKey.session_time || "").trim() || null;
     const client_id = (portalClientId || fromKey.client_id || "").trim() || null;
-    const client_name = (fbPn && clean(fbPn.value)) || clean(portalName) || portalParticipantQueryPrefill;
+    const client_name = portalResolveFeedbackParticipantName(
+      (fbPn && clean(fbPn.value)) || clean(portalName) || portalParticipantQueryPrefill,
+      client_id
+    );
     const service = (fbSv && clean(fbSv.value)) || portalService.trim();
     return { session_date, session_time, client_id, client_name, service };
   }
@@ -1938,6 +2004,9 @@ button{
     if(!ctx.session_date || !/^\d{4}-\d{2}-\d{2}$/.test(ctx.session_date)) missing.push("session date");
     if(!clean(ctx.service)) missing.push("service");
     if(!clean(ctx.client_name)) missing.push("participant name");
+    if(portalFeedbackNameIsRosterAreaToken(ctx.client_name)){
+      missing.push("participant name (select the client, not the room or wall area)");
+    }
     const clientLow = clean(ctx.client_name).toLowerCase();
     if(clientLow === "day centre"){
       missing.push("participant name (select a client, not the service name)");
