@@ -6,6 +6,10 @@ GUÍA PDF PARA ADMIN (fuentes de verdad — English)
   database/roster_review/SOURCES_OF_TRUTH_PORTAL.pdf
   (legacy Spanish: FUENTES_DE_VERDAD_PORTAL.pdf)
 
+  Guía visual en el portal (English, diagramas — recomendada para onboarding):
+    working_ui/admin_roster_guide.html
+    URL en producción: https://<portal-host>/admin_roster_guide.html
+
   Regenerar tras cambiar el contenido:
     python database/roster_review/generate_fuentes_verdad_pdf.py
 

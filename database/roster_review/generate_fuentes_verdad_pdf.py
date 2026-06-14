@@ -106,26 +106,32 @@ def build() -> None:
         fill=True,
     )
 
-    section(pdf, "1. Two layers (how sync works)")
+    section(pdf, "1. Three layers (how sync works)")
     body(
         pdf,
-        "Think of the system in two layers. Both matter; they stack rather than replace each other.",
+        "Staff and Lead dashboards merge three sources. Admin tools usually touch layers 2 or 3; "
+        "layer 1 is the deployed term baseline.",
     )
     bullet(
         pdf,
-        "Layer 1 - Term foundation (repo + deploy): the default term roster and staff-hour templates "
-        "shipped with each Vercel release. Victor updates these from the machine.",
+        "Layer 1 - Term bundle (repo + deploy): staff_dashboard_spreadsheet_bundle.js from MADRE JSON. "
+        "Victor updates via sync script + git push.",
     )
     bullet(
         pdf,
-        "Layer 2 - Live admin edits (Supabase): changes saved from Admin screens. Applied on top of "
-        "Layer 1 immediately for Admin and Staff (Realtime merge). No redeploy required.",
+        "Layer 2 - Live term roster (Supabase): portal_roster_rows from New participant and Edit term slot. "
+        "Immediate for Admin and Staff (no redeploy).",
+    )
+    bullet(
+        pdf,
+        "Layer 3 - One-day overrides (Supabase): schedule_overrides from Schedule & Covers. "
+        "Single calendar day only.",
     )
     pdf.ln(1)
     body(
         pdf,
-        "If Admin and Staff disagree, check Layer 2 first (override not saved / wrong scope). "
-        "If the whole term baseline is wrong, Victor fixes Layer 1 and may fold Layer 2 changes back into it.",
+        "Visual guide for admins: working_ui/admin_roster_guide.html (deployed on Vercel). "
+        "If Admin and Staff disagree, check layer 2/3 first; if the whole term baseline is wrong, Victor fixes layer 1.",
     )
 
     section(pdf, "2. Layer 1 - Term foundation (Victor / machine)")
@@ -212,7 +218,21 @@ def build() -> None:
 
     pdf.ln(2)
     pdf.set_font("Helvetica", "B", 11)
-    body(pdf, "3c. Schedule & Covers (day overrides)")
+    body(pdf, "3d. New participant")
+    pdf.set_font("Helvetica", "", 10)
+    label_line(pdf, "Menu:", "Admin -> Sessions hub -> New participant (open / Available cell).")
+    label_line(
+        pdf,
+        "What:",
+        "Place a new family on an open roster cell (trial or new booking).",
+    )
+    label_line(pdf, "Stored in:", "Supabase portal_roster_rows (+ portal_roster_row_events audit).")
+    bullet(pdf, "Admin: pick date + open slot, save; staff see after portal refresh.")
+    bullet(pdf, "Do not use Schedule & Covers for a brand-new placement on Available.")
+
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 11)
+    body(pdf, "3e. Schedule & Covers (day overrides)")
     pdf.set_font("Helvetica", "", 10)
     label_line(pdf, "Menu:", "Admin -> Sessions - Schedule & Covers - Base schedule row actions.")
     label_line(

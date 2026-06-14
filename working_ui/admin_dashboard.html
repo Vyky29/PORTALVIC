@@ -134,7 +134,7 @@
         <div class="admin-sidebar-width-controls" role="presentation">
           <button type="button" class="admin-sidebar-rail-btn" id="adminSidebarPinToggle" aria-label="Expand sidebar to full width" title="Expand to full width">+</button>
         </div>
-        <span class="admin-sidebar-foot__txt">Demo mode · full mock journeys</span>
+        <span class="admin-sidebar-foot__txt">Demo mode · <a href="admin_roster_guide.html" target="_blank" rel="noopener" style="color:inherit">Roster guide</a></span>
       </div>
     </aside>
     <div class="admin-main">
@@ -13319,7 +13319,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewScheduling(){
       return '<h1 class="page-title">Sessions · Schedule &amp; Covers</h1>'+
-        '<p class="page-intro">See who is scheduled, record overrides, and review the change log for one date.</p>'+
+        '<p class="page-intro">See who is scheduled, record overrides, and review the change log for one date. '+
+        '<a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English, with diagrams)</a> — which tool to use for term vs one-day changes.</p>'+
         schedulingModuleInnerHtml();
     }
     /** Programme payments: finance sheet mirror only — <code>bindBookingModule</code> / <code>refreshBookingModule</code> wire Refresh, export, and <code>#bookingFinanceSheetTable</code>. Date-scoped roster lives on <strong>Bookings</strong>. */
@@ -19046,7 +19047,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div id="logsModuleRoot"></div>';
     }
     function viewTermRosterEdit(){
-      return '<div id="termSlotModuleRoot" class="admin-term-slot-root"></div>';
+      return '<p class="page-intro" style="margin:0 0 12px;max-width:52rem;overflow-wrap:break-word"><a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English)</a> — term scope vs one-day overrides.</p>'+
+        '<div id="termSlotModuleRoot" class="admin-term-slot-root"></div>';
     }
     function portalSpreadsheetRefConfigureOnce(){
       if(window.__portalSpreadsheetRefConfigured || !window.PortalSpreadsheetReference) return;

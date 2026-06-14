@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <title>Admin roster flow — PORTALVIC guide</title>
+  <style>
+    :root{
+      --blue:#2d84b3; --blue-soft:#eaf5fb; --gold:#f4b740; --ink:#173247;
+      --text:#314555; --muted:#728290; --line:rgba(23,50,71,.12); --white:#fff;
+      --ok:#15803d; --warn:#c2410c; --err:#b91c1c; --layer1:#dbeafe; --layer2:#dcfce7; --layer3:#ffedd5;
+      --shadow:0 14px 40px rgba(23,50,71,.08); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);line-height:1.5}
+    body{padding:max(16px,env(safe-area-inset-top)) 16px max(32px,env(safe-area-inset-bottom))}
+    .wrap{max-width:920px;margin:0 auto}
+    .hero{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(20px,4vw,32px);margin-bottom:18px}
+    .hero h1{margin:0 0 6px;font-size:clamp(1.25rem,3vw,1.65rem);color:var(--ink)}
+    .hero p{margin:0;color:var(--muted);max-width:52rem;overflow-wrap:break-word}
+    .pill{display:inline-block;margin-top:12px;padding:5px 10px;border-radius:999px;background:var(--blue-soft);color:var(--ink);font-size:12px;font-weight:700}
+    .nav-top{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+    .nav-top a{font-size:13px;color:var(--blue);text-decoration:none;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--white)}
+    .nav-top a:hover{border-color:rgba(45,132,179,.4)}
+    section{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,3vw,26px);margin-bottom:16px;min-width:0}
+    section h2{margin:0 0 8px;font-size:1.15rem;color:var(--ink)}
+    section > p.lead{margin:0 0 14px;color:var(--muted);font-size:14px;max-width:52rem;overflow-wrap:break-word}
+    .diagram{width:100%;overflow-x:auto;margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;background:#fafcff;padding:12px}
+    svg{display:block;max-width:100%;height:auto;margin:0 auto}
+    .layers{display:grid;gap:10px;margin-top:12px}
+    .layer{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:start;padding:12px;border-radius:12px;border:1px solid var(--line);min-width:0}
+    .layer-num{font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+    .layer h3{margin:0 0 4px;font-size:14px;color:var(--ink)}
+    .layer p{margin:0;font-size:13px;color:var(--muted);overflow-wrap:break-word}
+    .l1{background:var(--layer1)} .l2{background:var(--layer2)} .l3{background:var(--layer3)}
+    .tools{display:grid;gap:12px}
+    @media(min-width:640px){.tools{grid-template-columns:1fr 1fr}}
+    .tool{border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0;background:#fcfdff}
+    .tool h3{margin:0 0 6px;font-size:14px;color:var(--ink)}
+    .tool .menu{font-size:12px;color:var(--blue);font-weight:700;margin-bottom:6px;overflow-wrap:break-word}
+    .tool p{margin:0 0 8px;font-size:13px;overflow-wrap:break-word}
+    .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:4px;margin-bottom:4px}
+    .tag-live{background:#dcfce7;color:#166534}
+    .tag-deploy{background:#dbeafe;color:#1e40af}
+    .tag-read{background:#f1f5f9;color:#475569}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+    th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;overflow-wrap:break-word}
+    th{background:#f8fafc;color:var(--ink);font-size:12px}
+    .decision{margin:12px 0;padding:14px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;font-size:13px;overflow-wrap:break-word}
+    .decision strong{color:#92400e}
+    ol.check{margin:10px 0 0;padding-left:1.25rem;font-size:13px}
+    ol.check li{margin-bottom:6px;overflow-wrap:break-word}
+    .foot{margin-top:8px;font-size:12px;color:var(--muted);text-align:center;overflow-wrap:break-word}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .btn{display:inline-block;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid var(--line)}
+    .btn--pri{background:var(--blue);color:#fff;border-color:#1e6a94}
+    .btn--sec{background:var(--white);color:var(--ink)}
+    @media print{
+      body{background:#fff;padding:0}
+      section,.hero{box-shadow:none;break-inside:avoid}
+      .nav-top,.btn-row{display:none}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>How roster changes flow in Admin</h1>
+    <p>
+      This guide is for anyone using the <strong>Admin dashboard</strong>. It explains where each screen writes data,
+      what staff see on their tablets, and which tool to pick so Admin, Staff, and session feedback stay aligned.
+    </p>
+    <span class="pill">Current term · live Supabase + deployed bundle</span>
+    <nav class="nav-top" aria-label="On this page">
+      <a href="#layers">Three layers</a>
+      <a href="#flow">End-to-end flow</a>
+      <a href="#tools">Which tool when</a>
+      <a href="#decision">Decision tree</a>
+      <a href="#checklist">Before you save</a>
+      <a href="#trouble">If something looks wrong</a>
+    </nav>
+    <div class="btn-row">
+      <a class="btn btn--pri" href="admin_dashboard.html">Open Admin dashboard</a>
+      <a class="btn btn--sec" href="portal/SOURCES_OF_TRUTH_PORTAL.pdf" target="_blank" rel="noopener">PDF brief (print)</a>
+    </div>
+  </header>
+
+  <section id="layers">
+    <h2>1. Three layers (not one spreadsheet)</h2>
+    <p class="lead">
+      Staff and Lead dashboards <strong>merge three sources</strong>. Admin tools usually touch layers 2 or 3.
+      The whole-term baseline (layer 1) is shipped with each deploy.
+    </p>
+    <div class="layers">
+      <article class="layer l1">
+        <div class="layer-num">Layer 1</div>
+        <div>
+          <h3>Term bundle (deployed baseline)</h3>
+          <p>
+            <code>staff_dashboard_spreadsheet_bundle.js</code> — default grid for the term: participant, time, venue, pool/area, instructor.
+            Built from <strong>MADRE</strong> (<code>roster_term_master.json</code>) by the technical owner. Updates after <strong>git push → Vercel</strong> (~5–10 min).
+          </p>
+        </div>
+      </article>
+      <article class="layer l2">
+        <div class="layer-num">Layer 2</div>
+        <div>
+          <h3>Live term roster (Supabase)</h3>
+          <p>
+            Table <code>portal_roster_rows</code> — who is booked in a slot for the rest of term (or selected dates).
+            Written by <strong>New participant</strong> and <strong>Edit term slot</strong>. Visible to staff after refresh / realtime merge — <strong>no redeploy</strong>.
+          </p>
+        </div>
+      </article>
+      <article class="layer l3">
+        <div class="layer-num">Layer 3</div>
+        <div>
+          <h3>One-day overrides (Supabase)</h3>
+          <p>
+            Table <code>schedule_overrides</code> — absent, cancel, cover, make-up, move for <strong>one calendar day only</strong>.
+            Written by <strong>Schedule &amp; Covers</strong>. Also live — no redeploy.
+          </p>
+        </div>
+      </article>
+    </div>
+    <div class="diagram" role="img" aria-label="Diagram: three layers merge into staff view">
+      <svg viewBox="0 0 720 220" width="720" height="220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker>
+        </defs>
+        <rect x="20" y="24" width="200" height="56" rx="10" fill="#dbeafe" stroke="#93c5fd"/>
+        <text x="120" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a5f">Layer 1 · Bundle</text>
+        <text x="120" y="66" text-anchor="middle" font-size="11" fill="#475569">MADRE → deploy</text>
+        <rect x="20" y="96" width="200" height="56" rx="10" fill="#dcfce7" stroke="#86efac"/>
+        <text x="120" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#14532d">Layer 2 · portal_roster_rows</text>
+        <text x="120" y="138" text-anchor="middle" font-size="11" fill="#475569">Edit term slot · New participant</text>
+        <rect x="20" y="168" width="200" height="44" rx="10" fill="#ffedd5" stroke="#fdba74"/>
+        <text x="120" y="188" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">Layer 3 · schedule_overrides</text>
+        <text x="120" y="204" text-anchor="middle" font-size="11" fill="#475569">Schedule &amp; Covers</text>
+        <path d="M230 52 L300 110" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <path d="M230 124 L300 110" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <path d="M230 190 L300 130" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="300" y="78" width="120" height="64" rx="12" fill="#f1f5f9" stroke="#94a3b8"/>
+        <text x="360" y="104" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">Merge</text>
+        <text x="360" y="122" text-anchor="middle" font-size="11" fill="#64748b">portal JS</text>
+        <path d="M430 110 L500 110" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="500" y="70" width="200" height="80" rx="14" fill="#2d84b3" stroke="#1e6a94"/>
+        <text x="600" y="102" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Staff / Lead tablet</text>
+        <text x="600" y="122" text-anchor="middle" font-size="11" fill="#e0f2fe">Day card · feedback · pool icon</text>
+        <text x="600" y="138" text-anchor="middle" font-size="11" fill="#e0f2fe">Same merge in Admin sessions hub</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="flow">
+    <h2>2. End-to-end flow (what happens when you save)</h2>
+    <p class="lead">Pick the right admin screen → data lands in the right store → merged view updates for staff.</p>
+    <div class="diagram" role="img" aria-label="Flow from admin action to staff tablet">
+      <svg viewBox="0 0 720 300" width="720" height="300" xmlns="http://www.w3.org/2000/svg">
+        <rect x="16" y="20" width="130" height="44" rx="8" fill="#fff" stroke="#cbd5e1"/>
+        <text x="81" y="47" text-anchor="middle" font-size="11" font-weight="700">Admin action</text>
+        <path d="M146 42 H176" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="176" y="12" width="148" height="60" rx="8" fill="#eaf5fb" stroke="#7dd3fc"/>
+        <text x="250" y="36" text-anchor="middle" font-size="10" font-weight="700">New participant</text>
+        <text x="250" y="52" text-anchor="middle" font-size="10" font-weight="700">Edit term slot</text>
+        <text x="250" y="66" text-anchor="middle" font-size="9" fill="#64748b">Schedule &amp; Covers</text>
+        <path d="M324 42 H354" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="354" y="12" width="130" height="60" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="419" y="38" text-anchor="middle" font-size="10" font-weight="700">Supabase</text>
+        <text x="419" y="54" text-anchor="middle" font-size="9" fill="#64748b">portal_roster_rows</text>
+        <text x="419" y="66" text-anchor="middle" font-size="9" fill="#64748b">schedule_overrides</text>
+        <path d="M484 42 H514" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="514" y="20" width="190" height="44" rx="8" fill="#2d84b3" stroke="#1e6a94"/>
+        <text x="609" y="47" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Staff dashboard (merged)</text>
+        <text x="360" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">Typical timing</text>
+        <line x1="40" y1="130" x2="680" y2="130" stroke="#e2e8f0"/>
+        <circle cx="120" cy="160" r="8" fill="#22c55e"/><text x="140" y="164" font-size="11">Layers 2 &amp; 3: live — staff see change after refresh (often immediate)</text>
+        <circle cx="120" cy="200" r="8" fill="#3b82f6"/><text x="140" y="204" font-size="11">Layer 1 (MADRE / bundle): after deploy — ask technical owner for bulk term replans</text>
+        <circle cx="120" cy="240" r="8" fill="#f97316"/><text x="140" y="244" font-size="11">Schedule &amp; Covers shows orange/red banner if you pick a one-day action that fights the term roster</text>
+        <rect x="40" y="260" width="640" height="28" rx="6" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="360" y="278" text-anchor="middle" font-size="10" fill="#991b1b">Do not use Schedule &amp; Covers to swap someone for the whole term — use Edit term slot</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="tools">
+    <h2>3. Admin screens — which tool when</h2>
+    <p class="lead">Sidebar: <strong>Services &amp; Participants (CFK)</strong> — these are the roster tools.</p>
+    <div class="tools">
+      <article class="tool">
+        <div class="menu">Admin → Sessions hub → New participant</div>
+        <h3>New participant</h3>
+        <p>Place a <strong>new family</strong> on an <strong>open / Available</strong> cell (trial or new booking).</p>
+        <span class="tag tag-live">Live · portal_roster_rows</span>
+      </article>
+      <article class="tool">
+        <div class="menu">Admin → Edit term slot</div>
+        <h3>Edit term slot</h3>
+        <p>Change who is booked, time, instructor, venue, pool/area; cancel service; mark no participant. Choose scope: <strong>this day</strong>, <strong>every [weekday] until end of term</strong>, or selected dates.</p>
+        <span class="tag tag-live">Live · portal_roster_rows</span>
+      </article>
+      <article class="tool">
+        <div class="menu">Admin → Sessions · Schedule &amp; Covers</div>
+        <h3>Schedule &amp; Covers</h3>
+        <p><strong>One calendar day only:</strong> absent, cancel participant, replacement make-up, instructor cover, move to another slot today.</p>
+        <span class="tag tag-live">Live · schedule_overrides</span>
+      </article>
+      <article class="tool">
+        <div class="menu">Admin → Spreadsheet reference → Staff hours</div>
+        <h3>Staff hours (editable tab)</h3>
+        <p>Who works which venue/time band — <strong>not</strong> participant session rows. Click <strong>Save staff hours</strong>.</p>
+        <span class="tag tag-live">Live · portal_staff_timetable_cells</span>
+      </article>
+      <article class="tool">
+        <div class="menu">Admin → Spreadsheet reference → Group sessions</div>
+        <h3>Group sessions (read-only)</h3>
+        <p>Mirror of the term grid for reference. Edits here <strong>do not save</strong>.</p>
+        <span class="tag tag-read">Read-only</span>
+      </article>
+      <article class="tool">
+        <div class="menu">MADRE grid (technical owner)</div>
+        <h3>Bulk term replan</h3>
+        <p>Whole-term changes like the club spreadsheet — export JSON, sync script, deploy. Admins request this; daily ops use the screens above.</p>
+        <span class="tag tag-deploy">Deploy · Layer 1</span>
+      </article>
+    </div>
+    <table>
+      <thead>
+        <tr><th>I want to…</th><th>Use</th><th>Scope</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Add a new family on an open slot</td><td>New participant</td><td>From placement date</td></tr>
+        <tr><td>Swap Joel → Anas every Monday for 4 weeks</td><td>Edit term slot · Every Monday…</td><td>Rest of term (weekday pattern)</td></tr>
+        <tr><td>Joel absent today only; back next week</td><td>Schedule &amp; Covers · Absent / cancel</td><td>That date only</td></tr>
+        <tr><td>Luliya covers Giuseppe this Sunday only</td><td>Schedule &amp; Covers · Instructor cover</td><td>That date only</td></tr>
+        <tr><td>Change pool icon (Lane SE, Big Pool…)</td><td>Edit term slot · Pool / area</td><td>Match how many weeks it applies</td></tr>
+        <tr><td>Change who is on the rota at Acton 9–12</td><td>Spreadsheet reference · Staff hours</td><td>From 1 Jun onward (live)</td></tr>
+        <tr><td>Replan entire term like the club sheet</td><td>Request MADRE sync from technical owner</td><td>Whole term baseline</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="decision">
+    <h2>4. Decision tree (30 seconds)</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 680 420" width="680" height="420" xmlns="http://www.w3.org/2000/svg">
+        <rect x="240" y="8" width="200" height="40" rx="20" fill="#173247"/>
+        <text x="340" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">What are you changing?</text>
+        <path d="M340 48 V72" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="260" y="72" width="160" height="36" rx="8" fill="#fff" stroke="#cbd5e1"/>
+        <text x="340" y="95" text-anchor="middle" font-size="11">Open slot · new family?</text>
+        <path d="M260 90 H120" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="24" y="72" width="192" height="36" rx="8" fill="#dcfce7" stroke="#86efac"/>
+        <text x="120" y="95" text-anchor="middle" font-size="11" font-weight="700">→ New participant</text>
+        <path d="M420 90 H560" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="464" y="72" width="192" height="36" rx="8" fill="#fff" stroke="#cbd5e1"/>
+        <text x="560" y="95" text-anchor="middle" font-size="11">Existing booking</text>
+        <path d="M560 108 V132" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="480" y="132" width="160" height="36" rx="8" fill="#fff" stroke="#cbd5e1"/>
+        <text x="560" y="155" text-anchor="middle" font-size="11">One day only?</text>
+        <path d="M480 150 H120" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="24" y="132" width="192" height="36" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+        <text x="120" y="155" text-anchor="middle" font-size="11" font-weight="700">→ Schedule &amp; Covers</text>
+        <path d="M640 150 H560" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="464" y="192" width="192" height="36" rx="8" fill="#dcfce7" stroke="#86efac"/>
+        <text x="560" y="215" text-anchor="middle" font-size="11" font-weight="700">→ Edit term slot</text>
+        <text x="560" y="248" text-anchor="middle" font-size="10" fill="#64748b">Pick Apply to: weekday / rest of term</text>
+        <path d="M340 108 V180" stroke="#64748b" stroke-width="2" stroke-dasharray="4 3"/>
+        <rect x="240" y="180" width="200" height="36" rx="8" fill="#fff" stroke="#cbd5e1"/>
+        <text x="340" y="203" text-anchor="middle" font-size="11">Staff pool hours (not participants)?</text>
+        <path d="M340 216 V240" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+        <rect x="220" y="240" width="240" height="36" rx="8" fill="#dbeafe" stroke="#93c5fd"/>
+        <text x="340" y="263" text-anchor="middle" font-size="11" font-weight="700">→ Spreadsheet ref · Staff hours · Save</text>
+        <rect x="80" y="300" width="520" height="48" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="340" y="322" text-anchor="middle" font-size="11" font-weight="700" fill="#991b1b">Never: cancel in Schedule &amp; Covers to “remove someone from term”</text>
+        <text x="340" y="338" text-anchor="middle" font-size="10" fill="#991b1b">Use Edit term slot — orange banner in Schedule &amp; Covers will warn you</text>
+      </svg>
+    </div>
+    <div class="decision">
+      <strong>Golden rule:</strong> one logical change → one tool. Term-wide participant changes go through
+      <strong>Edit term slot</strong> (layer 2). Single-day exceptions go through <strong>Schedule &amp; Covers</strong> (layer 3).
+      The deployed bundle (layer 1) is the default skeleton underneath both.
+    </div>
+  </section>
+
+  <section id="checklist">
+    <h2>5. Before you save — quick checklist</h2>
+    <ol class="check">
+      <li>Is this <strong>one day</strong> or <strong>every week until end of term</strong>? Pick the matching tool and scope.</li>
+      <li>Participant name, date anchor, time band, service, <strong>pool/area</strong>, and instructor all correct?</li>
+      <li>After save: open <strong>Staff dashboard</strong> for that instructor on the <strong>same date</strong> and confirm the day card.</li>
+      <li>If you changed a weekday pattern for the rest of term, tell the technical owner to fold it into MADRE when convenient (keeps layer 1 and 2 from drifting).</li>
+      <li>Session feedback counts follow merge rules (e.g. Aquatic + Multi-Activity same instructor = one form on the tablet, separate counters in “this week”).</li>
+    </ol>
+  </section>
+
+  <section id="trouble">
+    <h2>6. If Admin and Staff disagree</h2>
+    <table>
+      <thead><tr><th>Symptom</th><th>Likely cause</th><th>What to do</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Staff still show old name after term swap</td>
+          <td>Only a one-day override saved, or bundle still has old name</td>
+          <td>Use <strong>Edit term slot</strong> with weekday scope; avoid cancelling old name in Schedule &amp; Covers</td>
+        </tr>
+        <tr>
+          <td>Red banner in Schedule &amp; Covers</td>
+          <td>Live roster (layer 2) ≠ bundle name (layer 1)</td>
+          <td>Click <strong>Edit term slot</strong> from the drawer — do not fight layers</td>
+        </tr>
+        <tr>
+          <td>New trial not on tablet</td>
+          <td>Save failed (auth) or wrong open cell</td>
+          <td>Re-save New participant; staff refresh portal; check Supabase if needed</td>
+        </tr>
+        <tr>
+          <td>Whole term baseline wrong everywhere</td>
+          <td>Layer 1 out of date</td>
+          <td>Request MADRE sync + deploy from technical owner</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="lead" style="margin-top:14px">
+      <strong>Who maintains layer 1:</strong> technical owner (Victor) — MADRE JSON, sync script, git push, Vercel.
+      <strong>Who runs day-to-day:</strong> admins using the screens above — no terminal required for normal ops.
+    </p>
+  </section>
+
+  <p class="foot">
+    PORTALVIC · Admin roster guide ·
+    <a href="admin_dashboard.html">Admin dashboard</a> ·
+    Printable PDF: <a href="portal/SOURCES_OF_TRUTH_PORTAL.pdf">Sources of truth (PDF)</a>
+  </p>
+</div>
+</body>
+</html>
