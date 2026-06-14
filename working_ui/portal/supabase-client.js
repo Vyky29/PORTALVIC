@@ -221,7 +221,7 @@ export function portalExtractDatesFromRosterKeys(rosterSessionKeys) {
  * `portal_session_key` values (co-instructors on the same slot share one key).
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} userId
- * @param {{ rosterSessionKeys?: string[], catchUpSessionDates?: string[] }} [opts]
+ * @param {{ rosterSessionKeys?: string[], catchUpSessionDates?: string[], feedbackMergeRules?: unknown[] }} [opts]
  * @returns {Promise<{ feedbackKeys: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys: string[], quickFeedbackDoneKeys: string[] }>}
  */
 export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, opts = {}) {
@@ -382,6 +382,10 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     const absent = [];
     const seenP = new Set();
     const seenA = new Set();
+    const matchOpts = {
+      feedbackMergeRules:
+        opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
+    };
     if (!Array.isArray(peerRows)) return { present, absent };
     for (const r of peerRows) {
       if (!r || typeof r !== "object") continue;
@@ -393,7 +397,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
         /** @type {{ attendance?: string }} */ (r).attendance
       );
       for (const rk of rosterSessionKeys) {
-        if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk)) continue;
+        if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
         if (isAbs) {
           if (!seenA.has(rk)) {
             seenA.add(rk);
@@ -583,6 +587,7 @@ function portalFeedbackNonParticipantSlugToken(token) {
   const s = String(token || "").trim().toLowerCase();
   if (!s) return true;
   if (
+    s === "merge" ||
     s === "aquatic" ||
     s === "day_centre" ||
     s === "bespoke_shared" ||
@@ -598,6 +603,76 @@ function portalFeedbackNonParticipantSlugToken(token) {
   }
   if (/^(multi|climb|swim|bespoke|day_centre)/.test(s)) return true;
   return false;
+}
+
+function portalSlugifyFeedbackName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function portalSubmittedKeyIsMergeFeedback(submittedKey) {
+  return /^\d{4}-\d{2}-\d{2}\|merge\|/i.test(String(submittedKey || "").trim());
+}
+
+function portalSubmittedKeyIsDateClientOnly(submittedKey) {
+  const parts = String(submittedKey || "")
+    .trim()
+    .split("|");
+  return parts.length >= 3 && parts[1] === "" && !!parts[2];
+}
+
+function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
+  const parts = String(rosterKey || "")
+    .trim()
+    .split("|");
+  const last = String(parts[parts.length - 1] || "")
+    .trim()
+    .toLowerCase();
+  if (last === "day_centre" || last === "bespoke_shared") return true;
+  if (parts.length >= 3 && parts[1] === "") return true;
+  return false;
+}
+
+function portalMergeRuleSlotStartHm(timeSlot) {
+  const raw = String(timeSlot || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) return "";
+  const m = raw.match(/^(\d{1,2})(?:[.:](\d{2}))?\s*(?:to|$|-)/);
+  if (!m) return "";
+  const h = parseInt(m[1], 10);
+  const min = m[2] != null ? parseInt(m[2], 10) : 0;
+  if (!Number.isFinite(h) || h < 0 || h > 23) return "";
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function portalFeedbackMergeKeyMatchesRosterKey(submittedKey, rosterKey, mergeRules) {
+  const m = String(submittedKey || "")
+    .trim()
+    .match(/^(\d{4}-\d{2}-\d{2})\|merge\|(.+)$/i);
+  if (!m) return false;
+  const date = m[1];
+  const mergeKey = String(m[2] || "").trim();
+  const r = String(rosterKey || "").trim();
+  if (r === String(submittedKey || "").trim()) return true;
+  if (!r.startsWith(`${date}|`)) return false;
+  const rules = Array.isArray(mergeRules) ? mergeRules : [];
+  const rule = rules.find((x) => String(x && x.mergeKey ? x.mergeKey : "").trim() === mergeKey);
+  if (!rule) return false;
+  const clientSlug = portalSlugifyFeedbackName(rule.client_name);
+  const rSlugs = portalFeedbackParticipantSlugTokensFromKey(r);
+  if (!rSlugs.some((rs) => portalClientSlugTokensEquivalent(rs, clientSlug))) return false;
+  const rTime = portalSessionKeyTimeToken(r);
+  if (!rTime) return true;
+  const allowed = new Set();
+  for (const slot of rule.slots || []) {
+    const hm = portalMergeRuleSlotStartHm(slot && slot.time_slot);
+    if (hm) allowed.add(hm);
+  }
+  return allowed.has(rTime);
 }
 
 /** Participant client slug tokens only (excludes aquatic, day_centre, pool area, …). */
@@ -666,7 +741,11 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
     }
     return false;
   }
-  return true;
+  if (portalRosterKeyIsSharedFeedbackUnit(rosterKey)) return true;
+  if (portalSubmittedKeyIsDateClientOnly(submittedKey) && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
+    return true;
+  }
+  return false;
 }
 
 function portalSessionKeyTimeToken(key) {
@@ -685,12 +764,18 @@ function portalSessionKeyTimeToken(key) {
 
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
+ * @param {string} submittedKey
+ * @param {string} rosterKey
+ * @param {{ feedbackMergeRules?: Array<{ mergeKey?: string, client_name?: string, slots?: Array<{ time_slot?: string }> }> }} [opts]
  */
-export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterKey) {
+export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterKey, opts = {}) {
   const s = String(submittedKey || "").trim();
   const r = String(rosterKey || "").trim();
   if (!s || !r) return false;
   if (s === r) return true;
+  if (portalSubmittedKeyIsMergeFeedback(s)) {
+    return portalFeedbackMergeKeyMatchesRosterKey(s, r, opts.feedbackMergeRules);
+  }
   const rParts = r.split("|");
   const sParts = s.split("|");
   const rDate = rParts[0];
@@ -710,6 +795,15 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   if (rTime && sTime && sTime !== rTime) return false;
   /* date||client must not absorb a timed submission from another slot the same day. */
   if (sTime && !rTime && rParts[1] === "" && rParts[2] && !rParts[3]) return false;
+  /* Untimed submission must not mark another instructor's timed MA / climbing slot green. */
+  if (
+    portalSubmittedKeyIsDateClientOnly(s) &&
+    rTime &&
+    !portalRosterKeyIsSharedFeedbackUnit(r)
+  ) {
+    return false;
+  }
+  if (rTime && !sTime && !portalRosterKeyIsSharedFeedbackUnit(r)) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   /* Participant slugs only — never fall back to raw pipe segment (e.g. "aquatic" on date|amber|aquatic). */
   return portalSessionKeyClientSlugsMatch(s, r);
@@ -734,7 +828,7 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
     for (const fk of submittedKeys || []) {
-      if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) continue;
+      if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
       if (markAbsent) {
         if (!prev.absent) {
@@ -755,7 +849,7 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
  * Merge server truth into the dashboard's in-memory review map (same object as localStorage mirror).
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
  * @param {{ feedbackKeys: string[], absentFeedbackKeys?: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
- * @param {{ rosterSessionKeys?: string[] }} [opts]
+ * @param {{ rosterSessionKeys?: string[], feedbackMergeRules?: unknown[] }} [opts]
  */
 export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
   const base = () => ({
@@ -861,8 +955,9 @@ function portalReviewMemoryBase() {
  * Roster session keys backed by Supabase for staff tablets (fan-out uses strict slug match).
  * @param {string[]} rosterKeys
  * @param {{ feedbackKeys?: string[], absentFeedbackKeys?: string[], incidentKeys?: string[], cancellationKeys?: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * @param {{ feedbackMergeRules?: unknown[] }} [opts]
  */
-export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs) {
+export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts = {}) {
   const submittedFb = portalSubmittedFeedbackKeysForMemory(packs || {});
   const absentAll = [
     ...new Set([...(packs?.absentFeedbackKeys || []), ...(packs?.absentKeys || [])]),
@@ -880,7 +975,7 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs) {
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
       for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) {
+        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
           target.add(rosterKey);
         }
       }
@@ -899,7 +994,7 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs) {
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
  * @param {string[]} rosterKeys
  * @param {{ feedbackKeys?: string[], absentFeedbackKeys?: string[], incidentKeys?: string[], cancellationKeys?: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
- * @param {{ serverTruthFromIso?: string, catchUpSessionDates?: string[] }} [opts]
+ * @param {{ serverTruthFromIso?: string, catchUpSessionDates?: string[], feedbackMergeRules?: unknown[] }} [opts]
  */
 export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs, opts = {}) {
   const serverTruthFromIso = String(opts.serverTruthFromIso || "2026-06-01").trim();
@@ -922,7 +1017,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
       for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) {
+        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
           resolved.add(rosterKey);
         }
       }
