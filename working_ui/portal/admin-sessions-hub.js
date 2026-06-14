@@ -983,6 +983,15 @@
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area + "|" + inst);
       }
     }
+    if (isClimbingService(slot.service)) {
+      keys.push(feedbackUnitKey(slot));
+      var climbArea = sessionAreaKey(slot.area);
+      var climbInst = primaryInstructorKey(slot);
+      if (climbArea && climbArea !== "default") keys.push(base + "|" + climbArea);
+      keys.push(base + "|" + serviceKey(slot.service));
+      keys.push(base + "|" + serviceKey(slot.service) + "|" + climbArea);
+      keys.push(base + "|" + serviceKey(slot.service) + "|" + climbArea + "|" + climbInst);
+    }
     if (isAquaticService(slot.service)) {
       keys.push(feedbackUnitKey(slot));
       var mergeAquatic = feedbackMergeGroupForSlot(slot);
@@ -1080,6 +1089,17 @@
         }
         if (maArea && maArea !== "default") {
           keys.push(sd + "|" + t + "|" + nm + "|" + maArea);
+        }
+      }
+    }
+    if (isClimbingService(svc)) {
+      var ct = normTimeKey(fb.session_time);
+      if (ct) {
+        keys.push(tk + "|" + serviceKey(svc));
+        var climbAreaFb = portalKeyAreaFromParts(pk ? pk.split("|").map(clean) : []);
+        if (!climbAreaFb || climbAreaFb === "default") climbAreaFb = sessionAreaKey("Wall");
+        if (climbAreaFb && climbAreaFb !== "default") {
+          keys.push(sd + "|" + ct + "|" + nm + "|" + climbAreaFb);
         }
       }
     }
@@ -2580,11 +2600,17 @@
       var sd = feedbackSessionDate(fb);
       if (!sd) continue;
       var sk = clean(fb.portal_session_key);
+      var cn = clean(fb.client_name);
+      if (isMislabeledRosterAreaClientName(cn)) {
+        var parsedAbsent = parsePortalSessionKeyFields(sk);
+        if (!parsedAbsent.clientSlug) continue;
+        cn = resolveRosterClientName(parsedAbsent.clientSlug) || cn;
+      }
       var entry = {
         portal_session_key: sk,
         session_date: sd,
         session_time: clean(fb.session_time),
-        client_name: clean(fb.client_name),
+        client_name: cn,
         service: clean(fb.service),
         staff_user_id: fb.submitted_by_user_id || "",
         staff_name: clean(fb.completed_by_name) || "",
@@ -3287,6 +3313,14 @@
     return false;
   };
 
+  function absentFeedbackPerSlotUnit(slot) {
+    return (
+      clientNeedsPerSlotAquaticFeedback(slot) ||
+      isClimbingService(slot.service) ||
+      isMultiActivityService(slot.service)
+    );
+  }
+
   function absentFeedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (!isAbsentFeedbackRow(fb)) return false;
@@ -3295,16 +3329,27 @@
     var fbSvc = serviceKey(clean(fb.service));
     var slotSvc = serviceKey(clean(slot.service));
     if (fbSvc && slotSvc && fbSvc !== slotSvc) {
-      if (!(isAquaticService(fb.service) && isAquaticService(slot.service))) return false;
+      if (!(isAquaticService(fb.service) && isAquaticService(slot.service))) {
+        if (!(isClimbingService(fb.service) && isClimbingService(slot.service))) return false;
+      }
     }
     var mt = normTimeKey(fb.session_time);
     var parsed = parsePortalSessionKeyFields(fb.portal_session_key);
     if (!mt && parsed.time) mt = parsed.time;
     var st = slot.time_start || normTimeKey(slot.time_slot);
-    if (mt && st && mt === st) return true;
-    if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
-    if (!mt || !st) return true;
-    return false;
+    var perSlot = absentFeedbackPerSlotUnit(slot);
+    if (mt && st && mt !== st) return false;
+    if (perSlot && (!mt || !st)) return false;
+    if (!mt && !st && !perSlot) return true;
+    if (isClimbingService(slot.service) || isMultiActivityService(slot.service)) {
+      var pk = clean(fb.portal_session_key);
+      if (pk) {
+        var pkArea = portalKeyAreaFromParts(pk.split("|").map(clean));
+        var slotArea = sessionAreaKey(slot.area);
+        if (pkArea && slotArea && pkArea !== slotArea) return false;
+      }
+    }
+    return true;
   }
 
   AdminSessionsHub.prototype.findAbsentFeedbackForSlot = function (slot) {
@@ -3353,9 +3398,56 @@
       var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
       if (!mt && parsedMk.time) mt = parsedMk.time;
       var st = slot.time_start || normTimeKey(slot.time_slot);
-      if (!mt || !st || mt === st) return true;
+      var perSlot = absentFeedbackPerSlotUnit(slot);
+      if (perSlot) {
+        if (!mt || !st || mt !== st) continue;
+      } else if (mt && st && mt !== st) {
+        continue;
+      }
+      return true;
     }
     return false;
+  };
+
+  /** Display row for feedback tab when overview already shows absent but no session_feedback row. */
+  AdminSessionsHub.prototype.syntheticAbsentDisplayRow = function (slot) {
+    if (!slot) return null;
+    var hub = this;
+    var afb = hub.findAbsentFeedbackForSlot(slot);
+    if (afb) return afb;
+    var marks = hub.absentMarksForDate(slot.session_date) || [];
+    for (var i = 0; i < marks.length; i++) {
+      var mk = marks[i];
+      if (canonicalClientSlug(mk.client_name) !== canonicalClientSlug(slot.client_name)) continue;
+      if (hub.opts && hub.opts.absentMarkScopeFilter && !hub.opts.absentMarkScopeFilter(mk)) {
+        continue;
+      }
+      var mt = normTimeKey(mk.session_time);
+      var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
+      if (!mt && parsedMk.time) mt = parsedMk.time;
+      var st = slot.time_start || normTimeKey(slot.time_slot);
+      if (absentFeedbackPerSlotUnit(slot)) {
+        if (!mt || !st || mt !== st) continue;
+      } else if (mt && st && mt !== st) {
+        continue;
+      }
+      return {
+        client_name: slot.client_name,
+        service: clean(mk.service) || slot.service || "\u2014",
+        session_date: slot.session_date,
+        session_time: mt || st || "",
+        attendance: "No",
+        completed_by_name: clean(mk.staff_name) || "\u2014",
+        created_at: mk.created_at || null,
+        engagement_rating: null,
+        client_emotions: null,
+        engagement_patterns: null,
+        positive_feedback: null,
+        relevant_information: null,
+        _ashAbsentMark: true,
+      };
+    }
+    return null;
   };
 
   AdminSessionsHub.prototype.feedbackUnitAbsent = function (unit) {
@@ -3478,7 +3570,14 @@
       if (units.length > 0) {
         var unitDoneCount = 0;
         for (var uj = 0; uj < units.length; uj++) {
-          if (unitAbsent[units[uj].key] || unitComplete[units[uj].key]) unitDoneCount++;
+          var uDone = units[uj];
+          var resolved =
+            unitAbsent[uDone.key] ||
+            unitComplete[uDone.key] ||
+            uDone.slots.some(function (s) {
+              return hub.slotIsAbsent(s);
+            });
+          if (resolved) unitDoneCount++;
         }
         return { total: units.length, done: unitDoneCount };
       }
@@ -4416,8 +4515,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slots = scopedSlots(unit);
       if (!slots.length) continue;
       var rep = slots[0];
-      if (hub.feedbackUnitAbsent(unit)) {
-        var afb = hub.findAbsentFeedbackForSlot(rep);
+      if (hub.feedbackUnitAbsent(unit) || hub.slotIsAbsent(rep)) {
+        var afb =
+          hub.findAbsentFeedbackForSlot(rep) || hub.syntheticAbsentDisplayRow(rep);
         if (!afb) {
           for (var ai = 0; ai < submitted.length; ai++) {
             if (
@@ -4497,7 +4597,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelled = hub.slotHasCancellation(slot);
       if (isAbsent || isCancelled) {
-        var afb = hub.findAbsentFeedbackForSlot(slot);
+        var afb =
+          hub.findAbsentFeedbackForSlot(slot) || hub.syntheticAbsentDisplayRow(slot);
         if (!afb) {
           for (var si = 0; si < submitted.length; si++) {
             if (
@@ -4605,6 +4706,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      if (hub.slotIsAbsent(awaitSlot)) {
+        var absentRow =
+          hub.findAbsentFeedbackForSlot(awaitSlot) ||
+          hub.syntheticAbsentDisplayRow(awaitSlot);
+        if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
+      }
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"

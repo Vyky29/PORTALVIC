@@ -20,7 +20,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260607-feedback-bespoke-match";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260614-absent-feedback-align";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
   if (portalIsProgrammeLeadUser(profile, authEmail)) return "staff_dashboard.html";
