@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Generate PORTALVIC sources-of-truth PDF for admin briefing."""
+"""Generate PORTALVIC sources-of-truth PDF (English) for admin briefing."""
 
 from __future__ import annotations
 
@@ -9,8 +9,20 @@ from pathlib import Path
 
 from fpdf import FPDF
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = Path(__file__).resolve().parent / "FUENTES_DE_VERDAD_PORTAL.pdf"
+OUT = Path(__file__).resolve().parent / "SOURCES_OF_TRUTH_PORTAL.pdf"
+
+
+class GuidePDF(FPDF):
+    def footer(self) -> None:
+        self.set_y(-12)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(100, 100, 100)
+        self.cell(
+            0,
+            8,
+            f"PORTALVIC - Sources of truth - {date.today().isoformat()} - p.{self.page_no()}",
+            align="C",
+        )
 
 
 def ascii_safe(text: str) -> str:
@@ -28,14 +40,6 @@ def ascii_safe(text: str) -> str:
     for src, dst in replacements.items():
         text = text.replace(src, dst)
     return text.encode("latin-1", "replace").decode("latin-1")
-
-
-class GuidePDF(FPDF):
-    def footer(self) -> None:
-        self.set_y(-12)
-        self.set_font("Helvetica", "I", 8)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 8, f"PORTALVIC - Fuentes de verdad - {date.today().isoformat()} - p.{self.page_no()}", align="C")
 
 
 def section(pdf: GuidePDF, title: str) -> None:
@@ -64,6 +68,10 @@ def label_line(pdf: GuidePDF, label: str, text: str) -> None:
     pdf.multi_cell(pdf.epw, 5.5, text)
 
 
+def body(pdf: GuidePDF, text: str) -> None:
+    pdf.multi_cell(pdf.epw, 5.5, ascii_safe(text))
+
+
 def build() -> None:
     pdf = GuidePDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=18)
@@ -75,16 +83,15 @@ def build() -> None:
     pdf.set_text_color(15, 23, 42)
     pdf.multi_cell(w, 10, ascii_safe("PORTALVIC"))
     pdf.set_font("Helvetica", "B", 14)
-    pdf.multi_cell(w, 8, ascii_safe("Fuentes de verdad de la app"))
+    pdf.multi_cell(w, 8, ascii_safe("Sources of truth - Admin guide"))
     pdf.ln(2)
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(51, 65, 85)
-    pdf.multi_cell(
-        w,
-        6,
-        "Documento para el equipo Admin. Explica qué datos mandan en el portal, "
-        "quién puede cambiarlos desde la app y qué debe hacer Victor en la máquina "
-        "(terminal + despliegue) para que staff y admin vean lo mismo.",
+    body(
+        pdf,
+        "Who changes what in the portal, where it is stored, and how admin screens stay in sync "
+        "with staff dashboards. Admin can make many term changes directly in the app (no terminal). "
+        "Victor maintains the long-term foundation in the repo and deploy pipeline.",
     )
     pdf.ln(2)
     pdf.set_fill_color(239, 246, 255)
@@ -92,179 +99,254 @@ def build() -> None:
     pdf.multi_cell(
         w,
         6,
-        "Regla de oro: un solo origen por tipo de dato. Si se edita en dos sitios distintos, "
-        "admin y staff pueden desincronizarse.",
+        ascii_safe(
+            "Golden rule: one logical source per data type. Base roster lives in the repo; "
+            "live admin edits layer on top via Supabase and must appear the same in Admin and Staff."
+        ),
         fill=True,
     )
 
-    section(pdf, "1. Resumen - cuántas fuentes hay")
-    pdf.multi_cell(
-        pdf.epw,
-        5.5,
-        "Para turnos y horarios del término hay TRES capas. Solo las dos primeras son "
-        "'plantilla' editable fuera de la app. La tercera son excepciones puntuales "
-        "desde Admin en producción:",
+    section(pdf, "1. Two layers (how sync works)")
+    body(
+        pdf,
+        "Think of the system in two layers. Both matter; they stack rather than replace each other.",
     )
-    bullet(pdf, "Fuente A - Roster MADRE (JSON): sesiones de participantes - quién, cuándo, servicio, área/pool, instructor.")
-    bullet(pdf, "Fuente B - Horas de staff en rota (spreadsheet): cuándo trabaja cada miembro del equipo en días de rota.")
-    bullet(pdf, "Fuente C - Overrides en Supabase: cambios puntuales del día (cubrir, mover, cancelar) hechos desde Admin.")
+    bullet(
+        pdf,
+        "Layer 1 - Term foundation (repo + deploy): the default term roster and staff-hour templates "
+        "shipped with each Vercel release. Victor updates these from the machine.",
+    )
+    bullet(
+        pdf,
+        "Layer 2 - Live admin edits (Supabase): changes saved from Admin screens. Applied on top of "
+        "Layer 1 immediately for Admin and Staff (Realtime merge). No redeploy required.",
+    )
+    pdf.ln(1)
+    body(
+        pdf,
+        "If Admin and Staff disagree, check Layer 2 first (override not saved / wrong scope). "
+        "If the whole term baseline is wrong, Victor fixes Layer 1 and may fold Layer 2 changes back into it.",
+    )
+
+    section(pdf, "2. Layer 1 - Term foundation (Victor / machine)")
+    label_line(
+        pdf,
+        "A. Participant roster (MADRE JSON):",
+        "Default sessions: participant, date, time, service, venue, pool/area, instructor. "
+        "File: working_ui/portal/roster_term_master.json. Visual editor: roster_term_master_review.html.",
+    )
+    label_line(
+        pdf,
+        "B. Staff pool hours template:",
+        "Default who works which venue/time bands (not participant slots). "
+        "Seeded in spreadsheet reference data; staff-shifts.csv in repo for bulk edits.",
+    )
+    label_line(pdf, "Who edits:", "Victor (terminal + git push). Admin does not edit JSON files.")
+    label_line(
+        pdf,
+        "Where it affects:",
+        "Staff dashboard, Lead dashboard, Admin Base schedule, session feedback, week counters - "
+        "after deploy (typically 5-10 min via Vercel).",
+    )
+    pdf.ln(1)
+    pdf.set_font("Helvetica", "B", 10)
+    body(pdf, "Victor terminal steps when the baseline term changes:")
+    pdf.set_font("Helvetica", "", 10)
+    bullet(pdf, "Edit roster_term_master.json (or export from the review grid).")
+    bullet(pdf, "Run: python database/roster_review/sync_roster_madre_to_portal.py")
+    bullet(pdf, "git commit + git push origin main (Vercel redeploys working_ui/).")
+    bullet(pdf, "Spot-check Admin Base schedule + one affected staff login on the same date.")
+
+    section(pdf, "3. Layer 2 - Admin screens that save live (synced)")
+    body(
+        pdf,
+        "These screens write to Supabase. Changes should appear in Admin and Staff without Victor "
+        "running terminal commands.",
+    )
+
+    pdf.set_font("Helvetica", "B", 11)
+    body(pdf, "3a. Spreadsheet reference - Staff hours tab")
+    pdf.set_font("Helvetica", "", 10)
+    label_line(pdf, "Menu:", "Admin -> Spreadsheet reference -> Staff hours.")
+    label_line(
+        pdf,
+        "What:",
+        "Edit staff assignment cells (name + time band per venue/date). Click Save staff hours.",
+    )
+    label_line(pdf, "Stored in:", "Supabase table portal_staff_timetable_cells.")
+    label_line(
+        pdf,
+        "Scope:",
+        "Staff pool hours from 2026-06-01 onward. Does NOT replace participant session rows (Fuente A).",
+    )
+    bullet(pdf, "Admin: edit cells, Save, confirm staff dashboard shows new hours.")
+    bullet(pdf, "Victor: only if save fails (RLS/auth) or template seed needs a term-wide reset in repo.")
+
     pdf.ln(2)
-    pdf.multi_cell(
-        pdf.epw,
-        5.5,
-        "Otros datos importantes (no son el roster del término, pero sí fuentes propias):",
-    )
-    bullet(pdf, "Fichas largas de participante (médico, motivadores) - CSV clients_info.")
-    bullet(pdf, "Pagos / facturación - hoja Clients Payments (grid finance en Admin).")
-    bullet(pdf, "Fotos de logros - Storage Supabase + pantalla Participant achievements en Admin.")
-
-    section(pdf, "2. Fuente A - Roster MADRE (participantes)")
-    label_line(pdf, "Qué es:", "La verdad de las sesiones de clientes: día, hora, servicio, venue, área (Big Pool, Hub Room...), instructor asignado.")
-    label_line(pdf, "Archivo maestro:", "working_ui/portal/roster_term_master.json")
-    label_line(pdf, "Editor visual:", "working_ui/roster_term_master_review.html (grid por día, 30 min, exportar JSON).")
-    label_line(pdf, "Quién edita contenido:", "Victor (o quien mantenga el JSON). Admin NO edita este archivo en la máquina.")
-    label_line(pdf, "Dónde afecta:", "Staff dashboard (mi día / this week), Lead dashboard, Admin Schedule & Covers (Base schedule), feedback de sesión, contadores semanales.")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Admin cuando hay cambios de participante:")
+    pdf.set_font("Helvetica", "B", 11)
+    body(pdf, "3b. Edit term slot")
     pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Pedir el cambio por el canal acordado (WhatsApp, email, reunión) con: participante, día/fecha, hora, servicio, área, instructor.")
-    bullet(pdf, "NO intentar corregir el roster editando filas sueltas en Supabase salvo urgencia puntual acordada con Victor.")
-    bullet(pdf, "Para un domingo concreto (ej. cubrir a Giuseppe por Luliya): usar Fuente C (override en Admin) si es solo ese día; si es regla del término entero, pedir cambio en Fuente A.")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Victor en la máquina (terminal):")
-    pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Recibir el JSON exportado o editar roster_term_master.json / grid review.")
-    bullet(pdf, "Desde la raíz del repo: python database/roster_review/sync_roster_madre_to_portal.py")
-    bullet(pdf, "Eso regenera bundle, merges de feedback (ej. Yusuf 9–10:15 un feedback) y filas del dashboard.")
-    bullet(pdf, "git commit + git push -> Vercel redeploya (5–10 min). Comprobar staff + admin el mismo día.")
-
-    section(pdf, "3. Reglas especiales de feedback (automáticas)")
-    pdf.multi_cell(
-        pdf.epw,
-        5.5,
-        "Cuando un participante tiene Aquatic + Multi-Activity seguidos con el MISMO instructor "
-        "(ej. Yusuf domingo con Roberto, Cyrus miércoles con Javier):",
-    )
-    bullet(pdf, "En la card del día del staff: UN bloque (ej. 9:00–10:15) y UN solo feedback.")
-    bullet(pdf, "En 'This week': siguen contándose Aquatic y Multi-Activity por separado (estadística real).")
-    bullet(pdf, "Estas reglas se generan al sincronizar Fuente A; Admin no las edita a mano.")
-
-    section(pdf, "4. Fuente B - Horas de staff (días de rota)")
-    label_line(pdf, "Qué es:", "Plantilla de cuándo trabaja cada miembro del equipo (turnos de staff, no sesiones de clientes).")
-    label_line(pdf, "Archivos:", "database/roster_review/staff-shifts.csv - editor Admin: Spreadsheet reference / horas en admin.")
-    label_line(pdf, "Quién edita:", "Admin puede proponer cambios; Victor aplica en repo y despliega.")
-    label_line(pdf, "Dónde afecta:", "Vista de horas de staff, planificación de cobertura; NO sustituye las sesiones de clientes (Fuente A).")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Admin:")
-    pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Indicar qué staff, qué días y franjas horarias cambian en la rota.")
-    bullet(pdf, "Usar Admin -> referencia spreadsheet / edición de horas si está habilitada (cambios van a Supabase o export).")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Victor:")
-    pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Actualizar staff-shifts.csv o bundle según el proceso acordado.")
-    bullet(pdf, "Commit + push -> Vercel.")
-
-    section(pdf, "5. Fuente C - Overrides (Admin en la app, Supabase)")
-    label_line(pdf, "Qué es:", "Excepciones puntuales: cubrir a alguien, mover sesión, cancelación, cambio de área solo ese día.")
-    label_line(pdf, "Dónde se editan:", "Admin -> Sessions - Schedule & Covers - Base schedule (clic en fila) - Edit term slot - Overrides.")
-    label_line(pdf, "Tablas Supabase:", "schedule_overrides - portal_roster_rows - portal_roster_row_events")
-    label_line(pdf, "Quién edita:", "Admin / CEO con login en admin_dashboard.html (RLS).")
-    label_line(pdf, "Dónde afecta:", "Admin Y staff en tiempo real (Realtime Supabase) - deben verse igual.")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Admin:")
-    pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Crear o revisar override el mismo día del cambio.")
-    bullet(pdf, "Comprobar en staff dashboard del instructor afectado que ve el cambio.")
-    bullet(pdf, "Si staff no ve el override: avisar a Victor (no duplicar el cambio en JSON).")
-    pdf.ln(1)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(pdf.epw, 5.5, "Qué hace Victor:")
-    pdf.set_font("Helvetica", "", 10)
-    bullet(pdf, "Solo si hay bug de sync: revisar merge en portal-roster-rows-merge.js o migración SQL.")
-    bullet(pdf, "Si el cambio es permanente para todo el término: mover a Fuente A, no dejar override eterno.")
-
-    section(pdf, "6. Otras fuentes (referencia rápida)")
+    label_line(pdf, "Menu:", "Admin -> Edit term slot (or link from Schedule & Covers).")
     label_line(
         pdf,
-        "Fichas participante:",
-        "database/clients_info_machine.csv -> working_ui/portal/clients_info_embed.js. "
-        "Cambios de texto médico/ficha: pedir a Victor; python database/export si aplica.",
+        "What:",
+        "Change a participant slot: time, instructor, venue, pool/area; cancel service; mark no participant.",
+    )
+    label_line(pdf, "Stored in:", "Supabase table portal_roster_rows (+ portal_roster_row_events audit).")
+    label_line(
+        pdf,
+        "Apply to (scope):",
+        "This day only | Every [weekday] until end of term | Rest of term from anchor | Selected sessions.",
+    )
+    bullet(
+        pdf,
+        "Every Sunday until end of term = term-wide change for that weekday pattern (live overlay, not JSON).",
+    )
+    bullet(pdf, "Reload from roster = refill form from the deployed bundle (Layer 1 baseline).")
+    bullet(pdf, "Admin: pick participant + service, set scope, Save term slot, verify on staff device.")
+    bullet(
+        pdf,
+        "Victor: periodically merge permanent term-wide edits back into roster_term_master.json so "
+        "Layer 1 and Layer 2 do not drift forever.",
+    )
+
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 11)
+    body(pdf, "3c. Schedule & Covers (day overrides)")
+    pdf.set_font("Helvetica", "", 10)
+    label_line(pdf, "Menu:", "Admin -> Sessions - Schedule & Covers - Base schedule row actions.")
+    label_line(
+        pdf,
+        "What:",
+        "One-off covers, moves, cancellations for a specific calendar day.",
+    )
+    label_line(pdf, "Stored in:", "Supabase schedule_overrides (+ related roster row events).")
+    bullet(pdf, "Admin: use for a single date exception (e.g. Luliya covers Giuseppe on one Sunday).")
+    bullet(pdf, "Victor: only if override visible in Admin but missing on Staff (sync bug).")
+
+    section(pdf, "4. Spreadsheet reference - Group sessions tab (read-only)")
+    body(
+        pdf,
+        "The Group sessions grid mirrors the roster week for reference. It is intentionally read-only here.",
+    )
+    bullet(pdf, "Do NOT expect edits in this tab to save.")
+    bullet(pdf, "To change participant slots: use Edit term slot or Schedule & Covers.")
+    bullet(pdf, "To change staff hours: use the Staff hours tab.")
+
+    section(pdf, "5. Feedback merge rules (automatic)")
+    body(
+        pdf,
+        "When Aquatic + Multi-Activity run back-to-back with the SAME instructor (e.g. Yusuf/Roberto Sunday, "
+        "Cyrus/Javier Wednesday):",
+    )
+    bullet(pdf, "Staff day card: one block (e.g. 9:00-10:15) and ONE feedback form.")
+    bullet(pdf, "This week counters: Aquatic and Multi-Activity still counted separately.")
+    bullet(pdf, "Generated when Victor syncs Layer 1; Admin does not edit merge rules by hand.")
+
+    section(pdf, "6. Other data sources (quick reference)")
+    label_line(
+        pdf,
+        "Participant long profiles:",
+        "database/clients_info_machine.csv -> clients_info_embed.js (Victor deploys).",
     )
     label_line(
         pdf,
-        "Pagos:",
-        "Clients Payments (PORTAL).xlsx -> clients_payments_portal_data.js. "
-        "Admin usa grid Finance en Admin; cambios de hoja vía Victor.",
+        "Payments / finance grid:",
+        "Clients Payments spreadsheet -> clients_payments_portal_data.js (Admin views; Victor exports).",
     )
     label_line(
         pdf,
-        "Fotos logros:",
-        "Admin -> Participant achievements. Inbox: asignar a participante, girar, borrar, selección múltiple. "
-        "Sin acceso a terminal.",
+        "Achievement photos:",
+        "Admin -> Participant achievements (inbox assign, rotate, delete, bulk select). Supabase Storage.",
     )
 
-    section(pdf, "7. Qué NO usar como fuente de verdad")
-    bullet(pdf, "Varias copias del roster mezcladas (bundle viejo + JSON nuevo + plantillas sin fecha duplicadas).")
-    bullet(pdf, "CSV participants-by-day solo para corregir áreas/notas puntuales - no sustituye al JSON MADRE para horarios completos.")
-    bullet(pdf, "Feedback ya enviado - es histórico, no edita el roster.")
-    bullet(pdf, "Datos demo / Teflon - excluidos de producción.")
+    section(pdf, "7. What NOT to use as source of truth")
+    bullet(pdf, "Editing Group sessions in Spreadsheet reference (read-only tab).")
+    bullet(pdf, "Duplicate roster copies (old bundle + new JSON + undated templates at once).")
+    bullet(pdf, "Submitted session feedback (historical record, not roster).")
+    bullet(pdf, "Random Supabase row edits outside Edit term slot / Schedule & Covers / Staff hours save.")
 
-    section(pdf, "8. Tabla - quién hace qué")
+    section(pdf, "8. Who does what - summary table")
     pdf.set_font("Helvetica", "B", 9)
-    col_w = [48, 52, 52, 38]
-    headers = ["Tipo de cambio", "Admin (app)", "Victor (máquina)", "Tiempo live"]
+    col_w = [44, 50, 50, 46]
+    headers = ["Change type", "Admin (app)", "Victor (machine)", "Live when"]
     for i, h in enumerate(headers):
-        pdf.cell(col_w[i], 7, h, border=1)
+        pdf.cell(col_w[i], 7, ascii_safe(h), border=1)
     pdf.ln()
-    pdf.set_font("Helvetica", "", 9)
+    pdf.set_font("Helvetica", "", 8.5)
     rows = [
-        ("Sesión participante (término)", "Pedir cambio documentado", "JSON MADRE + sync_roster_madre_to_portal.py + push", "Tras deploy Vercel"),
-        ("Solo área/pool en nota", "Pedir o CSV review", "apply_participants CSV o sync MADRE + push", "Tras deploy"),
-        ("Horas staff rota", "Pedir / spreadsheet admin", "staff-shifts + push", "Tras deploy"),
-        ("Cover / cambio un día", "Override en Schedule & Covers", "Solo si falla sync", "Inmediato (Supabase)"),
-        ("Ficha médica participante", "Pedir actualización", "clients_info CSV + export JS + push", "Tras deploy"),
-        ("Fotos inbox", "Asignar / borrar / girar en Admin", "Migración Supabase si permisos", "Inmediato"),
+        (
+            "Staff pool hours",
+            "Spreadsheet ref. Staff hours + Save",
+            "Re-seed template if term reset",
+            "Immediate (Supabase)",
+        ),
+        (
+            "Participant slot (one day)",
+            "Edit term slot OR Schedule & Covers",
+            "Only if sync broken",
+            "Immediate (Supabase)",
+        ),
+        (
+            "Participant slot (whole weekday in term)",
+            "Edit term slot - Every [weekday]...",
+            "Fold into JSON MADRE later",
+            "Immediate (Supabase)",
+        ),
+        (
+            "Whole term baseline",
+            "Request documented change",
+            "JSON MADRE + sync script + push",
+            "After Vercel deploy",
+        ),
+        (
+            "Pool/area note only",
+            "Edit term slot or request",
+            "CSV or MADRE sync + push",
+            "Supabase or deploy",
+        ),
+        (
+            "Achievement inbox photos",
+            "Participant achievements",
+            "Supabase migration if permissions",
+            "Immediate",
+        ),
     ]
     for row in rows:
         for i, cell in enumerate(row):
-            pdf.cell(col_w[i], 12, cell, border=1)
+            pdf.cell(col_w[i], 14, ascii_safe(cell), border=1)
         pdf.ln()
 
-    section(pdf, "9. Checklist cuando Admin pide un cambio de roster")
-    bullet(pdf, "¿Es para todo el término o solo un día? -> A (JSON) vs C (override).")
-    bullet(pdf, "¿Cambia participante, hora, servicio, área o instructor? -> Anotar los cinco.")
-    bullet(pdf, "¿Afecta reglas de feedback fusionado (Aquatic+Multi mismo instructor)? -> Decirlo explícitamente.")
-    bullet(pdf, "Tras deploy: Admin comprueba Base schedule + un staff afectado el mismo día.")
+    section(pdf, "9. Admin checklist before saving a term change")
+    bullet(pdf, "One day only or whole weekday pattern? -> pick the right Apply to scope.")
+    bullet(pdf, "Participant, date anchor, time, service, pool/area, instructor all correct?")
+    bullet(pdf, "After Save: open Staff dashboard for that instructor on the same date.")
+    bullet(pdf, "If term-wide and permanent: tell Victor to fold into roster_term_master.json.")
 
-    section(pdf, "10. Comandos Victor (copiar/pegar)")
+    section(pdf, "10. Victor commands (reference)")
     pdf.set_font("Courier", "", 9)
     pdf.set_fill_color(248, 250, 252)
     cmds = [
-        "# Sincronizar roster participantes (Fuente A)",
+        "# Sync participant roster foundation (Layer 1)",
         "python database/roster_review/sync_roster_madre_to_portal.py",
         "",
-        "# Solo notas de área desde CSV (alternativa)",
+        "# Area notes from CSV (alternative)",
         "python database/roster_review/apply_participants_by_day_csv.py",
         "",
-        "# Desplegar",
+        "# Regenerate this PDF",
+        "python database/roster_review/generate_fuentes_verdad_pdf.py",
+        "",
+        "# Deploy foundation changes",
         "git add -A && git commit -m 'Roster: ...' && git push origin main",
-        "# Vercel redeploy automático desde GitHub",
     ]
     for line in cmds:
-        pdf.multi_cell(pdf.epw, 5, line, fill=True)
+        pdf.multi_cell(pdf.epw, 5, ascii_safe(line), fill=True)
     pdf.ln(2)
     pdf.set_font("Helvetica", "I", 9)
     pdf.set_text_color(100, 116, 139)
-    pdf.multi_cell(
-        pdf.epw,
-        5,
-        "Contacto técnico: Victor - Repo GitHub PORTALVIC - Supabase proyecto Portal (cklpnwhlqsulpmkipmqb) - "
+    body(
+        pdf,
+        "Technical: Victor - GitHub PORTALVIC - Supabase Portal (cklpnwhlqsulpmkipmqb) - "
         "Deploy: Vercel working_ui/",
     )
 
