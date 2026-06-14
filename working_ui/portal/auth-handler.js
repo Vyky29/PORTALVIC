@@ -1533,19 +1533,9 @@ export async function uploadStaffAvatar(file, opts = {}) {
   if (sessionErr) throw sessionErr;
   if (!session?.user?.id) throw new Error("No active session.");
 
-  const { data: profile } = await supabase
-    .from("staff_profiles")
-    .select("username, full_name")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  const staffKey = normalizeAvatarKey(
-    profile?.username || profile?.full_name || session.user.email,
-    session.user.id
-  );
   const bucket = String(opts.bucket || "staff-avatars").trim() || "staff-avatars";
   const ext = String(file.name || "avatar.jpg").split(".").pop() || "jpg";
-  const path = `${staffKey}/avatar.${ext}`;
+  const path = `${session.user.id}/avatar.${ext}`;
 
   const { error: uploadErr } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,

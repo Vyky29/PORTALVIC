@@ -41,6 +41,11 @@
     return u.replace(/\.(png|jpe?g|webp)$/i, "." + ext);
   }
 
+  function isRemoteStaffPhotoUrl(url) {
+    var u = String(url || "").trim();
+    return /^https?:\/\//i.test(u) || u.indexOf("data:") === 0;
+  }
+
   /** Admin roster photo paths (spreadsheet boot / staffProfiles) — not user-uploaded auth metadata. */
   function resolveStaffPhotoCandidates() {
     var urls = [];
@@ -66,7 +71,7 @@
     } catch (_) {}
     try {
       var dd = global.dashboardData;
-      if (dd && dd.avatarFile) {
+      if (dd && dd.avatarFile && !isRemoteStaffPhotoUrl(dd.avatarFile)) {
         push(dd.avatarFile);
         push(swapStaffPhotoExtension(dd.avatarFile, "png"));
         push(swapStaffPhotoExtension(dd.avatarFile, "jpg"));
@@ -444,9 +449,6 @@
     if (!url) return;
     global.__PORTAL_STAFF_SELF_AVATAR_URL__ = url;
     try {
-      if (global.dashboardData) global.dashboardData.avatarFile = url;
-    } catch (_) {}
-    try {
       if (typeof global.portalSyncTopbarStaffPhoto === "function") {
         global.portalSyncTopbarStaffPhoto();
       }
@@ -480,7 +482,7 @@
         return;
       }
       setStaffPhotoEditBusy(true);
-      import("/portal/auth-handler.js")
+      import("/portal/auth-handler.js?v=20260614-avatar-uid")
         .then(function (mod) {
           if (!mod || typeof mod.uploadStaffAvatar !== "function") {
             throw new Error("Photo upload is not available.");
