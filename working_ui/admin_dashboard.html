@@ -10326,6 +10326,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(ovType === 'client_move_same_day' && sched.activeSlot){
           schedPopulateMoveTargetSelect(sched.activeSlot);
         }
+        try{
+          schedUpdateTermMismatchBanner(sched.activeSlot, ovType === 'client_cancelled' ? 'slot_clear_client' : ovType);
+        }catch(_tw){}
       }
       function renderCoverSuggest(query){
         if(!covSug) return;
@@ -10745,6 +10748,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (canMoveClient ? '<option value="client_move_same_day">Move to another slot today</option>' : '')+
         '<option value="slot_open">Open closed slot</option>'+
         '</select>'+
+        '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
         '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+
         '<select id="schedFormMoveTarget" class="sel" style="max-width:100%">'+
@@ -10798,6 +10802,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       $('schedSlotDrawer').classList.add('open');
       $('schedSlotDrawer').setAttribute('aria-hidden','false');
       try{ bindSchedDrawerFormControls(); }catch(e){}
+      try{ schedUpdateTermMismatchBanner(slot, ''); }catch(_tw0){}
       try{ schedPopulateMoveTargetSelect(slot); }catch(_mv){}
       var snI = $('schedParentNotifyInstructor');
       if(snI) snI.onclick = function(){
@@ -11041,6 +11046,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
       try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
       adminInvalidateSessionsHubLiveCaches();
+      await schedRefreshRosterSourcesAfterOverride(client);
       await refreshSchedulingModule();
       }finally{
         if(saveBtn){
@@ -11048,6 +11054,156 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           saveBtn.textContent = 'Save override';
         }
       }
+    }
+    function schedNormTimeSlotLabel(v){
+      return String(v || '').trim().toLowerCase().replace(/\s*-\s*/g, ' to ').replace(/(\d)\.(\d)/g, '$1:$2');
+    }
+    function schedIsRealBookedParticipantSlug(slug){
+      var s = String(slug || '').trim().toLowerCase();
+      return !!(s && s !== 'available' && s !== 'closed' && s !== 'no client' && s !== 'noclient' && s !== 'no_client');
+    }
+    function schedCountFutureSamePatternInBundle(slot){
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows) || !slot) return 0;
+      var iso = String(slot.sessionDate || '').trim().slice(0, 10);
+      var wd = String(slot.sheetDay || portalWeekdayLongFromIsoDate(iso) || '').trim();
+      var slug = adminRosterSlugify(slot.clientSlug || slot.clientDisplay || '');
+      var ts = schedNormTimeSlotLabel(slot.anchorTimeLabel);
+      var ven = String(slot.venue || '').trim();
+      var inst = String(typeof portalDayOpsInstructorsLabelForSlot === 'function' ? portalDayOpsInstructorsLabelForSlot(slot) : (slot.staffName || slot.staffRosterId || '')).trim().toLowerCase();
+      var n = 0;
+      src.rows.forEach(function(r){
+        var sd = String(r.session_date || '').trim().slice(0, 10);
+        if(!sd || sd < iso || sd > SCHED_COVER_TERM_END) return;
+        if(String(r.day || '').trim() !== wd) return;
+        if(adminRosterSlugify(r.client_name) !== slug) return;
+        if(schedNormTimeSlotLabel(r.time_slot) !== ts) return;
+        if(String(r.venue || '').trim() !== ven) return;
+        var ri = String(r.instructors || '').trim().toLowerCase();
+        if(inst && ri && ri.indexOf(inst) < 0 && inst.indexOf(ri.split(',')[0].trim()) < 0) return;
+        n += 1;
+      });
+      return n;
+    }
+    function schedPortalRosterClientForSlot(iso, slot){
+      var cache = Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE) ? window.PORTAL_ROSTER_ROWS_CACHE : [];
+      if(!iso || !slot) return '';
+      var ts = schedNormTimeSlotLabel(slot.anchorTimeLabel);
+      var ven = String(slot.venue || '').trim();
+      var inst = String(typeof portalDayOpsInstructorsLabelForSlot === 'function' ? portalDayOpsInstructorsLabelForSlot(slot) : (slot.staffName || slot.staffRosterId || '')).trim().toLowerCase();
+      for(var i = 0; i < cache.length; i++){
+        var r = cache[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        if(String(r.session_date || '').trim().slice(0, 10) !== iso) continue;
+        if(schedNormTimeSlotLabel(r.time_slot) !== ts) continue;
+        if(String(r.venue || '').trim() !== ven) continue;
+        var ri = String(r.instructors || '').trim().toLowerCase();
+        if(inst && ri && ri.indexOf(inst) < 0 && inst.indexOf(ri.split(',')[0].trim()) < 0) continue;
+        return String(r.client_name || '').trim();
+      }
+      return '';
+    }
+    function schedAssessOverrideTermMismatch(slot, ovType, payload){
+      if(!slot || !ovType) return null;
+      payload = payload || {};
+      var iso = String(slot.sessionDate || '').trim().slice(0, 10);
+      var portalClient = schedPortalRosterClientForSlot(iso, slot);
+      var bundleSlug = adminRosterSlugify(slot.clientSlug || slot.clientDisplay || '');
+      var portalSlug = adminRosterSlugify(portalClient);
+      if(portalClient && portalSlug && bundleSlug && portalSlug !== bundleSlug){
+        if(ovType === 'slot_clear_client' || ovType === 'client_replace_in_slot'){
+          return {
+            level: 'error',
+            message:
+              'Live roster already has <strong>' + esc(portalClient) + '</strong> in this cell (portal_roster_rows), but this row still shows <strong>' + esc(String(slot.clientDisplay || slot.clientSlug || '')) + '</strong> from the bundle. Do not cancel the old name here — use <strong>Edit term slot</strong> so staff and feedback stay aligned.'
+          };
+        }
+      }
+      if(ovType === 'client_absence_announced' || ovType === 'client_move_same_day' || ovType === 'slot_open' || ovType === 'override_void' || ovType === 'slot_close'){
+        return null;
+      }
+      var future = schedCountFutureSamePatternInBundle(slot);
+      if(ovType === 'slot_clear_client'){
+        if(!schedIsRealBookedParticipantSlug(slot.clientSlug)) return null;
+        var msg =
+          '<strong>One day only.</strong> Cancelled here affects <strong>' + esc(iso) + '</strong> via schedule override. The term bundle still lists this participant on other ' + esc(String(slot.sheetDay || 'weekdays')) + 's';
+        if(future > 1) msg += ' (' + esc(String(future)) + ' more in the term export)';
+        msg += '. To remove or swap for the <strong>rest of term</strong>, use <strong>Edit term slot</strong> (button above) instead.';
+        return { level: future > 1 ? 'warn' : 'info', message: msg, suggestTermSlot: true };
+      }
+      if(ovType === 'client_replace_in_slot'){
+        var rep = String(payload.replacement_client_name || payload.to_client_id || '').trim();
+        var msgMk =
+          '<strong>Make-up / one day.</strong> Replacement' + (rep ? ' (<strong>' + esc(rep) + '</strong>)' : '') + ' applies to <strong>' + esc(iso) + '</strong> only. To change who is booked every week, use <strong>Edit term slot</strong>.';
+        if(future > 1) msgMk += ' Term bundle still has ' + esc(String(future)) + ' future matching slots for the current participant.';
+        return { level: 'info', message: msgMk, suggestTermSlot: future > 1 };
+      }
+      return null;
+    }
+    function schedUpdateTermMismatchBanner(slot, ovType){
+      var el = $('schedTermMismatchWarn');
+      if(!el) return;
+      var assessment = schedAssessOverrideTermMismatch(slot, ovType, {});
+      if(!assessment || !assessment.message){
+        el.hidden = true;
+        el.innerHTML = '';
+        return;
+      }
+      el.hidden = false;
+      el.style.background = assessment.level === 'error' ? '#fef2f2' : '#fff7ed';
+      el.style.borderColor = assessment.level === 'error' ? '#fecaca' : 'rgba(234,88,12,.35)';
+      el.innerHTML = assessment.message;
+    }
+    function schedOpenTermSlotFromSchedSlot(slot, action){
+      if(!slot) return;
+      closeSchedDrawer();
+      if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
+        window.portalAdminOpenTermSlotEdit({
+          anchorDate: String(slot.sessionDate || sched.selectedDate || '').slice(0, 10),
+          client_name: String(slot.clientDisplay || '').trim(),
+          service: String(slot.programme || slot.rosterService || '').trim(),
+          time_slot: String(slot.anchorTimeLabel || '').trim(),
+          instructors: String(slot.staffName || slot.staffRosterId || '').trim(),
+          venue: String(slot.venue || '').trim(),
+          area: String(slot.rosterArea || '').trim(),
+          scope: action === 'cancel' ? 'weekday_term' : 'single_day',
+          action: action === 'cancel' ? 'cancel_service' : 'update'
+        });
+      }else{
+        setView('term_roster_edit');
+      }
+    }
+    async function schedConfirmOverrideTermMismatch(slot, ovType, payload){
+      var assessment = schedAssessOverrideTermMismatch(slot, ovType, payload);
+      if(!assessment) return true;
+      schedUpdateTermMismatchBanner(slot, ovType);
+      if(assessment.level === 'error'){
+        var useTerm = window.confirm(
+          'This override conflicts with the live term roster.\n\nUse Edit term slot instead?\n\nOK = open Edit term slot\nCancel = stay here'
+        );
+        if(useTerm) schedOpenTermSlotFromSchedSlot(slot, ovType === 'slot_clear_client' ? 'cancel' : 'update');
+        return false;
+      }
+      if(!assessment.suggestTermSlot) return true;
+      var proceed = window.confirm(
+        'Schedule & Covers = this calendar day only.\nEdit term slot = rest of term (staff + feedback stay aligned).\n\nOK = save one-day override anyway\nCancel = open Edit term slot'
+      );
+      if(proceed) return true;
+      schedOpenTermSlotFromSchedSlot(slot, ovType === 'slot_clear_client' ? 'cancel' : 'update');
+      return false;
+    }
+    async function schedRefreshRosterSourcesAfterOverride(client){
+      try{
+        if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
+          await window.portalRefreshPortalRosterRowsFromSupabase(client);
+        }else if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+          window.portalRefreshStaffDashboardSourceFromPortal();
+        }
+        portalInvalidateAdminSlotsCache();
+        if(typeof window.portalNotifyAdminRosterDataChanged === 'function'){
+          window.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
+        }
+      }catch(_rf){}
     }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
@@ -11153,6 +11309,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         spreadsheet_revision: 'admin-dashboard:staff_dashboard_spreadsheet_bundle'
       };
       var beforeSnap = { slot: slot, previous_override: findOverrideForSlot(slot) };
+      if(!(await schedConfirmOverrideTermMismatch(slot, ovType, payload))) return;
       var insRes = await client.from('schedule_overrides').insert([row]).select('id,created_at,created_by');
       if(insRes.error){
         if(msgEl) msgEl.textContent = 'Save failed: '+esc(String(insRes.error.message||insRes.error))+(insRes.error.hint?(' — '+esc(insRes.error.hint)):'');
@@ -11203,6 +11360,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       closeSchedDrawer();
       sched.lastMsg = 'Override saved.';
       adminInvalidateSessionsHubLiveCaches();
+      await schedRefreshRosterSourcesAfterOverride(client);
       await refreshSchedulingModule();
       if(state.view === 'c4k_sessions'){
         try{ void sessionsHubRefreshActiveTab(); }catch(_hub){}
