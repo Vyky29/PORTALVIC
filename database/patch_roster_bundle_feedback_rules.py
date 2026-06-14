@@ -14,7 +14,7 @@ BUNDLE_PATHS = [
     ROOT / "working_ui" / "portal-shared-js" / "staff_dashboard_spreadsheet_bundle.js",
 ]
 
-# One swimming feedback: Aquatic + MA pool (same instructor). Support worker keeps Hub/Room 2 row.
+# Regenerate from MADRE via database/roster_review/sync_roster_madre_to_portal.py
 SUNDAY_FEEDBACK_MERGES = [
     {
         "day": "Wednesday",
@@ -33,7 +33,6 @@ SUNDAY_FEEDBACK_MERGES = [
         "mergeKey": "yusuf_ah_roberto_sun_swim",
         "slots": [
             {"time_slot": "9 to 9.30", "service": "Aquatic Activity"},
-            {"time_slot": "9 to 10.15", "service": "Aquatic Activity"},
             {"time_slot": "9.30 to 10.15", "service": "Multi-Activity"},
         ],
     },
@@ -50,12 +49,6 @@ OVERVIEW_OMIT_ROSTER_SLOTS = [
         "weekday": "Sunday",
         "client_slug": "yusuf_ah",
         "time_slot": "9 to 9.30",
-        "service": "Aquatic Activity",
-    },
-    {
-        "weekday": "Sunday",
-        "client_slug": "yusuf_ah",
-        "time_slot": "9 to 10.15",
         "service": "Aquatic Activity",
     },
 ]

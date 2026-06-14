@@ -7,11 +7,12 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260609-feedback-real",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster",
+      "/portal/roster_master_dashboard_rows.js?v=20260614-madre-roster",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
       "/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260602-javier-may20-catchup",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260614-madre-roster",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
