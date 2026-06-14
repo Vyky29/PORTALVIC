@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260613-dock-corp-colors" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260613-dock-corp-colors" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-staff-photo-change" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -210,10 +210,15 @@
       <div class="topbar-lead">
         <div class="topbar-left topbar-left--name">
           <div class="topbar-profile-card" id="topbarProfileCard" data-gender="m">
-            <div class="topbar-staff-photo" id="topbarStaffPhoto" aria-hidden="true">
+            <div class="topbar-staff-photo topbar-staff-photo--editable" id="topbarStaffPhoto" aria-hidden="true">
               <img id="topbarStaffPhotoImg" alt="" hidden />
               <span class="topbar-staff-photo__initials" id="topbarStaffPhotoInitials">…</span>
+              <button type="button" class="topbar-staff-photo__edit" id="topbarStaffPhotoEdit" aria-label="Change your profile photo">
+                <span class="topbar-staff-photo__edit-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+              </button>
+              <p class="topbar-staff-photo__share-note">Shared with participants &amp; families</p>
             </div>
+            <input type="file" id="topbarStaffPhotoInput" accept="image/*" hidden />
             <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
               <span class="topbar-name__given" id="staffNameGiven">…</span>
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
@@ -262,16 +267,10 @@
         </div>
         <div class="topbar-right topbar-right--tools">
           <div class="topbar-tools-grid topbar-tools-grid--lead" id="topbarToolsGrid" role="group" aria-label="Quick session tools">
-            <div class="topbar-tool-cell" id="topbarToolCellAchievements">
+            <div class="topbar-tool-cell topbar-tool-cell--row1-solo" id="topbarToolCellAchievements">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
                 <span class="topbar-tool-label" aria-hidden="true">PHOTO</span>
-              </button>
-            </div>
-            <div class="topbar-tool-cell topbar-tool-cell--participants">
-              <button type="button" class="topbar-tool-btn topbar-tool-btn--participants" id="topbarToolParticipants" aria-label="All participants">
-                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">CLIENTS</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellVenue">
@@ -896,7 +895,7 @@
   <script src="portal/staff_dashboard_portal_roster_source.js?v=20260611-madre-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260613-term-new-participant-notify"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -3360,7 +3359,7 @@
         const dl = String(dayLabel || '').trim();
         const sub = escapeHtml((dl ? (dl + ' · ') : '') + String(item.sub || ''));
         const k = String(item.kind || 'other');
-        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other')))));
+        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : (k === 'cancelled' ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
         rows.push(
           '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note" data-action="open-roster-override-attention" data-portal-override-id="' + idEsc + '" data-portal-override-nav-iso="' + isoEsc + '" aria-label="' + title + ' ' + isoEsc + '">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></span>' +
@@ -5177,6 +5176,11 @@
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
+      if(P && typeof P.overrideIsRosterDayGroupRow === 'function' && P.overrideIsRosterDayGroupRow(row)){
+        if(P.overrideRosterDayGroupIsNewShift && P.overrideRosterDayGroupIsNewShift(row)) return 'new_shift';
+        return 'roster_day';
+      }
+      if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return 'new_shift';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
       if(t === 'client_replace_in_slot') return 'makeup';
@@ -5255,6 +5259,27 @@
           kind: kind
         };
       }
+      if(kind === 'new_shift' || kind === 'roster_day'){
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const dayLabel = isoNav && typeof portalOverrideSessionDateDisplayLabel === 'function'
+          ? portalOverrideSessionDateDisplayLabel(isoNav)
+          : isoNav;
+        title = kind === 'new_shift' ? 'New shift' : 'Schedule change';
+        sub = dayLabel
+          ? ('Your roster for ' + dayLabel + '. Tap to view participants for this day.')
+          : 'Tap to view your roster for this day.';
+        const P = window.PortalParticipantsSheet;
+        const dismissId = P && typeof P.scheduleOverrideAttentionDismissKey === 'function'
+          ? P.scheduleOverrideAttentionDismissKey(row)
+          : '';
+        return {
+          id: dismissId || portalScheduleOverrideRowDismissKey(row),
+          iso: isoNav,
+          title: title,
+          sub: sub,
+          kind: kind
+        };
+      }
       if(kind === 'cancelled'){
         const nm = portalClientDisplayNameForOverride(row) || portalClientFirstNameTokenForOverride(row);
         title = nm ? ('Session Cancelled - ' + nm) : 'Session Cancelled';
@@ -5280,6 +5305,17 @@
         sub: sub,
         kind: kind
       };
+    }
+    function portalHideScheduleChangesWhenRosterDayGrouped(items){
+      if(!items || !items.length) return items || [];
+      if(!items.some(function(it){
+        const k = String(it && it.kind || '');
+        return k === 'new_shift' || k === 'roster_day';
+      })) return items;
+      return items.filter(function(it){ return String(it && it.kind || '') !== 'other'; });
+    }
+    function portalFinalizeOverrideQuickMenuItems(items){
+      return portalHideScheduleChangesWhenRosterDayGrouped(items || []);
     }
     function portalStaffRosterOverrideAttentionState(){
       const empty = { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
@@ -5341,11 +5377,12 @@
           const items = byIso[iso];
           items.sort(function(a, b){ return (b._sort || 0) - (a._sort || 0); });
           for(let a = 0; a < items.length; a++) delete items[a]._sort;
-          n += items.length;
+          const dedupedItems = portalFinalizeOverrideQuickMenuItems(items);
+          n += dedupedItems.length;
           rosterOverrideDayGroups.push({
             iso: iso,
             label: typeof portalOverrideSessionDateDisplayLabel === 'function' ? portalOverrideSessionDateDisplayLabel(iso) : iso,
-            items: items
+            items: dedupedItems
           });
         }
         if(!n) return empty;

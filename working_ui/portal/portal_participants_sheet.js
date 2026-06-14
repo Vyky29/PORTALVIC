@@ -208,11 +208,26 @@
     return String((pl && pl.scope) || "").trim();
   }
 
-  /** One-off / picked dates: group every client into a single “New shift” card for that day. */
-  function overrideIsNewShiftDayUpdate(row) {
+  /** Synthetic row emitted by collapseScheduleOverrideRowsForAttention (one card per staff/day). */
+  function overrideIsRosterDayGroupRow(row) {
+    const pl = overridePayload(row);
+    return !!(pl && (pl._portal_roster_day_group || pl._portal_new_shift_day_group));
+  }
+
+  /** slot_update rows that collapse to a single day card (excludes term-intake halo). */
+  function overrideIsRosterDayGroupableSlotUpdate(row) {
     const t = String(row && row.override_type || "").trim();
     if (t !== "slot_update") return false;
+    if (overrideIsTermNewParticipant(row)) return false;
+    return true;
+  }
+
+  /** One-off / picked dates: “New shift” title on the grouped day card. */
+  function overrideIsNewShiftDayUpdate(row) {
     const pl = overridePayload(row);
+    if (pl && pl._portal_roster_day_group) return !!pl._portal_roster_day_has_new_shift;
+    const t = String(row && row.override_type || "").trim();
+    if (t !== "slot_update") return false;
     if (!pl) return false;
     if (pl._portal_new_shift_day_group) return true;
     const scope = overridePayloadScope(pl);
@@ -220,6 +235,10 @@
     if (scope === "single_day" || scope === "pick_sessions") return true;
     if (pl.term_roster_edit && normIso(row && row.session_date)) return true;
     return false;
+  }
+
+  function overrideRosterDayGroupIsNewShift(row) {
+    return overrideIsNewShiftDayUpdate(row);
   }
 
   function overrideSlotAttentionKey(row) {
@@ -240,12 +259,16 @@
     return score;
   }
 
-  function overrideNewShiftDayGroupKey(row) {
-    if (!overrideIsNewShiftDayUpdate(row)) return "";
+  function overrideRosterDayGroupKey(row) {
+    if (!overrideIsRosterDayGroupableSlotUpdate(row) && !overrideIsRosterDayGroupRow(row)) return "";
     const staff = normKey(row && row.anchor_staff_id);
     const iso = normIso(row && row.session_date);
     if (!staff || !iso) return "";
-    return "new-shift-day|" + staff + "|" + iso;
+    return "roster-day|" + staff + "|" + iso;
+  }
+
+  function overrideNewShiftDayGroupKey(row) {
+    return overrideRosterDayGroupKey(row);
   }
 
   /** Term intake: one halo / quick-menu line for the whole term — not every calendar day. */
@@ -297,8 +320,10 @@
   }
 
   function scheduleOverrideAttentionDismissKey(row) {
-    const shiftGk = overrideNewShiftDayGroupKey(row);
-    if (shiftGk) return "new-shift-day:" + shiftGk.replace(/\|/g, ":");
+    const rosterGk = overrideRosterDayGroupKey(row);
+    if (rosterGk && (overrideIsRosterDayGroupRow(row) || overrideIsRosterDayGroupableSlotUpdate(row))) {
+      return "roster-day:" + rosterGk.replace(/\|/g, ":");
+    }
     const gk = overrideTermIntakeGroupKey(row);
     if (gk) return "term-intake:" + gk.replace(/\|/g, ":");
     return "";
@@ -308,51 +333,39 @@
     ctx = ctx || buildContext();
     const keep = [];
     const termGroups = Object.create(null);
-    const newShiftDayGroups = Object.create(null);
-    const slotUpdateByKey = Object.create(null);
-
-    function queueKeep(row) {
-      const t = String(row && row.override_type || "").trim();
-      if (t !== "slot_update") {
-        keep.push(row);
-        return;
-      }
-      const sk = overrideSlotAttentionKey(row);
-      if (!sk || sk.indexOf("|") <= 0) {
-        keep.push(row);
-        return;
-      }
-      const prev = slotUpdateByKey[sk];
-      if (!prev || overrideSlotAttentionScore(row) > overrideSlotAttentionScore(prev)) {
-        slotUpdateByKey[sk] = row;
-      }
-    }
+    const rosterDayGroups = Object.create(null);
 
     (rows || []).forEach(function (row) {
       if (!rowApplies(row, ctx)) return;
-      if (overrideIsNewShiftDayUpdate(row)) {
-        const gk = overrideNewShiftDayGroupKey(row);
+      if (overrideIsRosterDayGroupableSlotUpdate(row)) {
+        const gk = overrideRosterDayGroupKey(row);
         if (!gk) {
-          queueKeep(row);
+          keep.push(row);
           return;
         }
         const iso = normIso(row.session_date);
-        const prev = newShiftDayGroups[gk];
+        const prev = rosterDayGroups[gk];
         if (!prev) {
-          newShiftDayGroups[gk] = { row: row, iso: iso, count: 1 };
+          rosterDayGroups[gk] = {
+            row: row,
+            iso: iso,
+            count: 1,
+            hasNewShift: overrideIsNewShiftDayUpdate(row),
+          };
         } else {
           prev.count += 1;
+          if (overrideIsNewShiftDayUpdate(row)) prev.hasNewShift = true;
           if (iso && (!prev.iso || iso < prev.iso)) prev.iso = iso;
         }
         return;
       }
       if (!overrideIsTermNewParticipant(row)) {
-        queueKeep(row);
+        keep.push(row);
         return;
       }
       const gk = overrideTermIntakeGroupKey(row);
       if (!gk) {
-        queueKeep(row);
+        keep.push(row);
         return;
       }
       const iso = normIso(row.session_date);
@@ -361,14 +374,17 @@
       }
     });
 
-    Object.keys(newShiftDayGroups).forEach(function (gk) {
-      const pack = newShiftDayGroups[gk];
+    Object.keys(rosterDayGroups).forEach(function (gk) {
+      const pack = rosterDayGroups[gk];
       const src = pack.row;
       const pl = overridePayload(src) || {};
       keep.push(
         Object.assign({}, src, {
           payload: Object.assign({}, pl, {
-            _portal_new_shift_day_group: true,
+            _portal_roster_day_group: true,
+            _portal_roster_day_has_new_shift: !!pack.hasNewShift,
+            _portal_roster_day_participant_count: pack.count,
+            _portal_new_shift_day_group: !!pack.hasNewShift,
             _portal_new_shift_participant_count: pack.count,
           }),
         })
@@ -377,10 +393,6 @@
 
     Object.keys(termGroups).forEach(function (gk) {
       keep.push(termGroups[gk].row);
-    });
-
-    Object.keys(slotUpdateByKey).forEach(function (sk) {
-      keep.push(slotUpdateByKey[sk]);
     });
 
     return keep;
@@ -496,7 +508,7 @@
         if (cid) add(cid, row.session_date);
         return;
       }
-      if (overrideIsNewShiftDayUpdate(row)) return;
+      if (overrideIsRosterDayGroupRow(row) || overrideIsNewShiftDayUpdate(row)) return;
       if (overrideIsTermNewParticipant(row)) {
         const cid = overrideTermIntakeClientSlug(row);
         if (cid) add(cid, clientFirstSessionDateIso(cid, ctx) || row.session_date);
@@ -700,6 +712,8 @@
     buildPortalRosterFirstSessionMap: buildPortalRosterFirstSessionMap,
     clientFirstSessionDateIso: clientFirstSessionDateIso,
     overrideIsTermNewParticipant: overrideIsTermNewParticipant,
+    overrideIsRosterDayGroupRow: overrideIsRosterDayGroupRow,
+    overrideRosterDayGroupIsNewShift: overrideRosterDayGroupIsNewShift,
     overrideIsNewShiftDayUpdate: overrideIsNewShiftDayUpdate,
     overrideIsTrialSession: overrideIsTrialSession,
     overrideShouldShowOnCalendarDate: overrideShouldShowOnCalendarDate,
