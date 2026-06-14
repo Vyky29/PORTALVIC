@@ -342,6 +342,7 @@ async function loadRegisteredSessions(
 async function loadApplicantProgress(
   obAdmin: SupabaseClient,
   documents: OnboardingDocRow[],
+  portalAdmin?: SupabaseClient,
 ): Promise<ApplicantProgress[]> {
   const sessions = await loadRegisteredSessions(obAdmin);
   const { data, error } = await obAdmin
@@ -434,6 +435,41 @@ async function loadApplicantProgress(
     }
   }
 
+  if (portalAdmin) {
+    const ids = Array.from(byId.keys());
+    if (ids.length) {
+      const { data: healthRows } = await portalAdmin
+        .from("staff_health_questionnaire_drafts")
+        .select("staff_session_id, staff_name, submitted_at, updated_at")
+        .in("staff_session_id", ids);
+      for (const row of healthRows ?? []) {
+        const id = String(row.staff_session_id ?? "").trim();
+        if (!id) continue;
+        let entry = byId.get(id);
+        if (!entry) {
+          entry = {
+            applicant_session_id: id,
+            display_name: String(row.staff_name ?? "").trim(),
+            portal_staff_name: String(row.staff_name ?? "").trim(),
+            job: false,
+            health: false,
+            uploads: emptyUploadCounts(),
+            updated_at: null,
+            last_online_at: sessions.get(id)?.updated_at ?? null,
+            last_upload_at: null,
+          };
+          byId.set(id, entry);
+        }
+        if (row.submitted_at) entry.health = true;
+        const ts = row.updated_at ? String(row.updated_at) : null;
+        if (ts) entry.last_online_at = maxIso(entry.last_online_at, ts);
+        const name = String(row.staff_name ?? "").trim();
+        if (name && !entry.display_name) entry.display_name = name;
+        if (name && !entry.portal_staff_name) entry.portal_staff_name = name;
+      }
+    }
+  }
+
   return Array.from(byId.values()).sort((a, b) => {
     const ta = a.last_online_at
       ? Date.parse(a.last_online_at)
@@ -477,10 +513,13 @@ Deno.serve(async (req) => {
   const obAdmin = createClient(obUrl, obService, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const portalAdmin = createClient(portalUrl, portalService, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   const { bucket, errors: bucketErrors } = await resolveOnboardingBucket(obAdmin);
   const { documents, errors: listErrors } = await listAllDocuments(obAdmin, bucket);
-  const applicants = await loadApplicantProgress(obAdmin, documents);
+  const applicants = await loadApplicantProgress(obAdmin, documents, portalAdmin);
   const upload_counts = uploadCountsFromDocuments(documents);
   const unlinked_documents = documents.filter((d) => !d.applicant_session_id).length;
 

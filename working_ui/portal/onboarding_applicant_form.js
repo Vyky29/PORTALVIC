@@ -17,6 +17,9 @@
       var box = global.__PORTAL_SUPABASE__;
       if (box && box.anonKey) return String(box.anonKey);
     } catch (_) {}
+    try {
+      if (global.SUPABASE_ANON_KEY) return String(global.SUPABASE_ANON_KEY);
+    } catch (_) {}
     return "";
   }
 
@@ -58,6 +61,11 @@
       global.location.href = "login.html?portalReturn=" + ret;
       return null;
     }
+    try {
+      await edgePost("portal-staff-onboarding-session-touch", {
+        portal_staff_name: staffDisplayName(),
+      });
+    } catch (_) {}
     return token;
   }
 
@@ -90,10 +98,14 @@
       if (String(qs.get("from") || "").trim().toLowerCase() === "lead") {
         return "lead_dashboard.html";
       }
+      if (String(qs.get("from") || "").trim().toLowerCase() === "admin") {
+        return "admin_dashboard.html";
+      }
     } catch (_) {}
     try {
       var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
       var route = String((prof && prof.dashboard_route) || "").toLowerCase();
+      if (route.indexOf("admin") >= 0) return "admin_dashboard.html";
       var staffRole = String((prof && prof.staff_role) || "").toLowerCase();
       var appRole = String((prof && prof.app_role) || "").toLowerCase();
       if (route.indexOf("lead") >= 0 || staffRole === "lead" || appRole === "lead") {
@@ -101,6 +113,17 @@
       }
     } catch (_) {}
     return "staff_dashboard.html";
+  };
+  global.portalOnboardingFormSessionLabel = function portalOnboardingFormSessionLabel() {
+    var name = staffDisplayName();
+    if (name) return name;
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var email = box.session && box.session.user && box.session.user.email;
+      email = String(email || "").trim();
+      if (email) return email.split("@")[0];
+    } catch (_) {}
+    return "";
   };
   global.portalOnboardingFormApplyBackLink = function portalOnboardingFormApplyBackLink() {
     try {

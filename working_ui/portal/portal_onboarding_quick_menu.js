@@ -10,6 +10,11 @@
     "michelle@youtimecounselling.com": true,
   };
 
+  /** Roster key fallback when auth email is missing on session (PIN / slow hydrate). */
+  var ONBOARDING_APPLICANT_KEYS = {
+    michelle: true,
+  };
+
   var ONBOARDING_MENU_HIDDEN_CLASS = "portal-onboarding-menu-hidden";
 
   var JOB_TOP = "quickMenuOnboardingJobTop";
@@ -58,11 +63,13 @@
 
   global.portalOnboardingApplicantIs = function portalOnboardingApplicantIs(profile, authEmail) {
     var email = normEmail(authEmail);
+    if (email && ONBOARDING_APPLICANT_EMAILS[email]) return true;
     if (portalPreviewTeflon()) {
-      var key = rosterKeyFromProfile(profile, authEmail);
-      return key === "teflon";
+      var previewKey = rosterKeyFromProfile(profile, authEmail);
+      return previewKey === "teflon";
     }
-    return !!(email && ONBOARDING_APPLICANT_EMAILS[email]);
+    var key = rosterKeyFromProfile(profile, authEmail);
+    return !!(key && ONBOARDING_APPLICANT_KEYS[key]);
   };
 
   function resolveUrl(pathOrUrl) {
@@ -84,11 +91,12 @@
   function appendDashboardFrom(url) {
     var u = String(url || "").trim();
     if (!u) return u;
-    if (/from=(lead|staff)/i.test(u)) return u;
+    if (/from=(lead|staff|admin)/i.test(u)) return u;
     var from = "staff";
     try {
       var path = String((global.location && global.location.pathname) || "").toLowerCase();
-      if (path.indexOf("lead_dashboard") >= 0) from = "lead";
+      if (path.indexOf("admin_dashboard") >= 0) from = "admin";
+      else if (path.indexOf("lead_dashboard") >= 0) from = "lead";
     } catch (_) {}
     return u + (u.indexOf("?") >= 0 ? "&" : "?") + "from=" + from;
   }

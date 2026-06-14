@@ -80,3 +80,21 @@ body {
   overflow-wrap: break-word;
 }
 .ob-form-status.is-error { color: #b42318; }
+.ob-form-session {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #157347;
+  background: #ecfdf3;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.ob-form-session.is-error {
+  color: #b42318;
+  background: #fef3f2;
+  border-color: #fecdca;
+}

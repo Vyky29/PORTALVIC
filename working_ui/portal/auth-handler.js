@@ -1075,7 +1075,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         ? portalLoginUrlWithReturn(window.location.href)
         : loginRedirect;
   const sessionWaitMs =
-    isLeadOverview || page === "cs_cliq" ? 7000 : 2800;
+    isLeadOverview || page === "cs_cliq" || page === "onboarding" ? 7000 : 2800;
 
   /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
