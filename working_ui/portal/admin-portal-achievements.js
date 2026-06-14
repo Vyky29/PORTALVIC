@@ -400,9 +400,39 @@
     return { width: canvas.width, height: canvas.height };
   }
 
+  function ensureViewerOnBody() {
+    var viewer = document.getElementById("portalAdminAchievementsViewer");
+    if (!viewer || viewer.parentNode === document.body) return;
+    document.body.appendChild(viewer);
+  }
+
+  function showViewerToast(message, isError) {
+    var viewer = document.getElementById("portalAdminAchievementsViewer");
+    if (!viewer) return;
+    var el = viewer.querySelector(".portal-achievements-viewer__toast");
+    if (!el) {
+      el = document.createElement("p");
+      el.className = "portal-achievements-viewer__toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      viewer.appendChild(el);
+    }
+    var msg = String(message || "").trim();
+    el.textContent = msg;
+    el.classList.toggle("is-error", !!isError);
+    el.hidden = !msg;
+  }
+
   function setViewerBusy(busy) {
     viewerState.busy = !!busy;
-    ["portalAdminAchievementsViewerPrev", "portalAdminAchievementsViewerNext", "portalAdminAchievementsViewerDelete", "portalAdminAchievementsViewerRotate", "portalAdminAchievementsViewerClose"].forEach(function (id) {
+    [
+      "portalAdminAchievementsViewerPrev",
+      "portalAdminAchievementsViewerNext",
+      "portalAdminAchievementsViewerDelete",
+      "portalAdminAchievementsViewerRotate",
+      "portalAdminAchievementsViewerClose",
+      "portalAdminAchievementsViewerBack",
+    ].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.disabled = !!busy;
     });
@@ -428,6 +458,7 @@
       void removedIdx;
     } catch (err) {
       console.error(err);
+      showViewerToast((err && err.message) || "Could not delete photo.", true);
       var statusEl2 = document.getElementById("portalAdminAchievementsStatus");
       if (statusEl2) {
         statusEl2.textContent = (err && err.message) || "Could not delete photo.";
@@ -445,6 +476,7 @@
     setViewerBusy(true);
     try {
       await rotatePhoto(row, 90);
+      showViewerToast("Photo rotated.", false);
       await openViewer(viewerState.photos, viewerState.index);
       var statusEl = document.getElementById("portalAdminAchievementsStatus");
       if (statusEl) {
@@ -453,6 +485,7 @@
       }
     } catch (err) {
       console.error(err);
+      showViewerToast((err && err.message) || "Could not rotate photo.", true);
       var statusEl2 = document.getElementById("portalAdminAchievementsStatus");
       if (statusEl2) {
         statusEl2.textContent = (err && err.message) || "Could not rotate photo.";
@@ -500,6 +533,7 @@
       }
     }
     document.body.classList.remove("portal-achievements-viewer-open");
+    showViewerToast("", false);
     viewerState.index = -1;
     viewerState.photos = [];
     viewerState.busy = false;
@@ -521,6 +555,8 @@
 
   async function openViewer(photos, index) {
     if (!photos.length) return;
+    ensureViewerOnBody();
+    bindViewer();
     var idx = Math.max(0, Math.min(index, photos.length - 1));
     viewerState.photos = photos;
     viewerState.index = idx;
@@ -923,7 +959,13 @@
   }
 
   function bindViewer() {
+    ensureViewerOnBody();
     var viewer = document.getElementById("portalAdminAchievementsViewer");
+    var backBtn = document.getElementById("portalAdminAchievementsViewerBack");
+    if (backBtn && !backBtn.getAttribute("data-bound")) {
+      backBtn.setAttribute("data-bound", "1");
+      backBtn.addEventListener("click", closeViewer);
+    }
     var closeBtn = document.getElementById("portalAdminAchievementsViewerClose");
     if (closeBtn && !closeBtn.getAttribute("data-bound")) {
       closeBtn.setAttribute("data-bound", "1");
@@ -1018,6 +1060,9 @@
       '<div id="portalAdminAchievementsList" class="portal-admin-achievements-list"></div>' +
       "</div>" +
       '<div id="portalAdminAchievementsViewer" class="portal-achievements-viewer portal-admin-achievements-viewer" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Photo viewer">' +
+      '<div class="portal-achievements-viewer__topbar">' +
+      '<button type="button" class="portal-achievements-viewer__back" id="portalAdminAchievementsViewerBack">&larr; Back to gallery</button>' +
+      "</div>" +
       '<button type="button" class="portal-achievements-viewer__close" id="portalAdminAchievementsViewerClose" aria-label="Close">×</button>' +
       '<div class="portal-achievements-viewer__stage portal-achievement-protected">' +
       '<img id="portalAdminAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img" />' +

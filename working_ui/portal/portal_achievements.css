@@ -1501,7 +1501,87 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 }
 
 .portal-admin-achievements-viewer {
-  z-index: 200500;
+  z-index: 210000;
+}
+
+.portal-achievements-viewer__topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) max(56px, calc(10px + env(safe-area-inset-right))) 8px
+    max(10px, env(safe-area-inset-left));
+  min-width: 0;
+  pointer-events: none;
+}
+
+.portal-achievements-viewer__back {
+  pointer-events: auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.72);
+  cursor: pointer;
+  min-width: 0;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-achievements-viewer__back:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.portal-achievements-viewer__toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 7;
+  margin: 0;
+  max-width: min(92vw, 420px);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.88);
+  overflow-wrap: anywhere;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.portal-achievements-viewer__toast.is-error {
+  background: rgba(185, 28, 28, 0.92);
+}
+
+.portal-achievements-viewer__toast[hidden] {
+  display: none !important;
+}
+
+body.portal-achievements-viewer-open .admin-sidebar,
+body.portal-achievements-viewer-open .admin-float-menu-btn,
+body.portal-achievements-viewer-open .admin-topbar {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.portal-achievements-viewer__close,
+.portal-achievements-viewer__nav {
+  position: relative;
+  z-index: 6;
 }
 
 .portal-ach-inbox-bulk {
