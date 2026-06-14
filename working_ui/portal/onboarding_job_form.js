@@ -110,7 +110,11 @@
       setIfEmpty("surname", split.surname);
       setIfEmpty("phone", prof.mobile || prof.phone);
       setIfEmpty("nationality", prof.nationality);
-      setIfEmpty("role", prof.staff_role || prof.job_title);
+      var roleLabel =
+        typeof global.portalOnboardingFormResolveRoleLabel === "function"
+          ? global.portalOnboardingFormResolveRoleLabel(prof.staff_role || prof.job_title)
+          : prof.staff_role || prof.job_title;
+      setIfEmpty("role", roleLabel);
     } catch (_) {}
     global.portalJobFormSyncConditionalFields();
   };

@@ -18,6 +18,39 @@ body {
   margin: 0 auto;
   padding: max(12px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
 }
+.ob-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.ob-form-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ob-form-block[hidden] {
+  display: none !important;
+}
+.ob-form-block-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+.ob-form-block-desc {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+.ob-form-block--submit .ob-form-card {
+  border-color: rgba(45, 132, 179, 0.25);
+}
 .ob-form-head h1 { margin: 8px 0 6px; font-size: 22px; }
 .ob-form-head p { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.45; }
 .ob-form-back {

@@ -11,149 +11,162 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-full-fields" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-sections" />
 </head>
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Health questionnaire</h1>
-      <p>Answer Yes or No to each question. If Yes, provide details in the box that appears.</p>
+      <p>Answer Yes or No in each section. If Yes, details appear below that question.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
-    <form id="healthForm" class="ob-form-card">
-      <label>Name<input name="name" required autocomplete="given-name" /></label>
-      <label>Surname<input name="surname" required autocomplete="family-name" /></label>
-      <label>Date of birth<input name="dob" type="date" required autocomplete="bday" /></label>
-      <label>Role<input name="role" autocomplete="organization-title" /></label>
+    <form id="healthForm" class="ob-form-stack">
+      <section class="ob-form-block" aria-labelledby="healthSecPersonal">
+        <h2 class="ob-form-block-title" id="healthSecPersonal">1. Your details</h2>
+        <div class="ob-form-card">
+          <label>Name<input name="name" required autocomplete="given-name" /></label>
+          <label>Surname<input name="surname" required autocomplete="family-name" /></label>
+          <label>Date of birth<input name="dob" type="date" required autocomplete="bday" /></label>
+          <label>Role<select name="role"></select></label>
+        </div>
+      </section>
 
-      <p class="ob-form-section">Health questions</p>
+      <section class="ob-form-block" aria-labelledby="healthSecQuestions">
+        <h2 class="ob-form-block-title" id="healthSecQuestions">2. Health questions</h2>
+        <p class="ob-form-block-desc">Select Yes or No for each item.</p>
+        <div class="ob-form-card">
+          <label>Medical conditions
+            <select name="medical_conditions" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_medical_condition_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Medical condition info<textarea name="medical_condition_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Medical conditions
-        <select name="medical_conditions" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_medical_condition_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Medical condition info<textarea name="medical_condition_info" rows="3"></textarea></label>
-      </div>
+          <label>Medication
+            <select name="medication" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_medication_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Medication info<textarea name="medication_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Medication
-        <select name="medication" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_medication_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Medication info<textarea name="medication_info" rows="3"></textarea></label>
-      </div>
+          <label>Allergies
+            <select name="allergies" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_allergies_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Allergies info<textarea name="allergies_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Allergies
-        <select name="allergies" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_allergies_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Allergies info<textarea name="allergies_info" rows="3"></textarea></label>
-      </div>
+          <label>Mental health
+            <select name="mental_health" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_mental_health_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Mental health info<textarea name="mental_health_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Mental health
-        <select name="mental_health" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_mental_health_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Mental health info<textarea name="mental_health_info" rows="3"></textarea></label>
-      </div>
+          <label>Musculoskeletal
+            <select name="musculoskeletal" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_musculoskeletal_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Musculoskeletal conditions info<textarea name="musculoskeletal_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Musculoskeletal
-        <select name="musculoskeletal" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_musculoskeletal_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Musculoskeletal conditions info<textarea name="musculoskeletal_info" rows="3"></textarea></label>
-      </div>
+          <label>Respiratory
+            <select name="respiratory" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_respiratory_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Respiratory conditions info<textarea name="respiratory_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Respiratory
-        <select name="respiratory" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_respiratory_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Respiratory conditions info<textarea name="respiratory_info" rows="3"></textarea></label>
-      </div>
+          <label>Hearing impairments
+            <select name="hearing_impairments" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_hearing_impairments_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Hearing impairments info<textarea name="hearing_impairments_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Hearing impairments
-        <select name="hearing_impairments" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_hearing_impairments_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Hearing impairments info<textarea name="hearing_impairments_info" rows="3"></textarea></label>
-      </div>
+          <label>Communicable diseases
+            <select name="communicable_diseases" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_communicable_diseases_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Communicable diseases info<textarea name="communicable_diseases_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Communicable diseases
-        <select name="communicable_diseases" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_communicable_diseases_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Communicable diseases info<textarea name="communicable_diseases_info" rows="3"></textarea></label>
-      </div>
+          <label>Surgeries or hospital admissions
+            <select name="surgeries_or_hospital_admissions" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_hospital_admissions_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Hospital admissions info<textarea name="hospital_admissions_info" rows="3"></textarea></label>
+          </div>
 
-      <label>Surgeries or hospital admissions
-        <select name="surgeries_or_hospital_admissions" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_hospital_admissions_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Hospital admissions info<textarea name="hospital_admissions_info" rows="3"></textarea></label>
-      </div>
+          <label>Require workplace adjustments?
+            <select name="require_workplace_adjustments" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_adjustments_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Adjustments info<textarea name="adjustments_info" rows="3"></textarea></label>
+          </div>
+        </div>
+      </section>
 
-      <label>Require workplace adjustments?
-        <select name="require_workplace_adjustments" required>
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="healthInfo_adjustments_info" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Adjustments info<textarea name="adjustments_info" rows="3"></textarea></label>
-      </div>
-
-      <p class="ob-form-section">Confirmations</p>
-      <label class="ob-form-check"><input type="checkbox" name="confirmation_1" required /> I confirm the health information I have provided is complete and accurate to the best of my knowledge.</label>
-      <label class="ob-form-check"><input type="checkbox" name="confirmation_2" required /> I understand I must inform my employer if my health circumstances change.</label>
-      <label class="ob-form-check"><input type="checkbox" name="confirmation_3" required /> I consent to this information being used for pre-employment health assessment purposes only.</label>
-
-      <p id="healthStatus" class="ob-form-status" hidden></p>
-      <div class="ob-form-actions">
-        <button type="button" class="ob-btn ob-btn--ghost" id="healthSaveDraft">Save draft</button>
-        <button type="submit" class="ob-btn ob-btn--primary">Submit questionnaire</button>
-      </div>
+      <section class="ob-form-block ob-form-block--submit" aria-labelledby="healthSecConfirm">
+        <h2 class="ob-form-block-title" id="healthSecConfirm">3. Confirmations</h2>
+        <div class="ob-form-card">
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_1" required /> I confirm the health information I have provided is complete and accurate to the best of my knowledge.</label>
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_2" required /> I understand I must inform my employer if my health circumstances change.</label>
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_3" required /> I consent to this information being used for pre-employment health assessment purposes only.</label>
+          <p id="healthStatus" class="ob-form-status" hidden></p>
+          <div class="ob-form-actions">
+            <button type="button" class="ob-btn ob-btn--ghost" id="healthSaveDraft">Save draft</button>
+            <button type="submit" class="ob-btn ob-btn--primary">Submit questionnaire</button>
+          </div>
+        </div>
+      </section>
     </form>
   </main>
   <script src="/portal/onboarding_make_webhooks.js?v=20260601-make"></script>
-  <script src="/portal/onboarding_health_form.js?v=20260614-full-fields"></script>
-  <script src="/portal/onboarding_applicant_form.js?v=20260614-full-fields"></script>
+  <script src="/portal/onboarding_form_options.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
   <script>
     (function () {
       var form = document.getElementById("healthForm");
@@ -165,6 +178,7 @@
         statusEl.classList.toggle("is-error", !!isErr);
       }
       async function init() {
+        portalOnboardingFormInitHealthOptions(form);
         portalHealthFormBind(form);
         var sessionEl = document.getElementById("obFormSession");
         var token = await portalOnboardingFormEnsureSession();

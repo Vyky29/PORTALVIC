@@ -76,7 +76,11 @@
       var split = splitFullName(prof.full_name || prof.username || "");
       setIfEmpty("name", split.name);
       setIfEmpty("surname", split.surname);
-      setIfEmpty("role", prof.staff_role || prof.job_title);
+      var roleLabel =
+        typeof global.portalOnboardingFormResolveRoleLabel === "function"
+          ? global.portalOnboardingFormResolveRoleLabel(prof.staff_role || prof.job_title)
+          : prof.staff_role || prof.job_title;
+      setIfEmpty("role", roleLabel);
     } catch (_) {}
     global.portalHealthFormSyncConditionalFields();
   };

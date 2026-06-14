@@ -11,94 +11,132 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-full-fields" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-sections" />
 </head>
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Job application</h1>
-      <p>Complete in order. Right to work only if you are not British / UK. Bank details at the end.</p>
+      <p>Sections in order. Pick from lists where shown; type to filter suggestions on other fields.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
-    <form id="jobForm" class="ob-form-card">
-      <label>Name<input name="name" required autocomplete="given-name" /></label>
-      <label>Surname<input name="surname" required autocomplete="family-name" /></label>
-      <label>Address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
-      <label>Date of birth<input name="dob" type="date" autocomplete="bday" /></label>
-      <label>Nationality
-        <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="e.g. British, Spanish" />
-      </label>
-      <datalist id="jobNationalityList">
-        <option value="British"></option>
-        <option value="English"></option>
-        <option value="Scottish"></option>
-        <option value="Welsh"></option>
-        <option value="Irish"></option>
-        <option value="Spanish"></option>
-        <option value="Italian"></option>
-        <option value="Portuguese"></option>
-        <option value="French"></option>
-        <option value="Polish"></option>
-        <option value="Romanian"></option>
-        <option value="Indian"></option>
-        <option value="Pakistani"></option>
-        <option value="Bangladeshi"></option>
-        <option value="Nigerian"></option>
-        <option value="Ghanaian"></option>
-        <option value="American"></option>
-      </datalist>
-      <p class="ob-form-hint">British / UK nationals skip right to work below.</p>
+    <form id="jobForm" class="ob-form-stack">
+      <section class="ob-form-block" aria-labelledby="jobSecPersonal">
+        <h2 class="ob-form-block-title" id="jobSecPersonal">1. Personal details</h2>
+        <p class="ob-form-block-desc">Name, contact and nationality.</p>
+        <div class="ob-form-card">
+          <label>Name<input name="name" required autocomplete="given-name" /></label>
+          <label>Surname<input name="surname" required autocomplete="family-name" /></label>
+          <label>Address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
+          <label>Date of birth<input name="dob" type="date" autocomplete="bday" /></label>
+          <label>Phone<input name="phone" type="tel" autocomplete="tel" /></label>
+          <label>Nationality
+            <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="Start typing… e.g. British" />
+          </label>
+          <datalist id="jobNationalityList"></datalist>
+          <p class="ob-form-hint">British / UK nationals skip right to work in the next section.</p>
+        </div>
+      </section>
 
-      <fieldset id="jobRtwSection" hidden aria-hidden="true">
-        <p class="ob-form-section">Right to work</p>
-        <label>RTWork<textarea name="rtwork" rows="3" placeholder="Visa type, passport, expiry, etc."></textarea></label>
-        <label>RTWork code<input name="rtwork_code" autocomplete="off" placeholder="Home Office share code" /></label>
-      </fieldset>
+      <section class="ob-form-block" id="jobRtwSection" hidden aria-hidden="true" aria-labelledby="jobSecRtw">
+        <h2 class="ob-form-block-title" id="jobSecRtw">2. Right to work in the UK</h2>
+        <p class="ob-form-block-desc">Only if you are not a British or UK national.</p>
+        <div class="ob-form-card">
+          <label>RTWork<textarea name="rtwork" rows="3" placeholder="Visa type, passport, expiry, etc."></textarea></label>
+          <label>RTWork code<input name="rtwork_code" autocomplete="off" placeholder="Home Office share code" /></label>
+        </div>
+      </section>
 
-      <label>Phone<input name="phone" type="tel" autocomplete="tel" /></label>
-      <label>Role<input name="role" autocomplete="organization-title" /></label>
-      <label>Status<input name="status" placeholder="Employment status" /></label>
-      <label>Availability<textarea name="availability" rows="2"></textarea></label>
-      <label>Education<textarea name="education" rows="2"></textarea></label>
-      <label>Location<input name="location" autocomplete="address-level2" /></label>
-      <label>Qualifications<textarea name="qualifications" rows="2"></textarea></label>
-      <label>Date<input name="date" type="date" title="Qualifications or certification date" /></label>
-      <label>Additional certifications<textarea name="additional_certifications" rows="2"></textarea></label>
-      <label>Employment history<textarea name="employment_history" rows="4"></textarea></label>
-      <label>Gaps in employment<textarea name="gaps" rows="2"></textarea></label>
-      <label>Additional skills<textarea name="additional_skills" rows="2"></textarea></label>
+      <section class="ob-form-block" aria-labelledby="jobSecRole">
+        <h2 class="ob-form-block-title" id="jobSecRole">3. Role &amp; availability</h2>
+        <p class="ob-form-block-desc">Select role, status and main location.</p>
+        <div class="ob-form-card">
+          <label>Role<select name="role" required></select></label>
+          <label>Status<select name="status"></select></label>
+          <label>Location<select name="location"></select></label>
+          <label>Availability
+            <input name="availability" list="jobAvailabilityList" placeholder="Start typing or pick a pattern" />
+          </label>
+          <datalist id="jobAvailabilityList"></datalist>
+        </div>
+      </section>
 
-      <label>Criminal record
-        <select name="criminal_record">
-          <option value="">Select…</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </label>
-      <div id="jobCriminalInfoWrap" class="ob-form-detail" hidden aria-hidden="true">
-        <label>Criminal record info<textarea name="criminal_record_info" rows="3"></textarea></label>
-      </div>
+      <section class="ob-form-block" aria-labelledby="jobSecEdu">
+        <h2 class="ob-form-block-title" id="jobSecEdu">4. Education &amp; qualifications</h2>
+        <div class="ob-form-card">
+          <label>Education
+            <input name="education" list="jobEducationList" placeholder="Start typing… e.g. Bachelor's degree" />
+          </label>
+          <datalist id="jobEducationList"></datalist>
+          <label>Qualifications<textarea name="qualifications" rows="2"></textarea></label>
+          <label>Date<input name="date" type="date" title="Qualifications or certification date" /></label>
+          <label>Additional certifications
+            <input name="additional_certifications" list="jobCertificationsList" placeholder="Start typing… e.g. First aid at work" />
+          </label>
+          <datalist id="jobCertificationsList"></datalist>
+        </div>
+      </section>
 
-      <label>Reference 1<textarea name="reference_1" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
-      <label>Reference 2<textarea name="reference_2" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+      <section class="ob-form-block" aria-labelledby="jobSecExp">
+        <h2 class="ob-form-block-title" id="jobSecExp">5. Experience</h2>
+        <div class="ob-form-card">
+          <label>Employment history<textarea name="employment_history" rows="4"></textarea></label>
+          <label>Gaps in employment<textarea name="gaps" rows="2"></textarea></label>
+          <label>Additional skills<textarea name="additional_skills" rows="2"></textarea></label>
+        </div>
+      </section>
 
-      <p class="ob-form-section">Bank details (payroll)</p>
-      <label>Bank account<input name="bank_account" autocomplete="off" /></label>
-      <label>Sort code<input name="sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
-      <label>Account number<input name="account_number" inputmode="numeric" autocomplete="off" /></label>
+      <section class="ob-form-block" aria-labelledby="jobSecCrim">
+        <h2 class="ob-form-block-title" id="jobSecCrim">6. Criminal record</h2>
+        <div class="ob-form-card">
+          <label>Criminal record
+            <select name="criminal_record">
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="jobCriminalInfoWrap" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Criminal record info<textarea name="criminal_record_info" rows="3"></textarea></label>
+          </div>
+        </div>
+      </section>
 
-      <label class="ob-form-check"><input type="checkbox" name="confirm" required /> I confirm the information above is accurate.</label>
-      <p id="jobStatus" class="ob-form-status" hidden></p>
-      <div class="ob-form-actions">
-        <button type="button" class="ob-btn ob-btn--ghost" id="jobSaveDraft">Save draft</button>
-        <button type="submit" class="ob-btn ob-btn--primary">Submit application</button>
-      </div>
+      <section class="ob-form-block" aria-labelledby="jobSecRef">
+        <h2 class="ob-form-block-title" id="jobSecRef">7. References</h2>
+        <div class="ob-form-card">
+          <label>Reference 1<textarea name="reference_1" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+          <label>Reference 2<textarea name="reference_2" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecBank">
+        <h2 class="ob-form-block-title" id="jobSecBank">8. Bank details (payroll)</h2>
+        <p class="ob-form-block-desc">For salary payments only — complete last.</p>
+        <div class="ob-form-card">
+          <label>Bank account<input name="bank_account" autocomplete="off" /></label>
+          <label>Sort code<input name="sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
+          <label>Account number<input name="account_number" inputmode="numeric" autocomplete="off" /></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block ob-form-block--submit">
+        <div class="ob-form-card">
+          <label class="ob-form-check"><input type="checkbox" name="confirm" required /> I confirm the information above is accurate.</label>
+          <p id="jobStatus" class="ob-form-status" hidden></p>
+          <div class="ob-form-actions">
+            <button type="button" class="ob-btn ob-btn--ghost" id="jobSaveDraft">Save draft</button>
+            <button type="submit" class="ob-btn ob-btn--primary">Submit application</button>
+          </div>
+        </div>
+      </section>
     </form>
   </main>
   <script src="/portal/onboarding_make_webhooks.js?v=20260601-make"></script>
-  <script src="/portal/onboarding_job_form.js?v=20260614-full-fields"></script>
-  <script src="/portal/onboarding_applicant_form.js?v=20260614-full-fields"></script>
+  <script src="/portal/onboarding_form_options.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
   <script>
     (function () {
       var form = document.getElementById("jobForm");
@@ -110,6 +148,7 @@
         statusEl.classList.toggle("is-error", !!isErr);
       }
       async function init() {
+        portalOnboardingFormInitJobOptions(form);
         portalJobFormBind(form);
         var sessionEl = document.getElementById("obFormSession");
         var token = await portalOnboardingFormEnsureSession();
