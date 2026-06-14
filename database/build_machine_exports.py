@@ -17,7 +17,7 @@ TERM_RESUME_DATE = "2026-06-01"
 TERM_CLOSED_DATES = ["2026-05-04"]
 TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-07"],
-    "javier": ["2026-05-21"],
+    "javier": ["2026-06-18", "2026-06-21"],
 }
 # Summer Term 2: staff no longer on pool rota these weekdays (term cell red).
 TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
