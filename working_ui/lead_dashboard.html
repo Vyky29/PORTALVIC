@@ -359,7 +359,7 @@
 
   <nav class="dock-bar" aria-label="Main navigation">
     <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
-      <button type="button" class="dock-nav-item dock-nav-item--participants" id="dockParticipantsTile" data-open="clientsSheet" aria-label="My participants" title="Participants">
+      <button type="button" class="dock-nav-item dock-nav-item--participants" id="dockParticipantsTile" aria-label="My participants" title="Participants">
         <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
         <span class="dock-nav-item__label">Participants</span>
       </button>
@@ -922,7 +922,7 @@
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
-<script src="/portal/portal_sheet_back.js?v=20260609-dock-menu-nav"></script>
+<script src="/portal/portal_sheet_back.js?v=20260614-dock-toggle-nav"></script>
   <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script>
@@ -10407,6 +10407,7 @@
       document.body.classList.toggle('portal-sessions-overview-open', !!sessionsOverviewOpen);
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();
+      if(typeof portalSyncParticipantsDockChrome === 'function') portalSyncParticipantsDockChrome();
     }
     function openSheet(id, opts){
       if(id === 'internalChatSheet') return; /* chat removed — see archive/chat-full-removal-20260609 */
@@ -11085,61 +11086,55 @@
     if(clientQuickCancellation) clientQuickCancellation.addEventListener('click', handleClientQuickCancellation);
 
     function handleDashboardDockClick(){
-      if(document.getElementById('internalChatSheet')?.classList.contains('open')){
-        try{
-          window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
-          var dmTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
-          if(dmTid && typeof portalStaffDmMarkThreadSeenNow === 'function') portalStaffDmMarkThreadSeenNow(dmTid);
-          window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-          window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
-        }catch(_dm){}
-        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
-        if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
+      function dashboardDockEarlyExit(){
+        if(document.getElementById('internalChatSheet')?.classList.contains('open')){
+          try{
+            window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+            var dmTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
+            if(dmTid && typeof portalStaffDmMarkThreadSeenNow === 'function') portalStaffDmMarkThreadSeenNow(dmTid);
+            window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+            window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
+          }catch(_dm){}
+          if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+          if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
+          return true;
+        }
+        const demoOv = document.getElementById('demoQuickActionOverlay');
+        if(demoOv && !demoOv.hidden){
+          hideDemoQuickOverlay();
+          return true;
+        }
+        const lockIso = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '').trim();
+        const lockDay = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '').trim();
+        const flowOrigin = (typeof portalGetReviewFlowOrigin === 'function') ? portalGetReviewFlowOrigin() : 'dashboard';
+        const stickyReview = !!(typeof window !== 'undefined' && window.__PORTAL_STICKY_REVIEW_DAY_LOAD__);
+        const historicalHeading = (typeof portalTodaySectionTitleText === 'function') ? portalTodaySectionTitleText() : 'Today';
+        const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term' || historicalHeading !== 'Today';
+        const exitedHistorical = (typeof portalExitHistoricalReviewToLiveTodayMode === 'function')
+          ? portalExitHistoricalReviewToLiveTodayMode(shouldForceHistoricalExit)
+          : false;
+        if(exitedHistorical && typeof closeSheet === 'function'){
+          closeSheet({ bypassAnnouncementLock: true });
+        }
+        return false;
       }
+      const navResult = typeof portalHandleDashboardDockHome === 'function'
+        ? portalHandleDashboardDockHome(dashboardDockEarlyExit)
+        : 'home';
+      if(navResult === 'handled' || navResult === 'back') return;
+      if(typeof portalScrollDashboardHome === 'function') portalScrollDashboardHome();
+    }
+    function handleParticipantsDockClick(){
       const demoOv = document.getElementById('demoQuickActionOverlay');
       if(demoOv && !demoOv.hidden){
         hideDemoQuickOverlay();
         return;
       }
-      const lockIso = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '').trim();
-      const lockDay = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '').trim();
-      const flowOrigin = (typeof portalGetReviewFlowOrigin === 'function') ? portalGetReviewFlowOrigin() : 'dashboard';
-      const stickyReview = !!(typeof window !== 'undefined' && window.__PORTAL_STICKY_REVIEW_DAY_LOAD__);
-      const historicalHeading = (typeof portalTodaySectionTitleText === 'function') ? portalTodaySectionTitleText() : 'Today';
-      const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term' || historicalHeading !== 'Today';
-      const exitedHistorical = (typeof portalExitHistoricalReviewToLiveTodayMode === 'function')
-        ? portalExitHistoricalReviewToLiveTodayMode(shouldForceHistoricalExit)
-        : false;
-      if(exitedHistorical){
-        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+      if(typeof portalToggleParticipantsFromDock === 'function'){
+        portalToggleParticipantsFromDock();
+        return;
       }
-      const genSh = document.getElementById('clientGeneralSheet');
-      if(genSh && genSh.classList.contains('open')){
-        closeClientGeneralSheet();
-      }
-      const openSheets = $$('.sheet.open');
-      if(openSheets.length){
-        closeSheet({ bypassAnnouncementLock: true });
-        if(!exitedHistorical){
-          const appScrollEarly = document.getElementById('appBodyScroll');
-          try{
-            if(appScrollEarly) appScrollEarly.scrollTo({ top: 0, behavior: 'smooth' });
-            else window.scrollTo({ top: 0, behavior: 'smooth' });
-          }catch(_){
-            if(appScrollEarly) appScrollEarly.scrollTop = 0;
-            else window.scrollTo(0, 0);
-          }
-          return;
-        }
-      }
-      const appScroll = document.getElementById('appBodyScroll');
-      try{
-        if(appScroll) appScroll.scrollTo({ top: 0, behavior: 'smooth' });
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
-      }catch(_){
-        if(appScroll) appScroll.scrollTop = 0;
-        else window.scrollTo(0, 0);
-      }
+      openSheet('clientsSheet');
     }
     function handleQuickMenuDockClick(){
       portalQuickMenuEntryMode = 'full';
@@ -11193,6 +11188,7 @@
     window.closeClientSessionsOverviewSheet = closeClientSessionsOverviewSheet;
     if(typeof portalInitSheetBackNavigation === 'function') portalInitSheetBackNavigation();
     document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
+    document.getElementById('dockParticipantsTile')?.addEventListener('click', handleParticipantsDockClick);
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
     const avatarWrapEl = document.getElementById('avatarWrap');
     if(avatarWrapEl){

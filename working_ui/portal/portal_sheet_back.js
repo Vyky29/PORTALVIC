@@ -118,7 +118,10 @@
   }
 
   function portalNavigateSheetBack() {
-    if (closeNestedClientSheets()) return true;
+    if (closeNestedClientSheets()) {
+      portalSyncParticipantsDockChrome();
+      return true;
+    }
     if (backInternalChatThread()) return true;
 
     var current = getTopOpenSheetId();
@@ -140,11 +143,15 @@
     try {
       if (entry && entry.from) {
         if (open) open(entry.from, { skipNavRecord: true });
+        portalSyncQuickMenuDockChrome();
+        portalSyncParticipantsDockChrome();
         return true;
       }
       if (close) {
         close({ bypassAnnouncementLock: true });
         clearStack();
+        portalSyncQuickMenuDockChrome();
+        portalSyncParticipantsDockChrome();
         return true;
       }
     } finally {
@@ -153,7 +160,96 @@
     return false;
   }
 
-  function portalQuickMenuDockShouldBack() {
+  function portalIsParticipantsFlowActive() {
+    if (!global.document) return false;
+    var clients = global.document.getElementById("clientsSheet");
+    if (clients && clients.classList.contains("open")) return true;
+    var client = global.document.getElementById("clientSheet");
+    if (
+      client &&
+      client.classList.contains("open") &&
+      client.classList.contains("client-sheet--roster-entry")
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function portalCloseParticipantsFlow() {
+    closeNestedClientSheets();
+    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
+    if (close) {
+      close({ bypassAnnouncementLock: true });
+      clearStack();
+      portalSyncParticipantsDockChrome();
+      portalSyncQuickMenuDockChrome();
+      return true;
+    }
+    return false;
+  }
+
+  function portalSyncParticipantsDockChrome() {
+    var btn = global.document && global.document.getElementById("dockParticipantsTile");
+    if (!btn) return;
+    var active = portalIsParticipantsFlowActive();
+    btn.setAttribute("aria-label", active ? "Close participants" : "My participants");
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+    btn.classList.toggle("dock-nav-item--active", active);
+  }
+
+  /** Footer Participants: open list on first tap; close entire participants flow on second. */
+  function portalToggleParticipantsFromDock(opts) {
+    opts = opts || {};
+    if (portalIsParticipantsFlowActive()) {
+      portalCloseParticipantsFlow();
+      return "closed";
+    }
+    if (typeof global.openSheet === "function") {
+      global.openSheet("clientsSheet", opts.openOpts || {});
+      portalSyncParticipantsDockChrome();
+      return "opened";
+    }
+    return "noop";
+  }
+
+  /**
+   * Center footer logo — one step back when possible, otherwise close sheets to dashboard.
+   * Optional beforeBack(): return true when the click was fully handled (chat, demo, etc.).
+   */
+  function portalHandleDashboardDockHome(beforeBack) {
+    if (typeof beforeBack === "function") {
+      try {
+        if (beforeBack() === true) return "handled";
+      } catch (_pre) {}
+    }
+    if (typeof global.portalNavigateSheetBack === "function" && global.portalNavigateSheetBack()) {
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
+      return "back";
+    }
+    var openCount = getOpenSheetIds().length;
+    var close = typeof global.closeSheet === "function" ? global.closeSheet : null;
+    if (openCount && close) {
+      close({ bypassAnnouncementLock: true });
+      clearStack();
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
+      return "closed";
+    }
+    return "home";
+  }
+
+  function portalScrollDashboardHome() {
+    var appScroll = global.document && global.document.getElementById("appBodyScroll");
+    try {
+      if (appScroll) appScroll.scrollTo({ top: 0, behavior: "smooth" });
+      else global.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (_scroll) {
+      if (appScroll) appScroll.scrollTop = 0;
+      else global.scrollTo(0, 0);
+    }
+  }
+
     var menu = global.document.getElementById("menuSheet");
     if (menu && menu.classList.contains("open")) return true;
     var current = getTopOpenSheetId();
@@ -264,6 +360,8 @@
         suppressHandleClick = false;
       }, 400);
       portalNavigateSheetBack();
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
     }
   }
 
@@ -275,6 +373,8 @@
     if (!handleTargetIsSheetBack(ev.target)) return;
     ev.preventDefault();
     portalNavigateSheetBack();
+    portalSyncQuickMenuDockChrome();
+    portalSyncParticipantsDockChrome();
   }
 
   function decorateSheetHandles() {
@@ -315,6 +415,12 @@
   global.portalRecordSheetNavigation = portalRecordSheetNavigation;
   global.portalOnSheetClosed = portalOnSheetClosed;
   global.portalNavigateSheetBack = portalNavigateSheetBack;
+  global.portalIsParticipantsFlowActive = portalIsParticipantsFlowActive;
+  global.portalCloseParticipantsFlow = portalCloseParticipantsFlow;
+  global.portalSyncParticipantsDockChrome = portalSyncParticipantsDockChrome;
+  global.portalToggleParticipantsFromDock = portalToggleParticipantsFromDock;
+  global.portalHandleDashboardDockHome = portalHandleDashboardDockHome;
+  global.portalScrollDashboardHome = portalScrollDashboardHome;
   global.portalQuickMenuDockShouldBack = portalQuickMenuDockShouldBack;
   global.portalIsQuickMenuSheetOpen = portalIsQuickMenuSheetOpen;
   global.portalCloseQuickMenuSheet = portalCloseQuickMenuSheet;
