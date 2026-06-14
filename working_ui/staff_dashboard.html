@@ -547,6 +547,10 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
               <div class="menu-btn-copy"><strong>Risk Assessments</strong><span class="menu-btn-sub">Venue and activity risk assessments</span></div>
             </button>
+            <button type="button" class="menu-btn menu-btn--work-incident" id="quickMenuStaffIncident" data-portal-external-url="portal-incident.html?subject=staff" aria-label="Staff incident — report injury or event involving you">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+              <div class="menu-btn-copy"><strong>Staff incident</strong><span class="menu-btn-sub">Injury or event involving you (Myself)</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--work-expenses menu-btn--portal-wellbeing" id="quickMenuStaffWellbeingReview" data-portal-external-url="staff_wellbeing_checkin.html" aria-label="Wellbeing check-in — about 5 minutes, confidential">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
               <div class="menu-btn-copy"><strong>Wellbeing check-in</strong><span class="menu-btn-sub">~5 min · confidential · term pulse</span></div>
@@ -1740,6 +1744,16 @@
         if(pill === 'ABSENT') absent = true;
         if(pill === 'CANCELLED') cancelled = true;
       }
+      const baseS = item.__portalBaseSession;
+      const staffIdSrv = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+        const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffIdSrv);
+        if(ex){
+          if(ex.absent) absent = true;
+          if(ex.cancelled) cancelled = true;
+          if(ex.feedbackDone && !ex.absent && !ex.cancelled) feedbackDone = true;
+        }
+      }
       if(absent || cancelled) feedbackDone = false;
       const mem = getSessionReviewRecord(item) || {};
       return {
@@ -2517,7 +2531,11 @@
     }
     function buildIncidentReportPageUrl(item){
       const base = portalIncidentReportPageBase();
-      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'portal-incident.html';
+      if(!item || !item.sessionKey){
+        const staffBase = (base.split('?')[0].split('#')[0] || 'portal-incident.html');
+        const staffSep = staffBase.indexOf('?') >= 0 ? '&' : '?';
+        return portalAppendFromPortalQuery(staffBase + staffSep + 'subject=staff');
+      }
       let skEncoded = '';
       try{
         skEncoded = btoa(unescape(encodeURIComponent(String(item.sessionKey || ''))))
@@ -2890,6 +2908,25 @@
       }
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      const baseEarly = item.__portalBaseSession || null;
+      if(baseEarly && iso && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+        const exEarly = portalRosterSessionFeedbackResolvedFlags(baseEarly, iso, staffId);
+        if(exEarly && exEarly.absent){
+          return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+        }
+        if(exEarly && exEarly.cancelled){
+          return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        }
+      }
+      if(item.noSessionFeedbackRequired){
+        const pillEarly = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+        if(pillEarly === 'ABSENT'){
+          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: true, cancelled: false };
+        }
+        if(pillEarly === 'CANCELLED'){
+          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: false, cancelled: true };
+        }
+      }
       if(iso && portalIsServerTruthFeedbackDay(iso)){
         return portalServerTruthReviewRecordForItem(item, iso);
       }
@@ -7607,6 +7644,12 @@
       if(st === 'Closed' && !openedClosed){
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
+      const absentOvDedicated = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, iso, 'client_absence_announced')
+        : null;
+      if(absentOvDedicated){
+        return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+      }
       const ov = typeof portalTodayScheduleOverrideForSession === 'function'
         ? portalTodayScheduleOverrideForSession(s, iso)
         : null;
@@ -7831,6 +7874,7 @@
       const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
         ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
         : {};
+      if(rec.absent || rec.cancelled) return true;
       if(portalTermIsCatchUpFeedbackDate(iso, sid)){
         if(portalTermStaffForcedCompleteDates(sid).indexOf(iso) >= 0) return true;
         const cid = typeof portalEffectiveClientIdForReview === 'function'
@@ -8099,7 +8143,9 @@
               portalOverrideAlertPill: ''
             }, meta);
           }
-          if(ov && ov.override_type === 'client_absence_announced'){
+          const adminAbsentOv = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_absence_announced');
+          const replaceOvSameSlot = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_replace_in_slot');
+          if(adminAbsentOv && !replaceOvSameSlot){
             const cAbs = clientNotesById[s.clientId];
             if(!cAbs) return null;
             const showSpec = !isBespokeActivity(activity);
@@ -8130,7 +8176,8 @@
               detailsOpenAllowed: true,
               portalOverrideSuppressReviewOrange: true,
               portalOverrideCardTone: 'green',
-              portalOverrideAlertPill: 'ABSENT'
+              portalOverrideAlertPill: 'ABSENT',
+              __portalScheduleOverride: adminAbsentOv
             }, meta);
           }
           if(ov && ov.override_type === 'slot_clear_client'){
