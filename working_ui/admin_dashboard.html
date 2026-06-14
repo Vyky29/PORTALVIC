@@ -4,6 +4,7 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
   <meta charset="UTF-8" />
+  <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
@@ -2881,7 +2882,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="muted" style="font-size:11px;margin:-4px 0 0 26px;line-height:1.4;min-width:0;overflow-wrap:break-word">Delivery</div>' +
         '<div style="margin-left:22px;display:flex;flex-direction:column;gap:6px;min-width:0">' +
         '<label><input type="radio" name="c4kSfRelInstDel" id="c4kSfRelInstAnn" value="announcement" checked /> <span style="min-width:0;overflow-wrap:break-word">Team announcement</span></label>' +
-        '<label><input type="radio" name="c4kSfRelInstDel" id="c4kSfRelInstDm" value="dm" /> <span style="min-width:0;overflow-wrap:break-word">Private chat</span></label>' +
+        '<label><input type="radio" name="c4kSfRelInstDel" id="c4kSfRelInstDm" value="dm" /> <span style="min-width:0;overflow-wrap:break-word">Direct message</span></label>' +
         '</div></div></fieldset></div>' +
         '<div class="c4k-sf-act-stack" style="margin-top:18px">' +
         '<button type="button" class="btn btn--ghost btn--sm" id="c4kSfRelNotifyBack">Back</button>' +
@@ -18063,7 +18064,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
         clients:'Search participant profiles, attendance history, activity and report requests.',
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
-        comms_ops:'Programme comms · CEO chat · internal messages',
+        comms_ops:'Programme comms log · staff notices',
         staffhr:'Staff records, availability, HR notes and ZohoPeople-linked profile data.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Zero-hours employment contracts — create, send and track staff signatures.',
@@ -18670,7 +18671,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
-    function viewCsCliq(){ return '<h1 class="page-title">Messaging removed</h1><p class="page-intro">Internal chat has been disabled.</p>'; }
+    function viewCsCliq(){ return viewOperations(); }
     function bindCsCliqModule(){
       if(window.portalCsCliqPaused && typeof window.portalCsCliqPaused.bindAdminView === 'function'){
         window.portalCsCliqPaused.bindAdminView();
@@ -22771,13 +22772,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       var navHtml = topHtml + NAV_GROUPS.map(function(group){
         if(group.id === 'g_new_chat'){
-          var chatItem = navGetItem('portal_nav_new_chat');
-          if(!chatItem || !chatItem.externalUrl) return '';
-          var chatLink =
-            '<a class="admin-nav-external" href="'+esc(String(chatItem.externalUrl))+'" title="'+escAttr(chatItem.label)+'">'+
-            adminNavIconHtml('portal_nav_new_chat')+
-            '<span class="admin-nav-label">'+esc(chatItem.label)+'</span></a>';
-          return '<div class="admin-nav-group admin-nav-group--direct" data-group-id="'+esc(group.id)+'">'+chatLink+'</div>';
+          return '';
         }
         var childHtml = (group.children || []).map(function(cid){
           var cs = String(cid);
@@ -23210,7 +23205,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_badgeAlert){}
       var tab = String(meta.view || '').trim();
       if(tab === 'chat' || tab === 'cs_cliq'){
-        setView('cs_cliq');
+        setView('comms_ops');
         return;
       }
       if(tab === 'wellbeing'){

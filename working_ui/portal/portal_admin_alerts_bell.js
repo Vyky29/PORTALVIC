@@ -663,11 +663,13 @@
       return a.kind !== "chat";
     });
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
-    var hints = resolveChatHints();
-    hints.forEach(function (h, idx) {
-      var item = activityFromChatHint(h, idx);
-      if (item) pushActivityAlert(item, { silent: true });
-    });
+    if (!global.__PORTAL_HIDE_CHAT_UI__) {
+      var hints = resolveChatHints();
+      hints.forEach(function (h, idx) {
+        var item = activityFromChatHint(h, idx);
+        if (item) pushActivityAlert(item, { silent: true });
+      });
+    }
     sortNewestFirst();
     if (!opts.silent && typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();

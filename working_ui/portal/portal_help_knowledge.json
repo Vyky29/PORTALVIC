@@ -17,7 +17,7 @@
       "id": "dashboard",
       "title": "Understanding your dashboard",
       "keywords": ["dashboard", "today", "main screen", "home", "panel", "pantalla principal", "inicio"],
-      "answer": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today’s participants and what still needs doing.\n\nThe logo halo shows if feedback, chat, announcements or documents need attention.\n\nUse Next session, Week and Term under the cards for planning."
+      "answer": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today’s participants and what still needs doing.\n\nThe logo halo shows if feedback, announcements or documents need attention.\n\nUse Next session, Week and Term under the cards for planning."
     },
     {
       "id": "colours",
@@ -29,7 +29,7 @@
       "id": "logo-halo",
       "title": "Logo halo and notification centre",
       "keywords": ["logo", "halo", "dot", "notification centre", "notifications", "tap logo", "halos", "punto", "notificaciones"],
-      "answer": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nBlue — new internal chat message.\nRed — announcement or document to sign.\nGreen — all up to date.\nMultiple dots — more than one type waiting."
+      "answer": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nGreen — all up to date.\nMultiple dots — more than one type waiting."
     },
     {
       "id": "feedback",
@@ -75,9 +75,9 @@
     },
     {
       "id": "chat",
-      "title": "Internal chat",
+      "title": "Messaging",
       "keywords": ["chat", "internal chat", "message", "office", "voice note", "cliq", "mensaje", "chat interno"],
-      "answer": "Open Internal chat from the notification centre for quick messages with the office.\n\nA blue halo means a new message is waiting. You can send text or a voice note (mic).\n\nKeep Zoho Cliq installed for now — portal chat runs alongside it."
+      "answer": "In-portal messaging is not available yet. Use Zoho Cliq or contact the office for urgent messages."
     },
     {
       "id": "timesheet",
@@ -125,13 +125,13 @@
       "id": "alerts-settings",
       "title": "Alerts, notifications and permissions",
       "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "alertas", "notificaciones", "microfono"],
-      "answer": "Quick menu → Settings → Alerts & notifications.\n\nTurn on notifications once per device (use Send test to check).\n\nLocation is only for Bespoke Programme / Day Centre staff during their rota shift.\n\nMicrophone is optional — for voice feedback or voice notes in chat."
+      "answer": "Quick menu → Settings → Alerts & notifications.\n\nTurn on notifications once per device (use Send test to check).\n\nLocation is only for Bespoke Programme / Day Centre staff during their rota shift.\n\nMicrophone is optional — for voice feedback or voice typing in forms."
     },
     {
       "id": "guide",
       "title": "Portal guide",
       "keywords": ["guide", "help", "getting started", "guia", "ayuda", "manual"],
-      "answer": "Ask here in the help chat — type a question about feedback, participants, venue checks, or any Portal task.\n\nYou can also open the full walkthrough from the link at the bottom of this chat when you need the published Portal guide page."
+      "answer": "Ask here in Portal help — type a question about feedback, participants, venue checks, or any Portal task.\n\nYou can also open the full walkthrough from the link at the bottom of this panel when you need the published Portal guide page."
     },
     {
       "id": "topbar",

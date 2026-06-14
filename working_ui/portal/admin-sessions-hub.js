@@ -4115,7 +4115,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<label class="ash-modal__check"><input type="checkbox" checked disabled> Instructor \u2013 internal message</label>' +
       '<div class="ash-modal__delivery"><span>Delivery</span>' +
       '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="team" checked> Team announcement</label>' +
-      '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="private"> Private chat</label></div></div>' +
+      '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="private"> Direct message</label></div></div>' +
       '<button type="button" class="ash-modal-btn ash-modal-btn--ghost" data-ash-modal-back>Back</button>' +
       '<button type="button" class="ash-modal-btn ash-modal-btn--primary" data-ash-modal-send>Send notifications (demo)</button>' +
       "</div>";

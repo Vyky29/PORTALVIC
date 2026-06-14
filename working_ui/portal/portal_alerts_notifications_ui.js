@@ -37,7 +37,7 @@
     if (typeof global.portalApplyWebPushStatus === "function") {
       global.portalApplyWebPushStatus(statusEl, wp, {
         registeredMessage:
-          "Registered for background chat alerts. Send test checks this tab only — close the app to verify real push.",
+          "Registered for background alerts. Send test checks this tab only — close the app to verify real push.",
       });
     }
   }
@@ -107,7 +107,7 @@
           applyWebPushStatus(statusEl, wp);
           if (wp && wp.ok) {
             statusEl.textContent =
-              "Registered for background chat alerts. Send test checks this tab only — close the app to verify real push.";
+              "Registered for background alerts. Send test checks this tab only — close the app to verify real push.";
           }
           syncTestButton(testBtn, "granted", { highlight: !!(wp && wp.ok) });
           if (btn) {
@@ -198,7 +198,7 @@
         if (r === "granted") {
           try {
             new Notification("Portal alerts on", {
-              body: "Chat and reminders on this device.",
+              body: "Alerts and reminders on this device.",
             });
           } catch (e) {
             if (statusEl) {

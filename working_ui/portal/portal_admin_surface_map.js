@@ -123,10 +123,10 @@
         sendWorkerMessagesAsAdmin: ceo,
         opsInboxLabel: "Admin",
         staffChannelLabel: "Staff · Leads",
-        ceoExecLabel: "CEO's chat",
+        ceoExecLabel: "Executive messages",
       },
       mobile: {
-        bottomNavViews: ["staff_live_map", "cs_cliq", "fullnav"],
+        bottomNavViews: ["staff_live_map", "fullnav"],
         defaultView: "staff_live_map",
         csCliqStartPane: "list",
       },

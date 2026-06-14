@@ -47,7 +47,7 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
     {
       mode: "admin",
       label: "Admin Portal",
-      sub: "Day operations, chat, roster, feedback and admin tools",
+      sub: "Day operations, roster, feedback and admin tools",
       url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
     },
     {

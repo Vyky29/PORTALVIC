@@ -12318,9 +12318,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDayOpsBoardSection('Team','dayops-sec-team',
           portalDayOpsShortcutHtml('scheduling', '', 'scheduling', 'Schedule & covers', 'Weekly anchors &amp; swap cover', true, 'scheduling')+
           portalDayOpsShortcutHtml('', '', 'announcements', 'Announcements', 'Staff &amp; site notices', false, 'announcements', 'announcements')+
-          portalDayOpsShortcutHtml('', '', 'reminders', 'Reminders', 'Follow-ups &amp; due tasks', false, 'reminders', 'reminders')+
-          portalDayOpsShortcutHtml('', '', 'comms_ops', 'CEO\'s Chat', 'DMs + CEO groups', false, 'scheduling', 'ceo_exec_dm')+
-          portalDayOpsShortcutHtml('', '', 'comms_ops', 'Internal chat', 'Staff &amp; leads only', false, 'notify', 'team_dm'),
+          portalDayOpsShortcutHtml('', '', 'reminders', 'Reminders', 'Follow-ups &amp; due tasks', false, 'reminders', 'reminders'),
           'dayops-screen-nav--row5',
           'team',
           { linkedView: 'staffhr', linkedIconId: 'staffhr', jumpTitle: 'Staff & HR', navAriaLabel: 'Team' }
