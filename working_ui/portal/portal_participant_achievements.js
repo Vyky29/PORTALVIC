@@ -1383,7 +1383,10 @@
           vid.setAttribute("playsinline", "");
           stage.appendChild(vid);
         }
-        if (img) img.hidden = true;
+        if (img) {
+          img.hidden = true;
+          img.removeAttribute("src");
+        }
         vid.hidden = false;
         vid.src = url;
         try {

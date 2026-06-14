@@ -266,17 +266,19 @@
   }
 
   function updateInboxBulkUi(detailRoot, draftRows) {
-    if (!detailRoot) return;
+    if (!detailRoot || !detailRoot.querySelector) return;
     var countEl = detailRoot.querySelector("#portalAchInboxSelCount");
     var assignBtn = detailRoot.querySelector("#portalAchInboxBulkAssignBtn");
     var deleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
     var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
+    var bulkSelect = detailRoot.querySelector("#portalAchInboxBulkAssign");
     var ids = inboxSelectedIds();
+    var participantPicked = !!(bulkSelect && String(bulkSelect.value || "").trim());
     if (countEl) {
       countEl.textContent =
         ids.length + " selected · " + (draftRows ? draftRows.length : 0) + " draft photo(s)";
     }
-    if (assignBtn) assignBtn.disabled = !ids.length;
+    if (assignBtn) assignBtn.disabled = !ids.length || !participantPicked;
     if (deleteBtn) deleteBtn.disabled = !ids.length;
     if (selectAll && draftRows && draftRows.length) {
       selectAll.checked = ids.length > 0 && ids.length === draftRows.length;
@@ -540,9 +542,15 @@
           vid.setAttribute("playsinline", "");
           stage.appendChild(vid);
         }
-        if (img) img.hidden = true;
+        if (img) {
+          img.hidden = true;
+          img.removeAttribute("src");
+        }
         vid.hidden = false;
         vid.src = url;
+        try {
+          vid.load();
+        } catch (_ld) {}
       } else {
         if (vid) {
           try {
@@ -632,8 +640,8 @@
         })
       : [];
     if (isInbox) clearInboxSelection();
-    var detail = document.createElement("div");
-    detail.className = "portal-ach-detail";
+    var detailRoot = document.createElement("div");
+    detailRoot.className = "portal-ach-detail";
     var bulkBarHtml = isInbox
       ? '<div class="portal-ach-inbox-bulk" id="portalAchInboxBulkBar">' +
         '<label class="portal-ach-inbox-bulk__select-all">' +
@@ -645,7 +653,7 @@
         '<button type="button" class="btn btn--ghost btn--sm portal-ach-admin-delete__btn" id="portalAchInboxBulkDeleteBtn" disabled>Delete selected</button>' +
         "</div>"
       : "";
-    detail.innerHTML =
+    detailRoot.innerHTML =
       '<div class="portal-ach-detail__head">' +
       '<button type="button" class="btn btn--sec btn--sm" data-ach-back="1">&larr; All participants</button>' +
       '<div class="portal-ach-detail__titles">' +
@@ -661,19 +669,24 @@
       (group.photos.length === 1 ? "" : "s") +
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
       (isInbox
-        ? ". Tick photos to move in bulk, or assign one at a time. Choose a participant before Assign."
+        ? ". Tick photos, pick a participant above, then Assign selected. Double-click a photo to view full screen."
         : ". Double-click a photo to view full screen. Delete any photo that should not be kept.") +
       "</p></div></div></div></div>" +
       bulkBarHtml +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
-    host.appendChild(detail);
+    host.appendChild(detailRoot);
     if (isInbox && assignTargets.length) {
-      var bulkSelect = detail.querySelector("#portalAchInboxBulkAssign");
+      var bulkSelect = detailRoot.querySelector("#portalAchInboxBulkAssign");
       if (bulkSelect) populateParticipantSelect(bulkSelect, assignTargets);
-      var bulkAssignBtn = detail.querySelector("#portalAchInboxBulkAssignBtn");
-      var bulkDeleteBtn = detail.querySelector("#portalAchInboxBulkDeleteBtn");
-      var selectAll = detail.querySelector("#portalAchInboxSelectAll");
+      var bulkAssignBtn = detailRoot.querySelector("#portalAchInboxBulkAssignBtn");
+      var bulkDeleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
+      var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
+      if (bulkSelect) {
+        bulkSelect.addEventListener("change", function () {
+          updateInboxBulkUi(detailRoot, draftPhotos);
+        });
+      }
       if (selectAll) {
         selectAll.addEventListener("change", function () {
           clearInboxSelection();
@@ -682,10 +695,10 @@
               inboxSelection[String(row.id)] = true;
             });
           }
-          detail.querySelectorAll("[data-ach-select-id]").forEach(function (cb) {
+          detailRoot.querySelectorAll("[data-ach-select-id]").forEach(function (cb) {
             cb.checked = !!selectAll.checked;
           });
-          updateInboxBulkUi(detail, draftPhotos);
+          updateInboxBulkUi(detailRoot, draftPhotos);
         });
       }
       if (bulkAssignBtn && bulkSelect) {
@@ -694,7 +707,14 @@
             return t.key === bulkSelect.value;
           });
           var ids = inboxSelectedIds();
-          if (!target || !ids.length) return;
+          if (!ids.length) return;
+          if (!target) {
+            if (statusEl) {
+              statusEl.textContent = "Choose a participant first.";
+              statusEl.className = "portal-forms-status is-error";
+            }
+            return;
+          }
           bulkAssignBtn.disabled = true;
           var chain = Promise.resolve();
           ids.forEach(function (pid) {
@@ -760,9 +780,9 @@
             });
         });
       }
-      updateInboxBulkUi(detail, draftPhotos);
+      updateInboxBulkUi(detailRoot, draftPhotos);
     }
-    var grid = detail.querySelector(".portal-admin-achievement-gallery");
+    var grid = detailRoot.querySelector(".portal-admin-achievement-gallery");
     for (var i = 0; i < group.photos.length; i++) {
       (function (row, photoIndex) {
         signedUrl(client, row.storage_path).then(function (url) {
@@ -770,7 +790,7 @@
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-admin-achievement-thumb";
-          var detail = photoStatusDetail(row);
+          var statusDetail = photoStatusDetail(row);
           btn.setAttribute(
             "aria-label",
             esc(group.clientName) + " — " + esc(statusLabel(row.status)) + " — " + esc(caption)
@@ -787,7 +807,7 @@
             checkbox.addEventListener("change", function () {
               if (checkbox.checked) inboxSelection[String(row.id)] = true;
               else delete inboxSelection[String(row.id)];
-              updateInboxBulkUi(detail, draftPhotos);
+              updateInboxBulkUi(detailRoot, draftPhotos);
             });
             pick.appendChild(checkbox);
             pick.appendChild(document.createTextNode("Select"));
@@ -802,7 +822,7 @@
             esc(statusLabel(row.status)) +
             "</span>" +
             '<span class="portal-admin-achievement-thumb__who">' +
-            esc(detail) +
+            esc(statusDetail) +
             "</span>" +
             '<span class="portal-admin-achievement-thumb__title">' +
             esc(caption) +
@@ -814,76 +834,40 @@
           wrap.appendChild(btn);
           var actionBar = document.createElement("div");
           actionBar.className = "portal-ach-admin-photo-actions";
-          if (isInbox && row.status === "draft" && assignTargets.length) {
-            var assignBar = document.createElement("div");
-            assignBar.className = "portal-ach-inbox-assign";
-            var select = document.createElement("select");
-            select.className = "portal-ach-inbox-assign__select";
-            select.setAttribute("aria-label", "Assign to participant");
-            populateParticipantSelect(select, assignTargets);
-            var assignBtn = document.createElement("button");
-            assignBtn.type = "button";
-            assignBtn.className = "btn btn--sec btn--sm portal-ach-inbox-assign__btn";
-            assignBtn.textContent = "Assign";
-            assignBtn.disabled = true;
-            select.addEventListener("change", function () {
-              assignBtn.disabled = !select.value;
-            });
-            assignBtn.addEventListener("click", function () {
-              var target = assignTargets.find(function (t) {
-                return t.key === select.value;
-              });
-              if (!target) return;
-              assignBtn.disabled = true;
-              void assignInboxPhoto(row.id, target.key, target.clientName)
+          if (!isInbox || row.status !== "draft") {
+            var deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "btn btn--ghost btn--sm portal-ach-admin-delete__btn";
+            deleteBtn.textContent = "Delete";
+            deleteBtn.addEventListener("click", function () {
+              if (
+                !global.confirm(
+                  "Delete this photo permanently? This cannot be undone."
+                )
+              ) {
+                return;
+              }
+              deleteBtn.disabled = true;
+              void deletePhoto(row.id, row.storage_path)
                 .then(function () {
                   void refresh({ stayOnKey: key });
+                  if (statusEl) {
+                    statusEl.textContent = "Photo deleted.";
+                    statusEl.className = "portal-forms-status";
+                  }
                 })
                 .catch(function (err) {
                   console.error(err);
-                  assignBtn.disabled = false;
+                  deleteBtn.disabled = false;
                   if (statusEl) {
-                    statusEl.textContent = (err && err.message) || "Could not assign photo.";
+                    statusEl.textContent = (err && err.message) || "Could not delete photo.";
                     statusEl.className = "portal-forms-status is-error";
                   }
                 });
             });
-            assignBar.appendChild(select);
-            assignBar.appendChild(assignBtn);
-            actionBar.appendChild(assignBar);
+            actionBar.appendChild(deleteBtn);
           }
-          var deleteBtn = document.createElement("button");
-          deleteBtn.type = "button";
-          deleteBtn.className = "btn btn--ghost btn--sm portal-ach-admin-delete__btn";
-          deleteBtn.textContent = "Delete";
-          deleteBtn.addEventListener("click", function () {
-            if (
-              !global.confirm(
-                "Delete this photo permanently? This cannot be undone."
-              )
-            ) {
-              return;
-            }
-            deleteBtn.disabled = true;
-            void deletePhoto(row.id, row.storage_path)
-              .then(function () {
-                void refresh({ stayOnKey: key });
-                if (statusEl) {
-                  statusEl.textContent = "Photo deleted.";
-                  statusEl.className = "portal-forms-status";
-                }
-              })
-              .catch(function (err) {
-                console.error(err);
-                deleteBtn.disabled = false;
-                if (statusEl) {
-                  statusEl.textContent = (err && err.message) || "Could not delete photo.";
-                  statusEl.className = "portal-forms-status is-error";
-                }
-              });
-          });
-          actionBar.appendChild(deleteBtn);
-          wrap.appendChild(actionBar);
+          if (actionBar.childNodes.length) wrap.appendChild(actionBar);
           grid.appendChild(wrap);
         });
       })(group.photos[i], i);
