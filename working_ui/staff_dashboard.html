@@ -8724,12 +8724,6 @@
         || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
       const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
       const todayRows = dashboardData && Array.isArray(dashboardData.today) ? dashboardData.today : [];
-      if(dashboardData && dashboardData.portalTodayShowDayOffBanner && todayRows.length){
-        dashboardData.venueMeta = todayRows.length === 1
-          ? '1 participant'
-          : (todayRows.length + ' participants');
-        return;
-      }
       if(portalNextSessionPreviewHasParticipants(preview)){
         dashboardData.venueMeta = 'Next session ' + String(preview.dateLabel || '').trim();
         return;
@@ -8856,7 +8850,6 @@
       }catch(_){ rows = []; }
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
-      dashboardData.portalTodayShowDayOffBanner = false;
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       const selectedAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
         ? portalResolveTodaySectionCalendarDate()
@@ -8912,7 +8905,6 @@
       if(showLiveEmptyPanel && todayOff){
         if(!rosterReady){
           dashboardData.portalTodayNextSessionPreview = null;
-          dashboardData.portalTodayShowDayOffBanner = true;
           dashboardData.portalTodayEmptyPanelMode = 'sync';
           dashboardData.portalTodaySectionMode = 'day_off';
           dashboardData.today = [];
@@ -8921,32 +8913,11 @@
         }
         const previewOff = portalRefreshNextSessionPreview(id);
         dashboardData.portalTodayNextSessionPreview = previewOff;
-        dashboardData.portalTodayShowDayOffBanner = true;
         if(selectedIso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
           && portalStaffDayOffIsTimeOffRequested(selectedIso, id)){
           dashboardData.portalTodayEmptyPanelMode = 'off_time_requested';
         }else if(dashboardData.portalTodayEmptyPanelMode !== 'off_time_requested'){
           dashboardData.portalTodayEmptyPanelMode = 'off';
-        }
-        const isoNext = typeof window.portalFindNextSessionCalendarInfo === 'function'
-          ? (function(){
-            const inf = window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel);
-            return inf && inf.date && typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(inf.date) : '';
-          })()
-          : '';
-        let promotedRows = isoNext ? portalBuildTodayRowsForIso(isoNext) : [];
-        if(!promotedRows.length && typeof window.__portalSyncNextSessionFromModel === 'function'){
-          try{ window.__portalSyncNextSessionFromModel(); }catch(_){}
-          promotedRows = isoNext ? portalBuildTodayRowsForIso(isoNext) : [];
-        }
-        if(promotedRows.length){
-          dashboardData.portalTodaySectionMode = 'promoted_next';
-          dashboardData.portalTodaySectionHeading = previewOff && previewOff.dateLabel
-            ? ('NEXT SESSION · ' + String(previewOff.dateLabel).trim())
-            : 'NEXT SESSION';
-          dashboardData.today = promotedRows;
-          portalApplyTodayVenueMeta();
-          return promotedRows;
         }
         dashboardData.portalTodaySectionMode = 'day_off';
         dashboardData.today = [];
@@ -9006,8 +8977,7 @@
           return;
         }
         if(dashboardData && (
-          dashboardData.portalTodayShowDayOffBanner
-          || portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)
+          portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)
           || dashboardData.portalTodayEmptyPanelMode === 'off'
           || dashboardData.portalTodayEmptyPanelMode === 'off_time_requested'
           || dashboardData.portalTodayEmptyPanelMode === 'complete'
@@ -9115,7 +9085,6 @@
       portalTodaySectionHeading: '',
       portalTodaySectionMode: 'today',
       portalTodayNextSessionPreview: null,
-      portalTodayShowDayOffBanner: false,
       week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
       termName: 'Summer Term 2026',
@@ -10961,21 +10930,9 @@
       if(fb) fb.remove();
       grid.innerHTML = '';
       grid.removeAttribute('data-day-off-sig');
-      grid.classList.toggle('today-grid--promoted-next', !!(dashboardData && dashboardData.portalTodayShowDayOffBanner));
+      grid.classList.remove('today-grid--day-off');
       applyTodayGridSizing(grid, count);
       const list = dashboardData.today.slice(0, 9);
-      if(dashboardData && dashboardData.portalTodayShowDayOffBanner){
-        const banner = document.createElement('div');
-        banner.className = 'today-day-panel today-day-panel--solo today-grid__dayoff-banner';
-        banner.setAttribute('role', 'status');
-        const bannerPreview = dashboardData.portalTodayNextSessionPreview || null;
-        banner.innerHTML = portalTodayDayOffPanelHtml({
-          mode: String(dashboardData.portalTodayEmptyPanelMode || 'off'),
-          preview: bannerPreview,
-          loading: false
-        });
-        grid.appendChild(banner);
-      }
       const rowsWrap = document.createElement('div');
       rowsWrap.className = 'today-grid-rows';
       rowsWrap.setAttribute('role', 'list');
