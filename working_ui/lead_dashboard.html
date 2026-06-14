@@ -6996,6 +6996,9 @@
         const halfWeeks = dd && Array.isArray(dd.termHalfTermWeekStarts) ? dd.termHalfTermWeekStarts : [];
         if(typeof isHalfTermDay === 'function' && isHalfTermDay(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), halfWeeks)) return true;
         const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+        if(iso && typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
+          return false;
+        }
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
         if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(dayName, sid)) return true;
         return false;

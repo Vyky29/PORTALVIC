@@ -8475,6 +8475,9 @@
         const halfWeeks = dd && Array.isArray(dd.termHalfTermWeekStarts) ? dd.termHalfTermWeekStarts : [];
         if(typeof isHalfTermDay === 'function' && isHalfTermDay(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), halfWeeks)) return true;
         const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+        if(iso && typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
+          return false;
+        }
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
         if(typeof portalTermCalendarDayIsRed === 'function'
           && portalTermCalendarDayIsRed(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), sid, halfWeeks)){
@@ -8500,14 +8503,7 @@
       if(todayRows.length) return 'empty';
       const hydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
-        if(!hydrated){
-          try{
-            if(Array.isArray(window.ROSTER_TERM_MASTER_DASHBOARD_ROWS) && window.ROSTER_TERM_MASTER_DASHBOARD_ROWS.length){
-              return 'empty';
-            }
-          }catch(_){}
-          return 'sync';
-        }
+        if(!hydrated) return 'sync';
         return 'empty';
       }
       return live ? 'empty' : 'empty';
@@ -8530,6 +8526,11 @@
     function portalNextSessionPreviewHasParticipants(preview){
       return !!(preview && (Number(preview.sessionCount) > 0 || (Array.isArray(preview.participants) && preview.participants.length)));
     }
+    function portalStaffRosterReadyForNextSessionPreview(){
+      try{
+        return !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+      }catch(_){ return false; }
+    }
     function portalStabilizeNextSessionPreview(nextPreview, prevPreview){
       if(portalNextSessionPreviewHasParticipants(nextPreview)) return nextPreview;
       if(portalNextSessionPreviewHasParticipants(prevPreview)) return prevPreview;
@@ -8538,10 +8539,14 @@
     function portalRefreshNextSessionPreview(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       if(!id) return null;
+      const prev = dashboardData && dashboardData.__portalStableNextSessionPreview;
+      if(!portalStaffRosterReadyForNextSessionPreview()){
+        if(dashboardData) dashboardData.portalTodayNextSessionPreview = null;
+        return portalNextSessionPreviewHasParticipants(prev) ? prev : null;
+      }
       if(typeof window.__portalSyncNextSessionFromModel === 'function'){
         try{ window.__portalSyncNextSessionFromModel(); }catch(_){}
       }
-      const prev = dashboardData && dashboardData.__portalStableNextSessionPreview;
       const built = typeof portalBuildTodayNextSessionPreview === 'function'
         ? portalBuildTodayNextSessionPreview(id)
         : null;
@@ -8699,8 +8704,14 @@
         : (todayOff ? 'off' : 'empty');
       dashboardData.portalTodayEmptyPanelMode = emptyPanelMode;
       if(todayOff) rows = [];
-      if(liveToday && id && dashboardData.portalIdentityResolved !== false){
+      const rosterReady = portalStaffRosterReadyForNextSessionPreview();
+      if(liveToday && id && dashboardData.portalIdentityResolved !== false && rosterReady){
         portalRefreshNextSessionPreview(id);
+      }else if(!rosterReady){
+        dashboardData.portalTodayNextSessionPreview = null;
+        if(liveToday && id && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(id)){
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+        }
       }else if(!portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
         dashboardData.portalTodayNextSessionPreview = portalStabilizeNextSessionPreview(null, prevPreview);
       }
@@ -8727,6 +8738,15 @@
         && dashboardData.portalIdentityResolved !== false
         && (todayOff || (!rows.length && emptyPanelMode !== 'sync'));
       if(showLiveEmptyPanel && todayOff){
+        if(!rosterReady){
+          dashboardData.portalTodayNextSessionPreview = null;
+          dashboardData.portalTodayShowDayOffBanner = true;
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          dashboardData.portalTodaySectionMode = 'day_off';
+          dashboardData.today = [];
+          portalApplyTodayVenueMeta();
+          return [];
+        }
         const previewOff = portalRefreshNextSessionPreview(id);
         dashboardData.portalTodayNextSessionPreview = previewOff;
         dashboardData.portalTodayShowDayOffBanner = true;
@@ -8757,6 +8777,13 @@
         return [];
       }
       if(showLiveEmptyPanel){
+        if(!rosterReady){
+          dashboardData.portalTodayNextSessionPreview = null;
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          dashboardData.today = [];
+          portalApplyTodayVenueMeta();
+          return [];
+        }
         const preview = portalRefreshNextSessionPreview(id);
         dashboardData.portalTodayNextSessionPreview = preview;
         dashboardData.today = [];
