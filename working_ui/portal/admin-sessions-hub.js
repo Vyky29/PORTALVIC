@@ -1044,9 +1044,10 @@
     var rawSlug = slugify(fb.client_name);
     if (!sd || !nm) return keys;
     var parsedPk = parsePortalSessionKeyFields(pk);
+    var climbingOrMaPerSlot = isClimbingService(svc) || isMultiActivityService(svc);
     if (parsedPk.date && parsedPk.clientSlug) {
       if (parsedPk.time) keys.push(parsedPk.date + "|" + parsedPk.time + "|" + parsedPk.clientSlug);
-      keys.push(parsedPk.date + "|" + parsedPk.clientSlug);
+      if (!climbingOrMaPerSlot) keys.push(parsedPk.date + "|" + parsedPk.clientSlug);
     }
     var tk = sd + "|" + normTimeKey(fb.session_time) + "|" + nm;
     keys.push(tk);
@@ -1055,7 +1056,7 @@
       isAquaticService(svc) &&
       aquaticSlotCountForClientOnDate(sd, fb.client_name) > 1 &&
       !aquaticSameInstructorAllSlotsOnDate(sd, fb.client_name);
-    if (!aquaticPerSlot) {
+    if (!aquaticPerSlot && !climbingOrMaPerSlot) {
       keys.push(broadDateClient);
     }
     if (isDayCentreService(svc)) {
@@ -1064,14 +1065,22 @@
     }
     if (rawSlug && rawSlug !== nm) {
       keys.push(sd + "|" + normTimeKey(fb.session_time) + "|" + rawSlug);
-      if (!aquaticPerSlot) keys.push(sd + "|" + rawSlug);
+      if (!aquaticPerSlot && !climbingOrMaPerSlot) keys.push(sd + "|" + rawSlug);
     }
     if (isMultiActivityService(svc)) {
       var t = normTimeKey(fb.session_time);
       if (t) {
         keys.push(tk + "|" + serviceKey(svc));
-        keys.push(sd + "|" + t + "|" + nm + "|big_pool");
-        keys.push(sd + "|" + t + "|" + nm + "|hub_room");
+        var maKind = feedbackAreaKindFromFb(fb);
+        var maArea = portalKeyAreaFromParts(pk ? pk.split("|").map(clean) : []);
+        if (!maArea || maArea === "default") {
+          if (maKind === "hub") maArea = "hub_room";
+          else if (maKind === "pool") maArea = "big_pool";
+          else if (maKind === "aquatic") maArea = "small_pool";
+        }
+        if (maArea && maArea !== "default") {
+          keys.push(sd + "|" + t + "|" + nm + "|" + maArea);
+        }
       }
     }
     if (isDayCentreService(svc)) {

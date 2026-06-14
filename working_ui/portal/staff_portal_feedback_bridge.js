@@ -343,6 +343,7 @@
       .replace(/[\s_-]+/g, " ");
     if (k.indexOf("climbing") >= 0 || k.indexOf("climb") >= 0) return "climbing";
     if (/multi[-\s]?activity/.test(k) || k.indexOf("multi activity") >= 0) return "multi_activity";
+    if (k.indexOf("aquatic") >= 0 || k.indexOf("swimming") >= 0) return "aquatic";
     if (k.indexOf("bespoke") >= 0) return "bespoke";
     return "";
   }
@@ -402,7 +403,22 @@
       }
       return false;
     }
-    return true;
+    if (portalRosterKeyIsSharedFeedbackUnit(a) || portalRosterKeyIsSharedFeedbackUnit(b)) {
+      return true;
+    }
+    return false;
+  }
+
+  function portalRosterKeyIsSharedFeedbackUnit(key) {
+    const parts = String(key || "")
+      .trim()
+      .split("|");
+    const last = String(parts[parts.length - 1] || "")
+      .trim()
+      .toLowerCase();
+    if (last === "day_centre" || last === "bespoke_shared") return true;
+    if (parts.length >= 3 && parts[1] === "") return true;
+    return false;
   }
 
   function rosterSessionStartHm(s) {
@@ -433,6 +449,7 @@
       .toLowerCase();
     if (stKind === "climbing" && act.indexOf("climb") < 0) return false;
     if (stKind === "multi_activity" && !/multi[-\s]?activity/.test(act)) return false;
+    if (stKind === "aquatic" && !/aquatic|swimming/.test(act)) return false;
     if (stKind === "bespoke" && act.indexOf("bespoke") < 0) return false;
     return true;
   }
@@ -447,10 +464,16 @@
       const pkLow = rPk.toLowerCase();
       if (pkLow.indexOf("climb") >= 0) rKind = "climbing";
       else if (pkLow.indexOf("multi") >= 0) rKind = "multi_activity";
+      else if (pkLow.indexOf("aquatic") >= 0 || pkLow.indexOf("swim") >= 0) rKind = "aquatic";
       else if (pkLow.indexOf("bespoke") >= 0) rKind = "bespoke";
     }
     if (stKind && rKind && stKind !== rKind) return false;
     if (rPk && stUk && !portalKeyAreaTokensCompatible(rPk, stUk)) return false;
+    if (statusRowNeedsPerStaffUnitFeedback(st)) {
+      const rTime = portalKeyTimeToken(rPk);
+      const stTime = portalKeyTimeToken(stUk);
+      if (rTime && stTime && rTime !== stTime) return false;
+    }
     return true;
   }
 
