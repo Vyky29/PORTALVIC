@@ -101,9 +101,50 @@
       return {};
     });
     if (!res.ok || !data || data.ok === false) {
-      throw new Error((data && data.error) || "request_failed");
+      var err = new Error((data && data.error) || "request_failed");
+      err.code = String((data && data.error) || "request_failed");
+      err.httpStatus = res.status;
+      throw err;
     }
     return data;
+  }
+
+  function localJobDraftKey() {
+    var sid = staffSessionId();
+    return sid ? "portal_job_application_draft_v1_" + sid : "";
+  }
+
+  function readLocalJobDraft() {
+    var key = localJobDraftKey();
+    if (!key) return null;
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeLocalJobDraft(payload) {
+    var key = localJobDraftKey();
+    if (!key) return;
+    try {
+      localStorage.setItem(
+        key,
+        JSON.stringify({ payload: payload || {}, updated_at: new Date().toISOString() })
+      );
+    } catch (_) {}
+  }
+
+  function isOnboardingBackendMissing(err) {
+    return (
+      err &&
+      (err.code === "onboarding_not_configured" ||
+        err.httpStatus === 503 ||
+        String(err.message || "").indexOf("onboarding_not_configured") >= 0)
+    );
   }
 
   global.portalOnboardingFormEnsureSession = ensurePortalSession;
@@ -154,11 +195,21 @@
       payload._portal = payload._portal && typeof payload._portal === "object" ? payload._portal : {};
       payload._portal.submitted_at = new Date().toISOString();
     }
-    var result = await edgePost("portal-staff-onboarding-draft-save", {
-      form_type: "job",
-      payload: payload,
-      portal_staff_name: name,
-    });
+    var result;
+    try {
+      result = await edgePost("portal-staff-onboarding-draft-save", {
+        form_type: "job",
+        payload: payload,
+        portal_staff_name: name,
+      });
+    } catch (err) {
+      if (isOnboardingBackendMissing(err)) {
+        writeLocalJobDraft(payload);
+        result = { ok: true, source: "local" };
+      } else {
+        throw err;
+      }
+    }
     if (opts.submit && typeof global.portalOnboardingMakeWebhookPost === "function") {
       try {
         global.portalOnboardingMakeWebhookPost("job", staffSessionId(), name, payload);
@@ -167,7 +218,15 @@
     return result;
   };
   global.portalOnboardingFormLoadJob = async function () {
-    return edgePost("portal-staff-onboarding-draft-load", { form_type: "job" });
+    try {
+      return await edgePost("portal-staff-onboarding-draft-load", { form_type: "job" });
+    } catch (err) {
+      if (isOnboardingBackendMissing(err)) {
+        var local = readLocalJobDraft();
+        return { ok: true, draft: local, source: "local" };
+      }
+      throw err;
+    }
   };
   global.portalOnboardingFormSaveHealth = async function (payload, opts) {
     opts = opts || {};

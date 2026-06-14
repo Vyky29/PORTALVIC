@@ -98,3 +98,30 @@ body {
   background: #fef3f2;
   border-color: #fecdca;
 }
+.ob-form-section {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.ob-form-hint {
+  margin: -4px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.ob-form-card fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.ob-form-card fieldset[hidden] {
+  display: none !important;
+}

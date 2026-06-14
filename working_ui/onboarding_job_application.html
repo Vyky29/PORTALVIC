@@ -11,25 +11,65 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260601" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-job-form-order" />
 </head>
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Job application</h1>
-      <p>Complete your pre-employment application. You can save and return later.</p>
+      <p>Same order as our standard form: your details, nationality, right to work (if needed), then bank details at the end.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
     <form id="jobForm" class="ob-form-card">
+      <p class="ob-form-section">Your details</p>
       <label>Full name<input name="full_name" required autocomplete="name" /></label>
       <label>Email<input name="email" type="email" autocomplete="email" /></label>
       <label>Mobile<input name="mobile" type="tel" autocomplete="tel" /></label>
-      <label>Home address<textarea name="address" rows="3"></textarea></label>
-      <label>Right to work in the UK (details)<textarea name="right_to_work" rows="2"></textarea></label>
+      <label>Home address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
+
+      <p class="ob-form-section">Nationality</p>
+      <label>Nationality
+        <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="e.g. British, Spanish, Italian" />
+      </label>
+      <datalist id="jobNationalityList">
+        <option value="British"></option>
+        <option value="English"></option>
+        <option value="Scottish"></option>
+        <option value="Welsh"></option>
+        <option value="Irish"></option>
+        <option value="Spanish"></option>
+        <option value="Italian"></option>
+        <option value="Portuguese"></option>
+        <option value="French"></option>
+        <option value="Polish"></option>
+        <option value="Romanian"></option>
+        <option value="Indian"></option>
+        <option value="Pakistani"></option>
+        <option value="Bangladeshi"></option>
+        <option value="Nigerian"></option>
+        <option value="Ghanaian"></option>
+        <option value="American"></option>
+      </datalist>
+      <p class="ob-form-hint">British / UK nationals do not need to complete the right to work section below.</p>
+
+      <fieldset id="jobRtwSection" hidden aria-hidden="true">
+        <p class="ob-form-section">Right to work in the UK</p>
+        <p class="ob-form-hint">Required if you are not a British or UK national.</p>
+        <label>Right to work details
+          <textarea name="right_to_work" rows="3" placeholder="Share code, visa type, passport details, or expiry date"></textarea>
+        </label>
+        <label>Home Office share code (if applicable)
+          <input name="right_to_work_share_code" autocomplete="off" inputmode="text" />
+        </label>
+      </fieldset>
+
+      <p class="ob-form-section">Bank details (payroll)</p>
+      <p class="ob-form-hint">For salary payments only — complete at the end of the form.</p>
       <label>Bank account name<input name="bank_account_name" autocomplete="off" /></label>
-      <label>Sort code<input name="bank_sort_code" inputmode="numeric" autocomplete="off" /></label>
+      <label>Sort code<input name="bank_sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
       <label>Account number<input name="bank_account_number" inputmode="numeric" autocomplete="off" /></label>
+
       <label class="ob-form-check"><input type="checkbox" name="confirm" required /> I confirm the information above is accurate.</label>
       <p id="jobStatus" class="ob-form-status" hidden></p>
       <div class="ob-form-actions">
@@ -39,7 +79,8 @@
     </form>
   </main>
   <script src="/portal/onboarding_make_webhooks.js?v=20260601-make"></script>
-  <script src="/portal/onboarding_applicant_form.js?v=20260614-onboarding-session"></script>
+  <script src="/portal/onboarding_job_form.js?v=20260614-job-form-order"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260614-job-form-order"></script>
   <script>
     (function () {
       var form = document.getElementById("jobForm");
@@ -50,23 +91,8 @@
         statusEl.textContent = msg || "";
         statusEl.classList.toggle("is-error", !!isErr);
       }
-      function readPayload() {
-        var fd = new FormData(form);
-        var out = {};
-        fd.forEach(function (v, k) {
-          if (k === "confirm") return;
-          out[k] = String(v || "").trim();
-        });
-        return out;
-      }
-      function fillForm(payload) {
-        if (!payload || typeof payload !== "object") return;
-        Object.keys(payload).forEach(function (k) {
-          var el = form.elements.namedItem(k);
-          if (el && "value" in el && k !== "confirm") el.value = payload[k] || "";
-        });
-      }
       async function init() {
+        portalJobFormBind(form);
         var sessionEl = document.getElementById("obFormSession");
         var token = await portalOnboardingFormEnsureSession();
         if (!token) {
@@ -84,17 +110,25 @@
           sessionEl.textContent = who ? "Connected as " + who : "Connected";
         }
         if (typeof portalOnboardingFormApplyBackLink === "function") portalOnboardingFormApplyBackLink();
+        portalJobFormPrefillFromProfile(form);
         try {
           var res = await portalOnboardingFormLoadJob();
-          fillForm(res.draft && res.draft.payload);
+          if (res && res.draft && res.draft.payload) {
+            portalJobFormFill(form, res.draft.payload);
+          }
         } catch (e) {
-          showStatus("Could not load saved draft.", true);
+          console.warn("[job application] draft load", e);
         }
       }
       document.getElementById("jobSaveDraft").addEventListener("click", async function () {
+        var msg = portalJobFormValidate(form);
+        if (msg) {
+          showStatus(msg, true);
+          return;
+        }
         showStatus("Saving…");
         try {
-          await portalOnboardingFormSaveJob(readPayload(), { submit: false });
+          await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: false });
           showStatus("Draft saved.");
         } catch (e) {
           showStatus("Save failed. Try again.", true);
@@ -102,9 +136,14 @@
       });
       form.addEventListener("submit", async function (ev) {
         ev.preventDefault();
+        var msg = portalJobFormValidate(form);
+        if (msg) {
+          showStatus(msg, true);
+          return;
+        }
         showStatus("Submitting…");
         try {
-          await portalOnboardingFormSaveJob(readPayload(), { submit: true });
+          await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: true });
           showStatus("Application submitted. You can close this page.");
         } catch (e) {
           showStatus("Submit failed. Try again.", true);
