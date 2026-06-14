@@ -236,10 +236,58 @@
     }
   };
 
+  function portalReminderMetaFromMap(metaById, remId) {
+    var meta = metaById && typeof metaById === "object" ? metaById[remId] : null;
+    if (!meta || typeof meta !== "object") return { title: "Reminder", text: "" };
+    return {
+      title: String(meta.title || "Reminder").trim() || "Reminder",
+      text: String(meta.body || meta.text || "").trim(),
+    };
+  }
+
+  /** Fill title/body on signed reminder ack rows from the live admin reminder list. */
+  global.portalBackfillReminderAckMapFromAdminList = function portalBackfillReminderAckMapFromAdminList(
+    remList,
+    loadMap,
+    saveMap
+  ) {
+    try {
+      if (!Array.isArray(remList) || !remList.length) return false;
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var ack = loadMap();
+      var changed = false;
+      remList.forEach(function (r) {
+        var remId = String((r && r.portalAdminReminderId) || "").trim();
+        if (!remId) return;
+        var key = "portal-rem:" + remId;
+        var rec = ack[key];
+        if (!rec || typeof rec !== "object") return;
+        var wantTitle = String(r.title || "").trim();
+        var wantText = String(r.body || r.text || "").trim();
+        if (wantText && !String(rec.text || "").trim()) {
+          rec.text = wantText;
+          changed = true;
+        }
+        if (wantTitle && (!String(rec.title || "").trim() || rec.title === "Reminder")) {
+          rec.title = wantTitle;
+          changed = true;
+        }
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] backfill reminder ack copy", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
   global.portalMergeReminderAcksFromSupabase = async function portalMergeReminderAcksFromSupabase(
     reminderIds,
     loadMap,
-    saveMap
+    saveMap,
+    metaById
   ) {
     try {
       var ids = (reminderIds || [])
@@ -248,6 +296,7 @@
         })
         .filter(Boolean);
       if (!ids.length) return;
+      metaById = metaById && typeof metaById === "object" ? metaById : {};
       var box = readBox();
       var client = box && box.client;
       var session = box && box.session;
@@ -265,15 +314,26 @@
         var remId = String(row.announcement_id || "").trim();
         if (!remId) return;
         var key = "portal-rem:" + remId;
-        if (ack[key]) return;
+        var meta = portalReminderMetaFromMap(metaById, remId);
         var signedAt = Date.parse(row.signed_at || "");
-        ack[key] = {
-          title: "Reminder",
-          text: "",
-          signedAt: Number.isFinite(signedAt) ? signedAt : Date.now(),
-          portalAdminReminderId: remId,
-        };
-        changed = true;
+        if (!ack[key]) {
+          ack[key] = {
+            title: meta.title,
+            text: meta.text,
+            signedAt: Number.isFinite(signedAt) ? signedAt : Date.now(),
+            portalAdminReminderId: remId,
+          };
+          changed = true;
+          return;
+        }
+        if (meta.text && !String(ack[key].text || "").trim()) {
+          ack[key].text = meta.text;
+          changed = true;
+        }
+        if (meta.title && (!String(ack[key].title || "").trim() || ack[key].title === "Reminder")) {
+          ack[key].title = meta.title;
+          changed = true;
+        }
       });
       if (changed && typeof saveMap === "function") saveMap(ack);
     } catch (e) {

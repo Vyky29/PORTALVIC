@@ -15,7 +15,7 @@
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260612-reminder-ack-copy"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -7507,12 +7507,22 @@
           .map(function(row){ return String(row.id || ''); })
           .filter(Boolean);
         const remIds = remList.map(function(r){ return String(r && r.portalAdminReminderId || '').trim(); }).filter(Boolean);
+        const remMetaById = {};
+        remList.forEach(function(r){
+          const id = String(r && r.portalAdminReminderId || '').trim();
+          if(!id) return;
+          remMetaById[id] = { title: r.title, body: r.body };
+        });
         if(remIds.length && typeof portalMergeReminderAcksFromSupabase === 'function'){
           await portalMergeReminderAcksFromSupabase(
             remIds,
             portalReminderAckMapLoad,
-            portalReminderAckMapSave
+            portalReminderAckMapSave,
+            remMetaById
           );
+        }
+        if(remList.length && typeof portalBackfillReminderAckMapFromAdminList === 'function'){
+          portalBackfillReminderAckMapFromAdminList(remList, portalReminderAckMapLoad, portalReminderAckMapSave);
         }
         if(annIds.length && typeof portalMergeAnnouncementAcksFromSupabase === 'function'){
           await portalMergeAnnouncementAcksFromSupabase(
@@ -7746,15 +7756,28 @@
       });
       const remAck = portalReminderAckMapLoad();
       const rem = [];
+      const remLive = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin)
+        ? dashboardData.portalRemindersFromAdmin
+        : [];
       Object.keys(remAck).forEach(function(k){
         const rec = remAck[k];
         if(!rec || typeof rec !== 'object') return;
         if(String(k || '').indexOf('portal-rem:') !== 0) return;
+        let text = String(rec.text || '').trim();
+        let title = String(rec.title || 'Reminder').trim() || 'Reminder';
+        if(!text || title === 'Reminder'){
+          const remId = String(rec.portalAdminReminderId || k.slice('portal-rem:'.length) || '').trim();
+          const live = remLive.find(function(r){ return String(r && r.portalAdminReminderId || '') === remId; });
+          if(live){
+            if(!text) text = String(live.body || live.text || '').trim();
+            if(title === 'Reminder') title = String(live.title || title).trim() || title;
+          }
+        }
         rem.push({
           key: k,
           kind: 'reminder',
-          title: String(rec.title || 'Reminder').trim() || 'Reminder',
-          text: String(rec.text || '').trim(),
+          title: title,
+          text: text,
           signedAt: Number(rec.signedAt || 0)
         });
       });
