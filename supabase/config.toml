@@ -434,3 +434,6 @@ verify_jwt = false
 
 [functions.portal-push-feedback-9pm-digest]
 verify_jwt = false
+
+[functions.portal-push-dispatch-outstanding-feedback]
+verify_jwt = false
