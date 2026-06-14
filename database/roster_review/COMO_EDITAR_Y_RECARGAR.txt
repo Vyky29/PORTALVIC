@@ -121,3 +121,26 @@ SUPABASE (cambios puntuales en prod sin redeploy)
 -------------------------------------------------
   Tabla portal_roster_rows, columna area.
   Solo para excepciones; el CSV + bundle es la fuente principal del término.
+
+QUÉ HERRAMIENTA ADMIN USAR (para que cuadre con staff)
+------------------------------------------------------
+  El staff dashboard combina tres capas:
+    1) Bundle (MADRE / sync)  2) portal_roster_rows  3) schedule_overrides
+
+  | Quiero… | Herramienta | Escribe en… |
+  |---------|-------------|-------------|
+  | Familia nueva en hueco ABIERTO (trial) | New participant | portal_roster_rows |
+  | Cambiar niño/instructor/hora/pool TODO el término | Edit term slot | portal_roster_rows (+ eventos) |
+  | Cambio de UN día: absent, cancel, cover, make-up | Schedule & Covers | schedule_overrides |
+  | Ver la hoja del club (no guardar) | Spreadsheet reference | (solo lectura) |
+  | Cambios masivos del término (como la hoja MADRE) | roster_term_master_review → sync | MADRE → bundle + merges |
+
+  Reglas:
+  • No uses solo Schedule & Covers para un cambio de término (ej. Joel→Anas 4 semanas):
+    usa Edit term slot o MADRE + sync.
+  • New participant ya guarda en Supabase; staff lo ve tras recargar el portal.
+  • Tras MADRE/sync: commit + push → Vercel.
+  • Si algo no cuadra: revisa portal_roster_rows + schedule_overrides en Supabase.
+
+  Sync MADRE desde terminal:
+    python database/roster_review/sync_roster_madre_to_portal.py

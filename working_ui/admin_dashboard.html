@@ -11785,6 +11785,133 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_e){}
     }
+    function portalDayOpsInstructorsLabelForSlot(slot){
+      var rid = String(slot && slot.staffRosterId || '').trim().toLowerCase();
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var prof = src && src.staffProfiles && rid && src.staffProfiles[rid];
+      if(prof && prof.staffName) return String(prof.staffName).trim().toUpperCase();
+      if(slot && slot.staffName) return String(slot.staffName).trim().toUpperCase();
+      return rid ? rid.toUpperCase() : '';
+    }
+    function portalDayOpsOpenClientNameMarkers(){
+      return ['no client', 'noclient', 'no participant', 'available', 'closed'];
+    }
+    function portalDayOpsSlotToRosterRowPayload(slot, clientName){
+      var iso = String(slot && slot.sessionDate || '').trim().slice(0, 10);
+      return {
+        client_name: String(clientName || '').trim(),
+        day: String(slot.sheetDay || portalWeekdayLongFromIsoDate(iso) || '').trim(),
+        time_slot: String(slot.anchorTimeLabel || '').trim(),
+        instructors: portalDayOpsInstructorsLabelForSlot(slot),
+        service: String(slot.rosterService || slot.programme || '').trim(),
+        area: String(slot.rosterArea || '').trim(),
+        venue: String(slot.venue || '').trim(),
+        session_date: iso,
+        status: 'active'
+      };
+    }
+    function portalDayOpsRefreshRosterAfterPortalRowsChange(client){
+      var chain = Promise.resolve();
+      if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
+        chain = window.portalRefreshPortalRosterRowsFromSupabase(client);
+      }else if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+        try{ window.portalRefreshStaffDashboardSourceFromPortal(); }catch(_pr){}
+      }
+      return chain.then(function(){
+        portalInvalidateAdminSlotsCache();
+        try{
+          if(typeof adminMergeSpreadsheetSessionsForSlotLookup !== 'undefined' && adminMergeSpreadsheetSessionsForSlotLookup.invalidate){
+            adminMergeSpreadsheetSessionsForSlotLookup.invalidate();
+          }
+        }catch(_inv){}
+        if(typeof window.portalNotifyAdminRosterDataChanged === 'function'){
+          window.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
+        }
+        if(window.PortalDayOps && typeof window.PortalDayOps.getFeedbackHub === 'function'){
+          var fh = window.PortalDayOps.getFeedbackHub();
+          if(fh && typeof fh.refreshRosterRowsFromResolvedSource === 'function'){
+            fh.refreshRosterRowsFromResolvedSource();
+            if(fh.root && fh.root.isConnected && typeof fh.render === 'function') fh.render();
+          }
+        }
+      });
+    }
+    function portalDayOpsPlaceParticipantOnOpenSlotSupabase(demoId, clientName, isoOpt){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client) return Promise.reject(new Error('Sign in as admin to save to the live roster.'));
+      var slot = portalDayOpsFindSlotByDemoId(demoId, isoOpt);
+      if(!slot) return Promise.reject(new Error('Open slot not found — reload the page and try again.'));
+      if(!portalDayOpsIsOpenParticipantSlot(slot.clientSlug)){
+        return Promise.reject(new Error('That cell is no longer open.'));
+      }
+      var payload = portalDayOpsSlotToRosterRowPayload(slot, clientName);
+      if(!payload.client_name || !payload.session_date || !payload.time_slot || !payload.instructors){
+        return Promise.reject(new Error('Incomplete slot data for Supabase save.'));
+      }
+      var markers = portalDayOpsOpenClientNameMarkers();
+      var instNeedle = String(payload.instructors || '').trim().toLowerCase();
+      return client.from('portal_roster_rows')
+        .select('id, client_name, instructors')
+        .eq('status', 'active')
+        .eq('session_date', payload.session_date)
+        .eq('time_slot', payload.time_slot)
+        .eq('venue', payload.venue)
+        .then(function(res){
+          if(res.error) throw res.error;
+          var cancelIds = (res.data || []).filter(function(r){
+            var cn = String(r.client_name || '').trim().toLowerCase();
+            if(markers.indexOf(cn) < 0) return false;
+            var ri = String(r.instructors || '').trim().toLowerCase();
+            return !instNeedle || !ri || ri.indexOf(instNeedle) >= 0 || instNeedle.indexOf(ri.split(',')[0].trim()) >= 0;
+          }).map(function(r){ return r.id; });
+          var chain = Promise.resolve({ error: null });
+          if(cancelIds.length){
+            chain = client.from('portal_roster_rows').update({ status: 'cancelled' }).in('id', cancelIds);
+          }
+          return chain.then(function(up){
+            if(up && up.error) throw up.error;
+            return client.from('portal_roster_rows')
+              .select('id')
+              .eq('status', 'active')
+              .eq('client_name', payload.client_name)
+              .eq('time_slot', payload.time_slot)
+              .eq('session_date', payload.session_date)
+              .maybeSingle();
+          });
+        })
+        .then(function(existing){
+          if(existing.error && existing.error.code !== 'PGRST116') throw existing.error;
+          if(existing.data && existing.data.id){
+            return client.from('portal_roster_rows').update(payload).eq('id', existing.data.id).select('id').single();
+          }
+          return client.from('portal_roster_rows').insert([payload]).select('id').single();
+        })
+        .then(function(ins){
+          if(ins.error) throw ins.error;
+          var rowId = ins.data && ins.data.id;
+          return client.from('portal_roster_row_events').insert([{
+            roster_row_id: rowId,
+            action: 'create',
+            scope: 'single_day',
+            anchor_session_date: payload.session_date,
+            before_snapshot: { open_slot: true, slot: { sessionDate: slot.sessionDate, venue: slot.venue, time: slot.anchorTimeLabel, instructor: payload.instructors } },
+            after_snapshot: payload,
+            client_context: { page: 'admin_dashboard', module: 'new_participant' }
+          }]).then(function(ev){
+            if(ev.error) console.warn('[new-participant] portal_roster_row_events', ev.error);
+          }).then(function(){
+            return portalDayOpsRefreshRosterAfterPortalRowsChange(client);
+          }).then(function(){
+            return payload;
+          });
+        });
+    }
+    function portalDayOpsAssignParticipantToOpenSlot(demoId, cid, displayName, isoOpt){
+      return portalDayOpsPlaceParticipantOnOpenSlotSupabase(demoId, displayName, isoOpt).then(function(payload){
+        portalDayOpsApplyAssignmentToSlotDemo(demoId, cid, displayName);
+        return payload;
+      });
+    }
     function portalDayOpsFormatOpenSlotLabel(sl, iso){
       var whenLine = String(sl.whenLabel || '').trim() || (String(sl.sheetDay || '')+' · '+String(sl.anchorTimeLabel || '').trim());
       var d = bookingParseIsoLocal(iso);
@@ -11856,7 +11983,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }catch(_e2){}
       }
       var listHtml = rows.length
-        ? ('<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Pick an <strong>open</strong> roster row for <code>'+esc(iso)+'</code> (demo overlay until the sheet is written back).</p><div style="max-height:42vh;overflow:auto;min-width:0">'+rows.join('')+'</div>')
+        ? ('<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Pick an <strong>open</strong> roster row for <code>'+esc(iso)+'</code>. Saves to <strong>portal_roster_rows</strong> — staff see it on their tablet after refresh.</p><div style="max-height:42vh;overflow:auto;min-width:0">'+rows.join('')+'</div>')
         : ('<p class="muted" style="margin:0;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">No open cells for today, or the roster bundle is not loaded. The participant is still in <strong>Participants</strong> — place them later from <strong>Scheduling &amp; Cover</strong>.</p>');
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Place on roster</h2></div>'+
@@ -11878,25 +12005,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         mr.querySelectorAll('[data-dayops-np-assign]').forEach(function(btn){
           btn.addEventListener('click', function(){
             var demoId = btn.getAttribute('data-dayops-np-assign') || '';
-            portalDayOpsApplyAssignmentToSlotDemo(demoId, cid, displayName);
-            logAction('booking', 'Roster place (demo overlay): '+displayName+' → '+demoId, 'Day operations');
-            portalAdminToast(displayName+' linked to open roster cell (demo).');
-            closeModal();
-            if(state.view === 'dashboard'){
-              $('workspace').innerHTML = renderView('dashboard');
-              bindView('dashboard');
-            }
+            btn.disabled = true;
+            void portalDayOpsAssignParticipantToOpenSlot(demoId, cid, displayName, iso).then(function(payload){
+              logAction('booking', 'New participant placed on roster: '+displayName+' · '+String(payload.session_date)+' '+String(payload.time_slot), 'Day operations');
+              portalAdminToast(displayName+' placed on roster — staff will see '+String(payload.session_date)+'.');
+              closeModal();
+              if(state.view === 'dashboard'){
+                $('workspace').innerHTML = renderView('dashboard');
+                bindView('dashboard');
+              }
+            }).catch(function(err){
+              btn.disabled = false;
+              portalAdminToast(String((err && err.message) || err || 'Could not place on roster.'));
+            });
           });
         });
       }
       $('modalBackdrop').onclick = function(e){ if(e.target === $('modalBackdrop')) closeModal(); };
     }
     function openDayOpsNewParticipantModal(){
+      var openInner = function(){
       var slotOpts = portalDayOpsCollectOpenSlotOptions({ horizonDays: 14 });
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">New participant</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
         '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Quick add before the family completes the questionnaire — their answers will merge with this record later. Or wait for the <strong>new client</strong> notification and offer times after the form is in.</p>'+
+        '<details class="muted" style="margin:0 0 14px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"><summary style="cursor:pointer;color:var(--ink-soft)"><strong>Which admin tool when?</strong></summary>'+
+        '<ul style="margin:8px 0 0;padding-left:18px">'+
+        '<li><strong>New participant</strong> — trial / intake on an <em>open</em> cell (here).</li>'+
+        '<li><strong>Edit term slot</strong> — change who is booked every Monday (or rest of term).</li>'+
+        '<li><strong>Schedule &amp; Covers</strong> — today only: absent, cancel, cover instructor, make-up.</li>'+
+        '<li><strong>Spreadsheet reference</strong> — read-only grid; does not save.</li>'+
+        '<li><strong>MADRE + sync</strong> — bulk term edits: <code>roster_term_master.json</code> → <code>sync_roster_madre_to_portal.py</code>.</li>'+
+        '</ul></details>'+
         '<label class="muted" for="npName" style="display:block">Name</label>'+
         '<input type="text" id="npName" class="inp" style="margin-top:6px;max-width:100%;min-width:0" maxlength="120" autocomplete="name" placeholder="e.g. River K."/>'+
         '<label class="muted" for="npAge" style="display:block;margin-top:12px">Age</label>'+
@@ -11905,8 +12046,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDayOpsNewParticipantSlotSelectHtml(slotOpts)+
         '<p class="muted" id="npSlotHint" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">'+
         (slotOpts.length
-          ? esc(String(slotOpts.length))+' open slot'+(slotOpts.length===1?'':'s')+' in the next 2 weeks. Placement is a demo overlay until Supabase is wired.'
-          : 'Load the roster bundle to see open cells, or save without a slot and place later in <strong>Scheduling &amp; Covers</strong>.')+
+          ? esc(String(slotOpts.length))+' open slot'+(slotOpts.length===1?'':'s')+' in the next 2 weeks. Choosing one writes <strong>portal_roster_rows</strong> — staff dashboards update after refresh.'
+          : 'Load the roster bundle to see open cells, or save without a slot and place later in <strong>Edit term slot</strong> or <strong>Scheduling &amp; Covers</strong>.')+
         '</p>'+
         '</div>'+
         '<div class="modal-f">'+
@@ -11972,20 +12113,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           incidentHistory: [],
           recommendedNext: slotId
             ? 'Family completes questionnaire; confirm placement and billing.'
-            : 'Pick an open slot in Scheduling or offer times after the form is in.'
+            : 'Pick an open slot in Edit term slot or offer times after the form is in.'
         };
-        if(slotId){
-          portalDayOpsApplyAssignmentToSlotDemo(slotId, cid, name);
-          logAction('booking', 'New participant + slot (demo): '+name+' → '+slotId.slice(0, 24)+'… · '+cid, 'Day operations');
-          portalAdminToast(name+' saved and placed on open slot (demo).');
-        }else{
-          logAction('booking', 'New participant (demo): '+name+' · '+cid, 'Day operations');
-          portalAdminToast('Participant saved: '+name+'. Place on roster when ready.');
+        saveBtn.disabled = true;
+        var saveLabel = saveBtn.textContent;
+        saveBtn.textContent = 'Saving…';
+        function finishSave(msg, logLine){
+          logAction('booking', logLine, 'Day operations');
+          portalAdminToast(msg);
+          closeModal();
+          if(state.view === 'dashboard'){
+            $('workspace').innerHTML = renderView('dashboard');
+            bindView('dashboard');
+          }
         }
-        closeModal();
-        if(state.view === 'dashboard'){
-          $('workspace').innerHTML = renderView('dashboard');
-          bindView('dashboard');
+        if(slotId && slotPick){
+          void portalDayOpsAssignParticipantToOpenSlot(slotId, cid, name, slotPick.iso).then(function(payload){
+            finishSave(
+              name+' saved and placed on roster ('+String(payload.session_date)+' · '+String(payload.time_slot)+').',
+              'New participant + roster: '+name+' · '+String(payload.session_date)+' '+String(payload.time_slot)
+            );
+          }).catch(function(err){
+            saveBtn.disabled = false;
+            saveBtn.textContent = saveLabel;
+            portalAdminToast(String((err && err.message) || err || 'Could not place on roster.'));
+          });
+        }else{
+          finishSave('Participant saved: '+name+'. Place on roster when ready.', 'New participant: '+name+' · '+cid);
         }
       };
       $('modalBackdrop').onclick = function(e){ if(e.target === $('modalBackdrop')) closeModal(); };
@@ -11993,6 +12147,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var focusNm = $('npName');
         if(focusNm) try{ focusNm.focus(); }catch(_f){}
       }, 0);
+      };
+      if(window.portalAdminLoadScriptSet){
+        void window.portalAdminLoadScriptSet('roster').then(function(){
+          try{
+            if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+              window.portalRefreshStaffDashboardSourceFromPortal();
+            }
+          }catch(_pr){}
+          openInner();
+        });
+        return;
+      }
+      openInner();
     }
     function openStaffDrawerFromDayOps(rosterId){
       var r = String(rosterId || '').trim().toLowerCase();
