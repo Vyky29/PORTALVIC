@@ -52,14 +52,33 @@
   function dashboardReturnUrl() {
     try {
       var u = global.localStorage.getItem("portalLastDashboardUrl");
-      if (u && String(u).trim()) return String(u).trim();
+      if (u && String(u).trim()) {
+        var stored = String(u).trim();
+        if (/clubsensational\.org/i.test(stored) && typeof global.portalCanonicalPortalPageUrl === "function") {
+          return global.portalCanonicalPortalPageUrl("admin_dashboard.html");
+        }
+        return stored;
+      }
     } catch (_e2) {}
+    try {
+      var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+      var route = String((prof && prof.dashboard_route) || "").toLowerCase();
+      if (route.indexOf("admin") >= 0 && typeof global.portalCanonicalPortalPageUrl === "function") {
+        return global.portalCanonicalPortalPageUrl("admin_dashboard.html");
+      }
+    } catch (_) {}
+    if (typeof global.portalCanonicalPortalPageUrl === "function") {
+      return global.portalCanonicalPortalPageUrl("staff_dashboard.html");
+    }
     return "staff_dashboard.html";
   }
 
   function myDocumentsTrainingUrl() {
     if (typeof global.portalInductionMyDocumentsTrainingUrl === "function") {
       return global.portalInductionMyDocumentsTrainingUrl();
+    }
+    if (typeof global.portalCanonicalPortalPageUrl === "function") {
+      return global.portalCanonicalPortalPageUrl("my_documents.html?category=training");
     }
     try {
       return new URL("my_documents.html?category=training", global.location.href).href;

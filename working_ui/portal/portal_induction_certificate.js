@@ -318,6 +318,9 @@
   }
 
   function myDocumentsTrainingUrl() {
+    if (typeof global.portalCanonicalPortalPageUrl === "function") {
+      return global.portalCanonicalPortalPageUrl("my_documents.html?category=training");
+    }
     try {
       return new URL("my_documents.html?category=training", global.location.href).href;
     } catch (_e) {

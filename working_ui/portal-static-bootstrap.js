@@ -19,6 +19,53 @@
     window.PORTAL_SHARED_JS_BASE = "/portal-shared-js";
   }
 
+  /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
+  window.PORTAL_CANONICAL_ORIGIN =
+    window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  window.PORTAL_INDUCTION_BASE_URL =
+    window.PORTAL_INDUCTION_BASE_URL ||
+    String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
+
+  window.portalCanonicalPortalPageUrl = function portalCanonicalPortalPageUrl(path) {
+    path = String(path || "").replace(/^\//, "");
+    try {
+      var here = String(window.location.origin || "").replace(/\/$/, "");
+      if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(here)) {
+        return here + "/" + path;
+      }
+      if (/portalvic\.vercel\.app$/i.test(here)) {
+        return here + "/" + path;
+      }
+    } catch (_) {}
+    var origin = String(window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app").replace(
+      /\/$/,
+      ""
+    );
+    return origin + "/" + path;
+  };
+
+  window.portalPortalHostLooksWrong = function portalPortalHostLooksWrong() {
+    try {
+      var host = String(window.location.hostname || "").toLowerCase();
+      if (!host || host === "localhost" || host === "127.0.0.1") return false;
+      if (/portalvic\.vercel\.app$/i.test(host)) return false;
+      if (/vercel\.app$/i.test(host)) return false;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  (function portalRedirectGeneralInductionOffWrongHost() {
+    try {
+      var path = String(window.location.pathname || "");
+      if (path.toLowerCase().indexOf("general-induction") < 0) return;
+      if (!window.portalPortalHostLooksWrong()) return;
+      var suffix = path.replace(/^\//, "") + String(window.location.search || "") + String(window.location.hash || "");
+      window.location.replace(window.portalCanonicalPortalPageUrl(suffix));
+    } catch (_) {}
+  })();
+
   (function portalLoadScreenshotGuardEarly() {
     try {
       var path = String(

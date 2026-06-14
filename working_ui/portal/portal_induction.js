@@ -167,6 +167,9 @@
   function portalInductionBaseUrl() {
     var custom = String(global.PORTAL_INDUCTION_BASE_URL || "").trim();
     if (custom) return custom.replace(/\/?$/, "/");
+    if (typeof global.portalCanonicalPortalPageUrl === "function") {
+      return global.portalCanonicalPortalPageUrl("general-induction/");
+    }
     return String(global.location.origin || "") + "/general-induction/";
   }
 
@@ -184,6 +187,17 @@
     portalInductionPrepareLearnerName(profile, authEmail);
     portalInductionClearGrandfatherStateForRequired(profile, authEmail);
     portalInductionApplyGrandfather(profile, authEmail);
+    if (
+      typeof global.portalPortalHostLooksWrong === "function" &&
+      global.portalPortalHostLooksWrong()
+    ) {
+      try {
+        global.sessionStorage.setItem(
+          "portalInductionHostWarning",
+          "Use https://portalvic.vercel.app for General Induction — not clubsensational.org."
+        );
+      } catch (_) {}
+    }
     var url;
     try {
       url = new URL(portalInductionBaseUrl(), global.location.href);
