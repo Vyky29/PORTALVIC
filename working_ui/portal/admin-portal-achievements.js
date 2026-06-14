@@ -8,8 +8,13 @@
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
   var ICON_NEXT =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+  var ICON_TRASH =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+  var ICON_ROTATE =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>';
 
   var ACH_BUCKET = "participant-achievements";
+  var SELECT_ONE_LABEL = "Select one";
 
   var cfg = {
     esc: function (s) {
@@ -20,8 +25,9 @@
     },
   };
 
-  var viewerState = { photos: [], index: -1 };
+  var viewerState = { photos: [], index: -1, busy: false };
   var directoryState = { groups: [], byKey: Object.create(null), activeKey: "" };
+  var inboxSelection = Object.create(null);
 
   function configure(options) {
     if (!options) return;
@@ -234,6 +240,50 @@
     });
   }
 
+  function populateParticipantSelect(select, targets) {
+    while (select.firstChild) select.removeChild(select.firstChild);
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = SELECT_ONE_LABEL;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+    (targets || []).forEach(function (t) {
+      var opt = document.createElement("option");
+      opt.value = t.key;
+      opt.textContent = t.clientName;
+      select.appendChild(opt);
+    });
+  }
+
+  function clearInboxSelection() {
+    inboxSelection = Object.create(null);
+  }
+
+  function inboxSelectedIds() {
+    return Object.keys(inboxSelection).filter(function (k) {
+      return inboxSelection[k];
+    });
+  }
+
+  function updateInboxBulkUi(detailRoot, draftRows) {
+    if (!detailRoot) return;
+    var countEl = detailRoot.querySelector("#portalAchInboxSelCount");
+    var assignBtn = detailRoot.querySelector("#portalAchInboxBulkAssignBtn");
+    var deleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
+    var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
+    var ids = inboxSelectedIds();
+    if (countEl) {
+      countEl.textContent =
+        ids.length + " selected · " + (draftRows ? draftRows.length : 0) + " draft photo(s)";
+    }
+    if (assignBtn) assignBtn.disabled = !ids.length;
+    if (deleteBtn) deleteBtn.disabled = !ids.length;
+    if (selectAll && draftRows && draftRows.length) {
+      selectAll.checked = ids.length > 0 && ids.length === draftRows.length;
+      selectAll.indeterminate = ids.length > 0 && ids.length < draftRows.length;
+    }
+  }
+
   async function assignInboxPhoto(photoId, clientId, clientName) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
@@ -280,6 +330,137 @@
     return res.data;
   }
 
+  function loadImageElement(url) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        reject(new Error("Could not load image."));
+      };
+      img.src = url;
+    });
+  }
+
+  function canvasFromRotatedImage(img, degrees) {
+    degrees = ((degrees % 360) + 360) % 360;
+    var w = img.naturalWidth || img.width;
+    var h = img.naturalHeight || img.height;
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported.");
+    if (degrees === 90 || degrees === 270) {
+      canvas.width = h;
+      canvas.height = w;
+    } else {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((degrees * Math.PI) / 180);
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    return canvas;
+  }
+
+  async function rotatePhoto(row, degrees) {
+    if (rowMediaType(row) === "video") throw new Error("Videos cannot be rotated.");
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    var url = await signedUrl(client, row.storage_path);
+    var img = await loadImageElement(url);
+    var canvas = canvasFromRotatedImage(img, degrees || 90);
+    var blob = await new Promise(function (resolve, reject) {
+      canvas.toBlob(
+        function (b) {
+          if (b) resolve(b);
+          else reject(new Error("Could not encode rotated image."));
+        },
+        "image/jpeg",
+        0.92
+      );
+    });
+    var up = await client.storage.from(ACH_BUCKET).upload(row.storage_path, blob, {
+      contentType: "image/jpeg",
+      upsert: true,
+    });
+    if (up.error) throw up.error;
+    var upd = await client
+      .from("portal_participant_achievement_photos")
+      .update({
+        width: canvas.width,
+        height: canvas.height,
+        byte_size: blob.size,
+      })
+      .eq("id", row.id);
+    if (upd.error) throw upd.error;
+    return { width: canvas.width, height: canvas.height };
+  }
+
+  function setViewerBusy(busy) {
+    viewerState.busy = !!busy;
+    ["portalAdminAchievementsViewerPrev", "portalAdminAchievementsViewerNext", "portalAdminAchievementsViewerDelete", "portalAdminAchievementsViewerRotate", "portalAdminAchievementsViewerClose"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.disabled = !!busy;
+    });
+    updateViewerNav();
+  }
+
+  async function deleteViewerPhoto() {
+    if (viewerState.index < 0 || !viewerState.photos.length || viewerState.busy) return;
+    var row = viewerState.photos[viewerState.index];
+    if (!global.confirm("Delete this photo permanently? This cannot be undone.")) return;
+    var stayKey = directoryState.activeKey;
+    var removedIdx = viewerState.index;
+    setViewerBusy(true);
+    try {
+      await deletePhoto(row.id, row.storage_path);
+      closeViewer();
+      await refresh({ stayOnKey: stayKey });
+      var statusEl = document.getElementById("portalAdminAchievementsStatus");
+      if (statusEl) {
+        statusEl.textContent = "Photo deleted.";
+        statusEl.className = "portal-forms-status";
+      }
+      void removedIdx;
+    } catch (err) {
+      console.error(err);
+      var statusEl2 = document.getElementById("portalAdminAchievementsStatus");
+      if (statusEl2) {
+        statusEl2.textContent = (err && err.message) || "Could not delete photo.";
+        statusEl2.className = "portal-forms-status is-error";
+      }
+    } finally {
+      setViewerBusy(false);
+    }
+  }
+
+  async function rotateViewerPhoto() {
+    if (viewerState.index < 0 || !viewerState.photos.length || viewerState.busy) return;
+    var row = viewerState.photos[viewerState.index];
+    if (rowMediaType(row) === "video") return;
+    setViewerBusy(true);
+    try {
+      await rotatePhoto(row, 90);
+      await openViewer(viewerState.photos, viewerState.index);
+      var statusEl = document.getElementById("portalAdminAchievementsStatus");
+      if (statusEl) {
+        statusEl.textContent = "Photo rotated.";
+        statusEl.className = "portal-forms-status";
+      }
+    } catch (err) {
+      console.error(err);
+      var statusEl2 = document.getElementById("portalAdminAchievementsStatus");
+      if (statusEl2) {
+        statusEl2.textContent = (err && err.message) || "Could not rotate photo.";
+        statusEl2.className = "portal-forms-status is-error";
+      }
+    } finally {
+      setViewerBusy(false);
+    }
+  }
+
   function uniqueStaffNames(photos) {
     var seen = Object.create(null);
     var names = [];
@@ -319,13 +500,21 @@
     document.body.classList.remove("portal-achievements-viewer-open");
     viewerState.index = -1;
     viewerState.photos = [];
+    viewerState.busy = false;
   }
 
   function updateViewerNav() {
     var prev = document.getElementById("portalAdminAchievementsViewerPrev");
     var next = document.getElementById("portalAdminAchievementsViewerNext");
-    if (prev) prev.disabled = viewerState.index <= 0;
-    if (next) next.disabled = viewerState.index >= viewerState.photos.length - 1;
+    var rotate = document.getElementById("portalAdminAchievementsViewerRotate");
+    var del = document.getElementById("portalAdminAchievementsViewerDelete");
+    var row = viewerState.photos[viewerState.index];
+    var busy = viewerState.busy;
+    var isVideo = row && rowMediaType(row) === "video";
+    if (prev) prev.disabled = busy || viewerState.index <= 0;
+    if (next) next.disabled = busy || viewerState.index >= viewerState.photos.length - 1;
+    if (rotate) rotate.disabled = busy || isVideo;
+    if (del) del.disabled = busy;
   }
 
   async function openViewer(photos, index) {
@@ -437,8 +626,25 @@
     var staffList = uniqueStaffNames(group.photos);
     var isInbox = isInboxGroupKey(key);
     var assignTargets = isInbox ? participantAssignOptions(key) : [];
+    var draftPhotos = isInbox
+      ? group.photos.filter(function (row) {
+          return row.status === "draft";
+        })
+      : [];
+    if (isInbox) clearInboxSelection();
     var detail = document.createElement("div");
     detail.className = "portal-ach-detail";
+    var bulkBarHtml = isInbox
+      ? '<div class="portal-ach-inbox-bulk" id="portalAchInboxBulkBar">' +
+        '<label class="portal-ach-inbox-bulk__select-all">' +
+        '<input type="checkbox" id="portalAchInboxSelectAll" aria-label="Select all draft photos" />' +
+        "<span>Select all</span></label>" +
+        '<span class="portal-ach-inbox-bulk__count muted" id="portalAchInboxSelCount">0 selected</span>' +
+        '<select class="portal-ach-inbox-assign__select portal-ach-inbox-bulk__select" id="portalAchInboxBulkAssign" aria-label="Assign selected to participant"></select>' +
+        '<button type="button" class="btn btn--sec btn--sm portal-ach-inbox-assign__btn" id="portalAchInboxBulkAssignBtn" disabled>Assign selected</button>' +
+        '<button type="button" class="btn btn--ghost btn--sm portal-ach-admin-delete__btn" id="portalAchInboxBulkDeleteBtn" disabled>Delete selected</button>' +
+        "</div>"
+      : "";
     detail.innerHTML =
       '<div class="portal-ach-detail__head">' +
       '<button type="button" class="btn btn--sec btn--sm" data-ach-back="1">&larr; All participants</button>' +
@@ -455,12 +661,107 @@
       (group.photos.length === 1 ? "" : "s") +
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
       (isInbox
-        ? ". Assign each photo to a participant folder below, or delete ones that are not usable."
+        ? ". Tick photos to move in bulk, or assign one at a time. Choose a participant before Assign."
         : ". Double-click a photo to view full screen. Delete any photo that should not be kept.") +
       "</p></div></div></div></div>" +
+      bulkBarHtml +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
     host.appendChild(detail);
+    if (isInbox && assignTargets.length) {
+      var bulkSelect = detail.querySelector("#portalAchInboxBulkAssign");
+      if (bulkSelect) populateParticipantSelect(bulkSelect, assignTargets);
+      var bulkAssignBtn = detail.querySelector("#portalAchInboxBulkAssignBtn");
+      var bulkDeleteBtn = detail.querySelector("#portalAchInboxBulkDeleteBtn");
+      var selectAll = detail.querySelector("#portalAchInboxSelectAll");
+      if (selectAll) {
+        selectAll.addEventListener("change", function () {
+          clearInboxSelection();
+          if (selectAll.checked) {
+            draftPhotos.forEach(function (row) {
+              inboxSelection[String(row.id)] = true;
+            });
+          }
+          detail.querySelectorAll("[data-ach-select-id]").forEach(function (cb) {
+            cb.checked = !!selectAll.checked;
+          });
+          updateInboxBulkUi(detail, draftPhotos);
+        });
+      }
+      if (bulkAssignBtn && bulkSelect) {
+        bulkAssignBtn.addEventListener("click", function () {
+          var target = assignTargets.find(function (t) {
+            return t.key === bulkSelect.value;
+          });
+          var ids = inboxSelectedIds();
+          if (!target || !ids.length) return;
+          bulkAssignBtn.disabled = true;
+          var chain = Promise.resolve();
+          ids.forEach(function (pid) {
+            chain = chain.then(function () {
+              return assignInboxPhoto(pid, target.key, target.clientName);
+            });
+          });
+          void chain
+            .then(function () {
+              clearInboxSelection();
+              void refresh({ stayOnKey: key });
+            })
+            .catch(function (err) {
+              console.error(err);
+              bulkAssignBtn.disabled = false;
+              if (statusEl) {
+                statusEl.textContent = (err && err.message) || "Could not assign selected photos.";
+                statusEl.className = "portal-forms-status is-error";
+              }
+            });
+        });
+      }
+      if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener("click", function () {
+          var ids = inboxSelectedIds();
+          if (!ids.length) return;
+          if (
+            !global.confirm(
+              "Delete " + ids.length + " photo(s) permanently? This cannot be undone."
+            )
+          ) {
+            return;
+          }
+          bulkDeleteBtn.disabled = true;
+          var rowsById = Object.create(null);
+          draftPhotos.forEach(function (row) {
+            rowsById[String(row.id)] = row;
+          });
+          var chain = Promise.resolve();
+          ids.forEach(function (pid) {
+            var row = rowsById[pid];
+            if (!row) return;
+            chain = chain.then(function () {
+              return deletePhoto(row.id, row.storage_path);
+            });
+          });
+          void chain
+            .then(function () {
+              clearInboxSelection();
+              void refresh({ stayOnKey: key });
+              if (statusEl) {
+                statusEl.textContent = "Selected photos deleted.";
+                statusEl.className = "portal-forms-status";
+              }
+            })
+            .catch(function (err) {
+              console.error(err);
+              bulkDeleteBtn.disabled = false;
+              if (statusEl) {
+                statusEl.textContent = (err && err.message) || "Could not delete selected photos.";
+                statusEl.className = "portal-forms-status is-error";
+              }
+            });
+        });
+      }
+      updateInboxBulkUi(detail, draftPhotos);
+    }
     var grid = detail.querySelector(".portal-admin-achievement-gallery");
     for (var i = 0; i < group.photos.length; i++) {
       (function (row, photoIndex) {
@@ -476,6 +777,22 @@
           );
           var wrap = document.createElement("div");
           wrap.className = "portal-admin-achievement-thumb-wrap";
+          if (isInbox && row.status === "draft") {
+            var pick = document.createElement("label");
+            pick.className = "portal-ach-inbox-pick";
+            var checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "portal-ach-inbox-pick__input";
+            checkbox.setAttribute("data-ach-select-id", String(row.id));
+            checkbox.addEventListener("change", function () {
+              if (checkbox.checked) inboxSelection[String(row.id)] = true;
+              else delete inboxSelection[String(row.id)];
+              updateInboxBulkUi(detail, draftPhotos);
+            });
+            pick.appendChild(checkbox);
+            pick.appendChild(document.createTextNode("Select"));
+            wrap.appendChild(pick);
+          }
           btn.innerHTML =
             adminThumbInnerHtml(url, row) +
             '<span class="portal-admin-achievement-thumb__cap">' +
@@ -503,16 +820,15 @@
             var select = document.createElement("select");
             select.className = "portal-ach-inbox-assign__select";
             select.setAttribute("aria-label", "Assign to participant");
-            assignTargets.forEach(function (t) {
-              var opt = document.createElement("option");
-              opt.value = t.key;
-              opt.textContent = t.clientName;
-              select.appendChild(opt);
-            });
+            populateParticipantSelect(select, assignTargets);
             var assignBtn = document.createElement("button");
             assignBtn.type = "button";
             assignBtn.className = "btn btn--sec btn--sm portal-ach-inbox-assign__btn";
             assignBtn.textContent = "Assign";
+            assignBtn.disabled = true;
+            select.addEventListener("change", function () {
+              assignBtn.disabled = !select.value;
+            });
             assignBtn.addEventListener("click", function () {
               var target = assignTargets.find(function (t) {
                 return t.key === select.value;
@@ -623,16 +939,57 @@
   }
 
   function bindViewer() {
+    var viewer = document.getElementById("portalAdminAchievementsViewer");
     var closeBtn = document.getElementById("portalAdminAchievementsViewerClose");
-    if (closeBtn) closeBtn.addEventListener("click", closeViewer);
+    if (closeBtn && !closeBtn.getAttribute("data-bound")) {
+      closeBtn.setAttribute("data-bound", "1");
+      closeBtn.addEventListener("click", closeViewer);
+    }
+    if (viewer && !viewer.getAttribute("data-bound")) {
+      viewer.setAttribute("data-bound", "1");
+      viewer.addEventListener("click", function (e) {
+        if (e.target === viewer) closeViewer();
+      });
+    }
+    if (!global.__portalAdminAchievementsViewerKeys) {
+      global.__portalAdminAchievementsViewerKeys = true;
+      document.addEventListener("keydown", function (e) {
+        var viewerEl = document.getElementById("portalAdminAchievementsViewer");
+        if (!viewerEl || viewerEl.hidden) return;
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeViewer();
+        }
+      });
+    }
     var prev = document.getElementById("portalAdminAchievementsViewerPrev");
-    if (prev) prev.addEventListener("click", function () {
-      navigateViewer(-1);
-    });
+    if (prev && !prev.getAttribute("data-bound")) {
+      prev.setAttribute("data-bound", "1");
+      prev.addEventListener("click", function () {
+        navigateViewer(-1);
+      });
+    }
     var next = document.getElementById("portalAdminAchievementsViewerNext");
-    if (next) next.addEventListener("click", function () {
-      navigateViewer(1);
-    });
+    if (next && !next.getAttribute("data-bound")) {
+      next.setAttribute("data-bound", "1");
+      next.addEventListener("click", function () {
+        navigateViewer(1);
+      });
+    }
+    var del = document.getElementById("portalAdminAchievementsViewerDelete");
+    if (del && !del.getAttribute("data-bound")) {
+      del.setAttribute("data-bound", "1");
+      del.addEventListener("click", function () {
+        void deleteViewerPhoto();
+      });
+    }
+    var rotate = document.getElementById("portalAdminAchievementsViewerRotate");
+    if (rotate && !rotate.getAttribute("data-bound")) {
+      rotate.setAttribute("data-bound", "1");
+      rotate.addEventListener("click", function () {
+        void rotateViewerPhoto();
+      });
+    }
   }
 
   function bindModule() {
@@ -676,7 +1033,7 @@
       '<div id="portalAdminAchievementsStatus" class="portal-forms-status" role="status"></div>' +
       '<div id="portalAdminAchievementsList" class="portal-admin-achievements-list"></div>' +
       "</div>" +
-      '<div id="portalAdminAchievementsViewer" class="portal-achievements-viewer" hidden aria-hidden="true">' +
+      '<div id="portalAdminAchievementsViewer" class="portal-achievements-viewer portal-admin-achievements-viewer" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Photo viewer">' +
       '<button type="button" class="portal-achievements-viewer__close" id="portalAdminAchievementsViewerClose" aria-label="Close">×</button>' +
       '<div class="portal-achievements-viewer__stage portal-achievement-protected">' +
       '<img id="portalAdminAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img" />' +
@@ -684,6 +1041,12 @@
       '<div class="portal-achievements-viewer__nav" role="group" aria-label="Photo navigation">' +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAdminAchievementsViewerPrev" aria-label="Previous photo">' +
       ICON_PREV +
+      "</button>" +
+      '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAdminAchievementsViewerRotate" aria-label="Rotate clockwise">' +
+      ICON_ROTATE +
+      "</button>" +
+      '<button type="button" class="portal-achievements-viewer__nav-btn portal-achievements-viewer__nav-btn--delete" id="portalAdminAchievementsViewerDelete" aria-label="Delete photo">' +
+      ICON_TRASH +
       "</button>" +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAdminAchievementsViewerNext" aria-label="Next photo">' +
       ICON_NEXT +

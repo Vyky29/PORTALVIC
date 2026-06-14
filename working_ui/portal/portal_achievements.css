@@ -1491,3 +1491,61 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 .portal-admin-achievement-thumb-wrap {
   position: relative;
 }
+
+.portal-admin-achievements-viewer {
+  z-index: 200500;
+}
+
+.portal-ach-inbox-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.96);
+  min-width: 0;
+}
+
+.portal-ach-inbox-bulk__select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.portal-ach-inbox-bulk__count {
+  font-size: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.portal-ach-inbox-bulk__select {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.portal-ach-inbox-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy, #0f172a);
+  min-width: 0;
+  cursor: pointer;
+}
+
+.portal-ach-inbox-pick__input {
+  flex: 0 0 auto;
+}
+
+.portal-achievements-viewer__nav-btn--rotate {
+  background: rgba(255, 255, 255, 0.2);
+}
