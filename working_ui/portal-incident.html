@@ -438,7 +438,7 @@ button{
         </button>
         <button type="button" class="incident-choose-card" id="incidentChooseMyself" data-subject="staff">
           <span class="incident-choose-card__title">Myself</span>
-          <span class="incident-choose-card__desc">Something that happened to me<br />or during this session</span>
+          <span class="incident-choose-card__desc">Injury or event involving you — not a participant session report. Optional: name who was involved.</span>
         </button>
       </div>
       <div class="incident-step-actions">
@@ -454,10 +454,7 @@ button{
 
       <input type="hidden" id="serviceManualHidden" value="" aria-hidden="true" />
 
-      <div id="incidentParticipantFields" class="incident-form-panel">
-      <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
-
-      <div class="field field--session-details field--incident-session-shell portal-session-date-after-context" id="incidentSessionDateShell">
+      <div class="field field--session-details field--incident-session-shell portal-session-date-after-context" id="incidentSessionDateShell" data-incident-shared="1">
         <p class="incident-same-day-note">Report incidents on the day they happen so we can match your shift.</p>
         <div class="session-date-field" role="group" aria-labelledby="incSessionDateLabelText">
           <div class="session-date-label-row" id="incSessionDateLabelRow">
@@ -488,6 +485,9 @@ button{
           </div>
         </div>
       </div>
+
+      <div id="incidentParticipantFields" class="incident-form-panel">
+      <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
       <div class="grid">
 
         <div id="incidentDetailsEditable">
@@ -584,7 +584,7 @@ button{
       </div>
     </div>
       <div id="incidentMyselfFields" class="incident-form-panel" hidden>
-        <p class="incident-myself-note">A short log for your records — even if you were not hurt.</p>
+        <p class="incident-myself-note">Staff incident log — not tied to a participant session slot. Use participant involved only to note who else was there (optional).</p>
         <div class="grid">
 <div class="field">
             <label for="myselfIncidentTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time of incident <span class="req">*</span></label>
@@ -671,7 +671,48 @@ button{
   function setFormControlsDisabled(container, disabled){
     if(!container) return;
     const fields = container.querySelectorAll("input, select, textarea");
-    for(let i = 0; i < fields.length; i++) fields[i].disabled = !!disabled;
+    for(let i = 0; i < fields.length; i++){
+      if(fields[i].closest("[data-incident-shared='1']")) continue;
+      fields[i].disabled = !!disabled;
+    }
+  }
+  function resolveIncidentSessionDate(fd){
+    const fromDom = incidentSessionDateIso();
+    if(fromDom) return fromDom;
+    const fromFd = fd ? clean(fd.get("sessionDateManual")) : "";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(fromFd)) return fromFd;
+    const fromCtx = clean(context.sessionDate);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(fromCtx)) return fromCtx;
+    const fromKey = parseSessionKey(context.portalSessionKey);
+    const fromSk = clean(fromKey.session_date);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(fromSk)) return fromSk;
+    return todayIsoLocal();
+  }
+  function ensureIncidentSessionDateHiddenInput(fd){
+    const hid = document.getElementById("incSessionDate");
+    if(!hid) return;
+    const iso = resolveIncidentSessionDate(fd);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    hid.value = iso;
+    context.sessionDate = iso;
+    updateIncidentSessionDateDisplay();
+  }
+  function incidentParticipantOverridden(){
+    if(getIncidentSubjectType() === "staff") return false;
+    const pm = document.getElementById("participantManual");
+    const typed = pm ? clean(pm.value) : "";
+    const ctxName = clean(context.clientName);
+    if(!typed || !ctxName) return false;
+    return slugify(typed) !== slugify(ctxName);
+  }
+  function onParticipantManualChanged(){
+    ensureIncidentSessionDateHiddenInput(null);
+    if(incidentParticipantOverridden()){
+      const dateShell = document.getElementById("incidentSessionDateShell");
+      if(dateShell) dateShell.hidden = false;
+    }
+    renderIncidentContextCard();
+    syncIncidentParticipantServiceSelect();
   }
   function showIncidentStep(step){
     const isChoose = step === "choose";
@@ -863,6 +904,8 @@ button{
     if(isStaff){
       const staffList = collectServicesForStaffOnDate(clean(context.submittedByName), sessionIso);
       if(staffList.length) return staffList[0];
+      if(clean(context.service)) return clean(context.service);
+      return "Staff incident";
     }
     const pnm = fd ? clean(fd.get("participantManual")) : "";
     const partList = collectServicesForParticipantName(pnm);
@@ -903,6 +946,7 @@ button{
     const mp = document.getElementById("myselfParticipant");
     if(mp && !clean(mp.value) && clean(context.clientName)) mp.value = clean(context.clientName);
     syncIncidentSessionDate();
+    ensureIncidentSessionDateHiddenInput(null);
     syncMyselfInjuryUi();
   }
   function openIncidentSubject(type){
@@ -911,8 +955,12 @@ button{
     showIncidentStep("form");
     syncIncidentSubjectUi();
     const done = function(){
-      if(t === "staff") syncIncidentMyselfFields();
-      else syncIncidentManualFields();
+      if(t === "staff"){
+        syncIncidentMyselfFields();
+        renderIncidentContextCard();
+      }else{
+        syncIncidentManualFields();
+      }
     };
     ensurePortalRosterScriptsLoaded().then(done).catch(done);
   }
@@ -1011,7 +1059,8 @@ button{
     submittedByUserId: "",
     submittedByName: "",
     submittedByAppRole: "",
-    origin: "dashboard"
+    origin: "dashboard",
+    sessionKeyRequiredAtOpen: false
   };
 
   function clean(v){ return String(v || "").replace(/\s+/g, " ").trim(); }
@@ -1296,15 +1345,20 @@ button{
   function renderIncidentContextCard(){
     const card = document.getElementById("portalSessionContextCard");
     const editable = document.getElementById("incidentDetailsEditable");
+    const dateShell = document.getElementById("incidentSessionDateShell");
     if(!card) return;
     const name = clean(context.clientName);
     const svc = clean(context.service);
-    const iso = clean(context.sessionDate);
+    const iso = resolveIncidentSessionDate(null);
     const time = clean(context.sessionTime);
-    if(!name || !svc || !/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+    const overridden = incidentParticipantOverridden();
+    if(overridden || !name || !svc || !/^\d{4}-\d{2}-\d{2}$/.test(iso)){
       card.hidden = true;
       card.replaceChildren();
       if(editable) editable.hidden = false;
+      if(dateShell) dateShell.hidden = false;
+      ensureIncidentSessionDateHiddenInput(null);
+      if(iso) syncIncidentLateApprovalBanner(iso);
       return;
     }
     card.hidden = false;
@@ -1318,8 +1372,9 @@ button{
       portalRenderSessionContextCard(card, rows);
     }
     if(editable) editable.hidden = true;
-    const dateShell = document.getElementById("incidentSessionDateShell");
-    if(dateShell) dateShell.hidden = !!(name && svc && iso);
+    const hideDateForContext = !!(name && svc && iso);
+    if(dateShell) dateShell.hidden = getIncidentSubjectType() === "staff" ? false : hideDateForContext;
+    ensureIncidentSessionDateHiddenInput(null);
     syncIncidentLateApprovalBanner(iso);
   }
 
@@ -1600,9 +1655,12 @@ button{
     const allowPin = opts && opts.allowPinBridge;
     const isStaff = getIncidentSubjectType() === "staff";
     const missing = [];
-    if(!isStaff && !clean(context.portalSessionKey)) missing.push("sessionKey");
+    const participantChanged = incidentParticipantOverridden();
+    if(!isStaff && context.sessionKeyRequiredAtOpen && !participantChanged && !clean(context.portalSessionKey)){
+      missing.push("sessionKey");
+    }
     if(!resolveIncidentService(fd)) missing.push("service");
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(fd.get("sessionDateManual")))) missing.push("session date");
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(resolveIncidentSessionDate(fd))) missing.push("session date");
     if(!normalizeIncidentTimeForSubmit(fd.get("incidentTime"))) missing.push("time of incident (HH:MM)");
     if(isStaff){
       if(!clean(fd.get("statementDuring"))) missing.push("what happened");
@@ -1656,6 +1714,7 @@ button{
     location.href = target;
   }
   function persistPortalIncidentDone(){
+    if(getIncidentSubjectType() === "staff") return;
     const sk = clean(context.portalSessionKey);
     if(!sk) return;
     try{
@@ -1688,7 +1747,7 @@ button{
     window.portalWireFieldSuggest(document.getElementById("participantManual"), document.getElementById("participantManualSuggest"), {
       kind: "participant",
       strict: true,
-      onPick: function(){ syncIncidentParticipantServiceSelect(); }
+      onPick: function(){ onParticipantManualChanged(); }
     });
     window.portalWireFieldSuggest(document.getElementById("myselfParticipant"), document.getElementById("myselfParticipantSuggest"), {
       kind: "participant",
@@ -1721,6 +1780,14 @@ button{
 
   void ensureIncidentAutofillScripts();
 
+  const participantManualEl = document.getElementById("participantManual");
+  if(participantManualEl){
+    participantManualEl.addEventListener("change", onParticipantManualChanged);
+    participantManualEl.addEventListener("input", function(){
+      if(incidentParticipantOverridden()) onParticipantManualChanged();
+    });
+  }
+
   form.addEventListener("submit", async function(e){
     e.preventDefault();
     const activeTimeEl = getIncidentSubjectType() === "staff"
@@ -1740,7 +1807,7 @@ button{
       form.reportValidity();
       return;
     }
-    const sessionDatePre = clean(context.sessionDate) || clean(document.getElementById("incSessionDate") && document.getElementById("incSessionDate").value);
+    const sessionDatePre = resolveIncidentSessionDate(null);
     if(typeof portalIsPastSessionDateIso === "function" && portalIsPastSessionDateIso(sessionDatePre)){
       const okLate = typeof portalFormLateSubmissionApproved === "function"
         ? await portalFormLateSubmissionApproved(clean(context.portalSessionKey), "incident")
@@ -1754,11 +1821,13 @@ button{
     submitBtn.textContent = "Submitting";
 
     try{
-      const fd = new FormData(form);
       await enrichContextFromScripts();
       syncIncidentManualFields();
       syncIncidentMyselfFields();
       await softLoadIncidentAuthDisplay();
+      ensureIncidentSessionDateHiddenInput(null);
+      const fd = new FormData(form);
+      ensureIncidentSessionDateHiddenInput(fd);
       syncIncidentServiceHidden(fd);
       const pinName = readPinNameForIncident();
       const bridgeSecret = readBridgeSecretFromWindowOrHash();
@@ -1770,9 +1839,10 @@ button{
       }
 
       const isStaffSubject = getIncidentSubjectType() === "staff";
+      const participantChanged = incidentParticipantOverridden();
       const clientName = clean(fd.get("participantManual")) || null;
       const service = resolveIncidentService(fd);
-      const sessionDate = clean(fd.get("sessionDateManual"));
+      const sessionDate = resolveIncidentSessionDate(fd);
       const notifyFlag = false;
       const notifyNotes = null;
       const incidentPayload = {
@@ -1780,14 +1850,18 @@ button{
         affected_staff_user_id: isStaffSubject ? (clean(context.submittedByUserId) || null) : null,
         affected_staff_name: isStaffSubject ? (clean(context.submittedByName) || null) : null,
         incident_outcome: readIncidentOutcome(fd),
-        client_id: clean(context.clientId) || null,
-        client_name: isStaffSubject ? clientName : (clientName || ""),
+        client_id: isStaffSubject
+          ? (clientName ? slugify(clientName) : null)
+          : (participantChanged
+            ? (slugify(clientName) || clean(context.clientId) || null)
+            : (clean(context.clientId) || slugify(clientName) || null)),
+        client_name: isStaffSubject ? (clientName || null) : (clientName || ""),
         session_date: sessionDate,
-        session_time: clean(context.sessionTime) || null,
+        session_time: isStaffSubject ? null : (clean(context.sessionTime) || null),
         incident_time: normalizeIncidentTimeForSubmit(fd.get("incidentTime")),
         service: service,
         location: clean(fd.get("incidentLocation")) || null,
-        portal_session_key: clean(context.portalSessionKey) || null,
+        portal_session_key: isStaffSubject || participantChanged ? null : (clean(context.portalSessionKey) || null),
         incident_category: isStaffSubject ? staffIncidentCategoryFromForm(fd) : clean(fd.get("incidentCategory")),
         staff_involved: clean(fd.get("staffInvolved")) || null,
         witness: clean(fd.get("witness")) || null,
@@ -1858,6 +1932,7 @@ button{
     try{
       const decodedSk = decodeSessionKeyB64Url(qs.get("sk") || "");
       context.portalSessionKey = clean(decodedSk || qs.get("sessionKey") || "");
+      context.sessionKeyRequiredAtOpen = !!clean(context.portalSessionKey);
       context.sessionDate = clean(qs.get("date") || qs.get("rd") || "");
       context.sessionTime = clean(qs.get("time") || qs.get("sessionTime") || "");
       context.clientId = clean(qs.get("clientId") || "");
