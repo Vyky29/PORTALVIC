@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260606-help-faq-v2";
+  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260614-no-menu-guide";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;

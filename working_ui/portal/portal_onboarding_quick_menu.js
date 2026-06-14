@@ -190,11 +190,6 @@
         statusCache.health = false;
         statusCache.loaded = true;
         applyVisibility(false);
-        if (typeof global.portalUpdateQuickMenuAccordionLabel === "function") {
-          global.portalUpdateQuickMenuAccordionLabel("portalQuickMenuGuideGroup", "Getting started", [
-            "Guide",
-          ]);
-        }
         if (typeof global.portalSyncQuickMenuGuidePlacement === "function") {
           global.portalSyncQuickMenuGuidePlacement();
         }
@@ -230,12 +225,12 @@
       applyVisibility(true);
 
       if (typeof global.portalUpdateQuickMenuAccordionLabel === "function") {
-        var guideChips = ["Guide"];
+        var guideChips = [];
         if (!statusCache.job) guideChips.push("Job");
         if (!statusCache.health) guideChips.push("Health");
         global.portalUpdateQuickMenuAccordionLabel(
           "portalQuickMenuGuideGroup",
-          "Getting started",
+          "Onboarding",
           guideChips
         );
       }

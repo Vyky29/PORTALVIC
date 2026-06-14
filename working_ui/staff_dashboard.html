@@ -918,8 +918,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260604-induction-persist"></script>
-  <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
-  <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
+  <script src="/portal/portal_guide_ack.js?v=20260614-no-menu-guide"></script>
+  <script src="/portal/portal_guide_menu.js?v=20260614-no-menu-guide"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist-b"></script>
   <script src="/portal/portal_help_bot.js?v=20260607-help-ai-b"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
@@ -4495,7 +4495,6 @@
       const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
       const ovHtml = typeof portalBuildQuickMenuOverrideStackHtml === 'function' ? portalBuildQuickMenuOverrideStackHtml(st) : '';
       const hasOv = !!ovHtml;
-      const showGuideHeader = !logoLite && typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
 
       if(logoLite && hasOv){
         host.innerHTML = ovHtml;
@@ -4511,13 +4510,11 @@
 
       host.innerHTML = '';
       host.hidden = true;
-      if(titleEl) titleEl.textContent = 'Getting started';
-      if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Getting started');
       if(logoLite){
         guideGrp.hidden = true;
       }else{
-        guideGrp.hidden = !showGuideHeader;
-        if(guideGrid) guideGrid.hidden = !showGuideHeader;
+        guideGrp.hidden = true;
+        if(guideGrid) guideGrid.hidden = true;
       }
       return false;
     }

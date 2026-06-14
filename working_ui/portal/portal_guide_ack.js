@@ -40,9 +40,9 @@
     }
   };
 
-  /** Quick menu Getting started: show Guide at top until the staff opens the guide for the first time. */
+  /** Quick menu: Guide no longer promoted in menus (help bot only). */
   global.portalGuideShowInHeader = function portalGuideShowInHeader() {
-    return !global.portalGuideIsRead();
+    return false;
   };
 
   /** @deprecated Promo end date no longer gates Getting started; kept for legacy callers. */

@@ -1,19 +1,16 @@
 /**
- * Quick menu — Getting started (Guide at top until first read); then Guide in Settings only.
+ * Quick menu — Guide removed from menu chrome (help bot only).
+ * Top group stays for schedule overrides (logo) and onboarding promos only.
  */
 (function (global) {
   "use strict";
 
   function portalSyncQuickMenuGuidePlacement() {
     try {
-      var read =
-        typeof global.portalGuideIsRead === "function" && global.portalGuideIsRead();
-      var showGettingStarted =
-        typeof global.portalGuideShowInHeader === "function" &&
-        global.portalGuideShowInHeader();
       var topGrp = global.document && global.document.getElementById("portalQuickMenuGuideGroup");
       var setBtn = global.document && global.document.getElementById("quickMenuPortalGuideSettings");
       var guideGrid = global.document && global.document.getElementById("portalQuickMenuGuideGrid");
+      var guideTop = global.document && global.document.getElementById("quickMenuPortalGuideTop");
       var ovHost =
         global.document && global.document.getElementById("portalQuickMenuScheduleOverridesTop");
       var hasOv = !!(ovHost && !ovHost.hidden && String(ovHost.innerHTML || "").trim());
@@ -21,16 +18,23 @@
         typeof global.portalOnboardingHasTopPromo === "function" &&
         global.portalOnboardingHasTopPromo();
 
-      if (guideGrid) guideGrid.hidden = !showGettingStarted;
+      if (guideGrid) {
+        guideGrid.hidden = true;
+        guideGrid.setAttribute("aria-hidden", "true");
+      }
+      if (guideTop) {
+        guideTop.hidden = true;
+        guideTop.setAttribute("aria-hidden", "true");
+      }
 
       if (topGrp) {
-        topGrp.hidden = !showGettingStarted && !hasOv && !hasOb;
+        topGrp.hidden = !hasOv && !hasOb;
         topGrp.setAttribute("aria-hidden", topGrp.hidden ? "true" : "false");
       }
 
       if (setBtn) {
-        setBtn.hidden = !read;
-        setBtn.setAttribute("aria-hidden", read ? "false" : "true");
+        setBtn.hidden = true;
+        setBtn.setAttribute("aria-hidden", "true");
       }
 
       if (typeof global.portalInitQuickMenuAccordion === "function") {
