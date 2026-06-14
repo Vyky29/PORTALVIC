@@ -177,6 +177,16 @@ function portalUrlIsCsCliqPage(href) {
   return portalUrlIsNewChatPage(href);
 }
 
+function portalUrlIsOnboardingFormPage(href) {
+  if (typeof window === "undefined" && !href) return false;
+  try {
+    const u = new URL(String(href || window.location.href), window.location.href);
+    return /onboarding_(job_application|health_questionnaire)\.html$/i.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
 function portalNormalizeNewChatUrl(href) {
   if (typeof window === "undefined") return href;
   try {
@@ -623,7 +633,10 @@ export function enforceAppVersion() {
   if (!(window.location.pathname || "").toLowerCase().includes("login")) {
     let dest = "login.html?updated=1";
     try {
-      if (portalUrlIsCsCliqPage(window.location.href)) {
+      if (
+        portalUrlIsCsCliqPage(window.location.href) ||
+        portalUrlIsOnboardingFormPage(window.location.href)
+      ) {
         dest = portalLoginUrlWithReturn(window.location.href);
         const login = new URL(dest, window.location.href);
         login.searchParams.set("updated", "1");
@@ -1071,9 +1084,11 @@ export async function bootstrapDashboardSupabase(_opts) {
   const authFailureRedirect =
     page === "lead_overview"
       ? leadHubUrl
-      : page === "cs_cliq" && typeof window !== "undefined"
+      : page === "onboarding"
         ? portalLoginUrlWithReturn(window.location.href)
-        : loginRedirect;
+        : page === "cs_cliq" && typeof window !== "undefined"
+          ? portalLoginUrlWithReturn(window.location.href)
+          : loginRedirect;
   const sessionWaitMs =
     isLeadOverview || page === "cs_cliq" || page === "onboarding" ? 7000 : 2800;
 
@@ -1139,7 +1154,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       });
     }
     if (!session?.user?.id) {
-      if (portalDashboardRequiresStrictGate(page)) {
+      if (portalDashboardRequiresStrictGate(page) || page === "onboarding") {
         try {
           window.location.replace(authFailureRedirect);
         } catch {
@@ -1169,10 +1184,14 @@ export async function bootstrapDashboardSupabase(_opts) {
         /* ignore */
       }
       clearPortalStaffContext();
+      const inactiveRedirect =
+        page === "onboarding"
+          ? portalLoginUrlWithReturn(window.location.href)
+          : loginRedirect;
       try {
-        window.location.replace(loginRedirect);
+        window.location.replace(inactiveRedirect);
       } catch {
-        window.location.href = loginRedirect;
+        window.location.href = inactiveRedirect;
       }
       return;
     }
@@ -1299,7 +1318,11 @@ export async function bootstrapDashboardSupabase(_opts) {
           } catch {
             /* ignore */
           }
-          window.location.href = loginRedirect;
+          const kickUrl =
+            page === "onboarding"
+              ? portalLoginUrlWithReturn(window.location.href)
+              : loginRedirect;
+          window.location.href = kickUrl;
           return;
         }
         portalSetCachedAuthSessionGeneration(gen);
@@ -1352,7 +1375,12 @@ export async function bootstrapDashboardSupabase(_opts) {
         /* ignore */
       }
     }
-    if (typeof window !== "undefined" && session?.user?.id && !isGhostDashboard) {
+    if (
+      typeof window !== "undefined" &&
+      session?.user?.id &&
+      !isGhostDashboard &&
+      page !== "onboarding"
+    ) {
       window.__PORTAL_AUTH_GEN_DISPOSE__ = bindPortalRemoteLogoutOnStaleAuthGeneration(
         supabase,
         session.user.id,

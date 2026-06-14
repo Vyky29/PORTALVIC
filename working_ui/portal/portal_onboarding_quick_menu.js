@@ -158,6 +158,27 @@
     return !!(jobTop && !jobTop.hidden) || !!(healthTop && !healthTop.hidden);
   };
 
+  function bindOnboardingMenuNavigation() {
+    onboardingMenuButtons().forEach(function (btn) {
+      if (!btn || btn.__portalObNavBound) return;
+      btn.__portalObNavBound = true;
+      btn.addEventListener(
+        "click",
+        function (e) {
+          var u = String(btn.getAttribute("data-portal-external-url") || "").trim();
+          if (!u) return;
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            if (typeof global.closeSheet === "function") global.closeSheet();
+          } catch (_) {}
+          global.location.href = u;
+        },
+        true
+      );
+    });
+  }
+
   function applyVisibility(isApplicant) {
     var jobTop = global.document && global.document.getElementById(JOB_TOP);
     var healthTop = global.document && global.document.getElementById(HEALTH_TOP);
@@ -180,6 +201,7 @@
     if (healthTop) healthTop.setAttribute("data-portal-external-url", hUrl);
     if (jobSet) jobSet.setAttribute("data-portal-external-url", jUrl);
     if (healthSet) healthSet.setAttribute("data-portal-external-url", hUrl);
+    bindOnboardingMenuNavigation();
   }
 
   global.portalSyncOnboardingQuickMenu = async function portalSyncOnboardingQuickMenu(opts) {
@@ -285,9 +307,13 @@
 
   if (global.document) {
     if (global.document.readyState === "loading") {
-      global.document.addEventListener("DOMContentLoaded", bindDashboard);
+      global.document.addEventListener("DOMContentLoaded", function () {
+        bindDashboard();
+        bindOnboardingMenuNavigation();
+      });
     } else {
       bindDashboard();
+      bindOnboardingMenuNavigation();
     }
   }
 })(typeof window !== "undefined" ? window : globalThis);

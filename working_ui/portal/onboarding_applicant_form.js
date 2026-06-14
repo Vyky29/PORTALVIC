@@ -57,8 +57,24 @@
     if (global.__portalOnboardingFormReady) await global.__portalOnboardingFormReady;
     var token = await authToken();
     if (!token) {
-      var ret = encodeURIComponent(global.location.pathname + global.location.search);
-      global.location.href = "login.html?portalReturn=" + ret;
+      for (var attempt = 0; attempt < 8 && !token; attempt++) {
+        await new Promise(function (r) {
+          setTimeout(r, 400);
+        });
+        token = await authToken();
+      }
+    }
+    if (!token) {
+      var dest = "login.html";
+      try {
+        var login = new URL("login.html", global.location.href);
+        login.searchParams.set("next", global.location.href);
+        dest = login.href;
+      } catch (_) {
+        dest =
+          "login.html?next=" + encodeURIComponent(global.location.pathname + global.location.search);
+      }
+      global.location.href = dest;
       return null;
     }
     try {
