@@ -11,26 +11,23 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-job-form-order" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260614-full-fields" />
 </head>
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Job application</h1>
-      <p>Same order as our standard form: your details, nationality, right to work (if needed), then bank details at the end.</p>
+      <p>Complete in order. Right to work only if you are not British / UK. Bank details at the end.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
     <form id="jobForm" class="ob-form-card">
-      <p class="ob-form-section">Your details</p>
-      <label>Full name<input name="full_name" required autocomplete="name" /></label>
-      <label>Email<input name="email" type="email" autocomplete="email" /></label>
-      <label>Mobile<input name="mobile" type="tel" autocomplete="tel" /></label>
-      <label>Home address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
-
-      <p class="ob-form-section">Nationality</p>
+      <label>Name<input name="name" required autocomplete="given-name" /></label>
+      <label>Surname<input name="surname" required autocomplete="family-name" /></label>
+      <label>Address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
+      <label>Date of birth<input name="dob" type="date" autocomplete="bday" /></label>
       <label>Nationality
-        <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="e.g. British, Spanish, Italian" />
+        <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="e.g. British, Spanish" />
       </label>
       <datalist id="jobNationalityList">
         <option value="British"></option>
@@ -51,24 +48,45 @@
         <option value="Ghanaian"></option>
         <option value="American"></option>
       </datalist>
-      <p class="ob-form-hint">British / UK nationals do not need to complete the right to work section below.</p>
+      <p class="ob-form-hint">British / UK nationals skip right to work below.</p>
 
       <fieldset id="jobRtwSection" hidden aria-hidden="true">
-        <p class="ob-form-section">Right to work in the UK</p>
-        <p class="ob-form-hint">Required if you are not a British or UK national.</p>
-        <label>Right to work details
-          <textarea name="right_to_work" rows="3" placeholder="Share code, visa type, passport details, or expiry date"></textarea>
-        </label>
-        <label>Home Office share code (if applicable)
-          <input name="right_to_work_share_code" autocomplete="off" inputmode="text" />
-        </label>
+        <p class="ob-form-section">Right to work</p>
+        <label>RTWork<textarea name="rtwork" rows="3" placeholder="Visa type, passport, expiry, etc."></textarea></label>
+        <label>RTWork code<input name="rtwork_code" autocomplete="off" placeholder="Home Office share code" /></label>
       </fieldset>
 
+      <label>Phone<input name="phone" type="tel" autocomplete="tel" /></label>
+      <label>Role<input name="role" autocomplete="organization-title" /></label>
+      <label>Status<input name="status" placeholder="Employment status" /></label>
+      <label>Availability<textarea name="availability" rows="2"></textarea></label>
+      <label>Education<textarea name="education" rows="2"></textarea></label>
+      <label>Location<input name="location" autocomplete="address-level2" /></label>
+      <label>Qualifications<textarea name="qualifications" rows="2"></textarea></label>
+      <label>Date<input name="date" type="date" title="Qualifications or certification date" /></label>
+      <label>Additional certifications<textarea name="additional_certifications" rows="2"></textarea></label>
+      <label>Employment history<textarea name="employment_history" rows="4"></textarea></label>
+      <label>Gaps in employment<textarea name="gaps" rows="2"></textarea></label>
+      <label>Additional skills<textarea name="additional_skills" rows="2"></textarea></label>
+
+      <label>Criminal record
+        <select name="criminal_record">
+          <option value="">Select…</option>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </label>
+      <div id="jobCriminalInfoWrap" class="ob-form-detail" hidden aria-hidden="true">
+        <label>Criminal record info<textarea name="criminal_record_info" rows="3"></textarea></label>
+      </div>
+
+      <label>Reference 1<textarea name="reference_1" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+      <label>Reference 2<textarea name="reference_2" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+
       <p class="ob-form-section">Bank details (payroll)</p>
-      <p class="ob-form-hint">For salary payments only — complete at the end of the form.</p>
-      <label>Bank account name<input name="bank_account_name" autocomplete="off" /></label>
-      <label>Sort code<input name="bank_sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
-      <label>Account number<input name="bank_account_number" inputmode="numeric" autocomplete="off" /></label>
+      <label>Bank account<input name="bank_account" autocomplete="off" /></label>
+      <label>Sort code<input name="sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
+      <label>Account number<input name="account_number" inputmode="numeric" autocomplete="off" /></label>
 
       <label class="ob-form-check"><input type="checkbox" name="confirm" required /> I confirm the information above is accurate.</label>
       <p id="jobStatus" class="ob-form-status" hidden></p>
@@ -79,8 +97,8 @@
     </form>
   </main>
   <script src="/portal/onboarding_make_webhooks.js?v=20260601-make"></script>
-  <script src="/portal/onboarding_job_form.js?v=20260614-job-form-order"></script>
-  <script src="/portal/onboarding_applicant_form.js?v=20260614-job-form-order"></script>
+  <script src="/portal/onboarding_job_form.js?v=20260614-full-fields"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260614-full-fields"></script>
   <script>
     (function () {
       var form = document.getElementById("jobForm");
@@ -113,19 +131,12 @@
         portalJobFormPrefillFromProfile(form);
         try {
           var res = await portalOnboardingFormLoadJob();
-          if (res && res.draft && res.draft.payload) {
-            portalJobFormFill(form, res.draft.payload);
-          }
+          if (res && res.draft && res.draft.payload) portalJobFormFill(form, res.draft.payload);
         } catch (e) {
           console.warn("[job application] draft load", e);
         }
       }
       document.getElementById("jobSaveDraft").addEventListener("click", async function () {
-        var msg = portalJobFormValidate(form);
-        if (msg) {
-          showStatus(msg, true);
-          return;
-        }
         showStatus("Saving…");
         try {
           await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: false });
@@ -136,7 +147,7 @@
       });
       form.addEventListener("submit", async function (ev) {
         ev.preventDefault();
-        var msg = portalJobFormValidate(form);
+        var msg = portalJobFormValidate(form, { submit: true });
         if (msg) {
           showStatus(msg, true);
           return;

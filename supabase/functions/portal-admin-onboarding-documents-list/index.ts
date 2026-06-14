@@ -271,6 +271,9 @@ function displayNameFromPayload(payload: unknown): string {
     const staff = String((meta as Record<string, unknown>).staff_name ?? "").trim();
     if (staff) return staff;
   }
+  const name = String(p.name ?? "").trim();
+  const surname = String(p.surname ?? "").trim();
+  if (name && surname) return `${name} ${surname}`.trim();
   const parts = [
     p.firstName,
     p.lastName,
@@ -283,7 +286,7 @@ function displayNameFromPayload(payload: unknown): string {
     .map((v) => String(v ?? "").trim())
     .filter(Boolean);
   if (parts.length >= 2) return `${parts[0]} ${parts[1]}`.trim();
-  return parts[0] || "";
+  return parts[0] || surname || "";
 }
 
 function countDocForApplicant(doc: OnboardingDocRow, counts: UploadCounts) {

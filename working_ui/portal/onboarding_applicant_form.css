@@ -44,7 +44,8 @@ body {
   min-width: 0;
 }
 .ob-form-card input,
-.ob-form-card textarea {
+.ob-form-card textarea,
+.ob-form-card select {
   font: inherit;
   font-weight: 400;
   border: 1px solid var(--line);
@@ -52,6 +53,16 @@ body {
   padding: 10px 12px;
   min-width: 0;
   width: 100%;
+  background: #fff;
+}
+.ob-form-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.ob-form-detail[hidden] {
+  display: none !important;
 }
 .ob-form-check {
   flex-direction: row !important;

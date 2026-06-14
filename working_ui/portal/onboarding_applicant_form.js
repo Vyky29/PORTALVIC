@@ -114,6 +114,11 @@
     return sid ? "portal_job_application_draft_v1_" + sid : "";
   }
 
+  function localHealthDraftKey() {
+    var sid = staffSessionId();
+    return sid ? "portal_health_questionnaire_draft_v1_" + sid : "";
+  }
+
   function readLocalJobDraft() {
     var key = localJobDraftKey();
     if (!key) return null;
@@ -136,6 +141,40 @@
         JSON.stringify({ payload: payload || {}, updated_at: new Date().toISOString() })
       );
     } catch (_) {}
+  }
+
+  function readLocalHealthDraft() {
+    var key = localHealthDraftKey();
+    if (!key) return null;
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeLocalHealthDraft(payload) {
+    var key = localHealthDraftKey();
+    if (!key) return;
+    try {
+      localStorage.setItem(
+        key,
+        JSON.stringify({ payload: payload || {}, updated_at: new Date().toISOString() })
+      );
+    } catch (_) {}
+  }
+
+  function isHealthBackendMissing(err) {
+    return (
+      err &&
+      (err.code === "table_missing" ||
+        err.code === "load_failed" ||
+        err.code === "save_failed" ||
+        err.httpStatus === 500)
+    );
   }
 
   function isOnboardingBackendMissing(err) {
@@ -237,11 +276,21 @@
       payload._portal = payload._portal && typeof payload._portal === "object" ? payload._portal : {};
       payload._portal.submitted_at = new Date().toISOString();
     }
-    var result = await edgePost("staff-health-draft-save", {
-      staff_session_id: sid,
-      staff_name: name,
-      payload: payload,
-    });
+    var result;
+    try {
+      result = await edgePost("staff-health-draft-save", {
+        staff_session_id: sid,
+        staff_name: name,
+        payload: payload,
+      });
+    } catch (err) {
+      if (isHealthBackendMissing(err) || isOnboardingBackendMissing(err)) {
+        writeLocalHealthDraft(payload);
+        result = { ok: true, source: "local" };
+      } else {
+        throw err;
+      }
+    }
     if (opts.submit && typeof global.portalOnboardingMakeWebhookPost === "function") {
       try {
         global.portalOnboardingMakeWebhookPost("health", sid, name, payload);
@@ -252,6 +301,14 @@
   global.portalOnboardingFormLoadHealth = async function () {
     var sid = staffSessionId();
     if (!sid) throw new Error("not_signed_in");
-    return edgePost("staff-health-draft-load", { staff_session_id: sid });
+    try {
+      return await edgePost("staff-health-draft-load", { staff_session_id: sid });
+    } catch (err) {
+      if (isHealthBackendMissing(err) || isOnboardingBackendMissing(err)) {
+        var local = readLocalHealthDraft();
+        return { ok: true, draft: local, source: "local" };
+      }
+      throw err;
+    }
   };
 })(typeof window !== "undefined" ? window : globalThis);
