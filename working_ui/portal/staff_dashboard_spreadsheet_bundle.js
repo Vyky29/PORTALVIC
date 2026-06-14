@@ -13212,7 +13212,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-14T10:49:20Z",
+    "rosterMadreSyncedAt": "2026-06-14T19:46:12Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

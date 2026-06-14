@@ -5552,7 +5552,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Joel",
+      "client_name": "Anas",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -7232,7 +7232,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Joel",
+      "client_name": "Anas",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -8912,7 +8912,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Joel",
+      "client_name": "Anas",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -10592,7 +10592,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Joel",
+      "client_name": "Anas",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -13201,7 +13201,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-14T10:49:20Z",
+    "rosterMadreSyncedAt": "2026-06-14T19:46:12Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
