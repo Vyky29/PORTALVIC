@@ -1550,7 +1550,7 @@
       return false;
     }
     var kind = slotAreaKind(slot);
-    if (kind === "hub") return /godsway|giuseppe|bismark|john|berta/.test(by);
+    if (kind === "hub") return /godsway|giuseppe|lulia|luliya|bismark|john|berta/.test(by);
     if (kind === "pool") return /aurora|javier|roberto|dan|youssef/.test(by);
     if (kind === "climb") return /carlos|alex|bismark/.test(by);
     if (kind === "aquatic") return /aurora|javier|roberto|dan|youssef|bismark/.test(by);
@@ -1693,7 +1693,7 @@
     if (isAquaticService(fb.service)) return "aquatic";
     if (isMultiActivityService(fb.service)) {
       var by = clean(fb.completed_by_name).toLowerCase();
-      if (/godsway|giuseppe|bismark|john|berta/.test(by)) return "hub";
+      if (/godsway|giuseppe|lulia|luliya|bismark|john|berta/.test(by)) return "hub";
       if (/aurora|javier|roberto|dan|youssef/.test(by)) return "pool";
     }
     return "";

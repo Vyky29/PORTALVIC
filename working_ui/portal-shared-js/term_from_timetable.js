@@ -28,6 +28,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "2026-05-04"
   ],
   "termStaffAwayDatesByProfileKey": {
+    "giuseppe": [
+      "2026-06-14"
+    ],
     "roberto": [
       "2026-05-07"
     ],
@@ -79,7 +82,16 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
-    "javier": []
+    "javier": [],
+    "lulia": [
+      "2026-06-14"
+    ],
+    "luliya": [
+      "2026-06-14"
+    ],
+    "aida": [
+      "2026-06-14"
+    ]
   },
   "termStaffCatchUpFeedbackDatesByProfileKey": {
     "youssef": [
@@ -639,7 +651,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-08",
       "2026-06-10",
       "2026-06-12",
-      "2026-06-14",
       "2026-06-15",
       "2026-06-17",
       "2026-06-19",
@@ -741,6 +752,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09",
       "2026-06-10",
       "2026-06-12",
+      "2026-06-14",
       "2026-06-15",
       "2026-06-16",
       "2026-06-17",
@@ -771,6 +783,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09",
       "2026-06-10",
       "2026-06-12",
+      "2026-06-14",
       "2026-06-15",
       "2026-06-16",
       "2026-06-17",
@@ -954,7 +967,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-01",
       "2026-06-02",
       "2026-06-03",
-      "2026-06-05",
       "2026-06-06",
       "2026-06-08",
       "2026-06-09",

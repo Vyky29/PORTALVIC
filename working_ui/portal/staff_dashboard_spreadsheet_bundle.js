@@ -13,7 +13,8 @@
     "2026-06-14": {
       "leadOnDuty": "Berta",
       "replaceInstructor": {
-        "JOHN, BERTA": "BERTA"
+        "JOHN, BERTA": "BERTA",
+        "GIUSEPPE": "LULIA"
       }
     },
     "2026-06-21": {
@@ -4623,7 +4624,7 @@
     {
       "client_name": "Rayyan Fi",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "1.15 to 2",
@@ -4683,7 +4684,7 @@
     {
       "client_name": "Samer",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10.15 to 11",
@@ -4743,7 +4744,7 @@
     {
       "client_name": "Eiji",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "11 to 11.45",
@@ -4843,7 +4844,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "11.45 to 12.30",
@@ -4913,7 +4914,7 @@
     {
       "client_name": "Haneef",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "12.30 to 1.15",
@@ -5093,7 +5094,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "LULIA",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.30 to 10.15",
