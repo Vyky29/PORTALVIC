@@ -35,6 +35,71 @@
 .asr-cell-input--dirty {
   border-color: #2563eb;
   background: #eff6ff;
+  color: #2563eb;
+}
+.asr-cell-input--saved {
+  color: #2563eb;
+  font-weight: 600;
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.asr-changelog {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  min-width: 0;
+}
+.asr-changelog__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.asr-changelog__hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  max-width: 52rem;
+  overflow-wrap: break-word;
+}
+.asr-changelog-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+}
+.asr-changelog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 36rem;
+}
+.asr-changelog-table th,
+.asr-changelog-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.asr-changelog-table th {
+  background: #f9fafb;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.asr-changelog-table tr:last-child td {
+  border-bottom: none;
+}
+.asr-changelog-table .asr-changelog-new {
+  color: #2563eb;
+  font-weight: 600;
+}
+.asr-changelog-empty {
+  margin: 0;
+  padding: 16px;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
 }
 .asr-subtabs--service {
   margin-top: 8px;

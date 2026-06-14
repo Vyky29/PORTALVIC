@@ -24,8 +24,11 @@
     hoursDay: "Monday",
     hoursService: "all",
     dirty: Object.create(null),
+    dirtyBaseline: Object.create(null),
     saving: false,
     mergedData: null,
+    overrideLog: [],
+    authorById: Object.create(null),
   };
 
   var HOURS_SERVICE_FILTERS = [
@@ -127,6 +130,7 @@
     return (
       '<div class="asr-legend" aria-label="Staff hours legend">' +
       "<span>Scroll horizontally for all venues · edits sync to dashboards after Save</span>" +
+      '<span><i class="asr-swatch" style="background:#eff6ff;border-color:#93c5fd"></i> Saved override (blue text)</span>' +
       "</div>"
     );
   }
@@ -201,14 +205,208 @@
     return html;
   }
 
+  function findCellInStaffHours(staffHours, editKey) {
+    if (!staffHours || !editKey) return null;
+    var found = null;
+    function scan(cells) {
+      (cells || []).forEach(function (cell) {
+        if (cell && cell.editKey === editKey) found = cell;
+      });
+    }
+    Object.keys(staffHours).forEach(function (day) {
+      var sheet = staffHours[day];
+      if (!sheet) return;
+      (sheet.dates || []).forEach(function (dr) {
+        scan(dr.cells);
+      });
+      (sheet.blocks || []).forEach(function (block) {
+        (block.dates || []).forEach(function (dr) {
+          scan(dr.cells);
+        });
+      });
+    });
+    return found;
+  }
+
+  function getBaseCellText(editKey) {
+    var base = baseData();
+    if (!base || !base.staffHours) return "";
+    var cell = findCellInStaffHours(base.staffHours, editKey);
+    return cell ? String(cell.text || "").trim() : "";
+  }
+
+  function formatLogWhen(raw) {
+    if (!raw) return "";
+    try {
+      return new Date(raw).toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (_e) {
+      return String(raw).slice(0, 16).replace("T", " ");
+    }
+  }
+
+  function formatSessionDateLabel(iso) {
+    var s = String(iso || "").trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    try {
+      return new Date(s + "T12:00:00").toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (_e) {
+      return s;
+    }
+  }
+
+  function formatColumnLabel(columnKey) {
+    var k = String(columnKey || "").trim();
+    if (!k) return "—";
+    return k.replace(/:/g, " · ").replace(/-/g, " ");
+  }
+
+  function resolveAuthorName(userId) {
+    var id = String(userId || "").trim();
+    if (!id) return "Admin";
+    if (state.authorById[id]) return state.authorById[id];
+    try {
+      var box = global.__PORTAL_SUPABASE__;
+      var me = box && box.staff_profile;
+      if (me && String(me.id) === id) {
+        return String(me.full_name || me.username || "You").trim() || "You";
+      }
+    } catch (_e) {}
+    return "Admin";
+  }
+
+  function loadAuthorNames(rows) {
+    var client = cfg.getClient();
+    if (!client || !rows || !rows.length) return Promise.resolve();
+    var seen = Object.create(null);
+    var ids = [];
+    rows.forEach(function (r) {
+      var id = String((r && r.updated_by) || "").trim();
+      if (id && !seen[id]) {
+        seen[id] = 1;
+        ids.push(id);
+      }
+    });
+    if (!ids.length) return Promise.resolve();
+    return client
+      .from("staff_profiles")
+      .select("id,full_name,username")
+      .in("id", ids)
+      .then(function (res) {
+        if (res.error || !res.data) return;
+        res.data.forEach(function (p) {
+          if (!p || !p.id) return;
+          var name = String(p.full_name || p.username || "").trim();
+          if (name) state.authorById[String(p.id)] = name;
+        });
+      })
+      .catch(function () {});
+  }
+
+  function loadChangeLog() {
+    var client = cfg.getClient();
+    if (!client) {
+      state.overrideLog = [];
+      return Promise.resolve();
+    }
+    return client
+      .from("portal_staff_timetable_cells")
+      .select("session_date,day,column_key,raw_assignment,status,updated_at,updated_by")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false })
+      .limit(80)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        state.overrideLog = res.data || [];
+        return loadAuthorNames(state.overrideLog);
+      })
+      .catch(function () {
+        state.overrideLog = [];
+      });
+  }
+
+  function renderChangeLogHtml() {
+    var rows = state.overrideLog || [];
+    if (!rows.length) {
+      return (
+        '<section class="asr-changelog" aria-labelledby="asrChangelogTitle">' +
+        '<h3 class="asr-changelog__title" id="asrChangelogTitle">Change log</h3>' +
+        '<p class="asr-changelog__hint">Saved staff-hour overrides appear here after you click <strong>Save staff hours</strong>.</p>' +
+        '<p class="asr-changelog-empty">No saved changes yet.</p>' +
+        "</section>"
+      );
+    }
+    var html =
+      '<section class="asr-changelog" aria-labelledby="asrChangelogTitle">' +
+      '<h3 class="asr-changelog__title" id="asrChangelogTitle">Change log</h3>' +
+      '<p class="asr-changelog__hint">Recent saves from Supabase — blue cells in the grid match these overrides.</p>' +
+      '<div class="asr-changelog-scroll"><table class="asr-changelog-table"><thead><tr>' +
+      "<th>When</th><th>By</th><th>Date</th><th>Day</th><th>Column</th><th>Before</th><th>After</th>" +
+      "</tr></thead><tbody>";
+    rows.forEach(function (row) {
+      var editKey =
+        String(row.session_date || "").slice(0, 10) +
+        "|" +
+        String(row.day || "").trim() +
+        "|" +
+        String(row.column_key || "").trim();
+      var before = getBaseCellText(editKey);
+      var after = String(row.raw_assignment || "").trim();
+      html +=
+        "<tr>" +
+        "<td>" +
+        esc(formatLogWhen(row.updated_at)) +
+        "</td>" +
+        "<td>" +
+        esc(resolveAuthorName(row.updated_by)) +
+        "</td>" +
+        "<td>" +
+        esc(formatSessionDateLabel(row.session_date)) +
+        "</td>" +
+        "<td>" +
+        esc(row.day || "") +
+        "</td>" +
+        "<td>" +
+        esc(formatColumnLabel(row.column_key)) +
+        "</td>" +
+        "<td>" +
+        esc(before || "—") +
+        "</td>" +
+        '<td class="asr-changelog-new">' +
+        esc(after || "—") +
+        "</td>" +
+        "</tr>";
+    });
+    html += "</tbody></table></div></section>";
+    return html;
+  }
+
   function cellInputHtml(cell) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
     var dirtyCls = state.dirty[key] != null ? " asr-cell-input--dirty" : "";
-    var tone = cell.tone ? " asr-tone--" + cell.tone : "";
+    var savedCls =
+      state.dirty[key] == null && (cell.overridden || cell.tone === "updated")
+        ? " asr-cell-input--saved asr-tone--updated"
+        : "";
+    var tone =
+      cell.tone && state.dirty[key] == null && !savedCls
+        ? " asr-tone--" + cell.tone
+        : "";
     return (
       '<input type="text" class="asr-cell-input' +
       dirtyCls +
+      savedCls +
       tone +
       '" data-asr-edit-key="' +
       esc(key) +
@@ -370,9 +568,9 @@
         html += renderHoursDaySection(wd, sheet);
         html += "</section>";
       });
-      return html;
+      return html + renderChangeLogHtml();
     }
-    return html + renderHoursDaySection(day, d.staffHours[day]);
+    return html + renderHoursDaySection(day, d.staffHours[day]) + renderChangeLogHtml();
   }
 
   function updateToolbar() {
@@ -462,8 +660,14 @@
       .then(function (res) {
         if (res.error) throw res.error;
         if (global.PortalStaffTimetableMerge) global.PortalStaffTimetableMerge.invalidate();
+        Object.keys(state.dirty).forEach(function (key) {
+          delete state.dirtyBaseline[key];
+        });
         state.dirty = Object.create(null);
         return applyOverridesToMerged();
+      })
+      .then(function () {
+        return loadChangeLog();
       })
       .then(function () {
         refreshPanel();
@@ -520,8 +724,13 @@
       inp.addEventListener("input", function () {
         var key = inp.getAttribute("data-asr-edit-key") || "";
         if (!key) return;
+        if (!Object.prototype.hasOwnProperty.call(state.dirtyBaseline, key)) {
+          var cell = findCellInStaffHours(data(), key);
+          state.dirtyBaseline[key] = cell ? String(cell.text || "") : "";
+        }
         state.dirty[key] = inp.value;
         inp.classList.add("asr-cell-input--dirty");
+        inp.classList.remove("asr-cell-input--saved");
         updateToolbar();
       });
     });
@@ -555,7 +764,7 @@
         return;
       }
       state.mergedData = null;
-      applyOverridesToMerged().then(refreshPanel);
+      Promise.all([applyOverridesToMerged(), loadChangeLog()]).then(refreshPanel);
     }
 
     mount();

@@ -61,6 +61,7 @@
         if (Object.prototype.hasOwnProperty.call(overrideMap, k)) {
           cell.text = overrideMap[k];
           cell.overridden = true;
+          cell.tone = "updated";
         }
       });
     }
