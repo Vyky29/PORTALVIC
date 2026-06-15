@@ -261,6 +261,7 @@ export function portalIsOperationsAdminUser(profile, authEmail) {
 
 /** Admin views Sevitha may open from office_portal (payroll / staff files only). */
 export const PORTAL_OFFICE_ADMIN_VIEW_IDS = new Set([
+  "office_admin",
   "portal_payslips",
   "portal_documents",
   "portal_docs_timesheet",
@@ -281,7 +282,7 @@ export function portalIsOfficeAdminViewId(viewId) {
 }
 
 export function portalOfficeAdminDashboardUrl(viewId) {
-  const v = String(viewId || "portal_payslips").trim() || "portal_payslips";
+  const v = String(viewId || "office_admin").trim() || "office_admin";
   try {
     const u = new URL(portalPublishedAdminUrl(), window.location.href);
     u.searchParams.set("view", v);

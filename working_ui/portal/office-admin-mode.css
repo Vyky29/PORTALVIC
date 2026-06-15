@@ -66,3 +66,13 @@ html.portal-admin-office-mode #portalOfficeAdminBack {
 html.portal-admin-office-mode #workspace {
   padding-top: 8px;
 }
+
+html.portal-admin-office-mode .dash-hub--office-admin {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 8px 12px 24px;
+}
+
+html.portal-admin-office-mode .dash-hub--office-admin .page-intro {
+  max-width: 42rem;
+}
