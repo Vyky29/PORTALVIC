@@ -4282,12 +4282,17 @@
       border:1px solid rgba(160,80,20,.48);
       box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(200,106,18,.22);
     }
-    .portal-session-slot-chip--submitted,
-    .portal-session-slot-chip--absent{
+    .portal-session-slot-chip--submitted{
       color:#fff;
       background:linear-gradient(145deg,#157347,#0f5b37);
       border:1px solid rgba(11,85,51,.45);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(15,91,55,.22);
+    }
+    .portal-session-slot-chip--absent{
+      color:#fff;
+      background:linear-gradient(145deg,#e8872a,#c86a12);
+      border:1px solid rgba(160,80,20,.48);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(200,106,18,.22);
     }
     .portal-session-slot-chip--cancelled{
       color:#fff;

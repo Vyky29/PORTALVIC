@@ -5926,7 +5926,7 @@
       if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
         const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
         if(r.absent){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Absent recorded"><span>Absent</span></span>';
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>';
         }
         if(r.cancelled){
           return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Cancelled"><span>Cancelled</span></span>';
