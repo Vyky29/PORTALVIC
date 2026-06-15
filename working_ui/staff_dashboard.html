@@ -4538,18 +4538,17 @@
       if(!st) return '';
       const rows = [];
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
-      function pushOverrideSetupRow(item, dayLabel){
-        const idEsc = escapeHtml(String(item.id || ''));
-        const isoEsc = escapeHtml(String(item.iso || ''));
+      function pushOverrideSetupRow(item){
         const title = escapeHtml(String(item.title || 'Schedule change'));
-        const dl = String(dayLabel || '').trim();
-        const sub = escapeHtml((dl ? (dl + ' · ') : '') + String(item.sub || ''));
+        const subRaw = String(item.sub || '').trim();
+        const sub = subRaw ? escapeHtml(subRaw) : '';
         const k = String(item.kind || 'other');
         const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
+        const subHtml = sub ? ('<span class="setup-row-sub">' + sub + '</span>') : '';
         rows.push(
-          '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note" data-action="open-roster-override-attention" data-portal-override-id="' + idEsc + '" data-portal-override-nav-iso="' + isoEsc + '" aria-label="' + title + ' ' + isoEsc + '">' +
+          '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note"' + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></span>' +
-          '<span class="setup-row-text"><strong>' + title + '</strong><span class="setup-row-sub">' + sub + '</span></span>' +
+          '<span class="setup-row-text"><strong>' + title + '</strong>' + subHtml + '</span>' +
           '<span class="setup-row-chev" aria-hidden="true">›</span></button>'
         );
       }
@@ -4557,7 +4556,10 @@
         const grp = dayGroups[gi];
         const lab = String(grp && grp.label || grp && grp.iso || '').trim();
         const items = Array.isArray(grp && grp.items) ? grp.items : [];
-        for(let ri = 0; ri < items.length; ri++) pushOverrideSetupRow(items[ri], lab);
+        if(lab && items.length){
+          rows.push('<div class="portal-qm-override-day-label portal-op-reminder-day-label">' + escapeHtml(lab) + '</div>');
+        }
+        for(let ri = 0; ri < items.length; ri++) pushOverrideSetupRow(items[ri]);
       }
       const inductionIcon =
         '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></span>';
@@ -4773,14 +4775,14 @@
       if(!dayGroups.length) return '';
       const calIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>';
       function oneBtn(item){
-        const id = escapeHtml(String(item.id || ''));
-        const iso = escapeHtml(String(item.iso || ''));
         const title = escapeHtml(String(item.title || 'Schedule change'));
-        const sub = escapeHtml(String(item.sub || ''));
+        const subRaw = String(item.sub || '').trim();
+        const sub = subRaw ? escapeHtml(subRaw) : '';
         const tone = portalQuickMenuOverrideKindMenuClass(item && item.kind) + ' menu-btn--portal-pulse';
-        return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '" data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '" aria-label="' + title + ' — ' + iso + '">' +
+        const subHtml = sub ? ('<span class="menu-btn-sub">' + sub + '</span>') : '';
+        return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '"' + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
           '<div class="menu-btn-icon" aria-hidden="true">' + calIcon + '</div>' +
-          '<div class="menu-btn-copy"><strong>' + title + '</strong><span class="menu-btn-sub">' + sub + '</span></div>' +
+          '<div class="menu-btn-copy"><strong>' + title + '</strong>' + subHtml + '</div>' +
           '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
       }
       let html = '<div class="portal-qm-override-stack">';
@@ -6553,6 +6555,36 @@
       }catch(_){}
       if(sid.indexOf('revert:') === 0) portalStaffRevertQueueRemoveByRevertId(sid);
     };
+    function portalQuickMenuDismissOverrideFromEl(el){
+      if(!el) return;
+      const dismissAllRaw = el.getAttribute('data-portal-override-dismiss-all');
+      if(dismissAllRaw){
+        try{
+          const arr = JSON.parse(dismissAllRaw);
+          if(Array.isArray(arr) && arr.length){
+            for(let i = 0; i < arr.length; i++){
+              if(typeof window.portalQuickMenuDismissOverrideById === 'function'){
+                window.portalQuickMenuDismissOverrideById(arr[i]);
+              }
+            }
+            return;
+          }
+        }catch(_){}
+      }
+      const oid = el.getAttribute('data-portal-override-id') || '';
+      if(oid && typeof window.portalQuickMenuDismissOverrideById === 'function'){
+        window.portalQuickMenuDismissOverrideById(oid);
+      }
+    }
+    function portalOverrideAttentionButtonAttrs(item){
+      const id = escapeHtml(String(item && item.id || ''));
+      const iso = escapeHtml(String(item && item.iso || ''));
+      let attrs = ' data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '"';
+      if(item && Array.isArray(item._cancelledDismissIds) && item._cancelledDismissIds.length){
+        attrs += ' data-portal-override-dismiss-all="' + escapeHtml(JSON.stringify(item._cancelledDismissIds)) + '"';
+      }
+      return attrs;
+    }
     function portalOverrideCoverPayload(row){
       let pl = row && row.payload;
       if(typeof pl === 'string'){
@@ -6735,8 +6767,10 @@
       if(kind === 'cancelled'){
         const nm = portalClientDisplayNameForOverride(row) || portalClientFirstNameTokenForOverride(row);
         title = nm ? ('Session Cancelled - ' + nm) : 'Session Cancelled';
-        if(slot && venue) sub = slot + ' y ' + venue;
-        else sub = slot || venue || '';
+        const subParts = [];
+        if(slot) subParts.push(slot);
+        if(venue) subParts.push(venue);
+        sub = subParts.join(' · ');
       } else {
         let baseTitle = 'Schedule change';
         if(kind === 'absent') baseTitle = 'Absent';
@@ -6870,10 +6904,34 @@
         return true;
       });
     }
-    function portalFinalizeOverrideQuickMenuItems(items){
+    /** One summary card per day for client session cancellations (not per participant). */
+    function portalCollapseCancelledOverrideQuickMenuItems(items, dayIso){
+      if(!items || !items.length) return items || [];
+      const cancelled = [];
+      const rest = [];
+      for(let i = 0; i < items.length; i++){
+        const it = items[i];
+        if(String(it && it.kind || '') === 'cancelled') cancelled.push(it);
+        else rest.push(it);
+      }
+      if(!cancelled.length) return items;
+      const iso = String(dayIso || (cancelled[0] && cancelled[0].iso) || '').trim();
+      const dismissIds = cancelled.map(function(it){ return String(it && it.id || '').trim(); }).filter(Boolean);
+      rest.push({
+        id: 'cancelled-day:' + iso,
+        iso: iso,
+        title: 'Sessions Cancelled = ' + cancelled.length,
+        sub: '',
+        kind: 'cancelled',
+        _cancelledDismissIds: dismissIds
+      });
+      return rest;
+    }
+    function portalFinalizeOverrideQuickMenuItems(items, dayIso){
       let out = portalDedupeAbsentOverrideQuickMenuItems(items || []);
       out = portalDedupeScheduleChangeOverrideQuickMenuItems(out);
       out = portalCollapseShiftCancelledOverrideQuickMenuItems(out);
+      out = portalCollapseCancelledOverrideQuickMenuItems(out, dayIso);
       out = portalHideScheduleChangesWhenShiftCancelled(out);
       out = portalHideScheduleChangesWhenRosterDayGrouped(out);
       return out;
@@ -6953,7 +7011,7 @@
           const items = byIso[iso];
           items.sort(function(a, b){ return (b._sort || 0) - (a._sort || 0); });
           for(let a = 0; a < items.length; a++) delete items[a]._sort;
-          const dedupedItems = portalFinalizeOverrideQuickMenuItems(items);
+          const dedupedItems = portalFinalizeOverrideQuickMenuItems(items, iso);
           n += dedupedItems.length;
           rosterOverrideDayGroups.push({
             iso: iso,
@@ -14381,9 +14439,8 @@
         const ovGo = e.target.closest('[data-action="open-roster-override-attention"]');
         if(ovGo){
           e.preventDefault();
-          const oid = ovGo.getAttribute('data-portal-override-id') || '';
-          if(oid && typeof window.portalQuickMenuDismissOverrideById === 'function'){
-            window.portalQuickMenuDismissOverrideById(oid);
+          if(typeof portalQuickMenuDismissOverrideFromEl === 'function'){
+            portalQuickMenuDismissOverrideFromEl(ovGo);
           }
           const iso = ovGo.getAttribute('data-portal-override-nav-iso') || '';
           if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
@@ -14466,9 +14523,8 @@
       if(ovHit){
         e.preventDefault();
         e.stopPropagation();
-        const oid = ovHit.getAttribute('data-portal-override-id') || '';
-        if(oid && typeof window.portalQuickMenuDismissOverrideById === 'function'){
-          window.portalQuickMenuDismissOverrideById(oid);
+        if(typeof portalQuickMenuDismissOverrideFromEl === 'function'){
+          portalQuickMenuDismissOverrideFromEl(ovHit);
         }
         const iso = ovHit.getAttribute('data-portal-override-nav-iso') || '';
         if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
