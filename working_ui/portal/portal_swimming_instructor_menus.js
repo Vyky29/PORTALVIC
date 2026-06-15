@@ -287,7 +287,15 @@
 
   async function portalSyncSwimmingInstructorQuickMenus() {
     if (portalStaffIsCeoTopbarFullAccess()) {
-      applyCeoStaffTopbarTools();
+      applyTopbarProfile({
+        photo: true,
+        swReview: true,
+        venue: true,
+        pickup: true,
+        planner: true,
+        sixIcon: false,
+        leadExtras: true,
+      });
       try {
         if (typeof global.applySetupRoleTrainingRow === "function") {
           global.applySetupRoleTrainingRow();

@@ -39,10 +39,10 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
   const mode = String(currentMode || "").trim().toLowerCase();
   const all = [
     {
-      mode: "lead",
-      label: "Lead Portal",
-      sub: "Team overview, lead reports and support workflows",
-      url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
+      mode: "staff",
+      label: "Staff Portal",
+      sub: "Your roster, sessions and field tools",
+      url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "admin",

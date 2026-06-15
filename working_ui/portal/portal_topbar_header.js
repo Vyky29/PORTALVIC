@@ -383,16 +383,22 @@
     return true;
   }
 
+  /** Programme leads + executives on staff shell (not lead_dashboard). */
+  function portalStaffHasLeadFieldToolsOnStaffShell() {
+    if (portalStaffIsProgrammeLeadTopbar()) return true;
+    return portalStaffIsCeoTopbarFullAccess();
+  }
+
   /**
-   * Lead shell or programme lead (Berta/John): 6 tools in 2×3.
-   * CEOs: staff shell = staff tools only; lead shell = lead tools only.
+   * Lead shell or programme lead (Berta/John) or exec on staff shell: 6 tools in 2×3.
+   * CEOs on staff shell = same lead extras as programme leads.
    */
   global.portalSyncTopbarRoleTools = function portalSyncTopbarRoleTools(opts) {
     opts = opts || {};
     var isLeadShell = !!opts.isLead;
     global.__PORTAL_TOPBAR_IS_LEAD__ = isLeadShell;
 
-    var isProgrammeLead = !isLeadShell && portalStaffIsProgrammeLeadTopbar();
+    var isProgrammeLead = !isLeadShell && portalStaffHasLeadFieldToolsOnStaffShell();
     var swimmingSixGrid =
       !isLeadShell && !isProgrammeLead && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
     var showLeadExtras =
@@ -425,7 +431,7 @@
     }
 
     var isCeo = portalStaffIsCeoTopbarFullAccess();
-    if (isCeo && !isLeadShell && typeof global.portalSyncCeoFullTopbarTools === "function") {
+    if (isCeo && !isLeadShell && !isProgrammeLead && typeof global.portalSyncCeoFullTopbarTools === "function") {
       global.portalSyncCeoFullTopbarTools();
     }
   };

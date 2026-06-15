@@ -411,6 +411,14 @@ export function portalIsProgrammeLeadUser(profile, authEmail) {
   return portalIsStaffHomeProgrammeLead(profile, authEmail);
 }
 
+/** Staff shell with programme-lead field tools (Berta/John/Michelle + Victor/Raúl/Javi from admin). */
+export function portalStaffHomeHasLeadFieldTools(profile, authEmail) {
+  return (
+    portalIsStaffHomeProgrammeLead(profile, authEmail) ||
+    portalIsAdminHomeExecutiveUser(profile, authEmail)
+  );
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
  * Executive trio skip chooser — land on Admin portal directly.
@@ -1414,7 +1422,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         return;
       }
       if (portalIsAdminHomeExecutiveUser(profile, authEmail)) {
-        window.location.replace(portalPublishedAdminUrl());
+        window.location.replace(portalPublishedStaffUrl());
         return;
       }
       const eff = portalInferEffectiveRole(profile, authEmail);

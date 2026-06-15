@@ -300,7 +300,7 @@
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'staff_live_map', label:'Staff live map' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-      { id:'staffhr', label:'CRM' },
+      { id:'staffhr', label:'H&R' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'recruitment', label:'Recruitment' },
@@ -335,7 +335,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
-      { id:'g_zoho', label:'CRM (Staff)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
@@ -18343,6 +18343,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return false;
     }
     function portalAdminExecHideStaffPortalNav(){
+      return false;
+    }
+    function portalAdminExecHideLeadPortalNav(){
       if(typeof window.portalCanExecWorkspaceSwitch === 'function'){
         var box = window.__PORTAL_SUPABASE__ || {};
         var email = '';
@@ -18392,6 +18395,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!item) return;
         if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return;
         if(item.id === 'portal_nav_staff' && portalAdminExecHideStaffPortalNav()) return;
+        if(item.id === 'portal_nav_lead' && portalAdminExecHideLeadPortalNav()) return;
         tiles.push(dashHubNavTileHtml(item));
       });
       return tiles;
@@ -18479,7 +18483,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       {
         id:'staffhr',
         icon:'👥',
-        title:'CRM',
+        title:'H&R',
         description:'Staff roster and HR — view each worker, onboarding, contracts, recruitment and interviews.',
         preview:['Staff roster','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
         status:'Use this area to browse staff, update profiles and run employment workflows.',
@@ -18769,12 +18773,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ariaLabel:'Participants'
         })+
         portalDashPanel({
-          title:'CRM',
+          title:'H&R',
           subtitle:'Staff roster, contracts, payslips and documents',
           iconId:'staffhr',
           panelClass:'dash-hub__panel--staff dash-hub__panel--team-tone',
           bodyHtml: opsAdminGridHtml(staffRow1, '', 'dash-hub__grid--5'),
-          ariaLabel:'CRM'
+          ariaLabel:'H&R'
         })+
         '</div></div>'
       );
@@ -19102,9 +19106,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function viewStaffHR(){
-      // Live staff roster / CRM (powered by public.hr_records). Rendered by
+      // Live staff roster / H&R (powered by public.hr_records). Rendered by
       // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
-      return '<h1 class="page-title">CRM</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
+      return '<h1 class="page-title">H&amp;R</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
@@ -23173,6 +23177,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!item) return '';
           if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return '';
           if(item.id === 'portal_nav_staff' && portalAdminExecHideStaffPortalNav()) return '';
+          if(item.id === 'portal_nav_lead' && portalAdminExecHideLeadPortalNav()) return '';
           var btn;
           if(item.externalUrl){
             btn = '<a class="admin-nav-external" href="'+esc(String(item.externalUrl))+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></a>';
