@@ -98,7 +98,7 @@
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-label-space" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-lane-labels" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-faq-v2" />
 </head>
 <body class="lead-dashboard">
@@ -918,7 +918,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260607-area-icons-transparent"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260614-lane-labels"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
@@ -4512,11 +4512,17 @@
       if(idx > 0) return { line1: s.slice(0, idx).trim(), line2: 'Pool' };
       return { line1: s, line2: '' };
     }
-    function mapPoolTierToLocationLabel(tier, clientNotes){
+    function mapPoolTierToLocationLabel(tier, clientNotes, sessionRow, viewDay){
       if(tier === 'fish') return 'Teaching Pool';
       if(tier === 'small') return 'Small Pool';
       if(tier === 'shark') return 'Big Pool';
-      if(tier === 'dolphin') return 'Lane (' + (inferLaneBracketFromClientNotes(clientNotes) || 'SE') + ')';
+      if(tier === 'dolphin'){
+        const fromArea = sessionRow && typeof rosterAreaToPoolLabel === 'function'
+          ? rosterAreaToPoolLabel(sessionRow, viewDay)
+          : null;
+        if(fromArea && /^lane\s*\(/i.test(fromArea)) return fromArea;
+        return 'Lane (' + (inferLaneBracketFromClientNotes(clientNotes) || 'SE') + ')';
+      }
       return null;
     }
     function resolvePoolLocationLabelFromSession(s, activity, clientNotes, viewDay){
@@ -4526,7 +4532,7 @@
       if(fromArea) return fromArea;
       if(!shouldShowPoolSymbolForSession(s, activity, viewDay) || !isPoolTierActivity(activity)) return null;
       const tier = resolvePoolTier(s, activity, clientNotes, viewDay);
-      return tier ? mapPoolTierToLocationLabel(tier, clientNotes) : null;
+      return tier ? mapPoolTierToLocationLabel(tier, clientNotes, s, viewDay) : null;
     }
     /** Activities that can carry a pool-tier glyph when venue/day rules match. */
     function isPoolTierActivity(activity){
@@ -4758,7 +4764,15 @@
           ? String(item.areaLabel).trim()
           : (item.poolLocationLabel ? String(item.poolLocationLabel).trim() : ''));
       if(label && typeof portalAreaNoteIconHtml === 'function'){
-        const icon = portalAreaNoteIconHtml(label, { showLabel: false, venueSessionCard: true });
+        const displayLabel = typeof portalDisplayAreaNoteLabel === 'function'
+          ? portalDisplayAreaNoteLabel(label)
+          : label;
+        const icon = portalAreaNoteIconHtml(label, {
+          showLabel: true,
+          labelText: displayLabel,
+          layout: 'stack',
+          venueSessionCard: true
+        });
         if(icon) return icon;
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
@@ -4812,8 +4826,37 @@
       return hidePoolNotes ? null : resolvePoolTier(s, activity, clientNotes, viewDay);
     }
 
+    function portalFormatRosterBandLabel(start, end){
+      function tok(hm){
+        const bits = String(hm || '').split(':');
+        let h = Number(bits[0]);
+        const m = Number(bits[1] || 0);
+        if(Number.isNaN(h)) return '';
+        if(h > 12) h -= 12;
+        if(h === 0) h = 12;
+        if(m === 0) return String(h);
+        if(m === 30) return h + '.30';
+        if(m === 15) return h + '.15';
+        if(m === 45) return h + '.45';
+        return h + '.' + String(m).padStart(2, '0');
+      }
+      const a = tok(start);
+      const b = tok(end);
+      if(!a || !b) return '';
+      return a + ' to ' + b;
+    }
     function rosterSlotTimeLabel(s){
+      const start = String(s && s.start || '').trim();
+      const end = String(s && s.end || '').trim();
+      if(/^\d{1,2}:\d{2}$/.test(start) && /^\d{1,2}:\d{2}$/.test(end)){
+        const fromBounds = portalFormatRosterBandLabel(start, end);
+        if(fromBounds) return fromBounds;
+      }
       const raw = String(s.timeSlotLabel || '').trim();
+      if(raw){
+        const loose = portalNormSlotLabelLoose(raw);
+        if(loose) return loose.replace(/(\d):(\d{2})/g, '$1.$2');
+      }
       return raw || formatSlotRange(s.start, s.end);
     }
     /** Support workers: roster room (Hub Room, Room 2). Swimming instructors: roster pool area or activity fallback. */

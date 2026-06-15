@@ -48,6 +48,47 @@
     return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
+  function parseHmToken(token) {
+    var t = String(token || "").trim();
+    if (!t) return { h: 0, m: 0 };
+    var parts = t.split(".");
+    return {
+      h: parseInt(parts[0], 10) || 0,
+      m: parts.length > 1 ? parseInt(parts[1], 10) || 0 : 0,
+    };
+  }
+
+  function hourTo24(hour, day) {
+    if (day !== "Sunday" && hour < 8) return hour + 12;
+    if (day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    return hour;
+  }
+
+  function parseTimeSlotBounds(timeSlot, day) {
+    var parts = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .split(/\s+to\s+/i);
+    if (parts.length < 2) return { start: "16:30", end: "17:00" };
+    var a = parseHmToken(parts[0]);
+    var b = parseHmToken(parts[1]);
+    var ah = hourTo24(a.h, day);
+    var bh = hourTo24(b.h, day);
+    return {
+      start: String(ah).padStart(2, "0") + ":" + String(a.m).padStart(2, "0"),
+      end: String(bh).padStart(2, "0") + ":" + String(b.m).padStart(2, "0"),
+    };
+  }
+
+  function slotBoundsKey(timeSlot, day) {
+    var b = parseTimeSlotBounds(timeSlot, day);
+    return b.start + "-" + b.end;
+  }
+
+  function slotsSameBounds(a, b, day) {
+    if (!a || !b) return false;
+    return slotBoundsKey(a, day) === slotBoundsKey(b, day);
+  }
+
   function normInstructors(v) {
     return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
   }
@@ -58,9 +99,10 @@
   }
 
   function openedSlotKey(iso, row) {
+    var day = String(row.day || weekdayLongFromIso(iso) || "").trim();
     return [
       normIso(iso),
-      normTimeSlot(row.time_slot),
+      slotBoundsKey(row.time_slot, day),
       normInstructors(row.instructors),
     ].join("|");
   }
@@ -183,7 +225,8 @@
 
     function markRosterTimeUpdated(target, baseRow) {
       if (!target || !baseRow) return target;
-      if (normTimeSlot(target.time_slot) !== normTimeSlot(baseRow.time_slot)) {
+      var day = String(target.day || baseRow.day || "").trim();
+      if (!slotsSameBounds(target.time_slot, baseRow.time_slot, day)) {
         target.__portal_roster_time_updated = true;
       }
       return target;
@@ -228,7 +271,7 @@
         var moved = clientDayActive[clientDayKey];
         if (
           moved &&
-          normTimeSlot(moved.time_slot) !== normTimeSlot(r.time_slot) &&
+          !slotsSameBounds(moved.time_slot, r.time_slot, r.day || dayLabel) &&
           String(moved.service || "").trim().toLowerCase() === String(r.service || "").trim().toLowerCase() &&
           instructorSetsOverlap(moved.instructors, r.instructors)
         ) {
@@ -306,12 +349,11 @@
       if (!tpl || !isNoClientName(tpl.client_name)) return;
       var tplParts = tk.split("|");
       var tplDay = tplParts[0] || "";
-      var tplSlot = tplParts[2] || "";
       Object.keys(openedSlots).forEach(function (ok) {
         var slot = openedSlots[ok];
         if (!slot || !slot.session_date) return;
         if (String(slot.day || "").toLowerCase() !== tplDay) return;
-        if (normTimeSlot(slot.time_slot) !== tplSlot) return;
+        if (!slotsSameBounds(slot.time_slot, tpl.time_slot, slot.day || tplDay)) return;
         if (occupiedSlots[openedSlotKey(slot.session_date, slot)]) return;
         var skNoClient = datedSlotKey({
           session_date: slot.session_date,
@@ -327,6 +369,13 @@
         );
         seenDated[skNoClient] = true;
       });
+    });
+
+    out = out.filter(function (row) {
+      if (!isNoClientName(row.client_name)) return true;
+      var iso = normIso(row.session_date);
+      if (!iso || !row.time_slot) return true;
+      return !occupiedSlots[openedSlotKey(iso, row)];
     });
 
     return out.sort(function (a, b) {

@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260607-area-icons-transparent";
+  var ICON_IMG_VER = "20260614-lane-labels";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -72,6 +72,8 @@
     if (s === "teaching pool") return "teaching-pool";
     if (/^lane\s*\(\s*se\s*\)$/.test(s) || s === "lane se") return "lane-se";
     if (/^lane\s*\(\s*de\s*\)$/.test(s) || s === "lane de") return "lane-de";
+    if (s === "shark pool" || s === "shark") return "lane-de";
+    if (s === "fish pool" || s === "fish") return "lane-se";
     if (s === "hub room") return "hub-room";
     if (s === "room 2" || s === "room2") return "room-2";
     if (s === "gym" || s === "fitness" || s === "fitness gym") return "gym";
@@ -116,6 +118,12 @@
     return "";
   };
 
+  function portalDisplayAreaNoteLabel(raw) {
+    var key = portalNormalizeAreaNoteKey(raw);
+    if (key && ICONS[key] && ICONS[key].label) return ICONS[key].label;
+    return String(raw || "").trim();
+  }
+
   function portalResolveAreaNoteLabelFromItem(item) {
     if (!item) return "";
     var override = portalApplySessionAreaNoteOverrides({
@@ -150,7 +158,7 @@
       if (laneFromArea === "lane-se") return "Lane (SE)";
       return "Lane (SE)";
     }
-    return pool;
+    return portalDisplayAreaNoteLabel(pool || area);
   }
 
   var AREA_NOTE_SHORT_LABELS = {
@@ -278,6 +286,7 @@
   global.portalMeasureTodaySessionRowHeight = portalMeasureTodaySessionRowHeight;
 
   global.portalNormalizeAreaNoteKey = portalNormalizeAreaNoteKey;
+  global.portalDisplayAreaNoteLabel = portalDisplayAreaNoteLabel;
   global.portalResolveAreaNoteLabelFromItem = portalResolveAreaNoteLabelFromItem;
   global.portalAreaNoteIconHtml = portalAreaNoteIconHtml;
   global.portalTodayAreaNoteMetrics = portalTodayAreaNoteMetrics;

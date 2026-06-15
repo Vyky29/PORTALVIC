@@ -391,14 +391,10 @@
   function effectiveTimeSlotForEdit(p, slot) {
     var picked = String(p.time_slot || "").trim();
     if (!picked) return slot ? String(slot.time_slot || "").trim() : "";
-    if (
-      slot &&
-      timeSlotNormMatchesOrWithin(slot.time_slot, picked, p.day) &&
-      normSlotTime(slot.time_slot) !== normSlotTime(picked)
-    ) {
-      return picked;
+    if (slot && timeSlotNormMatchesOrWithin(slot.time_slot, picked, p.day)) {
+      return String(slot.time_slot || picked).trim();
     }
-    return slot ? String(slot.time_slot || picked).trim() : picked;
+    return picked;
   }
 
   function validateAquaticHalfHourBand(p) {
@@ -923,6 +919,8 @@
     ) {
       notifyDates = [normIso(p.anchorDate)];
     }
+    var rosterSlotRef = before && before.time_slot ? before : findBundleSlot(p.anchorDate, beforeName || p.client_name, p.time_slot);
+    var anchorSlotLabel = effectiveTimeSlotForEdit(p, rosterSlotRef);
     var rows = notifyDates.map(function (iso) {
       return {
         session_date: iso,
@@ -931,7 +929,7 @@
         anchor_end: times.end,
         anchor_venue: String(p.venue || "").trim(),
         anchor_client_id: rosterSlug(paxName),
-        anchor_time_slot_label: String(p.time_slot || "").trim(),
+        anchor_time_slot_label: anchorSlotLabel || String(p.time_slot || "").trim(),
         override_type: "slot_update",
         payload: {
           term_roster_edit: true,

@@ -257,9 +257,19 @@
   font-size:var(--today-area-label-fs, 10px);
   font-weight:600;
   letter-spacing:0;
-  text-transform:capitalize;
+  text-transform:none;
   color:var(--area-note-accent, var(--muted));
   line-height:1.1;
+}
+/* Composite PNGs bake old codenames (Shark/Fish Pool); clip caption when HTML label is shown. */
+.section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon{
+  overflow:hidden;
+  justify-content:flex-start;
+}
+.section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon .session-area-note-img{
+  clip-path:inset(0 0 34% 0);
+  object-fit:contain;
+  object-position:top center;
 }
 
 /* Label tint matched to each area-note PNG accent. */
