@@ -2623,10 +2623,31 @@
     this.rosterRows = [];
     this.bundleError = "";
     this._absentBySessionKey = {};
+    this._slotsByIso = null;
+    this._dayStatsByIso = null;
+    this._fbIndexSig = "";
   }
+
+  AdminSessionsHub.prototype.invalidateComputeCaches = function () {
+    this._slotsByIso = null;
+    this._dayStatsByIso = null;
+  };
+
+  AdminSessionsHub.prototype.dayStatsCacheKey = function (iso) {
+    return (
+      String(iso || "") +
+      "|" +
+      clean(this.instructorFilter) +
+      "|" +
+      clean(this.serviceFilter) +
+      "|" +
+      clean(this.clientSearch)
+    );
+  };
 
   AdminSessionsHub.prototype.setPayload = function (payload) {
     this.payload = payload || {};
+    this.invalidateComputeCaches();
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {
       this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
@@ -3157,6 +3178,7 @@
         global.portalResolveStaffDashboardSource();
       }
       var src = global.STAFF_DASHBOARD_SOURCE;
+      this.invalidateComputeCaches();
       this.rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
       this.bundleError = this.rosterRows.length ? "" : "Roster bundle loaded but has no rows.";
       if (this.payload && Array.isArray(this.payload.session_feedback)) {
@@ -3218,6 +3240,16 @@
   AdminSessionsHub.prototype.indexFeedback = function () {
     var hub = this;
     var list = this.payload.session_feedback || [];
+    var sig =
+      String(list.length) +
+      "|" +
+      String(this.rosterRows.length) +
+      "|" +
+      String((this.payload.incident_reports || []).length) +
+      "|" +
+      String((this.payload.cancellation_reports || []).length);
+    if (sig === this._fbIndexSig && this._fbByKey) return;
+    this._fbIndexSig = sig;
     var byKey = {};
     var byDateClient = {};
     var absentByDateClient = {};
@@ -3610,6 +3642,9 @@
   };
 
   AdminSessionsHub.prototype.expandSlotsForDate = function (isoDate) {
+    var isoKey = String(isoDate || "").trim().substring(0, 10);
+    if (!this._slotsByIso) this._slotsByIso = Object.create(null);
+    if (this._slotsByIso[isoKey]) return this._slotsByIso[isoKey];
     var wd = weekdayLongFromIso(isoDate);
     var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
     var out = [];
@@ -3636,6 +3671,7 @@
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
+    this._slotsByIso[isoKey] = out;
     return out;
   };
 
@@ -3681,6 +3717,9 @@
         return { total: ext.required, done: doneExt };
       }
     }
+    var cacheKey = hub.dayStatsCacheKey(iso);
+    if (!hub._dayStatsByIso) hub._dayStatsByIso = Object.create(null);
+    if (hub._dayStatsByIso[cacheKey]) return hub._dayStatsByIso[cacheKey];
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return hub.slotIncludedInDayStats(s);
     });
@@ -3718,6 +3757,7 @@
       }
       if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
+    var result;
     if (this.mode === "feedback") {
       if (units.length > 0) {
         var unitDoneCount = 0;
@@ -3731,13 +3771,18 @@
             });
           if (resolved) unitDoneCount++;
         }
-        return { total: units.length, done: unitDoneCount };
+        result = { total: units.length, done: unitDoneCount };
+      } else if (total > 0) {
+        result = { total: total, done: rosterDone };
+      } else {
+        var submitted = this.feedbackCountForDate(iso);
+        result = { total: Math.max(1, submitted), done: submitted };
       }
-      if (total > 0) return { total: total, done: rosterDone };
-      var submitted = this.feedbackCountForDate(iso);
-      return { total: Math.max(1, submitted), done: submitted };
+    } else {
+      result = { total: total, done: rosterDone };
     }
-    return { total: total, done: rosterDone };
+    hub._dayStatsByIso[cacheKey] = result;
+    return result;
   };
 
   /** Roster slots shown in Sessions Overview (omits ACAT group rows, overviewOmitRosterSlots, etc.). */
@@ -3954,6 +3999,7 @@
 
   AdminSessionsHub.prototype.refreshClientFilterView = function () {
     var hub = this;
+    hub.invalidateComputeCaches();
     var esc = this.escapeHtml;
     var tbody = hub.root.querySelector("[data-ash-client-filter-tbody]");
     if (!tbody) {

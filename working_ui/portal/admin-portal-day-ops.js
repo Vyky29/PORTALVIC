@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260615-staff-absent-match';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260616-perf-overview';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -226,6 +226,15 @@
     }
   }
 
+  var payloadMergeDebounce = null;
+  function portalDayOpsAfterFeedbackPayloadMergeDebounced() {
+    if (payloadMergeDebounce) clearTimeout(payloadMergeDebounce);
+    payloadMergeDebounce = setTimeout(function () {
+      payloadMergeDebounce = null;
+      portalDayOpsAfterFeedbackPayloadMerge();
+    }, 150);
+  }
+
   var sessionFeedbackRtBound = false;
   var sessionFeedbackRtDebounce = null;
 
@@ -351,90 +360,150 @@
     return { data: j };
   }
 
-  async function fetchFallbackSupabase() {
+  async function fetchScheduleOverridesInto(out, client) {
+    if (cfg.fetchScheduleOverrides) {
+      try {
+        out.schedule_overrides = await cfg.fetchScheduleOverrides();
+      } catch (eOv) {}
+      return;
+    }
+    var sinceOv = new Date();
+    sinceOv.setDate(sinceOv.getDate() - 120);
+    var sinceOvIso = sinceOv.toISOString().slice(0, 10);
+    try {
+      var ovRes = await client
+        .from('schedule_overrides')
+        .select(
+          'id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload'
+        )
+        .gte('session_date', sinceOvIso)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(600);
+      if (!ovRes.error) out.schedule_overrides = ovRes.data || [];
+    } catch (eOv2) {}
+  }
+
+  /** Fast path for Sessions overview — parallel, no incidents/lead/venue/DB feedback merge. */
+  async function fetchOverviewSupabaseExtras() {
     var client = cfg.getClient && cfg.getClient();
     if (!client) return emptyPayload();
     var out = emptyPayload();
     if (cfg.buildFeedbackFromPortal) {
       out.session_feedback = cfg.buildFeedbackFromPortal() || [];
       out.session_feedback_total = out.session_feedback.length;
+      out.session_feedback_loaded = out.session_feedback.length;
     }
+    var tasks = [fetchScheduleOverridesInto(out, client)];
     if (cfg.fetchCancellations) {
-      try {
-        out.cancellation_reports = await cfg.fetchCancellations();
-      } catch (e) {}
+      tasks.push(
+        cfg.fetchCancellations().then(function (rows) {
+          out.cancellation_reports = rows || [];
+        })
+      );
     }
     if (cfg.fetchAbsents) {
-      try {
-        out.session_quick_marks = await cfg.fetchAbsents();
-      } catch (e2) {}
+      tasks.push(
+        cfg.fetchAbsents().then(function (rows) {
+          out.session_quick_marks = rows || [];
+        })
+      );
     }
-    if (cfg.fetchScheduleOverrides) {
-      try {
-        out.schedule_overrides = await cfg.fetchScheduleOverrides();
-      } catch (eOv) {}
-    } else {
-      var sinceOv = new Date();
-      sinceOv.setDate(sinceOv.getDate() - 120);
-      var sinceOvIso = sinceOv.toISOString().slice(0, 10);
-      try {
-        var ovRes = await client
-          .from('schedule_overrides')
-          .select(
-            'id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload'
-          )
-          .gte('session_date', sinceOvIso)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(600);
-        if (!ovRes.error) out.schedule_overrides = ovRes.data || [];
-      } catch (eOv2) {}
-    }
-    if (cfg.fetchSessionFeedback) {
-      try {
-        var dbFb = await cfg.fetchSessionFeedback();
-        if (dbFb && dbFb.length) {
-          out.session_feedback = mergeFeedbackRowLists(out.session_feedback || [], dbFb);
-          out.session_feedback_total = out.session_feedback.length;
-        }
-      } catch (eFb) {}
-    }
+    await Promise.all(
+      tasks.map(function (p) {
+        return p.catch(function () {});
+      })
+    );
+    return out;
+  }
+
+  /** Heavier tables — defer until idle so overview paints first. */
+  async function fetchDeferredSupabaseExtras() {
+    var client = cfg.getClient && cfg.getClient();
+    if (!client) return emptyPayload();
+    var out = emptyPayload();
     var since = new Date();
     since.setDate(since.getDate() - 120);
     var sinceIso = since.toISOString().slice(0, 10);
-    try {
-      var inc = await client
+    var tasks = [];
+    if (cfg.fetchSessionFeedback) {
+      tasks.push(
+        cfg.fetchSessionFeedback().then(function (dbFb) {
+          if (dbFb && dbFb.length) {
+            out.session_feedback = dbFb;
+            out.session_feedback_total = dbFb.length;
+          }
+        })
+      );
+    }
+    tasks.push(
+      client
         .from('incident_reports')
         .select('*')
         .gte('created_at', sinceIso)
         .order('created_at', { ascending: false })
-        .limit(400);
-      if (!inc.error) out.incident_reports = inc.data || [];
-    } catch (e3) {}
+        .limit(400)
+        .then(function (inc) {
+          if (!inc.error) out.incident_reports = inc.data || [];
+        })
+    );
     if (cfg.fetchLeadReports) {
-      try {
-        out.lead_session_reports = await cfg.fetchLeadReports();
-      } catch (eLeadCfg) {}
+      tasks.push(
+        cfg.fetchLeadReports().then(function (rows) {
+          out.lead_session_reports = rows || [];
+        })
+      );
     } else {
-      try {
-        var lead = await client
+      tasks.push(
+        client
           .from('lead_session_reports')
           .select('*')
           .gte('session_date', sinceIso)
           .order('session_date', { ascending: false })
-          .limit(500);
-        if (!lead.error) out.lead_session_reports = lead.data || [];
-      } catch (e4) {}
+          .limit(500)
+          .then(function (lead) {
+            if (!lead.error) out.lead_session_reports = lead.data || [];
+          })
+      );
     }
-    try {
-      var ven = await client
+    tasks.push(
+      client
         .from('venue_reviews')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(400);
-      if (!ven.error) out.venue_reviews = ven.data || [];
-    } catch (e5) {}
+        .limit(400)
+        .then(function (ven) {
+          if (!ven.error) out.venue_reviews = ven.data || [];
+        })
+    );
+    await Promise.all(
+      tasks.map(function (p) {
+        return p.catch(function () {});
+      })
+    );
+    if (out.session_feedback && out.session_feedback.length && cfg.buildFeedbackFromPortal) {
+      out.session_feedback = mergeFeedbackRowLists(
+        cfg.buildFeedbackFromPortal() || [],
+        out.session_feedback
+      );
+      out.session_feedback_total = out.session_feedback.length;
+      out.session_feedback_loaded = out.session_feedback.length;
+    }
     return out;
+  }
+
+  async function fetchFallbackSupabase() {
+    var overview = await fetchOverviewSupabaseExtras();
+    var deferred = await fetchDeferredSupabaseExtras();
+    overview.incident_reports = deferred.incident_reports || [];
+    overview.lead_session_reports = deferred.lead_session_reports || [];
+    overview.venue_reviews = deferred.venue_reviews || [];
+    if (deferred.session_feedback && deferred.session_feedback.length) {
+      overview.session_feedback = deferred.session_feedback;
+      overview.session_feedback_total = deferred.session_feedback_total;
+      overview.session_feedback_loaded = deferred.session_feedback_loaded;
+    }
+    return overview;
   }
 
   function setStatus(msg, isError) {
@@ -954,13 +1023,46 @@
           setStatus('');
           void (async function () {
             try {
-              var fb = await fetchFallbackSupabase();
-              applyPayload(fb);
+              var partial = await fetchOverviewSupabaseExtras();
+              applyPayload(partial);
               mergePortalFeedbackIntoPayload();
               mergePortalVenueIntoPayload();
-              portalDayOpsAfterFeedbackPayloadMerge();
-              ensureSessionFeedbackRealtime();
-              renderLeadVenueTables();
+              portalDayOpsAfterFeedbackPayloadMergeDebounced();
+              var runDeferred = function () {
+                void (async function () {
+                  try {
+                    var deferred = await fetchDeferredSupabaseExtras();
+                    applyPayload(
+                      Object.assign({}, payload, {
+                        incident_reports: deferred.incident_reports || [],
+                        lead_session_reports: deferred.lead_session_reports || [],
+                        venue_reviews: deferred.venue_reviews || [],
+                        session_feedback: deferred.session_feedback || payload.session_feedback,
+                        session_feedback_total:
+                          deferred.session_feedback_total != null
+                            ? deferred.session_feedback_total
+                            : payload.session_feedback_total,
+                        session_feedback_loaded:
+                          deferred.session_feedback_loaded != null
+                            ? deferred.session_feedback_loaded
+                            : payload.session_feedback_loaded
+                      })
+                    );
+                    mergePortalFeedbackIntoPayload();
+                    mergePortalVenueIntoPayload();
+                    portalDayOpsAfterFeedbackPayloadMergeDebounced();
+                    ensureSessionFeedbackRealtime();
+                    renderLeadVenueTables();
+                  } catch (bgDeferErr) {
+                    console.debug('[PortalDayOps] background deferred enrich', bgDeferErr);
+                  }
+                })();
+              };
+              if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(runDeferred, { timeout: 6000 });
+              } else {
+                setTimeout(runDeferred, 1200);
+              }
             } catch (bgErr) {
               console.debug('[PortalDayOps] background enrich', bgErr);
             }

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260615-sessions-nav-load"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260616-perf-overview"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -1852,6 +1852,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return true;
     }
 
+    function portalAdminDeferDayOpsBadgesRefresh(){
+      if(typeof window.portalAdminDayOpsBadgesRefresh !== 'function') return;
+      var fn = window.portalAdminDayOpsBadgesRefresh;
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 2000 });
+      else setTimeout(fn, 0);
+    }
+
     /** @param {string} [bookingsScroll] reserved for future Bookings scroll targets (no longer maps sidebar views into Bookings). */
     function setView(id, bookingsScroll){
       if(state.view === 'staff_live_map' && id !== 'staff_live_map'){
@@ -1930,9 +1937,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminDayOpsBadgesMarkSeenView === 'function'){
           window.portalAdminDayOpsBadgesMarkSeenView(id);
         }
-        if(typeof window.portalAdminDayOpsBadgesRefresh === 'function'){
-          window.portalAdminDayOpsBadgesRefresh();
-        }
+        portalAdminDeferDayOpsBadgesRefresh();
       }catch(_badgeView){}
       syncNavGroupsUi();
       if(_hadRegisterPeek){
@@ -16955,7 +16960,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260615-staff-absent-match';
+      '/portal/admin-sessions-hub.js?v=20260616-perf-overview';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17342,9 +17347,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalHubDataPrefetchBound = true;
         window.addEventListener('portal:supabase-ready', function(){
           portalDayOpsConfigureOnce();
-          if(window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === 'function'){
-            void window.PortalDayOps.ensurePayload();
-          }
           void adminFetchCancellationReportsForHub();
           void adminFetchAbsentQuickMarksForHub();
         });
@@ -24156,9 +24158,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var btnAlerts = $('btnAlerts');
       if(btnAlerts) btnAlerts.classList.toggle('admin-icon-btn--has-alerts', n > 0);
       try{
-        if(typeof window.portalAdminDayOpsBadgesRefresh === 'function'){
-          window.portalAdminDayOpsBadgesRefresh();
-        }
+        portalAdminDeferDayOpsBadgesRefresh();
       }catch(_badgeBell){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}

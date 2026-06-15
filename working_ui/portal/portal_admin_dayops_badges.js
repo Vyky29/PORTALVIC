@@ -6,6 +6,7 @@
   "use strict";
 
   var STORE_PREFIX = "portal_admin_dayops_seen_v1_";
+  var BADGE_LOOKBACK_DAYS = 14;
   var BADGE_KEYS = [
     "late_approval",
     "cancellation",
@@ -111,12 +112,25 @@
         (row.created_at ||
           row.submittedAt ||
           row.submitted_at ||
-          row.updated_at)) ||
+          row.updated_at ||
+          row.session_date)) ||
         ""
     ).trim();
     if (!iso) return 0;
-    var t = new Date(iso).getTime();
+    var t = new Date(iso.length === 10 ? iso + "T12:00:00" : iso).getTime();
     return isNaN(t) ? 0 : t;
+  }
+
+  function badgeCutoffMs() {
+    var d = new Date();
+    d.setDate(d.getDate() - BADGE_LOOKBACK_DAYS);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  function rowWithinBadgeWindow(row) {
+    var t = feedbackSubmittedMs(row);
+    return t > 0 && t >= badgeCutoffMs();
   }
 
   function feedbackRows() {
@@ -129,9 +143,10 @@
     var ack = seenMs("feedback");
     var n = 0;
     feedbackRows().forEach(function (row) {
+      if (!rowWithinBadgeWindow(row)) return;
       var t = feedbackSubmittedMs(row);
       if (!t) return;
-      if (t > ack) n++;
+      if (!ack || t > ack) n++;
     });
     return n;
   }
@@ -150,12 +165,9 @@
         String(fb.attendance).toLowerCase().indexOf("no") === 0
       )
         return;
+      if (!rowWithinBadgeWindow(fb)) return;
       var t = feedbackSubmittedMs(fb);
-      if (!ack) {
-        n++;
-        return;
-      }
-      if (t > ack) n++;
+      if (!ack || t > ack) n++;
     });
     return n;
   }
