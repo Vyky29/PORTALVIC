@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
   <meta charset="UTF-8" />
-  <script src="/portal/portal_auth_page_gate.js?v=20260613-office-portal"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260609-office-portal-fix"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f4f8fb" />
@@ -195,9 +195,10 @@
       loadingEl.hidden = true;
       contentHost.hidden = false;
     } catch (e) {
-      if (String(e && e.message) === "redirect") return;
-      loadingEl.textContent = "";
-      showErr(e instanceof Error ? e.message : "Could not verify your session.");
+      if (String(e && e.message) !== "redirect") {
+        loadingEl.textContent = "";
+        showErr(e instanceof Error ? e.message : "Could not verify your session.");
+      }
     }
   </script>
 </body>
