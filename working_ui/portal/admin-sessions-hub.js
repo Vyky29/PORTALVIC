@@ -4153,13 +4153,29 @@
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
     var oCid = canonicalClientSlug(ov.anchor_client_id);
-    var sCid = canonicalClientSlug(slot.client_name);
+    var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
     if (oCid && sCid && oCid !== sCid) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
     var oStart = normTimeShort(ov.anchor_start);
-    var sStart = normTimeShort(slot.time_start || slot.time_slot);
+    var oEnd = normTimeShort(ov.anchor_end);
+    var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
+    var sEnd = normTimeShort(slot.time_end || slot.anchor_end);
+    if (overrideIsAbsentType(ov)) {
+      function mins(hm) {
+        var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!p) return NaN;
+        return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+      }
+      var lo1 = mins(oStart);
+      var hi1 = mins(oEnd || oStart);
+      var lo2 = mins(sStart);
+      var hi2 = mins(sEnd || sStart);
+      if (Number.isFinite(lo1) && Number.isFinite(hi1) && Number.isFinite(lo2) && Number.isFinite(hi2)) {
+        return lo1 < hi2 && lo2 < hi1;
+      }
+    }
     if (oStart && sStart && oStart !== sStart) return false;
     return true;
   };

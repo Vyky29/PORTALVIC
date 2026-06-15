@@ -3877,6 +3877,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
+    /** Same canonical participant slug as staff spreadsheet adapter (abodi_p → abodi_pa, etc.). */
+    function adminCanonicalClientSlug(value){
+      if(typeof window.StaffDashboardSpreadsheetAdapter !== 'undefined'
+        && typeof window.StaffDashboardSpreadsheetAdapter.canonicalParticipantClientId === 'function'){
+        return window.StaffDashboardSpreadsheetAdapter.canonicalParticipantClientId(value);
+      }
+      var s = adminRosterSlugify(value);
+      var ALIASES = { abodi_p: 'abodi_pa', abodi: 'abodi_pa', adam_a: 'adam_ab', junaid: 'junaid_f' };
+      return ALIASES[s] || s;
+    }
+    function schedTimeRangesOverlap(aStart, aEnd, bStart, bEnd){
+      var lo1 = schedPgTimeToMinutes(aStart);
+      var hi1 = schedPgTimeToMinutes(aEnd);
+      var lo2 = schedPgTimeToMinutes(bStart);
+      var hi2 = schedPgTimeToMinutes(bEnd);
+      if(!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) return false;
+      return lo1 < hi2 && lo2 < hi1;
+    }
     function adminRosterNormalizePersonId(value){
       var v = String(value || '')
         .normalize('NFD')
@@ -3959,7 +3977,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (sd ? sd + '|' : '')
         + normDayLabel(s.day) + '|' + String(s.start || '') + '|' + String(s.end || '')
         + '|' + String(s.venue || '').trim().toLowerCase()
-        + '|' + String(s.clientId || '').toLowerCase()
+        + '|' + adminCanonicalClientSlug(s.clientId || '')
         + '|' + String(s.staffId || '').toLowerCase();
     }
     function adminAppendSessionsFromRowsAllInstructors(merged, notes, src){
@@ -4007,7 +4025,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!timeSlotLabel) continue;
             sObj = Object.assign({}, baseSession, { clientId: 'available', activity: rosterService || 'Swimming', status: 'available' });
           }else{
-            var clientId = adminRosterSlugify(nameRaw);
+            var clientId = adminCanonicalClientSlug(nameRaw);
             sObj = Object.assign({}, baseSession, { clientId: clientId, activity: rosterService || 'Swimming', status: 'scheduled' });
             if(clientId && clientId !== 'closed' && clientId !== 'available' && !notes[clientId]){
               notes[clientId] = Object.assign({}, EMPTY_NOTE, {
@@ -4316,6 +4334,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         segments.forEach(function(seg, idx){
           var clone = Object.assign({}, slot);
+          clone.parentAnchorStart = slot.anchorStart;
+          clone.parentAnchorEnd = slot.anchorEnd;
           clone.anchorStart = seg.anchorStart;
           clone.anchorEnd = seg.anchorEnd;
           clone.anchorTimeLabel = schedFormatRosterHmToken(normTimeShort(clone.anchorStart)) + ' to ' + schedFormatRosterHmToken(normTimeShort(clone.anchorEnd));
@@ -5781,7 +5801,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(client){
         try{
           var res = await client.from('schedule_overrides')
-            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
+            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
             .eq('session_date', iso)
             .order('created_at', { ascending: false });
           if(!res.error) overrides = res.data || [];
@@ -7764,19 +7784,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       try{ renderNav(); }catch(_r){}
     }
+    function schedOverrideMatchesSlot(slot, o){
+      if(!slot || !o) return false;
+      if(String(o.session_date) !== String(slot.sessionDate)) return false;
+      if(String(o.status || 'active') !== 'active') return false;
+      if(String(o.anchor_venue || '').trim().toLowerCase() !== String(slot.venue || '').trim().toLowerCase()) return false;
+      if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== normalizeSchedAnchorStaffId(slot.staffRosterId)) return false;
+      var oCid = adminCanonicalClientSlug(o.anchor_client_id);
+      var sCid = adminCanonicalClientSlug(slot.clientSlug || slot.clientDisplay || '');
+      if(oCid && sCid && oCid !== sCid) return false;
+      var oType = String(o.override_type || '').trim();
+      if(oType === 'client_absence_announced'){
+        return schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
+      }
+      return normTimeShort(o.anchor_start) === normTimeShort(slot.anchorStart)
+        && normTimeShort(o.anchor_end) === normTimeShort(slot.anchorEnd);
+    }
     function findOverrideForSlot(slot, overrideRows){
       var rows = Array.isArray(overrideRows) ? overrideRows : sched.overrides;
       var best = null;
-      var slotStaff = normalizeSchedAnchorStaffId(slot.staffRosterId);
-      for(var i=0;i<rows.length;i++){
+      for(var i = 0; i < rows.length; i++){
         var o = rows[i];
-        if(String(o.session_date)!==String(slot.sessionDate)) continue;
-        if(normTimeShort(o.anchor_start)!==normTimeShort(slot.anchorStart)) continue;
-        if(normTimeShort(o.anchor_end)!==normTimeShort(slot.anchorEnd)) continue;
-        if(String(o.anchor_venue||'').trim().toLowerCase()!==String(slot.venue||'').trim().toLowerCase()) continue;
-        if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== slotStaff) continue;
-        if(String(o.anchor_client_id||'').trim().toLowerCase()!==String(slot.clientSlug||'').trim().toLowerCase()) continue;
-        if(String(o.status||'active')!=='active') continue;
+        if(!schedOverrideMatchesSlot(slot, o)) continue;
         if(!best || (o.created_at && (!best.created_at || new Date(o.created_at) > new Date(best.created_at)))) best = o;
       }
       return best;
@@ -9878,7 +9907,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }else{
         var res = await client.from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
+          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
           .eq('session_date', iso)
           .order('created_at', { ascending: false });
         if(res.error){
@@ -11335,7 +11364,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var anchor_staff_id = normalizeSchedAnchorStaffId(slot.staffRosterId);
       var anchor_client_id = ovType === 'client_replace_in_slot'
         ? schedResolveMakeupAnchorClientId(slot)
-        : String(slot.clientSlug || '').trim().toLowerCase();
+        : adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
+      if(ovType === 'client_absence_announced'){
+        var dupSlot = Object.assign({}, slot, { clientSlug: anchor_client_id });
+        if(slot.parentAnchorStart && slot.parentAnchorEnd){
+          dupSlot.anchorStart = slot.parentAnchorStart;
+          dupSlot.anchorEnd = slot.parentAnchorEnd;
+        }
+        var dupOv = findOverrideForSlot(dupSlot);
+        if(dupOv && String(dupOv.override_type || '').trim() === 'client_absence_announced'){
+          if(msgEl) msgEl.textContent = 'Absent is already recorded for this participant in this time window.';
+          return;
+        }
+      }
       var covering_staff_id = '';
       if(coverSlug){
         covering_staff_id = normalizeSchedAnchorStaffId(coverSlug);
@@ -11367,6 +11408,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         superseded_by: null,
         spreadsheet_revision: 'admin-dashboard:staff_dashboard_spreadsheet_bundle'
       };
+      if(ovType === 'client_absence_announced' && slot.parentAnchorStart && slot.parentAnchorEnd){
+        row.anchor_start = slot.parentAnchorStart;
+        row.anchor_end = slot.parentAnchorEnd;
+        row.anchor_time_slot_label = String(slot.parentBandLabel || row.anchor_time_slot_label || '').trim() || row.anchor_time_slot_label;
+        payload.aquatic_full_band_absent = true;
+      }
       var beforeSnap = { slot: slot, previous_override: findOverrideForSlot(slot) };
       if(!(await schedConfirmOverrideTermMismatch(slot, ovType, payload))) return;
       var insRes = await client.from('schedule_overrides').insert([row]).select('id,created_at,created_by');
@@ -13035,7 +13082,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var sCell = sKey
               ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
               : '<span class="muted">—</span>';
-            return '<tr><td style="white-space:nowrap">'+esc(normTimeShort(o.anchor_start))+'</td>'+
+            var timeLab = String(o.anchor_time_slot_label || '').trim();
+            if(!timeLab){
+              var ts = normTimeShort(o.anchor_start);
+              var te = normTimeShort(o.anchor_end);
+              timeLab = ts && te && ts !== te ? (ts + '–' + te) : ts;
+            }
+            return '<tr><td style="white-space:nowrap" title="'+esc(String(o.anchor_start||'')+'–'+String(o.anchor_end||''))+'">'+esc(timeLab)+'</td>'+
               '<td><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
               '<td style="min-width:0">'+cCell+'</td>'+
               '<td style="min-width:0">'+sCell+'</td>'+
@@ -13198,7 +13251,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var wdLong = portalWeekdayLongFromIsoDate(iso);
         var cacheBuckets = schedBuildRosterLogFromCache(iso, window.PORTAL_ROSTER_ROWS_CACHE || []);
         var res = await client.from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
+          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
           .eq('session_date', iso)
           .order('created_at', { ascending: false });
         var resTerm = await client.from('portal_roster_row_events')
@@ -16266,7 +16319,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         since.setDate(since.getDate() - 120);
         var res = await client
           .from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
+          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
           .gte('session_date', since.toISOString().slice(0, 10))
           .eq('status', 'active')
           .order('created_at', { ascending: false })

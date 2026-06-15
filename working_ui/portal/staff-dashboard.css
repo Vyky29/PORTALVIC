@@ -2172,6 +2172,61 @@
       background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
       border-color:rgba(21,128,61,.62);
     }
+    /* Schedule-changes halo (GuideGroup): same per-kind colours as legacy reminder tiles */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent{
+      background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
+      border:2px solid rgba(5,150,105,.45);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(16,185,129,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-copy strong{color:#065f46}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-sub{color:#047857}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-chev{color:rgba(6,95,70,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-icon{
+      background:rgba(16,185,129,.2);
+      color:#047857;
+      border-color:rgba(5,150,105,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup{
+      background:linear-gradient(180deg,#fdf2f8 0%,#fce7f3 100%);
+      border:2px solid rgba(219,39,119,.42);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(236,72,153,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup .menu-btn-copy strong{color:#9d174d}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup .menu-btn-sub{color:#be185d}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup .menu-btn-chev{color:rgba(157,23,77,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup .menu-btn-icon{
+      background:rgba(236,72,153,.2);
+      color:#be185d;
+      border-color:rgba(219,39,119,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#fef2f2 0%,#fee2e2 100%);
+      border:2px solid rgba(220,38,38,.45);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(220,38,38,.2);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#991b1b}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#b91c1c}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(153,27,27,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(220,38,38,.18);
+      color:#b91c1c;
+      border-color:rgba(220,38,38,.32);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent:hover{
+      border-color:rgba(5,150,105,.65);
+      box-shadow:0 10px 26px rgba(16,185,129,.28);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup:hover{
+      border-color:rgba(219,39,119,.55);
+      box-shadow:0 10px 26px rgba(236,72,153,.28);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover{
+      border-color:rgba(220,38,38,.6);
+      box-shadow:0 10px 26px rgba(220,38,38,.28);
+    }
     /* Legacy per-kind override tiles (unused in logo-lite alerts; session pills unchanged) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent{
       background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
@@ -3176,6 +3231,13 @@
       border-color:#b71c1c;
     }
     .session-card.override--absent{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder);box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow)}
+    .section-card--today .session-card.override--absent.session-card--review-needed,
+    .section-card--today .session-card.override--absent.session-card--review-done,
+    .section-card--today .session-card.session-card--ov-green.session-card--review-needed{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
     .session-card.override--portal-cancelled{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder);box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow)}
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}

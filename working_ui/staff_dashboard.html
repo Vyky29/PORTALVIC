@@ -4751,6 +4751,18 @@
       }
       return false;
     }
+    /** Quick-menu halo tile class per admin override kind (pink MakeUp, green Absent, red Cancelled, …). */
+    function portalQuickMenuOverrideKindMenuClass(kind){
+      const k = String(kind || 'other').trim();
+      if(k === 'absent') return 'menu-btn--qm-ov-absent';
+      if(k === 'makeup') return 'menu-btn--qm-ov-makeup';
+      if(k === 'cancelled' || k === 'shift_cancelled') return 'menu-btn--qm-ov-cancelled';
+      if(k === 'slot_opened') return 'menu-btn--qm-ov-slot-opened';
+      if(k === 'reverted') return 'menu-btn--qm-ov-reverted';
+      if(k === 'new_shift' || k === 'roster_day') return 'menu-btn--qm-ov-new-shift';
+      if(k === 'new_participant') return 'menu-btn--qm-ov-new-participant';
+      return 'menu-btn--qm-ov-other';
+    }
     function portalBuildQuickMenuOverrideStackHtml(st){
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
       if(!dayGroups.length) return '';
@@ -4760,7 +4772,7 @@
         const iso = escapeHtml(String(item.iso || ''));
         const title = escapeHtml(String(item.title || 'Schedule change'));
         const sub = escapeHtml(String(item.sub || ''));
-        const tone = 'menu-btn--qm-ov-schedule menu-btn--portal-pulse';
+        const tone = portalQuickMenuOverrideKindMenuClass(item && item.kind) + ' menu-btn--portal-pulse';
         return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '" data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '" aria-label="' + title + ' — ' + iso + '">' +
           '<div class="menu-btn-icon" aria-hidden="true">' + calIcon + '</div>' +
           '<div class="menu-btn-copy"><strong>' + title + '</strong><span class="menu-btn-sub">' + sub + '</span></div>' +
@@ -6135,14 +6147,46 @@
       }catch(_){}
       return null;
     }
+    function portalHmToMinutes(hm){
+      const m = String(hm || '').match(/^(\d{1,2}):(\d{2})/);
+      if(!m) return NaN;
+      return (parseInt(m[1], 10) || 0) * 60 + (parseInt(m[2], 10) || 0);
+    }
+    function portalSessionTimeWindowsOverlap(rStart, rEnd, sStart, sEnd){
+      const lo1 = portalHmToMinutes(portalHmFromDbTime(rStart));
+      const hi1 = portalHmToMinutes(portalHmFromDbTime(rEnd) || portalHmFromDbTime(rStart));
+      const lo2 = portalHmToMinutes(sStart);
+      const hi2 = portalHmToMinutes(sEnd || sStart);
+      if(!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) return false;
+      return lo1 < hi2 && lo2 < hi1;
+    }
     function portalScheduleOverrideAnchorTimesMatchSession(r, s, overrideType){
-      if(!portalTimeAnchorsMatch(r.anchor_start, s.start)) return false;
       const ot = overrideType ? String(overrideType || '').trim() : String(r && r.override_type || '').trim();
       if(ot === 'client_absence_announced'){
-        if(portalTimeAnchorsMatch(r.anchor_end, s.end)) return true;
+        if(portalTimeAnchorsMatch(r.anchor_start, s.start) && portalTimeAnchorsMatch(r.anchor_end, s.end)) return true;
+        if(portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)) return true;
         return portalOverrideSlotLabelMatchesRow(r, s);
       }
+      if(!portalTimeAnchorsMatch(r.anchor_start, s.start)) return false;
       return portalTimeAnchorsMatch(r.anchor_end, s.end);
+    }
+    /** MakeUp anchored on an open / cleared slot (e.g. after admin cancel → available). */
+    function portalOpenSlotMakeupOverrideForSession(s, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !s) return null;
+      const all = portalScheduleOverrideRowsAll().filter(function(r){
+        if(String(r.status || 'active') !== 'active') return false;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+        if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
+      });
+      all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      return all[0] || null;
+    }
+    function portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote){
+      const makeupOv = portalOpenSlotMakeupOverrideForSession(s, sessionDateKey);
+      if(!makeupOv) return null;
+      return portalBuildMakeupTodayCardFromOverride(s, makeupOv, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
     }
     function portalHmFromDbTime(t){
       const m = String(t || '').match(/(\d{1,2}):(\d{2})/);
@@ -7119,7 +7163,7 @@
         portalOverrideMakeUpTag: true,
         portalOverrideCardTone: slotWasUpdated ? 'blue' : (makeUpPink ? 'pink' : ''),
         portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
-        portalOverrideHideAdminBadge: true,
+        portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,
         sessionVenue: String(s.venue || '').trim() || '—',
@@ -8668,6 +8712,13 @@
                 portalOverrideAlertPill: 'CANCELLED'
               }, meta);
             }
+            const makeupFromClear = portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote);
+            if(makeupFromClear){
+              return Object.assign({}, meta, makeupFromClear, {
+                __portalScheduleOverride: makeupFromClear.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
             const c = clientNotesById.available;
             const showSpec = !isBespokeActivity(activity);
             return Object.assign({
@@ -8695,6 +8746,13 @@
             }, meta);
           }
           if(st === 'Available'){
+            const makeupFromOpen = portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote);
+            if(makeupFromOpen){
+              return Object.assign({}, meta, makeupFromOpen, {
+                __portalScheduleOverride: makeupFromOpen.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
             const c = clientNotesById.available;
             let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
             if(supportHidePoolNote) poolLocationLabel = null;
@@ -8769,7 +8827,7 @@
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual),
             portalOverrideCardTone: slotWasUpdated ? 'blue' : (makeUpPink ? 'pink' : ''),
             portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
-            portalOverrideHideAdminBadge: !!hasReplaceOv,
+            portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
             portalRosterTimeUpdated: !!slotWasUpdated
           }, meta);
@@ -8957,7 +9015,7 @@
           portalOverrideMakeUpTag: hasReplaceCoverOv,
           portalOverrideCardTone: makeUpPinkCover ? 'pink' : '',
           portalOverrideSymbolText: makeUpPinkCover ? 'Make Up Session' : '',
-          portalOverrideHideAdminBadge: !!hasReplaceCoverOv,
+          portalOverrideHideAdminBadge: false,
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
           __portalBaseSession: base,
