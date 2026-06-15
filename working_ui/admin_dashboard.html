@@ -300,7 +300,7 @@
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'staff_live_map', label:'Staff live map' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-      { id:'staffhr', label:'Staff & HR' },
+      { id:'staffhr', label:'CRM' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'recruitment', label:'Recruitment' },
@@ -335,7 +335,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
-      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
+      { id:'g_zoho', label:'CRM (Staff)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
@@ -18408,7 +18408,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         clients:'Search participant profiles, attendance history, activity and report requests.',
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms log · staff notices',
-        staffhr:'Staff records, availability, HR notes and ZohoPeople-linked profile data.',
+        staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Zero-hours employment contracts — create, send and track staff signatures.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
@@ -18479,10 +18479,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       {
         id:'staffhr',
         icon:'👥',
-        title:'Staff & HR',
-        description:'Manage staff records, onboarding, contracts, recruitment, interviews and HR-related workflows.',
-        preview:['Staff records','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
-        status:'Use this area for staff readiness, documents and employment workflows.',
+        title:'CRM',
+        description:'Staff roster and HR — view each worker, onboarding, contracts, recruitment and interviews.',
+        preview:['Staff roster','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
+        status:'Use this area to browse staff, update profiles and run employment workflows.',
         primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },'recruitment','interviews'],
         secondary:['comms_bookings']
       },
@@ -18738,9 +18738,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
         portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
       var staffRow1 =
-        portalDashTileHtml('staffhr', '', 'staffhr', 'Staff & HR', 'Records, availability &amp; HR notes', false, 'sessions')+
+        portalDashTileHtml('staffhr', '', 'staffhr', 'Staff roster', 'All staff — tap for full profile &amp; HR', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
-        portalDashTileHtml('leads', '', 'leads', 'CRM', 'Enquiries, intake &amp; family contacts', false, 'leads')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
@@ -18770,12 +18769,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ariaLabel:'Participants'
         })+
         portalDashPanel({
-          title:'Staff members',
-          subtitle:'HR, contracts, and staff documents',
+          title:'CRM',
+          subtitle:'Staff roster, contracts, payslips and documents',
           iconId:'staffhr',
           panelClass:'dash-hub__panel--staff dash-hub__panel--team-tone',
           bodyHtml: opsAdminGridHtml(staffRow1, '', 'dash-hub__grid--5'),
-          ariaLabel:'Staff members'
+          ariaLabel:'CRM'
         })+
         '</div></div>'
       );
@@ -19103,9 +19102,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function viewStaffHR(){
-      // Live, editable Staff & HR (powered by public.hr_records). Rendered by
+      // Live staff roster / CRM (powered by public.hr_records). Rendered by
       // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
-      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Live staff &amp; HR — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
+      return '<h1 class="page-title">CRM</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
