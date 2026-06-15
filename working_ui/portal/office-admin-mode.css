@@ -1,0 +1,68 @@
+/* Office payroll mode — Sevitha deep-links from office_portal.html into admin tools only */
+html.portal-admin-office-mode .admin-sidebar,
+html.portal-admin-office-mode #adminBottomNav,
+html.portal-admin-office-mode #adminFloatMenuBtn,
+html.portal-admin-office-mode .admin-search-wrap,
+html.portal-admin-office-mode #adminPortalSwitch,
+html.portal-admin-office-mode .admin-sidebar-backdrop {
+  display: none !important;
+}
+
+html.portal-admin-office-mode .admin-shell {
+  display: block;
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+}
+
+html.portal-admin-office-mode .admin-main {
+  width: 100%;
+  min-width: 0;
+}
+
+html.portal-admin-office-mode .admin-topbar {
+  justify-content: flex-end;
+  gap: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+html.portal-admin-office-mode .admin-menu-mob {
+  display: none !important;
+}
+
+html.portal-admin-office-mode #portalOfficeAdminBack {
+  display: inline-flex !important;
+}
+
+.portal-office-admin-back {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #eaf5fb;
+  color: #173247;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  min-width: 0;
+  max-width: min(220px, 46vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-office-admin-back:hover,
+.portal-office-admin-back:focus-visible {
+  background: #2d84b3;
+  color: #fff;
+}
+
+html.portal-admin-office-mode #workspace {
+  padding-top: 8px;
+}

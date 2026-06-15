@@ -144,6 +144,9 @@ function portalPublishedLoginUrl() {
 function portalPublishedChooseUrl() {
   return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
 }
+function portalPublishedOfficeUrl() {
+  return portalPublishedPageUrl("office_portal.html", "PORTAL_OFFICE_DASHBOARD_URL");
+}
 function portalPublishedNewChatUrl() {
   return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_URL");
 }
@@ -256,12 +259,49 @@ export function portalIsOperationsAdminUser(profile, authEmail) {
   return key === "sevitha" || key === "info";
 }
 
+/** Admin views Sevitha may open from office_portal (payroll / staff files only). */
+export const PORTAL_OFFICE_ADMIN_VIEW_IDS = new Set([
+  "portal_payslips",
+  "portal_documents",
+  "portal_docs_timesheet",
+  "portal_docs_expense",
+  "portal_docs_portalpin",
+  "portal_docs_certificate",
+  "portal_docs_passport",
+  "portal_docs_checklist",
+  "portal_docs_firstaid",
+  "staffhr_contracts",
+]);
+
+export function portalIsOfficeAdminViewId(viewId) {
+  const id = String(viewId || "").trim();
+  if (!id) return false;
+  if (PORTAL_OFFICE_ADMIN_VIEW_IDS.has(id)) return true;
+  return id.indexOf("portal_docs_") === 0;
+}
+
+export function portalOfficeAdminDashboardUrl(viewId) {
+  const v = String(viewId || "portal_payslips").trim() || "portal_payslips";
+  try {
+    const u = new URL(portalPublishedAdminUrl(), window.location.href);
+    u.searchParams.set("view", v);
+    u.searchParams.set("office", "1");
+    return u.href;
+  } catch {
+    return (
+      "admin_dashboard.html?view=" + encodeURIComponent(v) + "&office=1"
+    );
+  }
+}
+
 /**
- * Sevitha-only surfaces (e.g. restricted ops config) — not a block on admin_dashboard access.
- * Victor, Raúl and Javi use admin_dashboard as home; lead/staff/CEO remain via workspace switch.
+ * Full operations admin dashboard (Victor / Javi / Raúl) — not office slim mode for Sevitha.
  */
 export function portalCanAccessAdminDashboardFull(profile, authEmail) {
-  return portalIsOperationsAdminUser(profile, authEmail);
+  return (
+    portalCanAccessAdminDashboard(profile, authEmail) &&
+    !portalIsOperationsAdminUser(profile, authEmail)
+  );
 }
 
 /**
@@ -710,13 +750,13 @@ function inferDashboardRoute(profile, authEmail) {
   }
   if (fromWorkingUi) {
     if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return "admin_dashboard.html";
-    if (portalIsOperationsAdminUser(profile, authEmail)) return "admin_dashboard.html";
+    if (portalIsOperationsAdminUser(profile, authEmail)) return "office_portal.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
   if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return portalPublishedAdminUrl();
-  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedAdminUrl();
+  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedOfficeUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();
@@ -1096,6 +1136,7 @@ export async function bootstrapDashboardSupabase(_opts) {
   function portalDashboardRequiresStrictGate(page) {
     return (
       page === "admin" ||
+      page === "office" ||
       page === "lead" ||
       page === "lead_overview" ||
       page === "ceo" ||
@@ -1259,6 +1300,35 @@ export async function bootstrapDashboardSupabase(_opts) {
               ? portalPublishedLeadUrl()
               : portalPublishedStaffUrl()
         );
+        try {
+          window.location.replace(dest);
+        } catch {
+          window.location.href = dest;
+        }
+        return;
+      }
+      if (portalIsOperationsAdminUser(profile, authEmailGate)) {
+        let view = "";
+        let office = false;
+        try {
+          const sp = new URLSearchParams(window.location.search);
+          view = String(sp.get("view") || sp.get("portal_view") || "").trim();
+          office = sp.get("office") === "1";
+        } catch (_) {}
+        if (!office || !portalIsOfficeAdminViewId(view)) {
+          try {
+            window.location.replace(portalPublishedOfficeUrl());
+          } catch {
+            window.location.href = portalPublishedOfficeUrl();
+          }
+          return;
+        }
+      }
+    }
+
+    if (page === "office") {
+      if (!portalIsOperationsAdminUser(profile, authEmailGate)) {
+        const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
         try {
           window.location.replace(dest);
         } catch {
