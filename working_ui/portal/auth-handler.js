@@ -1121,6 +1121,14 @@ function portalIsGodModeAdminSession() {
  * @param {{ page?: string }} _opts
  */
 export async function bootstrapDashboardSupabase(_opts) {
+  if (typeof window !== "undefined") {
+    if (window.__PORTAL_SUPABASE__?.client) return;
+    if (window.__PORTAL_SUPABASE_BOOT_INFLIGHT__) {
+      return window.__PORTAL_SUPABASE_BOOT_INFLIGHT__;
+    }
+  }
+
+  const boot = async () => {
   if (enforceAppVersion()) return;
 
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
@@ -1130,16 +1138,34 @@ export async function bootstrapDashboardSupabase(_opts) {
   const isLeadOverview = page === "lead_overview";
   const leadHubUrl = portalPublishedLeadUrl();
   /** Programme-lead session overview: return to lead hub, not login, when auth is not ready yet. */
+  function portalDashboardUsesLoginWithReturn(p) {
+    return (
+      p === "onboarding" ||
+      p === "cs_cliq" ||
+      p === "admin" ||
+      p === "office" ||
+      p === "ceo" ||
+      p === "lead" ||
+      p === "choose"
+    );
+  }
   const authFailureRedirect =
     page === "lead_overview"
       ? leadHubUrl
-      : page === "onboarding"
+      : portalDashboardUsesLoginWithReturn(page) && typeof window !== "undefined"
         ? portalLoginUrlWithReturn(window.location.href)
-        : page === "cs_cliq" && typeof window !== "undefined"
-          ? portalLoginUrlWithReturn(window.location.href)
-          : loginRedirect;
+        : loginRedirect;
   const sessionWaitMs =
-    isLeadOverview || page === "cs_cliq" || page === "onboarding" ? 7000 : 2800;
+    isLeadOverview ||
+    page === "cs_cliq" ||
+    page === "onboarding" ||
+    page === "admin" ||
+    page === "office" ||
+    page === "ceo" ||
+    page === "lead" ||
+    page === "choose"
+      ? 7000
+      : 2800;
 
   /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
@@ -1235,7 +1261,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
       clearPortalStaffContext();
       const inactiveRedirect =
-        page === "onboarding"
+        page === "onboarding" || portalDashboardUsesLoginWithReturn(page)
           ? portalLoginUrlWithReturn(window.location.href)
           : loginRedirect;
       try {
@@ -1384,7 +1410,7 @@ export async function bootstrapDashboardSupabase(_opts) {
             /* ignore */
           }
           const kickUrl =
-            page === "onboarding"
+            page === "onboarding" || portalDashboardUsesLoginWithReturn(page)
               ? portalLoginUrlWithReturn(window.location.href)
               : loginRedirect;
           window.location.href = kickUrl;
@@ -1592,6 +1618,18 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
     }
   }
+  };
+
+  if (typeof window !== "undefined") {
+    window.__PORTAL_SUPABASE_BOOT_INFLIGHT__ = boot();
+    try {
+      await window.__PORTAL_SUPABASE_BOOT_INFLIGHT__;
+    } finally {
+      window.__PORTAL_SUPABASE_BOOT_INFLIGHT__ = null;
+    }
+    return;
+  }
+  return boot();
 }
 
 function normalizeAvatarKey(raw, fallback) {

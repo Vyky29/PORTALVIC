@@ -14,6 +14,7 @@
     /staff_dashboard|lead_dashboard|admin_dashboard|ceo_dashboard|office_portal|cs_cliq|portal_choose/i.test(path);
 
   var STYLE_ID = "portal-auth-page-gate-css";
+  var LOADER_ID = "portal-auth-page-gate-loader";
 
   function injectStyles(css) {
     if (doc.getElementById(STYLE_ID)) return;
@@ -57,17 +58,54 @@
   doc.documentElement.classList.add("portal-page-dashboard-gated");
   injectStyles(
     "html.portal-page-dashboard-gated:not(.portal-auth-ready) body{" +
-      "visibility:hidden!important;background:#edf4fb;" +
+      "visibility:visible!important;background:#edf4fb;" +
       "}" +
-      "html.portal-page-dashboard-gated:not(.portal-auth-ready) .admin-shell," +
-      "html.portal-page-dashboard-gated:not(.portal-auth-ready) .lead-dashboard," +
-      "html.portal-page-dashboard-gated:not(.portal-auth-ready) #page{" +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) .admin-shell," +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) .lead-dashboard," +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) #page{" +
       "opacity:0!important;pointer-events:none!important;" +
-      "}"
+      "}" +
+    "#" +
+      LOADER_ID +
+      "{" +
+      "position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;" +
+      "align-items:center;justify-content:center;gap:14px;background:#edf4fb;" +
+      "font:600 14px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;color:#1e3a5f;" +
+      "}" +
+    "html.portal-auth-ready #" +
+      LOADER_ID +
+      "{display:none!important;}" +
+    "#" +
+      LOADER_ID +
+      " .portal-auth-gate-spinner{" +
+      "width:36px;height:36px;border:3px solid #c5d9ea;border-top-color:#2563eb;" +
+      "border-radius:50%;animation:portalAuthGateSpin .75s linear infinite;" +
+      "}" +
+    "@keyframes portalAuthGateSpin{to{transform:rotate(360deg);}}"
   );
+
+  function showLoader() {
+    if (doc.getElementById(LOADER_ID)) return;
+    var el = doc.createElement("div");
+    el.id = LOADER_ID;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-busy", "true");
+    el.innerHTML =
+      '<div class="portal-auth-gate-spinner" aria-hidden="true"></div>' +
+      "<span>Loading portal…</span>";
+    (doc.body || doc.documentElement).appendChild(el);
+  }
+
+  if (doc.body) showLoader();
+  else doc.addEventListener("DOMContentLoaded", showLoader, { once: true });
 
   function markReady() {
     doc.documentElement.classList.add("portal-auth-ready");
+    var loader = doc.getElementById(LOADER_ID);
+    if (loader) {
+      loader.setAttribute("aria-busy", "false");
+    }
   }
 
   global.addEventListener("portal:supabase-ready", markReady, { once: true });
@@ -78,10 +116,10 @@
     { once: true }
   );
 
-  /* Safety: never leave a blank screen if bootstrap hangs >6s on public pages. */
+  /* Safety: never leave a blank screen if bootstrap hangs on slow networks. */
   global.setTimeout(function () {
     if (!doc.documentElement.classList.contains("portal-auth-ready")) {
       markReady();
     }
-  }, 6000);
+  }, 12000);
 })(typeof window !== "undefined" ? window : globalThis);
