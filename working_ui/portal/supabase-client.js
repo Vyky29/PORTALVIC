@@ -637,16 +637,27 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
   return false;
 }
 
-function portalMergeRuleSlotStartHm(timeSlot) {
+function portalMergeRuleSlotStartHm(timeSlot, dayWord) {
   const raw = String(timeSlot || "")
     .trim()
     .toLowerCase();
   if (!raw) return "";
+  const isAm = /\bam\b/.test(raw);
+  const dot = raw.match(/^(\d{1,2})\.(\d{2})\s*(?:to|$|-)/);
+  if (dot) {
+    let h = parseInt(dot[1], 10);
+    const min = parseInt(dot[2], 10) || 0;
+    if (!Number.isFinite(h) || h < 0 || h > 23) return "";
+    if (!isAm && h >= 1 && h <= 7) h += 12;
+    return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  }
   const m = raw.match(/^(\d{1,2})(?:[.:](\d{2}))?\s*(?:to|$|-)/);
   if (!m) return "";
-  const h = parseInt(m[1], 10);
+  let h = parseInt(m[1], 10);
   const min = m[2] != null ? parseInt(m[2], 10) : 0;
   if (!Number.isFinite(h) || h < 0 || h > 23) return "";
+  if (!isAm && h >= 1 && h <= 7) h += 12;
+  void dayWord;
   return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
@@ -670,7 +681,7 @@ function portalFeedbackMergeKeyMatchesRosterKey(submittedKey, rosterKey, mergeRu
   if (!rTime) return true;
   const allowed = new Set();
   for (const slot of rule.slots || []) {
-    const hm = portalMergeRuleSlotStartHm(slot && slot.time_slot);
+    const hm = portalMergeRuleSlotStartHm(slot && slot.time_slot, rule.day);
     if (hm) allowed.add(hm);
   }
   return allowed.has(rTime);
@@ -724,6 +735,11 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   const sArea = portalSessionKeyAreaToken(submittedKey);
   const rArea = portalSessionKeyAreaToken(rosterKey);
   if (!sArea && !rArea) return true;
+  if (!sArea && rArea) {
+    const sTime = portalSessionKeyTimeToken(submittedKey);
+    const rTime = portalSessionKeyTimeToken(rosterKey);
+    if (sTime && rTime && sTime === rTime) return true;
+  }
   if (sArea && rArea) {
     if (sArea === rArea) return true;
     if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
@@ -986,6 +1002,9 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(submittedFb, feedback);
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
+  for (const fk of submittedFb) {
+    if (portalSubmittedKeyIsMergeFeedback(fk)) feedback.add(String(fk || "").trim());
+  }
   return { feedback, absent, cancelled };
 }
 

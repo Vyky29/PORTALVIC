@@ -718,14 +718,78 @@
     return submittedCoversStatusRow(iso, st);
   }
 
+  function rosterFeedbackMergeRules() {
+    const src =
+      typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
+    return src && Array.isArray(src.sundayFeedbackMerges)
+      ? src.sundayFeedbackMerges
+      : [];
+  }
+
+  function mergeRuleSlotStartHm(timeSlot) {
+    const raw = String(timeSlot || "")
+      .trim()
+      .toLowerCase();
+    if (!raw) return "";
+    const isAm = /\bam\b/.test(raw);
+    const dot = raw.match(/^(\d{1,2})\.(\d{2})\s*(?:to|$|-)/);
+    if (dot) {
+      let h = parseInt(dot[1], 10);
+      const min = parseInt(dot[2], 10) || 0;
+      if (!Number.isFinite(h) || h < 0 || h > 23) return "";
+      if (!isAm && h >= 1 && h <= 7) h += 12;
+      return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+    }
+    const m = raw.match(/^(\d{1,2})(?:[.:](\d{2}))?\s*(?:to|$|-)/);
+    if (!m) return "";
+    let h = parseInt(m[1], 10);
+    const min = m[2] != null ? parseInt(m[2], 10) : 0;
+    if (!Number.isFinite(h) || h < 0 || h > 23) return "";
+    if (!isAm && h >= 1 && h <= 7) h += 12;
+    return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+  }
+
+  function submittedMergeKeyCoversRosterSession(pk, iso, s, clientNotesById) {
+    const m = String(pk || "")
+      .trim()
+      .match(/^(\d{4}-\d{2}-\d{2})\|merge\|(.+)$/i);
+    if (!m) return false;
+    const date = m[1];
+    if (date !== String(iso || "").trim().substring(0, 10)) return false;
+    const mergeKey = String(m[2] || "").trim();
+    const rule = rosterFeedbackMergeRules().find(function (x) {
+      return String(x && x.mergeKey ? x.mergeKey : "").trim() === mergeKey;
+    });
+    if (!rule) return false;
+    const rosterKey = rosterKeyForSession(s, clientNotesById);
+    const ruleClient = slug(rule.client_name);
+    if (!rosterKey || !ruleClient || !clientSlugTokensEquivalent(ruleClient, rosterKey)) {
+      return false;
+    }
+    const rosterTime = rosterSessionStartHm(s);
+    if (!rosterTime) return true;
+    const allowed = new Set();
+    for (let i = 0; i < (rule.slots || []).length; i++) {
+      const hm = mergeRuleSlotStartHm(rule.slots[i] && rule.slots[i].time_slot);
+      if (hm) allowed.add(hm);
+    }
+    return allowed.has(rosterTime);
+  }
+
   function submittedRowCoversRosterSession(r, s, clientNotesById) {
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const rKey = slug(r && r.clientName);
     if (!rosterKey || !rKey) return false;
     if (!clientSlugTokensEquivalent(rosterKey, rKey)) return false;
     const rosterTime = rosterSessionStartHm(s);
-    if (!rosterTime) return true;
     const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+    const iso = String(r && r.date ? r.date : "")
+      .trim()
+      .substring(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}\|merge\|/i.test(pk)) {
+      return submittedMergeKeyCoversRosterSession(pk, iso, s, clientNotesById);
+    }
+    if (!rosterTime) return true;
     const rTime = portalRowTimeTokenFromKey(pk);
     if (rTime && rosterTime && rTime !== rosterTime) return false;
     // Submission without a time token must not blanket-match every slot for the same client that day.
