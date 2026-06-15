@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260610-errors-feedback-17';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260615-staff-absent-match';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -547,6 +547,13 @@
     if (trackingHub && trackingHub.root === root) {
       trackingHub.setPayload(payload);
       applyPendingOverviewTab();
+      if (
+        !root.querySelector(".ash-panels") &&
+        !root.querySelector(".ash-panels--feedback-only") &&
+        typeof trackingHub.render === "function"
+      ) {
+        trackingHub.render();
+      }
       return trackingHub;
     }
     trackingHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'tracking' }));

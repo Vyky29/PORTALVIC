@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260610-feedback-unified-truth"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260615-sessions-nav-load"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -335,8 +335,8 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','operations_admin','operator'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
@@ -11776,16 +11776,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalDayOpsConfigureOnce();
       var run = function(){
         if(state.view !== 'c4k_sessions' && state.view !== 'c4k_registers') return;
-        if(window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === 'function'){
-          void window.PortalDayOps.ensurePayload();
-        }
         void adminFetchCancellationReportsForHub();
         void adminFetchAbsentQuickMarksForHub();
       };
-      if(window.portalAdminLoadHeavyScripts){
+      if(window.portalAdminLoadHeavyScripts && !portalAdminHeavyScriptsReady()){
         void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(run);
       }else{
-        setTimeout(run, 0);
+        run();
       }
     }
     function portalLateAdminEnsureConfigured(){
@@ -18562,7 +18559,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Weekly capacity snapshot, service registers and rota-linked session overview.',
+        c4k_services:'Weekly capacity snapshot, service registers and term booking grids.',
+        c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Read-only group session grids and staff hours timetable (spreadsheet layout).',
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
         clients:'Search participant profiles, attendance history, activity and report requests.',
@@ -18631,9 +18629,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         icon:'🎯',
         title:'Services & Participants',
         description:'Manage services, session capacity, participants, reviews, report requests and ClassForKids-related operational information.',
-        preview:['Services and capacity','Session overview','Participant profiles','Waiting list','Reviews and reports'],
+        preview:['Services and capacity','Participant profiles','Waiting list','Reviews and reports'],
         status:'Use this area to review clients, services, bookings and session progress.',
-        primary:['c4k_services','c4k_sessions','clients','c4k_waitlist','c4k_reviews'],
+        primary:['c4k_services','clients','c4k_waitlist','c4k_reviews'],
         secondary:['orders_all','c4k_reports','servicecap','comms_ops']
       },
       {
@@ -18860,9 +18858,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashPanel({
           title:'Sessions',
           subtitle:'Session-day tools while participants are on site',
-          linkView:'c4k_services',
-          linkIconId:'c4k_services',
-          jumpTitle:'Services',
+          linkView:'dashboard',
+          linkIconId:'dashboard',
+          jumpTitle:'Day operations',
           panelClass:'dash-hub__panel--sessions',
           bodyHtml:
             '<div class="dash-hub__sessions-grids">'+

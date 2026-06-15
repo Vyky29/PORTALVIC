@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-anas-cli";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -1196,7 +1196,40 @@
 
   function loadScriptOnce(src) {
     return new Promise(function (resolve, reject) {
+      if (global.STAFF_DASHBOARD_SOURCE) {
+        resolve();
+        return;
+      }
       var existing = document.querySelector('script[data-ash-roster-bundle="1"]');
+      if (!existing) {
+        var injected = document.querySelector('script[src*="staff_dashboard_spreadsheet_bundle.js"]');
+        if (injected) {
+          if (global.STAFF_DASHBOARD_SOURCE) {
+            resolve();
+            return;
+          }
+          if (injected.getAttribute("data-loaded") === "1") {
+            resolve();
+            return;
+          }
+          injected.addEventListener(
+            "load",
+            function () {
+              injected.setAttribute("data-loaded", "1");
+              resolve();
+            },
+            { once: true }
+          );
+          injected.addEventListener(
+            "error",
+            function () {
+              reject(new Error("load failed: " + src));
+            },
+            { once: true }
+          );
+          return;
+        }
+      }
       if (existing) {
         if (global.STAFF_DASHBOARD_SOURCE) {
           resolve();
@@ -6742,6 +6775,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.mode === "feedback") hub.initFeedbackDateRange();
     }
     if (hub.mode === "feedback") {
+      hub.render();
+      hub.loadBundle().catch(function () {});
+      return hub;
+    }
+    if (global.STAFF_DASHBOARD_SOURCE) {
+      hub.refreshRosterRowsFromResolvedSource();
       hub.render();
       hub.loadBundle().catch(function () {});
       return hub;
