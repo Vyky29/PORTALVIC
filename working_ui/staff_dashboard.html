@@ -2455,13 +2455,16 @@
     function portalOpenWeekDayReviewFlow(dayName, opts){
       const day = String(dayName || '').trim();
       if(!PORTAL_WEEK_REVIEW_VALID_DAYS.has(day)) return;
-      const hasJudgementOpt = opts && Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
+      opts = opts || {};
+      const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
+      /* Close term sheet first so the UI is never stuck behind it during date navigation. */
+      closeSheet();
+      closeClientGeneralSheet();
+      const hasJudgementOpt = Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
       let termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
-      const isoOpt = opts && opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
       if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)){
         const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
-        const dwCheck = isoOpt + 'T12:00:00';
-        const dayWordCheck = new Date(dwCheck).toLocaleDateString('en-GB', { weekday: 'long' });
+        const dayWordCheck = new Date(isoOpt + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         if((todayKey && isoOpt < todayKey)
           || (typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
             && portalTermCalendarDayStillHasPendingFeedback(isoOpt, dayWordCheck))){
@@ -2487,8 +2490,6 @@
         try{ window.__PORTAL_STICKY_REVIEW_DAY_LOAD__ = false; }catch(_){}
       }
       portalSyncReviewNavigationQueryToHistory();
-      closeSheet();
-      closeClientGeneralSheet();
       DEMO_VIEW_DAY = day;
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
@@ -3249,6 +3250,7 @@
      */
     function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord){
       try{
+        if(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
         const iso = String(isoYmd || '').trim();
         const dw = String(dayWord || '').trim();
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
@@ -3301,6 +3303,39 @@
       }catch(_){
         return false;
       }
+    }
+    /** Lightweight roster-only ended-session pending (no Today list build — safe inside term rebuild). */
+    function portalRosterEndedFeedbackPendingCount(isoKey, dayWord, staffId, sessions, curDate){
+      const list = Array.isArray(sessions) ? sessions : [];
+      const sid = String(staffId || '').trim().toLowerCase();
+      const key = String(isoKey || '').trim().slice(0, 10);
+      if(!list.length || !sid || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return 0;
+      const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(key + 'T12:00:00');
+      const dw = String(dayWord || '').trim() || cur.toLocaleDateString('en-GB', { weekday: 'long' });
+      const nowMs = termCalendarNowMs();
+      const y = cur.getFullYear();
+      const mo = cur.getMonth();
+      const da = cur.getDate();
+      let pending = 0;
+      for(let i = 0; i < list.length; i++){
+        const s = list[i];
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, key, sid)) continue;
+        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+          ? portalSessionReviewKeyForModelRow(s, dw, key)
+          : `${key}|${s.start}|${s.clientId}`;
+        if(!sk) continue;
+        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+          && portalRosterSessionFeedbackCompleteForTerm(s, dw, key, sid)) continue;
+        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+          ? portalGetMergedSessionReviewRecordForRoster(s, dw, key)
+          : (getSessionReviewRecord({ sessionKey: sk }) || {});
+        if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
+        const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
+        if(!Number.isFinite(endMs) || nowMs < endMs) continue;
+        pending++;
+      }
+      return pending;
     }
     /** Same rule as orange "review needed" rows: ended client sessions without register/feedback complete (see collectSessionReviewPendingStats). */
     function hasPendingReviews(){
@@ -11852,12 +11887,7 @@
         }
         const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
         if(bridge && typeof bridge.exportMarksDayComplete === 'function'){
-          if(!bridge.exportMarksDayComplete(iso, staffId)) return false;
-          if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-            && portalTermCalendarDayStillHasPendingFeedback(iso, dayWord)){
-            return false;
-          }
-          return true;
+          return bridge.exportMarksDayComplete(iso, staffId);
         }
       }catch(_){}
       return false;
@@ -11964,10 +11994,6 @@
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
       const list = Array.isArray(sessions) ? sessions : [];
       if(!list.length) return false;
-      if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-        && portalTermCalendarDayStillHasPendingFeedback(isoKey, dayWord)){
-        return false;
-      }
       if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
         && portalTermCalendarDayHasNotEndedClientSession(isoKey, dayWord, staffId, list, curDate)){
         return false;
@@ -12051,6 +12077,9 @@
       return anyEndedIncomplete ? 'late' : 'pending';
     }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
+      if(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return;
+      try{ if(typeof window !== 'undefined') window.__PORTAL_TERM_REBUILD_IN_PROGRESS__ = true; }catch(_){}
+      try{
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
@@ -12143,11 +12172,14 @@
         const portalDayCounts = portalTermIsCatchUpFeedbackDate(key, staffId) ? null : portalDayCountsRaw;
         if(portalDayCounts){
           if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
-            if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-              && portalTermCalendarDayStillHasPendingFeedback(key, dayWord)){
+            const relPick = relFb.length ? relFb : relAll;
+            const rosterEndedPending = typeof portalRosterEndedFeedbackPendingCount === 'function'
+              ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relPick, cur)
+              : 0;
+            if(rosterEndedPending > 0){
               fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
             } else if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-              && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb.length ? relFb : relAll, cur)){
+              && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relPick, cur)){
               fbMap[key] = 'pending';
             } else {
               fbMap[key] = 'complete';
@@ -12222,26 +12254,25 @@
               unresolved++;
             });
             let allDone = applicable > 0 && unresolved === 0;
-            if(applicable > 0 && !allDone && !portalTermIsCatchUpFeedbackDate(key, staffId)
-              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
-              const todayPending = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
-              if(todayPending === 0
+            if(applicable > 0 && !allDone && !portalTermIsCatchUpFeedbackDate(key, staffId)){
+              const rosterEndedPending = typeof portalRosterEndedFeedbackPendingCount === 'function'
+                ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relFb, cur)
+                : 0;
+              if(rosterEndedPending === 0
                 && !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
                   && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb, cur))){
                 allDone = true;
-              } else if(todayPending > 0){
+              } else if(rosterEndedPending > 0){
                 allDone = false;
               }
             }
             if(applicable === 0){
               fbMap[key] = relFb.length ? 'complete' : 'pending';
             } else if(allDone){
-              if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-                && portalTermCalendarDayStillHasPendingFeedback(key, dayWord)){
-                fbMap[key] = 'late';
-              } else {
-                fbMap[key] = 'complete';
-              }
+              const rosterEndedPendingDone = typeof portalRosterEndedFeedbackPendingCount === 'function'
+                ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relFb, cur)
+                : 0;
+              fbMap[key] = rosterEndedPendingDone > 0 ? 'late' : 'complete';
             } else {
               const nowMs = termCalendarNowMs();
               let anyEndedIncomplete = false;
@@ -12283,7 +12314,11 @@
         if(key <= todayKey && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
           && typeof portalTermExportMarksDayComplete === 'function'
           && portalTermExportMarksDayComplete(key, staffId)){
-          fbMap[key] = 'complete';
+          const relExport = relFb.length ? relFb : relAll;
+          const rosterEndedPendingExport = typeof portalRosterEndedFeedbackPendingCount === 'function'
+            ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relExport, cur)
+            : 0;
+          fbMap[key] = rosterEndedPendingExport > 0 ? 'late' : 'complete';
         }
         if(typeof portalTermClampCompleteIfSessionsStillRunning === 'function'){
           portalTermClampCompleteIfSessionsStillRunning(key, dayWord, staffId, relFb.length ? relFb : relAll, cur, fbMap);
@@ -12342,6 +12377,9 @@
       });
       dashboardData.termShiftEndByDate = endMap;
       dashboardData.termFeedbackByDate = fbMap;
+      } finally {
+        try{ if(typeof window !== 'undefined') window.__PORTAL_TERM_REBUILD_IN_PROGRESS__ = false; }catch(_){}
+      }
     }
     function portalOldestIsoDateNeedingTermFeedback(){
       try{
@@ -13687,14 +13725,14 @@
         const dayWord = String(cell.getAttribute('data-term-review-weekday') || '').trim();
         if(!iso || !portalParseIsoDateLocal(iso) || !dayWord || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dayWord)) return;
         portalSetReviewFlowOrigin('term');
-        let judgement = cell.getAttribute('data-term-review-judgement') === '1';
-        if(!judgement && typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-          && portalTermCalendarDayStillHasPendingFeedback(iso, dayWord)){
-          judgement = true;
-        }
-        if(typeof portalOpenWeekDayReviewFlow === 'function'){
-          portalOpenWeekDayReviewFlow(dayWord, { portalReviewDate: iso, portalTermJudgementAllowed: judgement });
-        }
+        const judgement = cell.getAttribute('data-term-review-judgement') === '1';
+        const openDay = function(){
+          if(typeof portalOpenWeekDayReviewFlow === 'function'){
+            portalOpenWeekDayReviewFlow(dayWord, { portalReviewDate: iso, portalTermJudgementAllowed: judgement });
+          }
+        };
+        if(typeof requestAnimationFrame === 'function') requestAnimationFrame(openDay);
+        else openDay();
       }
       grid.addEventListener('click', function(e){
         const cell = e.target && e.target.closest ? e.target.closest('.term-cal-day[data-term-review-date]') : null;
