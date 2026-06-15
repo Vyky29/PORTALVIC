@@ -65,7 +65,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-office-admin-hub" />
+  <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
 <body>
   <script>
@@ -18740,6 +18740,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var staffRow1 =
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff & HR', 'Records, availability &amp; HR notes', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
+        portalDashTileHtml('leads', '', 'leads', 'CRM', 'Enquiries, intake &amp; family contacts', false, 'leads')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
@@ -24412,8 +24413,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       };
       function portalAdminBootNeedsSupabaseFirst(){
-        if(String(params.get('office')||'') === '1') return true;
-        if(initial === 'office_admin' || initial === 'portal_payslips' || initial === 'portal_documents') return true;
+        if(initial === 'portal_payslips' || initial === 'portal_documents') return true;
         if(String(initial || '').indexOf('portal_docs_') === 0) return true;
         return false;
       }
@@ -24636,7 +24636,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalInferStaffKey } from "/portal/auth-handler.js?v=20260609-office-admin-hub";
+        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalInferStaffKey, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260609-sevitha-full-admin";
         import { portalCanExecWorkspaceSwitch } from "/portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
         window.portalCanWriteScheduleOverrides = portalCanWriteScheduleOverrides;
         window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
@@ -24645,6 +24645,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch (bootErr) {
           console.debug("[portal] admin bootstrap:", bootErr);
         }
+        try {
+          const box = window.__PORTAL_SUPABASE__ || {};
+          const prof = box.staff_profile || {};
+          const em = String((box.session && box.session.user && box.session.user.email) || "").trim();
+          if (portalIsOperationsAdminUser(prof, em)) {
+            document.documentElement.classList.add("portal-admin-sevitha-home");
+          }
+        } catch (_sevHome) {}
         if (
           window.portalCeoGodModeAdmin &&
           typeof window.portalCeoGodModeAdmin.applyAfterBootstrap === "function"

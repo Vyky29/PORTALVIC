@@ -63,6 +63,10 @@ html.portal-admin-office-mode #portalOfficeAdminBack {
   color: #fff;
 }
 
+html.portal-admin-sevitha-home #portalOfficeAdminBack {
+  display: inline-flex !important;
+}
+
 html.portal-admin-office-mode #workspace {
   padding-top: 8px;
 }

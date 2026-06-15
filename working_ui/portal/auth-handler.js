@@ -1309,21 +1309,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         return;
       }
       if (portalIsOperationsAdminUser(profile, authEmailGate)) {
-        let view = "";
-        let office = false;
-        try {
-          const sp = new URLSearchParams(window.location.search);
-          view = String(sp.get("view") || sp.get("portal_view") || "").trim();
-          office = sp.get("office") === "1";
-        } catch (_) {}
-        if (!office || !portalIsOfficeAdminViewId(view)) {
-          try {
-            window.location.replace(portalPublishedOfficeUrl());
-          } catch {
-            window.location.href = portalPublishedOfficeUrl();
-          }
-          return;
-        }
+        /* Full admin shell (sidebar + menu) — office_portal is only the personal home. */
       }
     }
 
