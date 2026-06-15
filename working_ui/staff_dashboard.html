@@ -2456,9 +2456,19 @@
       const day = String(dayName || '').trim();
       if(!PORTAL_WEEK_REVIEW_VALID_DAYS.has(day)) return;
       const hasJudgementOpt = opts && Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
-      const termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
-      try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
+      let termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
       const isoOpt = opts && opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
+      if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)){
+        const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
+        const dwCheck = isoOpt + 'T12:00:00';
+        const dayWordCheck = new Date(dwCheck).toLocaleDateString('en-GB', { weekday: 'long' });
+        if((todayKey && isoOpt < todayKey)
+          || (typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+            && portalTermCalendarDayStillHasPendingFeedback(isoOpt, dayWordCheck))){
+          termJudgementAllowed = true;
+        }
+      }
+      try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
       let usedDateLock = false;
       if(/^\d{4}-\d{2}-\d{2}$/.test(isoOpt)){
         const dtIso = portalParseIsoDateLocal(isoOpt);
@@ -3281,6 +3291,15 @@
         return pending;
       }catch(e){
         return 0;
+      }
+    }
+    /** Authoritative pending check for term calendar vs Today list (must agree before a day goes green). */
+    function portalTermCalendarDayStillHasPendingFeedback(isoYmd, dayWord){
+      try{
+        if(typeof portalCountPendingSessionReviewsForCalendarDay !== 'function') return false;
+        return portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord) > 0;
+      }catch(_){
+        return false;
       }
     }
     /** Same rule as orange "review needed" rows: ended client sessions without register/feedback complete (see collectSessionReviewPendingStats). */
@@ -11833,7 +11852,12 @@
         }
         const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
         if(bridge && typeof bridge.exportMarksDayComplete === 'function'){
-          return bridge.exportMarksDayComplete(iso, staffId);
+          if(!bridge.exportMarksDayComplete(iso, staffId)) return false;
+          if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+            && portalTermCalendarDayStillHasPendingFeedback(iso, dayWord)){
+            return false;
+          }
+          return true;
         }
       }catch(_){}
       return false;
@@ -11940,6 +11964,10 @@
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
       const list = Array.isArray(sessions) ? sessions : [];
       if(!list.length) return false;
+      if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+        && portalTermCalendarDayStillHasPendingFeedback(isoKey, dayWord)){
+        return false;
+      }
       if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
         && portalTermCalendarDayHasNotEndedClientSession(isoKey, dayWord, staffId, list, curDate)){
         return false;
@@ -12115,7 +12143,10 @@
         const portalDayCounts = portalTermIsCatchUpFeedbackDate(key, staffId) ? null : portalDayCountsRaw;
         if(portalDayCounts){
           if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
-            if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+            if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+              && portalTermCalendarDayStillHasPendingFeedback(key, dayWord)){
+              fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+            } else if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
               && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb.length ? relFb : relAll, cur)){
               fbMap[key] = 'pending';
             } else {
@@ -12205,7 +12236,12 @@
             if(applicable === 0){
               fbMap[key] = relFb.length ? 'complete' : 'pending';
             } else if(allDone){
-              fbMap[key] = 'complete';
+              if(typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+                && portalTermCalendarDayStillHasPendingFeedback(key, dayWord)){
+                fbMap[key] = 'late';
+              } else {
+                fbMap[key] = 'complete';
+              }
             } else {
               const nowMs = termCalendarNowMs();
               let anyEndedIncomplete = false;
@@ -13189,13 +13225,8 @@
       const terminal = !!(rec.absent || rec.cancelled);
       const actionsDisabledByOverride = !!(item && item.actionsDisabled);
       const bypass = portalStaffIsDemoAccount();
-      const judgementOff = typeof portalTermSessionJudgementAllowed === 'function'
-        && !portalTermSessionJudgementAllowed()
-        && !ended;
-      fb.disabled = judgementOff || actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended);
-      fb.title = judgementOff
-        ? 'Feedback opens after the session ends.'
-        : actionsDisabledByOverride
+      fb.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended);
+      fb.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? (rec.absent ? 'Absence recorded (feedback not required)' : 'Cancellation recorded')
@@ -13223,7 +13254,6 @@
     function executeClientQuickFeedback(){
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
-      if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return;
       if(item.actionsDisabled) return;
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
@@ -13238,7 +13268,6 @@
     async function handleClientQuickFeedback(){
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
-      if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return;
       if(item.actionsDisabled) return;
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
@@ -13414,6 +13443,15 @@
     function openClient(item){
       if(!item || item.kind !== 'client' || item.openSheet === false) return;
       currentOpenClientItem = item;
+      try{
+        const recOpen = (typeof getEffectiveSessionReviewRecord === 'function'
+          ? getEffectiveSessionReviewRecord(item)
+          : getSessionReviewRecord(item)) || {};
+        if(typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item)
+          && !recOpen.feedbackDone && !recOpen.absent && !recOpen.cancelled){
+          window.__PORTAL_TERM_JUDGEMENT_ALLOWED = true;
+        }
+      }catch(_){}
       resetClientInfoPanels();
       const gen = resolveClientGeneralInfoText(item);
       document.getElementById('clientTitle').textContent = item.name;
@@ -13649,7 +13687,11 @@
         const dayWord = String(cell.getAttribute('data-term-review-weekday') || '').trim();
         if(!iso || !portalParseIsoDateLocal(iso) || !dayWord || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dayWord)) return;
         portalSetReviewFlowOrigin('term');
-        const judgement = cell.getAttribute('data-term-review-judgement') === '1';
+        let judgement = cell.getAttribute('data-term-review-judgement') === '1';
+        if(!judgement && typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
+          && portalTermCalendarDayStillHasPendingFeedback(iso, dayWord)){
+          judgement = true;
+        }
         if(typeof portalOpenWeekDayReviewFlow === 'function'){
           portalOpenWeekDayReviewFlow(dayWord, { portalReviewDate: iso, portalTermJudgementAllowed: judgement });
         }
