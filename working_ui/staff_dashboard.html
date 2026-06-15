@@ -1709,7 +1709,7 @@
         keys.push(k);
       };
       add(item && item.sessionKey);
-      const s = item && item.__portalBaseSession;
+      const s = portalReviewSessionForItem(item) || (item && item.__portalBaseSession);
       if(!s || !iso) return keys;
       if(typeof portalSessionReviewKeyForModelRow === 'function'){
         add(portalSessionReviewKeyForModelRow(s, dayWord, iso));
@@ -1757,9 +1757,10 @@
         if(pill === 'ABSENT') absent = true;
         if(pill === 'CANCELLED') cancelled = true;
       }
-      const baseS = item.__portalBaseSession;
+      const baseS = portalReviewSessionForItem(item);
       const staffIdSrv = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+      const isMakeupCard = portalTodayCardUsesReplaceOverride(item);
+      if(baseS && !isMakeupCard && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
         const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffIdSrv);
         if(ex){
           if(ex.absent) absent = true;
@@ -2952,8 +2953,8 @@
       }
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      const baseEarly = item.__portalBaseSession || null;
-      if(baseEarly && iso && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+      const baseEarly = portalReviewSessionForItem(item);
+      if(baseEarly && iso && typeof portalRosterSessionFeedbackResolvedFlags === 'function' && !portalTodayCardUsesReplaceOverride(item)){
         const exEarly = portalRosterSessionFeedbackResolvedFlags(baseEarly, iso, staffId);
         if(exEarly && exEarly.absent){
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
@@ -2975,13 +2976,13 @@
         return portalServerTruthReviewRecordForItem(item, iso);
       }
       const dayWord = iso ? new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '';
-      const baseS = item.__portalBaseSession || null;
+      const baseS = portalReviewSessionForItem(item);
       let mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
       if(baseS && iso && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
         mem = portalGetMergedSessionReviewRecordForRoster(baseS, dayWord, iso);
       }
       if(!iso || !staffId) return mem;
-      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function' && !portalTodayCardUsesReplaceOverride(item)){
         const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffId);
         if(ex){
           return {
@@ -3002,7 +3003,7 @@
         };
       }
       if(typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
-      const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
+      const bundle = portalRosterReviewStateFromStatusBundle(portalReviewSessionForItem(item) || item.__portalBaseSession, iso, staffId);
       if(!bundle){
         if(typeof portalTermFeedbackAssumeComplete === 'function'
           && portalTermFeedbackAssumeComplete(iso, staffId)
@@ -3171,10 +3172,14 @@
         }else if(exemptEarly.cancelled){
           out.cancelled = true;
         }else if(exemptEarly.feedbackDone){
-          out.feedbackDone = true;
+          const makeupPending = typeof portalOpenSlotMakeupOverrideForSession === 'function'
+            && portalOpenSlotMakeupOverrideForSession(s, sessionDateIso);
+          if(!makeupPending){
+            out.feedbackDone = true;
+          }
         }
         if(exemptEarly.incident) out.incident = true;
-        return out;
+        if(out.absent || out.cancelled || out.feedbackDone) return out;
       }
       if(typeof portalTermFeedbackAssumeComplete === 'function'
         && portalTermFeedbackAssumeComplete(sessionDateIso, staffIdEarly)
@@ -7128,6 +7133,17 @@
       const ov = it.__portalScheduleOverride;
       return !!(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot');
     }
+    /** Make-up Today rows must resolve feedback against the replacement client, not the cleared roster anchor. */
+    function portalReviewSessionForItem(item){
+      if(!item) return null;
+      if(portalTodayCardUsesReplaceOverride(item)){
+        const base = item.__portalBaseSession || {};
+        const repId = String(item.clientId || '').trim().toLowerCase();
+        if(!repId) return base;
+        return Object.assign({}, base, { clientId: repId });
+      }
+      return item.__portalBaseSession || null;
+    }
     function portalSyntheticSessionFromOverride(ov, viewDay){
       if(!ov) return null;
       const vw = String(viewDay || '').trim();
@@ -8155,6 +8171,9 @@
       const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
       if(st === 'Available'){
+        if(typeof portalOpenSlotMakeupOverrideForSession === 'function' && portalOpenSlotMakeupOverrideForSession(s, iso)){
+          return null;
+        }
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       if(st === 'Closed' && !openedClosed){
@@ -8180,6 +8199,9 @@
         if(t === 'slot_clear_client'){
           if(ov.payload && ov.payload.cancelled_by_admin){
             return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+          }
+          if(typeof portalOpenSlotMakeupOverrideForSession === 'function' && portalOpenSlotMakeupOverrideForSession(s, iso)){
+            return null;
           }
           return { feedbackDone: true, incident: false, absent: false, cancelled: false };
         }
