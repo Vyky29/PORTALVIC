@@ -60,6 +60,35 @@
     return cfg.esc(s);
   }
 
+  async function waitForClient(maxWaitMs) {
+    maxWaitMs = maxWaitMs || 15000;
+    var sb = cfg.getClient ? cfg.getClient() : null;
+    if (sb) return sb;
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      function done(found) {
+        if (settled) return;
+        settled = true;
+        clearInterval(pollId);
+        clearTimeout(timeoutId);
+        window.removeEventListener('portal:supabase-ready', onReady);
+        if (found) resolve(found);
+        else reject(new Error('Supabase client not available.'));
+      }
+      function onReady() {
+        done(cfg.getClient ? cfg.getClient() : null);
+      }
+      window.addEventListener('portal:supabase-ready', onReady);
+      var pollId = setInterval(function () {
+        var live = cfg.getClient ? cfg.getClient() : null;
+        if (live) done(live);
+      }, 50);
+      var timeoutId = setTimeout(function () {
+        done(cfg.getClient ? cfg.getClient() : null);
+      }, maxWaitMs);
+    });
+  }
+
   function supabaseBase() {
     return String(cfg.getSupabaseUrl() || '').replace(/\/$/, '');
   }
@@ -380,6 +409,7 @@
     if (btn) btn.disabled = true;
     setStatus('<strong>Loading…</strong> Fetching documents from Supabase.');
     try {
+      await waitForClient();
       state.items = await loadAllItems();
       updateStats(state.items);
       renderTable(filteredItems());

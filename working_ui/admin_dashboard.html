@@ -17,8 +17,8 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260610-feedback-unified-truth"></script>
-  <script src="/portal/admin-portal-documents.js?v=20260530-docs-presetsearch"></script>
-  <script src="/portal/admin-payslips.js?v=20260610-payslips"></script>
+  <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
+  <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
@@ -24395,8 +24395,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.__PORTAL_GOD_MODE_BOOT_PENDING__ = false;
         }
       };
-      if(typeof requestIdleCallback === 'function') requestIdleCallback(portalAdminBoot, { timeout: 800 });
-      else setTimeout(portalAdminBoot, 0);
+      function portalAdminBootNeedsSupabaseFirst(){
+        if(String(params.get('office')||'') === '1') return true;
+        if(initial === 'portal_payslips' || initial === 'portal_documents') return true;
+        if(String(initial || '').indexOf('portal_docs_') === 0) return true;
+        return false;
+      }
+      function schedulePortalAdminBoot(){
+        if(window.__PORTAL_ADMIN_BOOT_DONE__) return;
+        var run = function(){
+          if(window.__PORTAL_ADMIN_BOOT_DONE__) return;
+          portalAdminBoot();
+        };
+        if(!portalAdminBootNeedsSupabaseFirst()){
+          if(typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 800 });
+          else setTimeout(run, 0);
+          return;
+        }
+        if(window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client){
+          run();
+          return;
+        }
+        window.addEventListener('portal:supabase-ready', run, { once: true });
+        setTimeout(function(){
+          if(!window.__PORTAL_ADMIN_BOOT_DONE__) run();
+        }, 12000);
+      }
+      schedulePortalAdminBoot();
       if(!window.__portalAdminProfileRefreshBound){
         window.__portalAdminProfileRefreshBound = true;
         window.addEventListener('portal:supabase-ready', function(){

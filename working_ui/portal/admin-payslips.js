@@ -162,9 +162,39 @@
       .join("");
   }
 
+  async function waitForClient(maxWaitMs) {
+    maxWaitMs = maxWaitMs || 15000;
+    var sb = client();
+    if (sb) return sb;
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      function done(found) {
+        if (settled) return;
+        settled = true;
+        clearInterval(pollId);
+        clearTimeout(timeoutId);
+        window.removeEventListener("portal:supabase-ready", onReady);
+        if (found) resolve(found);
+        else reject(new Error("Supabase client not available."));
+      }
+      function onReady() {
+        done(client());
+      }
+      window.addEventListener("portal:supabase-ready", onReady);
+      var pollId = setInterval(function () {
+        var live = client();
+        if (live) done(live);
+      }, 50);
+      var timeoutId = setTimeout(function () {
+        done(client());
+      }, maxWaitMs);
+    });
+  }
+
   async function refreshAll() {
     setStatus("<strong>Loading…</strong> Staff directory and recent uploads.");
     try {
+      await waitForClient();
       await Promise.all([loadStaffDirectory(), loadRecentUploads()]);
       renderStaffOptions();
       renderUploadsTable();
@@ -205,6 +235,13 @@
     }
 
     var sb = client();
+    if (!sb) {
+      try {
+        sb = await waitForClient();
+      } catch (_) {
+        sb = null;
+      }
+    }
     if (!sb) {
       setStatus("<strong>Not signed in</strong> — refresh and try again.", true);
       return;
