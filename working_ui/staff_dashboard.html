@@ -4755,8 +4755,8 @@
       if(r.feedbackDone) return 'session-card--review-done';
       if(r.incident) return 'session-card--review-incident';
       if(isSessionEndedForFeedback(item)){
-        if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return '';
-        return 'session-card--review-needed';
+        if(!r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';
+        return '';
       }
       return '';
     }
@@ -4800,7 +4800,18 @@
         }
       }catch(_e){}
       const t = item && item.sessionEndTs;
-      if(t == null) return false;
+      if(t == null){
+        try{
+          const iso = typeof portalSessionDateIsoFromItemSessionKey === 'function'
+            ? portalSessionDateIsoFromItemSessionKey(item)
+            : String(item && item.sessionKey || '').split('|')[0].trim();
+          const todayKey = typeof portalTermLocalYmdFromMs === 'function'
+            ? portalTermLocalYmdFromMs(Date.now())
+            : '';
+          if(/^\d{4}-\d{2}-\d{2}$/.test(iso) && todayKey && iso < todayKey) return true;
+        }catch(_){}
+        return false;
+      }
       const lead = portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
       return Date.now() >= (t - lead);
     }
@@ -5750,12 +5761,10 @@
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
         const started = isSessionStartedForItem(item);
         const ended = isSessionEndedForFeedback(item);
-        if(timeUpdated && !started){
+        if(timeUpdated && !started && !ended){
           return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Session time updated"><span>Updated</span></span>';
         }
-        const showPending = timeUpdated ? started : ended;
-        if(showPending){
-          if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return '';
+        if(ended && !r.feedbackDone && !r.absent && !r.cancelled){
           return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
         }
       }
@@ -6845,6 +6854,14 @@
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
+    function portalNormTimeSlotLabel(value){
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/\s*-\s*/g, ' to ')
+        .replace(/(\d)\.(\d)/g, '$1:$2');
+    }
     /** True when this session time differs from the machine roster (term slot update or slot_update override). */
     function portalSessionRosterTimeWasUpdated(s, sessionDateIso){
       if(!s) return false;
@@ -6867,6 +6884,7 @@
       const sid = portalNormKeyStr(s.staffId);
       const day = String(s.day || '').trim();
       const curStart = portalCanonicalHmToken(s.start);
+      const curSlot = portalNormTimeSlotLabel(s.timeSlotLabel || '');
       if(!curStart || !cid || !sid) return false;
       for(let i = 0; i < machine.length; i++){
         const m = machine[i];
@@ -6881,8 +6899,12 @@
         }
         const mStaff = portalNormKeyStr(String(m.instructors || '').split(/[,/&]|\band\b/i)[0]);
         if(mStaff && mStaff !== sid) continue;
+        const mSlot = portalNormTimeSlotLabel(m.time_slot || '');
         const mStart = portalCanonicalHmToken(parseTimeSlot(String(m.time_slot || ''), m.day || day).start);
-        if(mStart && mStart !== curStart) return true;
+        const sameSlot = curSlot && mSlot ? curSlot === mSlot : !!(mStart && curStart && mStart === curStart);
+        if(!sameSlot) continue;
+        if(mStart && curStart && mStart !== curStart) return true;
+        return false;
       }
       return false;
     }
@@ -12170,11 +12192,15 @@
             });
             let allDone = applicable > 0 && unresolved === 0;
             if(applicable > 0 && !allDone && !portalTermIsCatchUpFeedbackDate(key, staffId)
-              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-              && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0
-              && !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-                && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb, cur))){
-              allDone = true;
+              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
+              const todayPending = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
+              if(todayPending === 0
+                && !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+                  && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb, cur))){
+                allDone = true;
+              } else if(todayPending > 0){
+                allDone = false;
+              }
             }
             if(applicable === 0){
               fbMap[key] = relFb.length ? 'complete' : 'pending';
@@ -13163,10 +13189,12 @@
       const terminal = !!(rec.absent || rec.cancelled);
       const actionsDisabledByOverride = !!(item && item.actionsDisabled);
       const bypass = portalStaffIsDemoAccount();
-      const judgementOff = typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed();
+      const judgementOff = typeof portalTermSessionJudgementAllowed === 'function'
+        && !portalTermSessionJudgementAllowed()
+        && !ended;
       fb.disabled = judgementOff || actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended);
       fb.title = judgementOff
-        ? 'Feedback actions are only available from My Term on days marked for review (orange).'
+        ? 'Feedback opens after the session ends.'
         : actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
