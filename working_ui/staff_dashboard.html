@@ -937,7 +937,7 @@
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260612-programme-leads-staff-home"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260610-chat-avatar-sanitize"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260615-console-quiet"></script>
 <script src="/portal/portal_sheet_back.js?v=20260614-dock-nav-v2"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -7617,7 +7617,9 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_SCHED_RT_READY = true;
-              console.info("[portal] Realtime: schedule_overrides (staff)");
+              if(typeof window.portalRealtimeMarkSubscribed === "function"){
+                window.portalRealtimeMarkSubscribed("[portal] Realtime schedule_overrides");
+              }
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(
@@ -7687,7 +7689,9 @@
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_ANN_RT_READY = true;
-              try{ console.info("[portal] Realtime: portal_staff_announcements (staff)"); }catch(_){}
+              if(typeof window.portalRealtimeMarkSubscribed === "function"){
+                window.portalRealtimeMarkSubscribed("[portal] Realtime portal_staff_announcements");
+              }
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
               if(typeof window.portalRealtimeOnChannelError === "function"){
                 window.portalRealtimeOnChannelError(

@@ -2,6 +2,7 @@
   "buildCommand": "node scripts/inject-portal-bridge-secret.mjs",
   "outputDirectory": "working_ui",
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
     { "source": "/", "destination": "/login.html" },
     { "source": "/login", "destination": "/login.html" },
     { "source": "/portal-choose", "destination": "/portal_choose.html" },

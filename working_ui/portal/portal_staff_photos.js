@@ -268,6 +268,30 @@
     console.warn(label, status, err || "");
   }
 
+  /** Avoid F12 spam when Realtime reconnects in a loop (warn once per label / minute). */
+  function portalRealtimeLogChannelIssue(label, status, err) {
+    if (portalNetworkIsOffline()) return;
+    try {
+      if (!global.__PORTAL_RT_ERR_LOG__) global.__PORTAL_RT_ERR_LOG__ = Object.create(null);
+      const key = String(label || "realtime").trim();
+      const now = Date.now();
+      const prev = Number(global.__PORTAL_RT_ERR_LOG__[key]) || 0;
+      if (now - prev < 60000) {
+        console.debug(label, status, err || "");
+        return;
+      }
+      global.__PORTAL_RT_ERR_LOG__[key] = now;
+    } catch (_) {}
+    console.warn(label, status, err || "");
+  }
+
+  function portalRealtimeMarkSubscribed(label) {
+    try {
+      const key = String(label || "").trim();
+      if (key && global.__PORTAL_RT_ERR_LOG__) delete global.__PORTAL_RT_ERR_LOG__[key];
+    } catch (_) {}
+  }
+
   /** Drop a stale Supabase Realtime channel so init can run again. */
   function portalRealtimePrepareInit(chKey, readyKey) {
     try {
@@ -292,7 +316,7 @@
       if (ch && typeof ch.unsubscribe === "function") ch.unsubscribe();
     } catch (_) {}
     global[chKey] = null;
-    portalWarnUnlessOffline(label, status, err);
+    portalRealtimeLogChannelIssue(label, status, err);
     if (!portalNetworkIsOffline() && typeof initFn === "function") {
       setTimeout(initFn, 2500);
     }
@@ -329,6 +353,8 @@
   global.portalStaffPhotoKeyAllowed = portalStaffPhotoKeyAllowed;
   global.portalNetworkIsOffline = portalNetworkIsOffline;
   global.portalWarnUnlessOffline = portalWarnUnlessOffline;
+  global.portalRealtimeLogChannelIssue = portalRealtimeLogChannelIssue;
+  global.portalRealtimeMarkSubscribed = portalRealtimeMarkSubscribed;
   global.portalRealtimePrepareInit = portalRealtimePrepareInit;
   global.portalRealtimeOnChannelError = portalRealtimeOnChannelError;
 })(
