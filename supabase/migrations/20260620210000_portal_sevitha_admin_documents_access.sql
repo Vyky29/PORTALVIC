@@ -66,7 +66,7 @@ select
   'Sevitha',
   'admin',
   'admin',
-  'admin_dashboard.html',
+  'office_portal.html',
   true
 from auth.users au
 where lower(au.email) in (
@@ -79,7 +79,7 @@ set
   username = excluded.username,
   app_role = 'admin',
   staff_role = excluded.staff_role,
-  dashboard_route = 'admin_dashboard.html',
+  dashboard_route = 'office_portal.html',
   is_active = true;
 
 commit;
