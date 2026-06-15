@@ -5584,6 +5584,35 @@
     #termSheet .term-sheet-subtitle{
       margin:0 0 8px;
     }
+    #termSheet .term-sheet-hint{
+      margin:0 16px 10px;
+      padding:0;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+      text-align:center;
+      max-width:36em;
+      margin-left:auto;
+      margin-right:auto;
+    }
+    #termSheet .term-sheet-hint strong{font-weight:700;color:var(--ink)}
+    #termSheet .term-sheet-head{position:relative;padding-top:8px}
+    #termSheet .term-sheet-close-btn{
+      position:absolute;
+      top:10px;
+      right:14px;
+      z-index:2;
+      border:1px solid rgba(23,50,71,.14);
+      background:#fff;
+      color:var(--blue);
+      font-size:13px;
+      font-weight:700;
+      border-radius:999px;
+      padding:6px 12px;
+      cursor:pointer;
+    }
+    #termSheet .term-sheet-close-btn:active{transform:scale(.98)}
+    #termSheet #termSheetHandle{cursor:pointer}
     /* Nota colores Term: arriba del calendario, estilo aviso tipo Announcements / Reminder */
     .term-cal-intro-banner{
       margin:0 0 14px;
@@ -5747,6 +5776,11 @@
     .term-cal-day.term-feedback-complete[data-term-review-date],
     .term-cal-day.term-feedback-cancelled[data-term-review-date]{
       cursor:pointer;
+    }
+    .term-cal-day.term-feedback-complete[data-term-review-date]:active,
+    .term-cal-day.active[data-term-review-date]:active,
+    .term-cal-day.term-feedback-late:active{
+      transform:scale(.96);
     }
     .term-cal-day.term-feedback-late{
       background:var(--reviewOrangeBg);

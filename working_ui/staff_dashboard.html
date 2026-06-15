@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260613-luliya-next-session" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-term-close" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-label-space" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -829,10 +829,12 @@
   </section>
 
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="termSheet">
-    <div class="sheet-head">
-      <div class="sheet-handle"></div>
+    <div class="sheet-head term-sheet-head">
+      <div class="sheet-handle" id="termSheetHandle" role="button" tabindex="0" aria-label="Close term calendar"></div>
+      <button type="button" class="term-sheet-close-btn" id="termSheetCloseBtn" aria-label="Close and return to sessions">Close</button>
       <h3 id="termSheetTitle">Summer Term 2026</h3>
       <p class="term-sheet-subtitle">Days confirmed to work this term</p>
+      <p class="term-sheet-hint" id="termSheetHint">Tap a <strong>green</strong> or <strong>blue</strong> day to open that day&apos;s session cards. Red = not your shift.</p>
     </div>
     <div class="sheet-body" id="termSheetBody">
       <div class="term-cal-intro-banner" id="termCalIntroLayer" hidden aria-hidden="true">
@@ -2452,26 +2454,37 @@
       return true;
     }
     try{ window.portalTermSessionJudgementAllowed = portalTermSessionJudgementAllowed; }catch(_){}
+    function portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed){
+      try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
+      DEMO_VIEW_DAY = day;
+      if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
+      if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
+      hydrateSessionReviewMapFromStorage();
+      portalSyncTodaySectionDisplay();
+      if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
+      renderHeader();
+      renderToday();
+      renderMiniCounts();
+      renderLists();
+      document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
     function portalOpenWeekDayReviewFlow(dayName, opts){
       const day = String(dayName || '').trim();
       if(!PORTAL_WEEK_REVIEW_VALID_DAYS.has(day)) return;
       opts = opts || {};
       const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
       /* Close term sheet first so the UI is never stuck behind it during date navigation. */
-      closeSheet();
+      if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       closeClientGeneralSheet();
+      document.body.style.overflow = '';
       const hasJudgementOpt = Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
       let termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
+      const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
       if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)){
-        const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
-        const dayWordCheck = new Date(isoOpt + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
-        if((todayKey && isoOpt < todayKey)
-          || (typeof portalTermCalendarDayStillHasPendingFeedback === 'function'
-            && portalTermCalendarDayStillHasPendingFeedback(isoOpt, dayWordCheck))){
+        if(todayKey && isoOpt < todayKey){
           termJudgementAllowed = true;
         }
       }
-      try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
       let usedDateLock = false;
       if(/^\d{4}-\d{2}-\d{2}$/.test(isoOpt)){
         const dtIso = portalParseIsoDateLocal(isoOpt);
@@ -2490,17 +2503,16 @@
         try{ window.__PORTAL_STICKY_REVIEW_DAY_LOAD__ = false; }catch(_){}
       }
       portalSyncReviewNavigationQueryToHistory();
-      DEMO_VIEW_DAY = day;
-      if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
-      if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
-      hydrateSessionReviewMapFromStorage();
-      portalSyncTodaySectionDisplay();
-      if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-      renderHeader();
-      renderToday();
-      renderMiniCounts();
-      renderLists();
-      document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      const finish = function(){
+        if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)
+          && typeof portalTermCalendarDayStillHasPendingFeedback === 'function'){
+          const dayWordCheck = new Date(isoOpt + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          if(portalTermCalendarDayStillHasPendingFeedback(isoOpt, dayWordCheck)) termJudgementAllowed = true;
+        }
+        portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
+      };
+      if(typeof requestAnimationFrame === 'function') requestAnimationFrame(finish);
+      else finish();
     }
     try{ window.portalOpenWeekDayReviewFlow = portalOpenWeekDayReviewFlow; }catch(_){}
     /** System notification (roster override): open the affected calendar day in Today / week anchor. */
@@ -12532,7 +12544,8 @@
           const isWorked = extraCatchUp || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;
-          if(half){
+          const halfBlocksNav = half && !exportWorked && !extraCatchUp;
+          if(halfBlocksNav){
             cls += ' half-term';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
@@ -13717,6 +13730,22 @@
     }
     document.getElementById('termCalIntroUnderstood')?.addEventListener('click', dismissTermCalendarColorIntro);
 
+    function portalCloseTermSheetToDashboard(){
+      if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+      document.body.style.overflow = '';
+      if(typeof portalScrollDashboardHome === 'function') portalScrollDashboardHome();
+    }
+    document.getElementById('termSheetCloseBtn')?.addEventListener('click', portalCloseTermSheetToDashboard);
+    const termSheetHandle = document.getElementById('termSheetHandle');
+    if(termSheetHandle){
+      termSheetHandle.addEventListener('click', portalCloseTermSheetToDashboard);
+      termSheetHandle.addEventListener('keydown', function(e){
+        if(e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        portalCloseTermSheetToDashboard();
+      });
+    }
+
     (function bindTermGridPendingReviewNavigation(){
       const grid = document.getElementById('termGrid');
       if(!grid) return;
@@ -13731,8 +13760,7 @@
             portalOpenWeekDayReviewFlow(dayWord, { portalReviewDate: iso, portalTermJudgementAllowed: judgement });
           }
         };
-        if(typeof requestAnimationFrame === 'function') requestAnimationFrame(openDay);
-        else openDay();
+        openDay();
       }
       grid.addEventListener('click', function(e){
         const cell = e.target && e.target.closest ? e.target.closest('.term-cal-day[data-term-review-date]') : null;
