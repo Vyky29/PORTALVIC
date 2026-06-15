@@ -728,6 +728,8 @@
     const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
     const rTime = portalRowTimeTokenFromKey(pk);
     if (rTime && rosterTime && rTime !== rosterTime) return false;
+    // Submission without a time token must not blanket-match every slot for the same client that day.
+    if (!rTime && rosterTime) return false;
     return true;
   }
 
@@ -813,7 +815,19 @@
   }
 
   function rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById) {
-    if (anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById)) return true;
+    const day = String(iso || "").trim().substring(0, 10);
+    const sid = String(staffId || "").trim().toLowerCase();
+    if (
+      sid &&
+      submittedRowsForStaffDate(day, sid).some(function (r) {
+        return (
+          submittedRowMarksAbsent(r) &&
+          submittedRowCoversRosterSession(r, s, clientNotesById)
+        );
+      })
+    ) {
+      return true;
+    }
     const owned = statusRowsForStaffDate(iso, staffId);
     const allDay = statusRowsForDateAll(iso);
     const matchingOwned = owned.filter(function (st) {

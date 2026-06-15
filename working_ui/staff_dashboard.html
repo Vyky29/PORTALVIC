@@ -3257,50 +3257,60 @@
       return out;
     }
     /**
-     * Same pending-feedback count as the Today/Week list for a calendar YYYY-MM-DD (uses Today builder + review date lock).
-     * Authoritative when Term's roster key loop does not line up with stored sessionKey strings.
+     * Single source of truth for staff feedback UI: Today list for a calendar day (buildSelectedDayViewFromLauraModel).
+     * Each instructor only sees their own shifts; Giuseppe's 12:30 slot never resolves Javier's 1:15 slot.
      */
-    function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord){
+    function portalTodayListItemsForCalendarDay(isoYmd, dayWord, opts){
+      opts = opts || {};
+      const iso = String(isoYmd || '').trim();
+      const dw = String(dayWord || '').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return [];
+      if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return [];
+      if(typeof buildSelectedDayViewFromLauraModel !== 'function') return [];
+      const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
+      const prevDayLock = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '');
+      const prevDemo = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '');
       try{
-        if(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
-        const iso = String(isoYmd || '').trim();
-        const dw = String(dayWord || '').trim();
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
-        if(typeof buildSelectedDayViewFromLauraModel !== 'function' || typeof isSessionEndedForFeedback !== 'function') return 0;
-        const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
-        const prevDayLock = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '');
-        const prevDemo = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '');
-        let pending = 0;
+        portalSetReviewDateUrlLock(iso);
+        if(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined') __PORTAL_REVIEW_DAY_URL_LOCK = dw;
+        try{ if(typeof window !== 'undefined') window.__PORTAL_REVIEW_DAY_URL_LOCK = dw; }catch(_){ }
+        DEMO_VIEW_DAY = dw;
+        try{ if(typeof window !== 'undefined') window.DEMO_VIEW_DAY = dw; }catch(_){ }
+        return buildSelectedDayViewFromLauraModel() || [];
+      } finally {
+        if(/^\d{4}-\d{2}-\d{2}$/.test(prevDateLock)) portalSetReviewDateUrlLock(prevDateLock);
+        else if(typeof portalClearReviewDateUrlLock === 'function') portalClearReviewDateUrlLock();
         try{
-          portalSetReviewDateUrlLock(iso);
-          if(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined') __PORTAL_REVIEW_DAY_URL_LOCK = dw;
-          try{ if(typeof window !== 'undefined') window.__PORTAL_REVIEW_DAY_URL_LOCK = dw; }catch(_){ }
-          DEMO_VIEW_DAY = dw;
-          try{ if(typeof window !== 'undefined') window.DEMO_VIEW_DAY = dw; }catch(_){ }
-          const list = buildSelectedDayViewFromLauraModel() || [];
-          for(let i = 0; i < list.length; i++){
-            const item = list[i];
-            if(!item || !item.sessionKey) continue;
-            if(item.kind === 'closed' || item.kind === 'available') continue;
-            if(item.noSessionFeedbackRequired) continue;
-            if(!isSessionEndedForFeedback(item)) continue;
-            const r = typeof getEffectiveSessionReviewRecord === 'function'
-              ? (getEffectiveSessionReviewRecord(item) || {})
-              : (getSessionReviewRecord(item) || {});
-            if(r.feedbackDone || r.absent || r.cancelled) continue;
-            pending++;
-          }
-        } finally {
-          if(/^\d{4}-\d{2}-\d{2}$/.test(prevDateLock)) portalSetReviewDateUrlLock(prevDateLock);
-          else if(typeof portalClearReviewDateUrlLock === 'function') portalClearReviewDateUrlLock();
-          try{
-            if(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined') __PORTAL_REVIEW_DAY_URL_LOCK = prevDayLock;
-            if(typeof window !== 'undefined') window.__PORTAL_REVIEW_DAY_URL_LOCK = prevDayLock;
-          }catch(_){ }
-          try{
-            DEMO_VIEW_DAY = prevDemo;
-            if(typeof window !== 'undefined') window.DEMO_VIEW_DAY = prevDemo;
-          }catch(_){ }
+          if(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined') __PORTAL_REVIEW_DAY_URL_LOCK = prevDayLock;
+          if(typeof window !== 'undefined') window.__PORTAL_REVIEW_DAY_URL_LOCK = prevDayLock;
+        }catch(_){ }
+        try{
+          DEMO_VIEW_DAY = prevDemo;
+          if(typeof window !== 'undefined') window.DEMO_VIEW_DAY = prevDemo;
+        }catch(_){ }
+      }
+    }
+    /**
+     * Pending feedback count for a calendar day — same rules as the Today/Week session cards.
+     */
+    function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord, opts){
+      opts = opts || {};
+      try{
+        if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
+        if(typeof isSessionEndedForFeedback !== 'function') return 0;
+        const list = portalTodayListItemsForCalendarDay(isoYmd, dayWord, opts);
+        let pending = 0;
+        for(let i = 0; i < list.length; i++){
+          const item = list[i];
+          if(!item || !item.sessionKey) continue;
+          if(item.kind === 'closed' || item.kind === 'available') continue;
+          if(item.noSessionFeedbackRequired) continue;
+          if(!isSessionEndedForFeedback(item)) continue;
+          const r = typeof getEffectiveSessionReviewRecord === 'function'
+            ? (getEffectiveSessionReviewRecord(item) || {})
+            : (getSessionReviewRecord(item) || {});
+          if(r.feedbackDone || r.absent || r.cancelled) continue;
+          pending++;
         }
         return pending;
       }catch(e){
@@ -3316,38 +3326,129 @@
         return false;
       }
     }
-    /** Lightweight roster-only ended-session pending (no Today list build — safe inside term rebuild). */
-    function portalRosterEndedFeedbackPendingCount(isoKey, dayWord, staffId, sessions, curDate){
-      const list = Array.isArray(sessions) ? sessions : [];
-      const sid = String(staffId || '').trim().toLowerCase();
+    /**
+     * Term calendar cell colour for one day — derived only from the Today list (never from export aggregates alone).
+     */
+    function portalTermFeedbackStateFromTodayList(isoKey, dayWord, opts){
+      opts = opts || {};
       const key = String(isoKey || '').trim().slice(0, 10);
-      if(!list.length || !sid || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return 0;
-      const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(key + 'T12:00:00');
-      const dw = String(dayWord || '').trim() || cur.toLocaleDateString('en-GB', { weekday: 'long' });
-      const nowMs = termCalendarNowMs();
+      const dw = String(dayWord || '').trim();
+      const staffId = String(opts.staffId != null ? opts.staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')).trim().toLowerCase();
+      const maxEndMs = opts.maxEndMs;
+      const relFb = Array.isArray(opts.relFb) ? opts.relFb : [];
+      const relAll = Array.isArray(opts.relAll) ? opts.relAll : relFb;
+      const cur = opts.cur;
+      const todayKey = opts.todayKey || portalTermLocalYmdFromMs(termCalendarNowMs());
+      const catchUpDay = !!opts.catchUpDay;
+      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
+
+      if(key > todayKey) return 'future';
+      if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
+
+      if(relFb.length && cur){
+        let allCancelled = true;
+        let anyApplicable = false;
+        for(let i = 0; i < relFb.length; i++){
+          const s = relFb[i];
+          if(typeof portalRosterSessionFeedbackExempt === 'function'
+            && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
+          anyApplicable = true;
+          const item = typeof portalMinimalReviewItemFromRosterRow === 'function'
+            ? portalMinimalReviewItemFromRosterRow(s, dw, key, cur)
+            : null;
+          if(!item || !item.sessionKey) continue;
+          const r = typeof getEffectiveSessionReviewRecord === 'function'
+            ? (getEffectiveSessionReviewRecord(item) || {})
+            : {};
+          if(!r.cancelled){ allCancelled = false; break; }
+        }
+        if(anyApplicable && allCancelled) return 'cancelled';
+      }
+
+      if(key === todayKey && relFb.length && cur){
+        let minStart = Infinity;
+        relFb.forEach(function(s){
+          if(typeof portalRosterSessionFeedbackExempt === 'function'
+            && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
+          const sm = buildSessionStartMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), s.start);
+          if(Number.isFinite(sm) && sm < minStart) minStart = sm;
+        });
+        if(minStart !== Infinity && termCalendarNowMs() < minStart) return 'pending';
+      }
+
+      const pending = (typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+        && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw))
+        ? portalCountPendingSessionReviewsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+        : 0;
+
+      const stillRunning = typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+        && portalTermCalendarDayHasNotEndedClientSession(key, dw, staffId, relFb.length ? relFb : relAll, cur);
+
+      if(pending > 0){
+        const ended = Number.isFinite(maxEndMs) && termCalendarNowMs() > maxEndMs;
+        return (ended || catchUpDay) ? 'late' : 'pending';
+      }
+      if(stillRunning) return 'pending';
+
+      if(relAll.length || relFb.length) return 'complete';
+      const list = typeof portalTodayListItemsForCalendarDay === 'function'
+        ? portalTodayListItemsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+        : [];
+      for(let ti = 0; ti < list.length; ti++){
+        const item = list[ti];
+        if(item && item.kind === 'client' && item.sessionKey) return 'complete';
+      }
+      return 'pending';
+    }
+    /** Minimal Today-list item for one roster row (fallback when full list not built). */
+    function portalMinimalReviewItemFromRosterRow(s, dayWord, isoKey, curDate){
+      if(!s || !isoKey) return null;
+      const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(String(isoKey).slice(0, 10) + 'T12:00:00');
       const y = cur.getFullYear();
       const mo = cur.getMonth();
       const da = cur.getDate();
-      let pending = 0;
-      for(let i = 0; i < list.length; i++){
-        const s = list[i];
-        if(typeof portalRosterSessionFeedbackExempt === 'function'
-          && portalRosterSessionFeedbackExempt(s, key, sid)) continue;
-        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-          ? portalSessionReviewKeyForModelRow(s, dw, key)
-          : `${key}|${s.start}|${s.clientId}`;
-        if(!sk) continue;
-        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-          && portalRosterSessionFeedbackCompleteForTerm(s, dw, key, sid)) continue;
-        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-          ? portalGetMergedSessionReviewRecordForRoster(s, dw, key)
-          : (getSessionReviewRecord({ sessionKey: sk }) || {});
-        if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
-        const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
-        if(!Number.isFinite(endMs) || nowMs < endMs) continue;
-        pending++;
+      const sessionStartTs = buildSessionStartMsForCalendarDate(y, mo, da, s.start);
+      const sessionEndTs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
+      const effClientId = typeof portalEffectiveClientIdForReview === 'function'
+        ? portalEffectiveClientIdForReview(s, isoKey)
+        : String(s.clientId || '').trim().toLowerCase();
+      const dw = String(dayWord || '').trim() || cur.toLocaleDateString('en-GB', { weekday: 'long' });
+      const sessionKey = typeof portalBuildSessionReviewKey === 'function'
+        ? portalBuildSessionReviewKey(isoKey, s, dw, effClientId)
+        : `${isoKey}|${s.start}|${effClientId}`;
+      const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
+      const adminAbsentOv = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, isoKey, 'client_absence_announced')
+        : null;
+      const replaceOvSameSlot = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, isoKey, 'client_replace_in_slot')
+        : null;
+      const item = {
+        kind: 'client',
+        sessionKey: sessionKey,
+        sessionStartTs: sessionStartTs,
+        sessionEndTs: sessionEndTs,
+        __portalBaseSession: s,
+        clientId: effClientId,
+        noSessionFeedbackRequired: false
+      };
+      if(st === 'Absent' || (adminAbsentOv && !replaceOvSameSlot)){
+        item.noSessionFeedbackRequired = true;
+        item.portalOverrideAlertPill = 'ABSENT';
+        item.portalOverrideSuppressReviewOrange = true;
+        item.__portalScheduleOverride = adminAbsentOv || null;
       }
-      return pending;
+      return item;
+    }
+    /** Ended-session pending for a day — delegates to Today list (single source of truth). */
+    function portalRosterEndedFeedbackPendingCount(isoKey, dayWord, staffId, sessions, curDate){
+      const key = String(isoKey || '').trim().slice(0, 10);
+      const dw = String(dayWord || '').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
+      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
+      return typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+        ? portalCountPendingSessionReviewsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+        : 0;
     }
     /** Same rule as orange "review needed" rows: ended client sessions without register/feedback complete (see collectSessionReviewPendingStats). */
     function hasPendingReviews(){
@@ -4103,10 +4204,7 @@
             continue;
           }
           let dayCount = 0;
-          /* Feedback reminders fire only after the whole shift has ended (+15 min grace),
-             so a worker with back-to-back sessions is not nagged mid-shift. The last
-             session end of the day is the anchor (e.g. a 10–3 shift reminds from 3:15).
-             Future worked days stay silent (shift not ended); past days count normally. */
+          /* Feedback reminders fire only after the whole shift has ended (+15 min grace). */
           const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
           let dayShiftEndMs = NaN;
           for(let i = 0; i < relFb.length; i++){
@@ -4114,28 +4212,8 @@
             if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
           }
           const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
-          for(let i = 0; dayShiftEnded && i < relFb.length; i++){
-            const s = relFb[i];
-            if(typeof portalRosterSessionFeedbackExempt === 'function'
-              && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
-            const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-              ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-              : `${key}|${s.start}|${s.clientId}`;
-            if(!sk) continue;
-            const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-              ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-              : (getSessionReviewRecord({ sessionKey: sk }) || {});
-            if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
-            if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-              && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) continue;
-            dayCount++;
-          }
-          /* Same reconciliation as rebuildTermShiftAndFeedbackFromSessionModel: Today list + date lock
-             can show zero pending while roster-key merge still looks unresolved (key/time/client drift). */
-          if(dayCount > 0 && !portalTermIsCatchUpFeedbackDate(key, staffId)
-            && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-            && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
-            dayCount = 0;
+          if(dayShiftEnded && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
+            dayCount = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
           }
           count += dayCount;
           cur.setDate(cur.getDate() + 1);
@@ -4182,26 +4260,8 @@
               if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
             }
             const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
-            for(let i = 0; dayShiftEnded && i < relFb.length; i++){
-              const s = relFb[i];
-              if(typeof portalRosterSessionFeedbackExempt === 'function'
-                && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
-              const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-                ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-                : `${key}|${s.start}|${s.clientId}`;
-              if(!sk) continue;
-              const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-                ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-                : (getSessionReviewRecord({ sessionKey: sk }) || {});
-              if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
-              if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-                && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) continue;
-              dayCount++;
-            }
-            if(dayCount > 0 && !portalTermIsCatchUpFeedbackDate(key, staffId)
-              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-              && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
-              dayCount = 0;
+            if(dayShiftEnded && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
+              dayCount = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
             }
             count += dayCount;
           });
@@ -7959,40 +8019,55 @@
     function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
-      const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-        ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
-        : {};
-      if(rec.absent || rec.cancelled) return true;
       if(portalTermIsCatchUpFeedbackDate(iso, sid)){
         if(portalTermStaffForcedCompleteDates(sid).indexOf(iso) >= 0) return true;
         const cid = typeof portalEffectiveClientIdForReview === 'function'
           ? portalEffectiveClientIdForReview(s, sessionDateIso)
           : String(s && s.clientId || '').trim().toLowerCase();
         if(portalTermCatchUpClientMarkedDone(iso, sid, cid)) return true;
-        return !!(rec.feedbackDone || rec.absent || rec.cancelled);
       }
-      if(portalIsServerTruthFeedbackDay(iso)){
-        const cidTerm = typeof portalEffectiveClientIdForReview === 'function'
-          ? portalEffectiveClientIdForReview(s, sessionDateIso)
-          : String(s && s.clientId || '').trim().toLowerCase();
-        const skTerm = typeof portalBuildSessionReviewKey === 'function'
-          ? portalBuildSessionReviewKey(sessionDateIso, s, dayWord, cidTerm)
-          : '';
-        const serverRec = typeof portalServerTruthReviewRecordForItem === 'function'
-          ? portalServerTruthReviewRecordForItem({ sessionKey: skTerm, __portalBaseSession: s, noSessionFeedbackRequired: false }, iso)
+      if(typeof portalRosterSessionFeedbackExempt === 'function'
+        && portalRosterSessionFeedbackExempt(s, iso, sid)) return true;
+      const dw = String(dayWord || '').trim();
+      const cur = new Date(iso + 'T12:00:00');
+      const list = typeof portalTodayListItemsForCalendarDay === 'function'
+        ? portalTodayListItemsForCalendarDay(iso, dw, { allowDuringRebuild: true })
+        : [];
+      const tCanon = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s && s.start) : String(s && s.start || '').trim();
+      const cid = typeof portalEffectiveClientIdForReview === 'function'
+        ? portalEffectiveClientIdForReview(s, sessionDateIso)
+        : String(s && s.clientId || '').trim().toLowerCase();
+      for(let i = 0; i < list.length; i++){
+        const item = list[i];
+        if(!item || item.kind !== 'client' || !item.sessionKey) continue;
+        const base = item.__portalBaseSession;
+        if(base){
+          const sameStaff = portalNormKeyStr(base.staffId) === portalNormKeyStr(sid);
+          const sameClient = String(item.clientId || '').trim().toLowerCase() === cid
+            || portalNormKeyStr(base.clientId) === portalNormKeyStr(s.clientId);
+          const sameStart = typeof portalCanonicalHmToken === 'function'
+            ? portalCanonicalHmToken(base.start) === tCanon
+            : String(base.start || '').trim() === String(s.start || '').trim();
+          if(!sameStaff || !sameClient || !sameStart) continue;
+        }else{
+          const sk = String(item.sessionKey || '');
+          if(cid && tCanon && sk.indexOf('|' + tCanon + '|') < 0 && sk.indexOf('|' + String(s.start || '').trim() + '|') < 0) continue;
+          if(cid && sk.indexOf('|' + cid) < 0 && sk.indexOf('|' + cid + '|') < 0) continue;
+        }
+        if(item.noSessionFeedbackRequired) return true;
+        const r = typeof getEffectiveSessionReviewRecord === 'function'
+          ? (getEffectiveSessionReviewRecord(item) || {})
           : {};
-        if(serverRec.absent || serverRec.cancelled) return true;
-        const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
-        return serverSynced && !!serverRec.feedbackDone;
+        return !!(r.feedbackDone || r.absent || r.cancelled);
       }
-      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)) return true;
-      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
-      if(bridge && typeof bridge.rosterSessionCompleteForTerm === 'function'){
-        return bridge.rosterSessionCompleteForTerm(sessionDateIso, staffId, s, clientNotesById, rec);
-      }
-      if(bridge && typeof bridge.sessionComplete === 'function'){
-        return bridge.sessionComplete(sessionDateIso, staffId, s, clientNotesById, rec);
-      }
+      const item = typeof portalMinimalReviewItemFromRosterRow === 'function'
+        ? portalMinimalReviewItemFromRosterRow(s, dw, iso, cur)
+        : null;
+      if(!item || !item.sessionKey) return false;
+      if(item.noSessionFeedbackRequired) return true;
+      const rec = typeof getEffectiveSessionReviewRecord === 'function'
+        ? (getEffectiveSessionReviewRecord(item) || {})
+        : {};
       return !!(rec.feedbackDone || rec.absent || rec.cancelled);
     }
     function portalEnrichClientNotesFromPortalFeedback(){
@@ -11201,42 +11276,10 @@
       if(weekListDayRelationToToday(dayName) === 'future') return false;
       const sessionDateIso = portalIsoYmdFromDate(cell);
       const d = String(dayName || '').trim();
-      const staffIdWeek = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      if(staffIdWeek && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
-        try{
-          if(portalCountPendingSessionReviewsForCalendarDay(sessionDateIso, d) === 0) return false;
-        }catch(_){ /* fall back */ }
-      }
-      if(staffIdWeek && typeof portalTermDayAllSessionsComplete === 'function'){
-        const sessionsDone = weekListClientSessionsForDay(dayName);
-        if(sessionsDone.length && portalTermDayAllSessionsComplete(d, sessionDateIso, staffIdWeek, sessionsDone, cell)){
-          return false;
-        }
-      }
-      if(staffIdWeek && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
-        && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
-        const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(sessionDateIso, staffIdWeek);
-        if(portalCounts && portalCounts.unresolved === 0) return false;
-      }
       if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
         try{
           return portalCountPendingSessionReviewsForCalendarDay(sessionDateIso, d) > 0;
-        }catch(_){ /* fall back */ }
-      }
-      const sessions = weekListClientSessionsForDay(dayName);
-      for(let i = 0; i < sessions.length; i++){
-        const s = sessions[i];
-        if(typeof portalRosterSessionFeedbackExempt === 'function'
-          && portalRosterSessionFeedbackExempt(s, sessionDateIso, STAFF_DASHBOARD_ID)) continue;
-        const syn = weekListSyntheticFeedbackItem(s, cell);
-        if(!syn.sessionKey) continue;
-        const item = { sessionEndTs: syn.sessionEndTs, sessionKey: syn.sessionKey };
-        if(!isSessionEndedForFeedback(item)) continue;
-        const r = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-          ? portalGetMergedSessionReviewRecordForRoster(s, d, sessionDateIso)
-          : (getSessionReviewRecord(item) || {});
-        if(r.feedbackDone || r.absent || r.cancelled) continue;
-        return true;
+        }catch(_){ return false; }
       }
       return false;
     }
@@ -11374,10 +11417,6 @@
         return 'off';
       }
       if(weekRowTotalClients(item) <= 0) return 'off';
-      if(iso && sid && typeof portalTermExportMarksDayComplete === 'function'
-        && portalTermExportMarksDayComplete(iso, sid)){
-        return 'work-done';
-      }
       if(!weekListHasPendingFeedbackForDay(item.day)){
         if(rel === 'past') return 'work-done';
         const sessions = weekListClientSessionsForDay(item.day);
@@ -11842,12 +11881,6 @@
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
-      if(staffId && typeof portalTermExportMarksDayComplete === 'function'
-        && portalTermExportMarksDayComplete(key, staffId)
-        && typeof portalTermExportCountsAsWorkedDay === 'function'
-        && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
-        return 'complete';
-      }
       if(staffId && portalTermIsBeforeCurrentWeek(key) && key <= todayKey){
         const cur = new Date(key + 'T12:00:00');
         const isReal = function(sess){
@@ -11863,12 +11896,8 @@
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
         const rel = relFb.length ? relFb : relAll;
-        if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+        if(typeof portalTermDayAllSessionsComplete === 'function'
           && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
-          return 'complete';
-        }
-        if(!rel.length && typeof portalTermExportMarksDayComplete === 'function'
-          && portalTermExportMarksDayComplete(key, staffId)){
           return 'complete';
         }
       }
@@ -11888,7 +11917,7 @@
       if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return false;
       return true;
     }
-    /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
+    /** Legacy export helper — not used for Term/Week cell colours (Today list is authoritative). */
     function portalTermExportMarksDayComplete(iso, staffId){
       try{
         if(portalTermIsCatchUpFeedbackDate(iso, staffId)) return false;
@@ -11904,18 +11933,13 @@
       }catch(_){}
       return false;
     }
-    /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
+    /** Before this calendar week: green only when Today list says no pending (not export-only). */
     function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
       if(portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
       if(!portalTermIsBeforeCurrentWeek(iso)) return;
       if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return;
-      if(typeof portalTermExportMarksDayComplete === 'function'
-        && portalTermExportMarksDayComplete(iso, staffId)){
-        fbMap[key] = 'complete';
-        return;
-      }
       const rel = relFb.length ? relFb : relAll;
-      if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+      if(typeof portalTermDayAllSessionsComplete === 'function'
         && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
         fbMap[key] = 'complete';
       }
@@ -11970,123 +11994,64 @@
         fbMap[key] = 'pending';
       }
     }
-    /** Today list / export / roster agree the day needs no more feedback (stale fbMap "late" override). */
+    /** True when Today list shows no pending feedback for this instructor's day. */
     function portalTermDayFeedbackOutstandingResolved(isoKey, dayWord, staffId, sessionsOpt, curDateOpt){
       const iso = String(isoKey || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       const dw = String(dayWord || '').trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid || portalTermIsCatchUpFeedbackDate(iso, sid)) return false;
-      if(typeof portalTermExportMarksDayComplete === 'function'
-        && portalTermExportMarksDayComplete(iso, sid)) return true;
-      if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-        && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)
-        && portalCountPendingSessionReviewsForCalendarDay(iso, dw) === 0){
-        return !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-          && portalTermCalendarDayHasNotEndedClientSession(iso, dw, sid, sessionsOpt, curDateOpt));
-      }
-      const cur = curDateOpt || new Date(iso + 'T12:00:00');
-      const dayW = dw || cur.toLocaleDateString('en-GB', { weekday: 'long' });
-      let list = Array.isArray(sessionsOpt) ? sessionsOpt : [];
-      if(!list.length && typeof portalTermFeedbackSessionsForDate === 'function'){
-        const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
-        const isReal = function(s){
-          if(baseReal) return baseReal(s, iso);
-          const st = String(s.status || '').toLowerCase();
-          if(st === 'closed' || st === 'available') return false;
-          const cid = String(s.clientId || '').toLowerCase();
-          return Boolean(cid && cid !== 'closed' && cid !== 'available');
-        };
-        list = portalTermFeedbackSessionsForDate(dayW, iso, sid, isReal);
-      }
-      if(list.length && typeof portalTermDayAllSessionsComplete === 'function'
-        && portalTermDayAllSessionsComplete(dayW, iso, sid, list, cur)) return true;
-      return false;
+      if(typeof portalCountPendingSessionReviewsForCalendarDay !== 'function'
+        || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return false;
+      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
+      const pendingN = portalCountPendingSessionReviewsForCalendarDay(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined);
+      if(pendingN > 0) return false;
+      return !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
+        && portalTermCalendarDayHasNotEndedClientSession(iso, dw, sid, sessionsOpt, curDateOpt));
     }
-    /** Same rules as inside the day sheet: all countable sessions done → term cell green. */
+    /** All countable Today-list sessions resolved for this instructor's day. */
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
-      const list = Array.isArray(sessions) ? sessions : [];
-      if(!list.length) return false;
+      const iso = String(isoKey || '').trim().slice(0, 10);
+      const dw = String(dayWord || '').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return false;
+      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
+      const pending = typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+        ? portalCountPendingSessionReviewsForCalendarDay(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+        : 0;
+      if(pending > 0) return false;
       if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-        && portalTermCalendarDayHasNotEndedClientSession(isoKey, dayWord, staffId, list, curDate)){
+        && portalTermCalendarDayHasNotEndedClientSession(iso, dw, staffId, sessions, curDate)){
         return false;
       }
-      let applicable = 0;
-      const y = curDate.getFullYear();
-      const mo = curDate.getMonth();
-      const da = curDate.getDate();
+      const list = typeof portalTodayListItemsForCalendarDay === 'function'
+        ? portalTodayListItemsForCalendarDay(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+        : [];
       for(let i = 0; i < list.length; i++){
-        const s = list[i];
-        if(typeof portalRosterSessionFeedbackExempt === 'function'
-          && portalRosterSessionFeedbackExempt(s, isoKey, staffId)) continue;
-        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-          ? portalSessionReviewKeyForModelRow(s, dayWord, isoKey)
-          : `${isoKey}|${s.start}|${s.clientId}`;
-        if(!sk) continue;
-        applicable++;
-        const cidDone = typeof portalEffectiveClientIdForReview === 'function'
-          ? portalEffectiveClientIdForReview(s, isoKey)
-          : String(s && s.clientId || '').trim().toLowerCase();
-        if(portalTermIsCatchUpFeedbackDate(isoKey, staffId)
-          && portalTermCatchUpClientMarkedDone(isoKey, staffId, cidDone)) continue;
-        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-          && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, isoKey, staffId)) continue;
-        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-          ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, isoKey)
-          : (getSessionReviewRecord({ sessionKey: sk }) || {});
-        if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
-        return false;
+        const item = list[i];
+        if(item && item.kind === 'client' && !item.noSessionFeedbackRequired && item.sessionKey) return true;
       }
-      return applicable > 0 || list.length > 0;
+      const rel = Array.isArray(sessions) ? sessions : [];
+      return rel.length > 0;
     }
     function portalTermResolveDayFeedbackState(dayWord, isoKey, staffId, relPick, curDate, catchUpDay){
       const key = String(isoKey || '').trim().slice(0, 10);
-      const sid = String(staffId || '').trim().toLowerCase();
       const list = Array.isArray(relPick) ? relPick : [];
-      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
-      if(typeof portalTermDayAllSessionsComplete === 'function'
-        && portalTermDayAllSessionsComplete(dayWord, key, sid, list, curDate)){
-        return 'complete';
-      }
-      if(catchUpDay && key <= todayKey) return 'late';
-      if(key === todayKey){
-        let minStart = Infinity;
+      let maxEnd = 0;
+      if(curDate && list.length){
         list.forEach(function(s){
-          if(typeof portalRosterSessionFeedbackExempt === 'function'
-            && portalRosterSessionFeedbackExempt(s, key, sid)) return;
-          const sm = buildSessionStartMsForCalendarDate(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), s.start);
-          if(Number.isFinite(sm) && sm < minStart) minStart = sm;
+          const ms = buildSessionEndMsForCalendarDate(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), s.end);
+          if(ms > maxEnd) maxEnd = ms;
         });
-        if(minStart !== Infinity && termCalendarNowMs() < minStart) return 'pending';
       }
-      if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-        && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, sid, list, curDate)){
-        return 'pending';
-      }
-      const nowMs = termCalendarNowMs();
-      let anyEndedIncomplete = false;
-      const y = curDate.getFullYear();
-      const mo = curDate.getMonth();
-      const da = curDate.getDate();
-      list.forEach(function(s){
-        if(typeof portalRosterSessionFeedbackExempt === 'function'
-          && portalRosterSessionFeedbackExempt(s, key, sid)) return;
-        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-          ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-          : `${key}|${s.start}|${s.clientId}`;
-        if(!sk) return;
-        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-          && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, sid)) return;
-        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-          ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-          : (getSessionReviewRecord({ sessionKey: sk }) || {});
-        if(rec.feedbackDone || rec.absent || rec.cancelled) return;
-        const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
-        if(!Number.isFinite(endMs)) return;
-        const lead = typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
-          ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
-        if(nowMs >= (endMs - lead)) anyEndedIncomplete = true;
-      });
-      return anyEndedIncomplete ? 'late' : 'pending';
+      return typeof portalTermFeedbackStateFromTodayList === 'function'
+        ? portalTermFeedbackStateFromTodayList(key, dayWord, {
+          staffId: staffId,
+          maxEndMs: maxEnd,
+          relAll: list,
+          relFb: list,
+          cur: curDate,
+          catchUpDay: !!catchUpDay
+        })
+        : 'pending';
     }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
       if(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return;
@@ -12145,7 +12110,6 @@
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
         const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
-        const inCurrentWeek = key >= portalTermCurrentWeekMondayIso() && key <= todayKey;
         if(key > todayKey){
           if(relAll.length){
             let maxEndFut = 0;
@@ -12160,9 +12124,16 @@
           continue;
         }
         if(!relAll.length){
-          if(key <= todayKey && typeof portalTermExportCountsAsWorkedDay === 'function'
-            && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
-            fbMap[key] = 'complete';
+          if(key <= todayKey && typeof portalTermFeedbackStateFromTodayList === 'function'){
+            fbMap[key] = portalTermFeedbackStateFromTodayList(key, dayWord, {
+              staffId: staffId,
+              maxEndMs: 0,
+              relAll: [],
+              relFb: [],
+              cur: cur,
+              todayKey: todayKey,
+              catchUpDay: portalTermIsCatchUpFeedbackDate(key, staffId)
+            });
           }
           cur.setDate(cur.getDate() + 1);
           continue;
@@ -12177,164 +12148,17 @@
           continue;
         }
         endMap[key] = new Date(maxEnd).toISOString();
-        const portalDayCountsRaw = (typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
-          && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function')
-          ? window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(key, staffId)
-          : null;
-        const portalDayCounts = portalTermIsCatchUpFeedbackDate(key, staffId) ? null : portalDayCountsRaw;
-        if(portalDayCounts){
-          if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
-            const relPick = relFb.length ? relFb : relAll;
-            const rosterEndedPending = typeof portalRosterEndedFeedbackPendingCount === 'function'
-              ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relPick, cur)
-              : 0;
-            if(rosterEndedPending > 0){
-              fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
-            } else if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-              && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relPick, cur)){
-              fbMap[key] = 'pending';
-            } else {
-              fbMap[key] = 'complete';
-            }
-          } else if(!portalTermIsCatchUpFeedbackDate(key, staffId) && portalTermIsBeforeCurrentWeek(key)
-            && typeof portalTermExportMarksDayComplete === 'function'
-            && portalTermExportMarksDayComplete(key, staffId)){
-            fbMap[key] = 'complete';
-          } else if(inCurrentWeek){
-            fbMap[key] = portalDayCounts.applicable === 0
-              ? 'pending'
-              : (termCalendarNowMs() > maxEnd ? 'late' : 'pending');
-          } else {
-            fbMap[key] = portalDayCounts.applicable === 0 ? 'pending' : 'late';
-          }
-        } else if(!relFb.length){
-          if(!portalTermIsCatchUpFeedbackDate(key, staffId) && portalTermIsBeforeCurrentWeek(key)
-            && typeof portalTermExportMarksDayComplete === 'function'
-            && portalTermExportMarksDayComplete(key, staffId)){
-            fbMap[key] = 'complete';
-          } else {
-            fbMap[key] = inCurrentWeek && termCalendarNowMs() > maxEnd ? 'late' : 'pending';
-          }
-        } else {
-          if(key === todayKey){
-            let minStart = Infinity;
-            relFb.forEach(function(s){
-              if(typeof portalRosterSessionFeedbackExempt === 'function'
-                && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
-              const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-                ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-                : `${key}|${s.start}|${s.clientId}`;
-              if(!sk) return;
-              const sm = buildSessionStartMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), s.start);
-              if(Number.isFinite(sm) && sm < minStart) minStart = sm;
-            });
-            if(minStart !== Infinity && termCalendarNowMs() < minStart){
-              fbMap[key] = 'pending';
-              cur.setDate(cur.getDate() + 1);
-              continue;
-            }
-          }
-          const allCancelled = relFb.every(s => {
-            const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-              ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-              : `${key}|${s.start}|${s.clientId}`;
-            if(!sk) return true;
-            const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-              ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-              : (getSessionReviewRecord({ sessionKey: sk }) || {});
-            return !!rec.cancelled;
-          });
-          if(allCancelled){
-            fbMap[key] = 'cancelled';
-          } else {
-            let applicable = 0;
-            let unresolved = 0;
-            relFb.forEach(function(s){
-              if(typeof portalRosterSessionFeedbackExempt === 'function'
-                && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
-              const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-                ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-                : `${key}|${s.start}|${s.clientId}`;
-              if(!sk) return;
-              applicable++;
-              if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-                && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
-              const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-                ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-                : (getSessionReviewRecord({ sessionKey: sk }) || {});
-              if(rec.feedbackDone || rec.absent || rec.cancelled) return;
-              unresolved++;
-            });
-            let allDone = applicable > 0 && unresolved === 0;
-            if(applicable > 0 && !allDone && !portalTermIsCatchUpFeedbackDate(key, staffId)){
-              const rosterEndedPending = typeof portalRosterEndedFeedbackPendingCount === 'function'
-                ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relFb, cur)
-                : 0;
-              if(rosterEndedPending === 0
-                && !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
-                  && portalTermCalendarDayHasNotEndedClientSession(key, dayWord, staffId, relFb, cur))){
-                allDone = true;
-              } else if(rosterEndedPending > 0){
-                allDone = false;
-              }
-            }
-            if(applicable === 0){
-              fbMap[key] = relFb.length ? 'complete' : 'pending';
-            } else if(allDone){
-              const rosterEndedPendingDone = typeof portalRosterEndedFeedbackPendingCount === 'function'
-                ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relFb, cur)
-                : 0;
-              fbMap[key] = rosterEndedPendingDone > 0 ? 'late' : 'complete';
-            } else {
-              const nowMs = termCalendarNowMs();
-              let anyEndedIncomplete = false;
-              relFb.forEach(function(s){
-                if(typeof portalRosterSessionFeedbackExempt === 'function'
-                  && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
-                const sk = typeof portalSessionReviewKeyForModelRow === 'function'
-                  ? portalSessionReviewKeyForModelRow(s, dayWord, key)
-                  : `${key}|${s.start}|${s.clientId}`;
-                if(!sk) return;
-                if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
-                  && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
-                const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
-                  ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
-                  : (getSessionReviewRecord({ sessionKey: sk }) || {});
-                if(rec.feedbackDone || rec.absent || rec.cancelled) return;
-                const endMs = buildSessionEndMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), s.end);
-                if(Number.isFinite(endMs) && nowMs >= endMs) anyEndedIncomplete = true;
-              });
-              fbMap[key] = anyEndedIncomplete ? 'late' : 'pending';
-            }
-          }
-        }
-        const relReconcile = relFb.length ? relFb : relAll;
-        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
-          && !portalTermIsCatchUpFeedbackDate(key, staffId) && key <= todayKey && relReconcile.length
-          && typeof portalTermDayAllSessionsComplete === 'function'
-          && portalTermDayAllSessionsComplete(dayWord, key, staffId, relReconcile, cur)){
-          fbMap[key] = 'complete';
-        }
-        if(typeof portalTermApplyHistoricalDayGreen === 'function'){
-          portalTermApplyHistoricalDayGreen(key, staffId, dayWord, key, relAll, relFb, cur, fbMap);
-        }
-        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
-          && typeof portalTermDayFeedbackOutstandingResolved === 'function'
-          && portalTermDayFeedbackOutstandingResolved(key, dayWord, staffId, relReconcile, cur)){
-          fbMap[key] = 'complete';
-        }
-        if(key <= todayKey && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
-          && typeof portalTermExportMarksDayComplete === 'function'
-          && portalTermExportMarksDayComplete(key, staffId)){
-          const relExport = relFb.length ? relFb : relAll;
-          const rosterEndedPendingExport = typeof portalRosterEndedFeedbackPendingCount === 'function'
-            ? portalRosterEndedFeedbackPendingCount(key, dayWord, staffId, relExport, cur)
-            : 0;
-          fbMap[key] = rosterEndedPendingExport > 0 ? 'late' : 'complete';
-        }
-        if(typeof portalTermClampCompleteIfSessionsStillRunning === 'function'){
-          portalTermClampCompleteIfSessionsStillRunning(key, dayWord, staffId, relFb.length ? relFb : relAll, cur, fbMap);
-        }
+        fbMap[key] = typeof portalTermFeedbackStateFromTodayList === 'function'
+          ? portalTermFeedbackStateFromTodayList(key, dayWord, {
+            staffId: staffId,
+            maxEndMs: maxEnd,
+            relAll: relAll,
+            relFb: relFb,
+            cur: cur,
+            todayKey: todayKey,
+            catchUpDay: portalTermIsCatchUpFeedbackDate(key, staffId)
+          })
+          : 'pending';
         if(portalTermDateForcedComplete(key, staffId)) fbMap[key] = 'complete';
         cur.setDate(cur.getDate() + 1);
       }
