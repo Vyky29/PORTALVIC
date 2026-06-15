@@ -517,10 +517,6 @@
     return row.readiness.portalAccess === "web";
   }
 
-  function rowSharedDeviceSetup(row) {
-    return deviceSetupIsShared(row);
-  }
-
   function mergeRows(profiles, progressRows, setupRows, permissionAcksByStaff) {
     permissionAcksByStaff = permissionAcksByStaff || {};
     var byUser = {};
@@ -584,7 +580,6 @@
     if (f === "compliance_missing") return rows.filter(rowComplianceMissing);
     if (f === "app_setup_missing") return rows.filter(rowAppSetupMissing);
     if (f === "browser_only") return rows.filter(rowWebOnly);
-    if (f === "shared_device") return rows.filter(rowSharedDeviceSetup);
     return rows;
   }
 
@@ -1068,7 +1063,6 @@
       p_stale_minutes: 120,
     });
 
-    var deviceAttrRes = await client.rpc("portal_admin_fetch_staff_device_attribution");
     var liveLocRows = [];
     if (!liveLocRes.error && liveLocRes.data != null) {
       liveLocRows = Array.isArray(liveLocRes.data) ? liveLocRes.data : [];
@@ -1147,30 +1141,15 @@
       return;
     }
 
-    var deviceAttrRows = [];
-    var deviceAttrUnavailable = false;
-    if (!deviceAttrRes.error && deviceAttrRes.data != null) {
-      deviceAttrRows = Array.isArray(deviceAttrRes.data) ? deviceAttrRes.data : [];
-    } else if (deviceAttrRes.error) {
-      deviceAttrUnavailable = true;
-    }
-
     state.rows = mergeDeviceAttribution(
       mergeLiveLocationPings(
         mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff),
         liveLocRows
       ),
-      deviceAttrRows,
-      deviceAttrUnavailable
+      [],
+      true
     );
-    if (deviceAttrUnavailable) {
-      setStatus(
-        "<strong>Device check unavailable.</strong> Run migration <code>20260608130000_portal_admin_fetch_staff_device_attribution.sql</code> on Portal Supabase, then refresh.",
-        false
-      );
-    } else {
-      setStatus("");
-    }
+    setStatus("");
     renderTable(state.rows);
   }
 
@@ -1223,7 +1202,6 @@
       '<option value="compliance_missing">Compliance Missing</option>' +
       '<option value="app_setup_missing">App Setup Missing</option>' +
       '<option value="browser_only">Web Only Users</option>' +
-      '<option value="shared_device">Setup on someone else\'s phone</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
