@@ -6109,6 +6109,20 @@
       const cb = portalCanonicalRosterClientId(b);
       return !!(ca && cb && ca === cb);
     }
+    function portalScheduleOverrideAnchorIsOpenSlot(slug){
+      const s = String(slug || '').trim().toLowerCase();
+      return !s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client';
+    }
+    function portalScheduleOverrideMatchesSessionWindow(r, s, sessionDateIso){
+      if(!r || !s) return false;
+      const iso = normaliseIsoDate(sessionDateIso);
+      const rowIso = normaliseIsoDate(r.session_date);
+      if(!iso || !rowIso || rowIso !== iso) return false;
+      if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
+      if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
+      const ot = String(r.override_type || '').trim();
+      return portalScheduleOverrideAnchorTimesMatchSession(r, s, ot);
+    }
     function portalClientNotesLookup(clientId){
       const cid = portalNormKeyStr(clientId);
       if(!cid) return null;
@@ -6913,7 +6927,9 @@
         if(!rowIso || rowIso !== iso) return false;
         if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
         if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
-        if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
+        const rowOvType = wantType || String(r.override_type || '').trim();
+        const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
+        if(!openMakeupAnchor && !portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
         if(!portalScheduleOverrideAnchorTimesMatchSession(r, s, wantType || String(r.override_type || '').trim())) return false;
         if(requireSlotLabel && !portalOverrideSlotLabelMatchesRow(r, s)) return false;
         if(String(r.override_type || '').trim() === 'override_void') return false;
@@ -6935,7 +6951,17 @@
     }
     function portalScheduleOverrideForSessionByType(s, sessionDateIso, overrideType){
       const rows = portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType);
-      return rows[0] || null;
+      if(rows.length || overrideType !== 'client_replace_in_slot') return rows[0] || null;
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !s) return null;
+      const all = portalScheduleOverrideRowsAll().filter(function(r){
+        if(String(r.status || 'active') !== 'active') return false;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+        if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
+      });
+      all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      return all[0] || null;
     }
     function portalPickScheduleOverrideForSession(s, sessionDateIso){
       const rows = portalScheduleOverridesMatchingSession(s, sessionDateIso, null);
@@ -7258,6 +7284,19 @@
         if(!portalOverrideSlotLabelMatchesRow(ov, s)) continue;
         return s;
       }
+      if(portalScheduleOverrideAnchorIsOpenSlot(ov && ov.anchor_client_id)){
+        for(let k = 0; k < list.length; k++){
+          const s2 = list[k];
+          if(!s2) continue;
+          if(portalNormKeyStr(s2.staffId) !== aid) continue;
+          if(String(s2.day || '').trim() !== vw) continue;
+          if(portalNormKeyStr(s2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
+          if(!portalTimeAnchorsMatch(ov.anchor_start, s2.start)) continue;
+          if(!portalTimeAnchorsMatch(ov.anchor_end, s2.end)) continue;
+          if(!portalOverrideSlotLabelMatchesRow(ov, s2)) continue;
+          return s2;
+        }
+      }
       const iso = normaliseIsoDate(ov && ov.session_date);
       const srcRows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
       const adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
@@ -7292,6 +7331,43 @@
           session_date: iso || rowIso || '',
           status: 'scheduled'
         };
+      }
+      if(portalScheduleOverrideAnchorIsOpenSlot(ov && ov.anchor_client_id)){
+        for(let j2 = 0; j2 < srcRows.length; j2++){
+          const row2 = srcRows[j2];
+          if(!row2) continue;
+          if(String(row2.day || '').trim() !== vw) continue;
+          if(!portalStaffMatchesStatusInstructor(aid, row2.instructors)) continue;
+          const rowIso2 = normaliseIsoDate(row2.session_date || row2.sessionDate);
+          if(iso){
+            if(rowIso2 && rowIso2 !== iso) continue;
+            if(!rowIso2 && typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function' && portalCalendarIsoUsesSummerDatedRosterOnly(iso)) continue;
+          }
+          if(portalNormKeyStr(row2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
+          const start2 = portalHmFromDbTime(ov.anchor_start) || '09:00';
+          const end2 = portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00';
+          const tStart = parseTimeSlot(String(row2.time_slot || ''), row2.day || vw);
+          if(!portalTimeAnchorsMatch(ov.anchor_start, tStart.start || start2)) continue;
+          if(!portalTimeAnchorsMatch(ov.anchor_end, tStart.end || end2)) continue;
+          const clientId2 = adapter && typeof adapter.canonicalParticipantClientId === 'function'
+            ? adapter.canonicalParticipantClientId(row2.client_name)
+            : portalSlugifyClientKey(row2.client_name);
+          if(portalScheduleOverrideAnchorIsOpenSlot(clientId2)) continue;
+          return {
+            staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
+            day: vw,
+            start: start2,
+            end: end2,
+            venue: String(row2.venue || ov.anchor_venue || '').trim(),
+            clientId: String(clientId2 || '').trim().toLowerCase(),
+            activity: String(row2.service || 'Swimming').trim(),
+            rosterService: String(row2.service || '').trim(),
+            rosterArea: row2.area != null ? String(row2.area).trim() : '',
+            timeSlotLabel: String(row2.time_slot || ov.anchor_time_slot_label || '').trim(),
+            session_date: iso || rowIso2 || '',
+            status: 'scheduled'
+          };
+        }
       }
       return null;
     }

@@ -10068,6 +10068,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '';
     }
+    function schedIsOpenSlotSlug(slug){
+      var s = String(slug || '').trim().toLowerCase();
+      return !s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client';
+    }
+    function schedResolveReplacementParticipantSlug(pickList, repSlug, repTyped){
+      var slug = String(repSlug || '').trim().toLowerCase();
+      if(slug && !schedIsOpenSlotSlug(slug)) return slug;
+      slug = schedResolveReplacementSlugFromTyped(pickList, repTyped);
+      if(slug) return slug;
+      var guess = schedSlugifyDisplayName(repTyped);
+      if(guess && !schedIsOpenSlotSlug(guess)) return guess;
+      return '';
+    }
+    function schedResolveMakeupAnchorClientId(slot){
+      if(!slot) return '';
+      var slug = String(slot.clientSlug || '').trim().toLowerCase();
+      if(!schedIsOpenSlotSlug(slug)) return slug;
+      var iso = String(slot.sessionDate || '').trim().slice(0, 10);
+      var rows = Array.isArray(sched.overrides) ? sched.overrides : [];
+      for(var i = 0; i < rows.length; i++){
+        var o = rows[i];
+        if(String(o.session_date || '').trim().slice(0, 10) !== iso) continue;
+        if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== normalizeSchedAnchorStaffId(slot.staffRosterId)) continue;
+        if(normTimeShort(o.anchor_start) !== normTimeShort(slot.anchorStart)) continue;
+        if(normTimeShort(o.anchor_end) !== normTimeShort(slot.anchorEnd)) continue;
+        if(String(o.anchor_venue || '').trim().toLowerCase() !== String(slot.venue || '').trim().toLowerCase()) continue;
+        if(String(o.override_type || '').trim() !== 'slot_clear_client') continue;
+        var cleared = String(o.anchor_client_id || '').trim().toLowerCase();
+        if(cleared && !schedIsOpenSlotSlug(cleared)) return cleared;
+      }
+      return slug;
+    }
     function schedBuildInstructorPickList(){
       var bySlug = {};
       function add(slug, display){
@@ -10418,6 +10450,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               sug.hidden = true;
               sug.replaceChildren();
             });
+            b.addEventListener('click', function(ev){
+              ev.preventDefault();
+              if(hid) hid.value = x.slug;
+              if(inp) inp.value = x.display;
+              sug.hidden = true;
+              sug.replaceChildren();
+            });
             sug.appendChild(b);
           })(matches[j]);
         }
@@ -10464,6 +10503,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         inp.addEventListener('blur', function(){
           setTimeout(function(){
+            if(hid && !String(hid.value || '').trim() && inp && String(inp.value || '').trim()){
+              var resolved = schedResolveReplacementParticipantSlug(list, '', inp.value);
+              if(resolved) hid.value = resolved;
+            }
             if(sug){
               sug.hidden = true;
               sug.replaceChildren();
@@ -11243,9 +11286,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var pickList = schedBuildReplacementPickList();
       var repSlug = ($('schedFormReplaceSlug') && $('schedFormReplaceSlug').value.trim()) || '';
       var repTyped = ($('schedFormReplaceInput') && $('schedFormReplaceInput').value.trim()) || '';
-      if(ovType === 'client_replace_in_slot' && !repSlug){
-        repSlug = schedResolveReplacementSlugFromTyped(pickList, repTyped);
-      }
+      repSlug = schedResolveReplacementParticipantSlug(pickList, repSlug, repTyped);
       var repName = '';
       if(repSlug){
         var pi;
@@ -11292,6 +11333,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         payload.to_client_name = repName;
       }
       var anchor_staff_id = normalizeSchedAnchorStaffId(slot.staffRosterId);
+      var anchor_client_id = ovType === 'client_replace_in_slot'
+        ? schedResolveMakeupAnchorClientId(slot)
+        : String(slot.clientSlug || '').trim().toLowerCase();
       var covering_staff_id = '';
       if(coverSlug){
         covering_staff_id = normalizeSchedAnchorStaffId(coverSlug);
@@ -11314,7 +11358,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         anchor_start: slot.anchorStart,
         anchor_end: slot.anchorEnd,
         anchor_venue: slot.venue,
-        anchor_client_id: slot.clientSlug,
+        anchor_client_id: anchor_client_id,
         anchor_time_slot_label: slot.anchorTimeLabel || slot.whenLabel || '',
         override_type: ovType,
         payload: payload,
@@ -12978,7 +13022,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var t = o.created_at ? new Date(o.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
             var cb = schedResolveOverrideAuthorName(o);
             var cBtn = resolveAdminClientDrawerId(o.anchor_client_id);
-            var cLab = esc(String(o.anchor_client_id || '—'));
+            var cLabRaw = String(o.anchor_client_id || '—');
+            var p = o.payload || {};
+            var repLab = String(p.to_client_name || p.replacement_client_name || p.to_client_id || p.replacement_client_id || '').trim();
+            if(String(o.override_type || '').trim() === 'client_replace_in_slot' && repLab){
+              cLabRaw = repLab + (schedIsOpenSlotSlug(o.anchor_client_id) ? '' : (' · was ' + String(o.anchor_client_id || '')));
+            }
+            var cLab = esc(cLabRaw);
             var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
             var sPlain = String(o.anchor_staff_id || '').trim();
             var sKey = sPlain.toLowerCase();
