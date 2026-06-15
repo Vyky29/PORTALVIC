@@ -890,14 +890,148 @@
     );
   }
 
+  function overrideIsReplaceType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "client_replace_in_slot" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideAnchorIsOpenSlot(anchorClientId) {
+    var s = clean(anchorClientId).toLowerCase();
+    return !s || s === "available" || s === "closed" || s === "no client";
+  }
+
+  function overrideReplacementClientId(payload) {
+    var p = payload;
+    if (!p) return "";
+    var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
+    if (toId) return toId;
+    var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
+    return repId || "";
+  }
+
+  function overrideReplacementClientName(payload) {
+    var p = payload;
+    if (!p) return "";
+    var toName = p.to_client_name != null ? String(p.to_client_name).trim() : "";
+    if (toName) return toName;
+    var repName = p.replacement_client_name != null ? String(p.replacement_client_name).trim() : "";
+    return repName || "";
+  }
+
+  function resolveStaffDisplayName(staffId) {
+    var sid = clean(staffId).toLowerCase();
+    if (!sid) return "";
+    return sid.charAt(0).toUpperCase() + sid.slice(1);
+  }
+
+  function staffIdMatchesInstructor(staffId, instructors) {
+    var sid = clean(staffId).toLowerCase();
+    if (!sid) return true;
+    if (!instructors || !instructors.length) return true;
+    for (var i = 0; i < instructors.length; i++) {
+      var inst = clean(instructors[i]).toLowerCase();
+      if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
+    }
+    return false;
+  }
+
+  function slotFromMakeupOverride(isoDate, wd, ov) {
+    if (!ov || !overrideIsReplaceType(ov)) return null;
+    if (clean(ov.session_date) !== isoDate) return null;
+    var p = overridePayloadObj(ov);
+    var repId = overrideReplacementClientId(p);
+    var repName = overrideReplacementClientName(p);
+    if (!repId && !repName) return null;
+    var clientName = repName || resolveRosterClientName(repId) || repId.replace(/_/g, " ");
+    var timeLabel = clean(ov.anchor_time_slot_label);
+    var slotTimes = parseTimeSlot(
+      timeLabel ||
+        (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
+      wd
+    );
+    var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
+    var instructors = staffLabel ? [staffLabel] : [];
+    var service = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+    var slotRow = {
+      session_date: isoDate,
+      day: wd,
+      client_name: clientName,
+      service: service,
+      time_slot: timeLabel || slotTimes.label,
+      time_start: normTimeShort(ov.anchor_start) || slotTimes.start,
+      time_end: normTimeShort(ov.anchor_end) || slotTimes.end,
+      venue: clean(ov.anchor_venue),
+      area: clean(p.area || p.pool_note || ""),
+      instructors: instructors,
+      instructor_label: instructors.join(", "),
+      anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
+      session_key: buildSessionKey(isoDate, {
+        client_name: clientName,
+        service: service,
+        time_slot: timeLabel,
+        venue: clean(ov.anchor_venue),
+        area: clean(p.area || ""),
+        instructors: staffLabel,
+      }),
+      portalOverrideMakeUpTag: true,
+      __portalScheduleOverride: ov,
+    };
+    slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    return slotRow;
+  }
+
+  function injectOrphanMakeupOverrideSlots(hub, out, isoDate, wd) {
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return out;
+    var seenOvIds = Object.create(null);
+    var seenRepKeys = Object.create(null);
+    for (var i = 0; i < out.length; i++) {
+      var s = out[i];
+      var ov0 = s && s.__portalScheduleOverride;
+      if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
+      if (s && s.portalOverrideMakeUpTag) {
+        var rid = canonicalClientSlug(s.client_name);
+        var st = s.time_start || normTimeKey(s.time_slot, wd);
+        if (rid && st) seenRepKeys[rid + "|" + st] = true;
+      }
+    }
+    var added = [];
+    for (var j = 0; j < ovs.length; j++) {
+      var ov = ovs[j];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      var p = overridePayloadObj(ov);
+      if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
+      var syn = slotFromMakeupOverride(isoDate, wd, ov);
+      if (!syn) continue;
+      var repKey = canonicalClientSlug(syn.client_name) + "|" + (syn.time_start || "");
+      if (seenRepKeys[repKey]) continue;
+      if (ov.id) seenOvIds[String(ov.id)] = true;
+      seenRepKeys[repKey] = true;
+      added.push(syn);
+    }
+    if (!added.length) return out;
+    out = out.concat(added);
+    out.sort(function (a, b) {
+      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+    });
+    return out;
+  }
+
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
   }
 
   function hubOverrideChipClass(ov) {
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
@@ -906,6 +1040,10 @@
   function hubSlotShowsUpdatedChip(slot, slotOv) {
     if (overrideIsSlotUpdateType(slotOv)) return true;
     return !!(slot && slot.portalRosterTimeUpdated);
+  }
+
+  function hubSlotShowsMakeupChip(slot, slotOv) {
+    return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
   }
 
   function overrideClientName(ov) {
@@ -3669,6 +3807,7 @@
     out.sort(function (a, b) {
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
+    out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
@@ -4232,9 +4371,24 @@
     if (!slot || !ov) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
-    var oCid = canonicalClientSlug(ov.anchor_client_id);
     var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
-    if (oCid && sCid && oCid !== sCid) return false;
+    if (overrideIsReplaceType(ov)) {
+      var repPayload = overridePayloadObj(ov);
+      var repId = overrideReplacementClientId(repPayload);
+      if (repId && sCid && repId !== sCid) return false;
+      if (!repId) {
+        var repName = overrideReplacementClientName(repPayload);
+        if (repName && sCid && canonicalClientSlug(repName) !== sCid) return false;
+      }
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) {
+        var oCidRep = canonicalClientSlug(ov.anchor_client_id);
+        if (oCidRep && sCid && oCidRep !== sCid) return false;
+      }
+      if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
+    } else {
+      var oCid = canonicalClientSlug(ov.anchor_client_id);
+      if (oCid && sCid && oCid !== sCid) return false;
+    }
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
@@ -4261,6 +4415,7 @@
   };
 
   AdminSessionsHub.prototype.overrideForSlot = function (slot) {
+    if (slot && slot.__portalScheduleOverride) return slot.__portalScheduleOverride;
     var ovs = this.payload.schedule_overrides || [];
     var best = null;
     for (var i = 0; i < ovs.length; i++) {
@@ -5585,6 +5740,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+        var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var fbCell;
         if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
@@ -5597,11 +5753,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isUpdated
-              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
-                esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
-                "</span>"
-              : '<span class="ash-badge ash-badge--booked">Booked</span>';
+            : isMakeup
+              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+              : isUpdated
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
+                  esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
+                  "</span>"
+                : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
