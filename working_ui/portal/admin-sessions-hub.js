@@ -752,13 +752,14 @@
     if (!raw) return { date: "", time: "", clientSlug: "" };
     var parts = raw.split("|").map(clean);
     var date = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : "";
+    var dayWord = date ? weekdayLongFromIso(date) : "";
     var time = "";
     var clientSlug = "";
     var areaSlugs = portalSessionKeyAreaSlugTokens();
     for (var i = 1; i < parts.length; i++) {
       var p = parts[i];
       if (!p) continue;
-      var tk = normTimeKey(p);
+      var tk = normTimeKey(p, dayWord);
       if (tk && /^\d{2}:\d{2}$/.test(tk)) {
         time = tk;
         continue;
@@ -770,7 +771,7 @@
     if (!clientSlug) {
       for (var j = 1; j < parts.length; j++) {
         if (!parts[j]) continue;
-        var tk2 = normTimeKey(parts[j]);
+        var tk2 = normTimeKey(parts[j], dayWord);
         if (tk2 && /^\d{2}:\d{2}$/.test(tk2)) continue;
         var sl2 = slugify(parts[j]);
         if (!sl2 || areaSlugs[sl2]) continue;
@@ -953,15 +954,23 @@
     };
   }
 
-  /** Always HH:MM (zero-padded) so roster keys match submitted portal_session_key variants. */
-  function normTimeKey(t) {
+  /** Always HH:MM (zero-padded). Accepts roster dot times (1.15) and staff portal_session_key tokens. */
+  function normTimeKey(t, dayWord) {
     var s = clean(t).toLowerCase().replace(/\s+/g, " ");
     if (!s) return "";
-    var hm = s.match(/^(\d{1,2}):(\d{2})/);
+    var hm = s.match(/^(\d{1,2}):(\d{2})$/);
     if (hm) {
       return String(parseInt(hm[1], 10)).padStart(2, "0") + ":" + String(parseInt(hm[2], 10) || 0).padStart(2, "0");
     }
-    var p = parseTimeSlot(s, "");
+    var dot = s.match(/^(\d{1,2})\.(\d{1,2})$/);
+    if (dot) {
+      var dh = parseInt(dot[1], 10);
+      var dm = parseInt(dot[2], 10) || 0;
+      if (dayWord) dh = hourTo24(dh, dayWord);
+      else if (dh >= 1 && dh <= 7) dh = dh + 12;
+      return String(dh).padStart(2, "0") + ":" + String(dm).padStart(2, "0");
+    }
+    var p = parseTimeSlot(s, dayWord || "");
     return p.start || "";
   }
 
@@ -2681,6 +2690,16 @@
         if (!byKey[ak]) byKey[ak] = [];
         byKey[ak].push(m2);
       }
+      var slotMatch = this.slotForAbsentMark(m2);
+      if (slotMatch) {
+        var slotAliasKeys = feedbackAliasKeysForSlot(slotMatch);
+        for (var sx = 0; sx < slotAliasKeys.length; sx++) {
+          var sax = clean(slotAliasKeys[sx]).toLowerCase();
+          if (!sax) continue;
+          if (!byKey[sax]) byKey[sax] = [];
+          byKey[sax].push(m2);
+        }
+      }
     }
     this._absentBySessionKey = byKey;
     this._absentMarksMerged = list;
@@ -2998,13 +3017,16 @@
     var clientSlug = canonicalClientSlug(mark.client_name) || parsed.clientSlug;
     if (!iso || !clientSlug) return null;
     var slots = this.expandSlotsForDate(iso);
-    var timeHint = normTimeKey(mark.session_time) || parsed.time;
+    var timeHint = normTimeKey(mark.session_time, weekdayLongFromIso(iso)) || parsed.time;
     var key = pk.toLowerCase();
     var keyNorm = key.replace(/\|+/g, "|");
     var hits = [];
     for (var i = 0; i < slots.length; i++) {
       var sk = clean(slots[i].session_key).toLowerCase();
       if (sk && (sk === key || sk === keyNorm)) return slots[i];
+      if (parsed.time && slots[i].time_start === parsed.time && canonicalClientSlug(slots[i].client_name) === clientSlug) {
+        return slots[i];
+      }
       if (canonicalClientSlug(slots[i].client_name) !== clientSlug) continue;
       hits.push(slots[i]);
     }
@@ -3424,10 +3446,10 @@
         if (!(isClimbingService(fb.service) && isClimbingService(slot.service))) return false;
       }
     }
-    var mt = normTimeKey(fb.session_time);
+    var mt = normTimeKey(fb.session_time, weekdayLongFromIso(slot.session_date));
     var parsed = parsePortalSessionKeyFields(fb.portal_session_key);
     if (!mt && parsed.time) mt = parsed.time;
-    var st = slot.time_start || normTimeKey(slot.time_slot);
+    var st = slot.time_start || normTimeKey(slot.time_slot, weekdayLongFromIso(slot.session_date));
     var perSlot = absentFeedbackPerSlotUnit(slot);
     if (mt && st && mt !== st) return false;
     if (perSlot && (!mt || !st)) return false;
@@ -3483,14 +3505,16 @@
       return true;
     }
     var list = this._absentMarksMerged || [];
+    var slotDayWord = weekdayLongFromIso(slot.session_date);
     for (var i = 0; i < list.length; i++) {
       var mk = list[i];
+      if (this.slotForAbsentMark(mk) === slot) return true;
       if (feedbackSessionDate(mk) !== slot.session_date) continue;
       if (canonicalClientSlug(mk.client_name) !== canonicalClientSlug(slot.client_name)) continue;
-      var mt = normTimeKey(mk.session_time);
+      var mt = normTimeKey(mk.session_time, slotDayWord);
       var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
       if (!mt && parsedMk.time) mt = parsedMk.time;
-      var st = slot.time_start || normTimeKey(slot.time_slot);
+      var st = slot.time_start || normTimeKey(slot.time_slot, slotDayWord);
       var perSlot = absentFeedbackPerSlotUnit(slot);
       if (perSlot) {
         if (!mt || !st || mt !== st) continue;
@@ -3515,10 +3539,10 @@
       if (hub.opts && hub.opts.absentMarkScopeFilter && !hub.opts.absentMarkScopeFilter(mk)) {
         continue;
       }
-      var mt = normTimeKey(mk.session_time);
+      var mt = normTimeKey(mk.session_time, weekdayLongFromIso(slot.session_date));
       var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
       if (!mt && parsedMk.time) mt = parsedMk.time;
-      var st = slot.time_start || normTimeKey(slot.time_slot);
+      var st = slot.time_start || normTimeKey(slot.time_slot, weekdayLongFromIso(slot.session_date));
       if (absentFeedbackPerSlotUnit(slot)) {
         if (!mt || !st || mt !== st) continue;
       } else if (mt && st && mt !== st) {
@@ -4729,6 +4753,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (afb && !isUsed(afb)) {
           out.push(afb);
           markUsed(afb);
+        } else if (isAbsent) {
+          var synthAbsent = hub.syntheticAbsentDisplayRow(slot);
+          if (synthAbsent) {
+            out.push(synthAbsent);
+            markUsed(synthAbsent);
+          }
         }
         continue;
       }
@@ -4816,6 +4846,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
           hub.syntheticAbsentDisplayRow(awaitSlot);
         if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
+        var awaitInstAbsent =
+          awaitSlot.instructors && awaitSlot.instructors.length
+            ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
+            : esc(awaitSlot.instructor_label || "\u2014");
+        return (
+          '<tr class="ash-fb-row ash-fb-row--awaiting">' +
+          '<td><span class="ash-pill ash-pill--client">' +
+          esc(awaitSlot.client_name) +
+          "</span></td>" +
+          "<td>" +
+          esc(clean(awaitSlot.service) || "\u2014") +
+          awaitTime +
+          "</td>" +
+          '<td colspan="5" class="ash-td-center">' +
+          rosterFeedbackStatusHtml(true, false) +
+          "</td>" +
+          '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+          awaitInstAbsent +
+          "</div></td>" +
+          "</tr>"
+        );
       }
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
