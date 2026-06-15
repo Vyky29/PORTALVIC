@@ -7790,25 +7790,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(String(o.status || 'active') !== 'active') return false;
       if(String(o.anchor_venue || '').trim().toLowerCase() !== String(slot.venue || '').trim().toLowerCase()) return false;
       if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== normalizeSchedAnchorStaffId(slot.staffRosterId)) return false;
+      var oType = String(o.override_type || '').trim();
+      var timeExact = normTimeShort(o.anchor_start) === normTimeShort(slot.anchorStart)
+        && normTimeShort(o.anchor_end) === normTimeShort(slot.anchorEnd);
+      if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(o.anchor_client_id)){
+        return timeExact;
+      }
       var oCid = adminCanonicalClientSlug(o.anchor_client_id);
       var sCid = adminCanonicalClientSlug(slot.clientSlug || slot.clientDisplay || '');
+      if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(sCid)){
+        return timeExact;
+      }
       if(oCid && sCid && oCid !== sCid) return false;
-      var oType = String(o.override_type || '').trim();
       if(oType === 'client_absence_announced'){
         return schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
       }
-      return normTimeShort(o.anchor_start) === normTimeShort(slot.anchorStart)
-        && normTimeShort(o.anchor_end) === normTimeShort(slot.anchorEnd);
+      return timeExact;
+    }
+    function schedOverridePickBestForSlot(matches){
+      if(!matches || !matches.length) return null;
+      var typePri = {
+        client_replace_in_slot: 30,
+        slot_update: 25,
+        client_absence_announced: 20,
+        instructor_reassign: 15,
+        slot_open: 10,
+        slot_clear_client: 10,
+        slot_close: 5
+      };
+      matches.sort(function(a, b){
+        var pa = typePri[String(a.override_type || '').trim()] || 0;
+        var pb = typePri[String(b.override_type || '').trim()] || 0;
+        if(pb !== pa) return pb - pa;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
+      return matches[0];
     }
     function findOverrideForSlot(slot, overrideRows){
       var rows = Array.isArray(overrideRows) ? overrideRows : sched.overrides;
-      var best = null;
+      var matches = [];
       for(var i = 0; i < rows.length; i++){
-        var o = rows[i];
-        if(!schedOverrideMatchesSlot(slot, o)) continue;
-        if(!best || (o.created_at && (!best.created_at || new Date(o.created_at) > new Date(best.created_at)))) best = o;
+        if(schedOverrideMatchesSlot(slot, rows[i])) matches.push(rows[i]);
       }
-      return best;
+      return schedOverridePickBestForSlot(matches);
     }
     function schedFindSlotByDemoId(demoId){
       var id = String(demoId || '').trim();
@@ -12828,6 +12852,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var movedIn = ov.payload && ov.payload.client_move;
         var origLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
         var replLab = replName || replSlug || 'replacement';
+        var openSlotMakeup = schedIsOpenSlotSlug(ov.anchor_client_id) || schedIsOpenSlotSlug(slot.clientSlug);
+        if(openSlotMakeup && !movedIn){
+          return (
+            '<div class="sched-pax-pill-row">' +
+            schedParticipantPillHtml('Open slot', slot.demoId, 'out', 'demo') +
+            '<span class="sched-pax-pill-sep">→</span>' +
+            schedParticipantPillHtml(replLab, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
+            '</div>'
+          );
+        }
         if(movedIn){
           var fromTime = String(ov.payload.moved_from_time || '').trim();
           var fromHint = fromTime ? (' from ' + fromTime) : '';

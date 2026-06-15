@@ -5816,7 +5816,11 @@
       return '';
     }
     function portalOverrideReplacementClientId(payload){
-      if(!payload || typeof payload !== 'object') return '';
+      if(!payload) return '';
+      if(typeof payload === 'string'){
+        try{ payload = JSON.parse(payload); }catch(_){ return ''; }
+      }
+      if(typeof payload !== 'object') return '';
       const toId = payload.to_client_id != null ? String(payload.to_client_id).trim().toLowerCase() : '';
       if(toId) return toId;
       const repId = payload.replacement_client_id != null ? String(payload.replacement_client_id).trim().toLowerCase() : '';
@@ -5824,7 +5828,11 @@
       return '';
     }
     function portalOverrideReplacementClientName(payload){
-      if(!payload || typeof payload !== 'object') return '';
+      if(!payload) return '';
+      if(typeof payload === 'string'){
+        try{ payload = JSON.parse(payload); }catch(_){ return ''; }
+      }
+      if(typeof payload !== 'object') return '';
       const toName = payload.to_client_name != null ? String(payload.to_client_name).trim() : '';
       if(toName) return toName;
       const repName = payload.replacement_client_name != null ? String(payload.replacement_client_name).trim() : '';
@@ -7120,6 +7128,26 @@
       const ov = it.__portalScheduleOverride;
       return !!(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot');
     }
+    function portalSyntheticSessionFromOverride(ov, viewDay){
+      if(!ov) return null;
+      const vw = String(viewDay || '').trim();
+      const iso = normaliseIsoDate(ov.session_date);
+      return {
+        staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
+        day: vw,
+        start: portalHmFromDbTime(ov.anchor_start) || '09:00',
+        end: portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
+        venue: String(ov.anchor_venue || '').trim(),
+        clientId: portalScheduleOverrideAnchorIsOpenSlot(ov.anchor_client_id)
+          ? 'available'
+          : String(ov.anchor_client_id || '').trim().toLowerCase(),
+        activity: 'Swimming',
+        rosterService: 'Aquatic Activity',
+        status: 'scheduled',
+        session_date: iso || '',
+        timeSlotLabel: String(ov.anchor_time_slot_label || '').trim()
+      };
+    }
     function portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote){
       if(!base || !ov) return null;
       const s = Object.assign({}, base, { __portalBaseSession: base });
@@ -7128,7 +7156,14 @@
       const effClientId = portalOverrideReplacementClientId(ov.payload) || String(s.clientId || '').trim().toLowerCase();
       const nameFromReplace = portalOverrideReplacementClientName(ov.payload);
       const c = portalClientNotesLookup(effClientId) || clientNotesById[effClientId]
-        || (nameFromReplace ? { name: nameFromReplace, generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' } : null);
+        || (nameFromReplace || effClientId ? {
+          name: nameFromReplace || effClientId,
+          generalLead: '',
+          specialty: '',
+          specialtyClimbing: '',
+          specialtyFitness: '',
+          generalInfoSheet: ''
+        } : null);
       if(!c) return null;
       let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, anchorDayWord);
       if(supportHidePoolNote) poolLocationLabel = null;
@@ -7198,7 +7233,8 @@
         if(ov.id && seenOvIds[String(ov.id)]) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         if(!repId) return;
-        const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord);
+        const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord)
+          || portalSyntheticSessionFromOverride(ov, anchorDayWord);
         if(!base) return;
         const startTok = portalCanonicalHmToken(base.start) || portalCanonicalHmToken(ov.anchor_start);
         if(seenRepKeys[repId + '|' + startTok]) return;
