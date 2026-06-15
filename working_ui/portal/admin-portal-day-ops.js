@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260616-perf-overview';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260616-feedback-index-fix';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -395,6 +395,17 @@
       out.session_feedback_loaded = out.session_feedback.length;
     }
     var tasks = [fetchScheduleOverridesInto(out, client)];
+    if (cfg.fetchSessionFeedback) {
+      tasks.push(
+        cfg.fetchSessionFeedback().then(function (dbFb) {
+          if (dbFb && dbFb.length) {
+            out.session_feedback = mergeFeedbackRowLists(out.session_feedback || [], dbFb);
+            out.session_feedback_total = out.session_feedback.length;
+            out.session_feedback_loaded = out.session_feedback.length;
+          }
+        })
+      );
+    }
     if (cfg.fetchCancellations) {
       tasks.push(
         cfg.fetchCancellations().then(function (rows) {
@@ -426,16 +437,6 @@
     since.setDate(since.getDate() - 120);
     var sinceIso = since.toISOString().slice(0, 10);
     var tasks = [];
-    if (cfg.fetchSessionFeedback) {
-      tasks.push(
-        cfg.fetchSessionFeedback().then(function (dbFb) {
-          if (dbFb && dbFb.length) {
-            out.session_feedback = dbFb;
-            out.session_feedback_total = dbFb.length;
-          }
-        })
-      );
-    }
     tasks.push(
       client
         .from('incident_reports')
@@ -982,6 +983,13 @@
     ensurePayload: function () {
       if (loadInFlight) return loadInFlight;
       loadInFlight = (async function () {
+        if (
+          global.portalAdminLoadHeavyScripts &&
+          typeof global.portalAdminHeavyScriptsReady === 'function' &&
+          !global.portalAdminHeavyScriptsReady()
+        ) {
+          await global.portalAdminLoadHeavyScripts(['roster', 'feedback']);
+        }
         var skipEdge = !!(cfg && cfg.skipAdminFormsEdge);
         var edge = null;
         if (!skipEdge) {
@@ -1036,16 +1044,7 @@
                       Object.assign({}, payload, {
                         incident_reports: deferred.incident_reports || [],
                         lead_session_reports: deferred.lead_session_reports || [],
-                        venue_reviews: deferred.venue_reviews || [],
-                        session_feedback: deferred.session_feedback || payload.session_feedback,
-                        session_feedback_total:
-                          deferred.session_feedback_total != null
-                            ? deferred.session_feedback_total
-                            : payload.session_feedback_total,
-                        session_feedback_loaded:
-                          deferred.session_feedback_loaded != null
-                            ? deferred.session_feedback_loaded
-                            : payload.session_feedback_loaded
+                        venue_reviews: deferred.venue_reviews || []
                       })
                     );
                     mergePortalFeedbackIntoPayload();

@@ -2631,6 +2631,7 @@
   AdminSessionsHub.prototype.invalidateComputeCaches = function () {
     this._slotsByIso = null;
     this._dayStatsByIso = null;
+    this._fbIndexSig = "";
   };
 
   AdminSessionsHub.prototype.dayStatsCacheKey = function (iso) {

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260616-perf-overview"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260616-feedback-index-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -1969,6 +1969,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       dashboard: true,
       operations: true,
       operations_admin: true,
+      c4k_sessions: true,
+      c4k_registers: true,
+      c4k_late_submissions: true
     };
     function portalAdminExtractPageTitle(html){
       var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
@@ -16960,7 +16963,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260616-perf-overview';
+      '/portal/admin-sessions-hub.js?v=20260616-feedback-index-fix';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17008,6 +17011,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       function onHubRefreshDone(){
         var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
         if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
+        if(showTrack){
+          var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
+          var ovRoot = $('adminSessionsHubRoot');
+          if(th && ovRoot && !ovRoot.querySelector('.ash-panels') && typeof th.render === 'function'){
+            th.render();
+          }
+        }
         sessionsHubStampRefresh();
         portalAdminApplyPendingActivityAlertFocus(h.tab);
       }
