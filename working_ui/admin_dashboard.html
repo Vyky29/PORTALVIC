@@ -285,7 +285,7 @@
       { id:'absents_refunds', label:'Absents, refunds & credits', hubLabel:'Refunds & credits' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Enquiries & intake' },
-      { id:'c4k_services', label:'Overview', hubLabel:'Services' },
+      { id:'c4k_services', label:'Services' },
       { id:'orders_all', label:'All', hubLabel:'Bookings' },
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
@@ -7605,7 +7605,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var fp = $('c4kServicesFiltersPanel');
       if(!host){
         try{
-          if(typeof portalAdminToast === 'function') portalAdminToast('Register panel missing — open Services overview and try again.');
+          if(typeof portalAdminToast === 'function') portalAdminToast('Register panel missing — open Services and try again.');
         }catch(_t){}
         return;
       }
@@ -7616,7 +7616,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var st = registerLoadState(demoId);
       host.innerHTML =
         '<div class="c4k-register-inline-head toolbar" style="justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0 0 12px;min-width:0">'+
-        '<button type="button" class="btn btn--sec" id="btnC4kRegisterClose" aria-label="Close register and return to services overview">Close register</button></div>'+
+        '<button type="button" class="btn btn--sec" id="btnC4kRegisterClose" aria-label="Close register and return to Services">Close register</button></div>'+
         '<div class="card c4k-register-inline-card" style="min-width:0;overflow:hidden;border:1px solid var(--line)">'+
         '<div class="modal c4k-register-inline-modal" id="c4kRegisterInlineModalRoot" role="region" aria-labelledby="modalTitle" style="box-shadow:none;margin:0;border:0;max-width:none;width:100%">'+
         buildRegisterModalHtml(slot, st)+
@@ -15495,7 +15495,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }else if(opts.omitHeader){
         headBlock =
           '<h2 class="page-title" style="font-size:15px;margin:0 0 6px">Capacity detail</h2>'+
-          '<p class="page-intro" style="margin:0 0 10px;max-width:52rem;min-width:0;overflow-wrap:break-word">Same grid as under <strong>Services overview</strong> (Physical Activity). Open counts are roster lines still available to assign.</p>';
+          '<p class="page-intro" style="margin:0 0 10px;max-width:52rem;min-width:0;overflow-wrap:break-word">Same grid as under <strong>Services</strong> (Physical Activity). Open counts are roster lines still available to assign.</p>';
       }else{
         headBlock =
           '<h2 class="page-title">Services &amp; capacity</h2>'+
@@ -15855,7 +15855,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var anchorIso = isoDateLocal(new Date());
       var rosterPart = viewC4kRosterServicesFromSlotsHtml(anchorIso, anchorIso, {});
       return (
-        '<h1 class="page-title">Services · overview</h1>'+
+        '<h1 class="page-title">Services</h1>'+
         '<p class="page-intro" style="margin-top:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Programmes and time bands for this week — filter, open registers, and spot spare capacity.</p>'+
         '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">'+
@@ -16927,6 +16927,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div></div>'
       );
     }
+    function portalAdminHeavyScriptsReady(){
+      return !!(window.STAFF_DASHBOARD_SOURCE && window.SESSION_FEEDBACK_PORTAL_SOURCE);
+    }
+    function sessionsHubShowLoading(rootId, msg){
+      var root = $(rootId);
+      if(!root) return;
+      if(root.querySelector('.ash-panels') || root.querySelector('.ash-panels--feedback-only')) return;
+      root.innerHTML = '<p class="muted c4k-sessions-hub-loading" role="status" style="margin:12px 0;font-size:14px">' + esc(msg || 'Loading…') + '</p>';
+    }
     function sessionsHubStampRefresh(){
       var el = $('c4kHubRefreshAt');
       if(!el) return;
@@ -16992,6 +17001,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(head) head.outerHTML = sessionsHubHeadHtml(h.tab);
       var hubActs = $('c4kHubToolbarActions');
       if(hubActs) hubActs.hidden = !sessionsHubTabShowsRefresh(h.tab);
+      if(showTrack) sessionsHubShowLoading('adminSessionsHubRoot', 'Loading sessions overview…');
+      if(showFb) sessionsHubShowLoading('adminSessionFeedbacksRoot', 'Loading session feedback…');
       function onHubRefreshDone(){
         var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
         if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
@@ -16999,12 +17010,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalAdminApplyPendingActivityAlertFocus(h.tab);
       }
       function onHubRefreshFail(err){
-        var root = $('adminSessionFeedbacksRoot');
-        if(root && showFb){
-          root.innerHTML =
+        var msg = esc(String((err && err.message) || err));
+        var fbRoot = $('adminSessionFeedbacksRoot');
+        if(fbRoot && showFb){
+          fbRoot.innerHTML =
             '<p class="submission-state is-error" style="margin:0"><strong>Could not load session feedback.</strong> ' +
-            esc(String((err && err.message) || err)) +
-            ' Try <strong>Refresh</strong> or reload the page.</p>';
+            msg + ' Try <strong>Refresh</strong> or reload the page.</p>';
+        }
+        var ovRoot = $('adminSessionsHubRoot');
+        if(ovRoot && showTrack && !ovRoot.querySelector('.ash-panels')){
+          ovRoot.innerHTML =
+            '<p class="submission-state is-error" style="margin:0"><strong>Could not load sessions overview.</strong> ' +
+            msg + ' Try <strong>Refresh</strong> or reload the page.</p>';
         }
       }
       function onPickupRefreshFail(err){
@@ -17036,7 +17053,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           void refreshSessionFeedbackGrid();
         }
       }
-      if((showFb || showTrack) && window.portalAdminLoadHeavyScripts){
+      if((showFb || showTrack) && window.portalAdminLoadHeavyScripts && !portalAdminHeavyScriptsReady()){
         void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(runHubRefresh).catch(onHubRefreshFail);
       }else{
         runHubRefresh();
@@ -17376,7 +17393,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sessionsHubToolbarHtml(h.tab) +
         '<div id="portalDayOpsStatus" class="portal-forms-status" aria-live="polite"></div>' +
         '<div id="c4kHubPanelOverview" class="c4k-sessions-hub-panel"' + (sessionsHubUsesTrackingHub(h.tab) ? '' : ' hidden') + '>' +
-        '<div id="adminSessionsHubRoot" class="admin-sessions-hub-root"></div></div>' +
+        '<div id="adminSessionsHubRoot" class="admin-sessions-hub-root"><p class="muted c4k-sessions-hub-loading" role="status" style="margin:12px 0;font-size:14px">Loading sessions overview…</p></div></div>' +
         '<div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel"' + (sessionsHubUsesFeedbackHub(h.tab) ? '' : ' hidden') + '>' +
         c4kSessionFeedbackPanelInnerHtml() + '</div>' +
         '<div id="c4kHubPanelLead" class="c4k-sessions-hub-panel"' + (h.tab === 'lead' ? '' : ' hidden') + '>' +
@@ -18805,7 +18822,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewOperations(){
       var sessionsRow1 =
-        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Overview', 'Live grid & capacity', false, 'sessions', 'sessions_hub_overview')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
@@ -18845,7 +18862,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           subtitle:'Session-day tools while participants are on site',
           linkView:'c4k_services',
           linkIconId:'c4k_services',
-          jumpTitle:'Services overview',
+          jumpTitle:'Services',
           panelClass:'dash-hub__panel--sessions',
           bodyHtml:
             '<div class="dash-hub__sessions-grids">'+
@@ -19704,14 +19721,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!inner){
         return (
           '<h1 class="page-title">Capacity</h1>'+
-          '<p class="page-intro">Week overview and the same detail table as under Services overview.</p>'+
+          '<p class="page-intro">Week overview and the same detail table as under Services.</p>'+
           strip+
           '<p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">This section did not load — refresh the page.</p>'
         );
       }
       return (
         '<h1 class="page-title">Capacity</h1>'+
-        '<p class="page-intro">This week at a glance (Mon–Sun), then the same capacity table as under Services overview.</p>'+
+        '<p class="page-intro">This week at a glance (Mon–Sun), then the same capacity table as under Services.</p>'+
         strip+
         '<div class="c4k-svc-capmap--standalone" style="min-width:0">'+inner+'</div>'
       );
@@ -23334,7 +23351,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             btn += '</button>';
           }
           if(item.id === 'c4k_services' && state.view === 'c4k_services' && state.c4kServicesRegisterOpen){
-            btn += '<div class="admin-nav-register-peek" role="status" aria-live="polite" title="Opened from Overview — use Back or close to return">'+adminNavIconHtml('c4k_registers')+
+            btn += '<div class="admin-nav-register-peek" role="status" aria-live="polite" title="Opened from Services — use Back or close to return">'+adminNavIconHtml('c4k_registers')+
               '<span class="admin-nav-label">Register</span></div>';
           }
           return btn;
