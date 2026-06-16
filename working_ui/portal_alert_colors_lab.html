@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="portal-colors-lab">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -9,7 +9,15 @@
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
     *{box-sizing:border-box}
-    body{
+    /* staff-dashboard.css locks html/body for the app shell — undo on this standalone page */
+    html.portal-colors-lab,
+    html.portal-colors-lab body{
+      height:auto !important;min-height:100%;max-height:none !important;
+      overflow-x:hidden !important;overflow-y:auto !important;
+      position:static !important;overscroll-behavior:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    html.portal-colors-lab body{
       margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
       background:linear-gradient(180deg,#f4f8fb 0%,#eef3f8 100%);color:var(--lab-ink);line-height:1.45;
     }
@@ -101,7 +109,7 @@
   </style>
   <style id="labLiveOverrides"></style>
 </head>
-<body>
+<body class="portal-colors-lab">
   <div class="lab-wrap" id="labLiveScope">
     <header class="lab-hero">
       <h1>Lab colores — Portal staff</h1>
