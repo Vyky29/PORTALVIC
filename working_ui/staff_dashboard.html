@@ -9707,6 +9707,118 @@
     }
     try{ window.portalStaffScheduleTodaySyncRetry = portalStaffScheduleTodaySyncRetry; }catch(_){}
 
+    /** Paint TODAY from cached Supabase auth + local roster bundle before async profile bootstrap finishes. */
+    function portalReadPersistedAuthUserLite(){
+      try{
+        if(typeof localStorage === 'undefined') return null;
+        for(var i = 0; i < localStorage.length; i++){
+          var k = localStorage.key(i);
+          if(!k || !/^sb-.*-auth-token/i.test(k)) continue;
+          var raw = localStorage.getItem(k);
+          if(!raw) continue;
+          var data = JSON.parse(raw);
+          var user = (data && data.user) || (data && data.currentSession && data.currentSession.user);
+          if(user && user.id) return user;
+        }
+      }catch(_){}
+      return null;
+    }
+    function portalCanonicalStaffKeyLite(raw){
+      var k = String(raw || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '')
+        .trim();
+      if(!k) return '';
+      if(k === 'luliya' || k === 'aida' || k === 'stf021') return 'lulia';
+      if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+        return window.portalCanonicalStaffRosterKey(k) || k;
+      }
+      return k;
+    }
+    function portalBootstrapRosterHitFromAuthUser(user, profileForRoster){
+      var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+      var source = typeof window.portalResolveStaffDashboardSource === 'function'
+        ? window.portalResolveStaffDashboardSource()
+        : window.STAFF_DASHBOARD_SOURCE;
+      if(!Adapter || !source || !user) return null;
+      var email = String(user.email || '');
+      var keys = [];
+      var seen = Object.create(null);
+      function pushKey(v){
+        var k = String(v || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '')
+          .trim();
+        if(!k || seen[k]) return;
+        if(k === 'luliya' || k === 'aida') k = 'lulia';
+        seen[k] = true;
+        keys.push(k);
+        if(/^stf\d{3}$/.test(k)){
+          var map = {
+            stf001: 'sandra', stf002: 'roberto', stf003: 'dan', stf004: 'angel',
+            stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'giuseppe',
+            stf009: 'godsway', stf010: 'javier', stf011: 'aurora', stf012: 'berta',
+            stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf017: 'javi',
+            stf018: 'raul', stf019: 'sevitha', stf020: 'teflon', stf021: 'lulia',
+            stf022: 'andres'
+          };
+          if(map[k] && !seen[map[k]]){ seen[map[k]] = true; keys.push(map[k]); }
+        }
+      }
+      pushKey(profileForRoster && profileForRoster.username);
+      pushKey(profileForRoster && profileForRoster.full_name);
+      pushKey(String((profileForRoster && profileForRoster.full_name) || '').split(/\s+/)[0]);
+      pushKey(email.split('@')[0]);
+      if(typeof window.portalInferStaffKey === 'function') pushKey(window.portalInferStaffKey(profileForRoster, email));
+      var i;
+      for(i = 0; i < keys.length; i++){
+        var boot = Adapter.bootstrap({ source: source, staffId: keys[i] });
+        if(boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length){
+          return { staffId: portalCanonicalStaffKeyLite(keys[i]), boot: boot };
+        }
+      }
+      if(!keys[0]) return null;
+      var boot0 = Adapter.bootstrap({ source: source, staffId: keys[0] });
+      if(!boot0 || !Array.isArray(boot0.sessionsModel) || !boot0.sessionsModel.length) return null;
+      return { staffId: portalCanonicalStaffKeyLite(keys[0]), boot: boot0 };
+    }
+    function portalTryOptimisticRosterFromPersistedAuth(){
+      if(STAFF_DASHBOARD_ID || portalStaffDashIsEditorPreviewMode()) return false;
+      if(typeof window !== 'undefined' && window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active) return false;
+      var user = portalReadPersistedAuthUserLite();
+      if(!user) return false;
+      var profileForRoster = {
+        username: String(user.email || '').split('@')[0],
+        full_name: String((user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || '').trim()
+      };
+      var hit = portalBootstrapRosterHitFromAuthUser(user, profileForRoster);
+      if(!hit || !hit.boot) return false;
+      var sid = portalCanonicalStaffKeyLite(hit.staffId);
+      if(!sid) return false;
+      STAFF_DASHBOARD_ID = sid;
+      try{ window.STAFF_DASHBOARD_ID = sid; }catch(_){}
+      __spreadsheetBoot = hit.boot;
+      sessionsModel = hit.boot.sessionsModel || [];
+      clientNotesById = hit.boot.clientNotesById || {};
+      try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+      portalApplyClientsInfoToNotes();
+      if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+      if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
+      if(dashboardData){
+        var nm = String(profileForRoster.full_name || profileForRoster.username || '').trim();
+        if(nm) dashboardData.staffName = nm;
+        dashboardData.portalIdentityResolved = true;
+        dashboardData.week = typeof buildWeekRows === 'function' ? buildWeekRows(sid) : dashboardData.week;
+        if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
+      }
+      return true;
+    }
+    try{ window.portalTryOptimisticRosterFromPersistedAuth = portalTryOptimisticRosterFromPersistedAuth; }catch(_){}
+
     /** Staff/lead topbar brand orbits use F-02-1 crest. Dock centre uses FOOTERLOGO.png. */
     const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = '/portal/F-02-1.png';
     const PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL = '/portal/F-02-1.png';
@@ -14640,6 +14752,9 @@
       portalMarkFeedbackReconciledFromExports();
     }
     var _portalDeferRosterUntilAuth = !STAFF_DASHBOARD_ID && !portalStaffDashIsEditorPreviewMode();
+    if(_portalDeferRosterUntilAuth && typeof portalTryOptimisticRosterFromPersistedAuth === 'function'){
+      if(portalTryOptimisticRosterFromPersistedAuth()) _portalDeferRosterUntilAuth = false;
+    }
     if(_portalDeferRosterUntilAuth && dashboardData){
       dashboardData.portalIdentityResolved = false;
       dashboardData.today = [];
@@ -15298,6 +15413,17 @@
           if(typeof portalSeedTeflonGuideDemoReviewState === 'function') portalSeedTeflonGuideDemoReviewState();
         }
         portalApplyClientsInfoToNotes();
+        var _finishStaffRehydrateUiNowEarly = function(){
+          if(typeof portalMarkFeedbackReconciledFromExports === 'function'){
+            portalMarkFeedbackReconciledFromExports();
+          }
+          if(typeof renderHeader === 'function') renderHeader();
+          if(typeof renderToday === 'function') renderToday();
+          if(typeof renderMiniCounts === 'function') renderMiniCounts();
+          if(typeof renderLists === 'function') renderLists();
+        };
+        _finishStaffRehydrateUiNowEarly();
+        portalStaffApplyIdentityResolved(profileForRoster, p, session);
         var postFbDay = "";
         try{
           if(typeof __postFbLand !== "undefined" && __postFbLand && __postFbLand.appliedReviewDay){

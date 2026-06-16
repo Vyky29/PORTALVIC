@@ -1074,6 +1074,81 @@
     return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
   }
 
+  /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
+  function hubSlotIsMakeup(slot) {
+    if (!slot) return false;
+    if (slot.portalOverrideMakeUpTag) return true;
+    var ov = slot.__portalScheduleOverride;
+    return !!(ov && overrideIsReplaceType(ov));
+  }
+
+  /** Active overrides from the loaded admin hub payload (makeup slot counting + matching). */
+  var _activeScheduleOverrides = [];
+
+  function syncScheduleOverridesForMatching(overrides) {
+    _activeScheduleOverrides = Array.isArray(overrides) ? overrides : [];
+  }
+
+  function aquaticMakeupSlotsForClientOnDate(iso, clientName) {
+    var cid = canonicalClientSlug(clientName);
+    if (!iso || !cid || !_activeScheduleOverrides.length) return [];
+    var out = [];
+    for (var i = 0; i < _activeScheduleOverrides.length; i++) {
+      var ov = _activeScheduleOverrides[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== iso) continue;
+      var p = overridePayloadObj(ov);
+      var repSlug =
+        overrideReplacementClientId(p) || canonicalClientSlug(overrideReplacementClientName(p));
+      if (repSlug !== cid) continue;
+      var svc = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+      if (!isAquaticService(svc)) continue;
+      out.push({
+        instructor: resolveStaffDisplayName(ov.anchor_staff_id),
+        time_start: normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label),
+      });
+    }
+    return out;
+  }
+
+  function makeupFeedbackTimeMatchesSlot(fb, slot) {
+    var st = slot.time_start || normTimeKey(slot.time_slot, slot.day);
+    if (!st) return false;
+    var ft = normTimeKey(fb.session_time, slot.day);
+    if (ft && ft === st) return true;
+    if (fb.session_time && slot.day) {
+      var parsed = parseTimeSlot(fb.session_time, slot.day);
+      if (parsed.start && parsed.start === st) return true;
+    }
+    var pk = clean(fb.portal_session_key);
+    if (!pk) return false;
+    var parts = pk.split("|").map(clean);
+    if (parts.length >= 2 && normTimeKey(parts[1], slot.day) === st) return true;
+    if (parts.length >= 3 && normTimeKey(parts[2], slot.day) === st) return true;
+    if (parts.length >= 3 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+      if (
+        parts[1] &&
+        !normTimeKey(parts[1]) &&
+        normTimeKey(parts[2], slot.day) === st &&
+        canonicalClientSlug(parts[1]) === canonicalClientSlug(slot.client_name)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** MakeUp: same client/day is not enough — covering instructor + anchor time must match. */
+  function makeupFeedbackStrictFits(fb, slot) {
+    if (!fb || !slot) return false;
+    if (isAbsentFeedbackRow(fb)) return false;
+    if (!feedbackRosterDateMatches(fb, slot)) return false;
+    if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+    if (!servicesCompatibleForSlot(fb, slot)) return false;
+    if (!makeupFeedbackTimeMatchesSlot(fb, slot)) return false;
+    return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
+  }
+
   function overrideClientName(ov) {
     var slug = clean(ov && ov.anchor_client_id);
     return resolveRosterClientName(slug) || slug.replace(/_/g, " ");
@@ -1161,6 +1236,18 @@
     if (sk) keys.push(sk);
     var cid = canonicalClientSlug(slot.client_name);
     if (!slot.session_date || !cid) return keys;
+    if (hubSlotIsMakeup(slot)) {
+      keys.push(feedbackUnitKey(slot));
+      var mkT = slot.time_start || normTimeKey(slot.time_slot, slot.day);
+      if (mkT) {
+        keys.push(slot.session_date + "|" + mkT + "|" + cid);
+        if (isAquaticService(slot.service)) {
+          keys.push(slot.session_date + "|" + cid + "|" + mkT + "|aquatic");
+          keys.push(slot.session_date + "|" + cid + "|" + mkT + "|aquatic|" + primaryInstructorKey(slot));
+        }
+      }
+      return keys;
+    }
     if (isDayCentreService(slot.service)) {
       keys.push(slot.session_date + "|" + cid);
       keys.push(slot.session_date + "|" + cid + "|day_centre");
@@ -1838,6 +1925,7 @@
       if (!isRosterClient(r.client_name)) continue;
       n++;
     }
+    n += aquaticMakeupSlotsForClientOnDate(iso, clientName).length;
     return n;
   }
 
@@ -1861,6 +1949,14 @@
       if (!inst) continue;
       if (!lead) lead = inst;
       else if (lead !== inst) return false;
+    }
+    var makeups = aquaticMakeupSlotsForClientOnDate(iso, clientName);
+    for (var m = 0; m < makeups.length; m++) {
+      n++;
+      var minst = clean(makeups[m].instructor).toUpperCase();
+      if (!minst) continue;
+      if (!lead) lead = minst;
+      else if (lead !== minst) return false;
     }
     return n > 1 && !!lead;
   }
@@ -2094,6 +2190,7 @@
 
   function feedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
+    if (hubSlotIsMakeup(slot)) return makeupFeedbackStrictFits(fb, slot);
     if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
     if (!feedbackRosterDateMatches(fb, slot)) return false;
     if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
@@ -2214,6 +2311,13 @@
         "|" +
         sessionAreaKey(slot.area)
       );
+    }
+    if (hubSlotIsMakeup(slot)) {
+      var mkInst = primaryInstructorKey(slot);
+      if (isAquaticService(slot.service)) {
+        return slot.session_date + "|" + cid + "|" + t + "|aquatic|" + mkInst;
+      }
+      return slot.session_date + "|" + cid + "|" + t + "|makeup|" + mkInst;
     }
     if (isAquaticService(slot.service)) {
       if (clientNeedsPerSlotAquaticFeedback(slot)) {
@@ -3456,11 +3560,14 @@
 
   AdminSessionsHub.prototype.indexFeedback = function () {
     var hub = this;
+    syncScheduleOverridesForMatching(this.payload && this.payload.schedule_overrides);
     var list = this.payload.session_feedback || [];
     var sig =
       String(list.length) +
       "|" +
       String(this.rosterRows.length) +
+      "|" +
+      String((this.payload.schedule_overrides || []).length) +
       "|" +
       String((this.payload.incident_reports || []).length) +
       "|" +

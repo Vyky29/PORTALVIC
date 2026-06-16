@@ -46,8 +46,29 @@ let _writeInFlight = false;
 let _consecutiveFails = 0;
 /** @type {number} */
 let _pulseBackoffUntil = 0;
-/** @type {boolean | null} */
-let _rpcPulseAvailable = null;
+const VISIT_PULSE_RPC_OK_KEY = "portalVisitPulseRpcOk";
+/** @type {boolean} — default direct table updates; enable RPC only after a prior success. */
+let _rpcPulseAvailable = false;
+
+function visitSessionRpcEnabled() {
+  if (_rpcPulseAvailable === false) {
+    try {
+      if (typeof localStorage !== "undefined" && localStorage.getItem(VISIT_PULSE_RPC_OK_KEY) === "1") {
+        _rpcPulseAvailable = true;
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+  return _rpcPulseAvailable === true;
+}
+
+function visitSessionMarkRpcOk() {
+  _rpcPulseAvailable = true;
+  try {
+    localStorage.setItem(VISIT_PULSE_RPC_OK_KEY, "1");
+  } catch (_) {}
+}
 
 const SHEET_VISIT_LABELS = {
   menuSheet: "menu",
@@ -228,7 +249,7 @@ async function visitSessionDirectUpdate(payload) {
 }
 
 async function visitSessionPulseRpc(scalars) {
-  if (_rpcPulseAvailable === false) return { ok: false, skipped: true };
+  if (!visitSessionRpcEnabled()) return { ok: false, skipped: true };
   const { data, error } = await _client.rpc("portal_visit_session_pulse", {
     p_session_id: _sessionId,
     p_last_page_label: scalars.last_page_label || null,
@@ -236,16 +257,21 @@ async function visitSessionPulseRpc(scalars) {
     p_total_ms: scalars.total_ms,
   });
   if (error) {
-    if (visitSessionErrorIsMissingRpc(error)) _rpcPulseAvailable = false;
+    if (visitSessionErrorIsMissingRpc(error)) {
+      _rpcPulseAvailable = false;
+      try {
+        localStorage.removeItem(VISIT_PULSE_RPC_OK_KEY);
+      } catch (_) {}
+    }
     return { ok: false, error };
   }
-  _rpcPulseAvailable = true;
+  visitSessionMarkRpcOk();
   if (data === false) return { ok: false, error: { message: "session_not_found" } };
   return { ok: true, error: null };
 }
 
 async function visitSessionPatchRpc(scalars, jsonExtra) {
-  if (_rpcPulseAvailable === false) return { ok: false, skipped: true };
+  if (!visitSessionRpcEnabled()) return { ok: false, skipped: true };
   const { data, error } = await _client.rpc("portal_visit_session_patch", {
     p_session_id: _sessionId,
     p_last_page_label: scalars.last_page_label || null,
@@ -255,12 +281,30 @@ async function visitSessionPatchRpc(scalars, jsonExtra) {
     p_form_submits: jsonExtra.form_submits != null ? jsonExtra.form_submits : null,
   });
   if (error) {
-    if (visitSessionErrorIsMissingRpc(error)) _rpcPulseAvailable = false;
+    if (visitSessionErrorIsMissingRpc(error)) {
+      _rpcPulseAvailable = false;
+      try {
+        localStorage.removeItem(VISIT_PULSE_RPC_OK_KEY);
+      } catch (_) {}
+    }
     return { ok: false, error };
   }
-  _rpcPulseAvailable = true;
+  visitSessionMarkRpcOk();
   if (data === false) return { ok: false, error: { message: "session_not_found" } };
   return { ok: true, error: null };
+}
+
+function visitSessionDirectScalarPayload(scalars, jsonExtra) {
+  return Object.assign(
+    {
+      last_seen_at: new Date().toISOString(),
+      last_page_label: scalars.last_page_label || null,
+      active_tab_ms: scalars.active_tab_ms,
+      total_ms: scalars.total_ms,
+      still_open: true,
+    },
+    jsonExtra || {}
+  );
 }
 
 /**
@@ -296,39 +340,22 @@ async function visitSessionWrite(opts) {
     if (wantForms) jsonExtra.form_submits = opts.form_submits;
 
     let result = { ok: false, error: null };
-    if (wantJson && Object.keys(jsonExtra).length) {
+    const directPayload = visitSessionDirectScalarPayload(scalars, jsonExtra);
+    const directFirst = await visitSessionDirectUpdate(directPayload);
+    if (!directFirst.error) {
+      result = { ok: true, error: null };
+    } else if (wantJson && Object.keys(jsonExtra).length) {
       result = await visitSessionPatchRpc(scalars, jsonExtra);
       if (result.skipped) {
-        const payload = Object.assign(
-          {
-            last_seen_at: new Date().toISOString(),
-            last_page_label: label,
-            active_tab_ms: active,
-            total_ms: active,
-            still_open: true,
-          },
-          jsonExtra
-        );
-        const direct = await visitSessionDirectUpdate(payload);
-        result = direct.error ? { ok: false, error: direct.error } : { ok: true, error: null };
+        result = { ok: false, error: directFirst.error };
       }
-    } else {
+    } else if (visitSessionRpcEnabled()) {
       result = await visitSessionPulseRpc(scalars);
       if (result.skipped) {
-        const direct = await visitSessionDirectUpdate(
-          Object.assign(
-            {
-              last_seen_at: new Date().toISOString(),
-              last_page_label: label,
-              active_tab_ms: active,
-              total_ms: active,
-              still_open: true,
-            },
-            jsonExtra
-          )
-        );
-        result = direct.error ? { ok: false, error: direct.error } : { ok: true, error: null };
+        result = { ok: false, error: directFirst.error };
       }
+    } else {
+      result = { ok: false, error: directFirst.error };
     }
 
     if (result.ok) {
