@@ -5811,7 +5811,6 @@
       if(t === 'client_absence_announced') return 'override--absent';
       if(t === 'slot_close') return 'override--closed';
       if(t === 'slot_open') return 'override--slot-open';
-      if(item && item.portalOverrideTrialTag) return 'override--trial';
       if(t === 'client_replace_in_slot' || t === 'replace_participant') return 'override--replace';
       if(t === 'instructor_reassign') return 'override--instructor';
       if(t === 'slot_update') return 'override--updated';
@@ -5822,6 +5821,8 @@
       if(pill === 'ABSENT') return 'override--absent';
       const type = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
       if(type === 'slot_clear_client' && item && item.__portalScheduleOverride && item.__portalScheduleOverride.payload && item.__portalScheduleOverride.payload.cancelled_by_admin) return 'override--portal-cancelled';
+      if(item && item.portalOverrideTrialTag) return 'override--trial';
+      if(type === 'client_replace_in_slot' && item && item.__portalScheduleOverride && portalOverrideIsTrial(item.__portalScheduleOverride)) return 'override--trial';
       if(type) return portalOverrideTypeClass(type);
       const manual = String(item && item.__portalBaseSession && item.__portalBaseSession.override || '').trim().toUpperCase();
       if(manual === 'CANCELLED') return 'override--portal-cancelled';
