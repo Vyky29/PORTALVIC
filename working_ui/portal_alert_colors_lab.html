@@ -83,6 +83,18 @@
       max-height:none;box-shadow:none;border-radius:14px;padding:12px;background:#fafbfd;margin-top:14px;
     }
     #menuSheet.menu-sheet--logo-lite .menu-btn{pointer-events:none;max-width:420px}
+    /* Reminder / training tiles: production rules need sheet--fullscreen — mirror for lab */
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--reminder-attention{
+      background:linear-gradient(180deg,#fff4df 0%,#ffe7bf 100%);
+      border-color:rgba(224,146,28,.45);
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--reminder-attention .menu-btn-icon{
+      background:linear-gradient(180deg,#f59e0b,#ea580c);color:#fff;border-color:rgba(180,95,20,.3);
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--training-safeguarding .menu-btn-icon,
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--training-role-swimming .menu-btn-icon{
+      border-radius:10px;
+    }
     .lab-grid-2{display:grid;grid-template-columns:1fr;gap:16px;margin-top:12px}
     @media(min-width:900px){.lab-grid-2{grid-template-columns:1fr 1fr}}
     .lab-preview-col h3{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)}
@@ -105,8 +117,11 @@
     }
     .lab-row-actions{display:flex;gap:4px;flex-wrap:wrap}
     .lab-empty{padding:16px;text-align:center;color:var(--lab-muted);font-size:.85rem}
-    .lab-badge{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px;background:#e2e8f0;color:#475569;margin-left:6px}
-  </style>
+    .lab-notif-stack{display:flex;flex-direction:column;gap:16px;max-width:420px;margin-top:14px}
+    .lab-notif-stack .menu-group-title{margin:0 0 8px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)}
+    .lab-notif-stack .menu-group-title--portal-reminders{margin-top:4px}
+    .lab-session-demo{display:flex;flex-direction:column;gap:10px;max-width:420px;margin-top:10px}
+    .lab-session-demo .session-card{text-align:left;cursor:default;pointer-events:none;width:100%}
   <style id="labLiveOverrides"></style>
 </head>
 <body class="portal-colors-lab">
@@ -147,6 +162,20 @@
           <tbody id="labMasterBody"></tbody>
         </table>
       </div>
+      <h3 style="margin:20px 0 8px;font-size:.9rem">Anuncios, reminders, feedback, training</h3>
+      <p class="lab-lead">Tarjetas del quick menu (sección Notifications) — no son overrides de roster.</p>
+      <div class="lab-table-wrap">
+        <table class="lab-table">
+          <thead>
+            <tr>
+              <th>Tarjeta</th>
+              <th>Clase CSS</th>
+              <th>Dónde</th>
+            </tr>
+          </thead>
+          <tbody id="labNotifMasterBody"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="lab-section lab-panel" data-panel="overrides" aria-labelledby="tOverrides">
@@ -179,8 +208,13 @@
           <div class="lab-halo-grid" id="labHaloGrid"></div>
         </div>
         <div class="lab-preview-col">
-          <h3>Tarjetas quick menu</h3>
-          <div class="lab-cards-stack" id="labProdCards"></div>
+          <h3>Quick menu — overrides + notifications</h3>
+          <div class="lab-notif-stack" id="labMenuSheetHost"></div>
+        </div>
+        <div class="lab-preview-col">
+          <h3>Today — Training / Shadowing (admin)</h3>
+          <p class="lab-sub" style="margin-top:0">Sesiones añadidas con <code>session_add</code> — amarillo corporativo en Today.</p>
+          <div class="lab-session-demo" id="labSessionCards"></div>
         </div>
       </div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips + Term pulse</h3>
@@ -193,6 +227,28 @@
   (function(){
     var STORAGE_KEY = 'portalLabAlertColorsV2';
     var CAL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>';
+    var SVG_URGENT = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>';
+    var SVG_ANN = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M11 4.5v15l7-4.2V8.7L11 4.5zM3 9v6h3.5V9H3zm14 .5v7c1.66-.45 3-1.7 3-3.5s-1.34-3.05-3-3.5z"/></svg>';
+    var SVG_FB = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
+    var SVG_VEN = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg>';
+    var SVG_STAR = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7-6.3-4.3-6.3 4.3 2.3-7-6-4.6h7.6L12 2z"/></svg>';
+    var SVG_SHIELD = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+    var SVG_SWIM = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20c2-4 4-6 6-6s4 2 6 6"/><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M16 14l3-2 3 2"/></svg>';
+
+    var NOTIF_CATALOG = [
+      { label: 'Announcement (pendiente firma)', cardClass: 'menu-btn--announcement-attention', donde: 'Quick menu · Need your signature · halo rojo' },
+      { label: 'Announcement (firmado)', cardClass: 'menu-btn--announcement-signed', donde: 'Quick menu · Previously signed' },
+      { label: 'Reminder admin · Notes for workers', cardClass: 'menu-btn--reminder-attention', donde: 'Reminder category notes · naranja/dorado' },
+      { label: 'Reminder admin · Training', cardClass: 'menu-btn--reminder-attention', donde: 'Reminder category training' },
+      { label: 'Outstanding feedback (pendiente)', cardClass: 'menu-btn--qm-outstanding-feedback--need', donde: 'Feedbacks · naranja pulse' },
+      { label: 'Outstanding feedback (al día)', cardClass: 'menu-btn--qm-outstanding-feedback--complete', donde: 'Feedbacks · naranja suave' },
+      { label: 'Venue reminder', cardClass: 'menu-btn--qm-reminder-venue', donde: 'Feedbacks · opening/closing late' },
+      { label: 'Induction (Training menu)', cardClass: 'menu-btn--induction', donde: 'Training grid · blanco default' },
+      { label: 'Safeguarding (Training menu)', cardClass: 'menu-btn--training-safeguarding', donde: 'Training grid' },
+      { label: 'Swimming training', cardClass: 'menu-btn--training-role-swimming', donde: 'Training grid · role modules' },
+      { label: 'Training (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=training' },
+      { label: 'Shadowing (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=shadowing' }
+    ];
 
     var CARD_FIELDS = [
       { key: 'bg1', label: 'Fondo arriba' },
@@ -570,17 +626,143 @@
       }).join('');
     }
 
-    function renderProdCards(){
-      var host = document.getElementById('labProdCards');
+    function menuBtnHtml(opts){
+      var idAttr = opts.id ? ' id="'+esc(opts.id)+'"' : '';
+      var extra = opts.extraClass ? ' '+opts.extraClass : '';
+      var copyInner = opts.blockCopy
+        ? '<div class="portal-quick-reminder-block"><strong>'+opts.blockCopy+'</strong></div>'
+        : '<strong>'+esc(opts.title)+'</strong>'+(opts.sub ? '<span class="menu-btn-sub">'+esc(opts.sub)+'</span>' : '');
+      var copyClass = opts.blockCopy ? ' menu-btn-copy txt' : ' menu-btn-copy';
+      return '<button type="button" class="menu-btn notice menu-btn--qm-tile '+esc(opts.classes)+extra+'"'+idAttr+'>'+
+        '<div class="menu-btn-icon" aria-hidden="true">'+opts.icon+'</div>'+
+        '<div class="'+copyClass.trim()+'">'+copyInner+'</div>'+
+        '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
+    }
+
+    function renderNotifMaster(){
+      var tb = document.getElementById('labNotifMasterBody');
+      if(!tb) return;
+      tb.innerHTML = NOTIF_CATALOG.map(function(n){
+        return '<tr><td><strong>'+esc(n.label)+'</strong></td><td><code>'+esc(n.cardClass)+'</code></td><td>'+esc(n.donde)+'</td></tr>';
+      }).join('');
+    }
+
+    function renderMenuSheet(){
+      var host = document.getElementById('labMenuSheetHost');
       if(!host) return;
-      var btns = state.overrides.map(function(ov){
+      var overrideBtns = state.overrides.map(function(ov){
         return '<button type="button" class="menu-btn notice menu-btn--qm-tile '+esc(ov.cardClass)+' menu-btn--portal-pulse">'+
           '<div class="menu-btn-icon" aria-hidden="true">'+CAL+'</div>'+
           '<div class="menu-btn-copy"><strong>'+esc(ov.sampleTitle)+'</strong><span class="menu-btn-sub">'+esc(ov.sampleSub)+'</span></div>'+
           '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
       }).join('');
-      host.innerHTML = '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
-        '<div class="portal-qm-override-stack">'+btns+'</div></section>';
+      var annPending = menuBtnHtml({
+        id: 'announcementNewNotice',
+        classes: 'announcement menu-btn--announcement-attention menu-btn--portal-pulse',
+        icon: SVG_URGENT,
+        blockCopy: '<span class="announcement-title-line announcement-title-line--quick-menu-only">New Announcement/Reminder</span>'
+      });
+      var annSigned = menuBtnHtml({
+        id: 'announcementSignedLog',
+        classes: 'announcement menu-btn--announcement-signed',
+        icon: SVG_ANN,
+        blockCopy: '<span class="announcement-title-line announcement-title-line--quick-menu-only">Signed Announcements/Reminders</span>'
+      });
+      var notesWorkers = menuBtnHtml({
+        classes: 'menu-btn--reminder-attention menu-btn--portal-pulse',
+        icon: SVG_ANN,
+        title: 'Notes for workers',
+        sub: 'Reminder · category notes · tap to read & sign'
+      });
+      var remTraining = menuBtnHtml({
+        classes: 'menu-btn--reminder-attention menu-btn--portal-pulse',
+        icon: SVG_STAR,
+        title: 'Complete safeguarding refresher',
+        sub: 'Reminder · category training'
+      });
+      var outNeed = menuBtnHtml({
+        id: 'portalOutstandingFeedbackBtn',
+        classes: 'menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse',
+        icon: SVG_FB,
+        title: 'Outstanding feedbacks x3',
+        sub: 'Complete session feedback'
+      });
+      var outOk = menuBtnHtml({
+        classes: 'menu-btn--qm-outstanding-feedback--complete',
+        icon: SVG_FB,
+        title: 'Outstanding feedbacks = 0',
+        sub: 'All caught up through today'
+      });
+      var venueRem = menuBtnHtml({
+        classes: 'menu-btn--qm-reminder-venue menu-btn--portal-pulse',
+        icon: SVG_VEN,
+        title: 'Venue report',
+        sub: 'Opening check incomplete (late)'
+      });
+      var induction = menuBtnHtml({
+        classes: 'menu-btn--induction',
+        icon: SVG_STAR,
+        title: 'Induction',
+        sub: 'Core company training'
+      });
+      var safeguarding = menuBtnHtml({
+        classes: 'menu-btn--training-safeguarding',
+        icon: SVG_SHIELD,
+        title: 'Safeguarding',
+        sub: 'Mandatory training (NSPCC My Learning)'
+      });
+      var swimTrain = menuBtnHtml({
+        classes: 'menu-btn--training-role-swimming',
+        icon: SVG_SWIM,
+        title: 'Swimming Training',
+        sub: 'Modules linked to your role'
+      });
+
+      host.innerHTML =
+        '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
+          '<p class="lab-sub" style="margin:0 0 10px">Schedule overrides (logo-lite top)</p>'+
+          '<div class="portal-qm-override-stack">'+overrideBtns+'</div>'+
+          '<div class="menu-group" id="portalQuickMenuNotificationsGroup" style="margin-top:16px">'+
+            '<div class="menu-group-title">Announcements</div>'+
+            '<div class="menu-grid menu-grid--portal-notices menu-grid--portal-announcements-split" id="portalQuickMenuNoticesGrid">'+
+              '<div class="portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--pending">'+
+                '<p class="portal-quickmenu-announcement-subtitle">Need your signature</p>'+annPending+
+              '</div>'+
+              '<div class="portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--signed">'+
+                '<p class="portal-quickmenu-announcement-subtitle">Previously signed</p>'+annSigned+
+              '</div>'+
+            '</div>'+
+            '<div class="menu-group-title menu-group-title--portal-reminders">Feedbacks</div>'+
+            '<div class="menu-grid menu-grid--portal-outstanding-feedback" id="portalQuickMenuOutstandingFeedbackSlot">'+outNeed+outOk+'</div>'+
+            '<div class="menu-grid menu-grid--portal-reminder-single" id="portalQuickMenuReminderGroup">'+
+              '<div id="portalQuickMenuReminderBannerHost">'+venueRem+'</div>'+
+            '</div>'+
+            '<div class="menu-group-title menu-group-title--portal-reminders">Reminders (admin)</div>'+
+            '<div class="menu-grid menu-grid--portal-reminder-single">'+
+              '<div class="portal-qm-reminder-stack">'+notesWorkers+remTraining+'</div>'+
+            '</div>'+
+            '<div class="menu-group-title">Training</div>'+
+            '<div class="menu-grid" id="quickMenuTrainingGrid">'+induction+safeguarding+swimTrain+'</div>'+
+          '</div>'+
+        '</section>';
+    }
+
+    function renderSessionCards(){
+      var host = document.getElementById('labSessionCards');
+      if(!host) return;
+      host.innerHTML =
+        '<div class="section-card--today">'+
+          '<button type="button" class="session-card session-card--ov-yellow session-card--client">'+
+            '<div class="session-line session-line--head"><span class="session-time">10 to 11 am</span><span class="session-venue">Westway</span></div>'+
+            '<div class="session-line"><strong>Training</strong></div>'+
+            '<div class="session-line session-line--symbol"><span class="session-ov-symbol-text">Room</span></div>'+
+          '</button>'+
+          '<button type="button" class="session-card session-card--ov-yellow session-card--client">'+
+            '<div class="session-line session-line--head"><span class="session-time">2 to 4 pm</span><span class="session-venue">Acton</span></div>'+
+            '<div class="session-line"><strong>Shadowing</strong></div>'+
+            '<div class="session-line session-line--symbol"><span class="session-ov-symbol-text">Pool</span></div>'+
+          '</button>'+
+        '</div>';
     }
 
     function renderChipDemos(){
@@ -642,12 +824,14 @@
 
     function renderPreviews(){
       renderHalos();
-      renderProdCards();
+      renderMenuSheet();
+      renderSessionCards();
       renderChipDemos();
     }
 
     function renderAll(){
       renderMaster();
+      renderNotifMaster();
       renderOverrideTable();
       renderHaloTable();
       buildLiveCss();
