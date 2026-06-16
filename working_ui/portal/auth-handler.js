@@ -1521,7 +1521,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260610-visit-heartbeat-light"
+          "./portal_visit_tracker.js?v=20260616-warn-rate-limit"
         );
         await startPortalVisitTracker({ page, profile, session });
       }

@@ -265,6 +265,17 @@
 
   function portalWarnUnlessOffline(label, status, err) {
     if (portalNetworkIsOffline()) return;
+    try {
+      if (!global.__PORTAL_WARN_LOG__) global.__PORTAL_WARN_LOG__ = Object.create(null);
+      var key = String(label || "warn").trim();
+      var now = Date.now();
+      var prev = Number(global.__PORTAL_WARN_LOG__[key]) || 0;
+      if (now - prev < 60000) {
+        console.debug(label, status, err || "");
+        return;
+      }
+      global.__PORTAL_WARN_LOG__[key] = now;
+    } catch (_) {}
     console.warn(label, status, err || "");
   }
 
