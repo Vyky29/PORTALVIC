@@ -10086,6 +10086,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedSlugifyDisplayName(nm){
       return String(nm || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
     }
+    /** Show first name only in UI — strip "(Trial 28/06)" style suffixes; TYPE column already says Trial. */
+    function schedParticipantDisplayName(raw){
+      var s = String(raw || '').trim();
+      if(!s) return s;
+      var stripped = s.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+      return stripped || s;
+    }
     function schedBuildReplacementPickList(){
       var bySlug = {};
       function add(slug, display){
@@ -12962,7 +12969,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var replName = String(ov.payload && (ov.payload.to_client_name || ov.payload.replacement_client_name) || '').trim();
         var movedIn = ov.payload && ov.payload.client_move;
         var origLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
-        var replLab = replName || replSlug || 'replacement';
+        var replLab = schedParticipantDisplayName(replName || replSlug || 'replacement');
         var openSlotMakeup = schedIsOpenSlotSlug(ov.anchor_client_id) || schedIsOpenSlotSlug(slot.clientSlug);
         if(schedOverrideIsTrial(ov)){
           if(openSlotMakeup && !movedIn){
@@ -13234,7 +13241,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var cBtn = resolveAdminClientDrawerId(o.anchor_client_id);
             var cLabRaw = String(o.anchor_client_id || '—');
             var p = o.payload || {};
-            var repLab = String(p.to_client_name || p.replacement_client_name || p.to_client_id || p.replacement_client_id || '').trim();
+            var repLab = schedParticipantDisplayName(String(p.to_client_name || p.replacement_client_name || p.to_client_id || p.replacement_client_id || '').trim());
             if(String(o.override_type || '').trim() === 'client_replace_in_slot' && repLab){
               cLabRaw = repLab + (schedIsOpenSlotSlug(o.anchor_client_id) ? '' : (' · was ' + String(o.anchor_client_id || '')));
             }

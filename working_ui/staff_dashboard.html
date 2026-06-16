@@ -5843,6 +5843,12 @@
       var lab = String(name || '').trim();
       return /\(\s*trial\b/i.test(lab) || /\btrial\s+\d{1,2}[\/\.-]\d{1,2}/i.test(lab);
     }
+    function portalParticipantDisplayName(raw){
+      var s = String(raw || '').trim();
+      if(!s) return s;
+      var stripped = s.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+      return stripped || s;
+    }
     function portalOverrideReplacementClientId(payload){
       if(!payload) return '';
       if(typeof payload === 'string'){
@@ -8992,7 +8998,7 @@
             time,
             kind: 'client',
             clientId: effClientId,
-            name: c.name || nameFromReplace || effClientId,
+            name: portalParticipantDisplayName(c.name || nameFromReplace || effClientId),
             activity,
             areaLabel,
             poolLocationLabel,

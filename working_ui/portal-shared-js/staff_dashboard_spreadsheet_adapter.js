@@ -201,6 +201,7 @@
     junaid: "junaid_f",
     khalid_ab: "khalid",
     rayyan_fi: "rayyan_f",
+    chaitanya_trial_28_06: "chaitanya",
   };
 
   /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
