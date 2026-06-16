@@ -10,10 +10,18 @@
   function parseHm(token) {
     const t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
+    const colonIdx = t.indexOf(":");
+    if (colonIdx >= 0) {
+      return {
+        h: parseInt(t.slice(0, colonIdx), 10) || 0,
+        m: parseInt(t.slice(colonIdx + 1), 10) || 0,
+      };
+    }
     const parts = t.split(".");
-    const h = parseInt(parts[0], 10) || 0;
-    const m = parts.length > 1 ? (parseInt(parts[1], 10) || 0) : 0;
-    return { h, m };
+    return {
+      h: parseInt(parts[0], 10) || 0,
+      m: parts.length > 1 ? parseInt(parts[1], 10) || 0 : 0,
+    };
   }
 
   function hourTo24(hour, day) {
@@ -225,6 +233,7 @@
       if (!map[canon]) map[canon] = label;
     }
     put("aadam_ah", "Adaam Ah");
+    put("eddie", "Eddie Mc");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)

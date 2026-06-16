@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-term-close" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-trial-eddie-mc" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-label-space" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -5800,6 +5800,7 @@
       if(t === 'green') return ' session-card--ov-green';
       if(t === 'yellow') return ' session-card--ov-yellow';
       if(t === 'pink') return ' session-card--ov-pink';
+      if(t === 'trial' || t === 'purple') return ' session-card--ov-trial';
       if(t === 'blue') return ' session-card--ov-blue';
       if(t === 'red') return ' session-card--ov-red';
       return '';
@@ -5809,6 +5810,7 @@
       if(t === 'client_absence_announced') return 'override--absent';
       if(t === 'slot_close') return 'override--closed';
       if(t === 'slot_open') return 'override--slot-open';
+      if(item && item.portalOverrideTrialTag) return 'override--trial';
       if(t === 'client_replace_in_slot' || t === 'replace_participant') return 'override--replace';
       if(t === 'instructor_reassign') return 'override--instructor';
       if(t === 'slot_update') return 'override--updated';
@@ -5827,6 +5829,15 @@
       if(manual === 'REPLACED') return 'override--replace';
       if(manual === 'REASSIGNED') return 'override--instructor';
       return '';
+    }
+    function portalOverrideIsTrial(ov){
+      if(!ov) return false;
+      var p = ov.payload || {};
+      if(typeof p === 'string'){
+        try{ p = JSON.parse(p); }catch(_){ p = {}; }
+      }
+      if(p.is_trial === true || String(p.booking_kind || '').trim().toLowerCase() === 'trial') return true;
+      return String(p.session_kind || '').trim().toLowerCase() === 'trial';
     }
     function portalOverrideReplacementClientId(payload){
       if(!payload) return '';
@@ -5907,6 +5918,7 @@
       const sym = String(item.portalOverrideSymbolText || '').trim();
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
+      const isTrialSym = symNorm === 'trial';
 
       if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent"><span>Absent</span></span>';
@@ -5916,6 +5928,9 @@
       }
       if(pillNorm === 'COMPLETED'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
+      }
+      if(!!item.portalOverrideTrialTag || isTrialSym){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial"><span>Trial</span></span>';
       }
       if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>';
@@ -5993,12 +6008,18 @@
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
       if(sym){
+        if(isTrialSym){
+          return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--trial" aria-label="Trial"><span>TRIAL</span></span>';
+        }
         if(isMakeUpSym){
           return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--makeup" aria-label="Make up"><span>MAKE UP</span></span>';
         } else {
         const tx = escapeHtml(sym);
         return `<span class="session-ov-symbol-text" aria-label="${tx}">${tx}</span>`;
         }
+      }
+      if(!!item.portalOverrideTrialTag){
+        return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--trial" aria-label="Trial"><span>TRIAL</span></span>';
       }
       if(!!item.portalOverrideMakeUpTag){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--makeup" aria-label="Make up"><span>MAKE UP</span></span>';
@@ -7225,7 +7246,7 @@
     }
     function portalTodayCardUsesReplaceOverride(it){
       if(!it || it.kind !== 'client') return false;
-      if(it.portalOverrideMakeUpTag) return true;
+      if(it.portalOverrideTrialTag || it.portalOverrideMakeUpTag) return true;
       const ov = it.__portalScheduleOverride;
       return !!(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot');
     }
@@ -7285,7 +7306,8 @@
       const showSpec = !isBespokeActivity(activity);
       const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
       const rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
-      const makeUpPink = !isSessionEndedForFeedback({ sessionEndTs: rowTs.sessionEndTs, sessionKey });
+      const isTrial = portalOverrideIsTrial(ov);
+      const makeUpPink = !isTrial && !isSessionEndedForFeedback({ sessionEndTs: rowTs.sessionEndTs, sessionKey });
       const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
         && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
       return {
@@ -7307,9 +7329,10 @@
         sessionStartTs: rowTs.sessionStartTs,
         sessionEndTs: rowTs.sessionEndTs,
         scheduleAdminAdjusted: true,
-        portalOverrideMakeUpTag: true,
-        portalOverrideCardTone: slotWasUpdated ? 'blue' : (makeUpPink ? 'pink' : ''),
-        portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
+        portalOverrideMakeUpTag: !isTrial,
+        portalOverrideTrialTag: isTrial,
+        portalOverrideCardTone: slotWasUpdated ? 'blue' : (isTrial ? 'trial' : (makeUpPink ? 'pink' : '')),
+        portalOverrideSymbolText: isTrial ? 'Trial' : (makeUpPink ? 'Make Up Session' : ''),
         portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,
@@ -8953,8 +8976,9 @@
           const showSpec = !isBespokeActivity(activity);
           const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
+          const isTrialOv = hasReplaceOv && portalOverrideIsTrial(ov);
           const replacedVisual = manualOv === 'REPLACED';
-          const makeUpPink = (hasReplaceOv || replacedVisual) && !isSessionEndedForFeedback({
+          const makeUpPink = !isTrialOv && (hasReplaceOv || replacedVisual) && !isSessionEndedForFeedback({
             sessionEndTs,
             sessionKey
           });
@@ -8978,9 +9002,10 @@
             sessionKey,
             sessionStartTs,
             sessionEndTs,
-            portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual),
-            portalOverrideCardTone: slotWasUpdated ? 'blue' : (makeUpPink ? 'pink' : ''),
-            portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
+            portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual) && !isTrialOv,
+            portalOverrideTrialTag: isTrialOv,
+            portalOverrideCardTone: slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : (makeUpPink ? 'pink' : '')),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (makeUpPink ? 'Make Up Session' : ''),
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
             portalRosterTimeUpdated: !!slotWasUpdated
@@ -9144,9 +9169,10 @@
         const showPoolSymbol = !!(poolLocationLabel || areaLabel);
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
+        const isTrialCoverOv = hasReplaceCoverOv && portalOverrideIsTrial(slotOv);
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
-        const makeUpPinkCover = hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        const makeUpPinkCover = !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
         extra.push({
           time,
           kind: 'client',
@@ -9166,9 +9192,10 @@
           sessionStartTs: coverTs.sessionStartTs,
           sessionEndTs: coverTs.sessionEndTs,
           scheduleAdminAdjusted: true,
-          portalOverrideMakeUpTag: hasReplaceCoverOv,
-          portalOverrideCardTone: makeUpPinkCover ? 'pink' : '',
-          portalOverrideSymbolText: makeUpPinkCover ? 'Make Up Session' : '',
+          portalOverrideMakeUpTag: hasReplaceCoverOv && !isTrialCoverOv,
+          portalOverrideTrialTag: isTrialCoverOv,
+          portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : ''),
+          portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up Session' : ''),
           portalOverrideHideAdminBadge: false,
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
@@ -10809,8 +10836,13 @@
               var fbItem = { sessionEndTs: sessionEndTs, sessionKey: sk, __portalBaseSession: s, dayCentre: portalRosterSessionIsDayCentre(s) };
               var rec = (typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(fbItem) : null) || {};
               if(typeof isSessionEndedForFeedback === 'function' && !isSessionEndedForFeedback(fbItem)){
-                futureOverrideTone = 'pink';
-                futureOverrideLabel = 'Make Up Session';
+                if(ov && portalOverrideIsTrial(ov)){
+                  futureOverrideTone = 'trial';
+                  futureOverrideLabel = 'Trial';
+                } else {
+                  futureOverrideTone = 'pink';
+                  futureOverrideLabel = 'Make Up Session';
+                }
               } else if(typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(fbItem)){
                 if(!rec.feedbackDone && !rec.absent && !rec.cancelled){
                   futureOverrideTone = 'pending-feedback';
@@ -11946,7 +11978,7 @@
       return false;
     }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
-      const out = { hasMakeUp: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false };
+      const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false };
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const d = String(dayName || '').trim();
@@ -11971,7 +12003,10 @@
           if(manualOv === 'REPLACED') out.hasMakeUp = true;
           const ov = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(baseSession, iso) : null;
           const t = String(ov && ov.override_type || '').trim();
-          if(t === 'client_replace_in_slot') out.hasMakeUp = true;
+          if(t === 'client_replace_in_slot'){
+            if(portalOverrideIsTrial(ov)) out.hasTrial = true;
+            else out.hasMakeUp = true;
+          }
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
           if(t === 'slot_clear_client' && ov && ov.payload && ov.payload.cancelled_by_admin) out.hasCancelled = true;
           if(t === 'slot_update'){
@@ -11982,7 +12017,7 @@
             }
           }
           if(typeof portalSessionRosterTimeWasUpdated === 'function' && portalSessionRosterTimeWasUpdated(baseSession, iso)) out.hasUpdated = true;
-          if(out.hasMakeUp && out.hasAbsentAnnounced && out.hasCancelled && out.hasUpdated) break;
+          if(out.hasMakeUp && out.hasTrial && out.hasAbsentAnnounced && out.hasCancelled && out.hasUpdated) break;
         }
       }catch(_){ }
       return out;
@@ -12021,11 +12056,14 @@
         const sc = scoreForType(tEff === 'slot_clear_client_cancelled' ? 'slot_close' : tEff);
         if(sc <= 0) return;
         if(!best || sc > best.score || (sc === best.score && new Date(ov.created_at || 0) > new Date(best.created_at || 0))){
-          best = { score: sc, type: tEff, created_at: ov.created_at || null };
+          best = { score: sc, type: tEff, created_at: ov.created_at || null, ov: ov };
         }
       });
       if(!best) return null;
       if(best.type === 'client_replace_in_slot'){
+        if(portalOverrideIsTrial(best.ov)){
+          return { tone: 'trial', label: 'Trial', priority: 3, type: best.type };
+        }
         return { tone: 'pink', label: 'Make Up Session', priority: 3, type: best.type };
       }
       if(best.type === 'slot_clear_client'){
@@ -12135,8 +12173,12 @@
         ariaBits.push('off');
       }
       const tone = weekRowVisualKind(item);
-      if(dayFlags.hasMakeUp || dayFlags.hasAbsentAnnounced || dayFlags.hasCancelled || dayFlags.hasUpdated){
+      if(dayFlags.hasMakeUp || dayFlags.hasTrial || dayFlags.hasAbsentAnnounced || dayFlags.hasCancelled || dayFlags.hasUpdated){
         const badgeParts = [];
+        if(dayFlags.hasTrial){
+          badgeParts.push('<span class="week-override-tag week-override-tag--trial">' + escapeHtml('Trial') + '</span>');
+          ariaBits.push('Trial');
+        }
         if(dayFlags.hasMakeUp){
           badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up Session') + '</span>');
           ariaBits.push('Make Up Session');
@@ -12172,7 +12214,9 @@
         tomorrowCard.setAttribute('aria-label', 'Open next session list — ' + c);
         const nextRows = Array.isArray(dashboardData.tomorrow) ? dashboardData.tomorrow : [];
         const hasMakeUp = nextRows.some(function(r){ return String(r && r.futureOverrideTone || '').trim() === 'pink'; });
+        const hasTrial = nextRows.some(function(r){ return String(r && r.futureOverrideTone || '').trim() === 'trial'; });
         tomorrowCard.classList.toggle('mini-card--ov-pink', hasMakeUp);
+        tomorrowCard.classList.toggle('mini-card--ov-trial', hasTrial);
       }
       if(weekCard){
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
@@ -13243,10 +13287,19 @@
           const ovRaw = String(row.futureOverrideLabel || '').trim();
           const isMakeUpTomorrowRow = row.futureOverrideTone === 'pink'
             && /make\s*up/i.test(ovRaw);
+          const isTrialTomorrowRow = row.futureOverrideTone === 'trial'
+            || /trial/i.test(ovRaw);
           let noteHtml = '';
           let makeupPillHtml = '';
+          let trialPillHtml = '';
           let noteWithOverride = '';
-          if(isMakeUpTomorrowRow){
+          if(isTrialTomorrowRow){
+            noteWithOverride = [noteRaw, ovRaw || 'Trial'].filter(Boolean).join(' · ');
+            if(noteRaw && typeof portalAreaNoteIconHtml === 'function'){
+              noteHtml = portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm', showLabel: true, layout: 'inline', labelText: noteRaw });
+            }
+            trialPillHtml = '<span class="tomorrow-trial-pill" aria-label="Trial session"><span>TRIAL</span></span>';
+          } else if(isMakeUpTomorrowRow){
             noteWithOverride = [noteRaw, ovRaw].filter(Boolean).join(' · ');
             if(noteRaw && typeof portalAreaNoteIconHtml === 'function'){
               noteHtml = portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm', showLabel: true, layout: 'inline', labelText: noteRaw });
@@ -13268,19 +13321,21 @@
             : '';
           const ovToneCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green'
             ? ' calendar-day--tomorrow-ov-done'
+            : (row.futureOverrideTone === 'trial'
+            ? ' calendar-day--tomorrow-ov-trial'
             : (row.futureOverrideTone === 'pink'
             ? ' calendar-day--tomorrow-ov-pink'
             : (row.futureOverrideTone === 'pending-feedback'
               ? ' calendar-day--tomorrow-ov-pending'
               : (row.futureOverrideTone === 'done'
                 ? ' calendar-day--tomorrow-ov-done'
-                : (row.futureOverrideTone === 'admin' ? ' calendar-day--tomorrow-ov-admin' : ''))));
+                : (row.futureOverrideTone === 'admin' ? ' calendar-day--tomorrow-ov-admin' : '')))));
             const aria = escapeHtml(
-            `${row.name}${noteWithOverride ? ', ' + noteWithOverride : ''}${makeupPillHtml ? ', Make up' : ''}, ${timeShown}, ${row.venue}${absentPillHtml ? ', Absent' : ''}${cancelledPillHtml ? ', Cancelled' : ''}`
+            `${row.name}${noteWithOverride ? ', ' + noteWithOverride : ''}${trialPillHtml ? ', Trial' : ''}${makeupPillHtml ? ', Make up' : ''}, ${timeShown}, ${row.venue}${absentPillHtml ? ', Absent' : ''}${cancelledPillHtml ? ', Cancelled' : ''}`
             );
             const absentRowCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' calendar-day--tomorrow-absent-noninteractive' : '';
             const absentRowTab = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' tabindex="-1"' : '';
-            const rowInner = `${avatar}<div class="calendar-day-tomorrow-middle"><span class="calendar-day-name">${n}</span>${noteHtml}${makeupPillHtml}${absentPillHtml}${cancelledPillHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
+            const rowInner = `${avatar}<div class="calendar-day-tomorrow-middle"><span class="calendar-day-name">${n}</span>${noteHtml}${trialPillHtml}${makeupPillHtml}${absentPillHtml}${cancelledPillHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
             const rawClientId = escapeHtml(String(row.clientId || '').trim());
             const rawName = escapeHtml(String(row.name || '').trim());
             const timeSub = escapeHtml(String(timeShown || '').trim());

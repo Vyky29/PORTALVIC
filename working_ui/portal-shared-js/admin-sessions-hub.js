@@ -481,10 +481,19 @@
 
   function parseHm(token) {
     var t = String(token || "").trim();
+    if (!t) return { h: 0, m: 0 };
+    var colonIdx = t.indexOf(":");
+    if (colonIdx >= 0) {
+      return {
+        h: parseInt(t.slice(0, colonIdx), 10) || 0,
+        m: parseInt(t.slice(colonIdx + 1), 10) || 0,
+      };
+    }
     var parts = t.split(".");
-    var h = parseInt(parts[0], 10) || 0;
-    var m = parts.length > 1 ? parseInt(parts[1], 10) || 0 : 0;
-    return { h: h, m: m };
+    return {
+      h: parseInt(parts[0], 10) || 0,
+      m: parts.length > 1 ? parseInt(parts[1], 10) || 0 : 0,
+    };
   }
 
   function hourTo24(hour, day) {

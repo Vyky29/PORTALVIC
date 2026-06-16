@@ -51,6 +51,13 @@
   function parseHmToken(token) {
     var t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
+    var colonIdx = t.indexOf(":");
+    if (colonIdx >= 0) {
+      return {
+        h: parseInt(t.slice(0, colonIdx), 10) || 0,
+        m: parseInt(t.slice(colonIdx + 1), 10) || 0,
+      };
+    }
     var parts = t.split(".");
     return {
       h: parseInt(parts[0], 10) || 0,
@@ -383,6 +390,23 @@
       var iso = normIso(row.session_date);
       if (!iso || !row.time_slot) return true;
       return !occupiedSlots[openedSlotKey(iso, row)];
+    });
+
+    var seenOpenSlot = Object.create(null);
+    out = out.filter(function (row) {
+      if (!isNoClientName(row.client_name)) return true;
+      var iso = normIso(row.session_date);
+      if (!iso || !row.time_slot) return true;
+      var day = String(row.day || weekdayLongFromIso(iso) || "").trim();
+      var dk = [
+        iso,
+        slotBoundsKey(row.time_slot, day),
+        normInstructors(row.instructors),
+        String(row.venue || "").trim().toLowerCase(),
+      ].join("|");
+      if (seenOpenSlot[dk]) return false;
+      seenOpenSlot[dk] = true;
+      return true;
     });
 
     return out.sort(function (a, b) {

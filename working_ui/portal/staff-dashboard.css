@@ -3183,11 +3183,13 @@
     .override--absent{background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(200,160,40,.55)}
     .override--closed{background:linear-gradient(180deg,rgba(255,235,238,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(183,28,28,.45)}
     .override--replace{background:linear-gradient(180deg,rgba(252,228,236,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(194,24,91,.32)}
+    .override--trial{background:linear-gradient(180deg,rgba(243,232,255,.98) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.32)}
     .override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
     .override--slot-open{background:linear-gradient(180deg,rgba(224,242,254,.92) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(8,145,178,.38)}
     .portal-sched-ov-badge.override--absent{background:rgba(212,140,38,.14);color:#a56a12;border-color:rgba(212,140,38,.34)}
     .portal-sched-ov-badge.override--closed{background:rgba(183,28,28,.13);color:#9b1f1f;border-color:rgba(183,28,28,.32)}
     .portal-sched-ov-badge.override--replace{background:rgba(194,24,91,.13);color:#a81f63;border-color:rgba(194,24,91,.3)}
+    .portal-sched-ov-badge.override--trial{background:#f3e8ff;color:#7c3aed;border-color:rgba(124,58,237,.32)}
     .portal-sched-ov-badge.override--instructor{background:rgba(45,132,179,.12);color:#2d84b3;border-color:rgba(45,132,179,.28)}
     .portal-sched-ov-badge.override--slot-open{background:rgba(8,145,178,.14);color:#0e7490;border-color:rgba(8,145,178,.32)}
     .portal-sched-ov-badge.override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
@@ -3214,9 +3216,17 @@
       background:rgba(252,233,241,.92);
       border-color:rgba(136,14,79,.72);
     }
+    .session-card--ov-trial{
+      background:linear-gradient(180deg,rgba(243,232,255,.96) 0%,rgba(255,255,255,.98) 100%);
+      border-color:rgba(124,58,237,.42);
+    }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
       border-color:#c2185b;
+    }
+    .section-card--today .session-card.session-card--ov-trial,
+    .section-card--today .session-card.override--trial{
+      border-color:#7c3aed;
     }
     .session-card--ov-blue{
       background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);
@@ -3241,6 +3251,7 @@
     .session-card.override--portal-cancelled{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder);box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow)}
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
+    .session-card.override--trial{background:linear-gradient(180deg,rgba(243,232,255,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.42)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
       background:var(--reviewOrangeBg);
       border-color:var(--reviewOrangeBorder);
@@ -4306,6 +4317,12 @@
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
     }
+    .portal-session-slot-chip--trial{
+      color:#fff;
+      background:linear-gradient(180deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.34);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(124,58,237,.22);
+    }
     .portal-session-slot-chip--plain{
       color:var(--muted);
       background:rgba(23,50,71,.06);
@@ -4436,6 +4453,13 @@
       background:linear-gradient(180deg,#d94f93,#c2185b);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(194,24,91,.22);
+    }
+    .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--trial,
+    .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--trial{
+      color:#fff;
+      background:linear-gradient(180deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.34);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--absent,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--absent{
@@ -4800,6 +4824,21 @@
     .section-card--overview .mini-card.mini-card--ov-pink .title,
     .section-card--overview .mini-card.mini-card--ov-pink .value{
       color:#9c1248;
+    }
+    .section-card--overview .mini-card.mini-card--ov-trial{
+      background:linear-gradient(180deg,#f5f0ff 0%,#ede9fe 100%);
+      border-color:rgba(124,58,237,.34);
+      box-shadow:0 4px 16px rgba(124,58,237,.14);
+    }
+    .section-card--overview .mini-card.mini-card--ov-trial .mini-card-icon{
+      background:linear-gradient(180deg,#a78bfa,#7c3aed);
+      color:#fff;
+      border-color:rgba(91,33,182,.34);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
+    }
+    .section-card--overview .mini-card.mini-card--ov-trial .title,
+    .section-card--overview .mini-card.mini-card--ov-trial .value{
+      color:#6d28d9;
     }
     .section-card--overview .mini-card:active{transform:translateY(0)}
     .section-card--overview .mini-card-icon{
@@ -5367,6 +5406,11 @@
       color:#9c1248;
       border:1px solid rgba(194,24,91,.28);
     }
+    .week-override-tag--trial{
+      background:rgba(124,58,237,.12);
+      color:#6d28d9;
+      border:1px solid rgba(124,58,237,.28);
+    }
     .week-override-tag--absent{
       background:rgba(24,67,133,.14);
       color:#173f7b;
@@ -5413,6 +5457,10 @@
       background:linear-gradient(180deg,#fff0f7 0%,#ffe8f2 100%);
       border-color:rgba(194,24,91,.32);
     }
+    .calendar-day--tomorrow.calendar-day--tomorrow-ov-trial{
+      background:linear-gradient(180deg,#f5f0ff 0%,#ede9fe 100%);
+      border-color:rgba(124,58,237,.32);
+    }
     .calendar-day--tomorrow.calendar-day--tomorrow-ov-pending{
       background:linear-gradient(180deg,#fff8f0 0%,#fff0e0 100%);
       border-color:rgba(200,110,45,.35);
@@ -5458,7 +5506,8 @@
     }
     .calendar-day-tomorrow-middle .tomorrow-absent-pill,
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill,
-    .calendar-day-tomorrow-middle .tomorrow-makeup-pill{
+    .calendar-day-tomorrow-middle .tomorrow-makeup-pill,
+    .calendar-day-tomorrow-middle .tomorrow-trial-pill{
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -5501,6 +5550,24 @@
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(194,24,91,.22);
     }
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill > span{
+      color:#fff;
+      font-size:inherit;
+      font-weight:inherit;
+      letter-spacing:inherit;
+      text-transform:inherit;
+      line-height:inherit;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
+    }
+    .calendar-day-tomorrow-middle .tomorrow-trial-pill{
+      color:#fff;
+      background:linear-gradient(180deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.34);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
+    }
+    .calendar-day-tomorrow-middle .tomorrow-trial-pill > span{
       color:#fff;
       font-size:inherit;
       font-weight:inherit;
