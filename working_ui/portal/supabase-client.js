@@ -1185,7 +1185,7 @@ export function portalClearPersistedSupabaseAuth() {
 export async function portalLogout() {
   try {
     const { endPortalVisitSession } = await import(
-      "./portal_visit_tracker.js?v=20260616-warn-rate-limit"
+      "./portal_visit_tracker.js?v=20260616-visit-pulse-rpc"
     );
     await endPortalVisitSession();
   } catch {

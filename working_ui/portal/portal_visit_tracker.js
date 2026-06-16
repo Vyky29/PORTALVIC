@@ -9,10 +9,12 @@ import {
 } from "./portal_live_presence.js";
 
 const STORAGE_KEY = "portalVisitSessionId_v1";
-const HEARTBEAT_MS = 12000;
-const FLUSH_MS = 45000;
+/** Admin online bar treats visits stale after ~90s — pulse every 45s is enough. */
+const HEARTBEAT_MS = 45000;
 const MAX_PAGES = 64;
 const MAX_FORM_SUBMITS = 32;
+const PULSE_BACKOFF_MS = 120000;
+const MAX_CONSECUTIVE_FAILS = 3;
 
 /** @type {string | null} */
 let _sessionId = null;
@@ -38,6 +40,14 @@ let _listenersBound = false;
 let _pagesDirty = false;
 /** @type {boolean} */
 let _heartbeatLightMode = false;
+/** @type {boolean} */
+let _writeInFlight = false;
+/** @type {number} */
+let _consecutiveFails = 0;
+/** @type {number} */
+let _pulseBackoffUntil = 0;
+/** @type {boolean | null} */
+let _rpcPulseAvailable = null;
 
 const SHEET_VISIT_LABELS = {
   menuSheet: "menu",
@@ -159,6 +169,189 @@ function visitSessionErrorIsTimeout(error) {
   return msg.indexOf("statement timeout") >= 0 || msg.indexOf("canceling statement") >= 0;
 }
 
+function visitSessionErrorIsMissingRpc(error) {
+  const msg = String((error && error.message) || error || "").toLowerCase();
+  return (
+    msg.indexOf("portal_visit_session_pulse") >= 0 ||
+    msg.indexOf("portal_visit_session_patch") >= 0 ||
+    (msg.indexOf("function") >= 0 && msg.indexOf("does not exist") >= 0)
+  );
+}
+
+function visitSessionAccumulateActiveMs() {
+  const now = Date.now();
+  if (document.visibilityState === "visible" && _visibleSince > 0) {
+    _activeTabAccumMs += Math.max(0, now - _visibleSince);
+    _visibleSince = now;
+  }
+  return Math.round(_activeTabAccumMs);
+}
+
+function visitSessionLogIssue(kind, error, quiet) {
+  const msg = error && error.message ? error.message : String(error || "");
+  if (quiet) {
+    console.debug("[portal] visit session " + kind, msg);
+    return;
+  }
+  if (typeof globalThis.portalWarnUnlessOffline === "function") {
+    globalThis.portalWarnUnlessOffline("[portal] visit session " + kind, "", msg);
+  } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
+    console.warn("[portal] visit session " + kind, msg);
+  }
+}
+
+function visitSessionMarkSuccess(hadJsonPatch) {
+  _consecutiveFails = 0;
+  _pulseBackoffUntil = 0;
+  if (hadJsonPatch) {
+    _pagesDirty = false;
+    _heartbeatLightMode = false;
+  }
+}
+
+function visitSessionMarkFailure(error, kind, hadJsonPatch) {
+  if (visitSessionErrorIsTimeout(error)) _heartbeatLightMode = true;
+  _consecutiveFails += 1;
+  if (_consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
+    _pulseBackoffUntil = Date.now() + PULSE_BACKOFF_MS;
+  }
+  const quiet = _heartbeatLightMode && !hadJsonPatch;
+  visitSessionLogIssue(kind, error, quiet);
+}
+
+async function visitSessionDirectUpdate(payload) {
+  return _client
+    .from("portal_staff_visit_sessions")
+    .update(payload)
+    .eq("id", _sessionId)
+    .eq("staff_user_id", _userId);
+}
+
+async function visitSessionPulseRpc(scalars) {
+  if (_rpcPulseAvailable === false) return { ok: false, skipped: true };
+  const { data, error } = await _client.rpc("portal_visit_session_pulse", {
+    p_session_id: _sessionId,
+    p_last_page_label: scalars.last_page_label || null,
+    p_active_tab_ms: scalars.active_tab_ms,
+    p_total_ms: scalars.total_ms,
+  });
+  if (error) {
+    if (visitSessionErrorIsMissingRpc(error)) _rpcPulseAvailable = false;
+    return { ok: false, error };
+  }
+  _rpcPulseAvailable = true;
+  if (data === false) return { ok: false, error: { message: "session_not_found" } };
+  return { ok: true, error: null };
+}
+
+async function visitSessionPatchRpc(scalars, jsonExtra) {
+  if (_rpcPulseAvailable === false) return { ok: false, skipped: true };
+  const { data, error } = await _client.rpc("portal_visit_session_patch", {
+    p_session_id: _sessionId,
+    p_last_page_label: scalars.last_page_label || null,
+    p_active_tab_ms: scalars.active_tab_ms,
+    p_total_ms: scalars.total_ms,
+    p_pages: jsonExtra.pages != null ? jsonExtra.pages : null,
+    p_form_submits: jsonExtra.form_submits != null ? jsonExtra.form_submits : null,
+  });
+  if (error) {
+    if (visitSessionErrorIsMissingRpc(error)) _rpcPulseAvailable = false;
+    return { ok: false, error };
+  }
+  _rpcPulseAvailable = true;
+  if (data === false) return { ok: false, error: { message: "session_not_found" } };
+  return { ok: true, error: null };
+}
+
+/**
+ * @param {{ last_page_label?: string, pages?: unknown, form_submits?: unknown, forceJson?: boolean }} opts
+ */
+async function visitSessionWrite(opts) {
+  if (!_client || !_sessionId || !_userId) return;
+  if (_writeInFlight) return;
+  if (Date.now() < _pulseBackoffUntil) return;
+
+  _writeInFlight = true;
+  try {
+    const active = visitSessionAccumulateActiveMs();
+    const label =
+      (opts && opts.last_page_label) ||
+      _lastPageLabel ||
+      portalVisitPageLabelFromLocation(location);
+    const scalars = {
+      last_page_label: label,
+      active_tab_ms: active,
+      total_ms: active,
+    };
+    const jsonExtra = {};
+    const wantPages = opts && opts.pages != null;
+    const wantForms = opts && opts.form_submits != null;
+    const wantJson =
+      (opts && opts.forceJson) ||
+      wantPages ||
+      wantForms ||
+      (!_heartbeatLightMode && _pagesDirty);
+    if (wantPages) jsonExtra.pages = opts.pages;
+    else if (wantJson && _pagesDirty) jsonExtra.pages = _pagesLocal;
+    if (wantForms) jsonExtra.form_submits = opts.form_submits;
+
+    let result = { ok: false, error: null };
+    if (wantJson && Object.keys(jsonExtra).length) {
+      result = await visitSessionPatchRpc(scalars, jsonExtra);
+      if (result.skipped) {
+        const payload = Object.assign(
+          {
+            last_seen_at: new Date().toISOString(),
+            last_page_label: label,
+            active_tab_ms: active,
+            total_ms: active,
+            still_open: true,
+          },
+          jsonExtra
+        );
+        const direct = await visitSessionDirectUpdate(payload);
+        result = direct.error ? { ok: false, error: direct.error } : { ok: true, error: null };
+      }
+    } else {
+      result = await visitSessionPulseRpc(scalars);
+      if (result.skipped) {
+        const direct = await visitSessionDirectUpdate(
+          Object.assign(
+            {
+              last_seen_at: new Date().toISOString(),
+              last_page_label: label,
+              active_tab_ms: active,
+              total_ms: active,
+              still_open: true,
+            },
+            jsonExtra
+          )
+        );
+        result = direct.error ? { ok: false, error: direct.error } : { ok: true, error: null };
+      }
+    }
+
+    if (result.ok) {
+      visitSessionMarkSuccess(wantJson && Object.keys(jsonExtra).length > 0);
+      return;
+    }
+    if (result.error && String(result.error.message || "") === "session_not_found") {
+      saveStoredSessionId("");
+      _sessionId = null;
+      return;
+    }
+    visitSessionMarkFailure(result.error, wantJson ? "update" : "heartbeat", wantJson);
+  } finally {
+    _writeInFlight = false;
+  }
+}
+
+async function flushPatch(extra) {
+  await visitSessionWrite(
+    Object.assign({ forceJson: !!(extra && (extra.pages != null || extra.form_submits != null)) }, extra || {})
+  );
+}
+
 function isPortalPageContextLabel(label) {
   const L = String(label || "")
     .trim()
@@ -186,45 +379,6 @@ function appendFormSubmitEvent(submits, actionLabel, pageLabel) {
     at: new Date().toISOString(),
   });
   return arr;
-}
-
-async function flushPatch(extra) {
-  if (!_client || !_sessionId || !_userId) return;
-  const now = Date.now();
-  if (document.visibilityState === "visible" && _visibleSince > 0) {
-    _activeTabAccumMs += Math.max(0, now - _visibleSince);
-    _visibleSince = now;
-  }
-  const payload = Object.assign(
-    {
-      last_seen_at: new Date().toISOString(),
-      last_page_label: _lastPageLabel || portalVisitPageLabelFromLocation(location),
-      active_tab_ms: Math.round(_activeTabAccumMs),
-      still_open: true,
-    },
-    extra || {}
-  );
-  if (payload.total_ms == null) {
-    payload.total_ms = payload.active_tab_ms;
-  }
-  const { error } = await _client
-    .from("portal_staff_visit_sessions")
-    .update(payload)
-    .eq("id", _sessionId)
-    .eq("staff_user_id", _userId);
-  if (error) {
-    if (visitSessionErrorIsTimeout(error)) _heartbeatLightMode = true;
-    var logFn =
-      _heartbeatLightMode && (extra == null || !extra.pages)
-        ? console.debug.bind(console)
-        : typeof globalThis.portalWarnUnlessOffline === "function"
-          ? globalThis.portalWarnUnlessOffline
-          : console.warn.bind(console);
-    logFn("[portal] visit session update", "", error.message || error);
-  } else if (extra && (extra.pages != null || extra.form_submits != null)) {
-    _pagesDirty = false;
-    _heartbeatLightMode = false;
-  }
 }
 
 async function insertVisitSessionRow(row) {
@@ -306,46 +460,13 @@ async function ensureSession(opts) {
 
 async function heartbeat() {
   if (!_client || !_sessionId) return;
+  if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
   const label = portalVisitPageLabelFromLocation(location);
   notePage(label);
   const prevLen = _pagesLocal.length;
   _pagesLocal = appendPageEvent(_pagesLocal, label);
   if (_pagesLocal.length !== prevLen) _pagesDirty = true;
-  const now = Date.now();
-  if (document.visibilityState === "visible") {
-    if (_visibleSince <= 0) _visibleSince = now;
-    _activeTabAccumMs += Math.max(0, now - _visibleSince);
-    _visibleSince = now;
-  } else {
-    _visibleSince = 0;
-  }
-  const active = Math.round(_activeTabAccumMs);
-  const payload = {
-    last_seen_at: new Date().toISOString(),
-    last_page_label: label,
-    active_tab_ms: active,
-    total_ms: active,
-    still_open: true,
-  };
-  if (!_heartbeatLightMode && _pagesDirty) payload.pages = _pagesLocal;
-  const { error } = await _client
-    .from("portal_staff_visit_sessions")
-    .update(payload)
-    .eq("id", _sessionId)
-    .eq("staff_user_id", _userId);
-  if (error) {
-    if (visitSessionErrorIsTimeout(error)) _heartbeatLightMode = true;
-    if (_heartbeatLightMode) {
-      console.debug("[portal] visit session heartbeat", error.message || error);
-    } else if (typeof globalThis.portalWarnUnlessOffline === "function") {
-      globalThis.portalWarnUnlessOffline("[portal] visit session heartbeat", "", error.message || error);
-    } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
-      console.warn("[portal] visit session heartbeat", error.message || error);
-    }
-  } else if (payload.pages != null) {
-    _pagesDirty = false;
-    _heartbeatLightMode = false;
-  }
+  await visitSessionWrite({ last_page_label: label });
 }
 
 async function closeSession() {
@@ -498,8 +619,4 @@ export async function startPortalVisitTracker(opts = {}) {
   window.addEventListener("pagehide", () => {
     void flushPatch();
   });
-
-  setInterval(() => {
-    void flushPatch();
-  }, FLUSH_MS);
 }

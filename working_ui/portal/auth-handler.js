@@ -1521,7 +1521,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260616-warn-rate-limit"
+          "./portal_visit_tracker.js?v=20260616-visit-pulse-rpc"
         );
         await startPortalVisitTracker({ page, profile, session });
       }
