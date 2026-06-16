@@ -95,7 +95,14 @@
 
   function isNoClientName(name) {
     var n = String(name || "").trim().toLowerCase();
-    return !n || n === "no client" || n === "noclient" || n === "no_client";
+    return (
+      !n ||
+      n === "no client" ||
+      n === "noclient" ||
+      n === "no_client" ||
+      n === "no participant" ||
+      n === "no_participant"
+    );
   }
 
   function openedSlotKey(iso, row) {

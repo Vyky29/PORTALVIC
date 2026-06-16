@@ -3926,7 +3926,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminRosterHourTo24(hour, day){
       var dn = String(day || '');
       if(dn !== 'Sunday' && hour < 8) return hour + 12;
-      if(dn === 'Sunday' && hour >= 1 && hour <= 3) return hour + 12;
+      if(dn === 'Sunday' && hour >= 1 && hour <= 7) return hour + 12;
       return hour;
     }
     function adminRosterPad2(n){
@@ -4844,6 +4844,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         out = adminSchedSlotsFromRosterRows(iso, pack.notes);
         for(var fi = 0; fi < out.length; fi++) sched.slotsById[out[fi].demoId] = out[fi];
       }
+      out = schedDedupeOpenSchedulingSlots(out);
       out.sort(function(a,b){
         return (a.anchorStart||'').localeCompare(b.anchorStart||'') || (a.venue||'').localeCompare(b.venue||'') || (a.staffRosterId||'').localeCompare(b.staffRosterId||'');
       });
@@ -11191,9 +11192,55 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedNormTimeSlotLabel(v){
       return String(v || '').trim().toLowerCase().replace(/\s*-\s*/g, ' to ').replace(/(\d)\.(\d)/g, '$1:$2');
     }
+    function schedNormOpenParticipantToken(v){
+      var s = String(v || '').trim().toLowerCase();
+      if(!s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant') return 'open';
+      return adminRosterSlugify(v);
+    }
+    function schedPgTimeToHmShort(pg){
+      var p = String(pg || '').trim().match(/^(\d{1,2}):(\d{2})/);
+      if(!p) return '';
+      return String(parseInt(p[1], 10)) + ':' + String(parseInt(p[2], 10)).padStart(2, '0');
+    }
+    function schedRosterRowTimeBounds(iso, row){
+      var wd = String(row.day || portalWeekdayLongFromIsoDate(iso) || '').trim();
+      var b = adminRosterParseTimeSlot(row.time_slot, wd);
+      return { start: b.start, end: b.end };
+    }
+    function schedSlotTimeBoundsMatch(iso, slot, row){
+      if(!slot || !row) return false;
+      var rb = schedRosterRowTimeBounds(iso, row);
+      var ss = schedPgTimeToHmShort(slot.anchorStart);
+      var se = schedPgTimeToHmShort(slot.anchorEnd);
+      return !!(ss && se && rb.start === ss && rb.end === se);
+    }
+    function schedOpenSlotAnchorKey(slot){
+      return [
+        String(slot.sessionDate || '').slice(0, 10),
+        schedPgTimeToHmShort(slot.anchorStart),
+        schedPgTimeToHmShort(slot.anchorEnd),
+        String(slot.venue || '').trim().toLowerCase(),
+        String(slot.staffRosterId || '').trim().toLowerCase()
+      ].join('|');
+    }
+    function schedDedupeOpenSchedulingSlots(slots){
+      var out = [];
+      var openSeen = {};
+      for(var i = 0; i < slots.length; i++){
+        var slot = slots[i];
+        if(!schedIsOpenParticipantSlot(slot)){
+          out.push(slot);
+          continue;
+        }
+        var key = schedOpenSlotAnchorKey(slot);
+        if(openSeen[key]) continue;
+        openSeen[key] = true;
+        out.push(slot);
+      }
+      return out;
+    }
     function schedIsRealBookedParticipantSlug(slug){
-      var s = String(slug || '').trim().toLowerCase();
-      return !!(s && s !== 'available' && s !== 'closed' && s !== 'no client' && s !== 'noclient' && s !== 'no_client');
+      return schedNormOpenParticipantToken(slug) !== 'open';
     }
     function schedCountFutureSamePatternInBundle(slot){
       var src = window.STAFF_DASHBOARD_SOURCE;
@@ -11228,7 +11275,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var r = cache[i];
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.session_date || '').trim().slice(0, 10) !== iso) continue;
-        if(schedNormTimeSlotLabel(r.time_slot) !== ts) continue;
+        var timeMatch = schedNormTimeSlotLabel(r.time_slot) === ts || schedSlotTimeBoundsMatch(iso, slot, r);
+        if(!timeMatch) continue;
         if(String(r.venue || '').trim() !== ven) continue;
         var ri = String(r.instructors || '').trim().toLowerCase();
         if(inst && ri && ri.indexOf(inst) < 0 && inst.indexOf(ri.split(',')[0].trim()) < 0) continue;
@@ -11241,9 +11289,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       payload = payload || {};
       var iso = String(slot.sessionDate || '').trim().slice(0, 10);
       var portalClient = schedPortalRosterClientForSlot(iso, slot);
-      var bundleSlug = adminRosterSlugify(slot.clientSlug || slot.clientDisplay || '');
-      var portalSlug = adminRosterSlugify(portalClient);
-      if(portalClient && portalSlug && bundleSlug && portalSlug !== bundleSlug){
+      var bundleTok = schedNormOpenParticipantToken(slot.clientSlug || slot.clientDisplay || '');
+      var portalTok = schedNormOpenParticipantToken(portalClient);
+      if(portalClient && bundleTok !== portalTok){
         if(ovType === 'slot_clear_client' || ovType === 'client_replace_in_slot'){
           return {
             level: 'error',
@@ -12101,7 +12149,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return rid ? rid.toUpperCase() : '';
     }
     function portalDayOpsOpenClientNameMarkers(){
-      return ['no client', 'noclient', 'no participant', 'available', 'closed'];
+      return ['no client', 'noclient', 'no_client', 'no participant', 'no_participant', 'available', 'closed'];
     }
     function portalDayOpsSlotToRosterRowPayload(slot, clientName){
       var iso = String(slot && slot.sessionDate || '').trim().slice(0, 10);
