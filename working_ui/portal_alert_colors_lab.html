@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Portal alert colours lab — halos &amp; quick-menu cards</title>
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-trial-eddie-mc" />
+  <style>
+    :root{
+      /* Card: trial */
+      --lab-trial-bg1:#f5f3ff; --lab-trial-bg2:#ede9fe; --lab-trial-border:#7c3aed6b;
+      --lab-trial-shadow:rgba(124,58,237,.22); --lab-trial-strong:#5b21b6; --lab-trial-sub:#6d28d9;
+      --lab-trial-icon-bg:rgba(167,139,250,.24); --lab-trial-icon-fg:#6d28d9; --lab-trial-icon-border:rgba(124,58,237,.35);
+      /* Card: makeup */
+      --lab-makeup-bg1:#fdf2f8; --lab-makeup-bg2:#fce7f3; --lab-makeup-border:#db27776b;
+      --lab-makeup-shadow:rgba(236,72,153,.22); --lab-makeup-strong:#9d174d; --lab-makeup-sub:#be185d;
+      --lab-makeup-icon-bg:rgba(236,72,153,.2); --lab-makeup-icon-fg:#be185d; --lab-makeup-icon-border:rgba(219,39,119,.35);
+      /* Card: absent */
+      --lab-absent-bg1:#ecfdf5; --lab-absent-bg2:#d1fae5; --lab-absent-border:#05966973;
+      --lab-absent-shadow:rgba(16,185,129,.22); --lab-absent-strong:#065f46; --lab-absent-sub:#047857;
+      --lab-absent-icon-bg:rgba(16,185,129,.2); --lab-absent-icon-fg:#047857; --lab-absent-icon-border:rgba(5,150,105,.35);
+      /* Card: cancelled */
+      --lab-cancelled-bg1:#fef2f2; --lab-cancelled-bg2:#fee2e2; --lab-cancelled-border:#dc262673;
+      --lab-cancelled-shadow:rgba(220,38,38,.2); --lab-cancelled-strong:#991b1b; --lab-cancelled-sub:#b91c1c;
+      --lab-cancelled-icon-bg:rgba(220,38,38,.18); --lab-cancelled-icon-fg:#b91c1c; --lab-cancelled-icon-border:rgba(220,38,38,.32);
+      /* Card: slot opened */
+      --lab-slot-bg1:#ecfeff; --lab-slot-bg2:#cffafe; --lab-slot-border:#0891b273;
+      --lab-slot-shadow:rgba(8,145,178,.18); --lab-slot-strong:#0e7490; --lab-slot-sub:#155e75;
+      --lab-slot-icon-bg:rgba(34,211,238,.22); --lab-slot-icon-fg:#0e7490; --lab-slot-icon-border:rgba(8,145,178,.38);
+      /* Halo dots */
+      --lab-halo-green-1:#22c55e; --lab-halo-green-2:#16a34a; --lab-halo-green-3:#4ade80;
+      --lab-halo-purple-1:#a78bfa; --lab-halo-purple-2:#7c3aed; --lab-halo-purple-3:#c4b5fd;
+      --lab-halo-red-1:#dc2626; --lab-halo-red-2:#ef4444; --lab-halo-red-3:#991b1b;
+      --lab-halo-orange-1:#f97316; --lab-halo-orange-2:#ea580c; --lab-halo-orange-3:#fb923c;
+      --lab-halo-gold-1:#f9bf2e; --lab-halo-gold-2:#f4b740; --lab-halo-gold-3:#ffe08a;
+      --lab-halo-blue-1:#2d84b3; --lab-halo-blue-2:#4f8fca; --lab-halo-blue-3:#1d4f8f;
+      --lab-ink:#173247; --lab-muted:#728290;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:linear-gradient(180deg,#f4f8fb 0%,#eef3f8 100%);
+      color:var(--lab-ink); line-height:1.45;
+    }
+    .lab-wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+    .lab-hero{
+      background:#fff;border:1px solid rgba(23,50,71,.1);border-radius:18px;
+      padding:18px 20px;margin-bottom:20px;box-shadow:0 8px 28px rgba(11,24,38,.06);
+    }
+    .lab-hero h1{margin:0 0 8px;font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+    .lab-hero p{margin:0;color:var(--lab-muted);font-size:.92rem;max-width:62ch}
+    .lab-hero p + p{margin-top:8px}
+    .lab-hero a{color:#2d84b3;font-weight:600}
+    .lab-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    .lab-btn{
+      border:1px solid rgba(23,50,71,.18);background:#fff;color:var(--lab-ink);
+      border-radius:10px;padding:8px 14px;font-size:.85rem;font-weight:600;cursor:pointer;
+    }
+    .lab-btn--primary{background:#173247;color:#fff;border-color:#173247}
+    .lab-btn:active{transform:translateY(1px)}
+    .lab-section{
+      background:#fff;border:1px solid rgba(23,50,71,.1);border-radius:18px;
+      padding:16px;margin-bottom:18px;box-shadow:0 6px 22px rgba(11,24,38,.05);
+    }
+    .lab-section h2{margin:0 0 6px;font-size:1.05rem}
+    .lab-section .lab-lead{margin:0 0 14px;color:var(--lab-muted);font-size:.86rem}
+    .lab-grid-2{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.lab-grid-2{grid-template-columns:1fr 1fr}}
+    .lab-preview-col h3{margin:0 0 10px;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--lab-muted)}
+    .lab-halo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .lab-halo-cell{
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      padding:12px 8px;border-radius:14px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);
+      min-width:0;
+    }
+    .lab-halo-cell span{font-size:.72rem;font-weight:700;text-align:center;overflow-wrap:anywhere}
+    .lab-orbit-wrap{
+      position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center;
+    }
+    .lab-orbit-wrap .lab-logo-core{
+      width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid rgba(23,50,71,.12);
+      display:flex;align-items:center;justify-content:center;z-index:1;box-shadow:0 4px 12px rgba(11,24,38,.08);
+    }
+    .lab-orbit-wrap .lab-logo-core img{width:36px;height:auto;display:block}
+    .lab-orbit-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    @keyframes lab-orbit-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.78)}}
+    .lab-orbit-svg circle.lab-pulse{animation:lab-orbit-pulse 1.05s ease-in-out infinite}
+    .lab-cards-stack{display:flex;flex-direction:column;gap:10px;max-width:420px}
+    .lab-card-btn{
+      width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+      border-radius:14px;padding:12px 14px;border:2px solid transparent;
+      box-shadow:0 6px 18px rgba(15,23,42,.08);cursor:default;min-width:0;
+    }
+    .lab-card-btn .lab-card-icon{
+      flex:0 0 auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+      border:1px solid transparent;
+    }
+    .lab-card-btn .lab-card-icon svg{width:20px;height:20px}
+    .lab-card-copy{flex:1;min-width:0}
+    .lab-card-copy strong{display:block;font-size:.92rem;line-height:1.25;overflow-wrap:break-word}
+    .lab-card-copy em{display:block;font-style:normal;font-size:.78rem;margin-top:3px;opacity:.85;overflow-wrap:break-word}
+    .lab-card-chev{flex:0 0 auto;opacity:.45;font-size:1.1rem}
+    /* Card kinds driven by CSS vars */
+    .lab-card-btn[data-kind="trial"]{
+      background:linear-gradient(180deg,var(--lab-trial-bg1) 0%,var(--lab-trial-bg2) 100%);
+      border-color:var(--lab-trial-border);box-shadow:0 6px 18px var(--lab-trial-shadow);
+    }
+    .lab-card-btn[data-kind="trial"] strong{color:var(--lab-trial-strong)}
+    .lab-card-btn[data-kind="trial"] em{color:var(--lab-trial-sub)}
+    .lab-card-btn[data-kind="trial"] .lab-card-icon{background:var(--lab-trial-icon-bg);color:var(--lab-trial-icon-fg);border-color:var(--lab-trial-icon-border)}
+    .lab-card-btn[data-kind="makeup"]{
+      background:linear-gradient(180deg,var(--lab-makeup-bg1) 0%,var(--lab-makeup-bg2) 100%);
+      border-color:var(--lab-makeup-border);box-shadow:0 6px 18px var(--lab-makeup-shadow);
+    }
+    .lab-card-btn[data-kind="makeup"] strong{color:var(--lab-makeup-strong)}
+    .lab-card-btn[data-kind="makeup"] em{color:var(--lab-makeup-sub)}
+    .lab-card-btn[data-kind="makeup"] .lab-card-icon{background:var(--lab-makeup-icon-bg);color:var(--lab-makeup-icon-fg);border-color:var(--lab-makeup-icon-border)}
+    .lab-card-btn[data-kind="absent"]{
+      background:linear-gradient(180deg,var(--lab-absent-bg1) 0%,var(--lab-absent-bg2) 100%);
+      border-color:var(--lab-absent-border);box-shadow:0 6px 18px var(--lab-absent-shadow);
+    }
+    .lab-card-btn[data-kind="absent"] strong{color:var(--lab-absent-strong)}
+    .lab-card-btn[data-kind="absent"] em{color:var(--lab-absent-sub)}
+    .lab-card-btn[data-kind="absent"] .lab-card-icon{background:var(--lab-absent-icon-bg);color:var(--lab-absent-icon-fg);border-color:var(--lab-absent-icon-border)}
+    .lab-card-btn[data-kind="cancelled"]{
+      background:linear-gradient(180deg,var(--lab-cancelled-bg1) 0%,var(--lab-cancelled-bg2) 100%);
+      border-color:var(--lab-cancelled-border);box-shadow:0 6px 18px var(--lab-cancelled-shadow);
+    }
+    .lab-card-btn[data-kind="cancelled"] strong{color:var(--lab-cancelled-strong)}
+    .lab-card-btn[data-kind="cancelled"] em{color:var(--lab-cancelled-sub)}
+    .lab-card-btn[data-kind="cancelled"] .lab-card-icon{background:var(--lab-cancelled-icon-bg);color:var(--lab-cancelled-icon-fg);border-color:var(--lab-cancelled-icon-border)}
+    .lab-card-btn[data-kind="slot"]{
+      background:linear-gradient(180deg,var(--lab-slot-bg1) 0%,var(--lab-slot-bg2) 100%);
+      border-color:var(--lab-slot-border);box-shadow:0 6px 18px var(--lab-slot-shadow);
+    }
+    .lab-card-btn[data-kind="slot"] strong{color:var(--lab-slot-strong)}
+    .lab-card-btn[data-kind="slot"] em{color:var(--lab-slot-sub)}
+    .lab-card-btn[data-kind="slot"] .lab-card-icon{background:var(--lab-slot-icon-bg);color:var(--lab-slot-icon-fg);border-color:var(--lab-slot-icon-border)}
+    .lab-table-wrap{overflow-x:auto;margin-top:12px}
+    table.lab-table{width:100%;border-collapse:collapse;font-size:.82rem}
+    .lab-table th,.lab-table td{border:1px solid rgba(23,50,71,.1);padding:8px 10px;text-align:left;vertical-align:middle}
+    .lab-table th{background:#f1f5f9;font-weight:700;white-space:nowrap}
+    .lab-table td:first-child{font-weight:600;min-width:140px}
+    .lab-table input[type="color"]{width:36px;height:28px;padding:0;border:1px solid rgba(23,50,71,.15);border-radius:6px;cursor:pointer;vertical-align:middle}
+    .lab-table input[type="text"]{
+      width:100%;min-width:88px;max-width:120px;padding:4px 6px;border:1px solid rgba(23,50,71,.18);
+      border-radius:6px;font-family:ui-monospace,monospace;font-size:.78rem;
+    }
+    .lab-table .lab-group-row td{background:#eef6fc;font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#2d84b3}
+    .lab-note{
+      margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff8e6;border:1px solid rgba(244,183,64,.35);
+      font-size:.82rem;color:#5c4a1a;
+    }
+    .lab-compare{
+      margin-top:16px;padding-top:14px;border-top:1px dashed rgba(23,50,71,.15);
+    }
+    .lab-compare h3{margin:0 0 10px;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--lab-muted)}
+    #menuSheet.menu-sheet--logo-lite.lab-compare-sheet{
+      position:relative;transform:none;opacity:1;visibility:visible;pointer-events:none;
+      max-height:none;box-shadow:none;border-radius:14px;padding:12px;background:#fafbfd;
+    }
+    #menuSheet.menu-sheet--logo-lite .menu-btn{pointer-events:none;max-width:420px}
+    pre.lab-export{
+      margin:12px 0 0;padding:12px;border-radius:10px;background:#0f172a;color:#e2e8f0;
+      font-size:.72rem;overflow-x:auto;max-height:220px;white-space:pre-wrap;word-break:break-all;
+    }
+    .lab-map{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px;
+    }
+    .lab-map div{
+      padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);
+      font-size:.78rem;min-width:0;overflow-wrap:break-word;
+    }
+    .lab-map strong{display:block;font-size:.72rem;color:var(--lab-muted);margin-bottom:2px}
+  </style>
+</head>
+<body>
+  <div class="lab-wrap">
+    <header class="lab-hero">
+      <h1>Portal alert colours lab</h1>
+      <p>Visual reference for <strong>header logo halos</strong> (orbit dots) and <strong>quick-menu cards</strong> inside Alerts/Notifications. Edit colours in the table — previews update live.</p>
+      <p>Production: <a href="/staff_dashboard.html">staff_dashboard.html</a> · CSS: <code>portal/staff-dashboard.css</code> · Footer dock logo stays white (no halo).</p>
+      <div class="lab-toolbar">
+        <button type="button" class="lab-btn" id="labReset">Reset defaults</button>
+        <button type="button" class="lab-btn lab-btn--primary" id="labCopyVars">Copy CSS variables</button>
+      </div>
+    </header>
+
+    <section class="lab-section" aria-labelledby="labMapTitle">
+      <h2 id="labMapTitle">When does each colour appear?</h2>
+      <p class="lab-lead">Halos = header logo only. Cards = panel opened from header logo (logo-lite).</p>
+      <div class="lab-map" id="labLogicMap"></div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="labHalosTitle">
+      <h2 id="labHalosTitle">1 · Logo halos (header)</h2>
+      <p class="lab-lead">Orbiting dots around the top club logo. Trial overrides use <strong>purple</strong> instead of schedule green.</p>
+      <div class="lab-grid-2">
+        <div class="lab-preview-col">
+          <h3>Live preview</h3>
+          <div class="lab-halo-grid" id="labHaloPreviews"></div>
+        </div>
+        <div class="lab-preview-col">
+          <h3>Edit halo palette</h3>
+          <div class="lab-table-wrap">
+            <table class="lab-table" id="labHaloTable"><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="labCardsTitle">
+      <h2 id="labCardsTitle">2 · Quick-menu cards (inside logo)</h2>
+      <p class="lab-lead">Schedule override tiles grouped by day. Title pattern: <em>Trial - Name</em>, <em>MakeUp - Name</em>, etc.</p>
+      <div class="lab-grid-2">
+        <div class="lab-preview-col">
+          <h3>Live preview</h3>
+          <div class="lab-cards-stack" id="labCardPreviews"></div>
+          <div class="lab-compare">
+            <h3>Production classes (read-only)</h3>
+            <section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet" aria-hidden="true">
+              <div class="portal-qm-override-stack" id="labProdCards"></div>
+            </section>
+          </div>
+        </div>
+        <div class="lab-preview-col">
+          <h3>Edit card colours</h3>
+          <div class="lab-table-wrap">
+            <table class="lab-table" id="labCardTable"><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+      <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
+    </section>
+  </div>
+
+  <script>
+  (function(){
+    var CAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>';
+
+    var HALO_MODES = [
+      { id: 'schedule', label: 'Schedule only', dots: ['green-1','green-2','green-3'], pulse: true },
+      { id: 'schedule-trial', label: 'Schedule + trial', dots: ['purple-1','purple-2','purple-3'], pulse: true },
+      { id: 'reminder', label: 'Feedback / reminder', dots: ['orange-1','gold-1','orange-2'], pulse: false },
+      { id: 'announcement', label: 'Announcement', dots: ['red-1','red-2','red-3'], pulse: false },
+      { id: 'reminder-schedule', label: 'Reminder + schedule', dots: ['orange-1','green-1'], pulse: [false,true] },
+      { id: 'reminder-schedule-trial', label: 'Reminder + trial', dots: ['orange-1','purple-1'], pulse: [false,true] },
+      { id: 'ann-schedule-trial', label: 'Announcement + trial', dots: ['red-1','purple-1'], pulse: [false,true] }
+    ];
+
+    var HALO_TOKENS = [
+      { group: 'Green (schedule makeup/absent stack)' },
+      { key: '--lab-halo-green-1', label: 'Green dot A', def: '#22c55e' },
+      { key: '--lab-halo-green-2', label: 'Green dot B', def: '#16a34a' },
+      { key: '--lab-halo-green-3', label: 'Green dot C', def: '#4ade80' },
+      { group: 'Purple (trial)' },
+      { key: '--lab-halo-purple-1', label: 'Purple dot A', def: '#a78bfa' },
+      { key: '--lab-halo-purple-2', label: 'Purple dot B', def: '#7c3aed' },
+      { key: '--lab-halo-purple-3', label: 'Purple dot C', def: '#c4b5fd' },
+      { group: 'Red (announcement)' },
+      { key: '--lab-halo-red-1', label: 'Red dot A', def: '#dc2626' },
+      { key: '--lab-halo-red-2', label: 'Red dot B', def: '#ef4444' },
+      { key: '--lab-halo-red-3', label: 'Red dot C', def: '#991b1b' },
+      { group: 'Orange / gold (reminder)' },
+      { key: '--lab-halo-orange-1', label: 'Orange A', def: '#f97316' },
+      { key: '--lab-halo-orange-2', label: 'Orange B', def: '#ea580c' },
+      { key: '--lab-halo-orange-3', label: 'Orange C', def: '#fb923c' },
+      { key: '--lab-halo-gold-1', label: 'Gold A', def: '#f9bf2e' },
+      { key: '--lab-halo-gold-2', label: 'Gold B', def: '#f4b740' },
+      { key: '--lab-halo-gold-3', label: 'Gold C', def: '#ffe08a' },
+      { group: 'Blue (chat — rare on staff)' },
+      { key: '--lab-halo-blue-1', label: 'Blue A', def: '#2d84b3' },
+      { key: '--lab-halo-blue-2', label: 'Blue B', def: '#4f8fca' },
+      { key: '--lab-halo-blue-3', label: 'Blue C', def: '#1d4f8f' }
+    ];
+
+    var CARD_SAMPLES = [
+      { kind: 'trial', prodClass: 'menu-btn--qm-ov-trial', title: 'Trial - Chaitanya', sub: '15:00 – 16:00 · Westway' },
+      { kind: 'makeup', prodClass: 'menu-btn--qm-ov-makeup', title: 'MakeUp - Eddie Ri', sub: '11:00 – 12:00 · Acton' },
+      { kind: 'absent', prodClass: 'menu-btn--qm-ov-absent', title: 'Absent - Mary', sub: '10:00 – 11:00 · Pool' },
+      { kind: 'cancelled', prodClass: 'menu-btn--qm-ov-cancelled', title: 'Session Cancelled - James', sub: '14:00 – 15:00 · Venue' },
+      { kind: 'slot', prodClass: 'menu-btn--qm-ov-slot-opened', title: 'Slot reopened', sub: 'This block is open on your roster.' }
+    ];
+
+    var CARD_PREFIX = {
+      trial: 'trial', makeup: 'makeup', absent: 'absent', cancelled: 'cancelled', slot: 'slot'
+    };
+
+    var CARD_FIELDS = [
+      { suffix: 'bg1', label: 'Gradient top' },
+      { suffix: 'bg2', label: 'Gradient bottom' },
+      { suffix: 'border', label: 'Border' },
+      { suffix: 'shadow', label: 'Shadow (rgba)' },
+      { suffix: 'strong', label: 'Title text' },
+      { suffix: 'sub', label: 'Subtitle text' },
+      { suffix: 'icon-bg', label: 'Icon background' },
+      { suffix: 'icon-fg', label: 'Icon colour' },
+      { suffix: 'icon-border', label: 'Icon border' }
+    ];
+
+    var CARD_DEFAULTS = {
+      trial: { bg1:'#f5f3ff', bg2:'#ede9fe', border:'#7c3aed6b', shadow:'rgba(124,58,237,.22)', strong:'#5b21b6', sub:'#6d28d9', 'icon-bg':'rgba(167,139,250,.24)', 'icon-fg':'#6d28d9', 'icon-border':'rgba(124,58,237,.35)' },
+      makeup: { bg1:'#fdf2f8', bg2:'#fce7f3', border:'#db27776b', shadow:'rgba(236,72,153,.22)', strong:'#9d174d', sub:'#be185d', 'icon-bg':'rgba(236,72,153,.2)', 'icon-fg':'#be185d', 'icon-border':'rgba(219,39,119,.35)' },
+      absent: { bg1:'#ecfdf5', bg2:'#d1fae5', border:'#05966973', shadow:'rgba(16,185,129,.22)', strong:'#065f46', sub:'#047857', 'icon-bg':'rgba(16,185,129,.2)', 'icon-fg':'#047857', 'icon-border':'rgba(5,150,105,.35)' },
+      cancelled: { bg1:'#fef2f2', bg2:'#fee2e2', border:'#dc262673', shadow:'rgba(220,38,38,.2)', strong:'#991b1b', sub:'#b91c1c', 'icon-bg':'rgba(220,38,38,.18)', 'icon-fg':'#b91c1c', 'icon-border':'rgba(220,38,38,.32)' },
+      slot: { bg1:'#ecfeff', bg2:'#cffafe', border:'#0891b273', shadow:'rgba(8,145,178,.18)', strong:'#0e7490', sub:'#155e75', 'icon-bg':'rgba(34,211,238,.22)', 'icon-fg':'#0e7490', 'icon-border':'rgba(8,145,178,.38)' }
+    };
+
+    var LOGIC_MAP = [
+      { halo: 'Purple pulse', card: 'Trial (lila)', when: 'Override client_replace_in_slot with is_trial: true' },
+      { halo: 'Green pulse', card: 'MakeUp (rosa)', when: 'Same override without trial flag' },
+      { halo: 'Green pulse', card: 'Absent (verde)', when: 'client_absence_announced' },
+      { halo: 'Green pulse', card: 'Cancelled (rojo)', when: 'slot_clear_client + cancelled_by_admin' },
+      { halo: 'Green pulse', card: 'Slot reopened (cian)', when: 'slot_open override' },
+      { halo: 'Orange + gold', card: 'Feedback tiles', when: 'Session feedback / venue reminders' },
+      { halo: 'Red', card: 'Announcement', when: 'Unsigned announcement pending' }
+    ];
+
+    function cssVar(key){ return getComputedStyle(document.documentElement).getPropertyValue(key).trim(); }
+    function setVar(key, val){ document.documentElement.style.setProperty(key, val); }
+
+    function hexToRgb(hex){
+      var h = String(hex||'').replace('#','').trim();
+      if(h.length === 3) h = h.split('').map(function(c){ return c+c; }).join('');
+      if(h.length === 8) h = h.slice(0,6);
+      var n = parseInt(h, 16);
+      if(!Number.isFinite(n)) return null;
+      return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+    }
+    function parseColorInput(raw){
+      var s = String(raw||'').trim();
+      if(!s) return s;
+      if(s.indexOf('rgba') === 0 || s.indexOf('rgb') === 0) return s;
+      if(s.charAt(0) === '#') return s.length <= 7 ? s : s.slice(0,7);
+      return s;
+    }
+    function toColorInputValue(raw){
+      var s = String(raw||'').trim();
+      var m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if(m) return '#'+[m[1],m[2],m[3]].map(function(x){ var h = Number(x).toString(16); return h.length<2?'0'+h:h; }).join('');
+      if(s.charAt(0)==='#') return s.length>=7 ? s.slice(0,7) : s;
+      return '#888888';
+    }
+
+    function haloDotFill(token){
+      var map = {
+        'green-1':'--lab-halo-green-1','green-2':'--lab-halo-green-2','green-3':'--lab-halo-green-3',
+        'purple-1':'--lab-halo-purple-1','purple-2':'--lab-halo-purple-2','purple-3':'--lab-halo-purple-3',
+        'red-1':'--lab-halo-red-1','red-2':'--lab-halo-red-2','red-3':'--lab-halo-red-3',
+        'orange-1':'--lab-halo-orange-1','orange-2':'--lab-halo-orange-2','orange-3':'--lab-halo-orange-3',
+        'gold-1':'--lab-halo-gold-1','gold-2':'--lab-halo-gold-2','gold-3':'--lab-halo-gold-3',
+        'blue-1':'--lab-halo-blue-1','blue-2':'--lab-halo-blue-2','blue-3':'--lab-halo-blue-3'
+      };
+      return cssVar(map[token] || '--lab-halo-green-1') || '#888';
+    }
+
+    function buildOrbitSvg(mode){
+      var dots = mode.dots;
+      var positions = dots.length === 2
+        ? [{cx:100,cy:42,r:7},{cx:158,cy:100,r:7}]
+        : [{cx:100,cy:28,r:7},{cx:162,cy:72,r:6},{cx:138,cy:148,r:6},{cx:62,cy:148,r:6},{cx:38,cy:72,r:6}];
+      var circles = '';
+      for(var i = 0; i < positions.length; i++){
+        var p = positions[i % positions.length];
+        var tok = dots[i % dots.length];
+        var pulse = Array.isArray(mode.pulse) ? !!mode.pulse[i] : !!mode.pulse;
+        circles += '<circle cx="'+p.cx+'" cy="'+p.cy+'" r="'+p.r+'" fill="'+haloDotFill(tok)+'"'+(pulse?' class="lab-pulse"':'')+'/>';
+      }
+      return '<svg class="lab-orbit-svg" viewBox="0 0 200 200" aria-hidden="true">'+circles+'</svg>';
+    }
+
+    function renderHaloPreviews(){
+      var host = document.getElementById('labHaloPreviews');
+      if(!host) return;
+      host.innerHTML = HALO_MODES.map(function(m){
+        return '<div class="lab-halo-cell"><div class="lab-orbit-wrap">'+buildOrbitSvg(m)+
+          '<div class="lab-logo-core"><img src="/portal/F-02-1.png" alt="" width="36" height="36" decoding="async"/></div></div>'+
+          '<span>'+m.label+'</span></div>';
+      }).join('');
+    }
+
+    function renderCardPreviews(){
+      var host = document.getElementById('labCardPreviews');
+      if(!host) return;
+      host.innerHTML = CARD_SAMPLES.map(function(c){
+        return '<div class="lab-card-btn" data-kind="'+c.kind+'">'+
+          '<div class="lab-card-icon" aria-hidden="true">'+CAL_SVG+'</div>'+
+          '<div class="lab-card-copy"><strong>'+c.title+'</strong><em>'+c.sub+'</em></div>'+
+          '<span class="lab-card-chev" aria-hidden="true">›</span></div>';
+      }).join('');
+    }
+
+    function renderProdCards(){
+      var host = document.getElementById('labProdCards');
+      if(!host) return;
+      host.innerHTML = CARD_SAMPLES.map(function(c){
+        return '<button type="button" class="menu-btn notice menu-btn--qm-tile '+c.prodClass+' menu-btn--portal-pulse">'+
+          '<div class="menu-btn-icon" aria-hidden="true">'+CAL_SVG+'</div>'+
+          '<div class="menu-btn-copy"><strong>'+c.title+'</strong><span class="menu-btn-sub">'+c.sub+'</span></div>'+
+          '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
+      }).join('');
+    }
+
+    function renderLogicMap(){
+      var host = document.getElementById('labLogicMap');
+      if(!host) return;
+      host.innerHTML = LOGIC_MAP.map(function(row){
+        return '<div><strong>Halo · '+row.halo+' · Card · '+row.card+'</strong>'+row.when+'</div>';
+      }).join('');
+    }
+
+    function cardVarKey(kind, suffix){ return '--lab-'+kind+'-'+suffix; }
+
+    function buildHaloTable(){
+      var tb = document.querySelector('#labHaloTable tbody');
+      if(!tb) return;
+      var html = '';
+      HALO_TOKENS.forEach(function(row){
+        if(row.group){
+          html += '<tr class="lab-group-row"><td colspan="3">'+row.group+'</td></tr>';
+          return;
+        }
+        var val = cssVar(row.key) || row.def;
+        html += '<tr data-var="'+row.key+'"><td>'+row.label+'</td><td><input type="color" value="'+toColorInputValue(val)+'" data-var="'+row.key+'" aria-label="'+row.label+' colour picker"/></td>'+
+          '<td><input type="text" value="'+val+'" data-var="'+row.key+'" spellcheck="false"/></td></tr>';
+      });
+      tb.innerHTML = html;
+      tb.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('input', onTokenInput);
+        inp.addEventListener('change', onTokenInput);
+      });
+    }
+
+    function buildCardTable(){
+      var tb = document.querySelector('#labCardTable tbody');
+      if(!tb) return;
+      var html = '';
+      Object.keys(CARD_DEFAULTS).forEach(function(kind){
+        html += '<tr class="lab-group-row"><td colspan="3">Card · '+kind+'</td></tr>';
+        CARD_FIELDS.forEach(function(f){
+          var key = cardVarKey(kind, f.suffix);
+          var val = cssVar(key) || CARD_DEFAULTS[kind][f.suffix];
+          var isRgba = String(val).indexOf('rgba') === 0;
+          html += '<tr data-var="'+key+'"><td>'+f.label+'</td><td>'+
+            (isRgba ? '—' : '<input type="color" value="'+toColorInputValue(val)+'" data-var="'+key+'"/>')+
+            '</td><td><input type="text" value="'+val+'" data-var="'+key+'" spellcheck="false"/></td></tr>';
+        });
+      });
+      tb.innerHTML = html;
+      tb.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('input', onTokenInput);
+        inp.addEventListener('change', onTokenInput);
+      });
+    }
+
+    function syncTableInputs(key, val){
+      document.querySelectorAll('input[data-var="'+key+'"]').forEach(function(inp){
+        if(inp.type === 'color') inp.value = toColorInputValue(val);
+        else inp.value = val;
+      });
+    }
+
+    function onTokenInput(ev){
+      var inp = ev.target;
+      var key = inp.getAttribute('data-var');
+      if(!key) return;
+      var val = inp.type === 'color' ? inp.value : parseColorInput(inp.value);
+      setVar(key, val);
+      syncTableInputs(key, val);
+      renderHaloPreviews();
+    }
+
+    function resetDefaults(){
+      HALO_TOKENS.forEach(function(row){
+        if(row.key) setVar(row.key, row.def);
+      });
+      Object.keys(CARD_DEFAULTS).forEach(function(kind){
+        CARD_FIELDS.forEach(function(f){
+          setVar(cardVarKey(kind, f.suffix), CARD_DEFAULTS[kind][f.suffix]);
+        });
+      });
+      buildHaloTable();
+      buildCardTable();
+      renderHaloPreviews();
+    }
+
+    function exportVars(){
+      var lines = ['/* Paste into portal_alert_colors_lab or map manually to staff-dashboard.css */', ':root{'];
+      HALO_TOKENS.forEach(function(row){ if(row.key) lines.push('  '+row.key+': '+cssVar(row.key)+';'); });
+      Object.keys(CARD_DEFAULTS).forEach(function(kind){
+        CARD_FIELDS.forEach(function(f){
+          var k = cardVarKey(kind, f.suffix);
+          lines.push('  '+k+': '+cssVar(k)+';');
+        });
+      });
+      lines.push('}');
+      var pre = document.getElementById('labExport');
+      if(pre){
+        pre.hidden = false;
+        pre.textContent = lines.join('\n');
+      }
+      var text = lines.join('\n');
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).catch(function(){});
+      }
+      var btn = document.getElementById('labCopyVars');
+      if(btn){
+        var old = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent = old; }, 1600);
+      }
+    }
+
+    document.getElementById('labReset').addEventListener('click', resetDefaults);
+    document.getElementById('labCopyVars').addEventListener('click', exportVars);
+
+    renderLogicMap();
+    renderHaloPreviews();
+    renderCardPreviews();
+    renderProdCards();
+    buildHaloTable();
+    buildCardTable();
+  })();
+  </script>
+</body>
+</html>
