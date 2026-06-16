@@ -60,7 +60,7 @@
 
   function hourTo24(hour, day) {
     if (day !== "Sunday" && hour < 8) return hour + 12;
-    if (day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    if (day === "Sunday" && hour >= 1 && hour <= 7) return hour + 12;
     return hour;
   }
 
