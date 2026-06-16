@@ -10151,24 +10151,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var disp = String(slot.clientDisplay || '').trim().toLowerCase();
       return disp === 'closed';
     }
-    function schedRosterParticipantLooksTrial(slot){
-      if(!slot) return false;
-      var lab = String(slot.clientDisplay || slot.clientSlug || '').trim();
-      return /\(\s*trial\b/i.test(lab) || /\btrial\s+\d{1,2}[\/\.-]\d{1,2}/i.test(lab);
-    }
+    /** Open cell on the merged roster row (display + dedupe). Does not consult live portal alone — avoids hiding booked bundle names. */
     function schedIsOpenParticipantSlot(slot){
       if(!slot) return false;
       if(schedIsClosedParticipantSlot(slot)) return false;
       if(schedIsOpenSlotSlug(slot.clientSlug)) return true;
       var disp = String(slot.clientDisplay || '').trim().toLowerCase();
-      if(disp === 'no participant' || disp === 'no_participant' || disp === 'no client' || disp === 'open slot') return true;
-      if(schedNormOpenParticipantToken(slot.clientSlug || slot.clientDisplay) === 'open') return true;
+      return disp === 'no participant' || disp === 'no_participant' || disp === 'no client';
+    }
+    /** Trial action in drawer: open on bundle row, or live portal_roster_rows says open for this anchor. */
+    function schedCanAssignTrialToSlot(slot){
+      if(schedIsOpenParticipantSlot(slot)) return true;
       var iso = String(slot.sessionDate || '').trim().slice(0, 10);
-      if(iso){
-        var portalClient = schedPortalRosterClientForSlot(iso, slot);
-        if(schedNormOpenParticipantToken(portalClient) === 'open') return true;
-      }
-      return false;
+      if(!iso) return false;
+      var portalClient = schedPortalRosterClientForSlot(iso, slot);
+      return schedNormOpenParticipantToken(portalClient) === 'open';
     }
     function schedOverrideIsTrial(ov){
       if(!ov) return false;
@@ -10886,7 +10883,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var moveTargetCount = schedBuildMoveTargetOptions(slot, movePool).length;
       var srcSlug = String(slot.clientSlug || '').trim().toLowerCase();
       var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
-      var canTrial = schedIsOpenParticipantSlot(slot);
+      var canTrial = schedCanAssignTrialToSlot(slot);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
         ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+(schedFormatOverrideWhenShort(ov) ? ' · '+esc(schedFormatOverrideWhenShort(ov)) : '')+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
@@ -11465,7 +11462,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : 'Choose a replacement participant from the suggestions, or type until your choice matches exactly.';
         return;
       }
-      if(isTrial && !schedIsOpenParticipantSlot(slot)){
+      if(isTrial && !schedCanAssignTrialToSlot(slot)){
         if(msgEl) msgEl.textContent = 'Trial applies to open roster lines (No participant).';
         return;
       }
@@ -13012,10 +13009,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(schedIsOpenParticipantSlot(slot)){
         return schedParticipantPillHtml('No participant', '', 'open', 'demo');
-      }
-      if(!ov && schedRosterParticipantLooksTrial(slot)){
-        var trialLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
-        return schedParticipantPillHtml('Trial · ' + trialLab, slot.demoId, 'trial', 'demo');
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
       return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');
