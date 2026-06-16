@@ -592,7 +592,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -2846,7 +2846,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -4841,7 +4841,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6472,7 +6472,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 5.30",
-                  "client_name": "Anas",
+                  "client_name": "CLOSED",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -7119,7 +7119,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -8721,7 +8721,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 5.30",
-                  "client_name": "Anas",
+                  "client_name": "CLOSED",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -9544,7 +9544,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -10983,7 +10983,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 5.30",
-                  "client_name": "Anas",
+                  "client_name": "CLOSED",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -11873,7 +11873,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -13246,7 +13246,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 5.30",
-                  "client_name": "Anas",
+                  "client_name": "CLOSED",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -13776,7 +13776,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4.30 to 5",
-                  "client_name": "Kirushy",
+                  "client_name": "NO CLIENT",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",

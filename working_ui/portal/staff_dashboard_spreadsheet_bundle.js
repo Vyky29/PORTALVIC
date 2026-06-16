@@ -223,7 +223,6 @@
     }
   },
   "clientRosterStartDates": {
-    "Anas": "2026-06-15",
     "Emmanuel": "2026-06-12"
   },
   "clientWeekdaysOnly": {
@@ -2173,7 +2172,7 @@
       "session_date": "2026-06-01"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -3813,7 +3812,7 @@
       "session_date": "2026-06-08"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -5493,7 +5492,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -5563,7 +5562,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Anas",
+      "client_name": "CLOSED",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -7173,7 +7172,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -7243,7 +7242,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Anas",
+      "client_name": "CLOSED",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -8853,7 +8852,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -8923,7 +8922,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Anas",
+      "client_name": "CLOSED",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -10533,7 +10532,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -10603,7 +10602,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Anas",
+      "client_name": "CLOSED",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -12213,7 +12212,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Kirushy",
+      "client_name": "NO CLIENT",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -13212,7 +13211,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-16T08:56:12Z",
+    "rosterMadreSyncedAt": "2026-06-16T09:31:52Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

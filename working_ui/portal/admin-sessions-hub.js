@@ -3929,28 +3929,14 @@
       if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
     var result;
-    if (this.mode === "feedback") {
-      if (units.length > 0) {
-        var unitDoneCount = 0;
-        for (var uj = 0; uj < units.length; uj++) {
-          var uDone = units[uj];
-          var resolved =
-            unitAbsent[uDone.key] ||
-            unitComplete[uDone.key] ||
-            uDone.slots.some(function (s) {
-              return hub.slotIsAbsent(s);
-            });
-          if (resolved) unitDoneCount++;
-        }
-        result = { total: units.length, done: unitDoneCount };
-      } else if (total > 0) {
-        result = { total: total, done: rosterDone };
-      } else {
-        var submitted = this.feedbackCountForDate(iso);
-        result = { total: Math.max(1, submitted), done: submitted };
-      }
-    } else {
+    if (total > 0) {
       result = { total: total, done: rosterDone };
+    } else if (this.mode === "feedback") {
+      var submitted = this.feedbackCountForDate(iso);
+      result =
+        submitted > 0 ? { total: submitted, done: submitted } : { total: 0, done: 0 };
+    } else {
+      result = { total: 0, done: 0 };
     }
     hub._dayStatsByIso[cacheKey] = result;
     return result;
@@ -4171,157 +4157,11 @@
   AdminSessionsHub.prototype.refreshClientFilterView = function () {
     var hub = this;
     hub.invalidateComputeCaches();
-    var esc = this.escapeHtml;
-    var tbody = hub.root.querySelector("[data-ash-client-filter-tbody]");
-    if (!tbody) {
-      if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
-      else hub.render();
-      return;
+    if (hub.opts && typeof hub.opts.onViewFiltersChange === "function") {
+      hub.opts.onViewFiltersChange(hub);
     }
-
-    if (hub.tab === "feedback" && hub.mode === "feedback") {
-      var rows = hub.feedbackRowsForSelectedDay();
-      var tableRows = rows
-        .map(function (fb, rowIdx) {
-          return hub.htmlFeedbackTableRow(fb, esc, { rowIdx: rowIdx, clickable: true });
-        })
-        .join("");
-      if (!tableRows) {
-        tableRows =
-          '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
-      }
-      tbody.innerHTML = tableRows;
-      return;
-    }
-
-    if (hub.tab === "positive" || hub.tab === "relevant") {
-      var kind = hub.tab === "relevant" ? "relevant" : "positive";
-      var noteRows = hub.feedbackNotesRows(kind);
-      var noteField = kind === "relevant" ? "relevant_information" : "positive_feedback";
-      var emptyMsg =
-        kind === "relevant"
-          ? "No relevant information notes in this date range."
-          : "No positive feedback notes in this date range.";
-      var tableRowsN = noteRows
-        .map(function (fb, rowIdx) {
-          var noteText =
-            kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
-          var reviewCls =
-            noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-          var submittedAt = feedbackSubmittedAt(fb);
-          var reviewTime = formatFbTime(submittedAt);
-          var sessionDay = formatFbDateShort(fb.session_date);
-          var reviewDate = formatFbDate(submittedAt);
-          var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
-          var noteHtml = noteText
-            ? noteText
-                .split(/\n+/)
-                .map(function (line) {
-                  return esc(line);
-                })
-                .join("<br>")
-            : "\u2014";
-          return (
-            '<tr class="ash-fb-row' +
-            reviewCls +
-            '" data-ash-fb-row="' +
-            rowIdx +
-            '" data-ash-note-field="' +
-            noteField +
-            '" tabindex="0" role="button">' +
-            '<td><span class="ash-link">' +
-            esc(fb.client_name) +
-            "</span></td>" +
-            "<td>" +
-            esc(svcLabel) +
-            (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
-            "</td>" +
-            '<td class="ash-cell-note ash-fb-note-cell" data-ash-note-field="' +
-            noteField +
-            '">' +
-            noteHtml +
-            "</td>" +
-            '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-            esc(fb.completed_by_name || "\u2014") +
-            '</div><div class="ash-cell-sub">' +
-            esc(reviewDate) +
-            (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
-            "</div></td>" +
-            "</tr>"
-          );
-        })
-        .join("");
-      if (!tableRowsN) {
-        tableRowsN = '<tr><td colspan="4"><div class="ash-empty">' + esc(emptyMsg) + "</div></td></tr>";
-      }
-      tbody.innerHTML = tableRowsN;
-      return;
-    }
-
-    if (hub.tab === "tracking") {
-      var slots = hub.expandSlotsForDate(hub.selectedDay);
-      var units = hub.getFeedbackUnitsForDate(hub.selectedDay);
-      var unitComplete = {};
-      var unitAbsent = {};
-      for (var u = 0; u < units.length; u++) {
-        unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
-        unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
-      }
-      var trackRows = slots
-        .filter(function (s) {
-          if (shouldOmitOverviewSlot(hub, s)) return false;
-          return hub.slotPassesOverviewFilters(s);
-        })
-        .map(function (slot) {
-          var ukey = feedbackUnitKey(slot);
-          var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
-          var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-          var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);
-          var svc =
-            esc(slot.service) +
-            (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
-          var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
-          var venue = clean(slot.venue) || "\u2014";
-          var notes = clean(slot.area) || "\u2014";
-          return (
-            "<tr>" +
-            '<td class="ash-td-center">' +
-            svc +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            inst +
-            "</td>" +
-            '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-            esc(slot.client_name) +
-            "</span></td>" +
-            '<td class="ash-td-center">' +
-            esc(venue) +
-            "</td>" +
-            '<td class="ash-td-center ash-cell-muted">' +
-            esc(notes) +
-            "</td>" +
-            '<td class="ash-td-center"><span class="ash-badge ash-badge--booked">Booked</span></td>' +
-            '<td class="ash-td-center">' +
-            fbCell +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            yesNoCell(hub.slotHasIncident(slot)) +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            yesNoCell(hub.slotHasCancellation(slot)) +
-            "</td>" +
-            "</tr>"
-          );
-        })
-        .join("");
-      if (!trackRows) {
-        trackRows =
-          '<tr><td colspan="9"><div class="ash-empty">' +
-          (hub.bundleError ? esc(hub.bundleError) : "No roster slots for this day.") +
-          "</div></td></tr>";
-      }
-      tbody.innerHTML = trackRows;
-    }
+    if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+    else hub.render();
   };
 
   AdminSessionsHub.prototype.feedbackInRange = function () {

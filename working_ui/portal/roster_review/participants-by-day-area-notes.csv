@@ -186,7 +186,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-01,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-06-01,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-06-01,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-06-01,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-06-01,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-06-01,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-06-01,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
 2026-06-01,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
@@ -332,7 +332,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-08,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-06-08,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-06-08,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-06-08,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-06-08,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-06-08,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-06-08,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
 2026-06-08,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
@@ -480,10 +480,9 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-15,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-06-15,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-06-15,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-06-15,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-06-15,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-06-15,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-06-15,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
-2026-06-15,Monday,Anas,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Teaching Pool
 2026-06-15,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
 2026-06-15,Monday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool
 2026-06-15,Monday,Serine,Physical Activity,5 to 6,SANDRA,Westway,Gym
@@ -629,10 +628,9 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-22,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-06-22,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-06-22,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-06-22,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-06-22,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-06-22,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-06-22,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
-2026-06-22,Monday,Anas,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Teaching Pool
 2026-06-22,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
 2026-06-22,Monday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool
 2026-06-22,Monday,Serine,Physical Activity,5 to 6,SANDRA,Westway,Gym
@@ -778,10 +776,9 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-29,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-06-29,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-06-29,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-06-29,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-06-29,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-06-29,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-06-29,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
-2026-06-29,Monday,Anas,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Teaching Pool
 2026-06-29,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
 2026-06-29,Monday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool
 2026-06-29,Monday,Serine,Physical Activity,5 to 6,SANDRA,Westway,Gym
@@ -927,10 +924,9 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-06,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-07-06,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-07-06,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-07-06,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-07-06,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-07-06,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-07-06,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
-2026-07-06,Monday,Anas,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Teaching Pool
 2026-07-06,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
 2026-07-06,Monday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool
 2026-07-06,Monday,Serine,Physical Activity,5 to 6,SANDRA,Westway,Gym
@@ -1076,7 +1072,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-13,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-07-13,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-07-13,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-07-13,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-07-13,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-07-13,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-07-13,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
 2026-07-13,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
@@ -1164,7 +1160,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 ,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 ,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 ,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt [removed from term — left programme Jun 2026],Teaching Pool
+,Monday,NO CLIENT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 ,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 ,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
 ,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool

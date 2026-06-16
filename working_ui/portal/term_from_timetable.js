@@ -142,7 +142,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     },
     "dan": {
       "2026-06-01": [
-        "kirushy",
         "gemma",
         "zayana",
         "adaam_ah"
@@ -170,7 +169,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "adam_ab"
       ],
       "2026-06-08": [
-        "kirushy",
         "gemma",
         "zayana",
         "adaam_ah"

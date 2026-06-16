@@ -555,6 +555,28 @@
     });
   }
 
+  function reRenderHub(hub) {
+    if (!hub || !hub.root || !hub.root.isConnected) return;
+    if (hub.opts && hub.opts.externalTabs) {
+      if (typeof hub.renderPanels === 'function') hub.renderPanels();
+    } else if (typeof hub.render === 'function') {
+      hub.render();
+    }
+  }
+
+  function syncHubViewFilters(fromHub, toHub) {
+    if (!fromHub || !toHub || fromHub === toHub) return;
+    toHub.instructorFilter = fromHub.instructorFilter || '';
+    toHub.serviceFilter = fromHub.serviceFilter || '';
+    toHub.clientSearch = fromHub.clientSearch || '';
+    if (fromHub.weekStart) toHub.weekStart = fromHub.weekStart;
+    if (fromHub.selectedDay) toHub.selectedDay = fromHub.selectedDay;
+    if (fromHub.mode === 'feedback' && toHub.mode === 'feedback' && fromHub.feedbackMetricsDay) {
+      toHub.feedbackMetricsDay = fromHub.feedbackMetricsDay;
+    }
+    toHub.invalidateComputeCaches();
+  }
+
   function hubMountOpts(extra) {
     extra = extra || {};
     return {
@@ -564,7 +586,17 @@
       payload: payload,
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
-      showFullWeekDayStrip: cfg.showFullWeekDayStrip
+      showFullWeekDayStrip: cfg.showFullWeekDayStrip,
+      onViewFiltersChange: function (changedHub) {
+        var other =
+          changedHub === trackingHub
+            ? feedbackHub
+            : changedHub === feedbackHub
+              ? trackingHub
+              : null;
+        syncHubViewFilters(changedHub, other);
+        reRenderHub(other);
+      }
     };
   }
 
@@ -1087,17 +1119,23 @@
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
           var th = await initTrackingHub();
-          if (th) applyPendingOverviewTab();
+          if (th && feedbackHub) syncHubViewFilters(feedbackHub, th);
+          if (th) {
+            applyPendingOverviewTab();
+            reRenderHub(th);
+          }
           return th;
         }
         if (tabId === 'feedback' || tabId === 'positive' || tabId === 'relevant') {
           var fs = feedbackSetupForC4k(tabId);
           pendingFeedbackNoteFilter = fs.filter;
           var fh = await initFeedbackHub();
+          if (fh && trackingHub) syncHubViewFilters(trackingHub, fh);
           if (fh) {
             fh.tab = fs.tab;
             fh.feedbackNoteFilter = fs.filter;
             applyPendingFeedbackNav(fh);
+            reRenderHub(fh);
           }
           return fh;
         }
