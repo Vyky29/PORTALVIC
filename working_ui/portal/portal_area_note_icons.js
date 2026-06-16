@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260614-lane-labels";
+  var ICON_IMG_VER = "20260616-lane-only-label";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -290,4 +290,19 @@
   global.portalResolveAreaNoteLabelFromItem = portalResolveAreaNoteLabelFromItem;
   global.portalAreaNoteIconHtml = portalAreaNoteIconHtml;
   global.portalTodayAreaNoteMetrics = portalTodayAreaNoteMetrics;
+
+  /** TODAY right column: full composite PNG for all notes except Lane (DE/SE). */
+  global.portalAreaNoteTodayColumnHtml = function portalAreaNoteTodayColumnHtml(label) {
+    var key = ICONS[label] ? label : portalNormalizeAreaNoteKey(label);
+    if (!key || !ICONS[key]) return "";
+    if (key === "lane-de" || key === "lane-se") {
+      return portalAreaNoteIconHtml(label, {
+        showLabel: true,
+        labelText: portalDisplayAreaNoteLabel(label),
+        layout: "stack",
+        venueSessionCard: true,
+      });
+    }
+    return portalAreaNoteIconHtml(label, { showLabel: false, venueSessionCard: true });
+  };
 })(typeof window !== "undefined" ? window : globalThis);
