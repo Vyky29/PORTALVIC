@@ -220,8 +220,8 @@
               </button>
               <p class="topbar-staff-photo__share-note">Shared with participants &amp; families</p>
             </div>
-            <input type="file" id="topbarStaffPhotoInput" accept="image/*" hidden />
-            <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
+            <input type="file" id="topbarStaffPhotoInput" name="topbarStaffPhoto" accept="image/*" hidden />
+            <h1 class="topbar-name" id="staffName">
               <span class="topbar-name__given" id="staffNameGiven">…</span>
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
             </h1>
@@ -231,7 +231,7 @@
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
             <div class="avatar-aura" aria-hidden="true"></div>
             <div class="avatar avatar--brand-default" id="avatar">
-              <img src="/portal/F-02-1.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
+              <img src="/portal/F-02-1.png" alt="" loading="eager" decoding="async" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
               <span class="avatar-initials" id="avatarInitials" hidden aria-hidden="true"></span>
             </div>
             <div class="avatar-orbit" aria-hidden="true">
@@ -382,7 +382,7 @@
               </g>
             </svg>
           </span>
-          <img class="dock-nav-item__logo" src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="clubSENsational" width="120" height="48" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo'" />
+          <img class="dock-nav-item__logo" src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="clubSENsational" width="120" height="48" decoding="async" onerror="this.onerror=null;this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo'" />
         </span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
@@ -799,7 +799,7 @@
       <div id="portalHelpSuggestions" class="portal-help-suggestions" hidden></div>
       <div class="portal-help-compose">
         <label class="topbar-sr-only" for="portalHelpInput">Your question</label>
-        <textarea id="portalHelpInput" class="txa" rows="2" maxlength="500" placeholder="Type a question…" enterkeyhint="send"></textarea>
+        <textarea id="portalHelpInput" name="portalHelpQuestion" class="txa" rows="2" maxlength="500" placeholder="Type a question…" enterkeyhint="send"></textarea>
         <button type="button" class="portal-help-send" id="portalHelpSendBtn">Ask</button>
       </div>
       <p class="portal-help-foot muted">Need the full walkthrough? <a href="portal_guide.html">Open Portal guide</a></p>
@@ -869,7 +869,7 @@
         <label for="clientsDirectorySearch" class="topbar-sr-only">Search participants by name</label>
         <div class="clients-search-input-wrap">
           <span class="clients-search-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-          <input type="search" id="clientsDirectorySearch" class="clients-directory-search-input" placeholder="Search by name…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+          <input type="search" id="clientsDirectorySearch" name="clientsDirectorySearch" class="clients-directory-search-input" placeholder="Search by name…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
         </div>
         <div class="clients-directory-suggest" id="clientsDirectorySuggest" role="listbox" aria-label="Participants matching your search" hidden></div>
       </div>
@@ -4703,7 +4703,7 @@
         '<article class="announcement-lock-card">' +
           '<p class="announcement-lock-copy" style="margin:0 0 16px">' + bodyCopy + '</p>' +
           '<div class="announcement-lock-actions">' +
-            '<label class="announcement-lock-check"><input type="checkbox" id="safeguardingPolicyReadConfirm"> I have read and understood this reminder.</label>' +
+            '<label class="announcement-lock-check"><input type="checkbox" id="safeguardingPolicyReadConfirm" name="safeguardingPolicyReadConfirm"> I have read and understood this reminder.</label>' +
             '<button type="button" class="announcement-sign-btn" id="portalSafeguardingPolicyAckBtn" disabled>I understand</button>' +
           '</div>' +
         '</article>';
@@ -4762,6 +4762,7 @@
     function portalQuickMenuOverrideKindMenuClass(kind){
       const k = String(kind || 'other').trim();
       if(k === 'absent') return 'menu-btn--qm-ov-absent';
+      if(k === 'trial') return 'menu-btn--qm-ov-trial';
       if(k === 'makeup') return 'menu-btn--qm-ov-makeup';
       if(k === 'cancelled' || k === 'shift_cancelled') return 'menu-btn--qm-ov-cancelled';
       if(k === 'slot_opened') return 'menu-btn--qm-ov-slot-opened';
@@ -6711,7 +6712,7 @@
       if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return 'new_shift';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
-      if(t === 'client_replace_in_slot') return 'makeup';
+      if(t === 'client_replace_in_slot') return portalOverrideIsTrial(row) ? 'trial' : 'makeup';
       if(t === 'slot_open') return 'slot_opened';
       if(t === 'slot_clear_client'){
         let pl = null;
@@ -6843,8 +6844,9 @@
       } else {
         let baseTitle = 'Schedule change';
         if(kind === 'absent') baseTitle = 'Absent';
+        else if(kind === 'trial') baseTitle = 'Trial';
         else if(kind === 'makeup') baseTitle = 'MakeUp';
-        const nameBit = kind === 'makeup'
+        const nameBit = (kind === 'makeup' || kind === 'trial')
           ? portalOverrideReplaceParticipantDisplayName(row)
           : portalClientFirstNameTokenForOverride(row);
         title = nameBit ? (baseTitle + ' - ' + nameBit) : baseTitle;
@@ -8521,6 +8523,42 @@
         if(String(synth.day || '').trim() !== dw) return;
         if(!isRealFn(synth)) return;
         acc.push(synth);
+      });
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(String(ov.status || 'active') !== 'active') return;
+        if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
+        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateIso)) return;
+        if(portalNormKeyStr(ov.anchor_staff_id) !== portalNormKeyStr(sid)) return;
+        const repId = portalOverrideReplacementClientId(ov.payload);
+        if(!repId) return;
+        const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function'
+          ? portalFindSpreadsheetSessionMatchingOverride(ov, dw)
+          : null;
+        const slotBase = base || (typeof portalSyntheticSessionFromOverride === 'function'
+          ? portalSyntheticSessionFromOverride(ov, dw)
+          : null);
+        if(!slotBase) return;
+        const startTok = portalCanonicalHmToken(slotBase.start) || portalCanonicalHmToken(ov.anchor_start);
+        let listed = false;
+        for(let li = 0; li < acc.length; li++){
+          const s = acc[li];
+          const bs = s.__portalBaseSession || s;
+          const ovMatch = typeof portalTodayScheduleOverrideForSession === 'function'
+            ? portalTodayScheduleOverrideForSession(bs, sessionDateIso)
+            : null;
+          if(ov.id && ovMatch && ovMatch.id === ov.id){ listed = true; break; }
+          if(portalCanonicalHmToken(bs.start) !== startTok) continue;
+          const eff = typeof portalEffectiveClientIdForReview === 'function'
+            ? portalEffectiveClientIdForReview(bs, sessionDateIso)
+            : String(s.clientId || '').trim().toLowerCase();
+          if(eff === repId || String(s.clientId || '').trim().toLowerCase() === repId){ listed = true; break; }
+        }
+        if(listed) return;
+        acc.push(Object.assign({}, slotBase, {
+          clientId: repId,
+          __portalBaseSession: slotBase,
+          __portalScheduleOverride: ov
+        }));
       });
       return acc;
     }
@@ -10479,7 +10517,7 @@
             '<span class="announcement-lock-badge announcement-lock-badge--' + (isReminder ? 'reminder' : 'announcement') + '">' + escapeHtml(kindLabel) + '</span></div>' +
             '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
             '<div class="announcement-lock-actions">' +
-              '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
+              '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm" name="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
               '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
             '</div>' +
           '</article>';
@@ -10534,6 +10572,16 @@
       btn.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
 
+    function portalRosterOverrideAttentionHasTrial(st){
+      const dayGroups = Array.isArray(st && st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
+      for(let g = 0; g < dayGroups.length; g++){
+        const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
+        for(let i = 0; i < items.length; i++){
+          if(String(items[i] && items[i].kind || '').trim() === 'trial') return true;
+        }
+      }
+      return false;
+    }
     function portalNotificationAlertFlags(st){
       const shot = typeof window !== 'undefined' ? String(window.__PORTAL_GUIDE_HALO_SHOT__ || '').trim().toLowerCase() : '';
       if(shot && portalStaffIsDemoAccount()){
@@ -10566,33 +10614,36 @@
       const hasFeedback = !!(state && state.sessionFeedbackNeed);
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending));
       const hasSchedule = !!(state && state.rosterOverrideNeed);
+      const hasScheduleTrial = hasSchedule && portalRosterOverrideAttentionHasTrial(state);
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
         announcement: portalActiveAnnouncementItems().length > 0,
         feedback: hasFeedback || hasReminderOther,
-        schedule: hasSchedule
+        schedule: hasSchedule,
+        scheduleTrial: hasScheduleTrial
       };
     }
     function portalNotificationAlertState(st){
       const f = portalNotificationAlertFlags(st);
       const orange = f.feedback;
       const green = f.schedule;
-      if(f.chat && f.announcement && orange && green) return 'quad';
-      if(f.chat && f.announcement && green) return 'chat-ann-schedule';
-      if(f.chat && orange && green) return 'chat-fb-schedule';
-      if(f.announcement && orange && green) return 'both-schedule';
+      const sk = f.scheduleTrial ? '-trial' : '';
+      if(f.chat && f.announcement && orange && green) return 'quad' + sk;
+      if(f.chat && f.announcement && green) return 'chat-ann-schedule' + sk;
+      if(f.chat && orange && green) return 'chat-fb-schedule' + sk;
+      if(f.announcement && orange && green) return 'both-schedule' + sk;
       if(f.chat && f.announcement && orange) return 'triple';
       if(f.chat && f.announcement) return 'chat-ann';
       if(f.chat && orange) return 'chat-fb';
       if(f.announcement && orange) return 'both';
-      if(f.chat && green) return 'chat-schedule';
-      if(f.announcement && green) return 'announcement-schedule';
-      if(orange && green) return 'reminder-schedule';
+      if(f.chat && green) return 'chat-schedule' + sk;
+      if(f.announcement && green) return 'announcement-schedule' + sk;
+      if(orange && green) return 'reminder-schedule' + sk;
       if(f.chat) return 'chat';
       if(f.announcement) return 'announcement';
       if(orange) return 'reminder';
-      if(green) return 'schedule';
+      if(green) return 'schedule' + sk;
       return 'none';
     }
     function portalApplyPortalOrbitAlertClasses(el, st){
@@ -10610,13 +10661,21 @@
         'avatar-wrap--portal-alert-chat-fb',
         'avatar-wrap--portal-alert-triple',
         'avatar-wrap--portal-alert-schedule',
+        'avatar-wrap--portal-alert-schedule-trial',
         'avatar-wrap--portal-alert-chat-schedule',
+        'avatar-wrap--portal-alert-chat-schedule-trial',
         'avatar-wrap--portal-alert-announcement-schedule',
+        'avatar-wrap--portal-alert-announcement-schedule-trial',
         'avatar-wrap--portal-alert-reminder-schedule',
+        'avatar-wrap--portal-alert-reminder-schedule-trial',
         'avatar-wrap--portal-alert-both-schedule',
+        'avatar-wrap--portal-alert-both-schedule-trial',
         'avatar-wrap--portal-alert-chat-ann-schedule',
+        'avatar-wrap--portal-alert-chat-ann-schedule-trial',
         'avatar-wrap--portal-alert-chat-fb-schedule',
-        'avatar-wrap--portal-alert-quad'
+        'avatar-wrap--portal-alert-chat-fb-schedule-trial',
+        'avatar-wrap--portal-alert-quad',
+        'avatar-wrap--portal-alert-quad-trial'
       ];
       const dockClasses = [
         'dock-nav-item--portal-attention',
@@ -10636,20 +10695,28 @@
       if(!active) return;
       const mode = portalNotificationAlertState(st);
       const modeClass = {
+        'quad-trial': 'avatar-wrap--portal-alert-quad-trial',
         quad: 'avatar-wrap--portal-alert-quad',
+        'chat-ann-schedule-trial': 'avatar-wrap--portal-alert-chat-ann-schedule-trial',
         'chat-ann-schedule': 'avatar-wrap--portal-alert-chat-ann-schedule',
+        'chat-fb-schedule-trial': 'avatar-wrap--portal-alert-chat-fb-schedule-trial',
         'chat-fb-schedule': 'avatar-wrap--portal-alert-chat-fb-schedule',
+        'both-schedule-trial': 'avatar-wrap--portal-alert-both-schedule-trial',
         'both-schedule': 'avatar-wrap--portal-alert-both-schedule',
         triple: 'avatar-wrap--portal-alert-triple',
         'chat-ann': 'avatar-wrap--portal-alert-chat-ann',
         'chat-fb': 'avatar-wrap--portal-alert-chat-fb',
         both: 'avatar-wrap--portal-alert-both',
+        'chat-schedule-trial': 'avatar-wrap--portal-alert-chat-schedule-trial',
         'chat-schedule': 'avatar-wrap--portal-alert-chat-schedule',
+        'announcement-schedule-trial': 'avatar-wrap--portal-alert-announcement-schedule-trial',
         'announcement-schedule': 'avatar-wrap--portal-alert-announcement-schedule',
+        'reminder-schedule-trial': 'avatar-wrap--portal-alert-reminder-schedule-trial',
         'reminder-schedule': 'avatar-wrap--portal-alert-reminder-schedule',
         chat: 'avatar-wrap--portal-alert-chat',
         announcement: 'avatar-wrap--portal-alert',
         reminder: 'avatar-wrap--portal-alert-reminder',
+        'schedule-trial': 'avatar-wrap--portal-alert-schedule-trial',
         schedule: 'avatar-wrap--portal-alert-schedule'
       }[mode];
       if(modeClass) el.classList.add(modeClass);
@@ -10680,8 +10747,8 @@
       }catch(_){ /* ignore */ }
       var mode = 'none';
       try{ mode = portalNotificationAlertState(st); }catch(_){ mode = 'none'; }
-      if(mode === 'schedule') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
-      if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both' || mode === 'quad' || mode.indexOf('-schedule') >= 0) return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
+      if(mode === 'schedule' || mode === 'schedule-trial') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
+      if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both' || mode === 'quad' || mode === 'quad-trial' || mode.indexOf('-schedule') >= 0) return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
       if(mode === 'announcement' || mode === 'announcement-schedule') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
       if(mode === 'chat' || mode === 'chat-schedule') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
       if(mode === 'reminder' || mode === 'reminder-schedule') return PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
@@ -10807,9 +10874,11 @@
           .sort(function(a, b){ return portalParseTimeSortVal(a.start) - portalParseTimeSortVal(b.start); })
           .map(function(s){
             var sessionDateIso = info && info.date && typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-            var ov = (sessionDateIso && typeof portalTodayScheduleOverrideForSession === 'function')
-              ? portalTodayScheduleOverrideForSession(s, sessionDateIso)
-              : null;
+            var baseForOv = s.__portalBaseSession || s;
+            var ov = (s && s.__portalScheduleOverride)
+              || (sessionDateIso && typeof portalTodayScheduleOverrideForSession === 'function'
+                ? portalTodayScheduleOverrideForSession(baseForOv, sessionDateIso)
+                : null);
             var effClientId = String(s.clientId || '').trim().toLowerCase();
             var nameFromReplace = '';
             if(ov && ov.override_type === 'client_replace_in_slot' && ov.payload){
@@ -11393,8 +11462,25 @@
       const dockHome = document.getElementById('dockDashboardTile');
       if(!dockHome) return;
       if(typeof portalApplyPortalOrbitAlertClasses === 'function'){
-        portalApplyPortalOrbitAlertClasses(dockHome, null);
+        const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
+        portalApplyPortalOrbitAlertClasses(dockHome, st);
       }
+    }
+    function portalSyncAnnouncementBeforeUnloadListener(){
+      const need = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
+      if(need){
+        if(!window.__portalAnnouncementBeforeUnloadBound){
+          window.addEventListener('beforeunload', portalAnnouncementBeforeUnloadHandler);
+          window.__portalAnnouncementBeforeUnloadBound = true;
+        }
+      }else if(window.__portalAnnouncementBeforeUnloadBound){
+        window.removeEventListener('beforeunload', portalAnnouncementBeforeUnloadHandler);
+        window.__portalAnnouncementBeforeUnloadBound = false;
+      }
+    }
+    function portalAnnouncementBeforeUnloadHandler(e){
+      e.preventDefault();
+      e.returnValue = '';
     }
 
     function renderNotices(){
@@ -13084,8 +13170,9 @@
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
-            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0);
+            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0);
             if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
+            else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
             else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
             else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
             else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
@@ -13424,6 +13511,7 @@
       document.body.classList.toggle('dock-context-menu', !!menuOpen);
       const annLock = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
       document.body.classList.toggle('dock-context-announcement-lock', annLock);
+      if(typeof portalSyncAnnouncementBeforeUnloadListener === 'function') portalSyncAnnouncementBeforeUnloadListener();
       const sessionsOverviewOpen = document.getElementById('clientSessionsOverviewSheet')?.classList.contains('open');
       document.body.classList.toggle('portal-sessions-overview-open', !!sessionsOverviewOpen);
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
@@ -14517,11 +14605,7 @@
         if(item) item.classList.toggle('is-open');
       }
     });
-    window.addEventListener('beforeunload', function(e){
-      if(!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive())) return;
-      e.preventDefault();
-      e.returnValue = '';
-    });
+    if(typeof portalSyncAnnouncementBeforeUnloadListener === 'function') portalSyncAnnouncementBeforeUnloadListener();
 
     const menuViewModeToggle = document.getElementById('menuViewModeToggle');
     if(menuViewModeToggle){
