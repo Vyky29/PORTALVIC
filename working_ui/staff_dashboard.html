@@ -5839,6 +5839,10 @@
       if(p.is_trial === true || String(p.booking_kind || '').trim().toLowerCase() === 'trial') return true;
       return String(p.session_kind || '').trim().toLowerCase() === 'trial';
     }
+    function portalRosterParticipantNameLooksTrial(name){
+      var lab = String(name || '').trim();
+      return /\(\s*trial\b/i.test(lab) || /\btrial\s+\d{1,2}[\/\.-]\d{1,2}/i.test(lab);
+    }
     function portalOverrideReplacementClientId(payload){
       if(!payload) return '';
       if(typeof payload === 'string'){
@@ -8976,7 +8980,7 @@
           const showSpec = !isBespokeActivity(activity);
           const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
-          const isTrialOv = hasReplaceOv && portalOverrideIsTrial(ov);
+          const isTrialOv = (hasReplaceOv && portalOverrideIsTrial(ov)) || portalRosterParticipantNameLooksTrial(c.name || nameFromReplace);
           const replacedVisual = manualOv === 'REPLACED';
           const makeUpPink = !isTrialOv && (hasReplaceOv || replacedVisual) && !isSessionEndedForFeedback({
             sessionEndTs,

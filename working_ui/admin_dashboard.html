@@ -10151,12 +10151,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var disp = String(slot.clientDisplay || '').trim().toLowerCase();
       return disp === 'closed';
     }
+    function schedRosterParticipantLooksTrial(slot){
+      if(!slot) return false;
+      var lab = String(slot.clientDisplay || slot.clientSlug || '').trim();
+      return /\(\s*trial\b/i.test(lab) || /\btrial\s+\d{1,2}[\/\.-]\d{1,2}/i.test(lab);
+    }
     function schedIsOpenParticipantSlot(slot){
       if(!slot) return false;
       if(schedIsClosedParticipantSlot(slot)) return false;
       if(schedIsOpenSlotSlug(slot.clientSlug)) return true;
       var disp = String(slot.clientDisplay || '').trim().toLowerCase();
-      return disp === 'no participant' || disp === 'no_participant' || disp === 'no client';
+      if(disp === 'no participant' || disp === 'no_participant' || disp === 'no client' || disp === 'open slot') return true;
+      if(schedNormOpenParticipantToken(slot.clientSlug || slot.clientDisplay) === 'open') return true;
+      var iso = String(slot.sessionDate || '').trim().slice(0, 10);
+      if(iso){
+        var portalClient = schedPortalRosterClientForSlot(iso, slot);
+        if(schedNormOpenParticipantToken(portalClient) === 'open') return true;
+      }
+      return false;
     }
     function schedOverrideIsTrial(ov){
       if(!ov) return false;
@@ -11777,9 +11789,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /** Open roster cell (no named participant) — same-day trial assign target. */
     function portalDayOpsIsOpenParticipantSlot(slug){
-      var s = String(slug || '').trim().toLowerCase();
-      if(!s || s === 'closed') return false;
-      return s === 'available' || s === 'noclient' || s === 'no client';
+      return schedIsOpenSlotSlug(slug);
     }
     function portalDayOpsFindSlotByDemoId(demoId, isoOpt){
       var id = String(demoId || '').trim();
@@ -13002,6 +13012,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(schedIsOpenParticipantSlot(slot)){
         return schedParticipantPillHtml('No participant', '', 'open', 'demo');
+      }
+      if(!ov && schedRosterParticipantLooksTrial(slot)){
+        var trialLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
+        return schedParticipantPillHtml('Trial · ' + trialLab, slot.demoId, 'trial', 'demo');
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
       return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');

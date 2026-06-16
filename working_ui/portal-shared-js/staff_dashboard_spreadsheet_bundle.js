@@ -8672,7 +8672,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Chaitanya (Trial 28/06)",
+      "client_name": "NO PARTICIPANT",
       "day": "Sunday",
       "instructors": "CARLOS",
       "service": "Climbing Activity",
