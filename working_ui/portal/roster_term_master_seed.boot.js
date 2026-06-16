@@ -201,7 +201,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -211,7 +211,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -1580,7 +1580,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -1682,7 +1682,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -1774,7 +1774,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -2083,7 +2083,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -2343,7 +2343,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -2353,7 +2353,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -3690,7 +3690,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -3792,7 +3792,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -3884,7 +3884,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -4198,7 +4198,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -4479,7 +4479,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -4489,7 +4489,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -5907,7 +5907,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6009,7 +6009,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6101,7 +6101,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6482,7 +6482,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6763,7 +6763,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -6773,7 +6773,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -8176,7 +8176,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -8278,7 +8278,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -8370,7 +8370,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -8731,7 +8731,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -9077,7 +9077,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -9087,7 +9087,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -10438,7 +10438,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -10540,7 +10540,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -10632,7 +10632,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -10993,7 +10993,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -11274,7 +11274,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -11284,7 +11284,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -12701,7 +12701,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -12803,7 +12803,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -12895,7 +12895,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -13256,7 +13256,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -13472,7 +13472,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -13482,7 +13482,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6",
-                  "client_name": "Steven C",
+                  "client_name": "Steven",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -14441,7 +14441,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -14543,7 +14543,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5 to 6",
-                  "client_name": "Amar Ra",
+                  "client_name": "Amar Rai",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -14635,7 +14635,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "4 to 5.30",
-                  "client_name": "Adam Pi",
+                  "client_name": "Adam P",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",
@@ -14900,7 +14900,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Abodi P",
+                  "client_name": "Abodi Pa",
                   "service": "Aquatic Activity",
                   "area": "Teaching Pool",
                   "pool_note": "Teaching Pool",

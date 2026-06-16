@@ -1079,7 +1079,8 @@ button{
   const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
   const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
   const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260520-hazem-angel-aurora");
-  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260609-autofill");
+  const PORTAL_SPREADSHEET_ADAPTER_SCRIPT = __portalJs("staff_dashboard_spreadsheet_adapter.js?v=20260616-worker-display-names");
+  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260616-worker-display-names");
   const PORTAL_FIELD_AUTOCOMPLETE_SCRIPT = __portalJs("portal_field_autocomplete.js?v=20260609-autofill");
 
   const qs = new URLSearchParams(typeof window !== "undefined" && window.location ? window.location.search : "");
@@ -1121,13 +1122,30 @@ button{
     return !!(s && portalFeedbackAreaSlugTokens()[s]);
   }
 
+  function portalParticipantSlugCanon(value) {
+    try {
+      const A = typeof window.StaffDashboardSpreadsheetAdapter !== "undefined" ? window.StaffDashboardSpreadsheetAdapter : null;
+      if (A && typeof A.canonicalParticipantClientId === "function") {
+        return A.canonicalParticipantClientId(value);
+      }
+    } catch (_) {}
+    const s = slugifyPortal(String(value || "").trim());
+    if (s === "aadam_ah") return "adaam_ah";
+    return s;
+  }
+
   function portalResolveFeedbackParticipantName(clientName, clientId) {
     let name = clean(clientName);
-    const cid = slugifyPortal(String(clientId || "").trim());
+    const cid = portalParticipantSlugCanon(clientId);
     if (name && !portalFeedbackNameIsRosterAreaToken(name)) {
       if (typeof window.portalResolveParticipantCanonicalName === "function") {
         const canon = clean(window.portalResolveParticipantCanonicalName(name));
         if (canon && !portalFeedbackNameIsRosterAreaToken(canon)) return canon;
+      }
+      if (typeof window.StaffDashboardSpreadsheetAdapter !== "undefined" &&
+          typeof window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName === "function") {
+        const resolved = clean(window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName(name, cid || clientId));
+        if (resolved && !portalFeedbackNameIsRosterAreaToken(resolved)) return resolved;
       }
       return name;
     }
@@ -1137,7 +1155,7 @@ button{
         if (Array.isArray(notes)) {
           for (let i = 0; i < notes.length; i++) {
             const nm = clean(notes[i] && notes[i].client_name);
-            if (nm && slugifyPortal(nm) === cid) return nm;
+            if (nm && portalParticipantSlugCanon(nm) === cid) return nm;
           }
         }
       } catch (_) {}
@@ -1148,9 +1166,20 @@ button{
             : [];
         for (let j = 0; j < rows.length; j++) {
           const nm2 = clean(rows[j] && rows[j].client_name);
-          if (nm2 && slugifyPortal(nm2) === cid) return nm2;
+          if (nm2 && portalParticipantSlugCanon(nm2) === cid) {
+            if (typeof window.StaffDashboardSpreadsheetAdapter !== "undefined" &&
+                typeof window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName === "function") {
+              return clean(window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName(nm2, cid));
+            }
+            return nm2;
+          }
         }
       } catch (_) {}
+      if (typeof window.StaffDashboardSpreadsheetAdapter !== "undefined" &&
+          typeof window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName === "function") {
+        const fromSlug = clean(window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName("", cid));
+        if (fromSlug) return fromSlug;
+      }
       return cid.replace(/_/g, " ").replace(/\b\w/g, function (c) {
         return c.toUpperCase();
       });
@@ -1360,6 +1389,12 @@ button{
     try{
       if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
         await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+      }
+    }catch(_){}
+    try{
+      if(typeof window.StaffDashboardSpreadsheetAdapter === "undefined" ||
+          typeof window.StaffDashboardSpreadsheetAdapter.resolveWorkerDisplayName !== "function"){
+        await loadPortalScriptOnce(PORTAL_SPREADSHEET_ADAPTER_SCRIPT);
       }
     }catch(_){}
     try{
@@ -2388,7 +2423,7 @@ button{
       client_id: ctx.client_id,
       client_name:
         typeof window.portalFeedbackSubmitClientName === "function"
-          ? window.portalFeedbackSubmitClientName(ctx.client_name)
+          ? window.portalFeedbackSubmitClientName(ctx.client_name, ctx.client_id)
           : ctx.client_name,
       session_date: ctx.session_date,
       session_time: ctx.session_time,
@@ -2796,7 +2831,7 @@ button{
         if (typeof window.portalRecordFormSubmit === "function") {
           var participantForActivity =
             typeof window.portalFeedbackSubmitClientName === "function"
-              ? window.portalFeedbackSubmitClientName(ctx2.client_name)
+              ? window.portalFeedbackSubmitClientName(ctx2.client_name, ctx2.client_id)
               : clean(ctx2.client_name);
           if (!participantForActivity && row && row.client_name) {
             participantForActivity = clean(row.client_name);

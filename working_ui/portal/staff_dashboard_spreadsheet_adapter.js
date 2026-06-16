@@ -174,26 +174,30 @@
    */
   var ROSTER_PARTICIPANT_SPELLING_ALIASES = {
     aadam_ah: "adaam_ah",
+    abodi_p: "abodi_pa",
+    adam_pi: "adam_p",
+    amar_ra: "amar_rai",
+    sammer: "samer",
+    rayan_tapa: "rayan_ta",
+    steven_ces: "steven",
+    steven_c: "steven",
+    steven_ce: "steven",
+    yusuf: "yusuf_ah",
+    yusef: "yusuf_ah",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
-    abodi_p: "abodi_pa",
     abodi: "abodi_pa",
-    yusuf: "yusuf_ah",
-    yusef: "yusuf_ah",
     junaid: "junaid_f",
     khalid_ab: "khalid",
-    amar_ra: "amar_rai",
-    steven_c: "steven_ces",
-    steven_ce: "steven_ces",
     rayyan_fi: "rayyan_f",
   };
 
   /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
   var CLIENT_INFO_SHEET_ALIASES = {
-    rayan_ta: "rayan_tapa",
+    rayan_tapa: "rayan_ta",
     aadam_ah: "adaam_ah",
   };
 
@@ -207,6 +211,72 @@
     const slug = slugify(String(nameRaw || "").trim());
     if (!slug) return slug;
     return rosterParticipantSlugAlias(slug);
+  }
+
+  var _workerDisplayBySlugCache = null;
+
+  /** Worker dashboard short labels — one name per participant slug (Clients Info + roster). */
+  function buildWorkerDisplayNameBySlug() {
+    const map = Object.create(null);
+    function put(slug, name) {
+      const canon = rosterParticipantSlugAlias(String(slug || "").trim());
+      const label = String(name || "").trim();
+      if (!canon || !label || isParticipantCatalogExcludedName(label)) return;
+      if (!map[canon]) map[canon] = label;
+    }
+    put("aadam_ah", "Adaam Ah");
+    try {
+      const rows =
+        typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
+          ? window.PORTAL_CLIENTS_INFO_ROWS
+          : [];
+      for (let i = 0; i < rows.length; i++) {
+        const nm = String(rows[i] && rows[i].client_name || "").trim();
+        if (nm) put(slugify(nm), nm);
+      }
+    } catch (_) {}
+    try {
+      const src =
+        typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE
+          ? window.STAFF_DASHBOARD_SOURCE
+          : null;
+      const roster = src && Array.isArray(src.rows) ? src.rows : [];
+      for (let j = 0; j < roster.length; j++) {
+        const nm2 = String(roster[j] && roster[j].client_name || "").trim();
+        if (nm2) put(canonicalParticipantClientId(nm2), nm2);
+      }
+    } catch (_2) {}
+    return map;
+  }
+
+  function workerDisplayNameBySlug() {
+    if (!_workerDisplayBySlugCache) {
+      _workerDisplayBySlugCache = buildWorkerDisplayNameBySlug();
+    }
+    return _workerDisplayBySlugCache;
+  }
+
+  function resetWorkerDisplayNameCache() {
+    _workerDisplayBySlugCache = null;
+  }
+
+  /** Canonical worker-facing label for dashboards and session_feedback.client_name. */
+  function resolveWorkerDisplayName(nameRaw, clientIdRaw) {
+    const cid = rosterParticipantSlugAlias(
+      slugify(String(clientIdRaw || "").trim()) || slugify(String(nameRaw || "").trim())
+    );
+    const map = workerDisplayNameBySlug();
+    if (cid && map[cid]) return map[cid];
+    const name = String(nameRaw || "").trim();
+    if (name && !isParticipantCatalogExcludedName(name)) return name;
+    if (cid) {
+      return cid.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return "";
+  }
+
+  function normalizeWorkerClientName(nameRaw, clientIdRaw) {
+    return resolveWorkerDisplayName(nameRaw, clientIdRaw);
   }
 
   function isParticipantCatalogExcludedName(nameRaw) {
@@ -375,7 +445,7 @@
   function mergeCompanyClientsFromRosterRows(clientNotesById, rows) {
     const list = Array.isArray(rows) ? rows : [];
     list.forEach((row) => {
-      const nameRaw = String(row.client_name || "").trim();
+      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       const nameLower = nameRaw.toLowerCase();
       if (!nameRaw || nameLower === "closed" || isParticipantCatalogExcludedName(nameRaw)) return;
       const clientId = canonicalParticipantClientId(nameRaw);
@@ -407,7 +477,7 @@
       const targets = instructorProfileKeysForRow(row.instructors, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
 
-      const nameRaw = String(row.client_name || "").trim();
+      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       const nameLower = nameRaw.toLowerCase();
       const isClosed = nameLower === "closed";
       const isOpenSlot =
@@ -582,6 +652,9 @@
     lookupClientInfoText: lookupClientInfoText,
     applyClientsInfoMerge: applyClientsInfoMerge,
     canonicalParticipantClientId: canonicalParticipantClientId,
+    resolveWorkerDisplayName: resolveWorkerDisplayName,
+    normalizeWorkerClientName: normalizeWorkerClientName,
+    resetWorkerDisplayNameCache: resetWorkerDisplayNameCache,
     isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
   };
 })();

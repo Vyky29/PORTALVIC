@@ -168,22 +168,121 @@
     return "";
   }
 
-  /** Roster slug → clients_info slug (abbreviated roster names vs full sheet names). */
-  var CLIENT_INFO_SLUG_ALIASES = {
-    adam_a: "adam_ab",
+  /**
+   * Ah brothers are separate participants — never alias across:
+   * amaar_ah, aydaan_ah (Aydan), adaam_ah.
+   */
+  var ROSTER_PARTICIPANT_SPELLING_ALIASES = {
+    aadam_ah: "adaam_ah",
     abodi_p: "abodi_pa",
-    abodi: "abodi_pa",
+    adam_pi: "adam_p",
+    amar_ra: "amar_rai",
+    sammer: "samer",
+    rayan_tapa: "rayan_ta",
+    steven_ces: "steven",
+    steven_c: "steven",
+    steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+  };
+
+  /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
+  var CLIENT_INFO_SLUG_ALIASES = {
+    adam_a: "adam_ab",
+    abodi: "abodi_pa",
     junaid: "junaid_f",
     khalid_ab: "khalid",
-    amar_ra: "amar_rai",
-    steven_c: "steven_ces",
-    steven_ce: "steven_ces",
-    rayan_ta: "rayan_tapa",
     rayyan_fi: "rayyan_f",
+  };
+
+  /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
+  var CLIENT_INFO_SHEET_ALIASES = {
+    rayan_tapa: "rayan_ta",
     aadam_ah: "adaam_ah",
   };
+
+  function rosterParticipantSlugAlias(slug) {
+    const s = String(slug || "").trim();
+    if (!s) return s;
+    return ROSTER_PARTICIPANT_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] || s;
+  }
+
+  function canonicalParticipantClientId(nameRaw) {
+    const slug = slugify(String(nameRaw || "").trim());
+    if (!slug) return slug;
+    return rosterParticipantSlugAlias(slug);
+  }
+
+  var _workerDisplayBySlugCache = null;
+
+  /** Worker dashboard short labels — one name per participant slug (Clients Info + roster). */
+  function buildWorkerDisplayNameBySlug() {
+    const map = Object.create(null);
+    function put(slug, name) {
+      const canon = rosterParticipantSlugAlias(String(slug || "").trim());
+      const label = String(name || "").trim();
+      if (!canon || !label || isParticipantCatalogExcludedName(label)) return;
+      if (!map[canon]) map[canon] = label;
+    }
+    put("aadam_ah", "Adaam Ah");
+    try {
+      const rows =
+        typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
+          ? window.PORTAL_CLIENTS_INFO_ROWS
+          : [];
+      for (let i = 0; i < rows.length; i++) {
+        const nm = String(rows[i] && rows[i].client_name || "").trim();
+        if (nm) put(slugify(nm), nm);
+      }
+    } catch (_) {}
+    try {
+      const src =
+        typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE
+          ? window.STAFF_DASHBOARD_SOURCE
+          : null;
+      const roster = src && Array.isArray(src.rows) ? src.rows : [];
+      for (let j = 0; j < roster.length; j++) {
+        const nm2 = String(roster[j] && roster[j].client_name || "").trim();
+        if (nm2) put(canonicalParticipantClientId(nm2), nm2);
+      }
+    } catch (_2) {}
+    return map;
+  }
+
+  function workerDisplayNameBySlug() {
+    if (!_workerDisplayBySlugCache) {
+      _workerDisplayBySlugCache = buildWorkerDisplayNameBySlug();
+    }
+    return _workerDisplayBySlugCache;
+  }
+
+  function resetWorkerDisplayNameCache() {
+    _workerDisplayBySlugCache = null;
+  }
+
+  /** Canonical worker-facing label for dashboards and session_feedback.client_name. */
+  function resolveWorkerDisplayName(nameRaw, clientIdRaw) {
+    const cid = rosterParticipantSlugAlias(
+      slugify(String(clientIdRaw || "").trim()) || slugify(String(nameRaw || "").trim())
+    );
+    const map = workerDisplayNameBySlug();
+    if (cid && map[cid]) return map[cid];
+    const name = String(nameRaw || "").trim();
+    if (name && !isParticipantCatalogExcludedName(name)) return name;
+    if (cid) {
+      return cid.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return "";
+  }
+
+  function normalizeWorkerClientName(nameRaw, clientIdRaw) {
+    return resolveWorkerDisplayName(nameRaw, clientIdRaw);
+  }
+
+  function isParticipantCatalogExcludedName(nameRaw) {
+    const n = String(nameRaw || "").trim().toLowerCase();
+    return !n || n === "closed" || n === "acat" || n === "acat group";
+  }
 
   function clientInfoLookupKeys(nameOrSlug) {
     const raw = String(nameOrSlug || "").trim();
@@ -260,8 +359,19 @@
       const hit = bySlug.get(tryKeys[i]);
       if (hit) return hit;
     }
+    const sheetAlias = CLIENT_INFO_SHEET_ALIASES[slug];
+    if (sheetAlias) return bySlug.get(sheetAlias) || "";
     const alias = CLIENT_INFO_SLUG_ALIASES[slug];
     if (alias) return bySlug.get(alias) || "";
+    for (const key in CLIENT_INFO_SHEET_ALIASES) {
+      if (
+        Object.prototype.hasOwnProperty.call(CLIENT_INFO_SHEET_ALIASES, key) &&
+        CLIENT_INFO_SHEET_ALIASES[key] === slug
+      ) {
+        const hit = bySlug.get(key);
+        if (hit) return hit;
+      }
+    }
     for (const key in CLIENT_INFO_SLUG_ALIASES) {
       if (
         Object.prototype.hasOwnProperty.call(CLIENT_INFO_SLUG_ALIASES, key) &&
@@ -300,13 +410,45 @@
   }
 
   /** Every real client on any roster row (any instructor): powers ALL CLIENTS without changing MY CLIENTS logic. */
+  function collapseAliasParticipantNotes(clientNotesById) {
+    if (!clientNotesById || typeof clientNotesById !== "object") return;
+    var mergeAliases = Object.assign({}, ROSTER_PARTICIPANT_SPELLING_ALIASES, CLIENT_INFO_SLUG_ALIASES);
+    Object.keys(mergeAliases).forEach(function (alias) {
+      var canon = mergeAliases[alias];
+      if (!alias || !canon || alias === canon) return;
+      var from = clientNotesById[alias];
+      if (!from) return;
+      if (!clientNotesById[canon]) {
+        clientNotesById[canon] = from;
+      } else {
+        var to = clientNotesById[canon];
+        if (!String(to.gender || "").trim() && String(from.gender || "").trim()) {
+          to.gender = from.gender;
+        }
+        if (!String(to.generalInfoSheet || "").trim() && String(from.generalInfoSheet || "").trim()) {
+          to.generalInfoSheet = from.generalInfoSheet;
+        }
+      }
+      delete clientNotesById[alias];
+    });
+  }
+
+  function remapSessionsToCanonicalClientIds(sessionsModel, clientNotesById) {
+    if (!Array.isArray(sessionsModel)) return;
+    sessionsModel.forEach(function (s) {
+      if (!s || !s.clientId) return;
+      var canon = rosterParticipantSlugAlias(s.clientId);
+      if (canon && canon !== s.clientId && clientNotesById[canon]) s.clientId = canon;
+    });
+  }
+
   function mergeCompanyClientsFromRosterRows(clientNotesById, rows) {
     const list = Array.isArray(rows) ? rows : [];
     list.forEach((row) => {
-      const nameRaw = String(row.client_name || "").trim();
+      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       const nameLower = nameRaw.toLowerCase();
-      if (!nameRaw || nameLower === "closed") return;
-      const clientId = slugify(nameRaw);
+      if (!nameRaw || nameLower === "closed" || isParticipantCatalogExcludedName(nameRaw)) return;
+      const clientId = canonicalParticipantClientId(nameRaw);
       if (!clientId || clientId === "closed" || clientId === "available") return;
       if (clientNotesById[clientId]) return;
       const rosterService = String(row.service || "").trim();
@@ -335,7 +477,7 @@
       const targets = instructorProfileKeysForRow(row.instructors, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
 
-      const nameRaw = String(row.client_name || "").trim();
+      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       const nameLower = nameRaw.toLowerCase();
       const isClosed = nameLower === "closed";
       const isOpenSlot =
@@ -350,6 +492,30 @@
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
       const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
+
+      if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) && nameRaw) {
+        const startMap =
+          (typeof window !== "undefined" &&
+            window.STAFF_DASHBOARD_SOURCE &&
+            window.STAFF_DASHBOARD_SOURCE.clientRosterStartDates) ||
+          null;
+        if (startMap) {
+          const slug = nameRaw.toLowerCase();
+          const slugNorm = slug === "timmy" ? "timi" : slug;
+          let startIso = startMap[nameRaw] || startMap[slug] || startMap[slugNorm] || "";
+          if (!startIso) {
+            for (const k of Object.keys(startMap)) {
+              const kl = String(k).trim().toLowerCase();
+              if (kl === slug || kl === slugNorm) {
+                startIso = startMap[k];
+                break;
+              }
+            }
+          }
+          startIso = String(startIso || "").trim().slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(startIso) && sessionDate < startIso) return;
+        }
+      }
 
       const selfKey =
         targets.find((k) => normalizePersonId(k) === wanted) ||
@@ -415,7 +581,7 @@
         return;
       }
 
-      const clientId = slugify(nameRaw);
+      const clientId = canonicalParticipantClientId(nameRaw);
       sessionsModel.push(
         Object.assign({}, baseSession, {
           clientId,
@@ -468,6 +634,8 @@
       clientsInfo = window.PORTAL_CLIENTS_INFO_ROWS;
     }
     mergeClientsInfoRows(built.clientNotesById, clientsInfo);
+    collapseAliasParticipantNotes(built.clientNotesById);
+    remapSessionsToCanonicalClientIds(built.sessionsModel, built.clientNotesById);
 
     return {
       staffName: profile.staffName || rawId || "Staff",
@@ -483,5 +651,10 @@
     bootstrap: bootstrap,
     lookupClientInfoText: lookupClientInfoText,
     applyClientsInfoMerge: applyClientsInfoMerge,
+    canonicalParticipantClientId: canonicalParticipantClientId,
+    resolveWorkerDisplayName: resolveWorkerDisplayName,
+    normalizeWorkerClientName: normalizeWorkerClientName,
+    resetWorkerDisplayNameCache: resetWorkerDisplayNameCache,
+    isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
   };
 })();

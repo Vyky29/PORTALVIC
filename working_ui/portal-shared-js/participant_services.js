@@ -79,9 +79,27 @@
   window.portalResolveParticipantCanonicalName = function (rawName) {
     var typed = clean(rawName);
     if (!typed) return "";
+    try {
+      var A = window.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.resolveWorkerDisplayName === "function") {
+        var resolved = A.resolveWorkerDisplayName(typed, typed);
+        if (resolved) typed = resolved;
+      }
+    } catch (_) {}
     return window.portalResolveCatalogName(typed, window.portalCollectUniqueParticipantNames(), {
       match: "startsWith",
     });
+  };
+
+  window.portalFeedbackSubmitClientName = function (rawName, clientId) {
+    try {
+      var A = window.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.resolveWorkerDisplayName === "function") {
+        var label = A.resolveWorkerDisplayName(rawName, clientId);
+        if (label) return label;
+      }
+    } catch (_) {}
+    return clean(rawName);
   };
 
   window.portalCollectUniqueStaffNames = function () {

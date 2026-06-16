@@ -403,7 +403,7 @@
       "session_date": "2026-05-13"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -683,7 +683,7 @@
       "session_date": "2026-05-15"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -1333,7 +1333,7 @@
       "session_date": "2026-05-18"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -1403,7 +1403,7 @@
       "session_date": "2026-05-18"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -1443,7 +1443,7 @@
       "session_date": "2026-05-18"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -1453,7 +1453,7 @@
       "session_date": "2026-05-18"
     },
     {
-      "client_name": "Aadam Ah",
+      "client_name": "Adaam Ah",
       "day": "Monday",
       "instructors": "DAN",
       "service": "Aquatic Activity",
@@ -1833,7 +1833,7 @@
       "session_date": "2026-05-20"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -2113,7 +2113,7 @@
       "session_date": "2026-05-22"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -2213,7 +2213,7 @@
       "session_date": "2026-06-01"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -2303,7 +2303,7 @@
       "session_date": "2026-06-01"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -2323,7 +2323,7 @@
       "session_date": "2026-06-01"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -2343,7 +2343,7 @@
       "session_date": "2026-06-01"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -2813,7 +2813,7 @@
       "session_date": "2026-06-03"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -3123,7 +3123,7 @@
       "session_date": "2026-06-05"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -3853,7 +3853,7 @@
       "session_date": "2026-06-08"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -3943,7 +3943,7 @@
       "session_date": "2026-06-08"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -3963,7 +3963,7 @@
       "session_date": "2026-06-08"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -3983,7 +3983,7 @@
       "session_date": "2026-06-08"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -4443,7 +4443,7 @@
       "session_date": "2026-06-10"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -4763,7 +4763,7 @@
       "session_date": "2026-06-12"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -5533,7 +5533,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -5623,7 +5623,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -5643,7 +5643,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -5663,7 +5663,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -6143,7 +6143,7 @@
       "session_date": "2026-06-17"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -6473,7 +6473,7 @@
       "session_date": "2026-06-19"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -7213,7 +7213,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -7303,7 +7303,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -7323,7 +7323,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -7343,7 +7343,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -7823,7 +7823,7 @@
       "session_date": "2026-06-24"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -8153,7 +8153,7 @@
       "session_date": "2026-06-26"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -8893,7 +8893,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -8983,7 +8983,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -9003,7 +9003,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -9023,7 +9023,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -9503,7 +9503,7 @@
       "session_date": "2026-07-01"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -9833,7 +9833,7 @@
       "session_date": "2026-07-03"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -10573,7 +10573,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -10663,7 +10663,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -10683,7 +10683,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -10703,7 +10703,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -11183,7 +11183,7 @@
       "session_date": "2026-07-08"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -11513,7 +11513,7 @@
       "session_date": "2026-07-10"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -12253,7 +12253,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -12343,7 +12343,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -12363,7 +12363,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Steven C",
+      "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
@@ -12383,7 +12383,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Abodi P",
+      "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -12863,7 +12863,7 @@
       "session_date": "2026-07-15"
     },
     {
-      "client_name": "Amar Ra",
+      "client_name": "Amar Rai",
       "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -13193,7 +13193,7 @@
       "session_date": "2026-07-17"
     },
     {
-      "client_name": "Adam Pi",
+      "client_name": "Adam P",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
@@ -13262,7 +13262,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-14T19:46:12Z",
+    "rosterMadreSyncedAt": "2026-06-16T08:56:12Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

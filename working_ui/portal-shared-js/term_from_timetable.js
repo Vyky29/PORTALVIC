@@ -114,7 +114,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-01": [
         "eddie",
         "joel",
-        "abodi_p"
+        "abodi_pa"
       ],
       "2026-06-02": [
         "ayman",
@@ -133,7 +133,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-08": [
         "eddie",
         "joel",
-        "abodi_p"
+        "abodi_pa"
       ],
       "2026-06-09": [
         "ayman",
@@ -181,7 +181,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "acat",
         "fadi",
         "yunis",
-        "amar_ra",
+        "amar_rai",
         "yamik"
       ],
       "2026-06-02": [
@@ -194,7 +194,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-03": [
         "fadi",
         "vithura",
-        "amar_ra",
+        "amar_rai",
         "amber"
       ],
       "2026-06-04": [
@@ -206,7 +206,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-05": [
         "fadi",
-        "adam_pi",
+        "adam_p",
         "amaar_ah"
       ],
       "2026-06-07": [
@@ -223,7 +223,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "acat",
         "fadi",
         "yunis",
-        "amar_ra",
+        "amar_rai",
         "yamik"
       ],
       "2026-06-09": [
@@ -236,7 +236,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-10": [
         "fadi",
         "vithura",
-        "amar_ra"
+        "amar_rai"
       ],
       "2026-06-11": [
         "fadi",

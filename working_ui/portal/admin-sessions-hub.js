@@ -314,16 +314,23 @@
 
   /** Legacy roster / feedback spellings → canonical slug (same person only — do not merge distinct participants). */
   var CLIENT_SLUG_ALIASES = {
-    sammer: "samer",
-    amaar: "amaar_ah",
-    rayyan: "rayyan_fi",
-    rayyan_f: "rayyan_fi",
-    adam_pilcher: "adam_pi",
-    adam_a: "adam_ab",
+    aadam_ah: "adaam_ah",
     abodi_p: "abodi_pa",
     abodi: "abodi_pa",
-    steven_ce: "steven_c",
-    steven_c: "steven_c",
+    adam_pi: "adam_p",
+    adam_pilcher: "adam_p",
+    adam_a: "adam_ab",
+    amar_ra: "amar_rai",
+    amaar: "amaar_ah",
+    sammer: "samer",
+    rayan_tapa: "rayan_ta",
+    steven_ces: "steven",
+    steven_c: "steven",
+    steven_ce: "steven",
+    yusuf: "yusuf_ah",
+    yusef: "yusuf_ah",
+    rayyan: "rayyan_fi",
+    rayyan_f: "rayyan_fi",
     junaid: "junaid_f",
   };
 
@@ -370,6 +377,27 @@
       if (out.portal_session_key) {
         out.portal_session_key = normalizeAdamAbFeedbackPortalKey(out.portal_session_key);
       }
+      return out;
+    });
+  }
+
+  /** Worker short label from roster / Clients Info (e.g. Aadam Ah typo → Adaam Ah). */
+  function normalizeWorkerDisplayFeedbackRows(feedbackList) {
+    if (!Array.isArray(feedbackList)) return feedbackList;
+    return feedbackList.map(function (fb) {
+      var cid = canonicalClientSlug(fb.client_id || fb.client_name);
+      if (!cid) return fb;
+      var canon = resolveRosterClientName(cid);
+      if (!canon && cid === "adaam_ah") canon = "Adaam Ah";
+      if (!canon || clean(fb.client_name) === clean(canon)) {
+        if (cid && clean(fb.client_id) && canonicalClientSlug(fb.client_id) === cid) return fb;
+        if (cid && (!fb.client_id || canonicalClientSlug(fb.client_id) !== cid)) {
+          return Object.assign({}, fb, { client_id: cid });
+        }
+        return fb;
+      }
+      if (canonicalClientSlug(canon) !== canonicalClientSlug(fb.client_name)) return fb;
+      var out = Object.assign({}, fb, { client_name: canon, client_id: cid });
       return out;
     });
   }
@@ -2792,6 +2820,9 @@
       this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
         this.payload.session_feedback,
         adamDates
+      );
+      this.payload.session_feedback = normalizeWorkerDisplayFeedbackRows(
+        this.payload.session_feedback
       );
     }
     this.indexAbsentMarks();
