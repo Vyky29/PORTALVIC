@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-trial-eddie-mc" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
     *{box-sizing:border-box}
@@ -127,7 +128,13 @@
       border:1px solid rgba(23,50,71,.12);box-shadow:0 4px 16px rgba(11,24,38,.06);
     }
     .lab-today-panel .today-grid{padding:4px 8px 10px}
-    .lab-today-panel .today-grid-rows{display:flex;flex-direction:column;gap:8px}
+    .lab-today-demos{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px}
+    @media(min-width:820px){.lab-today-demos{grid-template-columns:1fr 1fr}}
+    .lab-today-panel{max-width:none;margin:0}
+    .lab-today-panel .today-grid-rows{display:flex;flex-direction:column;gap:6px}
+    .lab-today-panel .today-grid-rows > .session-card{
+      flex:0 0 auto !important;min-height:52px;max-height:none;pointer-events:none;cursor:default;
+    }
     .lab-today-panel .session-card{pointer-events:none;cursor:default}
     .lab-today-card-wrap{min-width:0}
     .lab-today-caption{margin:0 0 4px;font-size:.72rem;font-weight:700;color:var(--lab-muted);line-height:1.35;overflow-wrap:anywhere}
@@ -146,6 +153,26 @@
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
       background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
     }
+    /* Override tiles: production colours need GuideGroup + override-top-host (mirror ReminderBanner slot-opened) */
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
+      min-height:76px;align-items:center;border-radius:14px;padding:12px 14px;gap:12px;
+      display:flex;width:100%;min-width:0;box-sizing:border-box;text-align:left;
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile .menu-btn-icon{
+      width:44px;height:44px;min-width:44px;min-height:44px;display:flex;align-items:center;
+      justify-content:center;flex-shrink:0;border-radius:12px;
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened{
+      background:linear-gradient(180deg,#ecfeff 0%,#cffafe 100%);
+      border:2px solid rgba(8,145,178,.45);box-shadow:0 6px 16px rgba(8,145,178,.18);
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-copy strong{color:#0e7490}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-sub{color:#155e75}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-chev{color:rgba(14,116,144,.55)}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-icon{
+      background:rgba(34,211,238,.22);color:#0e7490;border-color:rgba(8,145,178,.38);
+    }
+  </style>
   <style id="labLiveOverrides"></style>
 </head>
 <body class="portal-colors-lab">
@@ -244,18 +271,23 @@
           <div class="lab-notif-stack" id="labMenuSheetHost"></div>
         </div>
       </div>
-      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — tarjetas de sesión</h3>
-      <p class="lab-lead">Markup real de <code>todaySessionCardInnerHtml</code>: hora, venue, nombre, chip bajo nombre, nota pool/room a la derecha.</p>
-      <div id="labTodaySection"></div>
+      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — tarjetas de sesión por día</h3>
+      <p class="lab-lead">Mismo markup que producción: cabecera <code>TODAY · fecha</code>, filas con hora/venue, chip bajo nombre, icono pool/room a la derecha. Cada panel muestra un día distinto como en el dashboard.</p>
+      <div class="lab-today-demos" id="labTodaySection"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
       <div class="lab-chip-demo-grid" id="labChipDemos"></div>
       <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
     </section>
   </div>
 
+  <script src="/portal/portal_area_note_icons.js?v=20260616-lane-only-label"></script>
   <script>
   (function(){
     var STORAGE_KEY = 'portalLabAlertColorsV2';
+    var POOL_TIER_SVG = {
+      fish: '<svg class="session-pool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="13" cy="12" rx="7" ry="4"/><path d="M6 12H2"/><path d="M6 12c0-1 1.2-2.2 3-2.7"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/></svg>',
+      shark: '<svg class="session-pool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12L10 4v4.5c-4 .3-7 2.5-8 5.5 1 3 4 5.2 8 5.5V20l12-8z"/></svg>'
+    };
     var CAL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>';
     var SVG_URGENT = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>';
     var SVG_ANN = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M11 4.5v15l7-4.2V8.7L11 4.5zM3 9v6h3.5V9H3zm14 .5v7c1.66-.45 3-1.7 3-3.5s-1.34-3.05-3-3.5z"/></svg>';
@@ -422,12 +454,19 @@
     }
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
+    function mergeOverrideDefaults(saved){
+      var defaults = defaultOverrides();
+      return saved.map(function(s){
+        var def = defaults.find(function(d){ return d.id === s.id; }) || {};
+        return Object.assign({}, def, s, { colors: Object.assign({}, def.colors || {}, s.colors || {}) });
+      });
+    }
     function loadState(){
       try{
         var raw = localStorage.getItem(STORAGE_KEY);
         if(!raw) return;
         var parsed = JSON.parse(raw);
-        if(parsed && Array.isArray(parsed.overrides) && parsed.overrides.length) state.overrides = parsed.overrides;
+        if(parsed && Array.isArray(parsed.overrides) && parsed.overrides.length) state.overrides = mergeOverrideDefaults(parsed.overrides);
         if(parsed && Array.isArray(parsed.halos) && parsed.halos.length) state.halos = parsed.halos;
       }catch(e){}
     }
@@ -472,7 +511,9 @@
     }
 
     function cardSelector(cardClass){
-      return '#labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.'+cardClass;
+      var base = '#labLiveScope #menuSheet.menu-sheet--logo-lite';
+      return base+' #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.'+cardClass+
+        ', '+base+' #portalQuickMenuReminderBannerHost .menu-btn.'+cardClass;
     }
 
     function buildLiveCss(){
@@ -480,7 +521,7 @@
       state.overrides.forEach(function(ov){
         var c = ov.colors || {};
         var sel = cardSelector(ov.cardClass);
-        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important}');
+        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border:2px solid '+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important}');
         lines.push(sel+' .menu-btn-copy strong{color:'+c.strong+' !important}');
         lines.push(sel+' .menu-btn-sub{color:'+c.sub+' !important}');
         lines.push(sel+' .menu-btn-chev{color:'+c.strong+'99 !important}');
@@ -705,13 +746,29 @@
         (ln2 ? '<span class="session-pool-label__ln2">'+esc(ln2)+'</span>' : '')+'</span>';
     }
 
+    function poolTierSymbol(tier){
+      var svg = POOL_TIER_SVG[tier];
+      if(!svg) return '<span class="session-pool-na" aria-hidden="true">—</span>';
+      return '<span class="session-symbol-pool session-pool--'+esc(tier)+'">'+svg+'</span>';
+    }
+
+    function areaNoteSymbol(label){
+      if(typeof portalAreaNoteTodayColumnHtml === 'function'){
+        var html = portalAreaNoteTodayColumnHtml(label);
+        if(html) return html;
+      }
+      return poolTierSymbol('fish');
+    }
+
     function slotChip(cls, label){
       return '<span class="portal-session-slot-chip '+cls+'" aria-label="'+esc(label)+'"><span>'+esc(label)+'</span></span>';
     }
 
-    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml){
+    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml, asDiv){
+      var tag = asDiv ? 'div' : 'button';
+      var typeAttr = asDiv ? '' : ' type="button"';
       var chips = chipHtml ? '<div class="session-chips-below-name">'+chipHtml+'</div>' : '';
-      return '<button type="button" class="session-card '+classes+'" role="listitem">'+
+      return '<'+tag+typeAttr+' class="session-card '+classes+'" role="listitem">'+
         '<div class="session-card-body">'+
           '<div class="session-line session-line--time session-line--time-stack">'+
             '<span class="session-slot-time">'+esc(time)+'</span>'+
@@ -720,11 +777,21 @@
             '<span class="session-name-stack"><span class="session-meta-name">'+esc(name)+'</span>'+chips+'</span></div>'+
           '<div class="session-line session-line--symbol">'+
             '<span class="session-right-note">'+(poolHtml || '<span class="session-pool-na" aria-hidden="true">—</span>')+'</span></div>'+
-        '</div></button>';
+        '</div></'+tag+'>';
     }
 
-    function todayCardBlock(caption, cardHtml){
-      return '<div class="lab-today-card-wrap"><p class="lab-today-caption">'+caption+'</p>'+cardHtml+'</div>';
+    function todayDayPanel(dayLabel, dateStr, rowsHtml, note){
+      return '<div class="section-card section-card--today lab-today-panel">'+
+        '<div class="section-head section-head--today">'+
+          '<h2 class="today-section-title">'+
+            '<span class="today-section-title__label">'+esc(dayLabel)+'</span>'+
+            (dateStr ? '<span class="today-section-date">'+esc(dateStr)+'</span>' : '')+
+          '</h2></div>'+
+        '<div class="today-grid today-grid--session-scroll">'+
+          '<div class="today-grid-rows" role="list">'+rowsHtml+'</div>'+
+        '</div>'+
+        (note ? '<p class="lab-sub" style="padding:0 12px 10px;margin:0">'+note+'</p>' : '')+
+      '</div>';
     }
 
     function renderMenuSheet(){
@@ -807,7 +874,12 @@
       host.innerHTML =
         '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
           '<p class="lab-sub" style="margin:0 0 10px">Schedule overrides (logo-lite top)</p>'+
-          '<div class="portal-qm-override-stack">'+overrideBtns+reverted+'</div>'+
+          '<div class="menu-group" id="portalQuickMenuGuideGroup">'+
+            '<div class="portal-qm-override-top-host">'+
+              '<div class="portal-qm-override-stack">'+overrideBtns+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div id="portalQuickMenuReminderBannerHost">'+reverted+'</div>'+
           '<div class="menu-group" id="portalQuickMenuNotificationsGroup" style="margin-top:16px">'+
             '<div class="menu-group-title">Announcements</div>'+
             '<div class="menu-grid menu-grid--portal-notices menu-grid--portal-announcements-split" id="portalQuickMenuNoticesGrid">'+
@@ -836,46 +908,61 @@
     function renderTodaySection(){
       var host = document.getElementById('labTodaySection');
       if(!host) return;
-      var poolTeaching = todayPoolNote('Teaching', 'Pool');
-      var poolShallow = todayPoolNote('Shallow', 'End');
-      var poolRoom = todayPoolNote('Hub', 'Room');
-      var cards = [
-        todayCardBlock('Normal — Eddie Ri (participant habitual, sin override)',
-          todayCardHtml('', '11 to 12 am', 'Westway', 'Eddie Ri', '', poolTeaching)),
-        todayCardBlock('Normal + sesión acabada — feedback <strong>Pending</strong> (tarjeta naranja)',
-          todayCardHtml('session-card--review-needed', '11 to 12 am', 'Westway', 'Eddie Ri',
-            slotChip('portal-session-slot-chip--pending', 'Pending'), poolTeaching)),
-        todayCardBlock('Normal + feedback <strong>Submitted</strong> (tarjeta verde)',
-          todayCardHtml('session-card--review-done', '2 to 3 pm', 'Westway', 'Mary K',
-            slotChip('portal-session-slot-chip--submitted', 'Submitted'), poolShallow)),
-        todayCardBlock('Trial activo — Chaitanya en hueco NO PARTICIPANT (lila)',
-          todayCardHtml('session-card--ov-trial override--trial', '3 to 4 pm', 'Westway', 'Chaitanya',
-            slotChip('portal-session-slot-chip--trial', 'Trial'), poolTeaching)),
-        todayCardBlock('MakeUp activo — replace sin trial (rosa)',
-          todayCardHtml('session-card--ov-pink override--replace session-card--review-needed', '10 to 11 am', 'Acton', 'Youssef',
-            slotChip('portal-session-slot-chip--makeup', 'Make up'), todayPoolNote('Main', 'Pool'))),
-        todayCardBlock('Absent anunciado (verde + chip Absent)',
-          todayCardHtml('override--absent session-card--ov-green', '9 to 10 am', 'Pool', 'James',
-            slotChip('portal-session-slot-chip--absent', 'Absent'), poolShallow)),
-        todayCardBlock('Cancelled (rojo + chip Cancelled)',
-          todayCardHtml('session-card--ov-red', '4 to 5 pm', 'Westway', 'Slot cleared',
-            slotChip('portal-session-slot-chip--cancelled', 'Cancelled'), '<span class="session-pool-na">—</span>')),
-        todayCardBlock('Tras <strong>revert</strong> — Eddie Ri otra vez, tarjeta blanca normal (sin chip override)',
-          todayCardHtml('', '11 to 12 am', 'Westway', 'Eddie Ri', '', poolTeaching)),
-        todayCardBlock('Training (admin session_add) — amarillo',
-          todayCardHtml('session-card--ov-yellow', '10 to 11 am', 'Westway', 'Training',
-            '', todayPoolNote('Room', ''))),
-        todayCardBlock('Shadowing (admin session_add) — amarillo',
-          todayCardHtml('session-card--ov-yellow', '2 to 4 pm', 'Acton', 'Shadowing',
-            slotChip('portal-session-slot-chip--plain', 'Pool'), todayPoolNote('Pool', '')))
-      ].join('');
-      host.innerHTML =
-        '<div class="section-card section-card--today lab-today-panel">'+
-          '<div class="today-grid today-grid--session-scroll">'+
-            '<div class="today-grid-rows" role="list">'+cards+'</div>'+
-          '</div>'+
-          '<p class="lab-sub">Columna derecha = nota de área (pool/room). Chips = <code>portal-session-slot-chip--*</code> bajo el nombre.</p>'+
-        '</div>';
+      var fish = poolTierSymbol('fish');
+      var shark = poolTierSymbol('shark');
+      var teachingPool = areaNoteSymbol('Teaching Pool');
+      var dayCentre = areaNoteSymbol('Day Centre');
+
+      var panelTodayPending = todayDayPanel('TODAY', '16/06/2026',
+        todayCardHtml('session-card--review-needed', '4.30 to 5', 'Acton', 'Bediako',
+          slotChip('portal-session-slot-chip--pending', 'Pending'), fish)+
+        todayCardHtml('session-card--review-needed', '4.30 to 5.30', 'Acton', 'Junaid F',
+          slotChip('portal-session-slot-chip--pending', 'Pending'), shark)+
+        todayCardHtml('session-card--review-needed', '5.30 to 6', 'Acton', 'Aydaan Ah',
+          slotChip('portal-session-slot-chip--pending', 'Pending'), fish)+
+        todayCardHtml('session-card--review-needed', '6 to 6.30', 'Acton', 'Hazem',
+          slotChip('portal-session-slot-chip--pending', 'Pending'), shark),
+        'Todas <strong>Pending</strong> — tarjeta naranja (<code>session-card--review-needed</code>).');
+
+      var panelThuNormal = todayDayPanel('THURSDAY', '18/06/2026',
+        todayCardHtml('', '4 to 4.30', 'Acton', 'Elijah', '', fish)+
+        todayCardHtml('', '4.30 to 5.30', 'Acton', 'Aqsa', '', shark)+
+        todayCardHtml('', '5.30 to 6', 'Acton', 'Hazem', '', shark)+
+        todayCardHtml('', '6 to 6.30', 'Acton', 'Maiyar', '', teachingPool),
+        'Sesiones normales — blanco, sin chip. Pez = teaching pool · tiburón = main pool.');
+
+      var panelThuMix = todayDayPanel('THURSDAY', '11/06/2026',
+        todayCardHtml('session-card--review-needed', '4 to 4.30', 'Acton', 'Elijah',
+          slotChip('portal-session-slot-chip--pending', 'Pending'), fish)+
+        todayCardHtml('override--absent session-card--ov-green', '4.30 to 5.30', 'Acton', 'Aqsa',
+          slotChip('portal-session-slot-chip--absent', 'Absent'), shark)+
+        todayCardHtml('session-card--ov-green override--replace session-card--review-done', '5.30 to 6', 'Acton', 'Yossi',
+          slotChip('portal-session-slot-chip--makeup', 'Make Up'), shark)+
+        todayCardHtml('session-card--ov-green session-card--review-done', '5.30 to 6', 'Acton', 'Hazem',
+          slotChip('portal-session-slot-chip--submitted', 'Submitted'), shark)+
+        todayCardHtml('session-card--ov-green session-card--review-done', '6 to 6.30', 'Acton', 'Maiyar',
+          slotChip('portal-session-slot-chip--submitted', 'Submitted'), teachingPool),
+        'Mezcla: pending naranja · override verde (absent/makeup) · submitted verde.');
+
+      var panelWedOverrides = todayDayPanel('WEDNESDAY', '17/06/2026',
+        todayCardHtml('', '11 to 4', 'SwimFarm', 'Stephanie', '', teachingPool)+
+        todayCardHtml('', '11 to 4', 'SwimFarm', 'Scott', '', teachingPool)+
+        todayCardHtml('session-card--ov-trial override--trial', '11 to 4', 'Westway', 'Eddie Ri',
+          slotChip('portal-session-slot-chip--trial', 'Trial'), teachingPool)+
+        todayCardHtml('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'No participant', '', teachingPool, true)+
+        todayCardHtml('', '11 to 4', 'Acton', 'Ikram', '', dayCentre),
+        'Trial lila · slot abierto amarillo · Day Centre naranja (icono área).');
+
+      var panelExtras = todayDayPanel('Catálogo', '',
+        todayCardHtml('', '11 to 12 am', 'Westway', 'Eddie Ri', '', teachingPool)+
+        todayCardHtml('session-card--ov-red', '4 to 5 pm', 'Westway', 'Slot cleared',
+          slotChip('portal-session-slot-chip--cancelled', 'Cancelled'), '<span class="session-pool-na">—</span>')+
+        todayCardHtml('session-card--ov-yellow', '10 to 11 am', 'Westway', 'Training', '', todayPoolNote('Room', ''))+
+        todayCardHtml('session-card--ov-yellow', '2 to 4 pm', 'Acton', 'Shadowing',
+          slotChip('portal-session-slot-chip--plain', 'Pool'), todayPoolNote('Pool', '')),
+        'Cancelled rojo · Training/Shadowing amarillo · revert = blanco normal.');
+
+      host.innerHTML = panelTodayPending + panelThuNormal + panelThuMix + panelWedOverrides + panelExtras;
     }
 
     function renderChipLegend(){
