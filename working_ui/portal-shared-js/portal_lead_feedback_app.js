@@ -1,7 +1,7 @@
 /**
  * Lead session report form (portal-lead-feedback.html) — wires lr* fields to lead_session_reports.
  */
-const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260615-lead-report";
+const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260616-lead-report-shell";
 const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260609-autofill";
 const PORTAL_AUTOCOMPLETE_SCRIPT = "/portal-shared-js/portal_field_autocomplete.js?v=20260609-autofill";
 const PORTAL_CATALOG_SCRIPT = "/portal-shared-js/participant_services.js?v=20260609-autofill";

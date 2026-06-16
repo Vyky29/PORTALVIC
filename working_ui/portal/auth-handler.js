@@ -419,6 +419,13 @@ export function portalStaffHomeHasLeadFieldTools(profile, authEmail) {
   );
 }
 
+/** True on lead_dashboard.html only — not standalone lead field tools (feedback report, …). */
+export function portalIsLeadDashboardShellPage() {
+  if (typeof window === "undefined") return false;
+  const path = String(window.location.pathname || "").toLowerCase();
+  return path.includes("lead_dashboard");
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
  * Executive trio skip chooser — land on Admin portal directly.
@@ -1433,7 +1440,12 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
     }
 
-    if (typeof window !== "undefined" && profile && page === "lead") {
+    if (
+      typeof window !== "undefined" &&
+      profile &&
+      page === "lead" &&
+      portalIsLeadDashboardShellPage()
+    ) {
       let authEmail = String(session.user?.email || "").trim();
       if (!authEmail) {
         try {
