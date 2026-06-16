@@ -8672,6 +8672,16 @@
       "session_date": "2026-06-28"
     },
     {
+      "client_name": "Chaitanya (Trial 28/06)",
+      "day": "Sunday",
+      "instructors": "CARLOS",
+      "service": "Climbing Activity",
+      "area": "Wall",
+      "time_slot": "3 to 4",
+      "venue": "Westway",
+      "session_date": "2026-06-28"
+    },
+    {
       "client_name": "Simon",
       "day": "Sunday",
       "instructors": "DAN",

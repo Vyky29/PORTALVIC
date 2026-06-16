@@ -314,14 +314,23 @@
 
   /** Legacy roster / feedback spellings → canonical slug (same person only — do not merge distinct participants). */
   var CLIENT_SLUG_ALIASES = {
-    sammer: "samer",
+    aadam_ah: "adaam_ah",
+    abodi_p: "abodi_pa",
+    abodi: "abodi_pa",
+    adam_pi: "adam_p",
+    adam_pilcher: "adam_p",
+    adam_a: "adam_ab",
+    amar_ra: "amar_rai",
     amaar: "amaar_ah",
+    sammer: "samer",
+    rayan_tapa: "rayan_ta",
+    steven_ces: "steven",
+    steven_c: "steven",
+    steven_ce: "steven",
+    yusuf: "yusuf_ah",
+    yusef: "yusuf_ah",
     rayyan: "rayyan_fi",
     rayyan_f: "rayyan_fi",
-    adam_pilcher: "adam_pi",
-    adam_a: "adam_ab",
-    steven_ce: "steven_c",
-    steven_c: "steven_c",
     junaid: "junaid_f",
   };
 
@@ -372,16 +381,56 @@
     });
   }
 
-  /** Bad submit: roster area saved as client_name (e.g. "Big Pool" instead of Haneef). */
+  /** Worker short label from roster / Clients Info (e.g. Aadam Ah typo → Adaam Ah). */
+  function normalizeWorkerDisplayFeedbackRows(feedbackList) {
+    if (!Array.isArray(feedbackList)) return feedbackList;
+    return feedbackList.map(function (fb) {
+      var cid = canonicalClientSlug(fb.client_id || fb.client_name);
+      if (!cid) return fb;
+      var canon = resolveRosterClientName(cid);
+      if (!canon && cid === "adaam_ah") canon = "Adaam Ah";
+      if (!canon || clean(fb.client_name) === clean(canon)) {
+        if (cid && clean(fb.client_id) && canonicalClientSlug(fb.client_id) === cid) return fb;
+        if (cid && (!fb.client_id || canonicalClientSlug(fb.client_id) !== cid)) {
+          return Object.assign({}, fb, { client_id: cid });
+        }
+        return fb;
+      }
+      if (canonicalClientSlug(canon) !== canonicalClientSlug(fb.client_name)) return fb;
+      var out = Object.assign({}, fb, { client_name: canon, client_id: cid });
+      return out;
+    });
+  }
+
+  /** Bad submit: roster area saved as client_name (e.g. "Big Pool" / "Wall" instead of Scott). */
   function isMislabeledRosterAreaClientName(name) {
     var s = canonicalClientSlug(name);
     return (
+      s === "wall" ||
       s === "big_pool" ||
       s === "hub_room" ||
       s === "small_pool" ||
       s === "teaching_pool" ||
-      s === "climbing_wall"
+      s === "climbing_wall" ||
+      s === "room_2" ||
+      s === "room_3" ||
+      s === "pools"
     );
+  }
+
+  function portalSessionKeyAreaSlugTokens() {
+    return {
+      wall: true,
+      big_pool: true,
+      hub_room: true,
+      small_pool: true,
+      teaching_pool: true,
+      climbing_wall: true,
+      room_2: true,
+      room_3: true,
+      pools: true,
+      default: true,
+    };
   }
 
   /** Session date for roster match \u2013 never use created_at (late submit on another day). */
@@ -458,6 +507,90 @@
     var start = String(ah).padStart(2, "0") + ":" + String(a.m).padStart(2, "0");
     var end = String(bh).padStart(2, "0") + ":" + String(b.m).padStart(2, "0");
     return { start: start, end: end, label: normalized };
+  }
+
+  /** Inverse of hourTo24 — roster labels use 4.30 to 5, not 16.30 to 17 (Mon–Sat PM). */
+  function hourFrom24ToRosterDisplay(hour, day) {
+    var h = parseInt(hour, 10);
+    if (!Number.isFinite(h)) return hour;
+    if (day === "Sunday") {
+      if (h >= 13 && h <= 15) return h - 12;
+      return h;
+    }
+    if (h >= 13 && h <= 21) return h - 12;
+    if (h === 12) return 12;
+    return h;
+  }
+
+  function rosterHmTokenFrom24(hm, day) {
+    var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+    if (!p) return "";
+    var h = hourFrom24ToRosterDisplay(parseInt(p[1], 10), day);
+    var m = parseInt(p[2], 10) || 0;
+    if (!m) return String(h);
+    return h + "." + String(m).padStart(2, "0");
+  }
+
+  /** Canonical roster-style band label (matches spreadsheet: 4.30 to 5). */
+  function rosterTimeSlotLabelFromBounds(startHm, endHm, day) {
+    var a = rosterHmTokenFrom24(startHm, day);
+    if (!a) return "";
+    var b = rosterHmTokenFrom24(endHm, day);
+    return b ? a + " to " + b : a;
+  }
+
+  function normalizeAnchorStaffId(raw) {
+    return String(raw == null ? "" : raw)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function slotAnchorStaffKey(slot) {
+    var raw = "";
+    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    else if (slot.instructor_label) {
+      raw = String(slot.instructor_label).split(/[,/&+]+|\s+and\s+/gi)[0];
+    }
+    return normalizeAnchorStaffId(raw) || primaryInstructorKey(slot);
+  }
+
+  function makeupOpenAnchorKey(ov, wd) {
+    var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    return [
+      clean(ov.session_date),
+      clean(ov.anchor_venue).toLowerCase(),
+      normalizeAnchorStaffId(ov.anchor_staff_id),
+      oStart || "",
+    ].join("|");
+  }
+
+  function openSlotMakeupAnchorKey(slot, wd) {
+    var st = slot.time_start || normTimeKey(slot.time_slot, wd);
+    return [
+      clean(slot.session_date),
+      clean(slot.venue).toLowerCase(),
+      slotAnchorStaffKey(slot),
+      st || "",
+    ].join("|");
+  }
+
+  /** MakeUp on NO PARTICIPANT anchor replaces the open line — do not show both rows. */
+  function suppressOpenSlotsConsumedByMakeupOverrides(out, isoDate, wd, overrides) {
+    if (!out || !out.length || !overrides || !overrides.length) return out;
+    var consumed = Object.create(null);
+    for (var j = 0; j < overrides.length; j++) {
+      var ov = overrides[j];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+      consumed[makeupOpenAnchorKey(ov, wd)] = true;
+    }
+    if (!Object.keys(consumed).length) return out;
+    return out.filter(function (slot) {
+      if (!isOpenRosterSlot(slot.client_name)) return true;
+      return !consumed[openSlotMakeupAnchorKey(slot, wd)];
+    });
   }
 
   function weekdayLongFromIso(iso) {
@@ -733,24 +866,31 @@
     if (!raw) return { date: "", time: "", clientSlug: "" };
     var parts = raw.split("|").map(clean);
     var date = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : "";
+    var dayWord = date ? weekdayLongFromIso(date) : "";
     var time = "";
     var clientSlug = "";
+    var areaSlugs = portalSessionKeyAreaSlugTokens();
     for (var i = 1; i < parts.length; i++) {
       var p = parts[i];
       if (!p) continue;
-      var tk = normTimeKey(p);
+      var tk = normTimeKey(p, dayWord);
       if (tk && /^\d{2}:\d{2}$/.test(tk)) {
         time = tk;
         continue;
       }
-      if (!clientSlug) clientSlug = slugify(p);
+      var sl = slugify(p);
+      if (!sl || areaSlugs[sl]) continue;
+      if (!clientSlug) clientSlug = sl;
     }
     if (!clientSlug) {
-      for (var j = parts.length - 1; j >= 1; j--) {
-        if (parts[j]) {
-          clientSlug = slugify(parts[j]);
-          break;
-        }
+      for (var j = 1; j < parts.length; j++) {
+        if (!parts[j]) continue;
+        var tk2 = normTimeKey(parts[j], dayWord);
+        if (tk2 && /^\d{2}:\d{2}$/.test(tk2)) continue;
+        var sl2 = slugify(parts[j]);
+        if (!sl2 || areaSlugs[sl2]) continue;
+        clientSlug = sl2;
+        break;
       }
     }
     if (clientSlug) clientSlug = canonicalClientSlug(clientSlug);
@@ -759,7 +899,7 @@
 
   function resolveRosterClientName(slug) {
     var s = canonicalClientSlug(slug);
-    if (!s) return "";
+    if (!s || isMislabeledRosterAreaClientName(s)) return "";
     var rows =
       global.STAFF_DASHBOARD_SOURCE && Array.isArray(global.STAFF_DASHBOARD_SOURCE.rows)
         ? global.STAFF_DASHBOARD_SOURCE.rows
@@ -767,6 +907,7 @@
     for (var i = 0; i < rows.length; i++) {
       if (canonicalClientSlug(rows[i].client_name) === s) return clean(rows[i].client_name);
     }
+    if (isMislabeledRosterAreaClientName(s)) return "";
     return s.replace(/_/g, " ").replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });
@@ -814,6 +955,38 @@
     );
   }
 
+  function statusExportRowsForDate(iso) {
+    var src = global.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) return [];
+    var want = clean(iso).substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(want)) return [];
+    return src.rows.filter(function (r) {
+      return String(r.date || "").trim().substring(0, 10) === want;
+    });
+  }
+
+  function statusExportRowMatchesSlot(stRow, slot) {
+    if (!stRow || !slot) return false;
+    var want = String(slot.session_date || "").trim().substring(0, 10);
+    if (String(stRow.date || "").trim().substring(0, 10) !== want) return false;
+    if (canonicalClientSlug(stRow.client) !== canonicalClientSlug(slot.client_name)) return false;
+    var slotTs = clean(slot.time_slot).toLowerCase();
+    var rowTs = clean(stRow.timeSlot || stRow.time_slot).toLowerCase();
+    if (slotTs && rowTs && slotTs !== rowTs) return false;
+    return true;
+  }
+
+  function statusExportRowIsAbsent(stRow) {
+    return String(stRow && stRow.overviewStatus || "").trim().toLowerCase() === "absent";
+  }
+
+  function statusExportRowIsResolved(stRow) {
+    if (!stRow) return false;
+    var st = String(stRow.overviewStatus || "").trim().toLowerCase();
+    if (st === "absent" || st === "cancelled") return true;
+    return !!stRow.feedbackComplete;
+  }
+
   function overrideIsCancelledType(ov) {
     var t = String(ov && ov.override_type || "").trim();
     if (String(ov && ov.status || "active").trim() !== "active") return false;
@@ -829,14 +1002,152 @@
     );
   }
 
+  function overrideIsReplaceType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "client_replace_in_slot" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideAnchorIsOpenSlot(anchorClientId) {
+    var s = clean(anchorClientId).toLowerCase();
+    return !s || s === "available" || s === "closed" || s === "no client" || s === "no participant" || s === "noclient" || s === "no_participant";
+  }
+
+  function overrideReplacementClientId(payload) {
+    var p = payload;
+    if (!p) return "";
+    var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
+    if (toId) return toId;
+    var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
+    return repId || "";
+  }
+
+  function overrideReplacementClientName(payload) {
+    var p = payload;
+    if (!p) return "";
+    var toName = p.to_client_name != null ? String(p.to_client_name).trim() : "";
+    if (toName) return toName;
+    var repName = p.replacement_client_name != null ? String(p.replacement_client_name).trim() : "";
+    return repName || "";
+  }
+
+  function resolveStaffDisplayName(staffId) {
+    var sid = clean(staffId).toLowerCase();
+    if (!sid) return "";
+    return sid.charAt(0).toUpperCase() + sid.slice(1);
+  }
+
+  function staffIdMatchesInstructor(staffId, instructors) {
+    var sid = clean(staffId).toLowerCase();
+    if (!sid) return true;
+    if (!instructors || !instructors.length) return true;
+    for (var i = 0; i < instructors.length; i++) {
+      var inst = clean(instructors[i]).toLowerCase();
+      if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
+    }
+    return false;
+  }
+
+  function slotFromMakeupOverride(isoDate, wd, ov) {
+    if (!ov || !overrideIsReplaceType(ov)) return null;
+    if (clean(ov.session_date) !== isoDate) return null;
+    var p = overridePayloadObj(ov);
+    var repId = overrideReplacementClientId(p);
+    var repName = overrideReplacementClientName(p);
+    if (!repId && !repName) return null;
+    var clientName = repName || resolveRosterClientName(repId) || repId.replace(/_/g, " ");
+    var timeLabel = clean(ov.anchor_time_slot_label);
+    var slotTimes = parseTimeSlot(
+      timeLabel ||
+        (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
+      wd
+    );
+    var startHm = normTimeShort(ov.anchor_start) || slotTimes.start;
+    var endHm = normTimeShort(ov.anchor_end) || slotTimes.end;
+    var rosterTimeLabel =
+      rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
+    var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
+    var instructors = staffLabel ? [staffLabel] : [];
+    var service = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+    var slotRow = {
+      session_date: isoDate,
+      day: wd,
+      client_name: clientName,
+      service: service,
+      time_slot: rosterTimeLabel,
+      time_start: startHm,
+      time_end: endHm,
+      venue: clean(ov.anchor_venue),
+      area: clean(p.area || p.pool_note || ""),
+      instructors: instructors,
+      instructor_label: instructors.join(", "),
+      anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
+      session_key: buildSessionKey(isoDate, {
+        client_name: clientName,
+        service: service,
+        time_slot: timeLabel,
+        venue: clean(ov.anchor_venue),
+        area: clean(p.area || ""),
+        instructors: staffLabel,
+      }),
+      portalOverrideMakeUpTag: true,
+      __portalScheduleOverride: ov,
+    };
+    slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    return slotRow;
+  }
+
+  function injectOrphanMakeupOverrideSlots(hub, out, isoDate, wd) {
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return out;
+    var seenOvIds = Object.create(null);
+    var seenRepKeys = Object.create(null);
+    for (var i = 0; i < out.length; i++) {
+      var s = out[i];
+      var ov0 = s && s.__portalScheduleOverride;
+      if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
+      if (s && s.portalOverrideMakeUpTag) {
+        var rid = canonicalClientSlug(s.client_name);
+        var st = s.time_start || normTimeKey(s.time_slot, wd);
+        if (rid && st) seenRepKeys[rid + "|" + st] = true;
+      }
+    }
+    var added = [];
+    for (var j = 0; j < ovs.length; j++) {
+      var ov = ovs[j];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      var p = overridePayloadObj(ov);
+      if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
+      var syn = slotFromMakeupOverride(isoDate, wd, ov);
+      if (!syn) continue;
+      var repKey = canonicalClientSlug(syn.client_name) + "|" + (syn.time_start || "");
+      if (seenRepKeys[repKey]) continue;
+      if (ov.id) seenOvIds[String(ov.id)] = true;
+      seenRepKeys[repKey] = true;
+      added.push(syn);
+    }
+    if (!added.length) return out;
+    out = out.concat(added);
+    out.sort(function (a, b) {
+      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+    });
+    return out;
+  }
+
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
   }
 
   function hubOverrideChipClass(ov) {
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
@@ -845,6 +1156,85 @@
   function hubSlotShowsUpdatedChip(slot, slotOv) {
     if (overrideIsSlotUpdateType(slotOv)) return true;
     return !!(slot && slot.portalRosterTimeUpdated);
+  }
+
+  function hubSlotShowsMakeupChip(slot, slotOv) {
+    return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
+  }
+
+  /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
+  function hubSlotIsMakeup(slot) {
+    if (!slot) return false;
+    if (slot.portalOverrideMakeUpTag) return true;
+    var ov = slot.__portalScheduleOverride;
+    return !!(ov && overrideIsReplaceType(ov));
+  }
+
+  /** Active overrides from the loaded admin hub payload (makeup slot counting + matching). */
+  var _activeScheduleOverrides = [];
+
+  function syncScheduleOverridesForMatching(overrides) {
+    _activeScheduleOverrides = Array.isArray(overrides) ? overrides : [];
+  }
+
+  function aquaticMakeupSlotsForClientOnDate(iso, clientName) {
+    var cid = canonicalClientSlug(clientName);
+    if (!iso || !cid || !_activeScheduleOverrides.length) return [];
+    var out = [];
+    for (var i = 0; i < _activeScheduleOverrides.length; i++) {
+      var ov = _activeScheduleOverrides[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== iso) continue;
+      var p = overridePayloadObj(ov);
+      var repSlug =
+        overrideReplacementClientId(p) || canonicalClientSlug(overrideReplacementClientName(p));
+      if (repSlug !== cid) continue;
+      var svc = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+      if (!isAquaticService(svc)) continue;
+      out.push({
+        instructor: resolveStaffDisplayName(ov.anchor_staff_id),
+        time_start: normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label),
+      });
+    }
+    return out;
+  }
+
+  function makeupFeedbackTimeMatchesSlot(fb, slot) {
+    var st = slot.time_start || normTimeKey(slot.time_slot, slot.day);
+    if (!st) return false;
+    var ft = normTimeKey(fb.session_time, slot.day);
+    if (ft && ft === st) return true;
+    if (fb.session_time && slot.day) {
+      var parsed = parseTimeSlot(fb.session_time, slot.day);
+      if (parsed.start && parsed.start === st) return true;
+    }
+    var pk = clean(fb.portal_session_key);
+    if (!pk) return false;
+    var parts = pk.split("|").map(clean);
+    if (parts.length >= 2 && normTimeKey(parts[1], slot.day) === st) return true;
+    if (parts.length >= 3 && normTimeKey(parts[2], slot.day) === st) return true;
+    if (parts.length >= 3 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+      if (
+        parts[1] &&
+        !normTimeKey(parts[1]) &&
+        normTimeKey(parts[2], slot.day) === st &&
+        canonicalClientSlug(parts[1]) === canonicalClientSlug(slot.client_name)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** MakeUp: same client/day is not enough — covering instructor + anchor time must match. */
+  function makeupFeedbackStrictFits(fb, slot) {
+    if (!fb || !slot) return false;
+    if (isAbsentFeedbackRow(fb)) return false;
+    if (!feedbackRosterDateMatches(fb, slot)) return false;
+    if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+    if (!servicesCompatibleForSlot(fb, slot)) return false;
+    if (!makeupFeedbackTimeMatchesSlot(fb, slot)) return false;
+    return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
   }
 
   function overrideClientName(ov) {
@@ -895,15 +1285,23 @@
     };
   }
 
-  /** Always HH:MM (zero-padded) so roster keys match submitted portal_session_key variants. */
-  function normTimeKey(t) {
+  /** Always HH:MM (zero-padded). Accepts roster dot times (1.15) and staff portal_session_key tokens. */
+  function normTimeKey(t, dayWord) {
     var s = clean(t).toLowerCase().replace(/\s+/g, " ");
     if (!s) return "";
-    var hm = s.match(/^(\d{1,2}):(\d{2})/);
+    var hm = s.match(/^(\d{1,2}):(\d{2})$/);
     if (hm) {
       return String(parseInt(hm[1], 10)).padStart(2, "0") + ":" + String(parseInt(hm[2], 10) || 0).padStart(2, "0");
     }
-    var p = parseTimeSlot(s, "");
+    var dot = s.match(/^(\d{1,2})\.(\d{1,2})$/);
+    if (dot) {
+      var dh = parseInt(dot[1], 10);
+      var dm = parseInt(dot[2], 10) || 0;
+      if (dayWord) dh = hourTo24(dh, dayWord);
+      else if (dh >= 1 && dh <= 7) dh = dh + 12;
+      return String(dh).padStart(2, "0") + ":" + String(dm).padStart(2, "0");
+    }
+    var p = parseTimeSlot(s, dayWord || "");
     return p.start || "";
   }
 
@@ -926,6 +1324,18 @@
     if (sk) keys.push(sk);
     var cid = canonicalClientSlug(slot.client_name);
     if (!slot.session_date || !cid) return keys;
+    if (hubSlotIsMakeup(slot)) {
+      keys.push(feedbackUnitKey(slot));
+      var mkT = slot.time_start || normTimeKey(slot.time_slot, slot.day);
+      if (mkT) {
+        keys.push(slot.session_date + "|" + mkT + "|" + cid);
+        if (isAquaticService(slot.service)) {
+          keys.push(slot.session_date + "|" + cid + "|" + mkT + "|aquatic");
+          keys.push(slot.session_date + "|" + cid + "|" + mkT + "|aquatic|" + primaryInstructorKey(slot));
+        }
+      }
+      return keys;
+    }
     if (isDayCentreService(slot.service)) {
       keys.push(slot.session_date + "|" + cid);
       keys.push(slot.session_date + "|" + cid + "|day_centre");
@@ -956,6 +1366,15 @@
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area);
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area + "|" + inst);
       }
+    }
+    if (isClimbingService(slot.service)) {
+      keys.push(feedbackUnitKey(slot));
+      var climbArea = sessionAreaKey(slot.area);
+      var climbInst = primaryInstructorKey(slot);
+      if (climbArea && climbArea !== "default") keys.push(base + "|" + climbArea);
+      keys.push(base + "|" + serviceKey(slot.service));
+      keys.push(base + "|" + serviceKey(slot.service) + "|" + climbArea);
+      keys.push(base + "|" + serviceKey(slot.service) + "|" + climbArea + "|" + climbInst);
     }
     if (isAquaticService(slot.service)) {
       keys.push(feedbackUnitKey(slot));
@@ -1018,9 +1437,10 @@
     var rawSlug = slugify(fb.client_name);
     if (!sd || !nm) return keys;
     var parsedPk = parsePortalSessionKeyFields(pk);
+    var climbingOrMaPerSlot = isClimbingService(svc) || isMultiActivityService(svc);
     if (parsedPk.date && parsedPk.clientSlug) {
       if (parsedPk.time) keys.push(parsedPk.date + "|" + parsedPk.time + "|" + parsedPk.clientSlug);
-      keys.push(parsedPk.date + "|" + parsedPk.clientSlug);
+      if (!climbingOrMaPerSlot) keys.push(parsedPk.date + "|" + parsedPk.clientSlug);
     }
     var tk = sd + "|" + normTimeKey(fb.session_time) + "|" + nm;
     keys.push(tk);
@@ -1029,7 +1449,7 @@
       isAquaticService(svc) &&
       aquaticSlotCountForClientOnDate(sd, fb.client_name) > 1 &&
       !aquaticSameInstructorAllSlotsOnDate(sd, fb.client_name);
-    if (!aquaticPerSlot) {
+    if (!aquaticPerSlot && !climbingOrMaPerSlot) {
       keys.push(broadDateClient);
     }
     if (isDayCentreService(svc)) {
@@ -1038,14 +1458,33 @@
     }
     if (rawSlug && rawSlug !== nm) {
       keys.push(sd + "|" + normTimeKey(fb.session_time) + "|" + rawSlug);
-      if (!aquaticPerSlot) keys.push(sd + "|" + rawSlug);
+      if (!aquaticPerSlot && !climbingOrMaPerSlot) keys.push(sd + "|" + rawSlug);
     }
     if (isMultiActivityService(svc)) {
       var t = normTimeKey(fb.session_time);
       if (t) {
         keys.push(tk + "|" + serviceKey(svc));
-        keys.push(sd + "|" + t + "|" + nm + "|big_pool");
-        keys.push(sd + "|" + t + "|" + nm + "|hub_room");
+        var maKind = feedbackAreaKindFromFb(fb);
+        var maArea = portalKeyAreaFromParts(pk ? pk.split("|").map(clean) : []);
+        if (!maArea || maArea === "default") {
+          if (maKind === "hub") maArea = "hub_room";
+          else if (maKind === "pool") maArea = "big_pool";
+          else if (maKind === "aquatic") maArea = "small_pool";
+        }
+        if (maArea && maArea !== "default") {
+          keys.push(sd + "|" + t + "|" + nm + "|" + maArea);
+        }
+      }
+    }
+    if (isClimbingService(svc)) {
+      var ct = normTimeKey(fb.session_time);
+      if (ct) {
+        keys.push(tk + "|" + serviceKey(svc));
+        var climbAreaFb = portalKeyAreaFromParts(pk ? pk.split("|").map(clean) : []);
+        if (!climbAreaFb || climbAreaFb === "default") climbAreaFb = sessionAreaKey("Wall");
+        if (climbAreaFb && climbAreaFb !== "default") {
+          keys.push(sd + "|" + ct + "|" + nm + "|" + climbAreaFb);
+        }
       }
     }
     if (isDayCentreService(svc)) {
@@ -1098,7 +1537,40 @@
 
   function loadScriptOnce(src) {
     return new Promise(function (resolve, reject) {
+      if (global.STAFF_DASHBOARD_SOURCE) {
+        resolve();
+        return;
+      }
       var existing = document.querySelector('script[data-ash-roster-bundle="1"]');
+      if (!existing) {
+        var injected = document.querySelector('script[src*="staff_dashboard_spreadsheet_bundle.js"]');
+        if (injected) {
+          if (global.STAFF_DASHBOARD_SOURCE) {
+            resolve();
+            return;
+          }
+          if (injected.getAttribute("data-loaded") === "1") {
+            resolve();
+            return;
+          }
+          injected.addEventListener(
+            "load",
+            function () {
+              injected.setAttribute("data-loaded", "1");
+              resolve();
+            },
+            { once: true }
+          );
+          injected.addEventListener(
+            "error",
+            function () {
+              reject(new Error("load failed: " + src));
+            },
+            { once: true }
+          );
+          return;
+        }
+      }
       if (existing) {
         if (global.STAFF_DASHBOARD_SOURCE) {
           resolve();
@@ -1140,11 +1612,58 @@
     });
   }
 
-  function isRosterClient(name) {
+  function rosterSlotKind(name) {
     var t = clean(name);
-    if (!t) return false;
+    if (!t) return "open";
     var low = t.toLowerCase();
-    return low !== "closed" && low !== "available" && low !== "no client";
+    if (low === "closed") return "closed";
+    if (
+      low === "no client" ||
+      low === "no participant" ||
+      low === "noclient" ||
+      low === "no_participant" ||
+      low === "available"
+    ) {
+      return "open";
+    }
+    return "client";
+  }
+
+  function isOpenRosterSlot(name) {
+    return rosterSlotKind(name) === "open";
+  }
+
+  function isRosterClient(name) {
+    return rosterSlotKind(name) === "client";
+  }
+
+  function rosterOpenSlotDisplayLabel() {
+    return "No participant";
+  }
+
+  function htmlParticipantPill(name, escFn) {
+    var esc = escFn || esc;
+    var kind = rosterSlotKind(name);
+    if (kind === "open") {
+      return (
+        '<span class="ash-pill ash-pill--no-participant">' +
+        esc(rosterOpenSlotDisplayLabel()) +
+        "</span>"
+      );
+    }
+    if (kind === "closed") {
+      return '<span class="ash-pill ash-pill--closed">Closed</span>';
+    }
+    return '<span class="ash-pill ash-pill--client">' + esc(name) + "</span>";
+  }
+
+  function htmlOpenSlotStatusBadge(escFn) {
+    var esc = escFn || esc;
+    return (
+      '<span class="ash-badge ash-badge--open-slot">' +
+      esc(rosterOpenSlotDisplayLabel()) +
+      "</span>"
+    );
   }
 
   function parseInstructors(raw) {
@@ -1494,6 +2013,7 @@
       if (!isRosterClient(r.client_name)) continue;
       n++;
     }
+    n += aquaticMakeupSlotsForClientOnDate(iso, clientName).length;
     return n;
   }
 
@@ -1517,6 +2037,14 @@
       if (!inst) continue;
       if (!lead) lead = inst;
       else if (lead !== inst) return false;
+    }
+    var makeups = aquaticMakeupSlotsForClientOnDate(iso, clientName);
+    for (var m = 0; m < makeups.length; m++) {
+      n++;
+      var minst = clean(makeups[m].instructor).toUpperCase();
+      if (!minst) continue;
+      if (!lead) lead = minst;
+      else if (lead !== minst) return false;
     }
     return n > 1 && !!lead;
   }
@@ -1750,6 +2278,7 @@
 
   function feedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
+    if (hubSlotIsMakeup(slot)) return makeupFeedbackStrictFits(fb, slot);
     if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
     if (!feedbackRosterDateMatches(fb, slot)) return false;
     if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
@@ -1870,6 +2399,13 @@
         "|" +
         sessionAreaKey(slot.area)
       );
+    }
+    if (hubSlotIsMakeup(slot)) {
+      var mkInst = primaryInstructorKey(slot);
+      if (isAquaticService(slot.service)) {
+        return slot.session_date + "|" + cid + "|" + t + "|aquatic|" + mkInst;
+      }
+      return slot.session_date + "|" + cid + "|" + t + "|makeup|" + mkInst;
     }
     if (isAquaticService(slot.service)) {
       if (clientNeedsPerSlotAquaticFeedback(slot)) {
@@ -1994,10 +2530,16 @@
     if (useFeedbackUnits) {
       var units = hub
         .getFeedbackUnitsForDate(iso)
+        .map(function (u) {
+          return {
+            key: u.key,
+            slots: u.slots.filter(function (s) {
+              return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s) && hub.slotIncludedInDayStats(s);
+            }),
+          };
+        })
         .filter(function (u) {
-          return u.slots.some(function (s) {
-            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
-          });
+          return u.slots.length > 0;
         });
       var unitTotal = units.length;
       var wd = weekdayLongFromIso(iso);
@@ -2486,15 +3028,40 @@
     this.rosterRows = [];
     this.bundleError = "";
     this._absentBySessionKey = {};
+    this._slotsByIso = null;
+    this._dayStatsByIso = null;
+    this._fbIndexSig = "";
   }
+
+  AdminSessionsHub.prototype.invalidateComputeCaches = function () {
+    this._slotsByIso = null;
+    this._dayStatsByIso = null;
+    this._fbIndexSig = "";
+  };
+
+  AdminSessionsHub.prototype.dayStatsCacheKey = function (iso) {
+    return (
+      String(iso || "") +
+      "|" +
+      clean(this.instructorFilter) +
+      "|" +
+      clean(this.serviceFilter) +
+      "|" +
+      clean(this.clientSearch)
+    );
+  };
 
   AdminSessionsHub.prototype.setPayload = function (payload) {
     this.payload = payload || {};
+    this.invalidateComputeCaches();
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {
       this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
         this.payload.session_feedback,
         adamDates
+      );
+      this.payload.session_feedback = normalizeWorkerDisplayFeedbackRows(
+        this.payload.session_feedback
       );
     }
     this.indexAbsentMarks();
@@ -2545,11 +3112,17 @@
       var sd = feedbackSessionDate(fb);
       if (!sd) continue;
       var sk = clean(fb.portal_session_key);
+      var cn = clean(fb.client_name);
+      if (isMislabeledRosterAreaClientName(cn)) {
+        var parsedAbsent = parsePortalSessionKeyFields(sk);
+        if (!parsedAbsent.clientSlug) continue;
+        cn = resolveRosterClientName(parsedAbsent.clientSlug) || cn;
+      }
       var entry = {
         portal_session_key: sk,
         session_date: sd,
         session_time: clean(fb.session_time),
-        client_name: clean(fb.client_name),
+        client_name: cn,
         service: clean(fb.service),
         staff_user_id: fb.submitted_by_user_id || "",
         staff_name: clean(fb.completed_by_name) || "",
@@ -2581,6 +3154,16 @@
         if (!ak) continue;
         if (!byKey[ak]) byKey[ak] = [];
         byKey[ak].push(m2);
+      }
+      var slotMatch = this.slotForAbsentMark(m2);
+      if (slotMatch) {
+        var slotAliasKeys = feedbackAliasKeysForSlot(slotMatch);
+        for (var sx = 0; sx < slotAliasKeys.length; sx++) {
+          var sax = clean(slotAliasKeys[sx]).toLowerCase();
+          if (!sax) continue;
+          if (!byKey[sax]) byKey[sax] = [];
+          byKey[sax].push(m2);
+        }
       }
     }
     this._absentBySessionKey = byKey;
@@ -2899,13 +3482,16 @@
     var clientSlug = canonicalClientSlug(mark.client_name) || parsed.clientSlug;
     if (!iso || !clientSlug) return null;
     var slots = this.expandSlotsForDate(iso);
-    var timeHint = normTimeKey(mark.session_time) || parsed.time;
+    var timeHint = normTimeKey(mark.session_time, weekdayLongFromIso(iso)) || parsed.time;
     var key = pk.toLowerCase();
     var keyNorm = key.replace(/\|+/g, "|");
     var hits = [];
     for (var i = 0; i < slots.length; i++) {
       var sk = clean(slots[i].session_key).toLowerCase();
       if (sk && (sk === key || sk === keyNorm)) return slots[i];
+      if (parsed.time && slots[i].time_start === parsed.time && canonicalClientSlug(slots[i].client_name) === clientSlug) {
+        return slots[i];
+      }
       if (canonicalClientSlug(slots[i].client_name) !== clientSlug) continue;
       hits.push(slots[i]);
     }
@@ -2987,10 +3573,21 @@
   AdminSessionsHub.prototype.loadBundle = async function () {
     try {
       await loadScriptOnce(BUNDLE_SRC);
+      this.refreshRosterRowsFromResolvedSource();
+    } catch (e) {
+      this.rosterRows = [];
+      this.bundleError = e.message || String(e);
+    }
+    if (this.root && this.root.isConnected) this.render();
+  };
+
+  AdminSessionsHub.prototype.refreshRosterRowsFromResolvedSource = function () {
+    try {
       if (typeof global.portalResolveStaffDashboardSource === "function") {
         global.portalResolveStaffDashboardSource();
       }
       var src = global.STAFF_DASHBOARD_SOURCE;
+      this.invalidateComputeCaches();
       this.rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
       this.bundleError = this.rosterRows.length ? "" : "Roster bundle loaded but has no rows.";
       if (this.payload && Array.isArray(this.payload.session_feedback)) {
@@ -3004,8 +3601,22 @@
       this.rosterRows = [];
       this.bundleError = e.message || String(e);
     }
-    if (this.root && this.root.isConnected) this.render();
   };
+
+  function bindAdminSessionsHubRosterSourceListener() {
+    if (global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__) return;
+    global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__ = true;
+    global.addEventListener("portal:staff-dashboard-source-updated", function () {
+      if (!global.document) return;
+      var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
+      for (var i = 0; i < roots.length; i++) {
+        var hub = roots[i]._ashHubInstance;
+        if (!hub || typeof hub.refreshRosterRowsFromResolvedSource !== "function") continue;
+        hub.refreshRosterRowsFromResolvedSource();
+        if (hub.root && hub.root.isConnected) hub.render();
+      }
+    });
+  }
 
   AdminSessionsHub.prototype.feedbackCountForDate = function (iso) {
     var hub = this;
@@ -3037,7 +3648,20 @@
 
   AdminSessionsHub.prototype.indexFeedback = function () {
     var hub = this;
+    syncScheduleOverridesForMatching(this.payload && this.payload.schedule_overrides);
     var list = this.payload.session_feedback || [];
+    var sig =
+      String(list.length) +
+      "|" +
+      String(this.rosterRows.length) +
+      "|" +
+      String((this.payload.schedule_overrides || []).length) +
+      "|" +
+      String((this.payload.incident_reports || []).length) +
+      "|" +
+      String((this.payload.cancellation_reports || []).length);
+    if (sig === this._fbIndexSig && this._fbByKey) return;
+    this._fbIndexSig = sig;
     var byKey = {};
     var byDateClient = {};
     var absentByDateClient = {};
@@ -3075,6 +3699,34 @@
     this._absentFbByDateClient = absentByDateClient;
     this._acatFeedbackByDate = acatByDate;
     this.indexPortalReports();
+  };
+
+  AdminSessionsHub.prototype.statusExportRowForSlot = function (slot) {
+    if (!slot) return null;
+    var rows = statusExportRowsForDate(slot.session_date);
+    for (var i = 0; i < rows.length; i++) {
+      if (statusExportRowMatchesSlot(rows[i], slot)) return rows[i];
+    }
+    var ukey = clean(feedbackUnitKey(slot)).toLowerCase();
+    if (ukey) {
+      for (var j = 0; j < rows.length; j++) {
+        var fk = clean(rows[j].feedbackUnitKey || rows[j].feedback_unit_key).toLowerCase();
+        if (fk && fk === ukey) return rows[j];
+      }
+    }
+    return null;
+  };
+
+  AdminSessionsHub.prototype.slotIncludedInDayStats = function (slot) {
+    if (!slot) return false;
+    if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
+    if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
+      return false;
+    }
+    if (clean(this.instructorFilter) || clean(this.serviceFilter) || clean(this.clientSearch)) {
+      return this.slotPassesOverviewFilters(slot);
+    }
+    return true;
   };
 
   AdminSessionsHub.prototype.indexPortalReports = function () {
@@ -3246,11 +3898,23 @@
   AdminSessionsHub.prototype.feedbackUnitResolved = function (unit) {
     if (this.feedbackUnitAbsent(unit)) return true;
     if (this.feedbackUnitComplete(unit)) return true;
+    for (var si = 0; si < unit.slots.length; si++) {
+      var stEx = this.statusExportRowForSlot(unit.slots[si]);
+      if (stEx && statusExportRowIsResolved(stEx)) return true;
+    }
     if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
       return true;
     }
     return false;
   };
+
+  function absentFeedbackPerSlotUnit(slot) {
+    return (
+      clientNeedsPerSlotAquaticFeedback(slot) ||
+      isClimbingService(slot.service) ||
+      isMultiActivityService(slot.service)
+    );
+  }
 
   function absentFeedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
@@ -3260,16 +3924,27 @@
     var fbSvc = serviceKey(clean(fb.service));
     var slotSvc = serviceKey(clean(slot.service));
     if (fbSvc && slotSvc && fbSvc !== slotSvc) {
-      if (!(isAquaticService(fb.service) && isAquaticService(slot.service))) return false;
+      if (!(isAquaticService(fb.service) && isAquaticService(slot.service))) {
+        if (!(isClimbingService(fb.service) && isClimbingService(slot.service))) return false;
+      }
     }
-    var mt = normTimeKey(fb.session_time);
+    var mt = normTimeKey(fb.session_time, weekdayLongFromIso(slot.session_date));
     var parsed = parsePortalSessionKeyFields(fb.portal_session_key);
     if (!mt && parsed.time) mt = parsed.time;
-    var st = slot.time_start || normTimeKey(slot.time_slot);
-    if (mt && st && mt === st) return true;
-    if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
-    if (!mt || !st) return true;
-    return false;
+    var st = slot.time_start || normTimeKey(slot.time_slot, weekdayLongFromIso(slot.session_date));
+    var perSlot = absentFeedbackPerSlotUnit(slot);
+    if (mt && st && mt !== st) return false;
+    if (perSlot && (!mt || !st)) return false;
+    if (!mt && !st && !perSlot) return true;
+    if (isClimbingService(slot.service) || isMultiActivityService(slot.service)) {
+      var pk = clean(fb.portal_session_key);
+      if (pk) {
+        var pkArea = portalKeyAreaFromParts(pk.split("|").map(clean));
+        var slotArea = sessionAreaKey(slot.area);
+        if (pkArea && slotArea && pkArea !== slotArea) return false;
+      }
+    }
+    return true;
   }
 
   AdminSessionsHub.prototype.findAbsentFeedbackForSlot = function (slot) {
@@ -3290,6 +3965,8 @@
 
   AdminSessionsHub.prototype.slotIsAbsent = function (slot) {
     if (!slot) return false;
+    var stEx = this.statusExportRowForSlot(slot);
+    if (stEx && statusExportRowIsAbsent(stEx)) return true;
     var ov = this.overrideForSlot(slot);
     if (ov && overrideIsAbsentType(ov)) return true;
     var cid = canonicalClientSlug(slot.client_name);
@@ -3310,17 +3987,66 @@
       return true;
     }
     var list = this._absentMarksMerged || [];
+    var slotDayWord = weekdayLongFromIso(slot.session_date);
     for (var i = 0; i < list.length; i++) {
       var mk = list[i];
+      if (this.slotForAbsentMark(mk) === slot) return true;
       if (feedbackSessionDate(mk) !== slot.session_date) continue;
       if (canonicalClientSlug(mk.client_name) !== canonicalClientSlug(slot.client_name)) continue;
-      var mt = normTimeKey(mk.session_time);
+      var mt = normTimeKey(mk.session_time, slotDayWord);
       var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
       if (!mt && parsedMk.time) mt = parsedMk.time;
-      var st = slot.time_start || normTimeKey(slot.time_slot);
-      if (!mt || !st || mt === st) return true;
+      var st = slot.time_start || normTimeKey(slot.time_slot, slotDayWord);
+      var perSlot = absentFeedbackPerSlotUnit(slot);
+      if (perSlot) {
+        if (!mt || !st || mt !== st) continue;
+      } else if (mt && st && mt !== st) {
+        continue;
+      }
+      return true;
     }
     return false;
+  };
+
+  /** Display row for feedback tab when overview already shows absent but no session_feedback row. */
+  AdminSessionsHub.prototype.syntheticAbsentDisplayRow = function (slot) {
+    if (!slot) return null;
+    var hub = this;
+    var afb = hub.findAbsentFeedbackForSlot(slot);
+    if (afb) return afb;
+    var marks = hub.absentMarksForDate(slot.session_date) || [];
+    for (var i = 0; i < marks.length; i++) {
+      var mk = marks[i];
+      if (canonicalClientSlug(mk.client_name) !== canonicalClientSlug(slot.client_name)) continue;
+      if (hub.opts && hub.opts.absentMarkScopeFilter && !hub.opts.absentMarkScopeFilter(mk)) {
+        continue;
+      }
+      var mt = normTimeKey(mk.session_time, weekdayLongFromIso(slot.session_date));
+      var parsedMk = parsePortalSessionKeyFields(mk.portal_session_key);
+      if (!mt && parsedMk.time) mt = parsedMk.time;
+      var st = slot.time_start || normTimeKey(slot.time_slot, weekdayLongFromIso(slot.session_date));
+      if (absentFeedbackPerSlotUnit(slot)) {
+        if (!mt || !st || mt !== st) continue;
+      } else if (mt && st && mt !== st) {
+        continue;
+      }
+      return {
+        client_name: slot.client_name,
+        service: clean(mk.service) || slot.service || "\u2014",
+        session_date: slot.session_date,
+        session_time: mt || st || "",
+        attendance: "No",
+        completed_by_name: clean(mk.staff_name) || "\u2014",
+        created_at: mk.created_at || null,
+        engagement_rating: null,
+        client_emotions: null,
+        engagement_patterns: null,
+        positive_feedback: null,
+        relevant_information: null,
+        _ashAbsentMark: true,
+      };
+    }
+    return null;
   };
 
   AdminSessionsHub.prototype.feedbackUnitAbsent = function (unit) {
@@ -3331,13 +4057,16 @@
   };
 
   AdminSessionsHub.prototype.expandSlotsForDate = function (isoDate) {
+    var isoKey = String(isoDate || "").trim().substring(0, 10);
+    if (!this._slotsByIso) this._slotsByIso = Object.create(null);
+    if (this._slotsByIso[isoKey]) return this._slotsByIso[isoKey];
     var wd = weekdayLongFromIso(isoDate);
     var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
     var out = [];
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
       if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
-      if (!isRosterClient(r.client_name)) continue;
+      if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
       if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
@@ -3354,9 +4083,17 @@
     out.sort(function (a, b) {
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
+    out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
+    out = suppressOpenSlotsConsumedByMakeupOverrides(
+      out,
+      isoDate,
+      wd,
+      (this.payload && this.payload.schedule_overrides) || []
+    );
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
+    this._slotsByIso[isoKey] = out;
     return out;
   };
 
@@ -3402,15 +4139,18 @@
         return { total: ext.required, done: doneExt };
       }
     }
+    var cacheKey = hub.dayStatsCacheKey(iso);
+    if (!hub._dayStatsByIso) hub._dayStatsByIso = Object.create(null);
+    if (hub._dayStatsByIso[cacheKey]) return hub._dayStatsByIso[cacheKey];
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+      return hub.slotIncludedInDayStats(s);
     });
     var units = this.getFeedbackUnitsForDate(iso)
       .map(function (u) {
         return {
           key: u.key,
           slots: u.slots.filter(function (s) {
-            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+            return hub.slotIncludedInDayStats(s);
           }),
         };
       })
@@ -3439,19 +4179,18 @@
       }
       if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
-    if (this.mode === "feedback") {
-      if (units.length > 0) {
-        var unitDoneCount = 0;
-        for (var uj = 0; uj < units.length; uj++) {
-          if (unitAbsent[units[uj].key] || unitComplete[units[uj].key]) unitDoneCount++;
-        }
-        return { total: units.length, done: unitDoneCount };
-      }
-      if (total > 0) return { total: total, done: rosterDone };
+    var result;
+    if (total > 0) {
+      result = { total: total, done: rosterDone };
+    } else if (this.mode === "feedback") {
       var submitted = this.feedbackCountForDate(iso);
-      return { total: Math.max(1, submitted), done: submitted };
+      result =
+        submitted > 0 ? { total: submitted, done: submitted } : { total: 0, done: 0 };
+    } else {
+      result = { total: 0, done: 0 };
     }
-    return { total: total, done: rosterDone };
+    hub._dayStatsByIso[cacheKey] = result;
+    return result;
   };
 
   /** Roster slots shown in Sessions Overview (omits ACAT group rows, overviewOmitRosterSlots, etc.). */
@@ -3492,6 +4231,18 @@
     if (this.feedbackMetricsDay) {
       rows = rows.filter(function (fb) {
         return hub.feedbackRowDate(fb) === hub.feedbackMetricsDay;
+      });
+    }
+    var inst = clean(this.instructorFilter);
+    if (inst) {
+      rows = rows.filter(function (fb) {
+        return completedByMatchesInstructor(fb.completed_by_name, inst);
+      });
+    }
+    var svcFilter = clean(this.serviceFilter);
+    if (svcFilter) {
+      rows = rows.filter(function (fb) {
+        return clean(hub.feedbackDisplayService(fb)) === svcFilter;
       });
     }
     return rows;
@@ -3656,157 +4407,12 @@
 
   AdminSessionsHub.prototype.refreshClientFilterView = function () {
     var hub = this;
-    var esc = this.escapeHtml;
-    var tbody = hub.root.querySelector("[data-ash-client-filter-tbody]");
-    if (!tbody) {
-      if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
-      else hub.render();
-      return;
+    hub.invalidateComputeCaches();
+    if (hub.opts && typeof hub.opts.onViewFiltersChange === "function") {
+      hub.opts.onViewFiltersChange(hub);
     }
-
-    if (hub.tab === "feedback" && hub.mode === "feedback") {
-      var rows = hub.feedbackRowsForSelectedDay();
-      var tableRows = rows
-        .map(function (fb, rowIdx) {
-          return hub.htmlFeedbackTableRow(fb, esc, { rowIdx: rowIdx, clickable: true });
-        })
-        .join("");
-      if (!tableRows) {
-        tableRows =
-          '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
-      }
-      tbody.innerHTML = tableRows;
-      return;
-    }
-
-    if (hub.tab === "positive" || hub.tab === "relevant") {
-      var kind = hub.tab === "relevant" ? "relevant" : "positive";
-      var noteRows = hub.feedbackNotesRows(kind);
-      var noteField = kind === "relevant" ? "relevant_information" : "positive_feedback";
-      var emptyMsg =
-        kind === "relevant"
-          ? "No relevant information notes in this date range."
-          : "No positive feedback notes in this date range.";
-      var tableRowsN = noteRows
-        .map(function (fb, rowIdx) {
-          var noteText =
-            kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
-          var reviewCls =
-            noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-          var submittedAt = feedbackSubmittedAt(fb);
-          var reviewTime = formatFbTime(submittedAt);
-          var sessionDay = formatFbDateShort(fb.session_date);
-          var reviewDate = formatFbDate(submittedAt);
-          var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
-          var noteHtml = noteText
-            ? noteText
-                .split(/\n+/)
-                .map(function (line) {
-                  return esc(line);
-                })
-                .join("<br>")
-            : "\u2014";
-          return (
-            '<tr class="ash-fb-row' +
-            reviewCls +
-            '" data-ash-fb-row="' +
-            rowIdx +
-            '" data-ash-note-field="' +
-            noteField +
-            '" tabindex="0" role="button">' +
-            '<td><span class="ash-link">' +
-            esc(fb.client_name) +
-            "</span></td>" +
-            "<td>" +
-            esc(svcLabel) +
-            (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
-            "</td>" +
-            '<td class="ash-cell-note ash-fb-note-cell" data-ash-note-field="' +
-            noteField +
-            '">' +
-            noteHtml +
-            "</td>" +
-            '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-            esc(fb.completed_by_name || "\u2014") +
-            '</div><div class="ash-cell-sub">' +
-            esc(reviewDate) +
-            (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
-            "</div></td>" +
-            "</tr>"
-          );
-        })
-        .join("");
-      if (!tableRowsN) {
-        tableRowsN = '<tr><td colspan="4"><div class="ash-empty">' + esc(emptyMsg) + "</div></td></tr>";
-      }
-      tbody.innerHTML = tableRowsN;
-      return;
-    }
-
-    if (hub.tab === "tracking") {
-      var slots = hub.expandSlotsForDate(hub.selectedDay);
-      var units = hub.getFeedbackUnitsForDate(hub.selectedDay);
-      var unitComplete = {};
-      var unitAbsent = {};
-      for (var u = 0; u < units.length; u++) {
-        unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
-        unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
-      }
-      var trackRows = slots
-        .filter(function (s) {
-          if (shouldOmitOverviewSlot(hub, s)) return false;
-          return hub.slotPassesOverviewFilters(s);
-        })
-        .map(function (slot) {
-          var ukey = feedbackUnitKey(slot);
-          var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
-          var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-          var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);
-          var svc =
-            esc(slot.service) +
-            (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
-          var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
-          var venue = clean(slot.venue) || "\u2014";
-          var notes = clean(slot.area) || "\u2014";
-          return (
-            "<tr>" +
-            '<td class="ash-td-center">' +
-            svc +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            inst +
-            "</td>" +
-            '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-            esc(slot.client_name) +
-            "</span></td>" +
-            '<td class="ash-td-center">' +
-            esc(venue) +
-            "</td>" +
-            '<td class="ash-td-center ash-cell-muted">' +
-            esc(notes) +
-            "</td>" +
-            '<td class="ash-td-center"><span class="ash-badge ash-badge--booked">Booked</span></td>' +
-            '<td class="ash-td-center">' +
-            fbCell +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            yesNoCell(hub.slotHasIncident(slot)) +
-            "</td>" +
-            '<td class="ash-td-center">' +
-            yesNoCell(hub.slotHasCancellation(slot)) +
-            "</td>" +
-            "</tr>"
-          );
-        })
-        .join("");
-      if (!trackRows) {
-        trackRows =
-          '<tr><td colspan="9"><div class="ash-empty">' +
-          (hub.bundleError ? esc(hub.bundleError) : "No roster slots for this day.") +
-          "</div></td></tr>";
-      }
-      tbody.innerHTML = trackRows;
-    }
+    if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+    else hub.render();
   };
 
   AdminSessionsHub.prototype.feedbackInRange = function () {
@@ -3887,19 +4493,51 @@
     if (!slot || !ov) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
-    var oCid = canonicalClientSlug(ov.anchor_client_id);
-    var sCid = canonicalClientSlug(slot.client_name);
-    if (oCid && sCid && oCid !== sCid) return false;
+    var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
+    if (overrideIsReplaceType(ov)) {
+      var repPayload = overridePayloadObj(ov);
+      var repId = overrideReplacementClientId(repPayload);
+      if (repId && sCid && repId !== sCid) return false;
+      if (!repId) {
+        var repName = overrideReplacementClientName(repPayload);
+        if (repName && sCid && canonicalClientSlug(repName) !== sCid) return false;
+      }
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) {
+        var oCidRep = canonicalClientSlug(ov.anchor_client_id);
+        if (oCidRep && sCid && oCidRep !== sCid) return false;
+      }
+      if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
+    } else {
+      var oCid = canonicalClientSlug(ov.anchor_client_id);
+      if (oCid && sCid && oCid !== sCid) return false;
+    }
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
     var oStart = normTimeShort(ov.anchor_start);
-    var sStart = normTimeShort(slot.time_start || slot.time_slot);
+    var oEnd = normTimeShort(ov.anchor_end);
+    var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
+    var sEnd = normTimeShort(slot.time_end || slot.anchor_end);
+    if (overrideIsAbsentType(ov)) {
+      function mins(hm) {
+        var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!p) return NaN;
+        return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+      }
+      var lo1 = mins(oStart);
+      var hi1 = mins(oEnd || oStart);
+      var lo2 = mins(sStart);
+      var hi2 = mins(sEnd || sStart);
+      if (Number.isFinite(lo1) && Number.isFinite(hi1) && Number.isFinite(lo2) && Number.isFinite(hi2)) {
+        return lo1 < hi2 && lo2 < hi1;
+      }
+    }
     if (oStart && sStart && oStart !== sStart) return false;
     return true;
   };
 
   AdminSessionsHub.prototype.overrideForSlot = function (slot) {
+    if (slot && slot.__portalScheduleOverride) return slot.__portalScheduleOverride;
     var ovs = this.payload.schedule_overrides || [];
     var best = null;
     for (var i = 0; i < ovs.length; i++) {
@@ -4115,7 +4753,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<label class="ash-modal__check"><input type="checkbox" checked disabled> Instructor \u2013 internal message</label>' +
       '<div class="ash-modal__delivery"><span>Delivery</span>' +
       '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="team" checked> Team announcement</label>' +
-      '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="private"> Private chat</label></div></div>' +
+      '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="private"> Direct message</label></div></div>' +
       '<button type="button" class="ash-modal-btn ash-modal-btn--ghost" data-ash-modal-back>Back</button>' +
       '<button type="button" class="ash-modal-btn ash-modal-btn--primary" data-ash-modal-send>Send notifications (demo)</button>' +
       "</div>";
@@ -4381,8 +5019,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slots = scopedSlots(unit);
       if (!slots.length) continue;
       var rep = slots[0];
-      if (hub.feedbackUnitAbsent(unit)) {
-        var afb = hub.findAbsentFeedbackForSlot(rep);
+      if (hub.feedbackUnitAbsent(unit) || hub.slotIsAbsent(rep)) {
+        var afb =
+          hub.findAbsentFeedbackForSlot(rep) || hub.syntheticAbsentDisplayRow(rep);
         if (!afb) {
           for (var ai = 0; ai < submitted.length; ai++) {
             if (
@@ -4462,7 +5101,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelled = hub.slotHasCancellation(slot);
       if (isAbsent || isCancelled) {
-        var afb = hub.findAbsentFeedbackForSlot(slot);
+        var afb =
+          hub.findAbsentFeedbackForSlot(slot) || hub.syntheticAbsentDisplayRow(slot);
         if (!afb) {
           for (var si = 0; si < submitted.length; si++) {
             if (
@@ -4488,6 +5128,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (afb && !isUsed(afb)) {
           out.push(afb);
           markUsed(afb);
+        } else if (isAbsent) {
+          var synthAbsent = hub.syntheticAbsentDisplayRow(slot);
+          if (synthAbsent) {
+            out.push(synthAbsent);
+            markUsed(synthAbsent);
+          }
         }
         continue;
       }
@@ -4570,6 +5216,33 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      if (hub.slotIsAbsent(awaitSlot)) {
+        var absentRow =
+          hub.findAbsentFeedbackForSlot(awaitSlot) ||
+          hub.syntheticAbsentDisplayRow(awaitSlot);
+        if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
+        var awaitInstAbsent =
+          awaitSlot.instructors && awaitSlot.instructors.length
+            ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
+            : esc(awaitSlot.instructor_label || "\u2014");
+        return (
+          '<tr class="ash-fb-row ash-fb-row--awaiting">' +
+          '<td><span class="ash-pill ash-pill--client">' +
+          esc(awaitSlot.client_name) +
+          "</span></td>" +
+          "<td>" +
+          esc(clean(awaitSlot.service) || "\u2014") +
+          awaitTime +
+          "</td>" +
+          '<td colspan="5" class="ash-td-center">' +
+          rosterFeedbackStatusHtml(true, false) +
+          "</td>" +
+          '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+          awaitInstAbsent +
+          "</div></td>" +
+          "</tr>"
+        );
+      }
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
@@ -5189,23 +5862,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+        var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
+        var isOpenSlot = isOpenRosterSlot(slot.client_name);
         var fbCell;
-        if (isAbsent) {
+        if (isOpenSlot) {
+          fbCell = '<span class="ash-muted">\u2014</span>';
+        } else if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
         } else if (isCancelled) {
           fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
         } else {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
         }
-        var statusCell = isCancelled
+        var statusCell = isOpenSlot
+          ? htmlOpenSlotStatusBadge(esc)
+          : isCancelled
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isUpdated
-              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
-                esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
-                "</span>"
-              : '<span class="ash-badge ash-badge--booked">Booked</span>';
+            : isMakeup
+              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+              : isUpdated
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
+                  esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
+                  "</span>"
+                : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
@@ -5220,9 +5901,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<td class="ash-td-center">' +
           inst +
           "</td>" +
-          '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-          esc(slot.client_name) +
-          "</span></td>" +
+          '<td class="ash-td-center">' +
+          htmlParticipantPill(slot.client_name, esc) +
+          "</td>" +
           '<td class="ash-td-center">' +
           esc(venue) +
           "</td>" +
@@ -5302,9 +5983,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             : esc(slot.instructor_label || "\u2014");
         return (
           "<tr>" +
-          '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-          esc(slot.client_name) +
-          "</span></td>" +
+          '<td class="ash-td-center">' +
+          htmlParticipantPill(slot.client_name, esc) +
+          "</td>" +
           '<td class="ash-td-center">' +
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "") +
@@ -6239,9 +6920,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ov = this.overrideForSlot(slot);
         var ovLabel = ov ? esc(ov.override_type || "Override") : "\u2014";
         var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
-        var client = isRosterClient(slot.client_name)
-          ? '<span class="ash-pill ash-pill--client">' + esc(slot.client_name) + "</span>"
-          : '<span class="ash-muted">NO CLIENT</span>';
+        var client = htmlParticipantPill(slot.client_name, esc);
         return (
           "<tr>" +
           "<td>" + esc(slot.time_slot || slot.time_start) + "</td>" +
@@ -6416,6 +7095,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var hub = new AdminSessionsHub(root, opts || {});
     root._ashHubInstance = hub;
+    bindAdminSessionsHubRosterSourceListener();
     if (opts && opts.mode) hub.mode = opts.mode;
     if (opts && opts.tab) hub.tab = opts.tab;
     hub.bindEvents();
@@ -6425,6 +7105,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.mode === "feedback") hub.initFeedbackDateRange();
     }
     if (hub.mode === "feedback") {
+      hub.render();
+      hub.loadBundle().catch(function () {});
+      return hub;
+    }
+    if (global.STAFF_DASHBOARD_SOURCE) {
+      hub.refreshRosterRowsFromResolvedSource();
       hub.render();
       hub.loadBundle().catch(function () {});
       return hub;

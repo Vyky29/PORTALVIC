@@ -103,7 +103,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-05-18,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
 2026-05-18,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool
 2026-05-18,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool
-2026-05-18,Monday,NO PARTICIPANT,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
+2026-05-18,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool
 2026-05-18,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool
 2026-05-18,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room
 2026-05-18,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool
@@ -113,7 +113,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-05-18,Monday,Steven Ce,Aquatic Activity,5.30 to 6,ANGEL,Acton,Teaching Pool
 2026-05-18,Monday,Zayana,Aquatic Activity,5.30 to 6,DAN,Northolt,Teaching Pool
 2026-05-18,Monday,Abodi P,Aquatic Activity,5.30 to 6.30,YOUSSEF,Acton,Teaching Pool
-2026-05-18,Monday,Aadam Ah,Aquatic Activity,6 to 6.30,DAN,Northolt,Teaching Pool
+2026-05-18,Monday,Adaam Ah,Aquatic Activity,6 to 6.30,DAN,Northolt,Teaching Pool
 2026-05-18,Monday,Mario,Aquatic Activity,6 to 6.30,ANGEL,Acton,Teaching Pool
 2026-05-18,Monday,Yamik (Trial 18/05),Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool
 2026-05-19,Tuesday,Ikram,Day Centre,11 to 3,"ROBERTO, LULIYA",SwimFarm,Hub Room
@@ -760,6 +760,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-28,Sunday,Faris,Aquatic Activity,2.30 to 3,DAN,SwimFarm,Big Pool
 2026-06-28,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Big Pool
 2026-06-28,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Big Pool
+2026-06-28,Sunday,Chaitanya (Trial 28/06),Climbing Activity,3 to 4,CARLOS,Westway,Wall
 2026-06-28,Sunday,Yusuf Ah,Aquatic Activity,9 to 10.15,ROBERTO,SwimFarm,Small Pool
 2026-06-28,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool
 2026-06-28,Sunday,Simon,Aquatic Activity,9 to 9.30,DAN,SwimFarm,Small Pool

@@ -2,7 +2,7 @@
   // Source consumed by staff_dashboard_spreadsheet_adapter.js
   window.STAFF_DASHBOARD_SOURCE = {
   "staffPhotosBaseUrl": "portal/staff_photos/",
-  "staffPhotoExtension": "jpg",
+  "staffPhotoExtension": "png",
   "sundayDateOverrides": {
     "2026-06-07": {
       "leadOnDuty": "John",
@@ -13,7 +13,8 @@
     "2026-06-14": {
       "leadOnDuty": "Berta",
       "replaceInstructor": {
-        "JOHN, BERTA": "BERTA"
+        "JOHN, BERTA": "BERTA",
+        "GIUSEPPE": "LULIA"
       }
     },
     "2026-06-21": {
@@ -45,7 +46,7 @@
     "sandra": {
       "staffId": "sandra",
       "staffName": "Sandra",
-      "avatarFile": "portal/staff_photos/sandra.jpg",
+      "avatarFile": "portal/staff_photos/sandra.png",
       "staffRoleTrack": "fitness",
       "canViewAll": false
     },
@@ -66,7 +67,7 @@
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "portal/staff_photos/angel.jpg",
+      "avatarFile": "portal/staff_photos/angel.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -94,7 +95,7 @@
     "giuseppe": {
       "staffId": "giuseppe",
       "staffName": "Giuseppe",
-      "avatarFile": "portal/staff_photos/giuseppe.jpg",
+      "avatarFile": "portal/staff_photos/giuseppe.png",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
@@ -115,7 +116,7 @@
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "portal/staff_photos/aurora.jpg",
+      "avatarFile": "portal/staff_photos/aurora.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -143,14 +144,14 @@
     "alex": {
       "staffId": "alex",
       "staffName": "Alex",
-      "avatarFile": "portal/staff_photos/alex.jpg",
+      "avatarFile": "portal/staff_photos/alex.png",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
     "javi": {
       "staffId": "javi",
       "staffName": "Javi",
-      "avatarFile": "portal/staff_photos/javi.jpg",
+      "avatarFile": "portal/staff_photos/javi.png",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
@@ -222,22 +223,10 @@
     }
   },
   "clientRosterStartDates": {
-    "Emmanuel": "2026-06-12",
-    "Timi": "2026-06-15",
-    "Timmy": "2026-06-15"
+    "Emmanuel": "2026-06-12"
   },
   "clientWeekdaysOnly": {
     "Emmanuel": [
-      "Monday",
-      "Wednesday",
-      "Friday"
-    ],
-    "Timi": [
-      "Monday",
-      "Wednesday",
-      "Friday"
-    ],
-    "Timmy": [
       "Monday",
       "Wednesday",
       "Friday"
@@ -653,16 +642,6 @@
       "session_date": "2026-05-14"
     },
     {
-      "client_name": "Timi",
-      "day": "Friday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-05-15"
-    },
-    {
       "client_name": "Ikram",
       "day": "Friday",
       "instructors": "RAUL, LULIYA",
@@ -675,7 +654,7 @@
     {
       "client_name": "Fadi",
       "day": "Friday",
-      "instructors": "RAUL",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -1273,16 +1252,6 @@
       "session_date": "2026-05-17"
     },
     {
-      "client_name": "Timi",
-      "day": "Monday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-05-18"
-    },
-    {
       "client_name": "Ikram",
       "day": "Monday",
       "instructors": "RAUL, LULIYA",
@@ -1305,7 +1274,7 @@
     {
       "client_name": "Fadi",
       "day": "Monday",
-      "instructors": "RAUL, VICTOR",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -1495,7 +1464,7 @@
     {
       "client_name": "Fadi",
       "day": "Tuesday",
-      "instructors": "VICTOR, RAUL",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -1721,16 +1690,6 @@
       "time_slot": "6 to 6.30",
       "venue": "Acton",
       "session_date": "2026-05-19"
-    },
-    {
-      "client_name": "Timi",
-      "day": "Wednesday",
-      "instructors": "RAUL, CARLOS",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-05-20"
     },
     {
       "client_name": "Ikram",
@@ -2083,16 +2042,6 @@
       "session_date": "2026-05-21"
     },
     {
-      "client_name": "Timi",
-      "day": "Friday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-05-22"
-    },
-    {
       "client_name": "Ikram",
       "day": "Friday",
       "instructors": "RAUL, LULIYA",
@@ -2105,7 +2054,7 @@
     {
       "client_name": "Fadi",
       "day": "Friday",
-      "instructors": "RAUL",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -8720,6 +8669,16 @@
       "area": "Teaching Pool",
       "time_slot": "2.30 to 3",
       "venue": "SwimFarm",
+      "session_date": "2026-06-28"
+    },
+    {
+      "client_name": "Chaitanya (Trial 28/06)",
+      "day": "Sunday",
+      "instructors": "CARLOS",
+      "service": "Climbing Activity",
+      "area": "Wall",
+      "time_slot": "3 to 4",
+      "venue": "Westway",
       "session_date": "2026-06-28"
     },
     {

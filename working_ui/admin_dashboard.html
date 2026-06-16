@@ -4001,7 +4001,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var nameRaw = String(row.client_name || '').trim();
         var nameLower = nameRaw.toLowerCase();
         var isClosed = nameLower === 'closed';
-        var isOpenSlot = !nameRaw || nameLower === 'no client' || nameLower === 'noclient' || nameLower === 'no_client';
+        var isOpenSlot = !nameRaw || nameLower === 'no client' || nameLower === 'noclient' || nameLower === 'no_client' || nameLower === 'no participant' || nameLower === 'no_participant';
         var timeSlotLabel = String(row.time_slot || '').trim();
         var rosterService = String(row.service || '').trim();
         var rosterArea = row.area !== undefined && row.area !== null ? String(row.area).trim() : '';
@@ -4173,7 +4173,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var staffName = prof.staffName || String(s.staffId||'');
       var nid = String(s.clientId||'');
       var cn = notesById && notesById[nid];
-      var clientName = cn && cn.name ? cn.name : (nid==='available'?'No participant':nid==='closed'?'Closed':nid);
+      var nidLow = String(nid || '').trim().toLowerCase();
+      var clientName;
+      if(nidLow === 'closed'){
+        clientName = 'Closed';
+      }else if(!nidLow || nidLow === 'available' || nidLow === 'noclient' || nidLow === 'no_client' || nidLow === 'no client' || nidLow === 'no participant' || nidLow === 'no_participant'){
+        clientName = 'No participant';
+      }else{
+        clientName = cn && cn.name ? cn.name : nid;
+      }
       var tm = schedAnchorTimeLabelFromSession(s);
       return {
         demoId: schedEncodeRowId(sessionDateIso, s),
@@ -4886,7 +4894,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function bookingIsBookedClientSlug(slug){
       var s = String(slug || '').trim().toLowerCase();
       if(!s) return false;
-      if(s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'closed') return false;
+      if(s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant' || s === 'closed') return false;
       return true;
     }
     /**
@@ -10131,7 +10139,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedIsOpenSlotSlug(slug){
       var s = String(slug || '').trim().toLowerCase();
-      return !s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client';
+      return !s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant';
+    }
+    function schedIsOpenParticipantSlot(slot){
+      if(!slot) return false;
+      if(schedIsOpenSlotSlug(slot.clientSlug)) return true;
+      var disp = String(slot.clientDisplay || '').trim().toLowerCase();
+      return disp === 'no participant' || disp === 'no_participant' || disp === 'no client';
     }
     function schedResolveReplacementParticipantSlug(pickList, repSlug, repTyped){
       var slug = String(repSlug || '').trim().toLowerCase();
@@ -12724,6 +12738,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return area;
     }
     function schedNamePillToneClass(tone){
+      if(tone === 'open') return 'sched-pax-pill--open';
       return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
     }
     function schedStaffDisplayName(slug, hint){
@@ -12846,7 +12861,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<div class="sched-pax-pill-row">' +
             schedParticipantPillHtml(origLab, slot.demoId, 'out', 'demo') +
             '<span class="sched-pax-pill-sep">→</span>' +
-            schedParticipantPillHtml('Open slot', slot.demoId, 'in', 'demo') +
+            schedParticipantPillHtml('No participant', '', 'open', 'demo') +
             '</div>'
           );
         }
@@ -12861,7 +12876,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(openSlotMakeup && !movedIn){
           return (
             '<div class="sched-pax-pill-row">' +
-            schedParticipantPillHtml('Open slot', slot.demoId, 'out', 'demo') +
+            schedParticipantPillHtml('No participant', '', 'open', 'demo') +
             '<span class="sched-pax-pill-sep">→</span>' +
             schedParticipantPillHtml(replLab, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
             '</div>'
@@ -12872,7 +12887,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var fromHint = fromTime ? (' from ' + fromTime) : '';
           return (
             '<div class="sched-pax-pill-row">' +
-            schedParticipantPillHtml('Open slot', slot.demoId, 'out', 'demo') +
+            schedParticipantPillHtml('No participant', '', 'open', 'demo') +
             '<span class="sched-pax-pill-sep">→</span>' +
             schedParticipantPillHtml(replLab + fromHint, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
             '</div>'
@@ -12885,6 +12900,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           schedParticipantPillHtml(replLab, replSlug, 'in', 'slug') +
           '</div>'
         );
+      }
+      if(schedIsOpenParticipantSlot(slot)){
+        return schedParticipantPillHtml('No participant', '', 'open', 'demo');
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
       return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');

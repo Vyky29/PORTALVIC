@@ -509,6 +509,90 @@
     return { start: start, end: end, label: normalized };
   }
 
+  /** Inverse of hourTo24 — roster labels use 4.30 to 5, not 16.30 to 17 (Mon–Sat PM). */
+  function hourFrom24ToRosterDisplay(hour, day) {
+    var h = parseInt(hour, 10);
+    if (!Number.isFinite(h)) return hour;
+    if (day === "Sunday") {
+      if (h >= 13 && h <= 15) return h - 12;
+      return h;
+    }
+    if (h >= 13 && h <= 21) return h - 12;
+    if (h === 12) return 12;
+    return h;
+  }
+
+  function rosterHmTokenFrom24(hm, day) {
+    var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+    if (!p) return "";
+    var h = hourFrom24ToRosterDisplay(parseInt(p[1], 10), day);
+    var m = parseInt(p[2], 10) || 0;
+    if (!m) return String(h);
+    return h + "." + String(m).padStart(2, "0");
+  }
+
+  /** Canonical roster-style band label (matches spreadsheet: 4.30 to 5). */
+  function rosterTimeSlotLabelFromBounds(startHm, endHm, day) {
+    var a = rosterHmTokenFrom24(startHm, day);
+    if (!a) return "";
+    var b = rosterHmTokenFrom24(endHm, day);
+    return b ? a + " to " + b : a;
+  }
+
+  function normalizeAnchorStaffId(raw) {
+    return String(raw == null ? "" : raw)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function slotAnchorStaffKey(slot) {
+    var raw = "";
+    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    else if (slot.instructor_label) {
+      raw = String(slot.instructor_label).split(/[,/&+]+|\s+and\s+/gi)[0];
+    }
+    return normalizeAnchorStaffId(raw) || primaryInstructorKey(slot);
+  }
+
+  function makeupOpenAnchorKey(ov, wd) {
+    var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    return [
+      clean(ov.session_date),
+      clean(ov.anchor_venue).toLowerCase(),
+      normalizeAnchorStaffId(ov.anchor_staff_id),
+      oStart || "",
+    ].join("|");
+  }
+
+  function openSlotMakeupAnchorKey(slot, wd) {
+    var st = slot.time_start || normTimeKey(slot.time_slot, wd);
+    return [
+      clean(slot.session_date),
+      clean(slot.venue).toLowerCase(),
+      slotAnchorStaffKey(slot),
+      st || "",
+    ].join("|");
+  }
+
+  /** MakeUp on NO PARTICIPANT anchor replaces the open line — do not show both rows. */
+  function suppressOpenSlotsConsumedByMakeupOverrides(out, isoDate, wd, overrides) {
+    if (!out || !out.length || !overrides || !overrides.length) return out;
+    var consumed = Object.create(null);
+    for (var j = 0; j < overrides.length; j++) {
+      var ov = overrides[j];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+      consumed[makeupOpenAnchorKey(ov, wd)] = true;
+    }
+    if (!Object.keys(consumed).length) return out;
+    return out.filter(function (slot) {
+      if (!isOpenRosterSlot(slot.client_name)) return true;
+      return !consumed[openSlotMakeupAnchorKey(slot, wd)];
+    });
+  }
+
   function weekdayLongFromIso(iso) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
     var p = iso.split("-").map(Number);
@@ -979,6 +1063,10 @@
         (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
       wd
     );
+    var startHm = normTimeShort(ov.anchor_start) || slotTimes.start;
+    var endHm = normTimeShort(ov.anchor_end) || slotTimes.end;
+    var rosterTimeLabel =
+      rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
     var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
     var instructors = staffLabel ? [staffLabel] : [];
     var service = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
@@ -987,9 +1075,9 @@
       day: wd,
       client_name: clientName,
       service: service,
-      time_slot: timeLabel || slotTimes.label,
-      time_start: normTimeShort(ov.anchor_start) || slotTimes.start,
-      time_end: normTimeShort(ov.anchor_end) || slotTimes.end,
+      time_slot: rosterTimeLabel,
+      time_start: startHm,
+      time_end: endHm,
       venue: clean(ov.anchor_venue),
       area: clean(p.area || p.pool_note || ""),
       instructors: instructors,
@@ -3996,6 +4084,12 @@
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
     out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
+    out = suppressOpenSlotsConsumedByMakeupOverrides(
+      out,
+      isoDate,
+      wd,
+      (this.payload && this.payload.schedule_overrides) || []
+    );
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
