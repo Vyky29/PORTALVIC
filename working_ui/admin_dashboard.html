@@ -12,7 +12,7 @@
   </script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260610-log-week-jump" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260616-no-participant" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260607-lead-table-center" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260607-ops-hub-kpi-center" />
@@ -5932,8 +5932,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(slug === 'closed'){
         return '<span class="novo-sched-badge novo-sched-badge--closed" title="Roster line closed — no bookings on this instructor slot">Closed</span>';
       }
-      if(slug === 'no client'){
-        return '<span class="novo-sched-badge novo-sched-badge--wait" title="Open roster line — sheet has no client (same as Scheduling &amp; Cover)">No client</span>';
+      if(slug === 'no client' || slug === 'no participant' || slug === 'no_participant'){
+        return '<span class="novo-sched-badge novo-sched-badge--wait" title="Open roster line — no participant booked (Scheduling &amp; Cover: No Participant)">No participant</span>';
       }
       if(slug === 'available' || slug === 'noclient' || !slug){
         return '<span class="novo-sched-badge novo-sched-badge--wait" title="Open roster line — no participant booked (Scheduling &amp; Cover: No Participant)">No participant</span>';
@@ -5950,7 +5950,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var slug = String(grp[i].clientSlug || '').trim().toLowerCase();
         if(slug === 'closed') closedN++;
         else if(bookingIsBookedClientSlug(slug)) booked++;
-        else if(slug === 'no client') noClientN++;
+        else if(slug === 'no client' || slug === 'no participant' || slug === 'no_participant') noClientN++;
         else openN++;
       }
       var tot = grp.length;
@@ -5959,7 +5959,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(booked === 0 && openN + noClientN === tot){
         var oc = openN + noClientN;
-        var lab = noClientN && !openN ? 'No client' : (openN && !noClientN ? 'No participant' : 'Open lines');
+        var lab = noClientN && !openN ? 'No participant' : (openN && !noClientN ? 'No participant' : 'Open lines');
         return '<span class="novo-sched-badge novo-sched-badge--wait" title="'+esc(String(oc)+' parallel lines — no named participant (Scheduling &amp; Cover)')+'">'+esc(String(oc))+' \xd7 '+esc(lab)+'</span>';
       }
       var tip = booked + ' booked, ' + closedN + ' closed, ' + (openN + noClientN) + ' open of ' + tot + ' parallel lines (same time band)';
@@ -16963,7 +16963,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260616-roster-sync";
+      "/portal/admin-sessions-hub.js?v=20260616-no-participant";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

@@ -67,7 +67,7 @@ def fix_long_aquatic_overlapping_multi(seed: dict) -> int:
                 by_client: dict[str, list] = {}
                 for s in slots:
                     cn = (s.get("client_name") or "").strip()
-                    if not cn or cn.upper() in ("CASA", "MANAGER", "CLOSED"):
+                    if not cn or cn.upper() in ("CASA", "MANAGER", "CLOSED", "NO CLIENT", "NO PARTICIPANT"):
                         continue
                     by_client.setdefault(cn, []).append(s)
                 for cn, slist in by_client.items():
@@ -141,7 +141,7 @@ def derive_feedback_rules(seed: dict) -> tuple[list[dict], list[dict]]:
                 by_client: dict[str, list] = {}
                 for s in slots:
                     cn = clean(s.get("client_name"))
-                    if not cn or cn.upper() in ("CASA", "MANAGER", "CLOSED"):
+                    if not cn or cn.upper() in ("CASA", "MANAGER", "CLOSED", "NO CLIENT", "NO PARTICIPANT"):
                         continue
                     by_client.setdefault(cn, []).append(s)
                 for cn, slist in by_client.items():

@@ -976,6 +976,13 @@
     .ash-table tr:last-child td { border-bottom: none; }
     .ash-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #f1f5fb; font-size: 12px; font-weight: 700; color: var(--navy); margin: 2px 4px 2px 0; }
     .ash-pill--client { background: #dbeafe; color: #1e40af; }
+    .ash-pill--no-participant,
+    .ash-badge--open-slot {
+      background: #fb923c;
+      color: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .ash-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .ash-badge--booked { background: #d1fae5; color: #065f46; }
     .override-chip { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; vertical-align: middle; }

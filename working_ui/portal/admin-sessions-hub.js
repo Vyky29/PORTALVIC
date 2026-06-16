@@ -927,7 +927,7 @@
 
   function overrideAnchorIsOpenSlot(anchorClientId) {
     var s = clean(anchorClientId).toLowerCase();
-    return !s || s === "available" || s === "closed" || s === "no client";
+    return !s || s === "available" || s === "closed" || s === "no client" || s === "no participant" || s === "noclient" || s === "no_participant";
   }
 
   function overrideReplacementClientId(payload) {
@@ -1437,11 +1437,58 @@
     });
   }
 
-  function isRosterClient(name) {
+  function rosterSlotKind(name) {
     var t = clean(name);
-    if (!t) return false;
+    if (!t) return "open";
     var low = t.toLowerCase();
-    return low !== "closed" && low !== "available" && low !== "no client";
+    if (low === "closed") return "closed";
+    if (
+      low === "no client" ||
+      low === "no participant" ||
+      low === "noclient" ||
+      low === "no_participant" ||
+      low === "available"
+    ) {
+      return "open";
+    }
+    return "client";
+  }
+
+  function isOpenRosterSlot(name) {
+    return rosterSlotKind(name) === "open";
+  }
+
+  function isRosterClient(name) {
+    return rosterSlotKind(name) === "client";
+  }
+
+  function rosterOpenSlotDisplayLabel() {
+    return "No participant";
+  }
+
+  function htmlParticipantPill(name, escFn) {
+    var esc = escFn || esc;
+    var kind = rosterSlotKind(name);
+    if (kind === "open") {
+      return (
+        '<span class="ash-pill ash-pill--no-participant">' +
+        esc(rosterOpenSlotDisplayLabel()) +
+        "</span>"
+      );
+    }
+    if (kind === "closed") {
+      return '<span class="ash-pill ash-pill--closed">Closed</span>';
+    }
+    return '<span class="ash-pill ash-pill--client">' + esc(name) + "</span>";
+  }
+
+  function htmlOpenSlotStatusBadge(escFn) {
+    var esc = escFn || esc;
+    return (
+      '<span class="ash-badge ash-badge--open-slot">' +
+      esc(rosterOpenSlotDisplayLabel()) +
+      "</span>"
+    );
   }
 
   function parseInstructors(raw) {
@@ -3478,6 +3525,9 @@
   AdminSessionsHub.prototype.slotIncludedInDayStats = function (slot) {
     if (!slot) return false;
     if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
+    if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
+      return false;
+    }
     if (clean(this.instructorFilter) || clean(this.serviceFilter) || clean(this.clientSearch)) {
       return this.slotPassesOverviewFilters(slot);
     }
@@ -3821,7 +3871,7 @@
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
       if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
-      if (!isRosterClient(r.client_name)) continue;
+      if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
       if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
@@ -5612,15 +5662,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var slotOv = hub.overrideForSlot(slot);
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
+        var isOpenSlot = isOpenRosterSlot(slot.client_name);
         var fbCell;
-        if (isAbsent) {
+        if (isOpenSlot) {
+          fbCell = '<span class="ash-muted">\u2014</span>';
+        } else if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
         } else if (isCancelled) {
           fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
         } else {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
         }
-        var statusCell = isCancelled
+        var statusCell = isOpenSlot
+          ? htmlOpenSlotStatusBadge(esc)
+          : isCancelled
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
@@ -5645,9 +5700,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<td class="ash-td-center">' +
           inst +
           "</td>" +
-          '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-          esc(slot.client_name) +
-          "</span></td>" +
+          '<td class="ash-td-center">' +
+          htmlParticipantPill(slot.client_name, esc) +
+          "</td>" +
           '<td class="ash-td-center">' +
           esc(venue) +
           "</td>" +
@@ -5727,9 +5782,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             : esc(slot.instructor_label || "\u2014");
         return (
           "<tr>" +
-          '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-          esc(slot.client_name) +
-          "</span></td>" +
+          '<td class="ash-td-center">' +
+          htmlParticipantPill(slot.client_name, esc) +
+          "</td>" +
           '<td class="ash-td-center">' +
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "") +
@@ -6664,9 +6719,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ov = this.overrideForSlot(slot);
         var ovLabel = ov ? esc(ov.override_type || "Override") : "\u2014";
         var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
-        var client = isRosterClient(slot.client_name)
-          ? '<span class="ash-pill ash-pill--client">' + esc(slot.client_name) + "</span>"
-          : '<span class="ash-muted">NO CLIENT</span>';
+        var client = htmlParticipantPill(slot.client_name, esc);
         return (
           "<tr>" +
           "<td>" + esc(slot.time_slot || slot.time_start) + "</td>" +

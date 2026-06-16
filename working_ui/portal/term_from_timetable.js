@@ -122,10 +122,12 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "rayyan_fi"
       ],
       "2026-06-03": [
+        "no_participant",
         "stephanie",
         "scott"
       ],
       "2026-06-06": [
+        "no_participant",
         "emani",
         "matthias",
         "saaib"
@@ -142,6 +144,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     },
     "dan": {
       "2026-06-01": [
+        "no_participant",
         "gemma",
         "zayana",
         "adaam_ah"
@@ -169,6 +172,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "adam_ab"
       ],
       "2026-06-08": [
+        "no_participant",
         "gemma",
         "zayana",
         "adaam_ah"

@@ -479,8 +479,9 @@
       const isOpenSlot =
         !nameRaw ||
         nameLower === "no client" ||
+        nameLower === "no participant" ||
         nameLower === "noclient" ||
-        nameLower === "no_client";
+        nameLower === "no_participant";
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
@@ -596,7 +597,7 @@
 
     if (!clientNotesById.available) {
       clientNotesById.available = Object.assign({}, EMPTY_NOTE, {
-        name: "No client",
+        name: "No participant",
         generalLead: "Open roster slot — new clients welcome",
       });
     }
