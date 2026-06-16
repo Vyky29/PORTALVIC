@@ -273,9 +273,33 @@ export type SendWhatsappResult =
   | { ok: true; id: string; channel: "whatsapp" | "sms" }
   | { ok: false; error: string };
 
+export type WhatsappSendOptions = {
+  templateName?: string;
+  templateLang?: string;
+};
+
+function whatsappTemplateBodyParam(body: string, template: string): string {
+  let text = String(body || "").trim();
+  if (template !== "hello_world") {
+    text = text.replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "").trim();
+  }
+  return text.slice(0, 1024);
+}
+
+function whatsappTemplateLangCandidates(preferred: string): string[] {
+  const base = String(preferred || "en").trim() || "en";
+  const out: string[] = [];
+  for (const code of [base, "en_US", "en", "en_GB"]) {
+    const c = String(code || "").trim();
+    if (c && !out.includes(c)) out.push(c);
+  }
+  return out;
+}
+
 export async function sendParentMessageViaWhatsapp(
   phoneE164: string,
   body: string,
+  opts?: WhatsappSendOptions,
 ): Promise<SendWhatsappResult> {
   const token = (Deno.env.get("META_WHATSAPP_TOKEN") ?? "").trim();
   const phoneId = (Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID") ?? "").trim();
@@ -285,56 +309,103 @@ export async function sendParentMessageViaWhatsapp(
 
   const to = phoneE164.replace(/^\+/, "");
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
-  const template = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
-  const lang = (Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") ?? "en").trim() || "en";
+  const template = (opts?.templateName ??
+    Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+  const preferredLang = (opts?.templateLang ?? Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") ??
+    "en").trim() || "en";
 
-  const payload = template
-    ? {
-        messaging_product: "whatsapp",
-        to,
-        type: "template",
-        template: {
-          name: template,
-          language: { code: lang },
-          components: [
-            {
-              type: "body",
-              parameters: [{ type: "text", text: body.slice(0, 1024) }],
-            },
-          ],
-        },
-      }
-    : {
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body: body.slice(0, 4096) },
-      };
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      return { ok: false, error: `whatsapp_${res.status}: ${text.slice(0, 400)}` };
-    }
-    let parsed: { messages?: Array<{ id?: string }> } = {};
+  if (!template) {
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { body: body.slice(0, 4096) },
+    };
     try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = {};
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        return { ok: false, error: `whatsapp_${res.status}: ${text.slice(0, 400)}` };
+      }
+      let parsed: { messages?: Array<{ id?: string }> } = {};
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = {};
+      }
+      const id = String(parsed.messages?.[0]?.id || "");
+      return { ok: true, id, channel: "whatsapp" };
+    } catch (e) {
+      return { ok: false, error: String(e) };
     }
-    const id = String(parsed.messages?.[0]?.id || "");
-    return { ok: true, id, channel: "whatsapp" };
-  } catch (e) {
-    return { ok: false, error: String(e) };
   }
+
+  const paramText = whatsappTemplateBodyParam(body, template);
+  if (!paramText) {
+    return { ok: false, error: "whatsapp_empty_template_body" };
+  }
+
+  let lastErr = "whatsapp_send_failed";
+  for (const lang of whatsappTemplateLangCandidates(preferredLang)) {
+    const tpl: Record<string, unknown> = {
+      name: template,
+      language: { code: lang },
+    };
+    if (template !== "hello_world") {
+      tpl.components = [
+        {
+          type: "body",
+          parameters: [{ type: "text", text: paramText }],
+        },
+      ];
+    }
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: tpl,
+    };
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        lastErr = `whatsapp_${res.status}: ${text.slice(0, 400)}`;
+        if (String(text).includes("132001") || String(text).includes("does not exist in the translation")) {
+          continue;
+        }
+        return { ok: false, error: lastErr };
+      }
+      let parsed: { messages?: Array<{ id?: string }> } = {};
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = {};
+      }
+      const id = String(parsed.messages?.[0]?.id || "");
+      if (!id) {
+        lastErr = `whatsapp_${res.status}: missing_message_id`;
+        continue;
+      }
+      return { ok: true, id, channel: "whatsapp" };
+    } catch (e) {
+      lastErr = String(e);
+    }
+  }
+  return { ok: false, error: lastErr };
 }
 
 export async function sendParentMessageViaTwilioSms(
@@ -383,8 +454,9 @@ export async function sendParentMessageViaTwilioSms(
 export async function sendParentMobileMessage(
   phoneE164: string,
   body: string,
+  opts?: WhatsappSendOptions,
 ): Promise<SendWhatsappResult> {
-  const wa = await sendParentMessageViaWhatsapp(phoneE164, body);
+  const wa = await sendParentMessageViaWhatsapp(phoneE164, body, opts);
   if (wa.ok) return wa;
   const sms = await sendParentMessageViaTwilioSms(phoneE164, body);
   if (sms.ok) return sms;

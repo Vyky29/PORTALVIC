@@ -1009,9 +1009,16 @@
     );
   }
 
+  function overrideIsTrialType(ov) {
+    if (!ov || !overrideIsReplaceType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    if (p.is_trial === true || clean(p.booking_kind).toLowerCase() === "trial") return true;
+    return clean(p.session_kind).toLowerCase() === "trial";
+  }
+
   function overrideAnchorIsOpenSlot(anchorClientId) {
     var s = clean(anchorClientId).toLowerCase();
-    return !s || s === "available" || s === "closed" || s === "no client" || s === "no participant" || s === "noclient" || s === "no_participant";
+    return !s || s === "available" || s === "no client" || s === "no participant" || s === "noclient" || s === "no_participant";
   }
 
   function overrideReplacementClientId(payload) {
@@ -1091,7 +1098,8 @@
         area: clean(p.area || ""),
         instructors: staffLabel,
       }),
-      portalOverrideMakeUpTag: true,
+      portalOverrideMakeUpTag: !overrideIsTrialType(ov),
+      portalOverrideTrialTag: overrideIsTrialType(ov),
       __portalScheduleOverride: ov,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
@@ -1108,7 +1116,7 @@
       var s = out[i];
       var ov0 = s && s.__portalScheduleOverride;
       if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
-      if (s && s.portalOverrideMakeUpTag) {
+      if (s && (s.portalOverrideMakeUpTag || s.portalOverrideTrialTag)) {
         var rid = canonicalClientSlug(s.client_name);
         var st = s.time_start || normTimeKey(s.time_slot, wd);
         if (rid && st) seenRepKeys[rid + "|" + st] = true;
@@ -1141,16 +1149,22 @@
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsTrialType(ov)) return "Trial";
     if (overrideIsReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
   }
 
   function hubOverrideChipClass(ov) {
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsTrialType(ov)) return "override--trial";
     if (overrideIsReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
+  }
+
+  function hubSlotShowsTrialChip(slot, slotOv) {
+    return overrideIsTrialType(slotOv) || !!(slot && slot.portalOverrideTrialTag);
   }
 
   function hubSlotShowsUpdatedChip(slot, slotOv) {
@@ -1159,15 +1173,24 @@
   }
 
   function hubSlotShowsMakeupChip(slot, slotOv) {
+    if (hubSlotShowsTrialChip(slot, slotOv)) return false;
     return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
   function hubSlotIsMakeup(slot) {
     if (!slot) return false;
+    if (slot.portalOverrideTrialTag) return false;
     if (slot.portalOverrideMakeUpTag) return true;
     var ov = slot.__portalScheduleOverride;
-    return !!(ov && overrideIsReplaceType(ov));
+    return !!(ov && overrideIsReplaceType(ov) && !overrideIsTrialType(ov));
+  }
+
+  function hubSlotIsTrial(slot) {
+    if (!slot) return false;
+    if (slot.portalOverrideTrialTag) return true;
+    var ov = slot.__portalScheduleOverride;
+    return overrideIsTrialType(ov);
   }
 
   /** Active overrides from the loaded admin hub payload (makeup slot counting + matching). */
@@ -1641,8 +1664,12 @@
     return "No participant";
   }
 
-  function htmlParticipantPill(name, escFn) {
+  function htmlParticipantPill(name, escFn, slotOpt) {
     var esc = escFn || esc;
+    if (slotOpt && hubSlotIsTrial(slotOpt)) {
+      var trialName = clean(name) || "Trial";
+      return '<span class="ash-pill ash-pill--trial">Trial · ' + esc(trialName) + "</span>";
+    }
     var kind = rosterSlotKind(name);
     if (kind === "open") {
       return (
@@ -5862,6 +5889,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+        var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
         var fbCell;
@@ -5880,7 +5908,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isMakeup
+            : isTrial
+              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
+              : isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
               : isUpdated
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
@@ -5902,7 +5932,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           inst +
           "</td>" +
           '<td class="ash-td-center">' +
-          htmlParticipantPill(slot.client_name, esc) +
+          htmlParticipantPill(slot.client_name, esc, slot) +
           "</td>" +
           '<td class="ash-td-center">' +
           esc(venue) +
@@ -5984,7 +6014,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return (
           "<tr>" +
           '<td class="ash-td-center">' +
-          htmlParticipantPill(slot.client_name, esc) +
+          htmlParticipantPill(slot.client_name, esc, slot) +
           "</td>" +
           '<td class="ash-td-center">' +
           esc(slot.service) +
@@ -6918,9 +6948,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var rows = slots
       .map(function (slot) {
         var ov = this.overrideForSlot(slot);
-        var ovLabel = ov ? esc(ov.override_type || "Override") : "\u2014";
+        var ovLabel = ov ? esc(hubOverrideLabel(ov)) : "\u2014";
         var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
-        var client = htmlParticipantPill(slot.client_name, esc);
+        var client = htmlParticipantPill(slot.client_name, esc, slot);
         return (
           "<tr>" +
           "<td>" + esc(slot.time_slot || slot.time_start) + "</td>" +

@@ -983,10 +983,12 @@
       border: 1px solid rgba(15, 23, 42, 0.06);
     }
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .ash-badge--booked { background: #d1fae5; color: #065f46; }
     .override-chip { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; vertical-align: middle; }
     .override--updated { background: rgba(37,99,235,.12); color: #1d4ed8; border: 1px solid rgba(37,99,235,.28); }
+    .override--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status--done { color: #166534; font-weight: 700; font-size: 12px; }
     .ash-status--absent { color: #b91c1c; font-weight: 700; font-size: 12px; }

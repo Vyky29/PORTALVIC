@@ -65,7 +65,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-sched-trial" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -8221,6 +8221,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return { label:'Cancelled', cls:'chip--urg' };
       if(t === 'slot_clear_client') return { label:'No Participant', cls:'chip--pend' };
       if(t === 'client_absence_announced') return { label:'Absent', cls:'chip--pend' };
+      if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return { label:'Trial', cls:'chip--trial' };
       if(t === 'client_replace_in_slot' && payload && payload.client_move) return { label:'Moved in', cls:'chip--makeup' };
       if(t === 'client_replace_in_slot') return { label:'MakeUp', cls:'chip--makeup' };
       var baseClient = String(slot.clientSlug || '').trim().toLowerCase();
@@ -8235,6 +8236,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(x === 'Absent') return 4;
       if(x === 'No Participant') return 3;
       if(x === 'MakeUp') return 2;
+      if(x === 'Trial') return 2;
       return 1;
     }
     function bookingGroupedByClient(slots){
@@ -10140,13 +10142,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedIsOpenSlotSlug(slug){
       var s = String(slug || '').trim().toLowerCase();
-      return !s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant';
+      return !s || s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant';
+    }
+    function schedIsClosedParticipantSlot(slot){
+      if(!slot) return false;
+      var slug = String(slot.clientSlug || '').trim().toLowerCase();
+      if(slug === 'closed') return true;
+      var disp = String(slot.clientDisplay || '').trim().toLowerCase();
+      return disp === 'closed';
     }
     function schedIsOpenParticipantSlot(slot){
       if(!slot) return false;
+      if(schedIsClosedParticipantSlot(slot)) return false;
       if(schedIsOpenSlotSlug(slot.clientSlug)) return true;
       var disp = String(slot.clientDisplay || '').trim().toLowerCase();
       return disp === 'no participant' || disp === 'no_participant' || disp === 'no client';
+    }
+    function schedOverrideIsTrial(ov){
+      if(!ov) return false;
+      var p = ov.payload || {};
+      if(p.is_trial === true || String(p.booking_kind || '').trim().toLowerCase() === 'trial') return true;
+      return String(p.session_kind || '').trim().toLowerCase() === 'trial';
     }
     function schedResolveReplacementParticipantSlug(pickList, repSlug, repTyped){
       var slug = String(repSlug || '').trim().toLowerCase();
@@ -10442,10 +10458,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var coverList = schedBuildInstructorPickList();
       function syncFieldVisibility(){
         var ovType = typeEl && typeEl.value ? typeEl.value : '';
-        if(wrapRep) wrapRep.style.display = ovType === 'client_replace_in_slot' ? '' : 'none';
+        if(wrapRep) wrapRep.style.display = (ovType === 'client_replace_in_slot' || ovType === 'client_trial') ? '' : 'none';
         if(wrapCov) wrapCov.style.display = ovType === 'instructor_reassign' ? '' : 'none';
         if(wrapMove) wrapMove.style.display = ovType === 'client_move_same_day' ? '' : 'none';
         if(wrapRea) wrapRea.style.display = '';
+        var repLab = document.querySelector('label[for="schedFormReplaceInput"]');
+        if(repLab) repLab.textContent = ovType === 'client_trial' ? 'Trial participant' : 'Replacement participant';
         if(ovType === 'client_move_same_day' && sched.activeSlot){
           schedPopulateMoveTargetSelect(sched.activeSlot);
         }
@@ -10733,6 +10751,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = ov.payload || {};
       if(t === 'slot_clear_client' && payload && payload.client_move) return 'Moved out';
       if(t === 'client_replace_in_slot' && payload && payload.client_move) return 'Moved in';
+      if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return 'Trial';
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'Cancelled';
       return schedOverrideTypeLabel(t);
     }
@@ -10744,6 +10763,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'override--cancelled';
       if(k === 'slot_close') return 'override--cancelled';
       if(k === 'slot_open') return 'override--slot-open';
+      if((k === 'client_replace_in_slot' || k === 'replace_participant') && schedOverrideIsTrial(ov)) return 'override--trial';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--makeup';
       if(k === 'instructor_reassign') return 'override--instructor';
       if(k === 'slot_update') return 'override--updated';
@@ -10854,6 +10874,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var moveTargetCount = schedBuildMoveTargetOptions(slot, movePool).length;
       var srcSlug = String(slot.clientSlug || '').trim().toLowerCase();
       var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
+      var canTrial = schedIsOpenParticipantSlot(slot);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
         ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+(schedFormatOverrideWhenShort(ov) ? ' · '+esc(schedFormatOverrideWhenShort(ov)) : '')+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
@@ -10878,6 +10899,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="client_absence_announced">Absent</option>'+
         '<option value="client_cancelled">Cancelled</option>'+
         '<option value="client_replace_in_slot">MakeUp</option>'+
+        (canTrial ? '<option value="client_trial">Trial</option>' : '')+
         '<option value="instructor_reassign">Change Instructor</option>'+
         (canMoveClient ? '<option value="client_move_same_day">Move to another slot today</option>' : '')+
         '<option value="slot_open">Open closed slot</option>'+
@@ -11194,7 +11216,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedNormOpenParticipantToken(v){
       var s = String(v || '').trim().toLowerCase();
-      if(!s || s === 'available' || s === 'closed' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant') return 'open';
+      if(s === 'closed') return 'closed';
+      if(!s || s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant') return 'open';
       return adminRosterSlugify(v);
     }
     function schedPgTimeToHmShort(pg){
@@ -11403,7 +11426,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await saveSchedClientMoveFromDrawer();
         return;
       }
-      var ovType = ovTypeRaw === 'client_cancelled' ? 'slot_clear_client' : ovTypeRaw;
+      var isTrial = ovTypeRaw === 'client_trial';
+      var ovType = ovTypeRaw === 'client_cancelled' ? 'slot_clear_client' : (isTrial ? 'client_replace_in_slot' : ovTypeRaw);
       var reason = '';
       reason = ($('schedFormReason') && $('schedFormReason').value) || '';
       var pickList = schedBuildReplacementPickList();
@@ -11423,8 +11447,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var coverSlug = ($('schedFormCoverSlug') && $('schedFormCoverSlug').value.trim()) || '';
       var coverTyped = ($('schedFormCoverInput') && $('schedFormCoverInput').value.trim()) || '';
-      if(ovType === 'client_replace_in_slot' && !repSlug){
-        if(msgEl) msgEl.textContent = 'Choose a replacement participant from the suggestions, or type until your choice matches exactly.';
+      if((ovType === 'client_replace_in_slot' || isTrial) && !repSlug){
+        if(msgEl) msgEl.textContent = isTrial
+          ? 'Choose the trial participant from the suggestions, or type until your choice matches exactly.'
+          : 'Choose a replacement participant from the suggestions, or type until your choice matches exactly.';
+        return;
+      }
+      if(isTrial && !schedIsOpenParticipantSlot(slot)){
+        if(msgEl) msgEl.textContent = 'Trial applies to open roster lines (No participant).';
         return;
       }
       if(ovType === 'instructor_reassign' && !coverSlug){
@@ -11455,8 +11485,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         payload.replacement_client_name = repName;
         payload.to_client_name = repName;
       }
+      if(isTrial){
+        payload.is_trial = true;
+        payload.booking_kind = 'trial';
+      }
       var anchor_staff_id = normalizeSchedAnchorStaffId(slot.staffRosterId);
-      var anchor_client_id = ovType === 'client_replace_in_slot'
+      var anchor_client_id = (ovType === 'client_replace_in_slot')
         ? schedResolveMakeupAnchorClientId(slot)
         : adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
       if(ovType === 'client_absence_announced'){
@@ -11544,7 +11578,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var pax = String(slot.clientName || slot.client || slot.clientSlug || '').trim();
           var sumBits = [ovLabel];
           if(ovType === 'instructor_reassign' && payload.covering_staff_name) sumBits.push('cover: ' + payload.covering_staff_name);
-          if(ovType === 'client_replace_in_slot' && payload.to_client_name) sumBits.push('replacement: ' + payload.to_client_name);
+          if(ovType === 'client_replace_in_slot' && payload.to_client_name) sumBits.push((isTrial ? 'trial: ' : 'replacement: ') + payload.to_client_name);
           if(reason) sumBits.push('reason: ' + reason);
           var sumStr = (dayLong ? dayLong + ' ' : '') + dNice + ' · ' + String(slot.venue || '') + ' ' + whenLbl + ' · ' + sumBits.join(' · ');
           window.PortalChangeLog.record({
@@ -12787,6 +12821,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedNamePillToneClass(tone){
       if(tone === 'open') return 'sched-pax-pill--open';
+      if(tone === 'closed') return 'sched-pax-pill--closed';
+      if(tone === 'trial') return 'sched-pax-pill--trial';
       return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
     }
     function schedStaffDisplayName(slug, hint){
@@ -12921,6 +12957,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var origLab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
         var replLab = replName || replSlug || 'replacement';
         var openSlotMakeup = schedIsOpenSlotSlug(ov.anchor_client_id) || schedIsOpenSlotSlug(slot.clientSlug);
+        if(schedOverrideIsTrial(ov)){
+          if(openSlotMakeup && !movedIn){
+            return (
+              '<div class="sched-pax-pill-row">' +
+              schedParticipantPillHtml('No participant', '', 'open', 'demo') +
+              '<span class="sched-pax-pill-sep">→</span>' +
+              schedParticipantPillHtml('Trial · ' + replLab, replSlug || slot.demoId, 'trial', replSlug ? 'slug' : 'demo') +
+              '</div>'
+            );
+          }
+          return schedParticipantPillHtml('Trial · ' + replLab, replSlug || slot.demoId, 'trial', replSlug ? 'slug' : 'demo');
+        }
         if(openSlotMakeup && !movedIn){
           return (
             '<div class="sched-pax-pill-row">' +
@@ -12948,6 +12996,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           schedParticipantPillHtml(replLab, replSlug, 'in', 'slug') +
           '</div>'
         );
+      }
+      if(schedIsClosedParticipantSlot(slot)){
+        return schedParticipantPillHtml('Closed', '', 'closed', 'demo');
       }
       if(schedIsOpenParticipantSlot(slot)){
         return schedParticipantPillHtml('No participant', '', 'open', 'demo');

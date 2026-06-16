@@ -149,7 +149,11 @@ Deno.serve(async (req) => {
   }
 
   if (channel === "whatsapp" || channel === "both") {
-    const sent = await sendParentMobileMessage(parentPhone!, bodyText);
+    const kind = str(payload.kind, 64).toLowerCase();
+    const waOpts = kind === "whatsapp_test"
+      ? { templateName: "hello_world", templateLang: "en_US" }
+      : undefined;
+    const sent = await sendParentMobileMessage(parentPhone!, bodyText, waOpts);
     if (sent.ok) {
       whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";
       whatsappMessageId = sent.id;

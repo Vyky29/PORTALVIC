@@ -2634,6 +2634,7 @@
     .card--premium{box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 40px rgba(15,23,42,.08);border-color:#e8ecf1}
     .chip--pink{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.22)}
     .chip--makeup{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.28)}
+    .chip--trial{background:#f3e8ff;color:#7c3aed;border:1px solid rgba(124,58,237,.32)}
     .chip--pri{background:#fef3c7;color:#b45309}
     .chip--blk{background:#e0f2fe;color:#0369a1}
     .pr-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
@@ -3860,6 +3861,7 @@
     .override--cancelled{background:var(--dangerSoft);color:var(--danger);border:1px solid rgba(220,38,38,.28)}
     .override--closed{background:var(--dangerSoft);color:var(--danger);border:1px solid rgba(220,38,38,.28)}
     .override--makeup,.override--replace{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.32)}
+    .override--trial{background:#f3e8ff;color:#7c3aed;border:1px solid rgba(124,58,237,.32)}
     .override--instructor{background:var(--blueSoft);color:var(--blue);border:1px solid rgba(45,132,179,.32)}
     .override--slot-open{background:#f3e8ff;color:#7e22ce;border:1px solid rgba(126,34,206,.32)}
     .sched-tbl .chip.sched-roster-original{background:var(--successSoft);color:var(--success);border:1px solid rgba(21,128,61,.22)}
@@ -3875,6 +3877,8 @@
     button.sched-pax-pill{cursor:pointer;transition:filter .12s ease,box-shadow .12s ease}
     button.sched-pax-pill:hover,button.sched-pax-pill:focus-visible{filter:brightness(0.97);outline:none;box-shadow:0 0 0 2px rgba(45,132,179,.22)}
     .sched-pax-pill--booked{background:#ecfdf5;color:#15803d;border-color:rgba(21,128,61,.28)}
+    .sched-pax-pill--closed{background:var(--dangerSoft);color:var(--danger);border-color:rgba(220,38,38,.22)}
+    .sched-pax-pill--trial{background:#f3e8ff;color:#7c3aed;border-color:rgba(124,58,237,.32)}
     .sched-pax-pill--open{background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);color:#78350f;border-color:rgba(244,183,64,.32)}
     .sched-pax-pill--out{background:#fef2f2;color:#b91c1c;border-color:rgba(220,38,38,.24)}
     .sched-pax-pill--in{background:#dcfce7;color:#166534;border-color:rgba(22,101,52,.3)}
