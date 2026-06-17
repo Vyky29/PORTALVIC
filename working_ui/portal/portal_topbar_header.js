@@ -538,6 +538,10 @@
         e.stopPropagation();
 
         if (toolBtn.id === "topbarToolSessionPlanner") {
+          if (typeof global.portalOpenRoutinesPlanner === "function") {
+            void global.portalOpenRoutinesPlanner();
+            return;
+          }
           var routinesUrl = String(global.ROUTINES_PLANNER_URL || "").trim();
           if (routinesUrl) {
             openExternalUrl(routinesUrl);

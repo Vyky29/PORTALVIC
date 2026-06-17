@@ -1,8 +1,17 @@
-<!-- Mirror of working_ui/planner-link-snippet.html for docs/portal paths -->
-<a
-  href="https://visual-vic.vercel.app/planner"
-  target="_blank"
-  rel="noopener noreferrer"
->
+<!-- Mirror of working_ui/planner-link-snippet.html — session handoff to visualVIC Planner -->
+<button type="button" id="open-planner-btn" class="your-dashboard-button-class">
   Planner
-</a>
+</button>
+<script>
+  (function () {
+    var btn = document.getElementById("open-planner-btn");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (typeof window.portalOpenRoutinesPlanner === "function") {
+        void window.portalOpenRoutinesPlanner();
+      } else {
+        window.open("https://visual-vic.vercel.app/planner/login", "_blank", "noopener,noreferrer");
+      }
+    });
+  })();
+</script>

@@ -25,6 +25,12 @@
   /** visualVIC Routines Planner (prod). */
   window.ROUTINES_PLANNER_URL =
     window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/planner";
+  window.ROUTINES_PLANNER_HANDOFF_URL =
+    window.ROUTINES_PLANNER_HANDOFF_URL ||
+    "https://visual-vic.vercel.app/planner/auth/handoff";
+  window.ROUTINES_PLANNER_LOGIN_URL =
+    window.ROUTINES_PLANNER_LOGIN_URL ||
+    "https://visual-vic.vercel.app/planner/login";
   window.PORTAL_INDUCTION_BASE_URL =
     window.PORTAL_INDUCTION_BASE_URL ||
     String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
@@ -713,27 +719,89 @@
     } catch (_) {}
   })();
 
-  /** When visualVIC prod URL is configured, enable Plan topbar + quick menu (external /planner). */
+  /** When visualVIC prod URL is configured, enable Plan topbar + quick menu (session handoff). */
   (function portalRoutinesPlannerBootstrap() {
-    var url = String(window.ROUTINES_PLANNER_URL || "").trim();
-    if (!url) return;
-    function enablePlannerUi() {
-      ["topbarToolSessionPlanner", "quickMenuStaffSessionPlan", "quickMenuLeadSessionPlan"].forEach(
-        function (id) {
-          var el = document.getElementById(id);
-          if (!el) return;
-          el.classList.remove("menu-btn--feature-deactivated");
-          el.removeAttribute("disabled");
-          el.removeAttribute("aria-disabled");
-          if (el.tagName === "BUTTON") el.disabled = false;
-          if (id === "quickMenuStaffSessionPlan" || id === "quickMenuLeadSessionPlan") {
-            el.setAttribute("data-portal-external-url", url);
-            el.setAttribute("aria-label", "Session planner — open routines planner");
-          }
-          var sub = el.querySelector(".menu-btn-sub");
-          if (sub) sub.textContent = "Open routines planner";
+    var handoffUrl = String(window.ROUTINES_PLANNER_HANDOFF_URL || "").trim();
+    var loginUrl = String(window.ROUTINES_PLANNER_LOGIN_URL || "").trim();
+    if (!handoffUrl && !loginUrl) return;
+
+    function resolveRoutinesAuthClient() {
+      try {
+        var box = window.__PORTAL_SUPABASE__;
+        if (box && box.client && box.client.auth) return box.client;
+      } catch (_) {}
+      try {
+        if (typeof supabase !== "undefined" && supabase && supabase.auth) return supabase;
+      } catch (_) {}
+      return null;
+    }
+
+    window.portalOpenRoutinesPlanner = async function portalOpenRoutinesPlanner() {
+      var handoff = handoffUrl;
+      var login = loginUrl;
+      if (!handoff || !login) return false;
+      var authClient = resolveRoutinesAuthClient();
+      if (!authClient) {
+        window.open(login, "_blank", "noopener,noreferrer");
+        return true;
+      }
+      try {
+        var result = await authClient.auth.getSession();
+        var session = result && result.data && result.data.session;
+        if (!session || !session.access_token || !session.refresh_token) {
+          window.open(login, "_blank", "noopener,noreferrer");
+          return true;
+        }
+        var hash = new URLSearchParams({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }).toString();
+        window.open(handoff + "#" + hash, "_blank", "noopener,noreferrer");
+        return true;
+      } catch (_) {
+        window.open(login, "_blank", "noopener,noreferrer");
+        return true;
+      }
+    };
+
+    var PLANNER_CLICK_IDS = [
+      "topbarToolSessionPlanner",
+      "quickMenuStaffSessionPlan",
+      "quickMenuLeadSessionPlan",
+    ];
+
+    function bindPlannerHandoffClick(id) {
+      var el = document.getElementById(id);
+      if (!el || el.getAttribute("data-portal-planner-bound") === "1") return;
+      el.setAttribute("data-portal-planner-bound", "1");
+      el.addEventListener(
+        "click",
+        function (e) {
+          if (el.disabled || el.getAttribute("aria-disabled") === "true") return;
+          e.preventDefault();
+          e.stopPropagation();
+          void window.portalOpenRoutinesPlanner();
         },
+        true,
       );
+    }
+
+    function enablePlannerUi() {
+      PLANNER_CLICK_IDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("menu-btn--feature-deactivated");
+        el.removeAttribute("disabled");
+        el.removeAttribute("aria-disabled");
+        if (el.tagName === "BUTTON") el.disabled = false;
+        el.removeAttribute("data-portal-external-url");
+        if (id === "quickMenuStaffSessionPlan" || id === "quickMenuLeadSessionPlan") {
+          el.setAttribute("aria-label", "Session planner — open routines planner");
+        }
+        var sub = el.querySelector(".menu-btn-sub");
+        if (sub) sub.textContent = "Open routines planner";
+        bindPlannerHandoffClick(id);
+      });
     }
     window.portalEnableRoutinesPlannerUi = enablePlannerUi;
     if (document.readyState === "loading") {
