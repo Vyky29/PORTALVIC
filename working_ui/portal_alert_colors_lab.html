@@ -124,18 +124,50 @@
     .lab-session-demo{display:flex;flex-direction:column;gap:10px;max-width:420px;margin-top:10px}
     .lab-session-demo .session-card{text-align:left;cursor:default;pointer-events:none;width:100%}
     .lab-today-panel{
-      max-width:440px;padding:12px;border-radius:16px;background:#fff;
+      max-width:none;margin:0;min-width:0;padding:12px;border-radius:16px;background:#fff;
       border:1px solid rgba(23,50,71,.12);box-shadow:0 4px 16px rgba(11,24,38,.06);
+      height:auto !important;max-height:none !important;flex:none !important;overflow:visible !important;
     }
-    .lab-today-panel .today-grid{padding:4px 8px 10px}
-    .lab-today-demos{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px}
+    .lab-today-demos{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px;align-items:start}
     @media(min-width:820px){.lab-today-demos{grid-template-columns:1fr 1fr}}
-    .lab-today-panel{max-width:none;margin:0}
-    .lab-today-panel .today-grid-rows{display:flex;flex-direction:column;gap:6px}
-    .lab-today-panel .today-grid-rows > .session-card{
-      flex:0 0 auto !important;min-height:52px;max-height:none;pointer-events:none;cursor:default;
+    .lab-today-panel .section-head--today{flex:0 0 auto}
+    .lab-today-panel .today-grid{
+      flex:0 0 auto !important;min-height:0 !important;height:auto !important;
+      max-height:none !important;overflow:visible !important;padding-bottom:10px;
     }
-    .lab-today-panel .session-card{pointer-events:none;cursor:default}
+    .lab-today-panel .today-grid.today-grid--session-scroll{overflow:visible !important}
+    .lab-today-panel .today-grid-rows{
+      flex:0 0 auto !important;height:auto !important;max-height:none !important;
+      min-height:0 !important;gap:8px;
+    }
+    .lab-today-panel .today-grid-rows > .session-card{
+      flex:0 0 auto !important;min-height:52px !important;max-height:none !important;
+      height:auto !important;overflow:visible !important;
+    }
+    .lab-today-panel .session-card{pointer-events:none;cursor:default;overflow:visible !important}
+    .lab-today-panel .session-card .session-card-body{
+      overflow:visible !important;min-height:48px;height:auto !important;
+    }
+    .lab-today-panel .session-line--symbol,
+    .lab-today-panel .session-line--name,
+    .lab-today-panel .session-line--time{
+      overflow:visible !important;min-width:0;
+    }
+    .lab-today-panel .session-line--name .session-meta-name,
+    .lab-today-panel .session-line--time-stack .session-slot-time,
+    .lab-today-panel .session-line--time-stack .session-line-venue{
+      overflow:visible !important;text-overflow:clip !important;white-space:normal !important;
+      overflow-wrap:anywhere;
+    }
+    .lab-today-panel .session-chips-below-name{
+      flex-wrap:wrap;min-width:0;overflow:visible !important;
+    }
+    .lab-today-panel .session-chips-below-name .portal-session-slot-chip{
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;
+    }
+    .lab-today-panel .lab-sub{
+      padding:0 12px 12px !important;margin:0 !important;overflow-wrap:anywhere;line-height:1.45;
+    }
     .lab-today-card-wrap{min-width:0}
     .lab-today-caption{margin:0 0 4px;font-size:.72rem;font-weight:700;color:var(--lab-muted);line-height:1.35;overflow-wrap:anywhere}
     .lab-chip-legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
