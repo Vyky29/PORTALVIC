@@ -187,7 +187,28 @@
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
+    if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
     return k;
+  }
+
+  var PROGRAMME_LEAD_AUTH_EMAILS = {
+    "b.traperocasado@gmail.com": "berta",
+    "johnnyosti37@gmail.com": "john",
+    "michelle@youtimecounselling.com": "michelle",
+  };
+
+  function resolveProgrammeLeadStaffKeyFromAuth() {
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var em = String((box.session && box.session.user && box.session.user.email) || "")
+        .trim()
+        .toLowerCase();
+      if (em && PROGRAMME_LEAD_AUTH_EMAILS[em]) return PROGRAMME_LEAD_AUTH_EMAILS[em];
+      if (em.indexOf("traperocasado") >= 0) return "berta";
+      if (em.indexOf("johnnyosti") >= 0 || em.indexOf("john.osti") >= 0) return "john";
+      if (em.indexOf("michelle@youtimecounselling") >= 0) return "michelle";
+    } catch (_) {}
+    return "";
   }
 
   function resolveCurrentStaffKey() {
@@ -218,6 +239,8 @@
         return canonicalStaffRosterKey(profile.username);
       }
     } catch (_) {}
+    var fromAuth = resolveProgrammeLeadStaffKeyFromAuth();
+    if (fromAuth) return fromAuth;
     return "";
   }
 
@@ -312,7 +335,22 @@
     if (EXPLICIT_TOPBAR_PROFILES[staffKey]) {
       return EXPLICIT_TOPBAR_PROFILES[staffKey];
     }
+    var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
+    if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
+      return EXPLICIT_TOPBAR_PROFILES[leadKey];
+    }
     return DEFAULT_TOPBAR_PROFILE;
+  }
+
+  function portalResyncPlannerToolsAfterIdentity() {
+    var staffKey = resolveCurrentStaffKey();
+    if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
+    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    try {
+      if (typeof global.portalSyncTopbarRoleTools === "function") {
+        global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });
+      }
+    } catch (_) {}
   }
 
   async function portalSyncSwimmingInstructorQuickMenus() {
@@ -353,4 +391,13 @@
   global.portalSyncSwimmingInstructorQuickMenus = portalSyncSwimmingInstructorQuickMenus;
   global.portalSyncSwimmingTermReviewQuickMenu = portalSyncSwimmingInstructorQuickMenus;
   global.portalResolveStaffTopbarProfile = resolveTopbarProfileForStaff;
+  global.portalResyncPlannerToolsAfterIdentity = portalResyncPlannerToolsAfterIdentity;
+
+  if (global.addEventListener) {
+    global.addEventListener("portal:staff-identity-resolved", function () {
+      try {
+        portalResyncPlannerToolsAfterIdentity();
+      } catch (_) {}
+    });
+  }
 })(typeof window !== "undefined" ? window : globalThis);

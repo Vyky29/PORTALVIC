@@ -117,6 +117,7 @@ export const PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY = {
   "javier@clbusensational.org": "javi",
   "sevitha@clubsensational.org": "sevitha",
   "info@clubsensational.org": "sevitha",
+  "michelle@youtimecounselling.com": "michelle",
 };
 
 function normalizeMatchKey(value) {
@@ -322,6 +323,7 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+  if (k === "michelleemmacaleb" || k.startsWith("michelle")) return "michelle";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 
