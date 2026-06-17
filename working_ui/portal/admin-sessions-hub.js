@@ -3803,6 +3803,7 @@
   };
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
+    if (hubSlotIsTrial(slot)) return false;
     var ov = this.overrideForSlot(slot);
     if (ov && overrideIsCancelledType(ov)) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
@@ -5904,6 +5905,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var fbCell;
         if (isOpenSlot) {
           fbCell = '<span class="ash-muted">\u2014</span>';
+        } else if (isTrial) {
+          fbCell = rosterFeedbackStatusHtml(false, fbDone);
         } else if (isAbsent) {
           fbCell = rosterFeedbackStatusHtml(true, fbDone);
         } else if (isCancelled) {
@@ -5913,13 +5916,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         var statusCell = isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
+          : isTrial
+            ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
           : isCancelled
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
           : isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isTrial
-              ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
-              : isMakeup
+            : isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
               : isUpdated
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
