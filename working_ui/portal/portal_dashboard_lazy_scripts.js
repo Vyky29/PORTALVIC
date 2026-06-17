@@ -89,9 +89,9 @@
       void global.portalEnsureDashboardLazyScripts();
     };
     if (typeof global.requestIdleCallback === "function") {
-      global.requestIdleCallback(run, { timeout: 5000 });
+      global.requestIdleCallback(run, { timeout: 1800 });
     } else {
-      global.setTimeout(run, 250);
+      global.setTimeout(run, 180);
     }
   }
 

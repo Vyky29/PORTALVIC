@@ -14,12 +14,12 @@
   -->
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
-  <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
-<script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260612-reminder-ack-copy"></script>
-  <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
+  <script defer src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
+<script defer src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260612-reminder-ack-copy"></script>
+  <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
-  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-phase2"></script>
+  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
@@ -94,9 +94,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260625-manifest-fix" />
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
-  <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
+  <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-trial-eddie-mc" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260617-staff-footer-perf" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-label-space" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -899,10 +899,8 @@
   <script src="/portal/term_from_timetable.js?v=20260613-lulia-next-session-cover"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-anas-cli"></script>
+  <script src="/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260614-madre-roster"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260614-acat-jun8-absent"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260615-late-feedback-sync"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260611-roberto-roster-merge-fix"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260614-madre-roster"></script>
@@ -14379,6 +14377,9 @@
     document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
     document.getElementById('dockParticipantsTile')?.addEventListener('click', handleParticipantsDockClick);
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
+    if(typeof syncDockNavContext === 'function') syncDockNavContext();
+    if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();
+    if(typeof portalSyncParticipantsDockChrome === 'function') portalSyncParticipantsDockChrome();
     const avatarWrapEl = document.getElementById('avatarWrap');
     if(avatarWrapEl){
       avatarWrapEl.addEventListener('click', handleHeaderLogoAlertsClick);
@@ -15880,15 +15881,19 @@
           if(rosterClient) void window.portalRefreshPortalRosterRowsFromSupabase(rosterClient);
         }
         if(typeof window.portalInitStaffDmRealtime === "function"){
-          if(!(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active)){
+          if(!(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active) && !window.__PORTAL_HIDE_CHAT_UI__){
             window.portalInitStaffDmRealtime();
           }
         }
         if(typeof window.portalInitStaffDmUnreadPoll === "function"){
-          window.portalInitStaffDmUnreadPoll();
+          if(!window.__PORTAL_HIDE_CHAT_UI__){
+            window.portalInitStaffDmUnreadPoll();
+          }
         }
         if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
-          void window.portalStaffDmSyncUnreadChrome();
+          if(!window.__PORTAL_HIDE_CHAT_UI__){
+            void window.portalStaffDmSyncUnreadChrome();
+          }
         }
         _finishStaffRehydrateUi();
         function portalStaffRunBackgroundRosterRefresh(){
@@ -15942,9 +15947,21 @@
         }
       });
       window.addEventListener("portal:staff-dashboard-source-updated", portalRebootstrapSessionsForPinnedStaff);
+      window.addEventListener("portal:feedback-data-ready", function(){
+        try{
+          if(typeof portalMergeServerReviewStateForDashboard === "function"){
+            void portalMergeServerReviewStateForDashboard().then(function(){
+              if(typeof renderToday === "function") renderToday();
+              if(typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
+            });
+          }else{
+            if(typeof renderToday === "function") renderToday();
+          }
+        }catch(_fbReady){}
+      });
       setTimeout(function () {
         if (!_staffRosterHydratedOk) void rehydrateFromProfile();
-      }, 1800);
+      }, 1200);
     })();
   </script>
   <script>

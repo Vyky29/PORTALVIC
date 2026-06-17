@@ -65,8 +65,8 @@
       --dock-browser-ui-lift:0px;
       /* Should match ~real dock height (no extra “air” above the menu) */
       --fab-reserved-bottom:calc(var(--dock-strip-height) + env(safe-area-inset-bottom, 0px) + var(--dock-browser-ui-lift));
-      /* Alineado con .app::after dock-fade */
-      --dock-visual-reserve-bottom:calc(env(safe-area-inset-bottom, 0px) + var(--dock-strip-height) + 24px + var(--dock-browser-ui-lift));
+      /* Alineado con .app::after dock-fade + Safari bottom bar lift */
+      --dock-visual-reserve-bottom:calc(env(safe-area-inset-bottom, 0px) + var(--dock-strip-height) + var(--dock-browser-ui-lift) + 24px);
       /* Espacio bajo el contenido scrollable de la ficha cliente (dock inferior) */
     }
 
@@ -157,7 +157,7 @@
       content:'';
       position:fixed;
       left:50%;
-      bottom:0;
+      bottom:var(--dock-browser-ui-lift);
       transform:translateX(-50%);
       width:100%;
       max-width:var(--layout-max-desktop);
@@ -178,6 +178,7 @@
     }
     body.dev-mobile-preview .app::after{
       max-width:var(--layout-max-mobile);
+      bottom:0;
     }
     .app > *{
       position:relative;
@@ -7765,6 +7766,8 @@
       flex-direction:column;
       align-items:center;
       pointer-events:none;
+      transform:translateZ(0);
+      isolation:isolate;
     }
     .dock-bar__nav{
       position:relative;
@@ -7774,7 +7777,7 @@
       margin:0 auto;
       display:flex;
       flex-direction:row;
-      align-items:center;
+      align-items:stretch;
       justify-content:stretch;
       min-height:calc(var(--dock-strip-height) + env(safe-area-inset-bottom, 0px));
       padding:2px max(6px, env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-right));
@@ -7788,6 +7791,7 @@
     .dock-nav-item{
       flex:1;
       min-width:0;
+      min-height:48px;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -7802,6 +7806,7 @@
       font-family:inherit;
       color:var(--ink);
       text-align:center;
+      touch-action:manipulation;
       -webkit-tap-highlight-color:transparent;
       outline:none;
       appearance:none;
@@ -8331,15 +8336,19 @@
     .dock-nav-item__icon svg{width:14px;height:14px;display:block}
     .dock-nav-item__label{
       display:block;
-      font-size:8px;
+      font-size:9px;
       font-weight:800;
       text-transform:uppercase;
-      letter-spacing:.04em;
+      letter-spacing:.03em;
       color:var(--ink);
-      line-height:1.1;
+      line-height:1.15;
       text-align:center;
       max-width:100%;
-      padding:0 1px;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      padding:0 2px;
     }
 
     /* Quick menu (full): hide alerts/profile groups */
