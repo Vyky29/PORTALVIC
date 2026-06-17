@@ -22,6 +22,8 @@
   /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  /** visualVIC Routines Planner — set in Vercel env or override before bootstrap (e.g. https://xxx.vercel.app/planner). */
+  window.ROUTINES_PLANNER_URL = window.ROUTINES_PLANNER_URL || "";
   window.PORTAL_INDUCTION_BASE_URL =
     window.PORTAL_INDUCTION_BASE_URL ||
     String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
@@ -708,5 +710,30 @@
         'try { await bootstrapDashboardSupabase({ page }); } catch (e) { console.warn("[portal] form visit bootstrap", e); }\n';
       (document.head || document.documentElement).appendChild(s);
     } catch (_) {}
+  })();
+
+  /** When visualVIC prod URL is configured, enable Plan topbar + quick menu (external /planner). */
+  (function portalRoutinesPlannerBootstrap() {
+    var url = String(window.ROUTINES_PLANNER_URL || "").trim();
+    if (!url) return;
+    function enablePlannerUi() {
+      ["topbarToolSessionPlanner", "quickMenuStaffSessionPlan", "quickMenuLeadSessionPlan"].forEach(
+        function (id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.classList.remove("menu-btn--feature-deactivated");
+          el.removeAttribute("disabled");
+          el.removeAttribute("aria-disabled");
+          if (el.tagName === "BUTTON") el.disabled = false;
+          var sub = el.querySelector(".menu-btn-sub");
+          if (sub) sub.textContent = "Open routines planner";
+        },
+      );
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", enablePlannerUi);
+    } else {
+      enablePlannerUi();
+    }
   })();
 })();

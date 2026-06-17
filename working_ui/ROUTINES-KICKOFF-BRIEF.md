@@ -48,7 +48,7 @@ Inactive profiles (`is_active = false`) → no access.
 
 ## Portal tasks (this repo does not implement HTML dashboards)
 
-1. Run SQL migration: [`docs/portal/sql/staff_participant_access.sql`](./portal/sql/staff_participant_access.sql)
+1. Run SQL migration: `npm run apply:staff-participant-access` (or [`database/migrations/20260617120000_staff_participant_access.sql`](../database/migrations/20260617120000_staff_participant_access.sql))
 2. Seed rows for staff above (match `staff_profiles.id` after auth exists)
 3. Add **Planner** link on staff / lead dashboards:
 

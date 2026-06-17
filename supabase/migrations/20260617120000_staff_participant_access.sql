@@ -1,6 +1,6 @@
--- Portal Supabase (cklpnwhlqsulpmkipmqb)
--- Canonical migration: database/migrations/20260617120000_staff_participant_access.sql
--- CLI: npm run apply:staff-participant-access
+-- Mirror of database/migrations/20260617120000_staff_participant_access.sql for supabase db push.
+
+begin;
 
 create table if not exists public.staff_participant_access (
   staff_id uuid not null references public.staff_profiles(id) on delete cascade,
@@ -16,7 +16,9 @@ create index if not exists staff_participant_access_staff_id_idx
 
 alter table public.staff_participant_access enable row level security;
 
--- Staff read own rows; ceo/admin read all (adjust if your RLS pattern differs)
+revoke all on public.staff_participant_access from public, anon;
+grant select on public.staff_participant_access to authenticated;
+
 drop policy if exists staff_participant_access_select_own on public.staff_participant_access;
 create policy staff_participant_access_select_own
   on public.staff_participant_access
@@ -32,7 +34,28 @@ create policy staff_participant_access_select_own
     )
   );
 
--- Example seed (replace UUIDs with real auth.users / staff_profiles.id):
--- insert into public.staff_participant_access (staff_id, participant_slug) values
---   ('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'serine'),
---   ('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'ayaan');
+insert into public.staff_participant_access (staff_id, participant_slug)
+select sp.id, v.slug
+from public.staff_profiles sp
+cross join (
+  values
+    ('ikram'),
+    ('emmanuel')
+) as v(slug)
+where sp.is_active = true
+  and lower(trim(sp.username)) in ('luliya', 'lulia', 'youssef', 'michelle')
+on conflict do nothing;
+
+insert into public.staff_participant_access (staff_id, participant_slug)
+select sp.id, v.slug
+from public.staff_profiles sp
+cross join (
+  values
+    ('serine'),
+    ('ayaan')
+) as v(slug)
+where sp.is_active = true
+  and lower(trim(sp.username)) = 'sandra'
+on conflict do nothing;
+
+commit;

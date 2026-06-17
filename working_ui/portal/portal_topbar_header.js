@@ -538,6 +538,11 @@
         e.stopPropagation();
 
         if (toolBtn.id === "topbarToolSessionPlanner") {
+          var routinesUrl = String(global.ROUTINES_PLANNER_URL || "").trim();
+          if (routinesUrl) {
+            openExternalUrl(routinesUrl);
+            return;
+          }
           if (typeof global.openSheet === "function") {
             global.openSheet(
               global.__PORTAL_TOPBAR_IS_LEAD__ ? "leadSessionPlanSheet" : "staffSessionPlanSheet",
