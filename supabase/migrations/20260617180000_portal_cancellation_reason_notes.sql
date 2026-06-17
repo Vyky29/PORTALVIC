@@ -6,6 +6,27 @@ begin;
 alter table public.cancellation_reports
   add column if not exists notes text null;
 
+update public.cancellation_reports
+set
+  notes = coalesce(
+    nullif(trim(notes), ''),
+    nullif(trim(regexp_replace(reason_category, '^.* — Notes:\s*', '', 'i')), '')
+  ),
+  reason_category = trim(
+    regexp_replace(
+      regexp_replace(reason_category, '\s*—\s*Notes:.*$', '', 'i'),
+      '\s*—\s*Service:.*$',
+      '',
+      'i'
+    )
+  )
+where reason_category ~* '( — Notes:| — Service:)';
+
+update public.cancellation_reports
+set reason_category = 'Other'
+where reason_category ilike 'Other%'
+  and reason_category <> 'Other';
+
 comment on column public.cancellation_reports.notes is
   'Optional free-text context; reason_category stays one of the fixed illness/unforeseen/other values.';
 

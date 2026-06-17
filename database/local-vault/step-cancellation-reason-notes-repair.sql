@@ -1,11 +1,12 @@
--- Cancellation reports: allow "Other" reason + optional notes column (staff often add context).
--- Fixes submit failures when notes were appended to reason_category (broke the enum check).
+-- Repair legacy cancellation_reports rows, then add notes + allow "Other".
+-- Safe to re-run (idempotent).
 
 begin;
 
 alter table public.cancellation_reports
   add column if not exists notes text null;
 
+-- Legacy client appended notes into reason_category when notes column was missing.
 update public.cancellation_reports
 set
   notes = coalesce(
@@ -22,13 +23,12 @@ set
   )
 where reason_category ~* '( — Notes:| — Service:)';
 
+-- Normalise bare "Other — Notes: …" left from partial inserts.
 update public.cancellation_reports
-set reason_category = 'Other'
+set
+  reason_category = 'Other'
 where reason_category ilike 'Other%'
   and reason_category <> 'Other';
-
-comment on column public.cancellation_reports.notes is
-  'Optional free-text context; reason_category stays one of the fixed illness/unforeseen/other values.';
 
 alter table public.cancellation_reports
   drop constraint if exists cancellation_reports_reason_category_check;
@@ -47,5 +47,8 @@ alter table public.cancellation_reports
       'Other'
     )
   );
+
+comment on column public.cancellation_reports.notes is
+  'Optional free-text context; reason_category stays one of the fixed illness/unforeseen/other values.';
 
 commit;

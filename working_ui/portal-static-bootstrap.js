@@ -130,6 +130,27 @@
     return "";
   };
 
+  window.portalReadBridgeSecret = function portalReadBridgeSecret() {
+    try {
+      if (typeof window.portalEnsureBridgeCached === "function") {
+        var cached = String(window.portalEnsureBridgeCached() || "").trim();
+        if (cached) return cached;
+      }
+    } catch (_) {}
+    try {
+      var legacy =
+        sessionStorage.getItem("clubsens_portal_bridge_v1") ||
+        localStorage.getItem("clubsens_portal_bridge_v1") ||
+        "";
+      var t = String(legacy || "").trim();
+      if (t && t.indexOf("%%") !== 0 && t.length >= 16) {
+        window.portalPersistBridgeSecret(t);
+        return t;
+      }
+    } catch (_) {}
+    return "";
+  };
+
   try {
     window.portalEnsureBridgeCached();
   } catch (_) {}

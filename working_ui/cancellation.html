@@ -463,8 +463,8 @@ button{
   function __portalJsCx(file){
     return __portalSharedBaseCx() + '/' + file;
   }
-  var PORTAL_AUTH_MODULE = __portalJsCx('auth-handler.js?v=20260617-cancellation-fix');
-  var PORTAL_SUPABASE_MODULE = __portalJsCx('supabase-client.js?v=20260617-cancellation-fix');
+  var PORTAL_AUTH_MODULE = __portalJsCx('auth-handler.js?v=20260617-cancellation-fix2');
+  var PORTAL_SUPABASE_MODULE = __portalJsCx('supabase-client.js?v=20260617-cancellation-fix2');
 
   var PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
 
@@ -1146,11 +1146,17 @@ button{
 
   function readBridgeSecretFromWindowOrHash(){
     try {
+      if (typeof window.portalEnsureBridgeCached === 'function') {
+        var ensured = String(window.portalEnsureBridgeCached() || '').trim();
+        if (ensured) return ensured;
+      }
+    } catch (e0) {}
+    try {
       if (typeof window.portalReadBridgeSecret === 'function') {
         var shared = window.portalReadBridgeSecret();
         if (shared) return shared;
       }
-    } catch (e0) {}
+    } catch (e0b) {}
     try {
       var s = String(STAFF_PROFILE_PORTAL_BRIDGE_SECRET || '').trim();
       if (s && s !== '%%PB6%%' && s.length >= 16) return s;
@@ -1165,7 +1171,11 @@ button{
       return '';
     }
     try {
-      var stored = sessionStorage.getItem('clubsens_portal_bridge_v1') || localStorage.getItem('clubsens_portal_bridge_v1') || '';
+      var stored =
+        sessionStorage.getItem('portalStaffProfileBridgeSecret_v1') ||
+        sessionStorage.getItem('clubsens_portal_bridge_v1') ||
+        localStorage.getItem('clubsens_portal_bridge_v1') ||
+        '';
       var t = String(stored).trim();
       if (t && t !== '%%PB6%%' && t.length >= 16) return t;
     } catch (e3) {}
@@ -1304,16 +1314,13 @@ button{
       };
 
       var pinName = readPinIdentityNameForCancel() || readNameFromUrlParams();
-      var bridgeSecret = readBridgeSecretFromWindowOrHash();
-      var usePinBridge = !!(pinName && bridgeSecret);
+      var fromHub = portalOpenedFromStaffOrLeadHub();
       var auth = null;
 
-      if (!usePinBridge) {
-        try {
-          auth = await hydrateAuthContext();
-        } catch (authErr) {
-          auth = null;
-        }
+      try {
+        auth = await hydrateAuthContext();
+      } catch (authErr) {
+        auth = null;
       }
 
       if (auth) {
@@ -1322,15 +1329,15 @@ button{
         try {
           await insertCancellationViaSupabase(auth.supabase, row);
         } catch (insErr) {
-          if (usePinBridge) {
+          if (fromHub && pinName) {
             await submitCancellationViaPinBridge(pinName, row);
           } else {
             throw insErr;
           }
         }
-      } else if (usePinBridge) {
+      } else if (fromHub && pinName) {
         await submitCancellationViaPinBridge(pinName, row);
-      } else if (portalOpenedFromStaffOrLeadHub()) {
+      } else if (fromHub) {
         throw new Error(
           'PIN session found but the portal bridge is not loaded. Go back to Staff or Lead hub, sign in with your PIN again, then open Cancellation from the hub (not a bookmark).'
         );

@@ -17,6 +17,7 @@
     "apply:whatsapp:secrets": "node database/local-vault/apply-whatsapp.mjs --secrets-only",
     "deploy:openai-assist": "supabase functions deploy portal-openai-assist --no-verify-jwt",
     "deploy:incoming-call-push": "supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+    "deploy:cancellation-submit": "supabase functions deploy portal-cancellation-submit --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "apply:incoming-call-push": "node database/local-vault/apply-incoming-call-push.mjs && supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql",
     "apply:schedule-overrides-permissions": "node database/local-vault/apply-schedule-overrides-permissions.mjs",
     "apply:sevitha-office-portal": "node database/local-vault/apply-sevitha-office-portal.mjs",
