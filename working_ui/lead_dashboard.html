@@ -5952,7 +5952,8 @@
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return false;
       return w === String(s.day || '').trim();
     }
-    function portalScheduleOverrideFetchIsoList(){
+    function portalScheduleOverrideFetchIsoList(opts){
+      opts = opts || {};
       const out = [];
       const add = function(iso){
         const x = String(iso || '').trim();
@@ -5991,6 +5992,7 @@
         }
       }catch(_){}
       try{
+        if(opts.termCalendar !== false){
         const y = Number(dashboardData && dashboardData.termCalendarYear);
         let months = Array.isArray(dashboardData && dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
           ? dashboardData.termCalendarMonths.map(Number).filter(function(m){ return m >= 0 && m <= 11; })
@@ -6013,17 +6015,18 @@
             }
           });
         }
+        }
       }catch(_){}
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
       return out;
     }
-    window.portalRefreshScheduleOverridesCache = async function portalRefreshScheduleOverridesCache(){
+    window.portalRefreshScheduleOverridesCache = async function portalRefreshScheduleOverridesCache(opts){
       try{
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client) return;
         const sess = box.session;
         if(!sess || !sess.user) return;
-        const isoList = typeof portalScheduleOverrideFetchIsoList === 'function' ? portalScheduleOverrideFetchIsoList() : [portalIsoYmdFromDate(new Date())];
+        const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
@@ -6180,19 +6183,7 @@
             }
           });
         window.__PORTAL_STAFF_SCHED_RT_CH = ch;
-        if("serviceWorker" in navigator){
-          try{
-            var swUrl = new URL("clubsensational-portal-sw.js", window.location.href).href;
-            var scopeBase = new URL("./", window.location.href).href;
-            navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function(reg){
-              window.__PORTAL_SW_REG__ = reg;
-            }).catch(function(e){
-              console.warn("[portal] service worker register", e);
-            });
-          }catch(e){
-            console.warn("[portal] service worker", e);
-          }
-        }
+        /* SW registered once via portalRegisterStaffServiceWorkerEarly */
       }catch(e){
         console.warn("[portal] portalInitScheduleOverrideRealtimeForStaff", e);
       }
@@ -12446,10 +12437,17 @@
         return k;
       }
       var __PORTAL_LEAD_REHYDRATE_BUSY__ = false;
+      var __PORTAL_LEAD_REHYDRATE_PROMISE__ = null;
       async function rehydrateFromProfile(){
-        if(__PORTAL_LEAD_REHYDRATE_BUSY__) return;
+        if(__PORTAL_LEAD_REHYDRATE_PROMISE__) return __PORTAL_LEAD_REHYDRATE_PROMISE__;
         __PORTAL_LEAD_REHYDRATE_BUSY__ = true;
-        try{
+        __PORTAL_LEAD_REHYDRATE_PROMISE__ = rehydrateFromProfileOnce().finally(function(){
+          __PORTAL_LEAD_REHYDRATE_BUSY__ = false;
+          __PORTAL_LEAD_REHYDRATE_PROMISE__ = null;
+        });
+        return __PORTAL_LEAD_REHYDRATE_PROMISE__;
+      }
+      async function rehydrateFromProfileOnce(){
           try{
             if(window.__PORTAL_GHOST_VERIFY_PROMISE__){
             await Promise.race([
@@ -12760,23 +12758,32 @@
           void window.portalStaffDmSyncUnreadChrome();
         }
         _finishStaffRehydrateUi();
-        void (async function portalStaffBackgroundRosterRefresh(){
+        function portalStaffRunBackgroundRosterRefresh(){
+          void (async function portalStaffBackgroundRosterRefresh(){
           try{
             if(typeof portalRefreshScheduleOverridesCache === "function"){
-              await portalRefreshScheduleOverridesCache();
+              await portalRefreshScheduleOverridesCache({ termCalendar: false });
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
               await portalMergeServerReviewStateForDashboard();
             }
             _finishStaffRehydrateUi();
+            if(typeof portalRefreshScheduleOverridesCache === "function"){
+              await portalRefreshScheduleOverridesCache({ termCalendar: true });
+              _portalStaffRebuildAfterOverridesFetch(staffId);
+              _finishStaffRehydrateUi();
+            }
           }catch(e){
             console.warn("[portal] lead background roster refresh", e);
             _finishStaffRehydrateUi();
           }
-        })();
-        }finally{
-          __PORTAL_LEAD_REHYDRATE_BUSY__ = false;
+          })();
+        }
+        if(typeof requestIdleCallback === "function"){
+          requestIdleCallback(portalStaffRunBackgroundRosterRefresh, { timeout: 3000 });
+        }else{
+          setTimeout(portalStaffRunBackgroundRosterRefresh, 150);
         }
       }
 
