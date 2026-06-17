@@ -2,6 +2,16 @@
 /**
  * Sync Meta WhatsApp secrets to Supabase Portal + deploy Edge Functions.
  *
+ * Two-number setup (recommended):
+ *   1. Buy a new UK mobile SIM for API-only (portal OTP + parent notify).
+ *   2. Meta Business Suite → WhatsApp → Add phone number → verify SMS → Cloud API.
+ *   3. Put META_WHATSAPP_PHONE_NUMBER_ID + META_WHATSAPP_TOKEN in local-secrets/secrets.env
+ *      (Phone number ID is for the NEW API number, not the company mobile).
+ *   4. npm run apply:whatsapp
+ *   5. Admin → Settings → Send test WhatsApp
+ *   6. Company number: remove from Cloud API if needed, re-register in WhatsApp Business app.
+ *   7. API replies: Meta Business Suite inbox (Admin → Settings → Open Meta inbox).
+ *
  * Reads META_WHATSAPP_* from local-secrets/secrets.env (paste token there first).
  *
  * Usage (repo root):
@@ -99,3 +109,5 @@ for (const slug of functions) {
 
 console.log("\nDone. WhatsApp secrets synced + functions deployed.");
 console.log("Test: admin dashboard → Settings → Send test WhatsApp");
+console.log("API inbox (replies): Meta Business Suite — Admin → Settings → Open Meta inbox");
+console.log("Company chats: WhatsApp Business app on phone (separate number — not this API ID).");

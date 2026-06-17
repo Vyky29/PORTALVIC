@@ -1184,7 +1184,7 @@
     }
     if (hintEl) {
       hintEl.textContent = isLeadInboxMode()
-        ? "Take photos for the admin inbox (no participant), or pick someone from Today."
+        ? "Take photos for the admin inbox (no participant), or pick anyone with a session today."
         : "Same participants as your Today list (A–Z).";
     }
     if (!host) return;

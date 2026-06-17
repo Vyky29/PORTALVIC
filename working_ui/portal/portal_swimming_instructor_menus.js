@@ -146,6 +146,33 @@
       planner: true,
       sixIcon: false,
     },
+    victor: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: true,
+    },
+    raul: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: true,
+    },
+    javi: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: true,
+    },
   };
 
   var CEO_STAFF_TOPBAR_IDS = [

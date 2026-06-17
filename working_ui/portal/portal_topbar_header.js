@@ -389,6 +389,14 @@
     return portalStaffIsCeoTopbarFullAccess();
   }
 
+  /** Programme leads + Victor/Raúl/Javi — lead-style session photos (Inbox, org-wide picker). */
+  global.portalStaffHasLeadPhotoInboxAccess = function portalStaffHasLeadPhotoInboxAccess() {
+    if (portalStaffIsProgrammeLeadTopbar()) return true;
+    return portalStaffIsCeoTopbarFullAccess();
+  };
+
+  global.portalStaffHasLeadFieldToolsOnStaffShell = portalStaffHasLeadFieldToolsOnStaffShell;
+
   /**
    * Lead shell or programme lead (Berta/John) or exec on staff shell: 6 tools in 2×3.
    * CEOs on staff shell = same lead extras as programme leads.

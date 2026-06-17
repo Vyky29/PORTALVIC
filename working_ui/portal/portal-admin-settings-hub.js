@@ -509,9 +509,18 @@
       '<button type="button" class="btn btn--pri btn--sm" id="portalAdminParentNotifyTestBtn">Send test email</button>' +
       "</div>" +
       '<p class="muted" id="portalAdminParentNotifyTestStatus" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word;display:none" role="status"></p></div>' +
+      '<div class="card card-pad" style="margin-bottom:14px;border-color:#d4e8f7;background:linear-gradient(180deg,#f6fbff,#eaf6fc)">' +
+      '<h3 style="margin:0 0 8px;font-size:14px">WhatsApp — two numbers</h3>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word"><strong>API number</strong> (in Supabase secrets) — portal sends only: parent notify, staff OTP, templates. <strong>Company number</strong> — keep on <strong>WhatsApp Business</strong> on the office phone for day-to-day chats with families. Do not register the company number on Cloud API.</p>' +
+      '<ul class="muted" style="margin:0 0 12px;padding-left:18px;font-size:12px;line-height:1.45;max-width:42rem;overflow-wrap:break-word">' +
+      "<li>Buy a new SIM → add in Meta Business Suite → put its <code>PHONE_NUMBER_ID</code> in secrets → <code>npm run apply:whatsapp</code></li>" +
+      "<li>Replies to messages sent <em>from the API number</em> → Meta inbox below (not the portal yet)</li>" +
+      "<li>Manual family chats → WhatsApp Business app on the company mobile</li>" +
+      "</ul>" +
+      '<a class="btn btn--sec btn--sm" id="portalAdminMetaWhatsappInboxLink" href="https://business.facebook.com/latest/inbox/all" target="_blank" rel="noopener noreferrer">Open Meta inbox (API number)</a></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5e0f5;background:linear-gradient(180deg,#f5faff,#eaf4fc)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test WhatsApp</h3>' +
-      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">After Meta secrets and an approved template are set in Supabase, send a test via the <strong>WhatsApp Business API</strong>. Use your own mobile first. Meta usually requires an approved template for cold outbound — set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Sends via the <strong>API number</strong> (not the company mobile). After Meta secrets and an approved template are set in Supabase, test on your own phone first. Meta usually requires an approved template for cold outbound — set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match.</p>' +
       '<label class="muted" for="portalAdminParentNotifyTestWa" style="display:block;margin-bottom:6px">WhatsApp number (digits, country code)</label>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
       '<input id="portalAdminParentNotifyTestWa" class="inp" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 447..." style="flex:1 1 220px;min-width:0;max-width:100%" />' +

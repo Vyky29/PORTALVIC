@@ -907,9 +907,9 @@
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260609-photo-repair"></script>
   <script src="/portal/portal_participant_photos.js?v=20260610-chat-avatar-sanitize"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260614-avatar-uid"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260617-victor-lead-photo"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-michelle-planner"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-victor-lead-photo"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260616-lane-only-label"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
@@ -5767,7 +5767,57 @@
       const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
       return drop.indexOf(wd) >= 0;
     }
+    function portalAchievementsListOrgClientsForSelectedDay(){
+      try{
+        var model = Array.isArray(sessionsModel) ? sessionsModel : [];
+        if(!model.length) return [];
+        var viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        var anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
+        if(!anchor || isNaN(anchor.getTime())) anchor = new Date();
+        var sessionDateKey = typeof portalIsoYmdFromDate === 'function'
+          ? portalIsoYmdFromDate(anchor)
+          : anchor.getFullYear() + '-' + String(anchor.getMonth() + 1).padStart(2, '0') + '-' + String(anchor.getDate()).padStart(2, '0');
+        var anchorDayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+        var seen = Object.create(null);
+        var out = [];
+        model.forEach(function(s){
+          if(!s) return;
+          var st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
+          if(st === 'Closed' || st === 'Available') return;
+          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+            if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord)) return;
+          } else if(normaliseIsoDate(s.session_date || s.sessionDate) !== sessionDateKey){
+            return;
+          }
+          var cid = String(s.clientId || '').trim().toLowerCase();
+          if(!cid || cid === 'closed' || cid === 'available' || seen[cid]) return;
+          var notes = (typeof clientNotesById !== 'undefined' && clientNotesById) ? clientNotesById[cid] : null;
+          var nm = String(s.clientName || s.clientDisplay || (notes && notes.name) || '').trim();
+          if(!nm) return;
+          seen[cid] = true;
+          var sk = typeof portalBuildSessionReviewKey === 'function'
+            ? portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, cid)
+            : (sessionDateKey + '|' + String(s.start || '') + '|' + cid);
+          out.push({ clientId: cid, clientName: nm, portalSessionKey: sk });
+        });
+        out.sort(function(a, b){
+          return a.clientName.localeCompare(b.clientName, 'en', { sensitivity: 'base' });
+        });
+        return out;
+      }catch(_){
+        return [];
+      }
+    }
+    function portalAchievementsLeadPhotoAccessActive(){
+      if(typeof portalStaffHasLeadPhotoInboxAccess === 'function' && portalStaffHasLeadPhotoInboxAccess()) return true;
+      if(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess()) return true;
+      return true;
+    }
     function portalAchievementsListTodayParticipants(){
+      if(portalAchievementsLeadPhotoAccessActive()){
+        var org = portalAchievementsListOrgClientsForSelectedDay();
+        if(org.length) return org;
+      }
       var today = [];
       if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today)){
         today = dashboardData.today;
