@@ -7,7 +7,7 @@ Shared coordination between **visualVIC** (Routines / Planner) and **PORTALVIC**
 | App | Repo | Prod URL (today) | Role |
 |-----|------|------------------|------|
 | Staff Portal | PORTALVIC → `working_ui/` | https://portalvic.vercel.app | Login, dashboards, roster |
-| Routines | visualVIC (Next.js) | Vercel project for this repo | Library, player, Focus, **Planner** |
+| Routines | visualVIC (Next.js) | https://visual-vic.vercel.app | Library, player, Focus, **Planner** |
 
 **Same Supabase project (Portal)** — not Onboarding (`aptbbkmvkjybjgrrwxpr`).
 
@@ -50,13 +50,13 @@ Inactive profiles (`is_active = false`) → no access.
 
 1. Run SQL migration: `npm run apply:staff-participant-access` (or [`database/migrations/20260617120000_staff_participant_access.sql`](../database/migrations/20260617120000_staff_participant_access.sql))
 2. Seed rows for staff above (match `staff_profiles.id` after auth exists)
-3. Add **Planner** link on staff / lead dashboards:
+3. **Planner** link on staff / lead dashboards — **done** via `ROUTINES_PLANNER_URL` in `portal-static-bootstrap.js` (topbar **Plan** + quick menu):
 
    ```text
-   https://[ROUTINES_PROD_URL]/planner
+   https://visual-vic.vercel.app/planner
    ```
 
-4. Optional: add Routines env vars to Portal Vercel only if Portal JS needs Supabase client calls (already has bootstrap).
+   Snippet: [`working_ui/portal/planner-link-snippet.html`](./portal/planner-link-snippet.html)
 
 ## Routines tasks (visualVIC — this repo)
 
@@ -73,7 +73,17 @@ Portal and Routines are different origins. Session cookies are **not** shared. S
 
 **Not v1.** Assignments use `staff_participant_access.participant_slug`. Linking to `portal_roster_rows.client_name` is phase 2.
 
-## URLs to confirm
+## URLs (confirmed)
 
-- **Routines prod:** set when visualVIC Vercel project is linked (e.g. `https://pixtolearn-routines.vercel.app` or custom domain).
+- **Routines prod:** https://visual-vic.vercel.app
+- **Planner:** https://visual-vic.vercel.app/planner
+- **Planner login:** https://visual-vic.vercel.app/planner/login
 - **Staff login:** https://portalvic.vercel.app/login.html
+
+## Pre-go-live checklist (Sandra / Youssef)
+
+| Item | Owner | Status |
+|------|-------|--------|
+| Vercel visualVIC — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_STAFF_PORTAL_URL` in **Production** | visualVIC | ☐ |
+| Supabase — `staff_participant_access` migration + assignment seeds | Portal | ✅ (`npm run apply:staff-participant-access`) |
+| Portal — **Plan** → `https://visual-vic.vercel.app/planner` | Portal | ✅ |

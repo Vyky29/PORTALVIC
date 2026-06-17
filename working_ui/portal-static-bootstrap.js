@@ -22,8 +22,9 @@
   /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
-  /** visualVIC Routines Planner — set in Vercel env or override before bootstrap (e.g. https://xxx.vercel.app/planner). */
-  window.ROUTINES_PLANNER_URL = window.ROUTINES_PLANNER_URL || "";
+  /** visualVIC Routines Planner (prod). */
+  window.ROUTINES_PLANNER_URL =
+    window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/planner";
   window.PORTAL_INDUCTION_BASE_URL =
     window.PORTAL_INDUCTION_BASE_URL ||
     String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
