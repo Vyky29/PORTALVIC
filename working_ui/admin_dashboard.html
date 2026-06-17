@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260616-roster-sync"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260618-yossi-makeup-cache"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -16478,7 +16478,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     async function adminFetchScheduleOverridesForHub(){
-      if(window.__PORTAL_SCHEDULE_OVERRIDES__) return window.__PORTAL_SCHEDULE_OVERRIDES__;
       var client = getSchedSupabaseClient();
       if(!client){
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
@@ -17094,7 +17093,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260617-eddie-ri-trial";
+      "/portal/admin-sessions-hub.js?v=20260618-yossi-makeup-cache";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17243,6 +17242,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
         fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
+        invalidateLiveCaches: adminInvalidateSessionsHubLiveCaches,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
         fetchSessionFeedback: adminFetchSessionFeedbackForHub,
         onLogJumpWeek: function(weekStart){

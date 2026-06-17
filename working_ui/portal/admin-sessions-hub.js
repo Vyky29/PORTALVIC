@@ -1195,6 +1195,26 @@
     return !!(ov && overrideIsReplaceType(ov) && !overrideIsTrialType(ov));
   }
 
+  /** Make-up row satisfied when same client already has aquatic feedback that day (e.g. Roberto 5–5.30). */
+  function sameDayAquaticFeedbackCoversMakeupSlot(hub, slot) {
+    if (!hub || !hubSlotIsMakeup(slot)) return false;
+    var day = clean(slot.session_date);
+    var cid = canonicalClientSlug(slot.client_name);
+    if (!day || !cid) return false;
+    var list = (hub.payload && hub.payload.session_feedback) || [];
+    for (var i = 0; i < list.length; i++) {
+      var fb = list[i];
+      if (!fb || isAbsentFeedbackRow(fb)) continue;
+      if (feedbackSessionDate(fb) !== day) continue;
+      if (canonicalClientSlug(fb.client_name) !== cid) continue;
+      if (!isAquaticService(fb.service) && !isAquaticService(slot.service)) continue;
+      var er = fb.engagement_rating;
+      if (er != null && er !== "" && !isNaN(Number(er))) return true;
+      if (clean(fb.positive_feedback) || clean(fb.completed_by_name)) return true;
+    }
+    return false;
+  }
+
   function hubSlotIsTrial(slot) {
     if (!slot) return false;
     if (slot.portalOverrideTrialTag) return true;
@@ -3900,6 +3920,7 @@
 
   AdminSessionsHub.prototype.slotFeedbackComplete = function (slot) {
     if (this.acatGroupCoversSlot(slot)) return true;
+    if (sameDayAquaticFeedbackCoversMakeupSlot(this, slot)) return true;
     if (this.findFeedbackForSlot(slot)) return true;
     var mg = slot.feedback_merge_group;
     if (!mg) return false;

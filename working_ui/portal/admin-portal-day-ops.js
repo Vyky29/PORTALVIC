@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260617-makeup-feedback';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260618-yossi-makeup-cache';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -1115,6 +1115,13 @@
     },
     refreshTab: async function (tabId) {
       try {
+        if (cfg.invalidateLiveCaches) {
+          try {
+            cfg.invalidateLiveCaches();
+          } catch (_inv) {}
+        } else {
+          this.invalidatePayload();
+        }
         await global.PortalDayOps.ensurePayload();
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
@@ -1179,6 +1186,11 @@
     },
     invalidatePayload: function () {
       loadInFlight = null;
+      try {
+        if (typeof window !== 'undefined') {
+          window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+        }
+      } catch (_eOv) {}
       try {
         if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
           window.portalInvalidateAdminFeedbackStatusCache();
