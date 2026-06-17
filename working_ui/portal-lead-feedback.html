@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="/portal-static-bootstrap.js?v=20260610-portal-voice-auto"></script>
+  <script src="/portal/portal_return_and_shell.js?v=20260617-lead-report-back"></script>
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -31,10 +32,33 @@
       display: grid !important;
       grid-template-columns: minmax(0, 1fr) !important;
       justify-items: center !important;
-      padding-top: 24px;
+      padding-top: 12px;
       padding-bottom: 24px;
       padding-left: max(16px, env(safe-area-inset-left, 0px));
       padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+    body.portal-lead-feedback-page .plr-topbar {
+      justify-self: stretch !important;
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 0 8px !important;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    body.portal-lead-feedback-page .plr-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #fff;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      max-width: 100%;
+      min-width: 0;
     }
     body.portal-lead-feedback-page #portalPinIdentityBar {
       justify-self: stretch !important;
@@ -86,6 +110,9 @@
   </script>
 </head>
 <body class="portal-lead-feedback-page portal-logo-lead">
+  <nav class="plr-topbar" aria-label="Return to dashboard">
+    <button type="button" class="plr-back" id="lrBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
+  </nav>
   <div class="wrap">
     <div class="cancel-logo-wrap-outer">
       <div class="cancel-logo-wrap">
@@ -272,7 +299,7 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260610-voice-status-clear"></script>
   <script type="module">
-    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260616-lead-report-shell")
+    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260617-lead-report-back")
       .then(function (mod) {
         return mod.bootPortalLeadFeedback();
       })

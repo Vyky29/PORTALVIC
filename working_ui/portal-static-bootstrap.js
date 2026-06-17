@@ -394,7 +394,7 @@
         (typeof location !== "undefined" && location.pathname) || ""
       ).toLowerCase();
       if (p.indexOf("staff_dashboard") >= 0) return "staff_dashboard.html";
-      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
+      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0 || p.indexOf("portal-lead-feedback") >= 0) {
         return "lead_dashboard.html";
       }
     } catch (_) {}
@@ -407,7 +407,7 @@
         (typeof location !== "undefined" && location.pathname) || ""
       ).toLowerCase();
       if (p.indexOf("staff_dashboard") >= 0) return "staff";
-      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
+      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0 || p.indexOf("portal-lead-feedback") >= 0) {
         return "lead";
       }
     } catch (_) {}

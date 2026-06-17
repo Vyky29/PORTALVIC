@@ -445,26 +445,36 @@ function buildRow(ctx, data, auth) {
   };
 }
 
-function exitAfterSuccess() {
+function leadFeedbackNavigateBack() {
   try {
-    if (typeof window.portalRedirectToPortalReturn === "function") {
+    if (
+      typeof window.portalGetPortalReturnUrl === "function" &&
+      window.portalGetPortalReturnUrl() &&
+      typeof window.portalRedirectToPortalReturn === "function"
+    ) {
       window.portalRedirectToPortalReturn();
       return;
     }
   } catch (_) {}
   try {
-    const u =
-      typeof window.portalGetPortalReturnUrl === "function"
-        ? window.portalGetPortalReturnUrl()
-        : "";
-    if (clean(u)) {
-      window.location.replace(u);
+    if (typeof window.portalFormComputeReturnTarget === "function") {
+      window.location.replace(window.portalFormComputeReturnTarget());
       return;
     }
   } catch (_) {}
   try {
-    window.close();
-  } catch (_) {}
+    const hub =
+      typeof window.portalResolveHubUrl === "function"
+        ? window.portalResolveHubUrl("lead")
+        : "lead_dashboard.html";
+    window.location.replace(hub);
+  } catch (_) {
+    window.location.href = "lead_dashboard.html";
+  }
+}
+
+function exitAfterSuccess() {
+  leadFeedbackNavigateBack();
 }
 
 async function initVoiceInput(staffName) {
@@ -487,9 +497,11 @@ export async function bootPortalLeadFeedback() {
   const clearBtn = document.getElementById("lrClearBtn");
   const submitBtn = document.getElementById("lrSubmitBtn");
   const serviceEl = document.getElementById("lrService");
+  const backBtn = document.getElementById("lrBackBtn");
   if (!form || !clearBtn || !submitBtn || !serviceEl) {
     throw new Error("lead_report_form_missing");
   }
+  if (backBtn) backBtn.addEventListener("click", leadFeedbackNavigateBack);
 
   let origin = clean(qs.get("origin") || "dashboard");
   if (origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
