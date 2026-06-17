@@ -1124,6 +1124,110 @@ function portalIsGodModeAdminSession() {
 }
 
 /**
+ * Optional dashboard side effects (presence, visit tracking, location probes).
+ * Runs after portal:supabase-ready so roster rehydrate is not blocked.
+ */
+async function runPortalDashboardAuthSideEffects(ctx) {
+  const page = String(ctx.page || "").trim().toLowerCase();
+  const profile = ctx.profile || null;
+  const session = ctx.session || null;
+  const supabase = ctx.supabase;
+  const isGhostDashboard = !!ctx.isGhostDashboard;
+  const isLeadOverview = page === "lead_overview";
+
+  try {
+    if (isLeadOverview || isGhostDashboard) {
+      throw new Error("skip_presence_on_lead_overview");
+    }
+    const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
+      "./portal_live_presence.js?v=20260610-offline-quiet"
+    );
+    await startPortalLivePresence({ page, profile, session });
+    if (document.getElementById("portalLivePresenceBar")) {
+      mountPortalLivePresenceBar("portalLivePresenceBar");
+    }
+  } catch (presenceErr) {
+    console.debug("[portal] live presence skipped:", presenceErr);
+  }
+  try {
+    if (!isLeadOverview && !isGhostDashboard) {
+      const { startPortalVisitTracker } = await import(
+        "./portal_visit_tracker.js?v=20260617-direct-pulse"
+      );
+      await startPortalVisitTracker({ page, profile, session });
+    }
+  } catch (visitErr) {
+    console.debug("[portal] visit tracker skipped:", visitErr);
+  }
+  try {
+    if (!isLeadOverview && !isGhostDashboard) {
+      await import("./portal_training_progress_sync.js?v=20260610-rpc-fallback");
+      if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
+        await window.portalSyncTrainingProgressToSupabase({
+          client: supabase,
+          session,
+          profile: profile || null,
+        });
+      }
+    }
+  } catch (tprogErr) {
+    console.debug("[portal] training progress sync skipped:", tprogErr);
+  }
+  try {
+    if (isLeadOverview || isGhostDashboard) {
+      throw new Error("skip_location_on_lead_overview");
+    }
+    const perm = await import("./portal_location_permission.js?v=20260610-console-clean2");
+    window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
+    window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
+    window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
+    window.portalCommsMediaPermissionsGranted = perm.portalCommsMediaPermissionsGranted;
+    window.portalRequestLocationPermission = perm.requestLocationPermission;
+    window.portalRequestMicrophonePermission = perm.requestMicrophonePermission;
+    window.portalRequestCameraPermission = perm.requestCameraPermission;
+    window.portalMarkCameraGranted = perm.markCameraGranted;
+    window.portalMarkCameraDenied = perm.markCameraDenied;
+    window.portalRequestCallMediaPermissions = perm.requestCallMediaPermissions;
+    window.portalRequestAllPortalPermissions = perm.requestAllPortalPermissions;
+    window.portalRequestDefaultPortalPermissions = perm.requestDefaultPortalPermissions;
+    window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
+    window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
+    window.portalRefreshCameraUi = perm.portalRefreshCameraUi;
+    window.portalRefreshEnableAllUi = perm.portalRefreshEnableAllUi;
+    window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
+    window.portalOnAlertsSheetOpened = perm.portalOnAlertsSheetOpened;
+    window.portalRequestNotificationPermission = perm.requestNotificationPermission;
+    window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
+    window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
+    window.portalMandatoryAlertsSettingsComplete = perm.portalMandatoryAlertsSettingsComplete;
+    window.portalBindPortalLocationPermissionUi = perm.bindPortalLocationPermissionUi;
+    window.portalBindAutoNotificationOnFirstGesture = perm.bindAutoNotificationOnFirstGesture;
+    perm.bindPortalLocationPermissionUi();
+    perm.bindMandatoryAlertsSettingsResume();
+    await Promise.all([
+      perm.probeLocationPermissionState(),
+      perm.probeMicrophonePermissionState(),
+      perm.probeCameraPermissionState(),
+    ]);
+    perm.portalRefreshMicrophoneUi();
+    perm.portalRefreshCameraUi();
+    perm.portalRefreshEnableAllUi();
+    perm.portalSyncAlertsSettingsChrome();
+    const loc = await import("./portal_location_tracker.js?v=20260610-all-services-window");
+    window.portalRestartLocationTracker = function () {
+      return loc.restartPortalLocationTracker({ page, profile, session });
+    };
+    window.portalUploadLocationFromPosition = function (pos) {
+      return loc.uploadLocationFromPosition(pos);
+    };
+    await loc.startPortalLocationTracker({ page, profile, session });
+    await perm.portalEnsureMandatoryAlertsSettings({ page });
+  } catch (locErr) {
+    console.debug("[portal] location tracker skipped:", locErr);
+  }
+}
+
+/**
  * Optional: dashboards may import this; does not change DOM.
  * @param {{ page?: string }} _opts
  */
@@ -1504,96 +1608,13 @@ export async function bootstrapDashboardSupabase(_opts) {
         surfaceMap.bootAdminSurface(profile);
       }
     }
-    try {
-      if (page === "lead_overview" || isGhostDashboard) {
-        throw new Error("skip_presence_on_lead_overview");
-      }
-      const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260610-offline-quiet"
-      );
-      await startPortalLivePresence({ page, profile, session });
-      if (document.getElementById("portalLivePresenceBar")) {
-        mountPortalLivePresenceBar("portalLivePresenceBar");
-      }
-    } catch (presenceErr) {
-      console.debug("[portal] live presence skipped:", presenceErr);
-    }
-    try {
-      if (page !== "lead_overview" && !isGhostDashboard) {
-        const { startPortalVisitTracker } = await import(
-          "./portal_visit_tracker.js?v=20260617-direct-pulse"
-        );
-        await startPortalVisitTracker({ page, profile, session });
-      }
-    } catch (visitErr) {
-      console.debug("[portal] visit tracker skipped:", visitErr);
-    }
-    try {
-      if (page !== "lead_overview" && !isGhostDashboard) {
-        await import("./portal_training_progress_sync.js?v=20260610-rpc-fallback");
-        if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
-          await window.portalSyncTrainingProgressToSupabase({
-            client: supabase,
-            session,
-            profile: profile || null,
-          });
-        }
-      }
-    } catch (tprogErr) {
-      console.debug("[portal] training progress sync skipped:", tprogErr);
-    }
-    try {
-      if (page === "lead_overview" || isGhostDashboard) {
-        throw new Error("skip_location_on_lead_overview");
-      }
-      const perm = await import("./portal_location_permission.js?v=20260610-console-clean2");
-      window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
-      window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
-      window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
-      window.portalCommsMediaPermissionsGranted = perm.portalCommsMediaPermissionsGranted;
-      window.portalRequestLocationPermission = perm.requestLocationPermission;
-      window.portalRequestMicrophonePermission = perm.requestMicrophonePermission;
-      window.portalRequestCameraPermission = perm.requestCameraPermission;
-      window.portalMarkCameraGranted = perm.markCameraGranted;
-      window.portalMarkCameraDenied = perm.markCameraDenied;
-      window.portalRequestCallMediaPermissions = perm.requestCallMediaPermissions;
-      window.portalRequestAllPortalPermissions = perm.requestAllPortalPermissions;
-      window.portalRequestDefaultPortalPermissions = perm.requestDefaultPortalPermissions;
-      window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
-      window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
-      window.portalRefreshCameraUi = perm.portalRefreshCameraUi;
-      window.portalRefreshEnableAllUi = perm.portalRefreshEnableAllUi;
-      window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
-      window.portalOnAlertsSheetOpened = perm.portalOnAlertsSheetOpened;
-      window.portalRequestNotificationPermission = perm.requestNotificationPermission;
-      window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
-      window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
-      window.portalMandatoryAlertsSettingsComplete = perm.portalMandatoryAlertsSettingsComplete;
-      window.portalBindPortalLocationPermissionUi = perm.bindPortalLocationPermissionUi;
-      window.portalBindAutoNotificationOnFirstGesture = perm.bindAutoNotificationOnFirstGesture;
-      perm.bindPortalLocationPermissionUi();
-      perm.bindMandatoryAlertsSettingsResume();
-      await Promise.all([
-        perm.probeLocationPermissionState(),
-        perm.probeMicrophonePermissionState(),
-        perm.probeCameraPermissionState(),
-      ]);
-      perm.portalRefreshMicrophoneUi();
-      perm.portalRefreshCameraUi();
-      perm.portalRefreshEnableAllUi();
-      perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260610-all-services-window");
-      window.portalRestartLocationTracker = function () {
-        return loc.restartPortalLocationTracker({ page, profile, session });
-      };
-      window.portalUploadLocationFromPosition = function (pos) {
-        return loc.uploadLocationFromPosition(pos);
-      };
-      await loc.startPortalLocationTracker({ page, profile, session });
-      await perm.portalEnsureMandatoryAlertsSettings({ page });
-    } catch (locErr) {
-      console.debug("[portal] location tracker skipped:", locErr);
-    }
+    void runPortalDashboardAuthSideEffects({
+      page,
+      profile,
+      session,
+      supabase,
+      isGhostDashboard,
+    });
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
     if (typeof window !== "undefined" && portalDashboardRequiresStrictGate(page)) {
@@ -1624,6 +1645,13 @@ export async function bootstrapDashboardSupabase(_opts) {
           window.dispatchEvent(
             new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
           );
+          void runPortalDashboardAuthSideEffects({
+            page,
+            profile,
+            session,
+            supabase,
+            isGhostDashboard,
+          });
         }
       } catch {
         /* ignore */

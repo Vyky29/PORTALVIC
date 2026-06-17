@@ -324,7 +324,6 @@
     try {
       var path = String((location && location.pathname) || "").toLowerCase();
       if (path.indexOf("staff_dashboard") < 0 && path.indexOf("lead_dashboard") < 0) return;
-      void window.portalSyncAnnualProfileQuickMenu();
       window.addEventListener("portal:supabase-ready", function () {
         void window.portalSyncAnnualProfileQuickMenu();
       });
