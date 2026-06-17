@@ -290,7 +290,15 @@
   function applyCeoStaffTopbarTools() {
     setIdsVisible(CEO_STAFF_TOPBAR_IDS, true);
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, false);
-    setIdsVisible(SWIMMING_PLANNER_IDS, false);
+    var plannerOn = !!String(
+      global.ROUTINES_PLANNER_HANDOFF_URL || global.ROUTINES_PLANNER_URL || "",
+    ).trim();
+    setIdsVisible(SWIMMING_PLANNER_IDS, plannerOn);
+    if (plannerOn && typeof global.portalEnableRoutinesPlannerUi === "function") {
+      try {
+        global.portalEnableRoutinesPlannerUi();
+      } catch (_) {}
+    }
     SWIMMING_MENU_IDS.forEach(function (id) {
       setElementVisible(id, false);
     });
