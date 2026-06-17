@@ -32,7 +32,7 @@
     "topbarToolSessionPlanner",
   ];
 
-  /** Default staff (Sandra, Godsway, Bismark, Giuseppe, Carlos, Alex, …). */
+  /** Default staff (Godsway, Bismark, Giuseppe, Carlos, Alex, …). Sandra has an explicit profile below. */
   var DEFAULT_TOPBAR_PROFILE = {
     photo: true,
     swReview: false,
@@ -48,6 +48,15 @@
    * @type {Record<string, {photo:boolean,swReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean}>}
    */
   var EXPLICIT_TOPBAR_PROFILES = {
+    sandra: {
+      photo: true,
+      swReview: false,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: false,
+    },
     roberto: {
       photo: true,
       swReview: true,
@@ -256,6 +265,11 @@
     setIdsVisible(SWIMMING_VENUE_IDS, !!profile.venue);
     setIdsVisible(SWIMMING_PICKUP_IDS, !!profile.pickup);
     setIdsVisible(SWIMMING_PLANNER_IDS, !!profile.planner);
+    if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
+      try {
+        global.portalEnableRoutinesPlannerUi();
+      } catch (_) {}
+    }
 
     SWIMMING_MENU_IDS.forEach(function (id) {
       setElementVisible(id, !!profile.swReview);

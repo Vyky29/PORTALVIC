@@ -726,11 +726,16 @@
           el.removeAttribute("disabled");
           el.removeAttribute("aria-disabled");
           if (el.tagName === "BUTTON") el.disabled = false;
+          if (id === "quickMenuStaffSessionPlan" || id === "quickMenuLeadSessionPlan") {
+            el.setAttribute("data-portal-external-url", url);
+            el.setAttribute("aria-label", "Session planner — open routines planner");
+          }
           var sub = el.querySelector(".menu-btn-sub");
           if (sub) sub.textContent = "Open routines planner";
         },
       );
     }
+    window.portalEnableRoutinesPlannerUi = enablePlannerUi;
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", enablePlannerUi);
     } else {
