@@ -138,6 +138,14 @@
       planner: true,
       sixIcon: false,
     },
+    michelle: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+    },
   };
 
   var CEO_STAFF_TOPBAR_IDS = [
