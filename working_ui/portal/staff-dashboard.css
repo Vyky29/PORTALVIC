@@ -3513,7 +3513,7 @@
     .override--absent{background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(200,160,40,.55)}
     .override--closed{background:linear-gradient(180deg,rgba(255,235,238,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(183,28,28,.45)}
     .override--replace{background:linear-gradient(180deg,rgba(252,228,236,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(194,24,91,.32)}
-    .override--trial{background:linear-gradient(180deg,rgba(243,232,255,.98) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.32)}
+    .override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.45)}
     .override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
     .override--slot-open{background:linear-gradient(180deg,rgba(224,242,254,.92) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(8,145,178,.38)}
     .portal-sched-ov-badge.override--absent{background:rgba(212,140,38,.14);color:#a56a12;border-color:rgba(212,140,38,.34)}
@@ -3559,8 +3559,8 @@
       border-color:rgba(136,14,79,.72);
     }
     .session-card--ov-trial{
-      background:linear-gradient(180deg,rgba(243,232,255,.96) 0%,rgba(255,255,255,.98) 100%);
-      border-color:rgba(124,58,237,.42);
+      background:#f5f0ff;
+      border-color:rgba(167,139,250,.5);
     }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
@@ -3568,7 +3568,8 @@
     }
     .section-card--today .session-card.session-card--ov-trial,
     .section-card--today .session-card.override--trial{
-      border-color:#7c3aed;
+      background:#f5f0ff;
+      border-color:#c4b5fd;
     }
     .session-card--ov-blue{
       background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);
@@ -3591,13 +3592,16 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--portal-cancelled{
-      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
-      border-color:rgba(123,18,18,.78);
-      box-shadow:0 0 0 1px rgba(123,18,18,.12),0 8px 22px rgba(123,18,18,.08);
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
+    .section-card--today .session-card.override--portal-cancelled:hover{
+      border-color:rgba(21,115,71,.45);
     }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
-    .session-card.override--trial{background:linear-gradient(180deg,rgba(243,232,255,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.42)}
+    .session-card.override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.5)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
       background:var(--reviewOrangeBg);
       border-color:var(--reviewOrangeBorder);
@@ -4600,6 +4604,11 @@
       min-width:0;
       margin-top:4px;
     }
+    .section-card--today .session-chips-below-name--wrap{
+      flex-direction:row;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
     .section-card--today .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .session-chips-below-name .portal-sched-ov-badge{
       max-width:100%;
@@ -4664,10 +4673,10 @@
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
     }
     .portal-session-slot-chip--trial{
-      color:#fff;
-      background:linear-gradient(180deg,#a78bfa,#7c3aed);
-      border:1px solid rgba(91,33,182,.34);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(124,58,237,.22);
+      color:#6d28d9;
+      background:#ede9fe;
+      border:1px solid rgba(167,139,250,.65);
+      box-shadow:none;
       text-transform:none;
     }
     .portal-session-slot-chip--trial > span{
@@ -4809,10 +4818,10 @@
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--trial,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--trial{
-      color:#fff;
-      background:linear-gradient(180deg,#a78bfa,#7c3aed);
-      border:1px solid rgba(91,33,182,.34);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
+      color:#6d28d9;
+      background:#ede9fe;
+      border:1px solid rgba(167,139,250,.65);
+      box-shadow:none;
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--absent,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--absent{
@@ -6352,21 +6361,33 @@
       50%{box-shadow:0 0 0 2px rgba(194,24,91,.28),0 10px 24px rgba(194,24,91,.2)}
     }
     @keyframes termTrialPulse{
-      0%,100%{box-shadow:0 0 0 1px rgba(124,58,237,.16),0 6px 18px rgba(124,58,237,.14)}
-      50%{box-shadow:0 0 0 2px rgba(124,58,237,.34),0 10px 24px rgba(124,58,237,.24)}
+      0%,100%{box-shadow:0 0 0 1px rgba(167,139,250,.28),0 4px 14px rgba(167,139,250,.12);border-color:rgba(167,139,250,.45)}
+      50%{box-shadow:0 0 0 2px rgba(167,139,250,.45),0 8px 20px rgba(167,139,250,.2);border-color:rgba(167,139,250,.58)}
     }
     @keyframes termOvPulseAbsentCell{
       0%,100%{box-shadow:0 0 0 1px rgba(21,115,71,.22),0 4px 14px rgba(21,115,71,.14);border-color:rgba(21,115,71,.38)}
       50%{box-shadow:0 0 0 2px rgba(21,115,71,.42),0 8px 20px rgba(21,115,71,.22);border-color:rgba(21,115,71,.52)}
     }
     @keyframes termOvPulseCancelledCell{
-      0%,100%{box-shadow:0 0 0 1px rgba(198,40,40,.24),0 4px 14px rgba(198,40,40,.15);border-color:rgba(198,40,40,.42)}
-      50%{box-shadow:0 0 0 2px rgba(198,40,40,.42),0 8px 20px rgba(198,40,40,.22);border-color:rgba(198,40,40,.58)}
+      0%,100%{box-shadow:0 0 0 1px rgba(21,115,71,.22),0 4px 14px rgba(21,115,71,.14);border-color:rgba(21,115,71,.38)}
+      50%{box-shadow:0 0 0 2px rgba(21,115,71,.42),0 8px 20px rgba(21,115,71,.22);border-color:rgba(21,115,71,.52)}
+    }
+    @keyframes termOvPulseTrainingCell{
+      0%,100%{box-shadow:0 0 0 1px rgba(37,99,235,.22),0 4px 14px rgba(37,99,235,.14);border-color:rgba(37,99,235,.38)}
+      50%{box-shadow:0 0 0 2px rgba(37,99,235,.42),0 8px 20px rgba(37,99,235,.22);border-color:rgba(37,99,235,.52)}
+    }
+    @keyframes termOvPulseShadowingCell{
+      0%,100%{box-shadow:0 0 0 1px rgba(14,165,233,.22),0 4px 14px rgba(14,165,233,.14);border-color:rgba(14,165,233,.38)}
+      50%{box-shadow:0 0 0 2px rgba(14,165,233,.42),0 8px 20px rgba(14,165,233,.22);border-color:rgba(14,165,233,.52)}
+    }
+    @keyframes termOvPulseMeetingCell{
+      0%,100%{box-shadow:0 0 0 1px rgba(132,204,22,.24),0 4px 14px rgba(132,204,22,.14);border-color:rgba(132,204,22,.4)}
+      50%{box-shadow:0 0 0 2px rgba(132,204,22,.42),0 8px 20px rgba(132,204,22,.22);border-color:rgba(132,204,22,.54)}
     }
     @keyframes termOvPulseBothCell{
       0%{box-shadow:0 0 0 2px rgba(194,24,91,.38),0 6px 16px rgba(194,24,91,.2);border-color:rgba(194,24,91,.42)}
-      50%{box-shadow:0 0 0 2px rgba(21,115,71,.42),0 8px 20px rgba(21,115,71,.22);border-color:rgba(21,115,71,.48)}
-      100%{box-shadow:0 0 0 2px rgba(198,40,40,.42),0 8px 20px rgba(198,40,40,.22);border-color:rgba(198,40,40,.48)}
+      50%{box-shadow:0 0 0 2px rgba(167,139,250,.42),0 8px 20px rgba(167,139,250,.22);border-color:rgba(167,139,250,.48)}
+      100%{box-shadow:0 0 0 2px rgba(21,115,71,.42),0 8px 20px rgba(21,115,71,.22);border-color:rgba(21,115,71,.48)}
     }
     .term-cal-day.term-cal-day--ov-pulse-makeup{
       animation:termMakeUpPulse 1.6s ease-in-out infinite;
@@ -6380,6 +6401,15 @@
     .term-cal-day.term-cal-day--ov-pulse-cancelled{
       animation:termOvPulseCancelledCell 1.75s ease-in-out infinite;
     }
+    .term-cal-day.term-cal-day--ov-pulse-training{
+      animation:termOvPulseTrainingCell 1.75s ease-in-out infinite;
+    }
+    .term-cal-day.term-cal-day--ov-pulse-shadowing{
+      animation:termOvPulseShadowingCell 1.75s ease-in-out infinite;
+    }
+    .term-cal-day.term-cal-day--ov-pulse-meeting{
+      animation:termOvPulseMeetingCell 1.75s ease-in-out infinite;
+    }
     .term-cal-day.term-cal-day--ov-pulse-both{
       animation:termOvPulseBothCell 2.2s ease-in-out infinite;
     }
@@ -6388,11 +6418,17 @@
       .term-cal-day.term-cal-day--ov-pulse-trial,
       .term-cal-day.term-cal-day--ov-pulse-absent,
       .term-cal-day.term-cal-day--ov-pulse-cancelled,
+      .term-cal-day.term-cal-day--ov-pulse-training,
+      .term-cal-day.term-cal-day--ov-pulse-shadowing,
+      .term-cal-day.term-cal-day--ov-pulse-meeting,
       .term-cal-day.term-cal-day--ov-pulse-both{animation:none}
       .term-cal-day.term-cal-day--ov-pulse-makeup{box-shadow:0 0 0 1px rgba(194,24,91,.22),0 4px 12px rgba(194,24,91,.14)}
-      .term-cal-day.term-cal-day--ov-pulse-trial{box-shadow:0 0 0 1px rgba(124,58,237,.24),0 4px 12px rgba(124,58,237,.14)}
+      .term-cal-day.term-cal-day--ov-pulse-trial{box-shadow:0 0 0 1px rgba(167,139,250,.28),0 4px 12px rgba(167,139,250,.12)}
       .term-cal-day.term-cal-day--ov-pulse-absent{box-shadow:0 0 0 1px rgba(21,115,71,.28),0 4px 12px rgba(21,115,71,.12)}
-      .term-cal-day.term-cal-day--ov-pulse-cancelled{box-shadow:0 0 0 1px rgba(198,40,40,.28),0 4px 12px rgba(198,40,40,.12)}
+      .term-cal-day.term-cal-day--ov-pulse-cancelled{box-shadow:0 0 0 1px rgba(21,115,71,.28),0 4px 12px rgba(21,115,71,.12)}
+      .term-cal-day.term-cal-day--ov-pulse-training{box-shadow:0 0 0 1px rgba(37,99,235,.24),0 4px 12px rgba(37,99,235,.12)}
+      .term-cal-day.term-cal-day--ov-pulse-shadowing{box-shadow:0 0 0 1px rgba(14,165,233,.24),0 4px 12px rgba(14,165,233,.12)}
+      .term-cal-day.term-cal-day--ov-pulse-meeting{box-shadow:0 0 0 1px rgba(132,204,22,.26),0 4px 12px rgba(132,204,22,.12)}
       .term-cal-day.term-cal-day--ov-pulse-both{box-shadow:0 0 0 2px rgba(112,45,112,.25),0 4px 14px rgba(112,45,112,.12)}
     }
 

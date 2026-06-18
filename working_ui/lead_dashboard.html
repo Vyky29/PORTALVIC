@@ -4766,6 +4766,45 @@
       return false;
     }
     /** Pool / room label HTML (right column when no override; under name when override splits layout). */
+    function portalSessionAddSplitNames(raw){
+      return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
+    }
+    function portalSessionAddPeopleChips(kind, payload){
+      payload = payload && typeof payload === 'object' ? payload : {};
+      const trainer = String(payload.trainer || '').trim();
+      if(kind === 'training'){
+        return portalSessionAddSplitNames(trainer).map(function(n){ return 'with ' + n; });
+      }
+      if(kind === 'shadowing'){
+        return portalSessionAddSplitNames(trainer);
+      }
+      if(kind === 'meeting'){
+        let list = [];
+        const rawAtt = payload.attendees != null ? payload.attendees : payload.participants;
+        if(Array.isArray(rawAtt)){
+          list = rawAtt.map(function(x){ return String(x || '').trim(); }).filter(Boolean);
+        } else if(rawAtt){
+          list = portalSessionAddSplitNames(rawAtt);
+        }
+        if(!list.length && trainer) list = portalSessionAddSplitNames(trainer);
+        return list;
+      }
+      return [];
+    }
+    function portalSessionAddAreaNoteLabel(locRaw){
+      if(locRaw === 'pool') return 'Teaching Pool';
+      if(locRaw === 'room') return 'Hub Room';
+      if(locRaw === 'both') return 'Hub Room';
+      return '';
+    }
+    function portalPlainSessionSlotChipsHtml(chips){
+      if(!Array.isArray(chips) || !chips.length) return '';
+      return chips.map(function(tx){
+        const esc = escapeHtml(String(tx || '').trim());
+        if(!esc) return '';
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + esc + '"><span>' + esc + '</span></span>';
+      }).join('');
+    }
     function todaySessionPoolColumnHtml(item){
       if(!item || item.kind === 'closed'){
         return '<span class="session-pool-na" aria-hidden="true">—</span>';
@@ -4809,8 +4848,15 @@
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
+      const addChipsHtml = Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length
+        && String(item.portalOverrideAlertPill || '').trim().toUpperCase() !== 'COMPLETED'
+        ? portalPlainSessionSlotChipsHtml(item.portalSessionAddChips) : '';
+      const addChipsWrapCls = Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length > 1
+        ? ' session-chips-below-name--wrap' : '';
+      const addChipsRow = addChipsHtml
+        ? '<div class="session-chips-below-name' + addChipsWrapCls + '">' + addChipsHtml + '</div>' : '';
       const poolCenterHtml = '';
-      const namePart = `<span class="session-name-stack">${inlineOverrideTop}${ovBadge}${nameCore}${poolCenterHtml}${makeUpNoteHtml}${makeUpPillHtml}</span>`;
+      const namePart = `<span class="session-name-stack">${inlineOverrideTop}${ovBadge}${nameCore}${addChipsRow}${poolCenterHtml}${makeUpNoteHtml}${makeUpPillHtml}</span>`;
       const bodyCls = split ? 'session-card-body session-card-body--today-ov-split' : 'session-card-body';
       const rightColInner = split
         ? `<span class="session-right-status">${todaySessionOverrideDetailHtml(item)}</span>`
@@ -6813,7 +6859,7 @@
                 actionsDisabled: true,
                 detailsOpenAllowed: true,
                 portalOverrideSuppressReviewOrange: true,
-                portalOverrideCardTone: 'red',
+                portalOverrideCardTone: 'green',
                 portalOverrideAlertPill: 'CANCELLED',
                 __portalScheduleOverride: ov
               }, meta);
@@ -6980,7 +7026,7 @@
               actionsDisabled: true,
               detailsOpenAllowed: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'red',
+              portalOverrideCardTone: 'green',
               portalOverrideAlertPill: 'CANCELLED',
               scheduleAdminAdjusted: true,
               sessionVenue: String(s.venue || '').trim() || '—',
@@ -7120,32 +7166,32 @@
         if(ov.override_type !== 'session_add') return;
         if(normStaffKeyAdd(ov.anchor_staff_id) !== staffIdNormAdd) return;
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
-        const label = kind === 'shadowing' ? 'Shadowing' : 'Training';
-        const slug = kind === 'shadowing' ? 'shadowing' : 'training';
+        const displayTitle = kind === 'shadowing' ? 'Shadowing' : (kind === 'meeting' ? 'Team meeting' : 'Training session');
+        const slug = kind === 'meeting' ? 'meeting' : (kind === 'shadowing' ? 'shadowing' : 'training');
+        const cardTone = kind === 'shadowing' ? 'shadowing' : (kind === 'meeting' ? 'meeting' : 'training');
         const stT = portalHmFromDbTime(ov.anchor_start) || '09:00';
         const enT = portalHmFromDbTime(ov.anchor_end) || stT;
         const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
         const note = String(ov.reason || (ov.payload && ov.payload.note) || '').trim();
         const tts = portalSessionRowTimestamps(sessionDateKey, stT, enT, anchor);
         const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
-        const trainerName = String(ov.payload && ov.payload.trainer || '').trim();
         const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
-        const locLabel = locRaw === 'both' ? 'Room & Pool'
-          : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+        const areaNote = portalSessionAddAreaNoteLabel(locRaw);
+        const peopleChips = portalSessionAddPeopleChips(kind, ov.payload);
         const venueTitle = String(ov.anchor_venue || '').trim()
           .replace(/\S+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); });
         extra.push({
           time: rosterSlotTimeLabel(sT),
           kind: 'client',
           clientId: slug,
-          name: label,
-          activity: label,
-          areaLabel: trainerName,
-          poolLocationLabel: null,
-          showPoolSymbol: false,
+          name: displayTitle,
+          activity: displayTitle,
+          areaLabel: areaNote,
+          poolLocationLabel: areaNote,
+          showPoolSymbol: !!areaNote,
           showSpecialty: false,
           specialtyLabel: '',
-          general: note || (label + ' session (added by admin) — paid at £13.50/h.'),
+          general: note || (displayTitle + ' (added by admin) — paid at £13.50/h.'),
           specialty: '',
           openSheet: false,
           sessionKey: sessionDateKey + '|' + stT + '|' + slug,
@@ -7155,9 +7201,10 @@
           actionsDisabled: true,
           detailsOpenAllowed: true,
           portalOverrideSuppressReviewOrange: true,
-          portalOverrideCardTone: trainingEnded ? 'green' : 'yellow',
+          portalOverrideCardTone: trainingEnded ? 'green' : cardTone,
           portalOverrideAlertPill: trainingEnded ? 'COMPLETED' : '',
-          portalOverrideSymbolText: trainingEnded ? '' : (locLabel || label),
+          portalSessionAddChips: peopleChips,
+          portalOverrideSymbolText: '',
           scheduleAdminAdjusted: true,
           portalOverrideHideAdminBadge: true,
           sessionVenue: venueTitle || '—',
@@ -9516,7 +9563,7 @@
       return false;
     }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
-      const out = { hasMakeUp: false, hasAbsentAnnounced: false, hasCancelled: false };
+      const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasTraining: false, hasShadowing: false, hasMeeting: false };
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const d = String(dayName || '').trim();
@@ -9541,11 +9588,26 @@
           if(manualOv === 'REPLACED') out.hasMakeUp = true;
           const ov = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(baseSession, iso) : null;
           const t = String(ov && ov.override_type || '').trim();
-          if(t === 'client_replace_in_slot') out.hasMakeUp = true;
+          if(t === 'client_replace_in_slot'){
+            if(typeof portalOverrideIsTrial === 'function' && portalOverrideIsTrial(ov)) out.hasTrial = true;
+            else out.hasMakeUp = true;
+          }
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
           if(t === 'slot_clear_client' && ov && ov.payload && ov.payload.cancelled_by_admin) out.hasCancelled = true;
-          if(out.hasMakeUp && out.hasAbsentAnnounced && out.hasCancelled) break;
+          if(out.hasMakeUp && out.hasTrial && out.hasAbsentAnnounced && out.hasCancelled) break;
         }
+        const normStaffKeyOv = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+        const sidNormOv = normStaffKeyOv(sid);
+        (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).forEach(function(ov){
+          if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(iso)) return;
+          if(String(ov.status || 'active') !== 'active') return;
+          if(ov.override_type !== 'session_add') return;
+          if(normStaffKeyOv(ov.anchor_staff_id) !== sidNormOv) return;
+          const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+          if(kind === 'training') out.hasTraining = true;
+          else if(kind === 'shadowing') out.hasShadowing = true;
+          else if(kind === 'meeting') out.hasMeeting = true;
+        });
       }catch(_){ }
       return out;
     }
@@ -10499,11 +10561,15 @@
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
-            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0);
+            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0);
             if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
+            else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
             else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
             else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
             else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
+            else if(dayFlags.hasTraining) cls += ' term-cal-day--ov-pulse-training';
+            else if(dayFlags.hasShadowing) cls += ' term-cal-day--ov-pulse-shadowing';
+            else if(dayFlags.hasMeeting) cls += ' term-cal-day--ov-pulse-meeting';
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
             const dayWordNav = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const termReviewIsoNav = termCalendarDateKey(y, monthIndex, day);

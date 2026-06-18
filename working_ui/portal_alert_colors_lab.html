@@ -135,8 +135,8 @@
     @media(min-width:780px){.lab-chip-demo-grid{grid-template-columns:1fr 1fr}}
     .lab-chip-demo-box{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);min-width:0}
     .lab-chip-demo-box h4{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)}
-    .lab-term-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:8px}
-    .lab-term-row .term-cal{width:auto;max-width:280px}
+    .lab-term-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-top:8px}
+    .lab-term-row .term-cal{width:auto;max-width:none;flex:0 0 auto}
     .lab-mini-overview{display:flex;gap:10px;flex-wrap:wrap;padding:12px;background:#fff;border-radius:14px;border:1px solid rgba(23,50,71,.1)}
     .section-card--overview .mini-card{min-width:100px;flex:1;max-width:160px}
     .lab-today-pill-row{
@@ -194,6 +194,10 @@
     }
     .lab-today-panel .session-chips-below-name{
       flex-wrap:wrap;min-width:0;overflow:visible !important;
+    }
+    .lab-today-panel .session-chips-below-name--wrap{
+      flex-direction:row;
+      justify-content:center;
     }
     .lab-today-panel .session-chips-below-name .portal-session-slot-chip{
       max-width:100%;overflow:hidden;text-overflow:ellipsis;
@@ -397,7 +401,7 @@
       { estado: 'Trial (override activo)', card: 'session-card--ov-trial override--trial', chip: 'portal-session-slot-chip--trial' },
       { estado: 'MakeUp (override activo)', card: 'session-card--ov-pink override--replace', chip: 'portal-session-slot-chip--makeup' },
       { estado: 'Absent', card: 'override--absent session-card--ov-green', chip: 'portal-session-slot-chip--absent' },
-      { estado: 'Cancelled', card: 'session-card--ov-red', chip: 'portal-session-slot-chip--cancelled' },
+      { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
       { estado: 'Tras revert — vuelve a normal', card: '(default blanco)', chip: '— participant original' },
       { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'Room / Pool (symbol)' },
       { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'Room / Pool (symbol)' },
@@ -446,9 +450,9 @@
           sampleTitle: 'TRIAL/NEW - Chaitanya (15th/Jun)', sampleSub: '4.30 to 5 · Teaching Pool · Westway',
           haloNote: 'schedule-trial (lila) si hay trial pendiente',
           colors: {
-            bg1:'#f5f3ff', bg2:'#ede9fe', border:'rgba(124,58,237,.42)', shadow:'rgba(124,58,237,.22)',
-            strong:'#5b21b6', sub:'#6d28d9', iconBg:'rgba(167,139,250,.24)', iconFg:'#6d28d9', iconBorder:'rgba(124,58,237,.35)',
-            chipBg:'#ede9fe', chipFg:'#5b21b6', chipBorder:'rgba(124,58,237,.45)', termGlow:'rgba(124,58,237,.55)'
+            bg1:'#f5f0ff', bg2:'#f5f0ff', border:'rgba(167,139,250,.5)', shadow:'rgba(167,139,250,.12)',
+            strong:'#5b21b6', sub:'#6d28d9', iconBg:'rgba(237,233,254,.9)', iconFg:'#6d28d9', iconBorder:'rgba(167,139,250,.55)',
+            chipBg:'#ede9fe', chipFg:'#6d28d9', chipBorder:'rgba(167,139,250,.65)', termGlow:'rgba(167,139,250,.35)'
           }
         },
         {
@@ -499,9 +503,10 @@
         {
           id: 'training', label: 'Training', cuando: 'session_add kind=training',
           cardClass: 'menu-btn--qm-ov-training',
-          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          pillClass: '', weekClass: 'week-override-tag--training',
+          termClass: 'term-cal-day--ov-pulse-training', miniClass: '',
           tomorrowClass: '', tomorrowRowClass: '',
-          pillText: '', weekText: '',
+          pillText: '', weekText: 'Training',
           sampleTitle: 'TRAINING - Westway (16th/Jun)', sampleSub: '10 to 11 am · Room · Westway',
           haloNote: 'schedule-training (azul — antiguo undo)',
           colors: {
@@ -513,9 +518,10 @@
         {
           id: 'shadowing', label: 'Shadowing', cuando: 'session_add kind=shadowing',
           cardClass: 'menu-btn--qm-ov-shadowing',
-          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          pillClass: '', weekClass: 'week-override-tag--shadowing',
+          termClass: 'term-cal-day--ov-pulse-shadowing', miniClass: '',
           tomorrowClass: '', tomorrowRowClass: '',
-          pillText: '', weekText: '',
+          pillText: '', weekText: 'Shadowing',
           sampleTitle: 'SHADOWING - Acton (17th/Jun)', sampleSub: '2 to 4 pm · Pool · Acton',
           haloNote: 'schedule-shadowing (cielo)',
           colors: {
@@ -527,9 +533,10 @@
         {
           id: 'meeting', label: 'Meeting', cuando: 'session_add kind=meeting',
           cardClass: 'menu-btn--qm-ov-meeting',
-          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          pillClass: '', weekClass: 'week-override-tag--meeting',
+          termClass: 'term-cal-day--ov-pulse-meeting', miniClass: '',
           tomorrowClass: '', tomorrowRowClass: '',
-          pillText: '', weekText: '',
+          pillText: '', weekText: 'Meeting',
           sampleTitle: 'MEETING - Hub (18th/Jun)', sampleSub: '9 to 10 am · Hub Room · Acton',
           haloNote: 'schedule-meeting (lima)',
           colors: {
@@ -600,7 +607,11 @@
         if(d.id === 'cancelled' && !overrideColorsAreDark(colors)){
           colors = Object.assign({}, d.colors);
         }
-        return Object.assign({}, d, s, { colors: colors });
+        return Object.assign({}, d, s, { colors: colors,
+          termClass: String(s.termClass || '').trim() || d.termClass || '',
+          weekClass: String(s.weekClass || '').trim() || d.weekClass || '',
+          weekText: String(s.weekText || '').trim() || d.weekText || ''
+        });
       });
     }
     function overrideColorsAreDark(colors){
@@ -708,7 +719,7 @@
           lines.push('#labLiveScope .'+ov.weekClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
         }
         if(ov.termClass){
-          lines.push('#labLiveScope .'+ov.termClass+'{box-shadow:0 0 0 2px '+c.chipBorder+', 0 0 14px '+c.termGlow+' !important}');
+          lines.push('#labLiveScope .'+ov.termClass+'{border-color:'+c.chipBorder+' !important}');
         }
         if(ov.miniClass){
           lines.push('#labLiveScope .'+ov.miniClass+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important}');
@@ -721,7 +732,7 @@
         if(ov.id === 'training' || ov.id === 'shadowing' || ov.id === 'meeting'){
           var tsel = '#labLiveScope .lab-today-panel .session-card--ov-'+ov.id;
           lines.push(tsel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important;box-shadow:0 4px 14px '+c.shadow+' !important}');
-          lines.push(tsel+' .session-line--name .session-meta-name{color:'+c.strong+' !important}');
+          lines.push(tsel+' .session-line--name .session-meta-name{color:#000 !important}');
         }
       });
       state.halos.forEach(function(h){
@@ -982,10 +993,11 @@
       return '<span class="portal-session-slot-chip '+cls+'" aria-label="'+esc(label)+'"><span>'+esc(label)+'</span></span>';
     }
 
-    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml, asDiv){
+    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml, asDiv, chipsWrap){
       var tag = asDiv ? 'div' : 'button';
       var typeAttr = asDiv ? '' : ' type="button"';
-      var chips = chipHtml ? '<div class="session-chips-below-name">'+chipHtml+'</div>' : '';
+      var chipsCls = chipsWrap ? ' session-chips-below-name--wrap' : '';
+      var chips = chipHtml ? '<div class="session-chips-below-name'+chipsCls+'">'+chipHtml+'</div>' : '';
       return '<'+tag+typeAttr+' class="session-card '+classes+'" role="listitem">'+
         '<div class="session-card-body">'+
           '<div class="session-line session-line--time session-line--time-stack">'+
@@ -1103,6 +1115,13 @@
       return todayCardHtml(classes, time, venue, name, chip, poolNote || '', !!asDiv);
     }
 
+    function todayCatalogRowChips(classes, time, venue, name, chipSpecs, poolNote, asDiv){
+      var chipHtml = (chipSpecs || []).map(function(spec){
+        return slotChip(spec[0] || 'portal-session-slot-chip--plain', spec[1] || '');
+      }).join('');
+      return todayCardHtml(classes, time, venue, name, chipHtml, poolNote || '', !!asDiv, (chipSpecs || []).length > 1);
+    }
+
     function renderTodaySection(){
       var host = document.getElementById('labTodaySection');
       if(!host) return;
@@ -1120,15 +1139,21 @@
           'portal-session-slot-chip--submitted', 'Submitted', bigPool),
         todayCatalogRow('override--absent session-card--ov-green', '6 to 6.30', 'Acton', 'Mary',
           'portal-session-slot-chip--absent', 'Absent', teachingPool),
-        todayCatalogRow('session-card--ov-red override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
+        todayCatalogRow('session-card--ov-green override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
           'portal-session-slot-chip--cancelled', 'Cancelled', wallNote),
         todayCatalogRow('session-card--ov-trial override--trial', '4.30 to 5', 'Westway', 'Chaitanya',
           'portal-session-slot-chip--trial', 'Trial/New Participant', teachingPool),
         todayCatalogRow('session-card--ov-pink override--replace session-card--review-needed', '11 to 12', 'Acton', 'Eddie Ri',
           'portal-session-slot-chip--makeup', 'Make up', hubRoom),
-        todayCatalogRow('session-card--ov-training', '10 to 11 am', 'Westway', 'Training session', '', '', hubRoom),
-        todayCatalogRow('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing', 'portal-session-slot-chip--plain', 'Pool', teachingPool),
-        todayCatalogRow('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Team meeting', '', '', hubRoom),
+        todayCatalogRow('session-card--ov-training', '10 to 11 am', 'Westway', 'Training session',
+          'portal-session-slot-chip--plain', 'with Javi', hubRoom),
+        todayCatalogRow('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing',
+          'portal-session-slot-chip--plain', 'Roberto', teachingPool),
+        todayCatalogRowChips('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Team meeting', [
+          ['portal-session-slot-chip--plain', 'Swimming Instructors'],
+          ['portal-session-slot-chip--plain', 'Javi'],
+          ['portal-session-slot-chip--plain', 'Raul']
+        ], hubRoom),
         todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
         todayCatalogRow('session-card--closed', '12 to 1 pm', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
       ].join('');
@@ -1139,7 +1164,7 @@
         '<strong>Outstanding</strong> (<code>session-card--review-needed</code> + Pending naranja) · '+
         '<strong>Submitted</strong> (<code>session-card--review-done</code> + verde) · '+
         '<strong>Absent</strong> (verde + chip teal) · '+
-        '<strong>Cancelled</strong> (rojo + chip negro) · '+
+        '<strong>Cancelled</strong> (verde reviewed + chip negro) · '+
         '<strong>Trial/New Participant</strong> (lila) · '+
         '<strong>Make up</strong> (rosa) · '+
         '<strong>Training / Shadowing / Meeting</strong> (admin session_add) · '+
@@ -1172,9 +1197,9 @@
       var weekTags = state.overrides.filter(function(o){ return o.weekClass; }).map(function(o){
         return '<span class="week-override-tag '+esc(o.weekClass)+'">'+esc(o.weekText||o.label)+'</span>';
       }).join('');
-      var termCells = state.overrides.filter(function(o){ return o.termClass; }).slice(0,5).map(function(o, i){
+      var termCells = state.overrides.filter(function(o){ return o.termClass; }).map(function(o, i){
         return '<div><div class="term-cal"><div class="term-cal-day active '+esc(o.termClass)+'" role="gridcell">'+
-          '<span class="term-cal-day-num">'+(10+i*4)+'</span></div></div>'+
+          '<span class="term-cal-day-num">'+(10+i*3)+'</span></div></div>'+
           '<p class="lab-sub">'+esc(o.label)+'</p></div>';
       }).join('');
       var firstPill = state.overrides.find(function(o){ return o.pillClass; });
