@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260618-cancelled-reverted" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260618-cancelled-grey-dark" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -3622,7 +3622,7 @@
     function portalQuickMenuOverrideCancelledInlineStyle(kind){
       const k = String(kind || '').trim();
       if(k !== 'cancelled' && k !== 'shift_cancelled') return '';
-      return ' style="background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);background-color:#e4e4e7;color:#173247;border:2px solid rgba(113,113,122,.45);box-shadow:0 6px 18px rgba(113,113,122,.2)"';
+      return ' style="background:linear-gradient(180deg,#d6d6dc 0%,#bfc0c8 100%);background-color:#bfc0c8;color:#173247;border:2px solid rgba(82,82,91,.58);box-shadow:0 6px 18px rgba(82,82,91,.28)"';
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
