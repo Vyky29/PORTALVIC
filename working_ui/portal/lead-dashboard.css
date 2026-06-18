@@ -4543,9 +4543,9 @@
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--absent,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--absent{
       color:#fff;
-      background:linear-gradient(145deg,#157347,#0f5b37);
-      border:1px solid rgba(11,85,51,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(15,91,55,.22);
+      background:linear-gradient(145deg,#0d9488,#0f766e);
+      border:1px solid rgba(15,118,110,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(13,148,136,.28);
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--cancelled,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--cancelled{
@@ -5440,9 +5440,9 @@
       border:1px solid rgba(24,67,133,.32);
     }
     .week-override-tag--absents{
-      background:rgba(21,115,71,.12);
-      color:#157347;
-      border:1px solid rgba(21,115,71,.32);
+      background:rgba(13,148,136,.12);
+      color:#0f766e;
+      border:1px solid rgba(13,148,136,.32);
     }
     .week-override-tag--cancelled{
       background:rgba(198,40,40,.12);
@@ -5545,9 +5545,9 @@
     }
     .calendar-day-tomorrow-middle .tomorrow-absent-pill{
       color:#fff;
-      background:linear-gradient(145deg,#157347,#0f5b37);
-      border:1px solid rgba(11,85,51,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(15,91,55,.22);
+      background:linear-gradient(145deg,#0d9488,#0f766e);
+      border:1px solid rgba(15,118,110,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(13,148,136,.28);
     }
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill{
       color:#fff;
