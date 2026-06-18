@@ -6406,6 +6406,10 @@
       0%,100%{box-shadow:0 0 0 1px rgba(14,165,233,.22),0 4px 14px rgba(14,165,233,.14);border-color:rgba(14,165,233,.38)}
       50%{box-shadow:0 0 0 2px rgba(14,165,233,.42),0 8px 20px rgba(14,165,233,.22);border-color:rgba(14,165,233,.52)}
     }
+    @keyframes termOvPulseAdminShiftCell{
+      0%,100%{box-shadow:0 0 0 1px rgba(249,191,46,.28),0 4px 14px rgba(249,191,46,.16);border-color:rgba(200,165,45,.48)}
+      50%{box-shadow:0 0 0 2px rgba(249,191,46,.48),0 8px 20px rgba(244,183,64,.24);border-color:rgba(200,165,45,.62)}
+    }
     @keyframes termOvPulseMeetingCell{
       0%,100%{box-shadow:0 0 0 1px rgba(132,204,22,.24),0 4px 14px rgba(132,204,22,.14);border-color:rgba(132,204,22,.4)}
       50%{box-shadow:0 0 0 2px rgba(132,204,22,.42),0 8px 20px rgba(132,204,22,.22);border-color:rgba(132,204,22,.54)}
@@ -6433,6 +6437,9 @@
     .term-cal-day.term-cal-day--ov-pulse-shadowing{
       animation:termOvPulseShadowingCell 1.75s ease-in-out infinite;
     }
+    .term-cal-day.term-cal-day--ov-pulse-admin-shift{
+      animation:termOvPulseAdminShiftCell 1.75s ease-in-out infinite;
+    }
     .term-cal-day.term-cal-day--ov-pulse-meeting{
       animation:termOvPulseMeetingCell 1.75s ease-in-out infinite;
     }
@@ -6446,6 +6453,7 @@
       .term-cal-day.term-cal-day--ov-pulse-cancelled,
       .term-cal-day.term-cal-day--ov-pulse-training,
       .term-cal-day.term-cal-day--ov-pulse-shadowing,
+      .term-cal-day.term-cal-day--ov-pulse-admin-shift,
       .term-cal-day.term-cal-day--ov-pulse-meeting,
       .term-cal-day.term-cal-day--ov-pulse-both{animation:none}
       .term-cal-day.term-cal-day--ov-pulse-makeup{box-shadow:0 0 0 1px rgba(194,24,91,.22),0 4px 12px rgba(194,24,91,.14)}
@@ -6454,6 +6462,7 @@
       .term-cal-day.term-cal-day--ov-pulse-cancelled{box-shadow:0 0 0 1px rgba(21,115,71,.28),0 4px 12px rgba(21,115,71,.12)}
       .term-cal-day.term-cal-day--ov-pulse-training{box-shadow:0 0 0 1px rgba(37,99,235,.24),0 4px 12px rgba(37,99,235,.12)}
       .term-cal-day.term-cal-day--ov-pulse-shadowing{box-shadow:0 0 0 1px rgba(14,165,233,.24),0 4px 12px rgba(14,165,233,.12)}
+      .term-cal-day.term-cal-day--ov-pulse-admin-shift{box-shadow:0 0 0 1px rgba(249,191,46,.28),0 4px 12px rgba(249,191,46,.14)}
       .term-cal-day.term-cal-day--ov-pulse-meeting{box-shadow:0 0 0 1px rgba(132,204,22,.26),0 4px 12px rgba(132,204,22,.12)}
       .term-cal-day.term-cal-day--ov-pulse-both{box-shadow:0 0 0 2px rgba(112,45,112,.25),0 4px 14px rgba(112,45,112,.12)}
     }

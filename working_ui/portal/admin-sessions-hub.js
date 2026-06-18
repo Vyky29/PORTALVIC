@@ -1011,6 +1011,13 @@
     );
   }
 
+  function overrideIsInstructorReassignType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "instructor_reassign" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
   function overrideIsReplaceType(ov) {
     return (
       String(ov && ov.override_type || "").trim() === "client_replace_in_slot" &&
@@ -1158,6 +1165,7 @@
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
     if (overrideIsReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
@@ -1165,6 +1173,7 @@
 
   function hubOverrideChipClass(ov) {
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
     if (overrideIsReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
@@ -1184,6 +1193,73 @@
   function hubSlotShowsMakeupChip(slot, slotOv) {
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
     return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
+  }
+
+  function hubSlotShowsInstructorReassignChip(slot, slotOv) {
+    return overrideIsInstructorReassignType(slotOv) || !!(slot && slot.portalInstructorReassigned);
+  }
+
+  function instructorReassignOverrideForSlot(hub, slot) {
+    if (!hub || !slot) return null;
+    if (slot.__portalScheduleOverride && overrideIsInstructorReassignType(slot.__portalScheduleOverride)) {
+      return slot.__portalScheduleOverride;
+    }
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      if (!overrideIsInstructorReassignType(ovs[i])) continue;
+      if (!hub.overrideMatchesSlot(slot, ovs[i])) continue;
+      if (
+        !best ||
+        (ovs[i].created_at &&
+          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+      ) {
+        best = ovs[i];
+      }
+    }
+    return best;
+  }
+
+  function applyInstructorReassignOverrides(hub, slots) {
+    if (!hub || !slots || !slots.length) return slots || [];
+    return slots.map(function (slot) {
+      var ov = instructorReassignOverrideForSlot(hub, slot);
+      if (!ov) return slot;
+      var p = overridePayloadObj(ov);
+      var coverId = clean(p.covering_staff_id).toLowerCase();
+      var coverName =
+        clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
+      if (!coverId && !coverName) return slot;
+      var anchorId = clean(ov.anchor_staff_id).toLowerCase();
+      if (anchorId && !staffIdMatchesInstructor(anchorId, slot.instructors)) return slot;
+      var origInst = (slot.instructors || []).slice();
+      var effective = coverName ? [coverName] : coverId ? [coverId] : origInst.slice();
+      return Object.assign({}, slot, {
+        instructors: effective,
+        instructor_label: effective.join(", "),
+        __portalScheduleOverride: ov,
+        portalInstructorReassigned: true,
+        portalOriginalInstructors: origInst,
+        portalCoveringStaffId: coverId,
+        portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
+      });
+    });
+  }
+
+  function hubInstructorCellHtml(slot, slotOv) {
+    if (!slot) return "\u2014";
+    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var origHtml = slot.portalOriginalInstructors.map(formatInstructorPillOut).join("");
+      var coverHtml = (slot.instructors || []).map(formatInstructorPill).join("");
+      return (
+        '<span class="ash-instructor-reassign">' +
+        origHtml +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        coverHtml +
+        "</span>"
+      );
+    }
+    return (slot.instructors || []).map(formatInstructorPill).join(" ") || "\u2014";
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
@@ -2667,6 +2743,13 @@
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 
+  function formatInstructorPillOut(name) {
+    var n = clean(name);
+    if (!n) return "";
+    var title = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
+  }
+
   function emotionDotClass(emotionsText) {
     var t = clean(emotionsText).toLowerCase();
     if (!t) return "";
@@ -4148,6 +4231,7 @@
       wd,
       (this.payload && this.payload.schedule_overrides) || []
     );
+    out = applyInstructorReassignOverrides(this, out);
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
@@ -4568,6 +4652,9 @@
     } else {
       var oCid = canonicalClientSlug(ov.anchor_client_id);
       if (oCid && sCid && oCid !== sCid) return false;
+      if (overrideIsInstructorReassignType(ov)) {
+        if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
+      }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
@@ -5279,10 +5366,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
           hub.syntheticAbsentDisplayRow(awaitSlot);
         if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
-        var awaitInstAbsent =
-          awaitSlot.instructors && awaitSlot.instructors.length
-            ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
-            : esc(awaitSlot.instructor_label || "\u2014");
+        var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
           '<td><span class="ash-pill ash-pill--client">' +
@@ -5305,10 +5389,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
         : "";
-      var awaitInst =
-        awaitSlot.instructors && awaitSlot.instructors.length
-          ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
-          : esc(awaitSlot.instructor_label || "\u2014");
+      var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
         '<td><span class="ash-pill ash-pill--client">' +
@@ -5920,6 +6001,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+        var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
         var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
@@ -5945,6 +6027,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
             : isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+              : isInstructorReassign
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--instructor">' +
+                  esc(slotOv ? hubOverrideLabel(slotOv) : "Changed instructor") +
+                  "</span>"
               : isUpdated
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
                   esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
@@ -5953,7 +6039,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
-        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
+        var inst = hubInstructorCellHtml(slot, slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
         return (
@@ -6040,10 +6126,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var fbLabelHtml;
         slotAbsent = slotAbsent || (fb && hub.isFeedbackAbsent(fb));
         fbLabelHtml = rosterFeedbackStatusHtml(slotAbsent, fbDone && !slotAbsent);
-        var inst =
-          slot.instructors && slot.instructors.length
-            ? slot.instructors.map(formatInstructorPill).join(" ")
-            : esc(slot.instructor_label || "\u2014");
+        var slotOv = hub.overrideForSlot(slot);
+        var inst = hubInstructorCellHtml(slot, slotOv);
         return (
           "<tr>" +
           '<td class="ash-td-center">' +
@@ -6982,7 +7066,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       .map(function (slot) {
         var ov = this.overrideForSlot(slot);
         var ovLabel = ov ? esc(hubOverrideLabel(ov)) : "\u2014";
-        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
+        var inst = hubInstructorCellHtml(slot, ov);
         var client = htmlParticipantPill(slot.client_name, esc, slot);
         return (
           "<tr>" +

@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-no-participant-red" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-shadowing-host" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -5822,6 +5822,20 @@
     function portalTodayItemShowsAdminShiftBadge(item){
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
     }
+    function portalTodayItemShowsShadowingHostAlert(item){
+      return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
+    }
+    function portalTodayItemUsesAdminShiftCardStyle(item){
+      return portalTodayItemShowsAdminShiftBadge(item) || portalTodayItemShowsShadowingHostAlert(item);
+    }
+    function portalShadowingHostBadgeHtml(labels){
+      if(!Array.isArray(labels) || !labels.length) return '';
+      return labels.map(function(lab){
+        const esc = escapeHtml(String(lab || '').trim());
+        if(!esc) return '';
+        return '<span class="portal-sched-ov-badge override--admin-shift" title="Someone is shadowing your session">' + esc + '</span>';
+      }).join('');
+    }
     function portalTodaySessionOverrideCardClass(item){
       const t = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
       if(t === 'green') return ' session-card--ov-green';
@@ -6072,10 +6086,39 @@
         const shadowerKey = portalStaffNormRosterKey(ov.anchor_staff_id);
         if(!shadowerKey || seen[shadowerKey]) return;
         seen[shadowerKey] = true;
-        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' Shadowing';
+        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadows';
         out.push(label);
       });
       return out;
+    }
+    function portalShadowingHostLabelsForDay(sessionDateIso, staffId, staffDisplayName){
+      return portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, '', '');
+    }
+    function portalStaffHasUpcomingShadowingHostAlert(staffId, staffDisplayName){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return false;
+      const todayIso = typeof portalIsoYmdFromDate === 'function'
+        ? portalIsoYmdFromDate(new Date())
+        : '';
+      if(!todayIso) return false;
+      let hit = false;
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(hit) return;
+        if(String(ov.status || 'active') !== 'active') return;
+        if(String(ov.override_type || '').trim() !== 'session_add') return;
+        const iso = normaliseIsoDate(ov.session_date);
+        if(!iso || iso < todayIso) return;
+        let pl = ov.payload;
+        try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = ov.payload; }
+        if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') return;
+        const trainer = String(pl && pl.trainer || '').trim();
+        const hosts = portalSessionAddSplitNames(trainer);
+        const hostMatch = hosts.length
+          ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, sid, staffDisplayName); })
+          : portalStaffNameMatchesShadowHost(trainer, sid, staffDisplayName);
+        if(hostMatch) hit = true;
+      });
+      return hit;
     }
     function portalAttachShadowingObserverChips(items, sessionDateIso, staffId, staffDisplayName){
       if(!Array.isArray(items) || !items.length) return items || [];
@@ -6088,13 +6131,12 @@
         const cid = String(it.clientId || '').trim().toLowerCase();
         if(skipIds[cid]) return it;
         const base = it.__portalBaseSession || {};
-        const chips = portalShadowingObserverChipsForHost(sessionDateIso, sid, dn, base.start, base.end);
-        if(!chips.length) return it;
-        const existing = Array.isArray(it.portalSessionAddChips) ? it.portalSessionAddChips.slice() : [];
-        chips.forEach(function(c){
-          if(existing.indexOf(c) < 0) existing.push(c);
+        const labels = portalShadowingObserverChipsForHost(sessionDateIso, sid, dn, base.start, base.end);
+        if(!labels.length) return it;
+        return Object.assign({}, it, {
+          portalShadowingHostAlert: true,
+          portalShadowingHostLabels: labels
         });
-        return Object.assign({}, it, { portalSessionAddChips: existing });
       });
     }
     function portalSessionAddAreaNoteLabel(locRaw){
@@ -6130,6 +6172,9 @@
       }
       if(pillNorm === 'COMPLETED'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
+      }
+      if(typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)){
+        return portalShadowingHostBadgeHtml(item.portalShadowingHostLabels);
       }
       if(Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
         return portalPlainSessionSlotChipsHtml(item.portalSessionAddChips);
@@ -11190,7 +11235,13 @@
       const hasFeedback = !!(state && state.sessionFeedbackNeed);
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending));
       const haloScan = portalRosterOverrideHaloScan(state);
-      const scheduleMode = portalScheduleHaloMode(haloScan);
+      let scheduleMode = portalScheduleHaloMode(haloScan);
+      if(!scheduleMode && portalStaffHasUpcomingShadowingHostAlert(
+        typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '',
+        dashboardData && dashboardData.staffName
+      )){
+        scheduleMode = 'schedule';
+      }
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
@@ -12475,7 +12526,7 @@
       list.forEach(item => {
         const ovTone = typeof portalTodaySessionOverrideCardClass === 'function' ? portalTodaySessionOverrideCardClass(item) : '';
         const ovTypeCls = typeof portalTodayItemOverrideClass === 'function' ? portalTodayItemOverrideClass(item) : '';
-        const adminAdjCls = typeof portalTodayItemShowsAdminShiftBadge === 'function' && portalTodayItemShowsAdminShiftBadge(item) ? ' session-card--admin-adjusted' : '';
+        const adminAdjCls = typeof portalTodayItemUsesAdminShiftCardStyle === 'function' && portalTodayItemUsesAdminShiftCardStyle(item) ? ' session-card--admin-adjusted' : '';
         if(item.kind === 'closed' || item.kind === 'available' || item.openSheet === false){
           const row = document.createElement('div');
           const rowKindCls = item.kind === 'closed' ? 'session-card--closed' : (item.kind === 'available' ? 'session-card--available' : '');
@@ -12496,7 +12547,7 @@
           : (item.poolLocationLabel ? `, ${item.poolLocationLabel}` : '');
         const venAria = portalTodaySessionVenueLabel(item);
         const venPart = venAria && venAria !== '—' ? `, ${venAria}` : '';
-        card.setAttribute('aria-label', item.kind === 'available' ? `NO PARTICIPANT — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}${adminAdjCls ? ', schedule changed by admin' : ''}`);
+        card.setAttribute('aria-label', item.kind === 'available' ? `NO PARTICIPANT — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}${adminAdjCls ? (portalTodayItemShowsShadowingHostAlert(item) ? ', shadowing session' : ', schedule changed by admin') : ''}`);
         card.innerHTML = todaySessionCardInnerHtml(item);
         card.addEventListener('click', () => openClient(item));
         rowsWrap.appendChild(card);
@@ -12677,7 +12728,7 @@
       return false;
     }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
-      const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false, hasTraining: false, hasShadowing: false, hasMeeting: false };
+      const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false, hasTraining: false, hasShadowing: false, hasMeeting: false, hasShadowingHost: false, shadowingHostLabels: [] };
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const d = String(dayName || '').trim();
@@ -12730,6 +12781,13 @@
           else if(kind === 'shadowing') out.hasShadowing = true;
           else if(kind === 'meeting') out.hasMeeting = true;
         });
+        const hostLabels = typeof portalShadowingHostLabelsForDay === 'function'
+          ? portalShadowingHostLabelsForDay(iso, sid, dashboardData && dashboardData.staffName)
+          : [];
+        if(hostLabels.length){
+          out.hasShadowingHost = true;
+          out.shadowingHostLabels = hostLabels;
+        }
       }catch(_){ }
       return out;
     }
@@ -13792,12 +13850,13 @@
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
-            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0);
+            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0) + (dayFlags.hasShadowingHost ? 1 : 0);
             if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
             else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
             else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
             else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
             else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
+            else if(dayFlags.hasShadowingHost) cls += ' term-cal-day--ov-pulse-admin-shift';
             else if(dayFlags.hasTraining) cls += ' term-cal-day--ov-pulse-training';
             else if(dayFlags.hasShadowing) cls += ' term-cal-day--ov-pulse-shadowing';
             else if(dayFlags.hasMeeting) cls += ' term-cal-day--ov-pulse-meeting';
