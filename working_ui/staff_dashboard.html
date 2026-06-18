@@ -6567,11 +6567,10 @@
         const clientShort = clientName || (typeof portalClientFirstNameTokenForOverride === 'function'
           ? portalClientFirstNameTokenForOverride(oldR)
           : '');
-        const dateLbl = typeof portalOverrideRevertCardDateLabel === 'function'
-          ? portalOverrideRevertCardDateLabel(iso)
-          : '';
-        const title = clientShort ? (clientShort + ' - change undone') : 'Change undone';
-        const sub = dateLbl ? (dateLbl + ' goes back to normal') : 'Goes back to normal';
+        const title = clientShort ? ('CHANGE UNDONE - ' + clientShort) : 'CHANGE UNDONE';
+        const sub = typeof portalOverrideRevertCardSubLabel === 'function'
+          ? portalOverrideRevertCardSubLabel(iso)
+          : 'Goes back to normal';
         qList.push({
           revertId: rid,
           iso: iso,
@@ -6617,7 +6616,92 @@
       if(mod10 === 3) return n + 'RD';
       return n + 'TH';
     }
-    /** Short date for revert quick-menu subtitle, e.g. `Sat 28th Jun`. */
+    /** Compact parenthetical date for override card titles, e.g. `(18th/Jun)`. */
+    function portalOverrideCardDateParenLabel(iso){
+      const rowIso = normaliseIsoDate(iso);
+      if(!rowIso) return '';
+      const parts = rowIso.split('-');
+      if(parts.length !== 3) return '';
+      const y = Number(parts[0]), mo = Number(parts[1]) - 1, da = Number(parts[2]);
+      const d = new Date(y, mo, da);
+      if(isNaN(d.getTime())) return '';
+      let mon = '';
+      try{
+        mon = d.toLocaleDateString('en-GB', { month: 'short' });
+      }catch(_){
+        return '';
+      }
+      if(!mon) return '';
+      const ord = portalOverrideOrdinalDaySuffix(da);
+      const ordSuffix = ord ? ord.replace(/^\d+/, '').toLowerCase() : '';
+      return '(' + da + ordSuffix + '/' + mon + ')';
+    }
+    function portalOverrideQuickMenuNoteSnippet(row){
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      return String(row && row.reason || pl && (pl.note || pl.notes) || '').trim();
+    }
+    function portalOverrideQuickMenuServiceLabel(row){
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      return String(pl && (pl.service_booked || pl.service || pl.programme || pl.activity) || '').trim();
+    }
+    function portalOverrideQuickMenuTimeSlotLabel(row){
+      const lab = String(row && row.anchor_time_slot_label || '').trim();
+      const t0 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_start) : String(row && row.anchor_start || '').trim();
+      const t1 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_end) : String(row && row.anchor_end || '').trim();
+      if(typeof rosterSlotTimeLabel === 'function'){
+        const fromRoster = rosterSlotTimeLabel({ start: t0, end: t1, timeSlotLabel: lab });
+        if(fromRoster) return fromRoster;
+      }
+      if(lab) return lab.replace(/(\d):(\d{2})/g, '$1.$2');
+      if(t0 && t1) return t0 + ' to ' + t1;
+      return t0 || t1 || '';
+    }
+    function portalOverrideQuickMenuDetailSub(row, opts){
+      opts = opts || {};
+      const parts = [];
+      if(opts.includeService){
+        const svc = portalOverrideQuickMenuServiceLabel(row);
+        if(svc) parts.push(svc);
+      }
+      const slot = portalOverrideQuickMenuTimeSlotLabel(row);
+      if(slot) parts.push(slot);
+      if(opts.includeNote !== false){
+        const note = portalOverrideQuickMenuNoteSnippet(row);
+        if(note) parts.push(note);
+      }
+      if(opts.includeVenue !== false){
+        const venue = String(row && row.anchor_venue || '').trim();
+        if(venue) parts.push(venue);
+      }
+      return parts.join(' · ');
+    }
+    /** Revert subtitle, e.g. `28th Jun, goes back to normal`. */
+    function portalOverrideRevertCardSubLabel(iso){
+      const rowIso = normaliseIsoDate(iso);
+      if(!rowIso) return 'Goes back to normal';
+      const parts = rowIso.split('-');
+      if(parts.length !== 3) return 'Goes back to normal';
+      const y = Number(parts[0]), mo = Number(parts[1]) - 1, da = Number(parts[2]);
+      const d = new Date(y, mo, da);
+      if(isNaN(d.getTime())) return 'Goes back to normal';
+      let mon = '';
+      try{
+        mon = d.toLocaleDateString('en-GB', { month: 'short' });
+      }catch(_){
+        return 'Goes back to normal';
+      }
+      if(!mon) return 'Goes back to normal';
+      const ord = portalOverrideOrdinalDaySuffix(da);
+      const ordSuffix = ord ? ord.replace(/^\d+/, '').toLowerCase() : '';
+      return da + ordSuffix + ' ' + mon + ', goes back to normal';
+    }
+    /** Short date for revert contexts with weekday, e.g. `Sat 28th Jun`. */
     function portalOverrideRevertCardDateLabel(iso){
       const rowIso = normaliseIsoDate(iso);
       if(!rowIso) return '';
@@ -6888,20 +6972,20 @@
       }
       if(kind === 'new_shift' || kind === 'roster_day'){
         const isoNav = normaliseIsoDate(row && row.session_date);
+        const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
+          ? portalOverrideCardDateParenLabel(isoNav)
+          : '';
         if(kind === 'new_shift'){
-          const datePart = isoNav && typeof portalOverrideNewShiftCardDateLabel === 'function'
-            ? portalOverrideNewShiftCardDateLabel(isoNav)
+          const venue = String(row && row.anchor_venue || '').trim();
+          title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+          sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
             : '';
-          title = datePart ? ('NEW SHIFT (' + datePart + ')') : 'NEW SHIFT';
-          sub = '';
         }else{
-          title = 'Schedule change';
-          const dayLabel = isoNav && typeof portalOverrideSessionDateDisplayLabel === 'function'
-            ? portalOverrideSessionDateDisplayLabel(isoNav)
-            : isoNav;
-          sub = dayLabel
-            ? ('Your roster for ' + dayLabel + '. Tap to view participants for this day.')
-            : 'Tap to view your roster for this day.';
+          title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
+          sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: false })
+            : '';
         }
         const P = window.PortalParticipantsSheet;
         const coverDismiss = portalOverrideIsInstructorCoverForLoggedInStaff(row)
@@ -6934,24 +7018,32 @@
       }
       if(kind === 'cancelled'){
         const nm = portalClientDisplayNameForOverride(row) || portalClientFirstNameTokenForOverride(row);
-        title = nm ? ('Session Cancelled - ' + nm) : 'Session Cancelled';
-        const subParts = [];
-        if(slot) subParts.push(slot);
-        if(venue) subParts.push(venue);
-        sub = subParts.join(' · ');
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
+          ? portalOverrideCardDateParenLabel(isoNav)
+          : '';
+        title = nm ? ('CANCELLED - ' + nm + (datePart ? (' ' + datePart) : '')) : ('CANCELLED' + (datePart ? (' ' + datePart) : ''));
+        sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+          : '';
       } else {
         let baseTitle = 'Schedule change';
-        if(kind === 'absent') baseTitle = 'Absent';
-        else if(kind === 'trial') baseTitle = 'Trial';
-        else if(kind === 'makeup') baseTitle = 'MakeUp';
+        if(kind === 'absent') baseTitle = 'ABSENT';
+        else if(kind === 'trial') baseTitle = 'TRIAL/NEW';
+        else if(kind === 'makeup') baseTitle = 'MAKE UP';
         const nameBit = (kind === 'makeup' || kind === 'trial')
           ? portalOverrideReplaceParticipantDisplayName(row)
           : portalClientFirstNameTokenForOverride(row);
-        title = nameBit ? (baseTitle + ' - ' + nameBit) : baseTitle;
-        const subParts = [];
-        if(slot) subParts.push(slot);
-        if(venue) subParts.push(venue);
-        sub = subParts.join(' · ');
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
+          ? portalOverrideCardDateParenLabel(isoNav)
+          : '';
+        title = nameBit
+          ? (baseTitle + ' - ' + nameBit + (datePart ? (' ' + datePart) : ''))
+          : (baseTitle + (datePart ? (' ' + datePart) : ''));
+        sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+          : '';
       }
       return {
         id: portalScheduleOverrideRowDismissKey(row),
@@ -7194,8 +7286,8 @@
           byIso[qiso].push({
             id: rid,
             iso: qiso,
-          title: String(q.title || 'Change undone'),
-          sub: String(q.sub || 'Goes back to normal'),
+            title: String(q.title || 'CHANGE UNDONE'),
+            sub: String(q.sub || 'Goes back to normal'),
             kind: 'reverted',
             _sort: Number(q._sort) || Date.now()
           });
@@ -8138,7 +8230,7 @@
         const sess = box.session;
         if(!sess || !sess.user) return;
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
-        const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
+        const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,reason,status';
         const merged = [];
         const CHUNK = 40;
         for(let start = 0; start < isoList.length; start += CHUNK){
