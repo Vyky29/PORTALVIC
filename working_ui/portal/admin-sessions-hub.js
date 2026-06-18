@@ -1018,6 +1018,100 @@
     );
   }
 
+  function overrideIsShadowingSessionAdd(ov) {
+    if (String(ov && ov.override_type || "").trim() !== "session_add") return false;
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    var p = overridePayloadObj(ov);
+    return String(p && p.kind || "").trim().toLowerCase() === "shadowing";
+  }
+
+  function hmRangesOverlap(startA, endA, startB, endB) {
+    function mins(hm) {
+      var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!p) return NaN;
+      return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+    }
+    var lo1 = mins(startA);
+    var hi1 = mins(endA || startA);
+    var lo2 = mins(startB);
+    var hi2 = mins(endB || startB);
+    if (!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) {
+      return normTimeShort(startA) && normTimeShort(startB) && normTimeShort(startA) === normTimeShort(startB);
+    }
+    return lo1 < hi2 && lo2 < hi1;
+  }
+
+  function trainerMatchesSlotInstructors(trainerRaw, instructors) {
+    var parts = parseInstructors(trainerRaw);
+    if (!parts.length && clean(trainerRaw)) parts = [clean(trainerRaw)];
+    for (var i = 0; i < parts.length; i++) {
+      if (staffIdMatchesInstructor(parts[i], instructors)) return true;
+    }
+    return false;
+  }
+
+  function shadowingOverrideMatchesSlot(slot, ov) {
+    if (!slot || !overrideIsShadowingSessionAdd(ov)) return false;
+    if (clean(ov.session_date) !== slot.session_date) return false;
+    var p = overridePayloadObj(ov);
+    var insts =
+      slot.instructors && slot.instructors.length
+        ? slot.instructors
+        : parseInstructors(slot.instructor_label || "");
+    if (!trainerMatchesSlotInstructors(p.trainer, insts)) return false;
+    var oVen = clean(ov.anchor_venue).toLowerCase();
+    var sVen = clean(slot.venue).toLowerCase();
+    if (oVen && sVen && oVen !== sVen) return false;
+    var oStart = normTimeShort(ov.anchor_start);
+    var oEnd = normTimeShort(ov.anchor_end || ov.anchor_start);
+    var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
+    var sEnd = normTimeShort(slot.time_end || slot.anchor_end || slot.time_start);
+    return hmRangesOverlap(oStart, oEnd, sStart, sEnd);
+  }
+
+  function shadowingOverrideForSlot(hub, slot) {
+    if (!hub || !slot) return null;
+    if (slot.__portalShadowingOverride) return slot.__portalShadowingOverride;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      if (!shadowingOverrideMatchesSlot(slot, ovs[i])) continue;
+      if (
+        !best ||
+        (ovs[i].created_at &&
+          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+      ) {
+        best = ovs[i];
+      }
+    }
+    return best;
+  }
+
+  function applyShadowingHostDisplay(hub, slots) {
+    if (!hub || !slots || !slots.length) return slots || [];
+    return slots.map(function (slot) {
+      var ov = shadowingOverrideForSlot(hub, slot);
+      if (!ov) return slot;
+      var observerName = resolveStaffDisplayName(ov.anchor_staff_id);
+      var origInst =
+        slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? slot.portalOriginalInstructors.slice()
+          : (slot.instructors || []).slice();
+      return Object.assign({}, slot, {
+        instructors: origInst,
+        instructor_label: origInst.join(", "),
+        portalInstructorReassigned: false,
+        portalCoveringStaffId: "",
+        portalCoveringStaffName: "",
+        portalShadowingHost: true,
+        portalShadowingObserverName: observerName,
+        portalShadowingObserverId: clean(ov.anchor_staff_id).toLowerCase(),
+        portalOriginalInstructors: origInst,
+        __portalShadowingOverride: ov,
+      });
+    });
+  }
+
   function overrideIsReplaceType(ov) {
     return (
       String(ov && ov.override_type || "").trim() === "client_replace_in_slot" &&
@@ -1164,6 +1258,7 @@
 
   function hubOverrideLabel(ov) {
     if (!ov) return "";
+    if (overrideIsShadowingSessionAdd(ov)) return "Shadowing";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
@@ -1172,6 +1267,7 @@
   }
 
   function hubOverrideChipClass(ov) {
+    if (overrideIsShadowingSessionAdd(ov)) return "override--shadowing";
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
     if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
@@ -1196,7 +1292,12 @@
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {
+    if (slot && slot.portalShadowingHost) return false;
     return overrideIsInstructorReassignType(slotOv) || !!(slot && slot.portalInstructorReassigned);
+  }
+
+  function hubSlotShowsShadowingChip(slot) {
+    return !!(slot && slot.portalShadowingHost && slot.__portalShadowingOverride);
   }
 
   function instructorReassignOverrideForSlot(hub, slot) {
@@ -1248,6 +1349,18 @@
 
   function hubInstructorCellHtml(slot, slotOv) {
     if (!slot) return "\u2014";
+    if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
+      var origInstSh = slot.portalOriginalInstructors || slot.instructors || [];
+      var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
+      var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
+      return (
+        '<span class="ash-instructor-reassign ash-instructor-shadowing">' +
+        origHtmlSh +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        obsHtml +
+        "</span>"
+      );
+    }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
       var origHtml = slot.portalOriginalInstructors.map(formatInstructorPillOut).join("");
       var coverHtml = (slot.instructors || []).map(formatInstructorPill).join("");
@@ -4232,6 +4345,7 @@
       (this.payload && this.payload.schedule_overrides) || []
     );
     out = applyInstructorReassignOverrides(this, out);
+    out = applyShadowingHostDisplay(this, out);
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
     }
@@ -6000,7 +6114,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
         var isCancelled = hub.slotHasCancellation(slot);
         var slotOv = hub.overrideForSlot(slot);
+        if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+        var isShadowing = hubSlotShowsShadowingChip(slot);
         var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
         var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
@@ -6027,6 +6143,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
             : isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+              : isShadowing
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--shadowing">' +
+                  esc(hubOverrideLabel(slot.__portalShadowingOverride)) +
+                  "</span>"
               : isInstructorReassign
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--instructor">' +
                   esc(slotOv ? hubOverrideLabel(slotOv) : "Changed instructor") +
