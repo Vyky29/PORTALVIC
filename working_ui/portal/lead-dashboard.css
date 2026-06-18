@@ -3427,6 +3427,20 @@
       border-color:rgba(245,158,11,.42);
       box-shadow:0 1px 4px rgba(249,191,46,.18);
     }
+    /* Changed by Admin — same yellow card as No Participant */
+    .section-card--today .session-card.session-card--admin-adjusted,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-done,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{
+      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
+      border-color:rgba(200,165,45,.5);
+      box-shadow:0 1px 6px rgba(200,165,45,.12);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted:hover{
+      border-color:rgba(150,110,20,.62);
+      box-shadow:0 4px 14px rgba(180,140,30,.2);
+    }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
@@ -3494,9 +3508,12 @@
       box-shadow:0 0 0 1px var(--reviewLilacGlow),0 8px 22px var(--reviewLilacGlow);
     }
     .session-card.override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
-    .section-card--today .session-card.session-card--available.session-card--ov-yellow{
-      background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);
-      border-color:rgba(200,160,40,.55);
+    .section-card--today .session-card.session-card--available.session-card--ov-yellow,
+    .section-card--today .session-card.session-card--available.session-card--ov-green,
+    .section-card--today .session-card.session-card--available.session-card--ov-red{
+      border-color:rgba(176,45,45,.58);
+      background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
+      box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
     .session-ov-symbol-text{
       display:block;min-width:0;max-width:100%;
@@ -4323,13 +4340,13 @@
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
     .section-card--today .session-card.session-card--available{
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      border-color:rgba(200,165,45,.5);
-      box-shadow:0 1px 6px rgba(200,165,45,.12);
+      border-color:rgba(176,45,45,.58);
+      background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
+      box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(150,110,20,.62);
-      box-shadow:0 4px 14px rgba(180,140,30,.2);
+      border-color:rgba(150,28,28,.68);
+      box-shadow:0 4px 14px rgba(150,28,28,.22);
     }
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
@@ -4753,12 +4770,12 @@
     .session-card.session-card--available{
       cursor:default;
       pointer-events:none;
-      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      border-color:rgba(200,165,45,.5);
+      background:linear-gradient(180deg,#fff1f1 0%,#ffd4d4 100%);
+      border-color:rgba(170,38,38,.45);
+      box-shadow:none;
     }
-    .session-card.session-card--available:hover{border-color:rgba(160,120,20,.62)}
-    .session-card.session-card--available .session-cell--client{color:#8a6200}
+    .session-card.session-card--available:hover{transform:none;box-shadow:none;border-color:rgba(170,38,38,.45)}
+    .session-card.session-card--available .session-cell--client{color:var(--ink)}
     .session-card.session-card--review-done{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);

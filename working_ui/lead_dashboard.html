@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-cancelled-qm-black" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-no-participant-red" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -4617,6 +4617,9 @@
       const sel = portalSelectedViewCalendarIsoYmd();
       return !!iso && !!sel && iso === sel;
     }
+    function portalTodayItemShowsAdminShiftBadge(item){
+      return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
+    }
     function portalTodaySessionOverrideCardClass(item){
       const t = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
       if(t === 'green') return ' session-card--ov-green';
@@ -4807,6 +4810,107 @@
         return list;
       }
       return [];
+    }
+    function portalStaffNormRosterKey(v){
+      return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    function portalStaffProfileFirstName(rawKey){
+      const k = String(rawKey || '').trim().toLowerCase();
+      if(!k) return '';
+      try{
+        const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+        const prof = src && src.staffProfiles ? (src.staffProfiles[k] || src.staffProfiles[rawKey]) : null;
+        const nm = prof && String(prof.staffName || prof.name || '').trim();
+        if(nm){
+          const first = nm.split(/\s+/).filter(Boolean)[0];
+          if(first) return first;
+        }
+      }catch(_){}
+      return k.charAt(0).toUpperCase() + k.slice(1);
+    }
+    function portalStaffNameMatchesShadowHost(trainerName, staffId, staffDisplayName){
+      const t = portalStaffNormRosterKey(trainerName);
+      if(!t) return false;
+      const sid = portalStaffNormRosterKey(staffId);
+      let canonical = sid;
+      if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+        canonical = portalStaffNormRosterKey(window.portalCanonicalStaffRosterKey(staffId));
+      }
+      if(t === sid || t === canonical) return true;
+      const dn = String(staffDisplayName || '').trim();
+      if(!dn) return false;
+      const parts = dn.split(/\s+/).filter(Boolean);
+      const first = parts[0] || '';
+      if(portalStaffNormRosterKey(first) === t) return true;
+      if(portalStaffNormRosterKey(dn) === t) return true;
+      const raw = String(trainerName || '').trim().toLowerCase();
+      if(raw && dn.toLowerCase().indexOf(raw) >= 0) return true;
+      return first && raw === first.toLowerCase();
+    }
+    function portalHmRangeOverlaps(aStart, aEnd, bStart, bEnd){
+      function toMin(hm){
+        const t = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(hm) : String(hm || '').trim();
+        if(!t) return null;
+        const p = t.split(':');
+        const h = Number(p[0]), m = Number(p[1] || 0);
+        if(!Number.isFinite(h)) return null;
+        return h * 60 + m;
+      }
+      const as = toMin(aStart), ae = toMin(aEnd || aStart), bs = toMin(bStart), be = toMin(bEnd || bStart);
+      if(as == null || bs == null) return true;
+      const aEndMin = ae == null ? as : ae;
+      const bEndMin = be == null ? bs : be;
+      return as < bEndMin && bs < aEndMin;
+    }
+    function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !staffId) return [];
+      const out = [];
+      const seen = Object.create(null);
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(normaliseIsoDate(ov.session_date) !== iso) return;
+        if(String(ov.status || 'active') !== 'active') return;
+        if(String(ov.override_type || '').trim() !== 'session_add') return;
+        let pl = ov.payload;
+        try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = ov.payload; }
+        const kind = String(pl && pl.kind || '').trim().toLowerCase();
+        if(kind !== 'shadowing') return;
+        const trainer = String(pl && pl.trainer || '').trim();
+        const hosts = portalSessionAddSplitNames(trainer);
+        const hostMatch = hosts.length
+          ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, staffId, staffDisplayName); })
+          : portalStaffNameMatchesShadowHost(trainer, staffId, staffDisplayName);
+        if(!hostMatch) return;
+        const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
+        const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
+        if(startHm && ovStart && !portalHmRangeOverlaps(startHm, endHm, ovStart, ovEnd)) return;
+        const shadowerKey = portalStaffNormRosterKey(ov.anchor_staff_id);
+        if(!shadowerKey || seen[shadowerKey]) return;
+        seen[shadowerKey] = true;
+        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' Shadowing';
+        out.push(label);
+      });
+      return out;
+    }
+    function portalAttachShadowingObserverChips(items, sessionDateIso, staffId, staffDisplayName){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      const sid = String(staffId || '').trim().toLowerCase();
+      const dn = String(staffDisplayName || '').trim();
+      if(!sid) return items;
+      const skipIds = { shadowing: 1, training: 1, meeting: 1 };
+      return items.map(function(it){
+        if(!it || it.kind !== 'client') return it;
+        const cid = String(it.clientId || '').trim().toLowerCase();
+        if(skipIds[cid]) return it;
+        const base = it.__portalBaseSession || {};
+        const chips = portalShadowingObserverChipsForHost(sessionDateIso, sid, dn, base.start, base.end);
+        if(!chips.length) return it;
+        const existing = Array.isArray(it.portalSessionAddChips) ? it.portalSessionAddChips.slice() : [];
+        chips.forEach(function(c){
+          if(existing.indexOf(c) < 0) existing.push(c);
+        });
+        return Object.assign({}, it, { portalSessionAddChips: existing });
+      });
     }
     function portalSessionAddAreaNoteLabel(locRaw){
       if(locRaw === 'pool') return 'Teaching Pool';
@@ -6781,7 +6885,7 @@
               sessionEndTs,
               noSessionFeedbackRequired: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'green',
+              portalOverrideCardTone: 'red',
               portalOverrideSymbolText: 'No Participant'
             }, meta);
           }
@@ -6931,7 +7035,7 @@
               sessionEndTs,
               noSessionFeedbackRequired: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'yellow',
+              portalOverrideCardTone: 'red',
               portalOverrideSymbolText: 'NO CLIENT'
             }, meta);
           }
@@ -7102,7 +7206,7 @@
             ...rowTsForSession(s),
             noSessionFeedbackRequired: true,
             portalOverrideSuppressReviewOrange: true,
-            portalOverrideCardTone: 'green',
+            portalOverrideCardTone: 'red',
             portalOverrideSymbolText: 'NO CLIENT',
             scheduleAdminAdjusted: true,
             sessionVenue: String(s.venue || '').trim() || '—',
@@ -7265,8 +7369,14 @@
         return Number(normalizeTimeForSort(portalTodayItemSortKey(a))) - Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
       });
       if(typeof portalMergeStaffLeadTodayAquaticCards === 'function'){
-        return portalMergeStaffLeadTodayAquaticCards(sortedToday, sessionDateKey, anchorDayWord);
+        sortedToday = portalMergeStaffLeadTodayAquaticCards(sortedToday, sessionDateKey, anchorDayWord);
       }
+      sortedToday = portalAttachShadowingObserverChips(
+        sortedToday,
+        sessionDateKey,
+        staffId,
+        String(dashboardData && dashboardData.staffName || '').trim()
+      );
       return sortedToday;
     }
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
@@ -9414,10 +9524,11 @@
       list.forEach(item => {
         const ovTone = typeof portalTodaySessionOverrideCardClass === 'function' ? portalTodaySessionOverrideCardClass(item) : '';
         const ovTypeCls = typeof portalTodayItemOverrideClass === 'function' ? portalTodayItemOverrideClass(item) : '';
+        const adminAdjCls = typeof portalTodayItemShowsAdminShiftBadge === 'function' && portalTodayItemShowsAdminShiftBadge(item) ? ' session-card--admin-adjusted' : '';
         if(item.kind === 'closed' || item.kind === 'available' || item.openSheet === false){
           const row = document.createElement('div');
           const rowKindCls = item.kind === 'closed' ? 'session-card--closed' : (item.kind === 'available' ? 'session-card--available' : '');
-          row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + ovTone + (ovTypeCls ? ' ' + ovTypeCls : '');
+          row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '');
           row.setAttribute('role', 'listitem');
           row.innerHTML = todaySessionCardInnerHtml(item);
           rowsWrap.appendChild(row);
@@ -9426,7 +9537,7 @@
         const card = document.createElement('button');
         card.type = 'button';
         const reviewCls = sessionReviewRowClass(item);
-        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '');
+        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '');
         card.setAttribute('role', 'listitem');
         if(item.sessionKey) card.setAttribute('data-session-key', String(item.sessionKey));
         const poolAria = (item.areaLabel && String(item.areaLabel).trim())
@@ -9434,7 +9545,7 @@
           : (item.poolLocationLabel ? `, ${item.poolLocationLabel}` : '');
         const venAria = portalTodaySessionVenueLabel(item);
         const venPart = venAria && venAria !== '—' ? `, ${venAria}` : '';
-        card.setAttribute('aria-label', item.kind === 'available' ? `No participant — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}`);
+        card.setAttribute('aria-label', item.kind === 'available' ? `No participant — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}${adminAdjCls ? ', schedule changed by admin' : ''}`);
         card.innerHTML = todaySessionCardInnerHtml(item);
         card.addEventListener('click', () => openClient(item));
         rowsWrap.appendChild(card);
