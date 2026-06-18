@@ -161,7 +161,8 @@
       height:auto !important;max-height:none !important;flex:none !important;overflow:visible !important;
     }
     .lab-today-demos{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px;align-items:start}
-    @media(min-width:820px){.lab-today-demos{grid-template-columns:1fr 1fr}}
+    .lab-today-demos--catalog{grid-template-columns:1fr;max-width:min(100%,540px)}
+    @media(min-width:820px){.lab-today-demos:not(.lab-today-demos--catalog){grid-template-columns:1fr 1fr}}
     .lab-today-panel .section-head--today{flex:0 0 auto}
     .lab-today-panel .today-grid{
       flex:0 0 auto !important;min-height:0 !important;height:auto !important;
@@ -348,9 +349,9 @@
           <div id="labHaloGrid"></div>
         </div>
       </div>
-      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — tarjetas de sesión por día</h3>
-      <p class="lab-lead">Mismo markup que producción: cabecera <code>TODAY · fecha</code>, filas con hora/venue, chip bajo nombre, <strong>nota de área PNG</strong> a la derecha (Teaching Pool, Big Pool…). Dos días de ejemplo como en el dashboard.</p>
-      <div class="lab-today-demos staff-dashboard" id="labTodaySection"></div>
+      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — catálogo de tarjetas</h3>
+      <p class="lab-lead">Todas las filas Today de producción en un solo panel: hora/venue · nombre · chip · nota de área PNG. Mismo markup que <code>staff_dashboard.html</code>.</p>
+      <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodaySection"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
       <div class="lab-chip-demo-grid" id="labChipDemos"></div>
       <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
@@ -1097,38 +1098,54 @@
       renderHaloMenuCombo();
     }
 
+    function todayCatalogRow(classes, time, venue, name, chipCls, chipLabel, poolNote, asDiv){
+      var chip = chipCls ? slotChip(chipCls, chipLabel) : '';
+      return todayCardHtml(classes, time, venue, name, chip, poolNote || '', !!asDiv);
+    }
+
     function renderTodaySection(){
       var host = document.getElementById('labTodaySection');
       if(!host) return;
       var teachingPool = areaNoteSymbol('Teaching Pool');
       var bigPool = areaNoteSymbol('Big Pool');
-
       var wallNote = areaNoteSymbol('Wall');
+      var hubRoom = areaNoteSymbol('Hub Room');
+      var rows = [
+        todayCatalogRow('', '4 to 4.30', 'Acton', 'Elijah', '', '', teachingPool),
+        todayCatalogRow('session-card--ov-blue', '4.30 to 5', 'Acton', 'Aqsa',
+          'portal-session-slot-chip--updated', 'Updated', bigPool),
+        todayCatalogRow('session-card--review-needed', '5 to 5.30', 'Acton', 'Bediako',
+          'portal-session-slot-chip--pending', 'Pending', teachingPool),
+        todayCatalogRow('session-card--review-done', '5.30 to 6', 'Acton', 'Hazem',
+          'portal-session-slot-chip--submitted', 'Submitted', bigPool),
+        todayCatalogRow('override--absent session-card--ov-green', '6 to 6.30', 'Acton', 'Mary',
+          'portal-session-slot-chip--absent', 'Absent', teachingPool),
+        todayCatalogRow('session-card--ov-red override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
+          'portal-session-slot-chip--cancelled', 'Cancelled', wallNote),
+        todayCatalogRow('session-card--ov-trial override--trial', '4.30 to 5', 'Westway', 'Chaitanya',
+          'portal-session-slot-chip--trial', 'Trial/New Participant', teachingPool),
+        todayCatalogRow('session-card--ov-pink override--replace session-card--review-needed', '11 to 12', 'Acton', 'Eddie Ri',
+          'portal-session-slot-chip--makeup', 'Make up', hubRoom),
+        todayCatalogRow('session-card--ov-training', '10 to 11 am', 'Westway', 'Training session', '', '', hubRoom),
+        todayCatalogRow('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing', 'portal-session-slot-chip--plain', 'Pool', teachingPool),
+        todayCatalogRow('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Team meeting', '', '', hubRoom),
+        todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
+        todayCatalogRow('session-card--closed', '12 to 1 pm', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
+      ].join('');
 
-      var panelTodayPending = todayDayPanel('TODAY', '16/06/2026',
-        todayCardHtml('session-card--review-needed', '4.30 to 5', 'Acton', 'Bediako',
-          slotChip('portal-session-slot-chip--pending', 'Pending'), teachingPool)+
-        todayCardHtml('session-card--review-needed', '4.30 to 5.30', 'Acton', 'Junaid F',
-          slotChip('portal-session-slot-chip--pending', 'Pending'), bigPool)+
-        todayCardHtml('session-card--review-needed', '5.30 to 6', 'Acton', 'Aydaan Ah',
-          slotChip('portal-session-slot-chip--pending', 'Pending'), teachingPool)+
-        todayCardHtml('session-card--review-needed', '6 to 6.30', 'Acton', 'Hazem',
-          slotChip('portal-session-slot-chip--pending', 'Pending'), bigPool),
-        'Todas <strong>Pending</strong> — tarjeta naranja (<code>session-card--review-needed</code>).');
+      var legend =
+        '<strong>Normal</strong> (blanco, sin chip) · '+
+        '<strong>Updated</strong> (<code>session-card--ov-blue</code> + chip azul) · '+
+        '<strong>Outstanding</strong> (<code>session-card--review-needed</code> + Pending naranja) · '+
+        '<strong>Submitted</strong> (<code>session-card--review-done</code> + verde) · '+
+        '<strong>Absent</strong> (verde + chip teal) · '+
+        '<strong>Cancelled</strong> (rojo + chip negro) · '+
+        '<strong>Trial/New Participant</strong> (lila) · '+
+        '<strong>Make up</strong> (rosa) · '+
+        '<strong>Training / Shadowing / Meeting</strong> (admin session_add) · '+
+        '<strong>Slot abierto</strong> (amarillo) · <strong>Closed</strong> (rojo claro).';
 
-      var panelThuNormal = todayDayPanel('THURSDAY', '18/06/2026',
-        todayCardHtml('', '4 to 4.30', 'Acton', 'Elijah', '', teachingPool)+
-        todayCardHtml('', '4.30 to 5.30', 'Acton', 'Aqsa', '', bigPool)+
-        todayCardHtml('', '5.30 to 6', 'Acton', 'Hazem', '', bigPool)+
-        todayCardHtml('', '6 to 6.30', 'Acton', 'Maiyar', '', teachingPool),
-        'Sesiones normales — blanco, sin chip. Nota de área PNG a la derecha (Teaching Pool, Big Pool…).');
-
-      var panelCancelled = todayDayPanel('TODAY', '20/06/2026',
-        todayCardHtml('session-card--ov-red override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
-          slotChip('portal-session-slot-chip--cancelled', 'Cancelled'), wallNote),
-        'Cancelado — <strong>nombre del participante</strong>, chip negro <strong>Cancelled</strong>, nota de área a la derecha.');
-
-      host.innerHTML = panelTodayPending + panelThuNormal + panelCancelled;
+      host.innerHTML = todayDayPanel('TODAY', 'Catálogo', rows, legend);
     }
 
     function renderChipLegend(){
