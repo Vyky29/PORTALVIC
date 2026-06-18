@@ -899,7 +899,7 @@
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-cover-per-slot"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
@@ -3772,12 +3772,13 @@
       }catch(_){}
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
-      if(r.cancelled) return 'session-card--review-cancelled';
+      if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
       if(r.incident) return 'session-card--review-incident';
-      if(isSessionEndedForFeedback(item)){
+      if(isSessionStartedForItem(item)){
         if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return '';
-        return 'session-card--review-needed';
+        if(!r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';
+        return '';
       }
       return '';
     }
@@ -4876,6 +4877,30 @@
       const bEndMin = be == null ? bs : be;
       return as < bEndMin && bs < aEndMin;
     }
+    function portalStaffRosterOpenSlotOverlapsWindow(staffId, sessionDateKey, anchorDayWord, winStart, winEnd){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const iso = normaliseIsoDate(sessionDateKey);
+      const dayWord = String(anchorDayWord || '').trim();
+      if(!sid || !iso || !winStart) return false;
+      const winEndHm = winEnd || winStart;
+      const model = Array.isArray(sessionsModel) ? sessionsModel : [];
+      for(let i = 0; i < model.length; i++){
+        const s = model[i];
+        if(!s) continue;
+        if(String(s.staffId || '').trim().toLowerCase() !== sid) continue;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+          if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayWord)) continue;
+        }else if(String(s.day || '').trim() !== dayWord){
+          continue;
+        }
+        if(sessionModelStatus(s) !== 'Available') continue;
+        const st = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s.start) : String(s.start || '').trim();
+        const en = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s.end) : String(s.end || s.start || '').trim();
+        if(st && portalHmRangeOverlaps(st, en || st, winStart, winEndHm)) return true;
+      }
+      return false;
+    }
+    try{ window.portalStaffRosterOpenSlotOverlapsWindow = portalStaffRosterOpenSlotOverlapsWindow; }catch(_){}
     function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm){
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !staffId) return [];
@@ -7289,6 +7314,12 @@
           status: 'Scheduled',
           activity: 'Swimming'
         };
+        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
+        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
+        if(typeof portalStaffRosterOpenSlotOverlapsWindow === 'function'
+          && portalStaffRosterOpenSlotOverlapsWindow(cov, sessionDateKey, viewDay, coverWinStart, coverWinEnd)){
+          return;
+        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         const slotOv = portalTodayScheduleOverrideForSession(base, sessionDateKey);

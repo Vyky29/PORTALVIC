@@ -3427,9 +3427,8 @@
       border-color:rgba(245,158,11,.42);
       box-shadow:0 1px 4px rgba(249,191,46,.18);
     }
-    /* Changed by Admin — same yellow card as No Participant */
+    /* Changed by Admin — same yellow card as No Participant (until session starts) */
     .section-card--today .session-card.session-card--admin-adjusted,
-    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-done,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{
       background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
       border-color:rgba(200,165,45,.5);
@@ -3441,6 +3440,15 @@
       background:var(--reviewOrangeBg);
       border-color:var(--reviewOrangeBorder);
       box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
+    }
+    /* Submitted / absent / cancelled — green card even when admin-adjusted */
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-done{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-done:hover{
+      border-color:rgba(21,115,71,.45);
     }
     .section-card--today .session-card.session-card--admin-adjusted:not(.session-card--review-needed):not(.session-card--review-incident):hover{
       border-color:rgba(150,110,20,.62);
@@ -3506,15 +3514,11 @@
       box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
     }
     .section-card--today .session-card.override--replace.session-card--review-done,
-    .section-card--today .session-card.override--replace.session-card--review-incident{
+    .section-card--today .session-card.override--replace.session-card--review-incident,
+    .section-card--today .session-card.override--replace.session-card--review-cancelled{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
-    }
-    .section-card--today .session-card.override--replace.session-card--review-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 8px 22px var(--reviewLilacGlow);
     }
     .session-card.override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
     .section-card--today .session-card.session-card--available.session-card--ov-yellow,
@@ -3567,6 +3571,17 @@
       box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
     }
     .section-card--today .session-card.session-card--ov-pink.session-card--review-done{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
+    .section-card--today .session-card.session-card--ov-yellow.session-card--review-needed,
+    .section-card--today .session-card.session-card--ov-yellow.session-card--review-incident{
+      background:var(--reviewOrangeBg);
+      border-color:var(--reviewOrangeBorder);
+      box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
+    }
+    .section-card--today .session-card.session-card--ov-yellow.session-card--review-done{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);

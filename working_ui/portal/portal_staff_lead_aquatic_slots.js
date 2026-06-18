@@ -121,9 +121,130 @@
     return n > 1 && !!lead;
   }
 
+  /** Active instructor covers for one aquatic client on a calendar day (each cover window = one feedback unit). */
+  function aquaticInstructorCoverUnitsOnDate(iso, clientId, dayWord) {
+    var cid = slugClient(clientId);
+    if (!iso || !cid) return 0;
+    var rows =
+      typeof global.portalScheduleOverrideRowsAll === "function"
+        ? global.portalScheduleOverrideRowsAll()
+        : Array.isArray(global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+          ? global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+          : [];
+    var seen = Object.create(null);
+    var n = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var ov = rows[i];
+      if (!ov) continue;
+      if (String(ov.status || "active") !== "active") continue;
+      if (String(ov.override_type || "").trim() !== "instructor_reassign") continue;
+      var sd = String(ov.session_date || "").slice(0, 10);
+      if (sd && sd !== String(iso || "").slice(0, 10)) continue;
+      if (slugClient(ov.anchor_client_id) !== cid) continue;
+      var aquatic = false;
+      var src = rosterRows();
+      for (var j = 0; j < src.length; j++) {
+        var r = src[j];
+        if (!rowAppliesOnDate(r, iso, dayWord)) continue;
+        if (slugClient(r.client_name) !== cid) continue;
+        if (rowIsAquatic(r)) {
+          aquatic = true;
+          break;
+        }
+      }
+      if (!aquatic) continue;
+      var start =
+        typeof global.portalHmFromDbTime === "function"
+          ? global.portalHmFromDbTime(ov.anchor_start) || ""
+          : String(ov.anchor_start || "").trim().slice(0, 5);
+      var cover = String((ov.payload && ov.payload.covering_staff_id) || "")
+        .trim()
+        .toUpperCase();
+      var key = start + "\0" + cover;
+      if (!start || seen[key]) continue;
+      seen[key] = true;
+      n++;
+    }
+    return n;
+  }
+
+  function canonicalHmToken(hm) {
+    if (typeof global.portalCanonicalHmToken === "function") {
+      return global.portalCanonicalHmToken(hm) || String(hm || "").trim();
+    }
+    var m = String(hm || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return String(hm || "").trim();
+    return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+  }
+
+  /** Earliest aquatic delivery start that day (roster row or instructor cover). */
+  function earliestAquaticDeliveryStartHm(iso, clientId, dayWord) {
+    var cid = slugClient(clientId);
+    if (!iso || !cid) return "";
+    var earliest = "";
+    var rows = rosterRows();
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rowAppliesOnDate(r, iso, dayWord)) continue;
+      if (slugClient(r.client_name) !== cid) continue;
+      if (!rowIsAquatic(r) || !rowIsBookedClient(r)) continue;
+      var st = canonicalHmToken(r.start || "");
+      if (st && (!earliest || st < earliest)) earliest = st;
+    }
+    var ovs =
+      typeof global.portalScheduleOverrideRowsAll === "function"
+        ? global.portalScheduleOverrideRowsAll()
+        : Array.isArray(global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+          ? global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+          : [];
+    for (var k = 0; k < ovs.length; k++) {
+      var ov = ovs[k];
+      if (!ov) continue;
+      if (String(ov.status || "active") !== "active") continue;
+      if (String(ov.override_type || "").trim() !== "instructor_reassign") continue;
+      var sd = String(ov.session_date || "").slice(0, 10);
+      if (sd && sd !== String(iso || "").slice(0, 10)) continue;
+      if (slugClient(ov.anchor_client_id) !== cid) continue;
+      var st2 =
+        typeof global.portalHmFromDbTime === "function"
+          ? global.portalHmFromDbTime(ov.anchor_start) || ""
+          : String(ov.anchor_start || "").trim().slice(0, 5);
+      st2 = canonicalHmToken(st2);
+      if (st2 && (!earliest || st2 < earliest)) earliest = st2;
+    }
+    return earliest;
+  }
+
   function clientNeedsPerSlotAquaticFeedbackOnDate(iso, clientId, dayWord) {
+    if (aquaticInstructorCoverUnitsOnDate(iso, clientId, dayWord) > 1) return true;
     if (aquaticSlotCountForClientOnDate(iso, clientId, dayWord) <= 1) return false;
     return !aquaticSameInstructorAllSlotsOnDate(iso, clientId, dayWord);
+  }
+
+  /** When per-slot aquatic feedback applies, only accept server keys for this card's start (legacy day keys → earliest slot only). */
+  function feedbackKeyMatchesAquaticSlot(key, iso, clientId, startHm, dayWord) {
+    if (!clientNeedsPerSlotAquaticFeedbackOnDate(iso, clientId, dayWord)) return true;
+    var keyStr = String(key || "").trim();
+    if (!keyStr) return false;
+    var want = canonicalHmToken(startHm);
+    var parts = keyStr.split("|").map(function (p) {
+      return String(p || "").trim();
+    });
+    var keyTime = "";
+    for (var i = 0; i < parts.length; i++) {
+      if (/^\d{1,2}:\d{2}$/.test(parts[i])) {
+        keyTime = canonicalHmToken(parts[i]);
+        break;
+      }
+    }
+    if (keyTime) return !!want && keyTime === want;
+    if (parts.length >= 3 && parts[parts.length - 1].toLowerCase() === "aquatic") {
+      return !!want && want === earliestAquaticDeliveryStartHm(iso, clientId, dayWord);
+    }
+    if (parts.length >= 2 && parts[1] === "") {
+      return !!want && want === earliestAquaticDeliveryStartHm(iso, clientId, dayWord);
+    }
+    return false;
   }
 
   function buildAquaticSessionReviewKey(iso, clientId, s, dayWord) {
@@ -387,6 +508,8 @@
   global.portalStaffLeadIsAquaticActivity = isAquaticActivity;
   global.portalStaffLeadAquaticSessionReviewKey = buildAquaticSessionReviewKey;
   global.portalStaffLeadClientNeedsPerSlotAquaticFeedback = clientNeedsPerSlotAquaticFeedbackOnDate;
+  global.portalStaffLeadAquaticInstructorCoverUnitsOnDate = aquaticInstructorCoverUnitsOnDate;
+  global.portalStaffLeadFeedbackKeyMatchesAquaticSlot = feedbackKeyMatchesAquaticSlot;
   global.portalStaffLeadReviewKeyAllowsDateClientOnlyAlias = reviewKeyAllowsDateClientOnlyAlias;
   global.portalMergeStaffLeadTodayAquaticCards = mergeTodayAquaticCards;
   global.portalMergeStaffTodayFeedbackMergeGroups = mergeTodayFeedbackMergeGroups;

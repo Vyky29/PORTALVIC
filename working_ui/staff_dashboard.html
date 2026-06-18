@@ -910,7 +910,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260616-worker-display-names"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260611-hazem-per-slot"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-cover-per-slot"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-roberto-roster-fallback"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
@@ -1730,12 +1730,21 @@
       const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
       const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       const aliases = portalCollectItemSessionReviewKeyAliases(item, iso, dayWord);
+      const baseS = portalReviewSessionForItem(item);
       let feedbackDone = false;
       let absent = false;
       let cancelled = false;
       if(serverSynced && srv){
+        const cidForSlot = baseS && typeof portalEffectiveClientIdForReview === 'function'
+          ? portalEffectiveClientIdForReview(baseS, iso)
+          : String(baseS && baseS.clientId || item && item.clientId || '').trim().toLowerCase();
+        const startHm = baseS && baseS.start != null ? baseS.start : '';
         for(let i = 0; i < aliases.length; i++){
           const k = aliases[i];
+          if(typeof portalStaffLeadFeedbackKeyMatchesAquaticSlot === 'function'
+            && !portalStaffLeadFeedbackKeyMatchesAquaticSlot(k, iso, cidForSlot, startHm, dayWord)){
+            continue;
+          }
           if(srv.feedback && srv.feedback.has(k)) feedbackDone = true;
           if(srv.absent && srv.absent.has(k)) absent = true;
           if(srv.cancelled && srv.cancelled.has(k)) cancelled = true;
@@ -1746,7 +1755,6 @@
         if(pill === 'ABSENT') absent = true;
         if(pill === 'CANCELLED') cancelled = true;
       }
-      const baseS = portalReviewSessionForItem(item);
       const staffIdSrv = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
       const isMakeupCard = portalTodayCardUsesReplaceOverride(item);
       if(baseS && !isMakeupCard && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
