@@ -2438,19 +2438,30 @@
       color:#6d28d9;
       border-color:rgba(124,58,237,.35);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%);
-      border:2px solid rgba(255,255,255,.18);
-      color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.35);
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
+      background-color:#171717 !important;
+      border:2px solid rgba(255,255,255,.18) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65)}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(255,255,255,.14);
-      color:#fff;
-      border-color:rgba(255,255,255,.22);
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65) !important}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(255,255,255,.14) !important;
+      color:#fff !important;
+      border-color:rgba(255,255,255,.22) !important;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training{
       background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
@@ -2511,9 +2522,15 @@
       border-color:rgba(124,58,237,.55);
       box-shadow:0 10px 26px rgba(124,58,237,.28);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover{
-      border-color:rgba(255,255,255,.35);
-      box-shadow:0 10px 26px rgba(0,0,0,.45);
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
+      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
+      background-color:#262626 !important;
+      border-color:rgba(255,255,255,.35) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      transform:none;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training:hover{
       border-color:rgba(37,99,235,.6);
@@ -2567,18 +2584,19 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%);
-      border:2px solid rgba(255,255,255,.18);
-      color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.35);
+      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
+      background-color:#171717 !important;
+      border:2px solid rgba(255,255,255,.18) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65) !important}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(255,255,255,.14);
-      color:#fff;
-      border-color:rgba(255,255,255,.22);
+      background:rgba(255,255,255,.14) !important;
+      color:#fff !important;
+      border-color:rgba(255,255,255,.22) !important;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-slot-opened{
       background:linear-gradient(180deg,#ecfeff 0%,#cffafe 100%);
@@ -3360,8 +3378,10 @@
       box-shadow:0 10px 26px rgba(236,72,153,.28);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover{
-      border-color:rgba(255,255,255,.35);
-      box-shadow:0 10px 26px rgba(0,0,0,.45);
+      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
+      background-color:#262626 !important;
+      border-color:rgba(255,255,255,.35) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-other:hover{
       border-color:rgba(71,85,105,.5);
@@ -6722,6 +6742,29 @@
       transform:translateY(-1px);
     }
     .sheet.sheet--fullscreen.sheet--mobile-frame .menu-btn:active{transform:translateY(0)}
+    /* Cancelled override: beat mobile-frame white tile reset (black card, white text) */
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
+      background-color:#171717 !important;
+      border:2px solid rgba(255,255,255,.18) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+    }
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:focus-visible,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
+      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
+      background-color:#262626 !important;
+      border-color:rgba(255,255,255,.35) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      transform:none;
+    }
     /* Quick menu · Settings accordion panel + pinned View / Logout rows */
     #menuSheet #portalQuickMenuSettingsGroup > .menu-grid--settings-pinned{
       margin-top:10px;

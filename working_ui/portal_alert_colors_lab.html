@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-undo-grey-cancel-black-training-blue" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-cancelled-black-fix" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -216,6 +216,19 @@
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(63,63,70,.55)}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
       background:rgba(161,161,170,.28);color:#52525b;border-color:rgba(113,113,122,.4);
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
+      background-color:#171717 !important;
+      border:2px solid rgba(255,255,255,.18) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+      color:#fff !important;
+    }
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65) !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(255,255,255,.14) !important;color:#fff !important;border-color:rgba(255,255,255,.22) !important;
     }
     /* Override tiles: production colours (logo-lite) */
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
@@ -586,8 +599,29 @@
       return defaults.map(function(d){
         var s = byId[d.id];
         if(!s) return d;
-        return Object.assign({}, d, s, { colors: Object.assign({}, d.colors || {}, s.colors || {}) });
+        var colors = Object.assign({}, d.colors || {}, s.colors || {});
+        if(d.id === 'cancelled' && !overrideColorsAreDark(colors)){
+          colors = Object.assign({}, d.colors);
+        }
+        return Object.assign({}, d, s, { colors: colors });
       });
+    }
+    function overrideColorsAreDark(colors){
+      return isDarkColor(colors && colors.bg1) && isDarkColor(colors && colors.bg2);
+    }
+    function isDarkColor(val){
+      var s = String(val || '').trim().toLowerCase();
+      if(!s) return true;
+      if(s.indexOf('rgba') === 0 || s.indexOf('rgb') === 0) return true;
+      if(s.charAt(0) !== '#') return true;
+      var hex = s.slice(1);
+      if(hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      if(hex.length < 6) return true;
+      var r = parseInt(hex.slice(0, 2), 16);
+      var g = parseInt(hex.slice(2, 4), 16);
+      var b = parseInt(hex.slice(4, 6), 16);
+      if(isNaN(r) || isNaN(g) || isNaN(b)) return true;
+      return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
     }
     function mergeHaloDefaults(saved){
       var defaults = defaultHalos();
