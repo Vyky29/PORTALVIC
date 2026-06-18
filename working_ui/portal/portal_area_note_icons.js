@@ -296,6 +296,34 @@
   global.portalAreaNoteIconHtml = portalAreaNoteIconHtml;
   global.portalTodayAreaNoteMetrics = portalTodayAreaNoteMetrics;
 
+  global.portalTomorrowAreaNoteHtml = function portalTomorrowAreaNoteHtml(noteRaw, activity) {
+    var note = String(noteRaw || "").trim();
+    var act = String(activity || "").trim();
+    var line1 = "";
+    var line2 = "";
+    if (note.indexOf(" / ") >= 0) {
+      var parts = note.split(" / ").map(function (p) { return p.trim(); }).filter(Boolean);
+      line1 = parts[0] || "";
+      line2 = parts.slice(1).join(" / ") || "";
+    } else if (note && act && note.toLowerCase() !== act.toLowerCase()) {
+      line1 = note;
+      line2 = act;
+    } else if (note) {
+      line1 = note;
+    } else if (act) {
+      line2 = act;
+    }
+    if (!line1 && !line2) return "";
+    var html = '<span class="calendar-day-tomorrow-note">';
+    if (line1) html += '<span class="calendar-day-tomorrow-note__ln1">' + escapeHtml(line1) + "</span>";
+    if (line2) html += '<span class="calendar-day-tomorrow-note__ln2">' + escapeHtml(line2) + "</span>";
+    html += "</span>";
+    return html;
+  };
+
+  /** @deprecated use portalTomorrowAreaNoteHtml */
+  global.portalTomorrowTwoLineNoteHtml = global.portalTomorrowAreaNoteHtml;
+
   /** TODAY right column: icon crop + HTML label (same size for every area, Lane SE reference). */
   global.portalAreaNoteTodayColumnHtml = function portalAreaNoteTodayColumnHtml(label) {
     var key = ICONS[label] ? label : portalNormalizeAreaNoteKey(label);

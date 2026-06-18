@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-week-tag-colors" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-next-session-note" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -441,7 +441,7 @@
     </section>
   </div>
 
-  <script src="/portal/portal_area_note_icons.js?v=20260614-area-label-unify"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260614-next-session-note"></script>
   <script>
   (function(){
     var STORAGE_KEY = 'portalLabAlertColorsV2';
@@ -1416,14 +1416,20 @@
 
         (firstTomorrow ? (
           '<div class="lab-chip-demo-box"><h4>Next session</h4>'+
-            '<button type="button" class="calendar-day calendar-day--tomorrow calendar-day--tomorrow-btn '+
-              esc(firstTomorrow.tomorrowRowClass||'')+'" style="max-width:360px">'+
+            '<button type="button" class="calendar-day calendar-day--tomorrow calendar-day--tomorrow-btn calendar-day--tomorrow-ov-trial" style="max-width:360px">'+
               '<div class="calendar-day-avatar calendar-day-avatar--initials" aria-hidden="true">CH</div>'+
-              '<div class="calendar-day-tomorrow-middle">'+
+              '<div class="calendar-day-tomorrow-identity">'+
                 '<span class="calendar-day-name">Cliente</span>'+
+                '<span class="calendar-day-tomorrow-note">'+
+                  '<span class="calendar-day-tomorrow-note__ln1">Fadi</span>'+
+                  '<span class="calendar-day-tomorrow-note__ln2">Day Centre</span>'+
+                '</span></div>'+
+              '<div class="calendar-day-tomorrow-override">'+
                 '<span class="'+esc(firstTomorrow.tomorrowClass)+'" aria-label="'+esc(firstTomorrow.label)+'"><span>'+esc(firstTomorrow.pillText)+'</span></span>'+
               '</div>'+
-              '<div class="tomorrow-venue-block"><span class="tomorrow-venue-block-time">3 to 4</span></div>'+
+              '<div class="tomorrow-venue-block tomorrow-venue-chip--acton">'+
+                '<span class="tomorrow-venue-block-time">3 to 4</span>'+
+                '<span class="tomorrow-venue-block-venue">ACTON</span></div>'+
             '</button></div>'
         ) : '')+
 

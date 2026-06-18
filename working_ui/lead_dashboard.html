@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-week-tag-colors" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-next-session-note" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -911,7 +911,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-victor-lead-photo"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260614-area-label-unify"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260614-next-session-note"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_sheet_back.js?v=20260614-dock-nav-v2"></script>
@@ -8982,8 +8982,14 @@
             var c = (notes || {})[effClientId] || (nameFromReplace ? { name: nameFromReplace, avatarFile: '' } : {});
             var slotRaw = String(s.timeSlotLabel || '').trim();
             var slot = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(slotRaw) : slotRaw;
-            var activity = String(s.activity || 'Swimming').trim();
+            var activity = String(s.activity || s.rosterService || 'Swimming').trim();
+            var rosterAreaRaw = String(s.rosterArea != null ? s.rosterArea : '').trim();
             var areaNote = rosterAreaLabelForSession(s, activity, portalStaffIsSupportWorkerForAreaNotes()) || '';
+            if(/day\s*centre/i.test(activity) && rosterAreaRaw && rosterAreaRaw.toLowerCase() !== 'day centre'){
+              areaNote = rosterAreaRaw + ' / Day Centre';
+            } else if(areaNote && activity && areaNote.toLowerCase() !== activity.toLowerCase() && areaNote.indexOf(' / ') < 0){
+              areaNote = areaNote + ' / ' + activity;
+            }
             var manualOv = String(s && s.override || '').trim().toUpperCase();
             var hasAdminAbsence = !!(ov && ov.override_type === 'client_absence_announced');
             var hasAdminCancelled = !!(ov && ov.override_type === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin);
@@ -9053,6 +9059,7 @@
               venue: s.venue || '—',
               avatarFile: photoUrl,
               areaNote: String(areaNote).trim(),
+              activity: activity,
               futureOverrideLabel: futureOverrideLabel,
               futureOverrideTone: futureOverrideTone
             };
@@ -11263,6 +11270,7 @@
               venue: item.venue != null ? String(item.venue) : '—',
               avatarFile: resolveTomorrowRowPhoto(name, clientId, item.avatarFile),
               areaNote: item.areaNote != null ? String(item.areaNote).trim() : '',
+              activity: item.activity != null ? String(item.activity).trim() : '',
               futureOverrideLabel: foLab,
               futureOverrideTone: foTone
             };
@@ -11280,6 +11288,7 @@
               venue: item && item.venue != null ? String(item.venue) : '—',
               avatarFile: resolveTomorrowRowPhoto(name, clientId, item && item.avatarFile),
               areaNote: item && item.areaNote != null ? String(item.areaNote).trim() : '',
+              activity: item && item.activity != null ? String(item.activity).trim() : '',
               futureOverrideLabel: foLab,
               futureOverrideTone: foTone
             };
@@ -11294,6 +11303,7 @@
             venue: '—',
             avatarFile: resolveTomorrowRowPhoto(name, clientId, item && item.avatarFile),
             areaNote: '',
+            activity: '',
             futureOverrideLabel: foLab,
             futureOverrideTone: foTone
           };
@@ -11344,25 +11354,17 @@
                 ? `<div class="calendar-day-avatar calendar-day-avatar--photo"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.remove();"/></div>`
                 : `<div class="calendar-day-avatar calendar-day-avatar--initials">${escapeHtml(clientInitials(row.name))}</div>`);
             const noteRaw = String(row.areaNote || '').trim();
+            const activityRaw = String(row.activity || '').trim();
           const ovRaw = String(row.futureOverrideLabel || '').trim();
           const isMakeUpTomorrowRow = row.futureOverrideTone === 'pink'
             && /make\s*up/i.test(ovRaw);
-          let noteHtml = '';
+          const noteHtml = typeof portalTomorrowAreaNoteHtml === 'function'
+            ? portalTomorrowAreaNoteHtml(noteRaw, activityRaw)
+            : '';
           let makeupPillHtml = '';
-          let noteWithOverride = '';
+          let noteWithOverride = [noteRaw, activityRaw, ovRaw].filter(Boolean).join(' · ');
           if(isMakeUpTomorrowRow){
-            noteWithOverride = [noteRaw, ovRaw].filter(Boolean).join(' · ');
-            if(noteRaw && typeof portalAreaNoteIconHtml === 'function'){
-              noteHtml = portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm', showLabel: true, layout: 'inline', labelText: noteRaw });
-            }
             makeupPillHtml = '<span class="tomorrow-makeup-pill" aria-label="Make up session"><span>MAKE UP</span></span>';
-          } else {
-            noteWithOverride = noteRaw
-              ? (ovRaw ? (noteRaw + ' · ' + ovRaw) : noteRaw)
-              : ovRaw;
-            noteHtml = noteRaw && typeof portalAreaNoteIconHtml === 'function'
-              ? portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm', showLabel: true, layout: 'inline', labelText: noteRaw })
-              : '';
           }
           const absentPillHtml = row.futureOverrideTone === 'absent-green'
             ? '<span class="tomorrow-absent-pill">ABSENT</span>'
@@ -11370,6 +11372,7 @@
           const cancelledPillHtml = row.futureOverrideTone === 'cancelled-green'
             ? '<span class="tomorrow-cancelled-pill" aria-label="Cancelled"><span>CANCELLED</span></span>'
             : '';
+          const overrideHtml = makeupPillHtml + absentPillHtml + cancelledPillHtml;
           const ovToneCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green'
             ? ' calendar-day--tomorrow-ov-done'
             : (row.futureOverrideTone === 'pink'
@@ -11384,7 +11387,7 @@
             );
             const absentRowCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' calendar-day--tomorrow-absent-noninteractive' : '';
             const absentRowTab = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' tabindex="-1"' : '';
-            const rowInner = `${avatar}<div class="calendar-day-tomorrow-middle"><span class="calendar-day-name">${n}</span>${noteHtml}${makeupPillHtml}${absentPillHtml}${cancelledPillHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
+            const rowInner = `${avatar}<div class="calendar-day-tomorrow-identity"><span class="calendar-day-name">${n}</span>${noteHtml}</div><div class="calendar-day-tomorrow-override">${overrideHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
             const rawClientId = escapeHtml(String(row.clientId || '').trim());
             const rawName = escapeHtml(String(row.name || '').trim());
             const timeSub = escapeHtml(String(timeShown || '').trim());

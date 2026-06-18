@@ -5998,12 +5998,12 @@
       min-width:0;
       margin-top:4px;
     }
-    /* Tomorrow sheet: foto | nombre (1fr) | caja sede + hora */
+    /* Tomorrow sheet: foto | nombre+nota | override | chip hora+sede */
     .calendar-day--tomorrow{
       display:grid;
-      grid-template-columns:44px minmax(0,1fr) max-content;
+      grid-template-columns:44px minmax(0,1fr) auto max-content;
       gap:8px 10px;
-      align-items:flex-start;
+      align-items:center;
       padding:10px 12px;
       text-align:left;
     }
@@ -6146,6 +6146,46 @@
       line-height:inherit;
     }
     /* Next session pills: mismas proporciones visuales que Today (sin ancho fijo) */
+    .calendar-day-tomorrow-identity{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      justify-content:center;
+      gap:2px;
+      min-width:0;
+    }
+    .calendar-day-tomorrow-note{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:0;
+      min-width:0;
+      max-width:100%;
+    }
+    .calendar-day-tomorrow-note__ln1,
+    .calendar-day-tomorrow-note__ln2{
+      display:block;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      line-height:1.15;
+      color:var(--muted);
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .calendar-day-tomorrow-override{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      justify-content:center;
+      gap:4px;
+      flex-shrink:0;
+      min-width:0;
+      max-width:9rem;
+    }
     .calendar-day-tomorrow-middle{
       display:flex;
       flex-direction:column;
