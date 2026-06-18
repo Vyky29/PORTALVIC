@@ -238,7 +238,7 @@
     if (scrollMode) {
       var scrollH = Math.round(nameLineH * 2.05);
       var scrollLabelFs = 8;
-      var scrollStackGap = 1;
+      var scrollStackGap = 0;
       return {
         iconPx: 30,
         areaIconPx: scrollH,
@@ -276,7 +276,7 @@
     );
     var iconPx = Math.max(dense ? 24 : 26, Math.round(areaIconPx * 0.92));
     var labelFs = Math.max(8, Math.min(11, Math.round(nameFont * 0.65)));
-    var stackGap = Math.max(1, Math.round(labelFs * 0.12));
+    var stackGap = 0;
     var labelBlock = Math.ceil(labelFs * 1.12) + stackGap;
     return {
       iconPx: iconPx,

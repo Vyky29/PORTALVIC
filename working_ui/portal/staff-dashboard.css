@@ -2441,11 +2441,11 @@
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.18) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
@@ -2526,10 +2526,10 @@
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
-      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
-      background-color:#262626 !important;
+      background:linear-gradient(180deg,#828282 0%,#616161 100%) !important;
+      background-color:#616161 !important;
       border-color:rgba(255,255,255,.35) !important;
-      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
       transform:none;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training:hover{
@@ -2584,11 +2584,11 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.18) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
@@ -3378,10 +3378,10 @@
       box-shadow:0 10px 26px rgba(236,72,153,.28);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover{
-      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
-      background-color:#262626 !important;
+      background:linear-gradient(180deg,#828282 0%,#616161 100%) !important;
+      background-color:#616161 !important;
       border-color:rgba(255,255,255,.35) !important;
-      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-other:hover{
       border-color:rgba(71,85,105,.5);
@@ -4645,7 +4645,8 @@
     }
     .section-card--today .session-line--name .session-chips-below-name{
       display:flex;
-      flex-direction:column;
+      flex-direction:row;
+      flex-wrap:wrap;
       align-items:center;
       justify-content:center;
       gap:4px;
@@ -4686,11 +4687,18 @@
       min-width:0;
     }
     .portal-session-slot-chip--updated{
-      color:#1e4a8a;
-      background:linear-gradient(180deg,#dbeafe 0%,#bfdbfe 100%);
-      border:1px solid rgba(59,130,246,.45);
-      box-shadow:0 1px 4px rgba(37,99,235,.16);
+      color:#fff;
+      background:linear-gradient(145deg,#f59e0b,#d97706);
+      border:1px solid rgba(180,95,20,.48);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(217,119,6,.22);
       font-weight:800;
+      text-transform:none;
+    }
+    .portal-session-slot-chip--updated > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
     }
     .portal-session-slot-chip--pending{
       color:#fff;
@@ -4723,10 +4731,10 @@
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
     }
     .portal-session-slot-chip--trial{
-      color:#6d28d9;
-      background:#ede9fe;
-      border:1px solid rgba(167,139,250,.65);
-      box-shadow:none;
+      color:#fff;
+      background:linear-gradient(145deg,#8b5cf6,#7c3aed);
+      border:1px solid rgba(109,40,217,.55);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(124,58,237,.28);
       text-transform:none;
     }
     .portal-session-slot-chip--trial > span{
@@ -4736,9 +4744,28 @@
       text-align:center;
     }
     .portal-session-slot-chip--plain{
-      color:var(--muted);
-      background:rgba(23,50,71,.06);
-      border:1px solid rgba(45,132,179,.22);
+      color:#fff;
+      background:linear-gradient(145deg,#64748b,#475569);
+      border:1px solid rgba(51,65,85,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 2px 8px rgba(51,65,85,.18);
+    }
+    .portal-session-slot-chip--training{
+      color:#fff;
+      background:linear-gradient(145deg,#3b82f6,#2563eb);
+      border:1px solid rgba(37,99,235,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(37,99,235,.22);
+    }
+    .portal-session-slot-chip--shadowing{
+      color:#fff;
+      background:linear-gradient(145deg,#38bdf8,#0284c7);
+      border:1px solid rgba(14,165,233,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(14,165,233,.22);
+    }
+    .portal-session-slot-chip--meeting{
+      color:#fff;
+      background:linear-gradient(145deg,#84cc16,#65a30d);
+      border:1px solid rgba(101,163,13,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
     }
     .section-card--today .session-card-body--today-ov-split .session-line--name .session-name-stack{
       gap:2px;
@@ -6851,11 +6878,11 @@
     /* Cancelled override: beat mobile-frame white tile reset (black card, white text) */
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.18) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
     }
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
@@ -6865,21 +6892,21 @@
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:focus-visible,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
-      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
-      background-color:#262626 !important;
+      background:linear-gradient(180deg,#828282 0%,#616161 100%) !important;
+      background-color:#616161 !important;
       border-color:rgba(255,255,255,.35) !important;
-      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
       transform:none;
     }
-    /* Cancelled quick-menu tile — soft black + white type (beat generic white .menu-btn reset) */
+    /* Cancelled quick-menu tile — dark grey + white type (beat generic white .menu-btn reset) */
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#2e2e2e 0%,#141414 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.2) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.38) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
     }
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
@@ -6902,11 +6929,37 @@
     }
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:hover,
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
-      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
-      background-color:#262626 !important;
+      background:linear-gradient(180deg,#828282 0%,#616161 100%) !important;
+      background-color:#616161 !important;
       border-color:rgba(255,255,255,.35) !important;
-      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
       transform:none;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled.menu-btn--portal-pulse:not(:active){
+      animation:none !important;
+    }
+    /* Cancelled — final beat-anything layer (logo-lite Admin Changes stack) */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.notice.menu-btn--qm-ov-cancelled,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
+      color:#fff !important;
+      -webkit-text-fill-color:#fff !important;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
+      color:#f0f0f0 !important;
+      -webkit-text-fill-color:#f0f0f0 !important;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
       min-height:76px;

@@ -278,14 +278,8 @@
       if (m === 30) return h12 + ".30";
       return h12 + "." + String(m).padStart(2, "0");
     }
-    function meridiem(endHm) {
-      var bits = String(endHm || "").split(":");
-      var h = Number(bits[0]);
-      if (!Number.isFinite(h)) return "pm";
-      return h >= 12 ? "pm" : "am";
-    }
     if (!start && !end) return "";
-    if (start && end) return part(start) + " to " + part(end) + " " + meridiem(end);
+    if (start && end) return part(start) + " to " + part(end);
     return part(start || end);
   }
 

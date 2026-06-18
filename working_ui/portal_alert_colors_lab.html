@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-today-lifecycle" />
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-chip-white" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
     *{box-sizing:border-box}
@@ -194,6 +194,7 @@
     }
     .lab-today-panel .session-chips-below-name{
       flex-wrap:wrap;min-width:0;overflow:visible !important;
+      flex-direction:row;align-items:center;justify-content:center;gap:4px;
     }
     .lab-today-panel .session-chips-below-name--wrap{
       flex-direction:row;
@@ -228,14 +229,14 @@
       background:rgba(161,161,170,.28);color:#52525b;border-color:rgba(113,113,122,.4);
     }
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#262626 0%,#171717 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.18) !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
       color:#fff !important;
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5 !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important;-webkit-text-fill-color:#fff !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f0f0f0 !important;-webkit-text-fill-color:#f0f0f0 !important}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65) !important}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
       background:rgba(255,255,255,.14) !important;color:#fff !important;border-color:rgba(255,255,255,.22) !important;
@@ -359,10 +360,9 @@
         </div>
       </div>
       <h3 style="margin:20px 0 8px;font-size:.9rem">Today — ciclo de vida (3 formas)</h3>
-      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — color del tipo (blanco, trial, makeup, admin…) · <strong>(2) sesión empezada</strong> — tarjeta naranja + chip Pending (junto al chip previo si había) · <strong>(3) review hecho</strong> — tarjeta verde + chip Submitted / Absent / Cancelled.</p>
+      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — catálogo completo (normal, trial, makeup, Updated by admin, training, NO PARTICIPANT, Closed…) · <strong>(2) sesión empezada</strong> — naranja + Pending · <strong>(3) review hecho</strong> — verde + Submitted / Absent / Cancelled. Chips: <strong>texto blanco</strong> sobre color del tipo.</p>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodaySection"></div>
-      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — otros tipos (sin ciclo naranja→verde)</h3>
-      <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodayOverridesSection"></div>
+      <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodayOverridesSection" hidden aria-hidden="true"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
       <div class="lab-chip-demo-grid" id="labChipDemos"></div>
       <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
@@ -407,12 +407,14 @@
       { estado: 'Normal + feedback enviado', card: 'session-card--review-done', chip: 'portal-session-slot-chip--submitted' },
       { estado: 'Trial (override activo)', card: 'session-card--ov-trial override--trial', chip: 'portal-session-slot-chip--trial' },
       { estado: 'MakeUp (override activo)', card: 'session-card--ov-pink override--replace', chip: 'portal-session-slot-chip--makeup' },
+      { estado: 'Updated by admin', card: 'session-card--admin-adjusted', chip: 'portal-session-slot-chip--updated' },
       { estado: 'Absent', card: 'override--absent session-card--ov-green', chip: 'portal-session-slot-chip--absent' },
       { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
-      { estado: 'Tras revert — vuelve a normal', card: '(default blanco)', chip: '— participant original' },
-      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'Room / Pool (symbol)' },
-      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'Room / Pool (symbol)' },
-      { estado: 'Meeting (admin session_add)', card: 'session-card--ov-meeting', chip: '—' }
+      { estado: 'NO PARTICIPANT (slot abierto)', card: 'session-card--available session-card--ov-yellow', chip: '—' },
+      { estado: 'Closed', card: 'session-card--closed', chip: '—' },
+      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'portal-session-slot-chip--training' },
+      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing' },
+      { estado: 'Meeting (admin session_add)', card: 'session-card--ov-meeting', chip: 'portal-session-slot-chip--meeting' },
     ];
 
     var CARD_FIELDS = [
@@ -459,7 +461,7 @@
           colors: {
             bg1:'#f5f0ff', bg2:'#f5f0ff', border:'rgba(167,139,250,.5)', shadow:'rgba(167,139,250,.12)',
             strong:'#5b21b6', sub:'#6d28d9', iconBg:'rgba(237,233,254,.9)', iconFg:'#6d28d9', iconBorder:'rgba(167,139,250,.55)',
-            chipBg:'#ede9fe', chipFg:'#6d28d9', chipBorder:'rgba(167,139,250,.65)', termGlow:'rgba(167,139,250,.35)'
+            chipBg:'#7c3aed', chipFg:'#fff', chipBorder:'rgba(109,40,217,.55)', termGlow:'rgba(167,139,250,.35)'
           }
         },
         {
@@ -474,7 +476,7 @@
           colors: {
             bg1:'#fdf2f8', bg2:'#fce7f3', border:'rgba(219,39,119,.42)', shadow:'rgba(236,72,153,.22)',
             strong:'#9d174d', sub:'#be185d', iconBg:'rgba(236,72,153,.2)', iconFg:'#be185d', iconBorder:'rgba(219,39,119,.35)',
-            chipBg:'#fce7f3', chipFg:'#9d174d', chipBorder:'rgba(219,39,119,.4)', termGlow:'rgba(236,72,153,.5)'
+            chipBg:'#fce7f3', chipFg:'#fff', chipBorder:'rgba(219,39,119,.4)', termGlow:'rgba(236,72,153,.5)'
           }
         },
         {
@@ -489,7 +491,7 @@
           colors: {
             bg1:'#ecfdf5', bg2:'#d1fae5', border:'rgba(5,150,105,.45)', shadow:'rgba(16,185,129,.22)',
             strong:'#065f46', sub:'#047857', iconBg:'rgba(16,185,129,.2)', iconFg:'#047857', iconBorder:'rgba(5,150,105,.35)',
-            chipBg:'#ccfbf1', chipFg:'#0f766e', chipBorder:'rgba(13,148,136,.4)', termGlow:'rgba(13,148,136,.5)'
+            chipBg:'#0d9488', chipFg:'#fff', chipBorder:'rgba(13,148,136,.4)', termGlow:'rgba(13,148,136,.5)'
           }
         },
         {
@@ -502,9 +504,9 @@
           sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Wall · Acton',
           haloNote: 'schedule-cancelled (negro)',
           colors: {
-            bg1:'#262626', bg2:'#171717', border:'rgba(255,255,255,.18)', shadow:'rgba(0,0,0,.35)',
-            strong:'#fff', sub:'#f4f4f5', iconBg:'rgba(255,255,255,.14)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.22)',
-            chipBg:'#171717', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(0,0,0,.48)'
+            bg1:'#707070', bg2:'#525252', border:'rgba(255,255,255,.22)', shadow:'rgba(0,0,0,.32)',
+            strong:'#fff', sub:'#f0f0f0', iconBg:'rgba(255,255,255,.16)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.24)',
+            chipBg:'#525252', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(82,82,82,.48)'
           }
         },
         {
@@ -603,17 +605,31 @@
     }
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
+    /** Cancelled tile — always dark grey (stop icon), never user-editable to white. */
+    function cancelledCanonicalColors(){
+      return {
+        bg1:'#707070', bg2:'#525252', border:'rgba(255,255,255,.22)', shadow:'rgba(0,0,0,.32)',
+        strong:'#fff', sub:'#f0f0f0', iconBg:'rgba(255,255,255,.16)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.24)',
+        chipBg:'#525252', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(82,82,82,.48)'
+      };
+    }
+
     function mergeOverrideDefaults(saved){
       var defaults = defaultOverrides();
       var byId = {};
       (saved || []).forEach(function(s){ if(s && s.id && s.id !== 'slot') byId[s.id] = s; });
       return defaults.map(function(d){
+        if(d.id === 'cancelled'){
+          var s = byId[d.id];
+          return Object.assign({}, d, s || {}, { colors: cancelledCanonicalColors(),
+            termClass: String(s && s.termClass || '').trim() || d.termClass || '',
+            weekClass: String(s && s.weekClass || '').trim() || d.weekClass || '',
+            weekText: String(s && s.weekText || '').trim() || d.weekText || ''
+          });
+        }
         var s = byId[d.id];
         if(!s) return d;
         var colors = Object.assign({}, d.colors || {}, s.colors || {});
-        if(d.id === 'cancelled' && !overrideColorsAreDark(colors)){
-          colors = Object.assign({}, d.colors);
-        }
         return Object.assign({}, d, s, { colors: colors,
           termClass: String(s.termClass || '').trim() || d.termClass || '',
           weekClass: String(s.weekClass || '').trim() || d.weekClass || '',
@@ -711,11 +727,11 @@
     function buildLiveCss(){
       var lines = [];
       state.overrides.forEach(function(ov){
-        var c = ov.colors || {};
+        var c = ov.id === 'cancelled' ? cancelledCanonicalColors() : (ov.colors || {});
         var sel = cardSelector(ov.cardClass);
-        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border:2px solid '+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important}');
-        lines.push(sel+' .menu-btn-copy strong{color:'+c.strong+' !important}');
-        lines.push(sel+' .menu-btn-sub{color:'+c.sub+' !important}');
+        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border:2px solid '+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important;color:'+c.strong+' !important}');
+        lines.push(sel+' .menu-btn-copy strong{color:'+c.strong+' !important;-webkit-text-fill-color:'+c.strong+' !important}');
+        lines.push(sel+' .menu-btn-sub{color:'+c.sub+' !important;-webkit-text-fill-color:'+c.sub+' !important}');
         lines.push(sel+' .menu-btn-chev{color:'+c.strong+'99 !important}');
         lines.push(sel+' .menu-btn-icon{background:'+c.iconBg+' !important;color:'+c.iconFg+' !important;border-color:'+c.iconBorder+' !important}');
         if(ov.pillClass){
@@ -1152,10 +1168,19 @@
           'portal-session-slot-chip--trial', 'Trial/New Participant', teachingPool),
         todayCatalogRow('session-card--ov-pink override--replace', '11 to 12', 'Acton', 'Eddie Ri',
           'portal-session-slot-chip--makeup', 'Make up', hubRoom),
+        todayCatalogRow('session-card--admin-adjusted', '4.30 to 5', 'Acton', 'Aqsa',
+          'portal-session-slot-chip--updated', 'Updated by admin', bigPool),
         todayCatalogRow('session-card--ov-training', '10 to 11 am', 'Westway', 'Training session',
-          'portal-session-slot-chip--plain', 'with Javi', hubRoom),
-        todayCatalogRow('session-card--ov-blue', '4.30 to 5', 'Acton', 'Aqsa',
-          'portal-session-slot-chip--updated', 'Updated', bigPool)
+          'portal-session-slot-chip--training', 'with Javi', hubRoom),
+        todayCatalogRow('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing',
+          'portal-session-slot-chip--shadowing', 'Roberto', teachingPool),
+        todayCatalogRowChips('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Team meeting', [
+          ['portal-session-slot-chip--meeting', 'Swimming Instructors'],
+          ['portal-session-slot-chip--meeting', 'Javi'],
+          ['portal-session-slot-chip--meeting', 'Raul']
+        ], hubRoom),
+        todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
+        todayCatalogRow('session-card--closed', '12 to 1 pm', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
       ].join('');
 
       var phase2 = [
@@ -1194,46 +1219,32 @@
               '<span class="today-section-date">Catálogo — ciclo de vida</span>'+
             '</h2></div>'+
           '<div class="today-grid today-grid--session-scroll"><div class="today-grid-rows" role="list">'+
-            todayLifecycleHead('before', '1 · Antes de la sesión', 'color del tipo · sin Pending')+
+            todayLifecycleHead('before', '1 · Antes de la sesión', 'todos los tipos · sin Pending')+
             phase1+
             todayLifecycleHead('pending', '2 · Sesión empezada / review pendiente', 'naranja + Pending (+ chip previo si aplica)')+
             phase2+
             todayLifecycleHead('done', '3 · Review completado', 'verde + Submitted / Absent / Cancelled')+
             phase3+
           '</div></div>'+
-          '<p class="lab-sub">Referencia visual de las <strong>3 formas</strong>. Clases: <code>session-card--review-needed</code> (naranja) · <code>session-card--review-done</code> (verde). El naranja entra cuando <strong>empieza la sesión</strong> — igual que al abrir el review al final del turno.</p>'+
+          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). Chips: texto blanco sobre fondo sólido del tipo (trial = lila más oscuro que la card). <code>Updated by admin</code> = card amarilla + chip ámbar.</p>'+
         '</div>';
 
-      if(!overrideHost) return;
-      var overrideRows = [
-        todayCatalogRow('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing',
-          'portal-session-slot-chip--plain', 'Roberto', teachingPool),
-        todayCatalogRowChips('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Team meeting', [
-          ['portal-session-slot-chip--plain', 'Swimming Instructors'],
-          ['portal-session-slot-chip--plain', 'Javi'],
-          ['portal-session-slot-chip--plain', 'Raul']
-        ], hubRoom),
-        todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
-        todayCatalogRow('session-card--closed', '12 to 1 pm', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
-      ].join('');
-
-      var legend =
-        'Tipos que no siguen el ciclo naranja→verde: <strong>Shadowing / Meeting / Training</strong> (admin session_add) · '+
-        '<strong>Slot abierto</strong> (amarillo) · <strong>Closed</strong> (rojo). Trial / Makeup / Updated aparecen arriba en el ciclo.';
-
-      overrideHost.innerHTML = todayDayPanel('TODAY', 'Otros tipos', overrideRows, legend);
+      if(overrideHost) overrideHost.innerHTML = '';
     }
 
     function renderChipLegend(){
       var chips = [
-        ['portal-session-slot-chip--pending', 'Pending', 'Feedback due'],
-        ['portal-session-slot-chip--submitted', 'Submitted', 'Feedback done'],
-        ['portal-session-slot-chip--trial', 'Trial/New Participant', 'Override trial'],
-        ['portal-session-slot-chip--makeup', 'Make up', 'Override makeup'],
-        ['portal-session-slot-chip--absent', 'Absent', 'Absence'],
-        ['portal-session-slot-chip--cancelled', 'Cancelled', 'Slot cleared'],
-        ['portal-session-slot-chip--updated', 'Updated', 'Time changed'],
-        ['portal-session-slot-chip--plain', 'Pool', 'Symbol / admin note']
+        ['portal-session-slot-chip--pending', 'Pending', 'Feedback due · naranja'],
+        ['portal-session-slot-chip--submitted', 'Submitted', 'Feedback done · verde'],
+        ['portal-session-slot-chip--trial', 'Trial/New Participant', 'Lila oscuro · card lila claro'],
+        ['portal-session-slot-chip--makeup', 'Make up', 'Rosa'],
+        ['portal-session-slot-chip--updated', 'Updated by admin', 'Ámbar · card amarilla'],
+        ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
+        ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
+        ['portal-session-slot-chip--training', 'with Javi', 'Training · azul'],
+        ['portal-session-slot-chip--shadowing', 'Roberto', 'Shadowing · cielo'],
+        ['portal-session-slot-chip--meeting', 'Attendee', 'Meeting · lima'],
+        ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']
       ];
       return '<div class="lab-chip-demo-box" style="grid-column:1/-1"><h4>Chips bajo nombre (Today)</h4>'+
         '<div class="lab-chip-legend">'+chips.map(function(c){

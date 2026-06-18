@@ -95,11 +95,11 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260618-pending-orange-admin" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260618-cancelled-grey" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-lane-caption" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-faq-v2" />
 </head>
 <body class="lead-dashboard">
@@ -899,7 +899,7 @@
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-cover-per-slot"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
@@ -911,7 +911,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-victor-lead-photo"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260618-lane-caption"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260618-area-stack-tight"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_sheet_back.js?v=20260614-dock-nav-v2"></script>
@@ -1980,7 +1980,7 @@
         if(m === 30) return h + '.30';
         return h + '.' + String(m).padStart(2, '0');
       }
-      return part(start) + ' to ' + part(end) + ' ' + meridiemFromHHmm(end);
+      return part(start) + ' to ' + part(end);
     }
     function stripMeridiemFromSlotLabel(str){
       let s = String(str).trim();
@@ -5104,7 +5104,8 @@
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
     function todaySessionCardInnerHtml(item){
-      const time = escapeHtml(String(item.time || '').trim());
+      const timeRaw = String(item.time || '').trim();
+      const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const ovBadge = item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge

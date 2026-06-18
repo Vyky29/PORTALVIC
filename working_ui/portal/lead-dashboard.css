@@ -2489,11 +2489,11 @@
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#2e2e2e 0%,#141414 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.2) !important;
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.38) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important;-webkit-text-fill-color:#fff !important}
@@ -4474,7 +4474,8 @@
     }
     .section-card--today .session-line--name .session-chips-below-name{
       display:flex;
-      flex-direction:column;
+      flex-direction:row;
+      flex-wrap:wrap;
       align-items:center;
       justify-content:center;
       gap:4px;
@@ -6481,12 +6482,25 @@
     }
     .sheet.sheet--fullscreen.sheet--mobile-frame .menu-btn:active{transform:translateY(0)}
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled,
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#2e2e2e 0%,#141414 100%) !important;
-      background-color:#171717 !important;
-      border:2px solid rgba(255,255,255,.2) !important;
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      border:2px solid rgba(255,255,255,.22) !important;
       color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.38) !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
+      background:linear-gradient(180deg,#828282 0%,#616161 100%) !important;
+      background-color:#616161 !important;
+      border-color:rgba(255,255,255,.35) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
+      transform:none;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled.menu-btn--portal-pulse:not(:active){
+      animation:none !important;
     }
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
       color:#fff !important;
