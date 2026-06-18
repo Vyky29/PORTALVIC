@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-new-shift-soft-yellow" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-training-shadowing-meeting" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -4767,6 +4767,9 @@
       if(k === 'reverted') return 'menu-btn--qm-ov-reverted';
       if(k === 'new_shift' || k === 'roster_day') return 'menu-btn--qm-ov-new-shift';
       if(k === 'new_participant') return 'menu-btn--qm-ov-new-participant';
+      if(k === 'training') return 'menu-btn--qm-ov-training';
+      if(k === 'shadowing') return 'menu-btn--qm-ov-shadowing';
+      if(k === 'meeting') return 'menu-btn--qm-ov-meeting';
       return 'menu-btn--qm-ov-other';
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
@@ -5821,6 +5824,9 @@
       const t = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
       if(t === 'green') return ' session-card--ov-green';
       if(t === 'yellow') return ' session-card--ov-yellow';
+      if(t === 'training') return ' session-card--ov-training';
+      if(t === 'shadowing') return ' session-card--ov-shadowing';
+      if(t === 'meeting') return ' session-card--ov-meeting';
       if(t === 'pink') return ' session-card--ov-pink';
       if(t === 'trial' || t === 'purple') return ' session-card--ov-trial';
       if(t === 'blue') return ' session-card--ov-blue';
@@ -6636,12 +6642,30 @@
       const ordSuffix = ord ? ord.replace(/^\d+/, '').toLowerCase() : '';
       return '(' + da + ordSuffix + '/' + mon + ')';
     }
-    function portalOverrideQuickMenuNoteSnippet(row){
-      let pl = null;
+    function portalOverrideQuickMenuViewDayFromRow(row){
+      const iso = normaliseIsoDate(row && row.session_date);
+      if(!iso) return '';
       try{
-        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
-      }catch(_){ pl = null; }
-      return String(row && row.reason || pl && (pl.note || pl.notes) || '').trim();
+        return new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      }catch(_){
+        return '';
+      }
+    }
+    /** Roster area note for staff (Hub Room, Teaching Pool, …) — not admin override reason. */
+    function portalOverrideQuickMenuAreaNoteLabel(row){
+      const viewDay = portalOverrideQuickMenuViewDayFromRow(row);
+      const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function'
+        ? portalFindSpreadsheetSessionMatchingOverride(row, viewDay)
+        : null;
+      const session = base || (typeof portalSyntheticSessionFromOverride === 'function'
+        ? portalSyntheticSessionFromOverride(row, viewDay)
+        : null);
+      if(!session) return '';
+      const activity = String(session.activity || 'Swimming').trim();
+      const supportHide = typeof portalStaffIsSupportWorkerForAreaNotes === 'function'
+        ? portalStaffIsSupportWorkerForAreaNotes()
+        : false;
+      return String(rosterAreaLabelForSession(session, activity, supportHide, viewDay) || '').trim();
     }
     function portalOverrideQuickMenuServiceLabel(row){
       let pl = null;
@@ -6672,8 +6696,8 @@
       const slot = portalOverrideQuickMenuTimeSlotLabel(row);
       if(slot) parts.push(slot);
       if(opts.includeNote !== false){
-        const note = portalOverrideQuickMenuNoteSnippet(row);
-        if(note) parts.push(note);
+        const areaNote = portalOverrideQuickMenuAreaNoteLabel(row);
+        if(areaNote) parts.push(areaNote);
       }
       if(opts.includeVenue !== false){
         const venue = String(row && row.anchor_venue || '').trim();
@@ -6896,7 +6920,31 @@
         if(pl && pl.cancelled_by_admin) return 'cancelled';
       }
       if(portalOverrideIsInstructorReplacedOffRow(row)) return 'shift_cancelled';
+      if(t === 'session_add'){
+        const sk = String(row.payload && row.payload.kind || '').trim().toLowerCase();
+        if(sk === 'shadowing') return 'shadowing';
+        if(sk === 'meeting') return 'meeting';
+        return 'training';
+      }
       return 'other';
+    }
+    function portalSessionAddQuickMenuSub(row){
+      const parts = [];
+      const slot = typeof portalOverrideQuickMenuTimeSlotLabel === 'function'
+        ? portalOverrideQuickMenuTimeSlotLabel(row)
+        : '';
+      if(slot) parts.push(slot);
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      const locRaw = String(pl && pl.location || '').trim().toLowerCase();
+      const locLabel = locRaw === 'both' ? 'Room & Pool'
+        : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+      if(locLabel) parts.push(locLabel);
+      const venue = String(row && row.anchor_venue || '').trim();
+      if(venue) parts.push(venue);
+      return parts.join(' · ');
     }
     /** First name (or first token) for quick-menu titles such as "Absent - Mary". */
     function portalClientFirstNameTokenForOverride(row){
@@ -6997,6 +7045,23 @@
             : '');
         return {
           id: dismissId || portalScheduleOverrideRowDismissKey(row),
+          iso: isoNav,
+          title: title,
+          sub: sub,
+          kind: kind
+        };
+      }
+      if(kind === 'training' || kind === 'shadowing' || kind === 'meeting'){
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
+          ? portalOverrideCardDateParenLabel(isoNav)
+          : '';
+        const venue = String(row && row.anchor_venue || '').trim();
+        const baseTitle = kind === 'shadowing' ? 'SHADOWING' : (kind === 'meeting' ? 'MEETING' : 'TRAINING');
+        title = baseTitle + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+        sub = typeof portalSessionAddQuickMenuSub === 'function' ? portalSessionAddQuickMenuSub(row) : '';
+        return {
+          id: portalScheduleOverrideRowDismissKey(row),
           iso: isoNav,
           title: title,
           sub: sub,
@@ -8230,7 +8295,7 @@
         const sess = box.session;
         if(!sess || !sess.user) return;
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
-        const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,reason,status';
+        const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
         for(let start = 0; start < isoList.length; start += CHUNK){
@@ -9213,7 +9278,7 @@
               time,
               kind: 'available',
               clientId: s.clientId,
-              name: 'No participant',
+              name: 'NO PARTICIPANT',
               activity,
               areaLabel: '',
               poolLocationLabel: null,
@@ -9252,7 +9317,7 @@
               time,
               kind: 'available',
               clientId: s.clientId,
-              name: 'No participant',
+              name: 'NO PARTICIPANT',
               activity,
               areaLabel,
               poolLocationLabel,
@@ -9399,7 +9464,7 @@
             time: time0,
             kind: 'available',
             clientId: base.clientId,
-            name: 'No participant',
+            name: 'NO PARTICIPANT',
             activity: activity0,
             areaLabel: '',
             poolLocationLabel: null,
@@ -9525,8 +9590,9 @@
         if(ov.override_type !== 'session_add') return;
         if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm) return;
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
-        const label = kind === 'shadowing' ? 'Shadowing' : 'Training';
-        const slug = kind === 'shadowing' ? 'shadowing' : 'training';
+        const label = kind === 'shadowing' ? 'Shadowing' : (kind === 'meeting' ? 'Meeting' : 'Training');
+        const slug = kind === 'meeting' ? 'meeting' : (kind === 'shadowing' ? 'shadowing' : 'training');
+        const cardTone = kind === 'shadowing' ? 'shadowing' : (kind === 'meeting' ? 'meeting' : 'training');
         const stT = portalHmFromDbTime(ov.anchor_start) || '09:00';
         const enT = portalHmFromDbTime(ov.anchor_end) || stT;
         const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
@@ -9562,7 +9628,7 @@
           actionsDisabled: true,
           detailsOpenAllowed: true,
           portalOverrideSuppressReviewOrange: true,
-          portalOverrideCardTone: trainingEnded ? 'green' : 'yellow',
+          portalOverrideCardTone: trainingEnded ? 'green' : cardTone,
           portalOverrideAlertPill: trainingEnded ? 'COMPLETED' : '',
           portalOverrideSymbolText: trainingEnded ? '' : (locLabel || label),
           scheduleAdminAdjusted: true,
@@ -11263,7 +11329,7 @@
                 futureOverrideTone = String(ovMeta.tone || '').trim();
               }
             }
-            var displayName = c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'No participant');
+            var displayName = c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'NO PARTICIPANT');
             var photoUrl = typeof resolveParticipantPhotoUrl === 'function'
               ? resolveParticipantPhotoUrl(displayName, effClientId)
               : '';
@@ -12217,7 +12283,7 @@
           : (item.poolLocationLabel ? `, ${item.poolLocationLabel}` : '');
         const venAria = portalTodaySessionVenueLabel(item);
         const venPart = venAria && venAria !== '—' ? `, ${venAria}` : '';
-        card.setAttribute('aria-label', item.kind === 'available' ? `No participant — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}`);
+        card.setAttribute('aria-label', item.kind === 'available' ? `NO PARTICIPANT — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}`);
         card.innerHTML = todaySessionCardInnerHtml(item);
         card.addEventListener('click', () => openClient(item));
         rowsWrap.appendChild(card);
@@ -12487,7 +12553,7 @@
         return { tone: 'pink', label: 'Make Up Session', priority: 3, type: best.type };
       }
       if(best.type === 'slot_clear_client'){
-        return { tone: 'clear', label: 'No participant', priority: 1, type: best.type };
+        return { tone: 'clear', label: 'NO PARTICIPANT', priority: 1, type: best.type };
       }
       if(best.type === 'slot_clear_client_cancelled'){
         return { tone: 'admin', label: 'Cancelled', priority: 2, type: best.type };

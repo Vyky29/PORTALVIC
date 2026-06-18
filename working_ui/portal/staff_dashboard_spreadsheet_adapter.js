@@ -611,7 +611,7 @@
 
     if (!clientNotesById.available) {
       clientNotesById.available = Object.assign({}, EMPTY_NOTE, {
-        name: "No participant",
+        name: "NO PARTICIPANT",
         generalLead: "Open roster slot — new clients welcome",
       });
     }

@@ -976,11 +976,16 @@
     .ash-table tr:last-child td { border-bottom: none; }
     .ash-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #f1f5fb; font-size: 12px; font-weight: 700; color: var(--navy); margin: 2px 4px 2px 0; }
     .ash-pill--client { background: #dbeafe; color: #1e40af; }
-    .ash-pill--no-participant,
-    .ash-badge--open-slot {
+    .ash-pill--no-participant {
       background: #fb923c;
       color: #fff;
       border: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .ash-badge--available,
+    .ash-badge--open-slot {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+      color: #92400e;
+      border: 1px solid rgba(245, 158, 11, 0.42);
     }
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }

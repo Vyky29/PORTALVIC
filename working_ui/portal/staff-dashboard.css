@@ -2414,6 +2414,39 @@
       color:#b91c1c;
       border-color:rgba(220,38,38,.32);
     }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training{
+      background:linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%);
+      border:2px solid rgba(99,102,241,.42);
+      box-shadow:0 6px 18px rgba(99,102,241,.2);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-copy strong{color:#4338ca}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-sub{color:#4f46e5}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-chev{color:rgba(67,56,202,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-icon{
+      background:rgba(99,102,241,.22);color:#4338ca;border-color:rgba(99,102,241,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing{
+      background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
+      border:2px solid rgba(14,165,233,.42);
+      box-shadow:0 6px 18px rgba(14,165,233,.2);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-copy strong{color:#0369a1}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-sub{color:#0284c7}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-chev{color:rgba(3,105,161,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-icon{
+      background:rgba(14,165,233,.2);color:#0369a1;border-color:rgba(14,165,233,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border:2px solid rgba(132,204,22,.45);
+      box-shadow:0 6px 18px rgba(132,204,22,.2);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-copy strong{color:#4d7c0f}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-sub{color:#65a30d}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-chev{color:rgba(77,124,15,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-icon{
+      background:rgba(132,204,22,.22);color:#4d7c0f;border-color:rgba(132,204,22,.38);
+    }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent:hover{
       border-color:rgba(5,150,105,.65);
       box-shadow:0 10px 26px rgba(16,185,129,.28);
@@ -3428,6 +3461,18 @@
     .session-card--ov-yellow{
       background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);
       border-color:rgba(200,160,40,.55);
+    }
+    .session-card--ov-training{
+      background:linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%);
+      border-color:rgba(99,102,241,.42);
+    }
+    .session-card--ov-shadowing{
+      background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
+      border-color:rgba(14,165,233,.42);
+    }
+    .session-card--ov-meeting{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.45);
     }
     .session-card--ov-pink{
       background:rgba(252,233,241,.92);

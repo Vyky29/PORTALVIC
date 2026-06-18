@@ -1670,7 +1670,7 @@
   }
 
   function rosterOpenSlotDisplayLabel() {
-    return "No participant";
+    return "NO PARTICIPANT";
   }
 
   function htmlParticipantPill(name, escFn, slotOpt) {
@@ -1696,8 +1696,8 @@
   function htmlOpenSlotStatusBadge(escFn) {
     var esc = escFn || esc;
     return (
-      '<span class="ash-badge ash-badge--open-slot">' +
-      esc(rosterOpenSlotDisplayLabel()) +
+      '<span class="ash-badge ash-badge--available">' +
+      esc("AVAILABLE") +
       "</span>"
     );
   }

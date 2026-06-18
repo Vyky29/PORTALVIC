@@ -364,16 +364,19 @@
     var NOTIF_CATALOG = [
       { label: 'Announcement (pendiente firma)', cardClass: 'menu-btn--announcement-attention', donde: 'Quick menu · Need your signature · halo rojo' },
       { label: 'Announcement (firmado)', cardClass: 'menu-btn--announcement-signed', donde: 'Quick menu · Previously signed' },
-      { label: 'Reminder admin · Notes for workers', cardClass: 'menu-btn--reminder-attention', donde: 'Reminder category notes · naranja/dorado' },
-      { label: 'Reminder admin · Training', cardClass: 'menu-btn--reminder-attention', donde: 'Reminder category training' },
+      { label: 'Admin reminder (dentro del sheet)', cardClass: 'menu-btn--reminder-attention', donde: 'No es tarjeta suelta en prod — entra en «New Announcement/Reminder» (portal_staff_announcements message_type=reminder)' },
       { label: 'Outstanding feedback (pendiente)', cardClass: 'menu-btn--qm-outstanding-feedback--need', donde: 'Feedbacks · naranja pulse' },
       { label: 'Outstanding feedback (al día)', cardClass: 'menu-btn--qm-outstanding-feedback--complete', donde: 'Feedbacks · naranja suave' },
-      { label: 'Venue reminder', cardClass: 'menu-btn--qm-reminder-venue', donde: 'Feedbacks · opening/closing late' },
+      { label: 'Venue report (tarde)', cardClass: 'menu-btn--qm-reminder-venue', donde: 'Feedbacks · solo si opening/closing incompleto tras la hora límite (portal-venue-review.html)' },
       { label: 'Induction (Training menu)', cardClass: 'menu-btn--induction', donde: 'Training grid · blanco default' },
       { label: 'Safeguarding (Training menu)', cardClass: 'menu-btn--training-safeguarding', donde: 'Training grid' },
       { label: 'Swimming training', cardClass: 'menu-btn--training-role-swimming', donde: 'Training grid · role modules' },
-      { label: 'Training (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=training' },
-      { label: 'Shadowing (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=shadowing' },
+      { label: 'Training (Admin Changes)', cardClass: 'menu-btn--qm-ov-training', donde: 'session_add kind=training · índigo' },
+      { label: 'Shadowing (Admin Changes)', cardClass: 'menu-btn--qm-ov-shadowing', donde: 'session_add kind=shadowing · cielo' },
+      { label: 'Meeting (Admin Changes)', cardClass: 'menu-btn--qm-ov-meeting', donde: 'session_add kind=meeting · lima' },
+      { label: 'Training (Today)', cardClass: 'session-card--ov-training', donde: 'Today · session_add kind=training' },
+      { label: 'Shadowing (Today)', cardClass: 'session-card--ov-shadowing', donde: 'Today · session_add kind=shadowing' },
+      { label: 'Meeting (Today)', cardClass: 'session-card--ov-meeting', donde: 'Today · session_add kind=meeting' },
       { label: 'Revertido (quick menu)', cardClass: 'menu-btn--qm-ov-reverted', donde: 'CHANGE UNDONE - nombre · fecha, goes back to normal' }
     ];
 
@@ -386,7 +389,9 @@
       { estado: 'Absent', card: 'override--absent session-card--ov-green', chip: 'portal-session-slot-chip--absent' },
       { estado: 'Cancelled', card: 'session-card--ov-red', chip: 'portal-session-slot-chip--cancelled' },
       { estado: 'Tras revert — vuelve a normal', card: '(default blanco)', chip: '— participant original' },
-      { estado: 'Training / Shadowing (admin)', card: 'session-card--ov-yellow', chip: 'Room / Pool (symbol)' }
+      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'Room / Pool (symbol)' },
+      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'Room / Pool (symbol)' },
+      { estado: 'Meeting (admin session_add)', card: 'session-card--ov-meeting', chip: '—' }
     ];
 
     var CARD_FIELDS = [
@@ -408,13 +413,13 @@
     function defaultOverrides(){
       return [
         {
-          id: 'new_shift', label: 'New shift', cuando: 'instructor cover / roster day group',
+          id: 'new_shift', label: 'NEW SHIFT/CHANGES', cuando: 'instructor cover / roster day group / cualquier cambio de roster',
           cardClass: 'menu-btn--qm-ov-new-shift',
           pillClass: '', weekClass: '', termClass: '', miniClass: '',
           tomorrowClass: '', tomorrowRowClass: '',
           pillText: '', weekText: '',
           sampleTitle: 'NEW SHIFT - Westway (18th/Jun)', sampleSub: 'Aquatic Activity · 4.30 to 6.30pm',
-          haloNote: 'schedule (amarillo corporativo)',
+          haloNote: 'schedule / NEW SHIFT/CHANGES (amarillo corporativo)',
           colors: {
             bg1:'#fffbeb', bg2:'#fef3c7', border:'rgba(245,158,11,.42)', shadow:'rgba(249,191,46,.22)',
             strong:'#92400e', sub:'#b45309', iconBg:'rgba(249,191,46,.24)', iconFg:'#b45309', iconBorder:'rgba(245,158,11,.35)',
@@ -428,7 +433,7 @@
           termClass: 'term-cal-day--ov-pulse-trial', miniClass: 'mini-card--ov-trial',
           tomorrowClass: 'tomorrow-trial-pill', tomorrowRowClass: 'calendar-day--tomorrow-ov-trial',
           pillText: 'TRIAL', weekText: 'Trial',
-          sampleTitle: 'TRIAL/NEW - Chaitanya (15th/Jun)', sampleSub: '4.30 to 5 · Trial session · Westway',
+          sampleTitle: 'TRIAL/NEW - Chaitanya (15th/Jun)', sampleSub: '4.30 to 5 · Teaching Pool · Westway',
           haloNote: 'schedule-trial (lila) si hay trial pendiente',
           colors: {
             bg1:'#f5f3ff', bg2:'#ede9fe', border:'rgba(124,58,237,.42)', shadow:'rgba(124,58,237,.22)',
@@ -443,7 +448,7 @@
           termClass: 'term-cal-day--ov-pulse-makeup', miniClass: 'mini-card--ov-pink',
           tomorrowClass: 'tomorrow-makeup-pill', tomorrowRowClass: 'calendar-day--tomorrow-ov-pink',
           pillText: 'MAKE UP', weekText: 'Make Up Session',
-          sampleTitle: 'MAKE UP - Eddie Ri (13th/Jun)', sampleSub: '11.00 to 12.00 · Cover session · Acton',
+          sampleTitle: 'MAKE UP - Eddie Ri (13th/Jun)', sampleSub: '11.00 to 12.00 · Hub Room · Acton',
           haloNote: 'schedule (verde) si no hay trial',
           colors: {
             bg1:'#fdf2f8', bg2:'#fce7f3', border:'rgba(219,39,119,.42)', shadow:'rgba(236,72,153,.22)',
@@ -458,7 +463,7 @@
           termClass: 'term-cal-day--ov-pulse-absent', miniClass: 'mini-card--ov-green',
           tomorrowClass: 'tomorrow-absent-pill', tomorrowRowClass: '',
           pillText: 'ABSENT', weekText: 'Absents',
-          sampleTitle: 'ABSENT - Mary (14th/Jun)', sampleSub: '10.00 to 11.00 · Unwell · Pool',
+          sampleTitle: 'ABSENT - Mary (14th/Jun)', sampleSub: '10.00 to 11.00 · Small Pool · Acton',
           haloNote: 'schedule-absent (verde)',
           colors: {
             bg1:'#ecfdf5', bg2:'#d1fae5', border:'rgba(5,150,105,.45)', shadow:'rgba(16,185,129,.22)',
@@ -473,12 +478,54 @@
           termClass: 'term-cal-day--ov-pulse-cancelled', miniClass: '',
           tomorrowClass: 'tomorrow-cancelled-pill', tomorrowRowClass: '',
           pillText: 'CANCELLED', weekText: 'Cancelled',
-          sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Family holiday · Acton',
+          sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Wall · Acton',
           haloNote: 'schedule (verde)',
           colors: {
             bg1:'#fef2f2', bg2:'#fee2e2', border:'rgba(220,38,38,.42)', shadow:'rgba(220,38,38,.2)',
             strong:'#991b1b', sub:'#b91c1c', iconBg:'rgba(220,38,38,.18)', iconFg:'#b91c1c', iconBorder:'rgba(220,38,38,.32)',
             chipBg:'#fee2e2', chipFg:'#991b1b', chipBorder:'rgba(220,38,38,.38)', termGlow:'rgba(220,38,38,.48)'
+          }
+        },
+        {
+          id: 'training', label: 'Training', cuando: 'session_add kind=training',
+          cardClass: 'menu-btn--qm-ov-training',
+          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'TRAINING - Westway (16th/Jun)', sampleSub: '10 to 11 am · Room · Westway',
+          haloNote: 'schedule-training (índigo)',
+          colors: {
+            bg1:'#eef2ff', bg2:'#e0e7ff', border:'rgba(99,102,241,.42)', shadow:'rgba(99,102,241,.2)',
+            strong:'#4338ca', sub:'#4f46e5', iconBg:'rgba(99,102,241,.22)', iconFg:'#4338ca', iconBorder:'rgba(99,102,241,.35)',
+            chipBg:'#e0e7ff', chipFg:'#3730a3', chipBorder:'rgba(99,102,241,.4)', termGlow:'rgba(99,102,241,.5)'
+          }
+        },
+        {
+          id: 'shadowing', label: 'Shadowing', cuando: 'session_add kind=shadowing',
+          cardClass: 'menu-btn--qm-ov-shadowing',
+          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'SHADOWING - Acton (17th/Jun)', sampleSub: '2 to 4 pm · Pool · Acton',
+          haloNote: 'schedule-shadowing (cielo)',
+          colors: {
+            bg1:'#f0f9ff', bg2:'#e0f2fe', border:'rgba(14,165,233,.42)', shadow:'rgba(14,165,233,.2)',
+            strong:'#0369a1', sub:'#0284c7', iconBg:'rgba(14,165,233,.2)', iconFg:'#0369a1', iconBorder:'rgba(14,165,233,.35)',
+            chipBg:'#e0f2fe', chipFg:'#075985', chipBorder:'rgba(14,165,233,.4)', termGlow:'rgba(14,165,233,.48)'
+          }
+        },
+        {
+          id: 'meeting', label: 'Meeting', cuando: 'session_add kind=meeting',
+          cardClass: 'menu-btn--qm-ov-meeting',
+          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'MEETING - Hub (18th/Jun)', sampleSub: '9 to 10 am · Hub Room · Acton',
+          haloNote: 'schedule-meeting (lima)',
+          colors: {
+            bg1:'#f7fee7', bg2:'#ecfccb', border:'rgba(132,204,22,.45)', shadow:'rgba(132,204,22,.2)',
+            strong:'#4d7c0f', sub:'#65a30d', iconBg:'rgba(132,204,22,.22)', iconFg:'#4d7c0f', iconBorder:'rgba(132,204,22,.38)',
+            chipBg:'#ecfccb', chipFg:'#3f6212', chipBorder:'rgba(132,204,22,.42)', termGlow:'rgba(132,204,22,.5)'
           }
         }
       ];
@@ -488,22 +535,25 @@
       return [
         /* Individual — one colour family */
         { id: 'idle', label: 'Sin alerta', cssClass: 'avatar-wrap--portal-orbit-idle', c1:'#2d84b3', c2:'#4f8fca', c3:'#1d4f8f', pulse: false, note: 'Órbita oculta en idle' },
-        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#f9bf2e', c2:'#f4b740', c3:'#ffe08a', pulse: false, note: 'Amarillo corporativo (Quick menu)' },
+        { id: 'schedule', label: 'NEW SHIFT/CHANGES', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#f9bf2e', c2:'#f4b740', c3:'#ffe08a', pulse: false, note: 'Amarillo corporativo — cualquier cambio de roster / new shift' },
         { id: 'schedule-trial-only', label: 'Trial / new participant', cssClass: 'avatar-wrap--portal-alert-schedule-trial-only', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: false, note: 'Lila — solo órbita' },
         { id: 'schedule-makeup', label: 'Make up', cssClass: 'avatar-wrap--portal-alert-schedule-makeup', c1:'#ec4899', c2:'#db2777', c3:'#f9a8d4', pulse: false, note: 'Rosa' },
         { id: 'schedule-absent', label: 'Absent', cssClass: 'avatar-wrap--portal-alert-schedule-absent', c1:'#0d9488', c2:'#0f766e', c3:'#2dd4bf', pulse: false, note: 'Teal — ausencia anunciada' },
+        { id: 'schedule-training', label: 'Training', cssClass: 'avatar-wrap--portal-alert-schedule-training', c1:'#6366f1', c2:'#4f46e5', c3:'#a5b4fc', pulse: false, note: 'Índigo — session_add training' },
+        { id: 'schedule-shadowing', label: 'Shadowing', cssClass: 'avatar-wrap--portal-alert-schedule-shadowing', c1:'#0ea5e9', c2:'#0284c7', c3:'#7dd3fc', pulse: false, note: 'Cielo — session_add shadowing' },
+        { id: 'schedule-meeting', label: 'Meeting', cssClass: 'avatar-wrap--portal-alert-schedule-meeting', c1:'#84cc16', c2:'#65a30d', c3:'#bef264', pulse: false, note: 'Lima — session_add meeting' },
         { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#2d84b3', c2:'#1d4f8f', c3:'#4f8fca', pulse: false, note: 'Azul oscuro' },
         { id: 'reminder', label: 'Outstanding Feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#ea580c', c2:'#c2410c', c3:'#f97316', pulse: false, note: 'Naranja intenso — feedback pendiente' },
         { id: 'announcement', label: 'Announcements/Reminders', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo — firma pendiente' },
         /* Mixed — two alert families */
-        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#f9bf2e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Amarillo + lila alternado' },
-        { id: 'reminder-schedule', label: 'Outstanding feedback + New shift', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#ea580c', c2:'#f9bf2e', c3:'#f4b740', pulse: false, note: 'Naranja + amarillo alternado' },
+        { id: 'schedule-trial', label: 'NEW SHIFT/CHANGES + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#f9bf2e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Amarillo + lila alternado' },
+        { id: 'reminder-schedule', label: 'Outstanding feedback + NEW SHIFT/CHANGES', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#ea580c', c2:'#f9bf2e', c3:'#f4b740', pulse: false, note: 'Naranja + amarillo alternado' },
         { id: 'reminder-schedule-trial', label: 'Outstanding feedback + trial', cssClass: 'avatar-wrap--portal-alert-reminder-schedule-trial', c1:'#ea580c', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Naranja + lila' },
         { id: 'ann-schedule-trial', label: 'Ann/Reminders + trial', cssClass: 'avatar-wrap--portal-alert-announcement-schedule-trial', c1:'#dc2626', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Rojo + lila' },
         /* Mixed — three alert families */
-        { id: 'both-schedule', label: 'Ann/Reminders + Feedback + New shift', cssClass: 'avatar-wrap--portal-alert-both-schedule', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo (3n)' },
+        { id: 'both-schedule', label: 'Ann/Reminders + Feedback + NEW SHIFT/CHANGES', cssClass: 'avatar-wrap--portal-alert-both-schedule', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo (3n)' },
         /* Mixed — four alert families */
-        { id: 'both-schedule-trial', label: 'Ann/Reminders + Feedback + New shift + Trial', cssClass: 'avatar-wrap--portal-alert-both-schedule-trial', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo · lila (4n)' }
+        { id: 'both-schedule-trial', label: 'Ann/Reminders + Feedback + NEW SHIFT/CHANGES + Trial', cssClass: 'avatar-wrap--portal-alert-both-schedule-trial', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo · lila (4n)' }
       ];
     }
 
@@ -635,6 +685,11 @@
         if(ov.tomorrowClass){
           lines.push('#labLiveScope .'+ov.tomorrowClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
           lines.push('#labLiveScope .'+ov.tomorrowClass+' > span{color:'+c.chipFg+' !important}');
+        }
+        if(ov.id === 'training' || ov.id === 'shadowing' || ov.id === 'meeting'){
+          var tsel = '#labLiveScope .lab-today-panel .session-card--ov-'+ov.id;
+          lines.push(tsel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important;box-shadow:0 4px 14px '+c.shadow+' !important}');
+          lines.push(tsel+' .session-line--name .session-meta-name{color:'+c.strong+' !important}');
         }
       });
       state.halos.forEach(function(h){
@@ -797,6 +852,7 @@
       if(!host) return;
       var individualIds = {
         idle:1, schedule:1, 'schedule-trial-only':1, 'schedule-makeup':1, 'schedule-absent':1,
+        'schedule-training':1, 'schedule-shadowing':1, 'schedule-meeting':1,
         'schedule-undo':1, reminder:1, announcement:1
       };
       var mixedTwoIds = {
@@ -956,18 +1012,6 @@
         icon: SVG_ANN,
         blockCopy: '<span class="announcement-title-line announcement-title-line--quick-menu-only">Signed Announcements/Reminders</span>'
       });
-      var notesWorkers = menuBtnHtml({
-        classes: 'menu-btn--reminder-attention menu-btn--portal-pulse',
-        icon: SVG_ANN,
-        title: 'Notes for workers',
-        sub: 'Reminder · category notes · tap to read & sign'
-      });
-      var remTraining = menuBtnHtml({
-        classes: 'menu-btn--reminder-attention menu-btn--portal-pulse',
-        icon: SVG_STAR,
-        title: 'Complete safeguarding refresher',
-        sub: 'Reminder · category training'
-      });
       var outNeed = menuBtnHtml({
         id: 'portalOutstandingFeedbackBtn',
         classes: 'menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse',
@@ -1006,10 +1050,6 @@
             '<div class="menu-grid menu-grid--portal-outstanding-feedback" id="portalQuickMenuOutstandingFeedbackSlot">'+outNeed+outOk+'</div>'+
             '<div class="menu-grid menu-grid--portal-reminder-single" id="portalQuickMenuReminderGroup">'+
               '<div id="portalQuickMenuReminderBannerHost">'+venueRem+'</div>'+
-            '</div>'+
-            '<div class="menu-group-title menu-group-title--portal-reminders">Reminders (admin)</div>'+
-            '<div class="menu-grid menu-grid--portal-reminder-single">'+
-              '<div class="portal-qm-reminder-stack">'+notesWorkers+remTraining+'</div>'+
             '</div>'+
           '</div>'+
         '</section>';
@@ -1084,10 +1124,11 @@
         todayCardHtml('', '11 to 12 am', 'Westway', 'Eddie Ri', '', teachingPool)+
         todayCardHtml('session-card--ov-red', '4 to 5 pm', 'Westway', 'Slot cleared',
           slotChip('portal-session-slot-chip--cancelled', 'Cancelled'), '<span class="session-pool-na">—</span>')+
-        todayCardHtml('session-card--ov-yellow', '10 to 11 am', 'Westway', 'Training', '', todayPoolNote('Room', ''))+
-        todayCardHtml('session-card--ov-yellow', '2 to 4 pm', 'Acton', 'Shadowing',
-          slotChip('portal-session-slot-chip--plain', 'Pool'), todayPoolNote('Pool', '')),
-        'Cancelled rojo · Training/Shadowing amarillo · revert = blanco normal.');
+        todayCardHtml('session-card--ov-training', '10 to 11 am', 'Westway', 'Training', '', todayPoolNote('Room', ''))+
+        todayCardHtml('session-card--ov-shadowing', '2 to 4 pm', 'Acton', 'Shadowing',
+          slotChip('portal-session-slot-chip--plain', 'Pool'), todayPoolNote('Pool', ''))+
+        todayCardHtml('session-card--ov-meeting', '9 to 10 am', 'Acton', 'Meeting', '', todayPoolNote('Hub Room', '')),
+        'Training índigo · Shadowing cielo · Meeting lima · revert = blanco normal.');
 
       host.innerHTML = panelTodayPending + panelThuNormal + panelThuMix + panelWedOverrides + panelExtras;
     }
