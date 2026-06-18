@@ -3331,11 +3331,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
-      border-color:rgba(255,255,255,.18);
-      background:linear-gradient(180deg,#262626 0%,#171717 100%);
+      border-color:rgba(113,113,122,.45);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-text strong{color:#fff}
-    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-sub{color:#f4f4f5}
+    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-text strong{color:#3f3f46}
+    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-sub{color:#52525b}
     #portalOperationalReminderList .setup-row--qm-ov-slot-opened{
       border-color:rgba(8,145,178,.42);
       background:linear-gradient(180deg,rgba(236,254,255,.98) 0%,rgba(255,255,255,.99) 100%);
@@ -8699,36 +8699,53 @@
       border:0 !important;
     }
 
-    /* Cancelled quick-menu tile — terminal layer (keep last in file) */
+    /* Cancelled quick-menu tile — same palette as Change undone (reverted) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuScheduleOverridesTop.portal-qm-override-top-host .menu-btn.menu-btn--qm-tile.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled,
-    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
-      background-color:#525252 !important;
-      background-image:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
-      border:2px solid rgba(255,255,255,.22) !important;
-      color:#fff !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%) !important;
+      background-color:#e4e4e7 !important;
+      background-image:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%) !important;
+      border:2px solid rgba(113,113,122,.45) !important;
+      color:#173247 !important;
+      box-shadow:0 6px 18px rgba(113,113,122,.2) !important;
     }
     #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
-    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
-      color:#fff !important;
-      -webkit-text-fill-color:#fff !important;
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
+      color:#3f3f46 !important;
+      -webkit-text-fill-color:#3f3f46 !important;
     }
     #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
-    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
-      color:#f0f0f0 !important;
-      -webkit-text-fill-color:#f0f0f0 !important;
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
+      color:#52525b !important;
+      -webkit-text-fill-color:#52525b !important;
     }
     #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev,
-    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{
-      color:rgba(255,255,255,.7) !important;
-      -webkit-text-fill-color:rgba(255,255,255,.7) !important;
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{
+      color:rgba(63,63,70,.55) !important;
+      -webkit-text-fill-color:rgba(63,63,70,.55) !important;
     }
     #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon,
-    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(255,255,255,.16) !important;
-      color:#fff !important;
-      border-color:rgba(255,255,255,.24) !important;
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(161,161,170,.28) !important;
+      color:#52525b !important;
+      border-color:rgba(113,113,122,.4) !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:focus-visible,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%) !important;
+      background-color:#e4e4e7 !important;
+      border-color:rgba(113,113,122,.65) !important;
+      box-shadow:0 10px 26px rgba(113,113,122,.28) !important;
+      transform:none;
     }

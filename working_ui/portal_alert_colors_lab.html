@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-trial-pending-orange" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-cancelled-reverted" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -288,17 +288,17 @@
       background:rgba(161,161,170,.28);color:#52525b;border-color:rgba(113,113,122,.4);
     }
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
-      background-color:#525252 !important;
-      border:2px solid rgba(255,255,255,.22) !important;
-      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
-      color:#fff !important;
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%) !important;
+      background-color:#e4e4e7 !important;
+      border:2px solid rgba(113,113,122,.45) !important;
+      box-shadow:0 6px 18px rgba(113,113,122,.2) !important;
+      color:#173247 !important;
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff !important;-webkit-text-fill-color:#fff !important}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f0f0f0 !important;-webkit-text-fill-color:#f0f0f0 !important}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65) !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#3f3f46 !important;-webkit-text-fill-color:#3f3f46 !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#52525b !important;-webkit-text-fill-color:#52525b !important}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(63,63,70,.55) !important}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(255,255,255,.14) !important;color:#fff !important;border-color:rgba(255,255,255,.22) !important;
+      background:rgba(161,161,170,.28) !important;color:#52525b !important;border-color:rgba(113,113,122,.4) !important;
     }
     /* Override tiles: production colours (logo-lite) */
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
@@ -561,10 +561,10 @@
           tomorrowClass: 'tomorrow-cancelled-pill', tomorrowRowClass: '',
           pillText: 'CANCELLED', weekText: 'Cancelled',
           sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Wall · Acton',
-          haloNote: 'schedule-cancelled (negro)',
+          haloNote: 'schedule-cancelled (gris — como Change undone)',
           colors: {
-            bg1:'#707070', bg2:'#525252', border:'rgba(255,255,255,.22)', shadow:'rgba(0,0,0,.32)',
-            strong:'#fff', sub:'#f0f0f0', iconBg:'rgba(255,255,255,.16)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.24)',
+            bg1:'#f4f4f5', bg2:'#e4e4e7', border:'rgba(113,113,122,.45)', shadow:'rgba(113,113,122,.2)',
+            strong:'#3f3f46', sub:'#52525b', iconBg:'rgba(161,161,170,.28)', iconFg:'#52525b', iconBorder:'rgba(113,113,122,.4)',
             chipBg:'#525252', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(82,82,82,.48)'
           }
         },
@@ -664,11 +664,11 @@
     }
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
-    /** Cancelled tile — always dark grey (stop icon), never user-editable to white. */
+    /** Cancelled quick-menu tile — same palette as Change undone (reverted). */
     function cancelledCanonicalColors(){
       return {
-        bg1:'#707070', bg2:'#525252', border:'rgba(255,255,255,.22)', shadow:'rgba(0,0,0,.32)',
-        strong:'#fff', sub:'#f0f0f0', iconBg:'rgba(255,255,255,.16)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.24)',
+        bg1:'#f4f4f5', bg2:'#e4e4e7', border:'rgba(113,113,122,.45)', shadow:'rgba(113,113,122,.2)',
+        strong:'#3f3f46', sub:'#52525b', iconBg:'rgba(161,161,170,.28)', iconFg:'#52525b', iconBorder:'rgba(113,113,122,.4)',
         chipBg:'#525252', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(82,82,82,.48)'
       };
     }
