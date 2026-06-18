@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-gold-orange" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-admin-changes-halo" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -95,6 +95,21 @@
     .lab-previews-stack{display:flex;flex-direction:column;gap:28px;margin-top:12px;min-width:0}
     .lab-preview-block{min-width:0}
     .lab-preview-block h3{margin:0 0 12px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)}
+    .lab-halo-menu-combo{
+      position:relative;max-width:520px;padding:20px 14px 14px;border-radius:22px;
+      background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);
+      box-shadow:
+        0 0 0 1px rgba(249,191,46,.32),
+        0 0 28px rgba(249,191,46,.24),
+        0 0 56px rgba(234,88,12,.14),
+        0 0 40px rgba(220,38,38,.1);
+    }
+    .lab-halo-menu-combo__orbit{display:flex;justify-content:center;margin:0 0 14px}
+    .lab-halo-menu-combo__orbit .avatar-wrap{margin:0;cursor:default}
+    .lab-halo-menu-combo__orbit .avatar-wrap:hover,.lab-halo-menu-combo__orbit .avatar-wrap:active{transform:none}
+    .lab-halo-menu-combo__menu #menuSheet.menu-sheet--logo-lite.lab-compare-sheet{
+      max-width:none;padding:0;background:transparent;box-shadow:none;border-radius:0;
+    }
     #menuSheet.menu-sheet--logo-lite.lab-compare-sheet{
       position:relative;transform:none;opacity:1;visibility:visible;pointer-events:none;
       max-height:none;box-shadow:none;border-radius:14px;padding:12px;background:#fafbfd;margin-top:0;
@@ -202,23 +217,23 @@
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
       background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
     }
-    /* Override tiles: production colours need GuideGroup + override-top-host (mirror ReminderBanner slot-opened) */
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
+    /* Override tiles: production colours (logo-lite) */
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
       min-height:76px;align-items:center;border-radius:14px;padding:12px 14px;gap:12px;
       display:flex;width:100%;min-width:0;box-sizing:border-box;text-align:left;
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile .menu-btn-icon{
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile .menu-btn-icon{
       width:44px;height:44px;min-width:44px;min-height:44px;display:flex;align-items:center;
       justify-content:center;flex-shrink:0;border-radius:12px;
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened{
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened{
       background:linear-gradient(180deg,#ecfeff 0%,#cffafe 100%);
       border:2px solid rgba(8,145,178,.45);box-shadow:0 6px 16px rgba(8,145,178,.18);
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-copy strong{color:#0e7490}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-sub{color:#155e75}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-chev{color:rgba(14,116,144,.55)}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-icon{
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-copy strong{color:#0e7490}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-sub{color:#155e75}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-chev{color:rgba(14,116,144,.55)}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-slot-opened .menu-btn-icon{
       background:rgba(34,211,238,.22);color:#0e7490;border-color:rgba(8,145,178,.38);
     }
   </style>
@@ -312,12 +327,12 @@
       <h2 id="tPreviews">Previews en vivo</h2>
       <div class="lab-previews-stack">
         <div class="lab-preview-block">
-          <h3>Halos (markup real + logo)</h3>
-          <div id="labHaloGrid"></div>
+          <h3>Logo halo + quick menu (logo-lite)</h3>
+          <div class="lab-halo-menu-combo" id="labHaloMenuCombo"></div>
         </div>
         <div class="lab-preview-block">
-          <h3>Quick menu — overrides + notifications</h3>
-          <div class="lab-notif-stack" id="labMenuSheetHost"></div>
+          <h3>Halos — catálogo</h3>
+          <div id="labHaloGrid"></div>
         </div>
       </div>
       <h3 style="margin:20px 0 8px;font-size:.9rem">Today — tarjetas de sesión por día</h3>
@@ -589,7 +604,7 @@
 
     function cardSelector(cardClass){
       var base = '#labLiveScope #menuSheet.menu-sheet--logo-lite';
-      return base+' #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.'+cardClass+
+      return base+' .portal-qm-override-top-host .menu-btn.'+cardClass+
         ', '+base+' #portalQuickMenuReminderBannerHost .menu-btn.'+cardClass;
     }
 
@@ -915,9 +930,7 @@
       '</div>';
     }
 
-    function renderMenuSheet(){
-      var host = document.getElementById('labMenuSheetHost');
-      if(!host) return;
+    function buildLogoLiteMenuSheetHtml(){
       var overrideBtns = state.overrides.map(function(ov){
         return '<button type="button" class="menu-btn notice menu-btn--qm-tile '+esc(ov.cardClass)+' menu-btn--portal-pulse">'+
           '<div class="menu-btn-icon" aria-hidden="true">'+CAL+'</div>'+
@@ -974,35 +987,13 @@
         title: 'Venue report',
         sub: 'Opening check incomplete (late)'
       });
-      var induction = menuBtnHtml({
-        classes: 'menu-btn--induction',
-        icon: SVG_STAR,
-        title: 'Induction',
-        sub: 'Core company training'
-      });
-      var safeguarding = menuBtnHtml({
-        classes: 'menu-btn--training-safeguarding',
-        icon: SVG_SHIELD,
-        title: 'Safeguarding',
-        sub: 'Mandatory training (NSPCC My Learning)'
-      });
-      var swimTrain = menuBtnHtml({
-        classes: 'menu-btn--training-role-swimming',
-        icon: SVG_SWIM,
-        title: 'Swimming Training',
-        sub: 'Modules linked to your role'
-      });
-      host.innerHTML =
-        '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
-          '<p class="lab-sub" style="margin:0 0 10px">Schedule overrides (logo-lite top)</p>'+
-          '<div class="menu-group" id="portalQuickMenuGuideGroup">'+
+      return '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
+          '<div class="menu-group" id="portalQuickMenuNotificationsGroup">'+
+            '<div class="menu-group-title">Admin Changes</div>'+
             '<div class="portal-qm-override-top-host">'+
               '<div class="portal-qm-override-stack">'+overrideBtns+'</div>'+
             '</div>'+
-          '</div>'+
-          '<div id="portalQuickMenuReminderBannerHost"></div>'+
-          '<div class="menu-group" id="portalQuickMenuNotificationsGroup" style="margin-top:16px">'+
-            '<div class="menu-group-title">Announcements</div>'+
+            '<div class="menu-group-title">Announcements/Reminders</div>'+
             '<div class="menu-grid menu-grid--portal-notices menu-grid--portal-announcements-split" id="portalQuickMenuNoticesGrid">'+
               '<div class="portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--pending">'+
                 '<p class="portal-quickmenu-announcement-subtitle">Need your signature</p>'+annPending+
@@ -1020,10 +1011,25 @@
             '<div class="menu-grid menu-grid--portal-reminder-single">'+
               '<div class="portal-qm-reminder-stack">'+notesWorkers+remTraining+'</div>'+
             '</div>'+
-            '<div class="menu-group-title">Training</div>'+
-            '<div class="menu-grid" id="quickMenuTrainingGrid">'+induction+safeguarding+swimTrain+'</div>'+
           '</div>'+
         '</section>';
+    }
+
+    function renderHaloMenuCombo(){
+      var host = document.getElementById('labHaloMenuCombo');
+      if(!host) return;
+      var comboHalo = state.halos.find(function(h){ return h.id === 'both-schedule-trial'; })
+        || state.halos.find(function(h){ return h.id === 'both-schedule'; })
+        || state.halos.find(function(h){ return h.id === 'reminder-schedule'; })
+        || state.halos[0];
+      var orb = portalAvatarHtml(comboHalo && comboHalo.cssClass ? comboHalo.cssClass : 'avatar-wrap--portal-alert-both-schedule-trial', 'labComboOrb');
+      host.innerHTML =
+        '<div class="lab-halo-menu-combo__orbit">'+orb+'</div>'+
+        '<div class="lab-halo-menu-combo__menu">'+buildLogoLiteMenuSheetHtml()+'</div>';
+    }
+
+    function renderMenuSheet(){
+      renderHaloMenuCombo();
     }
 
     function renderTodaySection(){

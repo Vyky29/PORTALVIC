@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-gold-orange" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-admin-changes-halo" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -416,7 +416,6 @@
       <div class="menu-sheet-main">
         <div class="menu-group" id="portalQuickMenuGuideGroup" hidden>
           <div class="menu-group-title" id="portalQuickMenuGuideGroupTitle">Getting started</div>
-          <div id="portalQuickMenuScheduleOverridesTop" class="portal-qm-override-top-host" hidden></div>
           <div class="menu-grid" id="portalQuickMenuGuideGrid">
             <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo" id="quickMenuPortalGuideTop" data-portal-external-url="portal_guide.html" aria-label="clubSENsational portal guide">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
@@ -433,7 +432,9 @@
           </div>
         </div>
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
-          <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
+          <div class="menu-group-title" id="portalQuickMenuAdminChangesHeading" hidden>Admin Changes</div>
+          <div id="portalQuickMenuScheduleOverridesTop" class="portal-qm-override-top-host" hidden></div>
+          <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements/Reminders</div>
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Feedbacks</div>
           <div class="menu-grid menu-grid--portal-safeguarding-policy" id="portalQuickMenuSafeguardingPolicySlot" hidden></div>
@@ -4725,10 +4726,11 @@
     }
     function syncPortalScheduleOverridesTopSlot(st){
       const host = document.getElementById('portalQuickMenuScheduleOverridesTop');
+      const notifGrp = document.getElementById('portalQuickMenuNotificationsGroup');
+      const adminTitleEl = document.getElementById('portalQuickMenuAdminChangesHeading');
       const guideGrp = document.getElementById('portalQuickMenuGuideGroup');
       const guideGrid = document.getElementById('portalQuickMenuGuideGrid');
-      const titleEl = document.getElementById('portalQuickMenuGuideGroupTitle');
-      if(!host || !guideGrp) return false;
+      if(!host || !notifGrp) return false;
       if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
       const ovHtml = typeof portalBuildQuickMenuOverrideStackHtml === 'function' ? portalBuildQuickMenuOverrideStackHtml(st) : '';
@@ -4737,20 +4739,18 @@
       if(logoLite && hasOv){
         host.innerHTML = ovHtml;
         host.hidden = false;
-        if(titleEl) titleEl.textContent = 'Schedule changes';
-        if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Schedule changes');
-        guideGrp.hidden = false;
+        if(adminTitleEl) adminTitleEl.hidden = false;
+        if(guideGrp) guideGrp.hidden = true;
         if(guideGrid) guideGrid.hidden = true;
-        const panel = guideGrp.querySelector('.menu-group-panel');
-        if(panel) panel.hidden = false;
         return true;
       }
 
       host.innerHTML = '';
       host.hidden = true;
-      if(logoLite){
+      if(adminTitleEl) adminTitleEl.hidden = true;
+      if(logoLite && guideGrp){
         guideGrp.hidden = true;
-      }else{
+      }else if(guideGrp){
         guideGrp.hidden = true;
         if(guideGrid) guideGrid.hidden = true;
       }
@@ -11664,6 +11664,8 @@
       const qg = document.getElementById('portalQuickMenuReminderGroup');
       const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
       const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
+      const adminHost = document.getElementById('portalQuickMenuScheduleOverridesTop');
+      const adminTitle = document.getElementById('portalQuickMenuAdminChangesHeading');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
         grp.hidden = true;
@@ -11675,7 +11677,9 @@
       const hasWellbeing = !!(wellbeingSlot && !wellbeingSlot.hidden);
       const hasBanner = hasPolicy || hasOutstanding || hasWellbeing || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
-      grp.hidden = !hasBanner && !hasNotices;
+      const hasAdminChanges = !!(adminHost && !adminHost.hidden && adminHost.querySelector('.portal-qm-override-stack'));
+      if(adminTitle) adminTitle.hidden = !hasAdminChanges;
+      grp.hidden = !hasBanner && !hasNotices && !hasAdminChanges;
     }
 
     function syncDockQuickMenuAttention(){
