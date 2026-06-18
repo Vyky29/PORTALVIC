@@ -261,30 +261,17 @@
   color:var(--area-note-accent, var(--muted));
   line-height:1.1;
 }
-/* Lane PNGs bake old Shark/Fish captions — clip only those when HTML label replaces text. */
+/* Lane PNGs bake old Shark/Fish captions — clip caption; HTML label sits directly under icon (Teaching Pool style). */
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se),
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de){
   gap:var(--today-area-stack-gap, 2px);
   justify-content:center;
+  height:auto;
 }
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se) .session-area-note-icon--lane-se,
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de) .session-area-note-icon--lane-de{
-  overflow:hidden;
-  justify-content:flex-start;
-  flex:1 1 auto;
-  min-height:0;
-  max-height:calc(100% - var(--today-area-label-block, 12px));
-}
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se) .session-area-note-label,
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de) .session-area-note-label{
-  display:block;
   flex:0 0 auto;
-  min-height:var(--today-area-label-block, 10px);
-  font-size:var(--today-area-label-fs, 10px);
-  line-height:1.1;
-  white-space:nowrap;
   overflow:hidden;
-  text-overflow:ellipsis;
 }
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se) .session-area-note-icon--lane-se .session-area-note-img,
 .section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de) .session-area-note-icon--lane-de .session-area-note-img{

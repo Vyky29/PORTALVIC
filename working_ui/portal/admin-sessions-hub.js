@@ -5925,7 +5925,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
         var fbCell;
         if (isOpenSlot) {
-          fbCell = '<span class="ash-muted">\u2014</span>';
+          fbCell = '<span class="ash-muted">N/A</span>';
         } else if (isTrial) {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
         } else if (isAbsent) {

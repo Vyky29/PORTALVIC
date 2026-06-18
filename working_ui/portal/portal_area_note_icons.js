@@ -306,7 +306,7 @@
         showLabel: true,
         labelText: (laneMeta && laneMeta.label) || portalDisplayAreaNoteLabel(label),
         layout: "stack",
-        venueSessionCard: true,
+        venueSessionCard: false,
       });
     }
     return portalAreaNoteIconHtml(label, { showLabel: false, venueSessionCard: true });

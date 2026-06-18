@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-cancelled-today-row" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-cancelled-qm-black" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -6068,8 +6068,7 @@
       }
 
       if(item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
-        const ovTypeCls = portalTodayItemOverrideClass(item);
-        return '<span class="portal-sched-ov-badge' + (ovTypeCls ? ' ' + ovTypeCls : '') + '" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>';
+        return '<span class="portal-sched-ov-badge override--admin-shift" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>';
       }
       return '';
     }
@@ -6218,16 +6217,21 @@
     function rosterSlotTimeLabel(s){
       const start = String(s && s.start || '').trim();
       const end = String(s && s.end || '').trim();
+      let out = '';
       if(/^\d{1,2}:\d{2}$/.test(start) && /^\d{1,2}:\d{2}$/.test(end)){
         const fromBounds = portalFormatRosterBandLabel(start, end);
-        if(fromBounds) return fromBounds;
+        if(fromBounds) out = fromBounds;
       }
-      const raw = String(s.timeSlotLabel || '').trim();
-      if(raw){
-        const loose = portalNormSlotLabelLoose(raw);
-        if(loose) return loose.replace(/(\d):(\d{2})/g, '$1.$2');
+      if(!out){
+        const raw = String(s && s.timeSlotLabel || '').trim();
+        if(raw){
+          const loose = portalNormSlotLabelLoose(raw);
+          if(loose) out = loose.replace(/(\d):(\d{2})/g, '$1.$2');
+          else out = raw;
+        }
       }
-      return raw || formatSlotRange(s.start, s.end);
+      if(!out) out = formatSlotRange(s && s.start, s && s.end);
+      return typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(out) : out;
     }
     /** Support workers: roster room (Hub Room, Room 2). Swimming instructors: roster pool area or activity fallback. */
     function rosterAreaLabelForSession(s, activity, supportWorkerMode, viewDay){
@@ -8848,7 +8852,25 @@
       if(ov && (ov.override_type === 'slot_clear_client' || ov.override_type === 'client_absence_announced' || ov.override_type === 'slot_close')) return false;
       return true;
     };
-    window.portalWeekStripAddSyntheticCoverCounts = function(dayName, staffId, bucket, weekServiceCatFn){
+    /** One count per feedback/session unit (not per 30' roster row) — matches Today cards + feedback keys. */
+    window.portalWeekStripSessionCountKey = function(s, dayName, staffId){
+      const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
+      if(!cell || !s) return '';
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cell) : '';
+      if(!iso) return '';
+      if(typeof portalSessionReviewKeyForModelRow === 'function'){
+        const k = portalSessionReviewKeyForModelRow(s, dayName, iso);
+        if(k) return k;
+      }
+      const fb = String(s.feedbackUnitKey || '').trim();
+      if(fb) return fb + '\0' + iso;
+      const cid = typeof portalEffectiveClientIdForReview === 'function'
+        ? portalEffectiveClientIdForReview(s, iso)
+        : String(s.clientId || '').trim().toLowerCase();
+      if(!cid) return '';
+      return iso + '\0' + cid + '\0' + String(s.start || '');
+    };
+    window.portalWeekStripAddSyntheticCoverCounts = function(dayName, staffId, bucket, weekServiceCatFn, seenCount){
       const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
       if(!cell || typeof weekServiceCatFn !== 'function') return;
       const iso = portalIsoYmdFromDate(cell);
@@ -8862,6 +8884,12 @@
         const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function' ? portalFindSpreadsheetSessionMatchingOverride(ov, dayName) : null;
         if(!base) return;
         const s = Object.assign({}, base, { staffId: cov });
+        if(typeof window.portalWeekStripSessionCountKey === 'function' && seenCount){
+          const countKey = window.portalWeekStripSessionCountKey(s, dayName, sid);
+          if(!countKey) return;
+          if(seenCount[countKey]) return;
+          seenCount[countKey] = true;
+        }
         const venue = String(s.venue || '—');
         const lab = weekServiceCatFn(s);
         const key = venue + '\0' + lab;
@@ -15749,15 +15777,18 @@
                   && weekServiceCat(o) === "Multi-Activity";
               })) return;
             }
-            var dedupeKey = lab + "\0" + venue + "\0" + String(s.clientId || "").trim().toLowerCase();
-            if (seenCount[dedupeKey]) return;
-            seenCount[dedupeKey] = true;
+            var countKey = typeof window.portalWeekStripSessionCountKey === "function"
+              ? window.portalWeekStripSessionCountKey(s, day, sid)
+              : (lab + "\0" + venue + "\0" + String(s.clientId || "").trim().toLowerCase());
+            if (!countKey) return;
+            if (seenCount[countKey]) return;
+            seenCount[countKey] = true;
             var key = venue + "\0" + lab;
             if (!bucket[key]) bucket[key] = { count: 0, venue: venue, serviceLabel: lab };
             bucket[key].count += 1;
           });
           if (typeof window.portalWeekStripAddSyntheticCoverCounts === "function") {
-            window.portalWeekStripAddSyntheticCoverCounts(day, sid, bucket, weekServiceCat);
+            window.portalWeekStripAddSyntheticCoverCounts(day, sid, bucket, weekServiceCat, seenCount);
           }
           var segments = Object.keys(bucket).map(function (k) { return bucket[k]; });
           if (!segments.length) segments = [{ count: 0, venue: "", serviceLabel: "" }];

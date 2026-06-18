@@ -3523,6 +3523,12 @@
     .portal-sched-ov-badge.override--instructor{background:rgba(45,132,179,.12);color:#2d84b3;border-color:rgba(45,132,179,.28)}
     .portal-sched-ov-badge.override--slot-open{background:rgba(8,145,178,.14);color:#0e7490;border-color:rgba(8,145,178,.32)}
     .portal-sched-ov-badge.override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
+    .portal-sched-ov-badge.override--admin-shift{
+      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
+      color:#92400e;
+      border-color:rgba(245,158,11,.42);
+      box-shadow:0 1px 4px rgba(249,191,46,.18);
+    }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
@@ -4538,7 +4544,10 @@
       font-weight:700;
       line-height:1.15;
       color:#000;
-      white-space:nowrap;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      max-width:100%;
+      min-width:0;
     }
     .section-card--today .session-line--time-stack .session-line-venue{
       display:block;
@@ -6768,7 +6777,7 @@
       margin:0 0 8px 2px;
       font-size:10px;
     }
-    .sheet.sheet--fullscreen.sheet--mobile-frame .menu-btn{
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .menu-btn:not(.menu-btn--qm-ov-cancelled){
       border-radius:15px;
       padding:13px 14px;
       background:#fff;
@@ -6776,14 +6785,14 @@
       box-shadow:none;
       transition:transform .14s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
-    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .menu-btn:focus-visible{
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .menu-btn:not(.menu-btn--qm-ov-cancelled):focus-visible{
       outline:none;
       background:#f0f7fc;
       border-color:rgba(45,132,179,.38);
       box-shadow:0 0 0 4px rgba(45,132,179,.22);
       transform:translateY(-1px);
     }
-    .sheet.sheet--fullscreen.sheet--mobile-frame .menu-btn:hover{
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .menu-btn:not(.menu-btn--qm-ov-cancelled):hover{
       background:#fafcfe;
       border-color:rgba(45,132,179,.22);
       transform:translateY(-1px);
@@ -6811,6 +6820,66 @@
       border-color:rgba(255,255,255,.35) !important;
       box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
       transform:none;
+    }
+    /* Cancelled quick-menu tile — soft black + white type (beat generic white .menu-btn reset) */
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#2e2e2e 0%,#141414 100%) !important;
+      background-color:#171717 !important;
+      border:2px solid rgba(255,255,255,.2) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.38) !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
+      color:#fff !important;
+      -webkit-text-fill-color:#fff !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
+      color:#e4e4e7 !important;
+      -webkit-text-fill-color:#e4e4e7 !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{
+      color:rgba(255,255,255,.7) !important;
+      -webkit-text-fill-color:rgba(255,255,255,.7) !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(255,255,255,.16) !important;
+      color:#fff !important;
+      border-color:rgba(255,255,255,.24) !important;
+    }
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:hover,
+    #menuSheet .menu-btn.menu-btn--qm-ov-cancelled:focus-visible{
+      background:linear-gradient(180deg,#404040 0%,#262626 100%) !important;
+      background-color:#262626 !important;
+      border-color:rgba(255,255,255,.35) !important;
+      box-shadow:0 10px 26px rgba(0,0,0,.45) !important;
+      transform:none;
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
+      min-height:76px;
+      align-items:center;
+      border-radius:14px;
+      padding:12px 14px;
+      gap:12px;
+      display:flex;
+      width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      text-align:left;
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile .menu-btn-icon{
+      width:44px;
+      height:44px;
+      min-width:44px;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+      border-radius:12px;
     }
     /* Quick menu · Settings accordion panel + pinned View / Logout rows */
     #menuSheet #portalQuickMenuSettingsGroup > .menu-grid--settings-pinned{
