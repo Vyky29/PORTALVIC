@@ -4637,7 +4637,7 @@
       return labels.map(function(lab){
         const esc = escapeHtml(String(lab || '').trim());
         if(!esc) return '';
-        return '<span class="portal-sched-ov-badge override--admin-shift" title="Someone is shadowing your session">' + esc + '</span>';
+        return '<span class="portal-sched-ov-badge override--admin-shift" title="A colleague is shadowing your session">' + esc + '</span>';
       }).join('');
     }
     function portalTodaySessionOverrideCardClass(item){
@@ -5014,7 +5014,7 @@
         const shadowerKey = portalStaffNormRosterKey(ov.anchor_staff_id);
         if(!shadowerKey || seen[shadowerKey]) return;
         seen[shadowerKey] = true;
-        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadows';
+        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadowing you';
         out.push(label);
       });
       return out;
@@ -5102,7 +5102,7 @@
         ? portalOverrideCardDateParenLabel(iso)
         : '';
       const subParts = [];
-      if(shadowerName) subParts.push(shadowerName + ' shadows');
+      if(shadowerName) subParts.push(shadowerName + ' shadowing you');
       const slotSub = typeof portalSessionAddQuickMenuSub === 'function' ? portalSessionAddQuickMenuSub(row) : '';
       if(slotSub) subParts.push(slotSub);
       const sid = portalNormKeyStr(staffId);
