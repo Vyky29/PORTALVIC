@@ -4907,33 +4907,125 @@
       return out;
     }
     function portalShadowingHostLabelsForDay(sessionDateIso, staffId, staffDisplayName){
-      return portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, '', '');
-    }
-    function portalStaffHasUpcomingShadowingHostAlert(staffId, staffDisplayName){
       const sid = String(staffId || '').trim().toLowerCase();
-      if(!sid) return false;
-      const todayIso = typeof portalIsoYmdFromDate === 'function'
-        ? portalIsoYmdFromDate(new Date())
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!sid || !iso) return [];
+      const dayWord = typeof portalWeekdayLongEnGB === 'function'
+        ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
         : '';
-      if(!todayIso) return false;
-      let hit = false;
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(hit) return;
-        if(String(ov.status || 'active') !== 'active') return;
-        if(String(ov.override_type || '').trim() !== 'session_add') return;
-        const iso = normaliseIsoDate(ov.session_date);
-        if(!iso || iso < todayIso) return;
-        let pl = ov.payload;
-        try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = ov.payload; }
-        if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') return;
+      if(!dayWord) return [];
+      const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+      const isReal = function(s){
+        if(baseReal) return baseReal(s, iso);
+        const st = String(s && s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s && s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available');
+      };
+      const sessions = typeof portalBaseClientSessionsForCalendarDate === 'function'
+        ? portalBaseClientSessionsForCalendarDate(dayWord, iso, sid, isReal)
+        : [];
+      const dn = String(staffDisplayName || '').trim();
+      const out = [];
+      const seen = Object.create(null);
+      for(let i = 0; i < sessions.length; i++){
+        const s = sessions[i];
+        if(!s) continue;
+        const base = s.__portalBaseSession || s;
+        const start = String(base.start || s.start || '').trim();
+        const end = String(base.end || s.end || start).trim();
+        if(!start) continue;
+        const labels = portalShadowingObserverChipsForHost(iso, sid, dn, start, end);
+        for(let j = 0; j < labels.length; j++){
+          const lab = labels[j];
+          if(!lab || seen[lab]) continue;
+          seen[lab] = true;
+          out.push(lab);
+        }
+      }
+      return out;
+    }
+    function portalShadowingHostAlertActiveOnDate(sessionDateIso, staffId, staffDisplayName){
+      return portalShadowingHostLabelsForDay(sessionDateIso, staffId, staffDisplayName).length > 0;
+    }
+    function portalShadowingHostOverrideDismissKey(row, staffId){
+      const sid = portalNormKeyStr(staffId);
+      const oid = String(row && row.id || '').trim();
+      const iso = normaliseIsoDate(row && row.session_date);
+      return 'shadow-host|' + sid + '|' + (oid || iso);
+    }
+    function portalShadowingHostOverrideRowsForStaff(staffId, staffDisplayName){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return [];
+      const out = [];
+      const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      for(let i = 0; i < list.length; i++){
+        const r = list[i];
+        if(!r || String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'session_add') continue;
+        let pl = r.payload;
+        try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = r.payload; }
+        if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') continue;
+        if(portalNormKeyStr(r.anchor_staff_id) === portalNormKeyStr(sid)) continue;
         const trainer = String(pl && pl.trainer || '').trim();
         const hosts = portalSessionAddSplitNames(trainer);
         const hostMatch = hosts.length
           ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, sid, staffDisplayName); })
           : portalStaffNameMatchesShadowHost(trainer, sid, staffDisplayName);
-        if(hostMatch) hit = true;
-      });
-      return hit;
+        if(!hostMatch) continue;
+        const iso = normaliseIsoDate(r.session_date);
+        if(!iso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)) continue;
+        out.push(r);
+      }
+      return out;
+    }
+    function portalShadowingHostQuickMenuCard(row, staffId, staffDisplayName){
+      const iso = normaliseIsoDate(row && row.session_date);
+      if(!iso) return null;
+      const shadowerName = typeof portalStaffProfileFirstName === 'function'
+        ? portalStaffProfileFirstName(row.anchor_staff_id)
+        : String(row.anchor_staff_id || '').trim();
+      const datePart = typeof portalOverrideCardDateParenLabel === 'function'
+        ? portalOverrideCardDateParenLabel(iso)
+        : '';
+      const subParts = [];
+      if(shadowerName) subParts.push(shadowerName + ' shadows');
+      const slotSub = typeof portalSessionAddQuickMenuSub === 'function' ? portalSessionAddQuickMenuSub(row) : '';
+      if(slotSub) subParts.push(slotSub);
+      const sid = portalNormKeyStr(staffId);
+      return {
+        id: portalShadowingHostOverrideDismissKey(row, sid),
+        iso: iso,
+        title: 'Schedule change' + (datePart ? (' ' + datePart) : ''),
+        sub: subParts.join(' · '),
+        kind: 'roster_day'
+      };
+    }
+    function portalShadowingHostQuickMenuItemsForAttention(staffId, staffDisplayName, dismissed, seen){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return [];
+      const out = [];
+      const rows = portalShadowingHostOverrideRowsForStaff(sid, staffDisplayName);
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        const card = portalShadowingHostQuickMenuCard(r, sid, staffDisplayName);
+        if(!card || !card.id || dismissed[card.id] || seen[card.id]) continue;
+        seen[card.id] = true;
+        out.push(Object.assign({}, card, { _sort: new Date(r.created_at || 0).getTime() || 0 }));
+      }
+      return out;
+    }
+    function portalStaffHasUpcomingShadowingHostAlert(staffId, staffDisplayName){
+      const dismissed = {};
+      const dk = typeof portalQuickMenuLoadDismissedOverrideKeys === 'function' ? portalQuickMenuLoadDismissedOverrideKeys() : [];
+      for(let d = 0; d < dk.length; d++) dismissed[dk[d]] = true;
+      const sid = String(staffId || '').trim().toLowerCase();
+      const rows = portalShadowingHostOverrideRowsForStaff(sid, staffDisplayName);
+      for(let i = 0; i < rows.length; i++){
+        const card = portalShadowingHostQuickMenuCard(rows[i], sid, staffDisplayName);
+        if(card && card.id && !dismissed[card.id]) return true;
+      }
+      return false;
     }
     function portalAttachShadowingObserverChips(items, sessionDateIso, staffId, staffDisplayName){
       if(!Array.isArray(items) || !items.length) return items || [];
@@ -5762,6 +5854,18 @@
             kind: 'reverted',
             _sort: Number(q._sort) || Date.now()
           });
+        }
+        const hostItems = portalShadowingHostQuickMenuItemsForAttention(
+          typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '',
+          dashboardData && dashboardData.staffName,
+          dismissed,
+          seen
+        );
+        for(let hi = 0; hi < hostItems.length; hi++){
+          const pack = hostItems[hi];
+          const iso = pack.iso;
+          if(!byIso[iso]) byIso[iso] = [];
+          byIso[iso].push(pack);
         }
         const isos = Object.keys(byIso).sort();
         const rosterOverrideDayGroups = [];
