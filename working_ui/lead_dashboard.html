@@ -8778,7 +8778,8 @@
               }
             }
             var c = (notes || {})[effClientId] || (nameFromReplace ? { name: nameFromReplace, avatarFile: '' } : {});
-            var slot = String(s.timeSlotLabel || '').trim();
+            var slotRaw = String(s.timeSlotLabel || '').trim();
+            var slot = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(slotRaw) : slotRaw;
             var activity = String(s.activity || 'Swimming').trim();
             var areaNote = rosterAreaLabelForSession(s, activity, portalStaffIsSupportWorkerForAreaNotes()) || '';
             var manualOv = String(s && s.override || '').trim().toUpperCase();
