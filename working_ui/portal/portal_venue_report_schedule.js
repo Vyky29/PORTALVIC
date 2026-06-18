@@ -140,7 +140,7 @@
     },
   };
 
-  /** Thursday Day Centre — Roberto opening + closing. */
+  /** Thursday Day Centre — Roberto opening; legacy closing until Victor handover. */
   var ROBERTO_THU = {
     venue: "SwimFarm",
     label: "Day Centre (Thu)",
@@ -148,6 +148,15 @@
     closeEnd: mins(15, 15),
     serviceStart: mins(12, 30),
     serviceEnd: mins(15, 0),
+  };
+
+  /** Thursday SwimFarm — Victor closing from 2026-06-19 (last bespoke block ~5pm). */
+  var VICTOR_THU_CLOSE_FROM_ISO = "2026-06-19";
+  var VICTOR_THU = {
+    venue: "SwimFarm",
+    label: "SwimFarm (Thu)",
+    closeEnd: mins(17, 15),
+    serviceEnd: mins(17, 0),
   };
 
   /** Berta — Acton Wednesday (afternoon). */
@@ -191,9 +200,33 @@
   var CLOSING_ASSIGNEES = {
     john: { dows: [1, 3, 5], slot: "day_centre" },
     michelle: { dows: [2], slot: "day_centre" },
-    roberto: { dows: [4], slot: "roberto_thu", sun: "roberto" },
+    roberto: { sun: "roberto" },
+    victor: { dows: [4], slot: "victor_thu" },
     berta: { wedActon: true, sun: "berta" },
   };
+
+  function normViewDateIso(v) {
+    var s = String(v || "").trim().slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+  }
+
+  function victorThuSwimFarmClosingActive(viewDateIso) {
+    var iso = normViewDateIso(viewDateIso);
+    if (!iso) {
+      try {
+        var now = new Date();
+        iso =
+          now.getFullYear() +
+          "-" +
+          String(now.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(now.getDate()).padStart(2, "0");
+      } catch (_e) {
+        return false;
+      }
+    }
+    return iso >= VICTOR_THU_CLOSE_FROM_ISO;
+  }
 
   function openingDuty(staffId, dow, dayName, sessionsModel, parseStartMin) {
     var id = normStaffId(staffId);
@@ -268,9 +301,10 @@
     };
   }
 
-  function closingDuty(staffId, dow, dayName, sessionsModel) {
+  function closingDuty(staffId, dow, dayName, sessionsModel, viewDateIso) {
     var id = normStaffId(staffId);
     if (dow == null) dow = dowFromDayName(dayName);
+    var victorThuClose = victorThuSwimFarmClosingActive(viewDateIso);
 
     if (id === "john") {
       if (dow === 0 && staffHasRosterOnDay(id, dayName, sessionsModel)) {
@@ -310,7 +344,11 @@
     }
 
     if (id === "roberto") {
-      if (dow === 4 && staffOnDayCentreRoster(id, dayName, sessionsModel)) {
+      if (
+        !victorThuClose &&
+        dow === 4 &&
+        staffOnDayCentreRoster(id, dayName, sessionsModel)
+      ) {
         return {
           kind: "close",
           scopeKey: "roberto_thu_close",
@@ -328,6 +366,21 @@
           closeEnd: SUNDAY.roberto.closeEnd,
         };
       }
+    }
+
+    if (
+      id === "victor" &&
+      victorThuClose &&
+      dow === 4 &&
+      staffOnVenueRoster(id, dayName, "swimfarm", sessionsModel)
+    ) {
+      return {
+        kind: "close",
+        scopeKey: "victor_thu_close",
+        venue: VICTOR_THU.venue,
+        label: VICTOR_THU.label,
+        closeEnd: VICTOR_THU.closeEnd,
+      };
     }
 
     if (id === "berta") {
@@ -366,10 +419,11 @@
     var dow = ctx.dow != null ? ctx.dow : dowFromDayName(dayName);
     var sessionsModel = ctx.sessionsModel || [];
     var parseStartMin = ctx.parseStartMin || null;
+    var viewDateIso = normViewDateIso(ctx.viewDateIso);
 
     return {
       opening: openingDuty(staffId, dow, dayName, sessionsModel, parseStartMin),
-      closing: closingDuty(staffId, dow, dayName, sessionsModel),
+      closing: closingDuty(staffId, dow, dayName, sessionsModel, viewDateIso),
     };
   }
 

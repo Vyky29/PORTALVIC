@@ -3429,17 +3429,26 @@
     }
     /* Changed by Admin — same yellow card as No Participant */
     .section-card--today .session-card.session-card--admin-adjusted,
-    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-done,
-    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{
       background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
       border-color:rgba(200,165,45,.5);
       box-shadow:0 1px 6px rgba(200,165,45,.12);
     }
-    .section-card--today .session-card.session-card--admin-adjusted:hover{
+    /* Pending feedback wins over admin/shadowing yellow */
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident{
+      background:var(--reviewOrangeBg);
+      border-color:var(--reviewOrangeBorder);
+      box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted:not(.session-card--review-needed):not(.session-card--review-incident):hover{
       border-color:rgba(150,110,20,.62);
       box-shadow:0 4px 14px rgba(180,140,30,.2);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed:hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident:hover{
+      border-color:rgba(200,110,45,.52);
     }
     .session-card--ov-green{
       background:var(--reviewGreenBg);

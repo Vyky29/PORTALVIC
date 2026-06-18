@@ -96,11 +96,11 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-shadowing-host" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-pending-orange-admin" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <script src="/portal/portal_venue_report_schedule.js?v=20260614-day-centre-venue"></script>
+  <script src="/portal/portal_venue_report_schedule.js?v=20260619-victor-thu-close"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-lane-caption" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-faq-v2" />
 </head>
@@ -3895,6 +3895,7 @@
       const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
       return {
         viewDay: viewDay,
+        viewDateIso: typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '',
         sessionsModel: sessionsModel || [],
         hasShiftToday: portalStaffHasVenueShiftOnView(STAFF_DASHBOARD_ID),
         parseStartMin: portalParseRosterStartMin
