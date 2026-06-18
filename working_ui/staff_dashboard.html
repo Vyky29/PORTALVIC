@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-new-shift-alerts-gold" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-schedule-green" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -10720,15 +10720,16 @@
       btn.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
 
-    /** Halo colours from quick-menu override kinds (absent = tablet only, no halo). */
+    /** Halo colours from quick-menu override kinds (absent = green orbit). */
     function portalRosterOverrideHaloScan(st){
-      const out = { newShift: false, trial: false, makeup: false, undo: false, other: false };
+      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, other: false };
       const dayGroups = Array.isArray(st && st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
       for(let g = 0; g < dayGroups.length; g++){
         const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
         for(let i = 0; i < items.length; i++){
           const k = String(items[i] && items[i].kind || '').trim();
-          if(!k || k === 'absent') continue;
+          if(!k) continue;
+          if(k === 'absent'){ out.absent = true; continue; }
           if(k === 'new_shift' || k === 'roster_day') out.newShift = true;
           else if(k === 'trial' || k === 'new_participant') out.trial = true;
           else if(k === 'makeup') out.makeup = true;
@@ -10741,18 +10742,20 @@
     }
     function portalScheduleHaloActive(scan){
       if(!scan) return false;
-      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.other);
+      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.other);
     }
     function portalScheduleHaloMode(scan){
       if(!portalScheduleHaloActive(scan)) return '';
       const ns = !!(scan.newShift || scan.other);
-      if(scan.undo && !scan.trial && !scan.makeup && !ns) return 'schedule-undo';
-      if(scan.makeup && !scan.trial && !ns && !scan.undo) return 'schedule-makeup';
-      if(scan.trial && !ns && !scan.makeup && !scan.undo) return 'schedule-trial-only';
+      if(scan.absent && !scan.trial && !scan.makeup && !scan.undo && !ns) return 'schedule-absent';
+      if(scan.undo && !scan.trial && !scan.makeup && !ns && !scan.absent) return 'schedule-undo';
+      if(scan.makeup && !scan.trial && !ns && !scan.undo && !scan.absent) return 'schedule-makeup';
+      if(scan.trial && !ns && !scan.makeup && !scan.undo && !scan.absent) return 'schedule-trial-only';
       if(scan.trial && ns) return 'schedule-trial';
       if(ns) return 'schedule';
       if(scan.trial) return 'schedule-trial-only';
       if(scan.makeup) return 'schedule-makeup';
+      if(scan.absent) return 'schedule-absent';
       if(scan.undo) return 'schedule-undo';
       return 'schedule';
     }
@@ -10822,6 +10825,7 @@
       if(f.chat) return 'chat';
       if(f.announcement) return 'announcement';
       if(orange) return 'reminder';
+      if(green && !f.chat && !f.announcement && !orange) return green;
       if(green) return 'schedule' + sk;
       return 'none';
     }
@@ -10843,6 +10847,7 @@
         'avatar-wrap--portal-alert-schedule-trial',
         'avatar-wrap--portal-alert-schedule-trial-only',
         'avatar-wrap--portal-alert-schedule-makeup',
+        'avatar-wrap--portal-alert-schedule-absent',
         'avatar-wrap--portal-alert-schedule-undo',
         'avatar-wrap--portal-alert-chat-schedule',
         'avatar-wrap--portal-alert-chat-schedule-trial',
@@ -10901,6 +10906,7 @@
         'schedule-trial': 'avatar-wrap--portal-alert-schedule-trial',
         'schedule-trial-only': 'avatar-wrap--portal-alert-schedule-trial-only',
         'schedule-makeup': 'avatar-wrap--portal-alert-schedule-makeup',
+        'schedule-absent': 'avatar-wrap--portal-alert-schedule-absent',
         'schedule-undo': 'avatar-wrap--portal-alert-schedule-undo',
         schedule: 'avatar-wrap--portal-alert-schedule'
       }[mode];
@@ -10932,7 +10938,7 @@
       }catch(_){ /* ignore */ }
       var mode = 'none';
       try{ mode = portalNotificationAlertState(st); }catch(_){ mode = 'none'; }
-      if(mode === 'schedule' || mode === 'schedule-trial' || mode === 'schedule-trial-only' || mode === 'schedule-makeup' || mode === 'schedule-undo') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
+      if(mode === 'schedule' || mode === 'schedule-trial' || mode === 'schedule-trial-only' || mode === 'schedule-makeup' || mode === 'schedule-absent' || mode === 'schedule-undo') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
       if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both' || mode === 'quad' || mode === 'quad-trial' || mode.indexOf('-schedule') >= 0) return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
       if(mode === 'announcement' || mode === 'announcement-schedule') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
       if(mode === 'chat' || mode === 'chat-schedule') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;

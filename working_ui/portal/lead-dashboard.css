@@ -494,33 +494,33 @@
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle{fill:#f97316 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(2n){fill:#ea580c !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(3n){fill:#fb923c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:var(--sen-gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:var(--gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#ffe08a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:#fb923c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#f97316 !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:var(--sen-gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#ffe08a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#16a34a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#4ade80 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:#dc2626 !important}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
     .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+2){fill:#dc2626 !important}
     .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+3){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n){fill:#22c55e !important}
     /* Pending announcement + reminders: red logo, red aura + gold touch, vivid red and orange dots */
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-aura{
       background:

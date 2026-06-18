@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-orbit-gold" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-schedule-green" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -70,6 +70,11 @@
     .lab-group-row td{background:#eef6fc;font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#2d84b3}
     .lab-swatch{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.12);vertical-align:-2px;margin-right:4px}
     .lab-halo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:14px}
+    .lab-halo-section{margin-top:14px;min-width:0}
+    .lab-halo-section:first-child{margin-top:0}
+    .lab-halo-section-title{
+      margin:0 0 10px 2px;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lab-muted);
+    }
     .lab-halo-cell{
       display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;
       border-radius:14px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);min-width:0;
@@ -213,7 +218,7 @@
       <h1>Lab colores — Portal staff</h1>
       <p>Halos del logo (header), tarjetas del quick menu y chips. Mismas clases que <a href="/staff_dashboard.html">staff_dashboard.html</a>. Los cambios se guardan en este navegador.</p>
       <div class="lab-callout">
-        <strong>Dos catálogos separados</strong> — (1) <em>Tipos de override</em>: trial, makeup, absent… → tarjetas + chips. (2) <em>Modos de halo</em>: estado global del logo (schedule, reminder, combos). «Schedule only» = hay cambios de roster <strong>sin trial</strong> → halo verde; con trial → halo lila.
+        <strong>Dos catálogos separados</strong> — (1) <em>Tipos de override</em>: trial, makeup, absent… → tarjetas + chips. (2) <em>Modos de halo</em>: estado global del logo. Previews: <strong>Individual</strong> → <strong>Mixto</strong> (incl. 3 y 4 tipos). New shift = <strong>verde</strong>; Outstanding feedback = naranja; Ann/Reminders = rojo.
       </div>
       <div class="lab-toolbar">
         <button type="button" class="lab-btn" id="labReset">Restaurar defaults</button>
@@ -413,7 +418,7 @@
           tomorrowClass: 'tomorrow-absent-pill', tomorrowRowClass: '',
           pillText: 'ABSENT', weekText: 'Absents',
           sampleTitle: 'Absent - Mary', sampleSub: '10:00 – 11:00 · Pool',
-          haloNote: 'schedule (verde)',
+          haloNote: 'schedule-absent (verde)',
           colors: {
             bg1:'#ecfdf5', bg2:'#d1fae5', border:'rgba(5,150,105,.45)', shadow:'rgba(16,185,129,.22)',
             strong:'#065f46', sub:'#047857', iconBg:'rgba(16,185,129,.2)', iconFg:'#047857', iconBorder:'rgba(5,150,105,.35)',
@@ -454,17 +459,24 @@
 
     function defaultHalos(){
       return [
+        /* Individual — one colour family */
         { id: 'idle', label: 'Sin alerta', cssClass: 'avatar-wrap--portal-orbit-idle', c1:'#2d84b3', c2:'#4f8fca', c3:'#1d4f8f', pulse: false, note: 'Órbita oculta en idle' },
-        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#f9bf2e', c2:'#f4b740', c3:'#ffe08a', pulse: false, note: 'Amarillo corporativo (Quick menu)' },
+        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#22c55e', c2:'#16a34a', c3:'#4ade80', pulse: false, note: 'Verde — cambio de roster / cover' },
         { id: 'schedule-trial-only', label: 'Trial / new participant', cssClass: 'avatar-wrap--portal-alert-schedule-trial-only', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: false, note: 'Lila — solo órbita' },
-        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#f9bf2e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Amarillo + lila alternado' },
         { id: 'schedule-makeup', label: 'Make up', cssClass: 'avatar-wrap--portal-alert-schedule-makeup', c1:'#ec4899', c2:'#db2777', c3:'#f9a8d4', pulse: false, note: 'Rosa' },
+        { id: 'schedule-absent', label: 'Absent', cssClass: 'avatar-wrap--portal-alert-schedule-absent', c1:'#0d9488', c2:'#0f766e', c3:'#2dd4bf', pulse: false, note: 'Teal — ausencia anunciada' },
         { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#2d84b3', c2:'#1d4f8f', c3:'#4f8fca', pulse: false, note: 'Azul oscuro' },
-        { id: 'reminder', label: 'Reminder / feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#f97316', c2:'#f9bf2e', c3:'#ea580c', pulse: false, note: 'Naranja + dorado (cw/ccw)' },
-        { id: 'announcement', label: 'Announcement', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo' },
-        { id: 'reminder-schedule', label: 'Reminder + schedule', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#f97316', c2:'#22c55e', c3:'#16a34a', pulse: true, note: 'Alterna naranja/verde' },
-        { id: 'reminder-schedule-trial', label: 'Reminder + trial', cssClass: 'avatar-wrap--portal-alert-reminder-schedule-trial', c1:'#f97316', c2:'#a78bfa', c3:'#7c3aed', pulse: true, note: 'Naranja + lila' },
-        { id: 'ann-schedule-trial', label: 'Announcement + trial', cssClass: 'avatar-wrap--portal-alert-announcement-schedule-trial', c1:'#dc2626', c2:'#a78bfa', c3:'#7c3aed', pulse: true, note: 'Rojo + lila' }
+        { id: 'reminder', label: 'Outstanding Feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#f97316', c2:'#ea580c', c3:'#fb923c', pulse: false, note: 'Naranja — feedback pendiente' },
+        { id: 'announcement', label: 'Announcements/Reminders', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo — firma pendiente' },
+        /* Mixed — two alert families */
+        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#22c55e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Verde + lila alternado' },
+        { id: 'reminder-schedule', label: 'Outstanding feedback + New shift', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#f97316', c2:'#22c55e', c3:'#16a34a', pulse: false, note: 'Naranja + verde alternado' },
+        { id: 'reminder-schedule-trial', label: 'Outstanding feedback + trial', cssClass: 'avatar-wrap--portal-alert-reminder-schedule-trial', c1:'#f97316', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Naranja + lila' },
+        { id: 'ann-schedule-trial', label: 'Ann/Reminders + trial', cssClass: 'avatar-wrap--portal-alert-announcement-schedule-trial', c1:'#dc2626', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Rojo + lila' },
+        /* Mixed — three alert families */
+        { id: 'both-schedule', label: 'Ann/Reminders + Feedback + New shift', cssClass: 'avatar-wrap--portal-alert-both-schedule', productionOnly: true, c1:'#dc2626', c2:'#f97316', c3:'#22c55e', pulse: false, note: 'Rojo · naranja · verde (3n)' },
+        /* Mixed — four alert families */
+        { id: 'both-schedule-trial', label: 'Ann/Reminders + Feedback + New shift + Trial', cssClass: 'avatar-wrap--portal-alert-both-schedule-trial', productionOnly: true, c1:'#dc2626', c2:'#f97316', c3:'#22c55e', pulse: false, note: 'Rojo · naranja · verde · lila (4n)' }
       ];
     }
 
@@ -496,13 +508,28 @@
         return Object.assign({}, def, s, { colors: Object.assign({}, def.colors || {}, s.colors || {}) });
       });
     }
+    function mergeHaloDefaults(saved){
+      var defaults = defaultHalos();
+      var byId = {};
+      (saved || []).forEach(function(s){ if(s && s.id) byId[s.id] = s; });
+      var merged = defaults.map(function(d){
+        var s = byId[d.id];
+        if(!s) return d;
+        return Object.assign({}, d, s, { label: d.label, cssClass: d.cssClass, note: s.note || d.note });
+      });
+      (saved || []).forEach(function(s){
+        if(!s || !s.id || defaults.some(function(d){ return d.id === s.id; })) return;
+        merged.push(s);
+      });
+      return merged;
+    }
     function loadState(){
       try{
         var raw = localStorage.getItem(STORAGE_KEY);
         if(!raw) return;
         var parsed = JSON.parse(raw);
         if(parsed && Array.isArray(parsed.overrides) && parsed.overrides.length) state.overrides = mergeOverrideDefaults(parsed.overrides);
-        if(parsed && Array.isArray(parsed.halos) && parsed.halos.length) state.halos = parsed.halos;
+        if(parsed && Array.isArray(parsed.halos) && parsed.halos.length) state.halos = mergeHaloDefaults(parsed.halos);
       }catch(e){}
     }
     function saveState(){
@@ -582,6 +609,7 @@
       });
       state.halos.forEach(function(h){
         if(h.cssClass.indexOf('idle')>=0) return;
+        if(h.productionOnly) return;
         var base = '#labLiveScope .avatar-wrap.'+h.cssClass;
         lines.push(base+' .avatar-orbit, '+base+' .avatar-orbit-layer{opacity:1 !important;visibility:visible !important}');
         lines.push(base+' .avatar-orbit-layer circle{fill:'+h.c1+' !important}');
@@ -737,12 +765,45 @@
     function renderHalos(){
       var host = document.getElementById('labHaloGrid');
       if(!host) return;
-      host.innerHTML = state.halos.map(function(h, i){
-        return '<div class="lab-halo-cell">'+
-          portalAvatarHtml(h.cssClass, 'labOrbF'+i)+
-          '<span class="lab-halo-label">'+esc(h.label)+'</span>'+
-          '<span class="lab-halo-class">'+esc(h.cssClass)+'</span></div>';
-      }).join('');
+      var individualIds = {
+        idle:1, schedule:1, 'schedule-trial-only':1, 'schedule-makeup':1, 'schedule-absent':1,
+        'schedule-undo':1, reminder:1, announcement:1
+      };
+      var mixedTwoIds = {
+        'schedule-trial':1, 'reminder-schedule':1, 'reminder-schedule-trial':1, 'ann-schedule-trial':1
+      };
+      var mixedThreeIds = { 'both-schedule':1 };
+      var mixedFourIds = { 'both-schedule-trial':1 };
+      function renderCells(list){
+        return list.map(function(h, i){
+          var orbId = String(h.id || i).replace(/[^a-z0-9_-]/gi, '');
+          return '<div class="lab-halo-cell">'+
+            portalAvatarHtml(h.cssClass, 'labOrb'+orbId)+
+            '<span class="lab-halo-label">'+esc(h.label)+'</span>'+
+            '<span class="lab-halo-class">'+esc(h.cssClass)+'</span></div>';
+        }).join('');
+      }
+      function pushSection(title, list){
+        if(!list.length) return '';
+        return '<div class="lab-halo-section"><h4 class="lab-halo-section-title">'+esc(title)+'</h4><div class="lab-halo-grid">'+
+          renderCells(list)+'</div></div>';
+      }
+      var individual = [];
+      var mixedTwo = [];
+      var mixedThree = [];
+      var mixedFour = [];
+      state.halos.forEach(function(h){
+        if(individualIds[h.id]) individual.push(h);
+        else if(mixedTwoIds[h.id]) mixedTwo.push(h);
+        else if(mixedThreeIds[h.id]) mixedThree.push(h);
+        else if(mixedFourIds[h.id]) mixedFour.push(h);
+        else mixedTwo.push(h);
+      });
+      host.innerHTML =
+        pushSection('Individual', individual)+
+        pushSection('Mixto — 2 tipos', mixedTwo)+
+        pushSection('Mixto — 3 tipos', mixedThree)+
+        pushSection('Mixto — 4 tipos', mixedFour);
     }
 
     function menuBtnHtml(opts){
