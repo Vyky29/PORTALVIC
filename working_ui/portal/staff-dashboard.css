@@ -3586,16 +3586,18 @@
       border-color:rgba(200,160,40,.55);
     }
     .session-card--ov-training{
-      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
-      border-color:rgba(37,99,235,.42);
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      border-color:rgba(45,132,179,.34);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
     .session-card--ov-shadowing{
       background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
       border-color:rgba(132,204,22,.45);
     }
     .session-card--ov-meeting{
-      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
-      border-color:rgba(132,204,22,.45);
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      border-color:rgba(45,132,179,.34);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
     /* Today · Training / Meeting — neutral card (Elijah-style), coloured chips only */
     .section-card--today .session-card.session-card--ov-training,
@@ -3683,9 +3685,9 @@
     .section-card--today .session-card.session-card--available.session-card--ov-yellow,
     .section-card--today .session-card.session-card--available.session-card--ov-green,
     .section-card--today .session-card.session-card--available.session-card--ov-red{
-      border-color:rgba(176,45,45,.58);
-      background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
-      box-shadow:0 1px 6px rgba(150,28,28,.2);
+      border-color:rgba(45,132,179,.34);
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
     .session-ov-symbol-text{
       display:block;min-width:0;max-width:100%;
@@ -4572,13 +4574,16 @@
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(176,45,45,.58);
-      background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
-      box-shadow:0 1px 6px rgba(150,28,28,.2);
+      border-color:rgba(45,132,179,.34);
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(150,28,28,.68);
-      box-shadow:0 4px 14px rgba(150,28,28,.22);
+      border-color:rgba(45,132,179,.48);
+      box-shadow:0 4px 14px rgba(23,50,71,.1);
+    }
+    .section-card--today .session-card.session-card--available .session-meta-name{
+      color:#b91c1c;
     }
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;

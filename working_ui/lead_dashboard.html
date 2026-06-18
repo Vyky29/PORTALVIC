@@ -4811,19 +4811,80 @@
     function portalSessionAddSplitNames(raw){
       return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
     }
-    function portalSessionAddPeopleChips(kind, payload){
+    function portalSessionAddPeopleChips(kind, payload, ov, sessionDateIso){
       payload = payload && typeof payload === 'object' ? payload : {};
       const trainer = String(payload.trainer || '').trim();
       if(kind === 'training'){
         return portalSessionAddSplitNames(trainer).map(function(n){ return 'with ' + n; });
       }
       if(kind === 'shadowing'){
-        return portalSessionAddSplitNames(trainer);
+        const label = portalSessionAddShadowingChipLabel(payload, ov, sessionDateIso);
+        return label ? [label] : [];
       }
       if(kind === 'meeting'){
         return [];
       }
       return [];
+    }
+    function portalShadowingHostDisplayName(staffId){
+      const k = String(staffId || '').trim().toLowerCase();
+      if(!k) return '';
+      try{
+        const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+        const prof = src && src.staffProfiles ? (src.staffProfiles[k] || src.staffProfiles[staffId]) : null;
+        const nm = prof && String(prof.staffName || prof.name || '').trim();
+        if(nm) return nm.split(/\s+/).filter(Boolean)[0] || nm;
+      }catch(_){}
+      return k.charAt(0).toUpperCase() + k.slice(1);
+    }
+    function portalShadowingParticipantForSessionAdd(ov, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!ov || !iso) return '';
+      let pl = ov.payload;
+      try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = ov.payload; }
+      pl = pl && typeof pl === 'object' ? pl : {};
+      const fromPayload = String(pl.participant || pl.client_name || pl.client || '').trim();
+      if(fromPayload) return portalParticipantDisplayName(fromPayload);
+      const trainer = String(pl.trainer || '').trim();
+      if(!trainer) return '';
+      const dayWord = typeof portalWeekdayLongEnGB === 'function'
+        ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
+        : '';
+      if(!dayWord) return '';
+      const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
+      const isReal = function(s){
+        const st = String(s && s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s && s.clientId || '').toLowerCase();
+        if(!cid || cid === 'closed' || cid === 'available') return false;
+        const nm = String(s && (s.clientDisplay || s.clientName || '') || '').trim().toLowerCase();
+        if(/no\s*participant/.test(nm) || /no\s*client/.test(nm)) return false;
+        return true;
+      };
+      let found = '';
+      (sessionsModel || []).forEach(function(s){
+        if(found || !s || !isReal(s)) return;
+        if(String(s.day || '').trim() !== dayWord) return;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+          && !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayWord)) return;
+        if(ovStart && s.start && !portalHmRangeOverlaps(ovStart, ovEnd, s.start, s.end)) return;
+        const hostId = String(s.staffId || '').trim();
+        const hostName = portalShadowingHostDisplayName(hostId);
+        if(!portalStaffNameMatchesShadowHost(trainer, hostId, hostName)) return;
+        const nm = portalParticipantDisplayName(String(s.clientDisplay || s.clientName || s.clientId || '').trim());
+        if(nm) found = nm;
+      });
+      return found;
+    }
+    function portalSessionAddShadowingChipLabel(payload, ov, sessionDateIso){
+      payload = payload && typeof payload === 'object' ? payload : {};
+      const hosts = portalSessionAddSplitNames(String(payload.trainer || '').trim());
+      const host = hosts[0] || '';
+      const participant = portalShadowingParticipantForSessionAdd(ov, sessionDateIso);
+      if(host && participant) return host + ' / ' + participant;
+      if(hosts.length > 1) return hosts.join(' / ');
+      return host || participant || '';
     }
     function portalKnownMeetingGroupKeys(){
       return {
@@ -7643,7 +7704,7 @@
         const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
         const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
         const areaNote = portalSessionAddAreaNoteLabel(locRaw);
-        const peopleChips = (kind === 'meeting' || kind === 'training') ? [] : portalSessionAddPeopleChips(kind, ov.payload);
+        const peopleChips = (kind === 'meeting' || kind === 'training') ? [] : portalSessionAddPeopleChips(kind, ov.payload, ov, sessionDateKey);
         const meetingDetail = kind === 'meeting'
           ? portalSessionAddMeetingDetail(ov.payload)
           : (kind === 'training' ? portalSessionAddTrainingDetail(ov.payload, staffRoleTrackForTodayBuild()) : null);

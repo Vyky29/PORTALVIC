@@ -470,7 +470,7 @@
       { estado: 'Updated by admin', card: 'session-card--admin-adjusted', chip: 'portal-session-slot-chip--updated' },
       { estado: 'Absent', card: 'override--absent session-card--ov-green', chip: 'portal-session-slot-chip--absent' },
       { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
-      { estado: 'NO PARTICIPANT (slot abierto)', card: 'session-card--available session-card--ov-yellow', chip: '—' },
+      { estado: 'NO PARTICIPANT (slot abierto)', card: '(default blanco)', chip: '— · texto rojo' },
       { estado: 'Closed', card: 'session-card--closed', chip: '—' },
       { estado: 'Training (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--training · equipo + directores' },
       { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing · verde' },
@@ -1291,10 +1291,10 @@
           'portal-session-slot-chip--updated', 'Updated by admin', bigPool),
         todayCatalogRowTraining('session-card--ov-training', '10 to 11', 'Westway', 'Training session', 'Swimming Instructors', ['Javi'], hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
-          'portal-session-slot-chip--shadowing', 'Roberto', teachingPool),
+          'portal-session-slot-chip--shadowing', 'Roberto / Aqsa', teachingPool),
         todayCatalogRowShadowingHost('', '2 to 4', 'Acton', 'Samira', 'Alex shadowing you', teachingPool),
         todayCatalogRowMeeting('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting', 'Swimming Instructors', ['Javi', 'Raul'], hubRoom),
-        todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
+        todayCatalogRow('session-card--available', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
         todayCatalogRow('session-card--closed', '12 to 1', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
       ].join('');
 
@@ -1357,7 +1357,7 @@
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors + Javi', 'Training · azul · equipo + directores'],
-        ['portal-session-slot-chip--shadowing', 'Roberto', 'Shadowing · verde · card + chip'],
+        ['portal-session-slot-chip--shadowing', 'Roberto / Aqsa', 'Shadowing · verde · host / participante'],
         ['portal-sched-ov-badge override--shadowing-host', 'Alex shadowing you', 'Shadowing host · rojo · compañero en tu sesión'],
         ['portal-session-slot-chip--meeting', 'Swimming Instructors + Javi/Raul', 'Meeting · card blanca · chips azules (training)'],
         ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']
