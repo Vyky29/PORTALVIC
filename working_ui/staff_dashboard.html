@@ -4945,7 +4945,7 @@
       if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
       if(r.incident) return 'session-card--review-incident';
-      if(isSessionEndedForFeedback(item)){
+      if(isSessionStartedForItem(item)){
         if(!r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';
         return '';
       }
@@ -6247,7 +6247,7 @@
       }).join('');
     }
 
-    /** Single status chip below participant name (override + feedback + slot time change). */
+    /** Status chips below participant name (override context + feedback + slot time change). */
     function todaySessionChipBelowNameHtml(item){
       if(!item) return '';
       const pillText = String(item.portalOverrideAlertPill || '').trim();
@@ -6256,6 +6256,8 @@
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
       const isTrialSym = symNorm === 'trial';
+      const chips = [];
+      const push = function(html){ if(html) chips.push(html); };
 
       if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent"><span>Absent</span></span>';
@@ -6266,53 +6268,46 @@
       if(pillNorm === 'COMPLETED'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
       }
+
       if(typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)){
-        return portalShadowingHostBadgeHtml(item.portalShadowingHostLabels);
-      }
-      if(Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
-        return portalPlainSessionSlotChipsHtml(item.portalSessionAddChips);
-      }
-      if(!!item.portalOverrideTrialTag || isTrialSym){
-        return '<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>';
-      }
-      if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
-        return '<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>';
-      }
-      if(pillText && pillNorm !== 'UPDATED'){
+        push(portalShadowingHostBadgeHtml(item.portalShadowingHostLabels));
+      } else if(Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
+        push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips));
+      } else if(!!item.portalOverrideTrialTag || isTrialSym){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
+      } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>');
+      } else if(pillText && pillNorm !== 'UPDATED'){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
-        return '<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>';
-      }
-      if(sym && !isMakeUpSym){
+        push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
+      } else if(sym && !isMakeUpSym){
         const tx = escapeHtml(sym);
-        return '<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>';
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }
 
       if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
         const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
-        if(r.absent){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>';
-        }
-        if(r.cancelled){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Cancelled"><span>Cancelled</span></span>';
-        }
-        if(r.feedbackDone){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
-        }
-        const timeUpdated = portalSessionItemRosterTimeUpdated(item);
         const started = isSessionStartedForItem(item);
         const ended = isSessionEndedForFeedback(item);
-        if(timeUpdated && !started && !ended){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Session time updated"><span>Updated</span></span>';
+        const timeUpdated = portalSessionItemRosterTimeUpdated(item);
+        if(r.absent){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>');
+        } else if(r.cancelled){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>');
+        } else if(r.feedbackDone){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>');
+        } else if(started){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>');
         }
-        if(ended && !r.feedbackDone && !r.absent && !r.cancelled){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+        if(timeUpdated && !started && !ended){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Session time updated"><span>Updated</span></span>');
         }
       }
 
-      if(item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
-        return '<span class="portal-sched-ov-badge override--admin-shift" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>';
+      if(!chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+        push('<span class="portal-sched-ov-badge override--admin-shift" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>');
       }
-      return '';
+      return chips.join('');
     }
 
     /** @deprecated use todaySessionChipBelowNameHtml */
@@ -6415,8 +6410,8 @@
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
       const chip = todaySessionChipBelowNameHtml(item);
-      const chipsWrapCls = Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length > 1
-        ? ' session-chips-below-name--wrap' : '';
+      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
+      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '';
       const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
@@ -7186,6 +7181,31 @@
       return false;
     }
     try{ window.portalStaffHasInstructorCoverOnCalendarDate = portalStaffHasInstructorCoverOnCalendarDate; }catch(_){}
+    /** Cover instructor cannot take a client session that overlaps their own open / NO PARTICIPANT roster block. */
+    function portalStaffRosterOpenSlotOverlapsWindow(staffId, sessionDateKey, anchorDayWord, winStart, winEnd){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const iso = normaliseIsoDate(sessionDateKey);
+      const dayWord = String(anchorDayWord || '').trim();
+      if(!sid || !iso || !winStart) return false;
+      const winEndHm = winEnd || winStart;
+      const model = Array.isArray(sessionsModel) ? sessionsModel : [];
+      for(let i = 0; i < model.length; i++){
+        const s = model[i];
+        if(!s) continue;
+        if(String(s.staffId || '').trim().toLowerCase() !== sid) continue;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+          if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayWord)) continue;
+        }else if(String(s.day || '').trim() !== dayWord){
+          continue;
+        }
+        if(sessionModelStatus(s) !== 'Available') continue;
+        const st = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s.start) : String(s.start || '').trim();
+        const en = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s.end) : String(s.end || s.start || '').trim();
+        if(st && portalHmRangeOverlaps(st, en || st, winStart, winEndHm)) return true;
+      }
+      return false;
+    }
+    try{ window.portalStaffRosterOpenSlotOverlapsWindow = portalStaffRosterOpenSlotOverlapsWindow; }catch(_){}
     /** Logged-in staff was replaced by a cover instructor for this slot (their shift is off). */
     function portalOverrideIsInstructorReplacedOffRow(row){
       if(String(row && row.override_type || '').trim() !== 'instructor_reassign') return false;
@@ -9677,7 +9697,11 @@
               openSheet: false,
               sessionKey: `${sessionDateKey}|${s.start}|${s.clientId}`,
               sessionStartTs,
-              sessionEndTs
+              sessionEndTs,
+              noSessionFeedbackRequired: true,
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideCardTone: 'red',
+              portalOverrideSymbolText: 'No Participant'
             }, meta);
           }
           let effClientId = String(s.clientId || '').trim().toLowerCase();
@@ -9760,6 +9784,12 @@
           status: 'Scheduled',
           activity: 'Swimming'
         };
+        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
+        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
+        if(typeof portalStaffRosterOpenSlotOverlapsWindow === 'function'
+          && portalStaffRosterOpenSlotOverlapsWindow(cov, sessionDateKey, anchorDayWord, coverWinStart, coverWinEnd)){
+          return;
+        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         const slotOv = portalTodayScheduleOverrideForSession(base, sessionDateKey);
@@ -10008,6 +10038,8 @@
           if(!it || it.kind !== 'client') return;
           const cid = String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed') return;
+          const ov = it && it.__portalScheduleOverride;
+          if(ov && String(ov.override_type || '').trim() === 'instructor_reassign') return;
           filled[portalTodaySlotOccupancyKey(it)] = true;
         });
         return items.filter(function(it){
@@ -10059,6 +10091,20 @@
       const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       return d0 === t0;
     }
+    /** Block Today panel flashes until first full roster + term-calendar sync (live calendar day only). */
+    function portalStaffLiveTodayAwaitingInitialSchedule(){
+      if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
+      try{
+        return !window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__;
+      }catch(_){ return true; }
+    }
+    function portalStaffMarkInitialTodayScheduleUnsettled(){
+      try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
+    }
+    function portalStaffMarkInitialTodayScheduleSettled(){
+      try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = true; }catch(_){}
+    }
+    try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
     /** Live Today: staff has a dated shift on the anchor calendar day (Summer Term 2 timetable). */
     function portalStaffLiveTodayHasScheduledShift(staffId, anchorDate){
       try{
@@ -10315,6 +10361,13 @@
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
+        dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
+        dashboardData.portalTodayNextSessionPreview = null;
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        return [];
+      }
       const selectedAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
         ? portalResolveTodaySectionCalendarDate()
         : null;
@@ -11822,6 +11875,9 @@
       }
     };
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
+    if(portalStaffDashIsEditorPreviewMode()){
+      portalStaffMarkInitialTodayScheduleSettled();
+    }
 
     /** Model sessions for the demo view day and staff (same source as Today). */
     function getSessionsModelRowsForViewDay(){
@@ -12569,7 +12625,10 @@
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
-      const count = Math.min(9, dashboardData.today.length || 0);
+      let count = Math.min(9, dashboardData.today.length || 0);
+      if(typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
+        count = 0;
+      }
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
       if(!count){
@@ -16225,6 +16284,7 @@
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        portalStaffMarkInitialTodayScheduleSettled();
         if (typeof renderHeader === "function") renderHeader();
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
@@ -16250,6 +16310,7 @@
       }
       async function rehydrateFromProfileOnce(){
         var runId = ++_rehydrateRun;
+        portalStaffMarkInitialTodayScheduleUnsettled();
         try {
         try {
           if (window.__PORTAL_GHOST_VERIFY_PROMISE__) {
@@ -16382,16 +16443,6 @@
           if(typeof portalSeedTeflonGuideDemoReviewState === 'function') portalSeedTeflonGuideDemoReviewState();
         }
         portalApplyClientsInfoToNotes();
-        var _finishStaffRehydrateUiNowEarly = function(){
-          if(typeof portalMarkFeedbackReconciledFromExports === 'function'){
-            portalMarkFeedbackReconciledFromExports();
-          }
-          if(typeof renderHeader === 'function') renderHeader();
-          if(typeof renderToday === 'function') renderToday();
-          if(typeof renderMiniCounts === 'function') renderMiniCounts();
-          if(typeof renderLists === 'function') renderLists();
-        };
-        _finishStaffRehydrateUiNowEarly();
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
         var postFbDay = "";
         try{
@@ -16507,6 +16558,10 @@
         dashboardData.week = buildWeekRows(staffId);
 
         if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(staffId);
+        portalSyncTodaySectionDisplay(sessionsModel);
+        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
+        if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
+        if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
 
         try{
           const lockDay = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();
@@ -16531,6 +16586,7 @@
           if(typeof portalMarkFeedbackReconciledFromExports === "function"){
             portalMarkFeedbackReconciledFromExports();
           }
+          portalStaffMarkInitialTodayScheduleSettled();
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
