@@ -6659,6 +6659,24 @@
       const cover = portalNormKeyStr(pl && pl.covering_staff_id);
       return !!(me && cover && cover === me);
     }
+    /** Logged-in staff covers at least one session on this calendar date (spreadsheet instructor change). */
+    function portalStaffHasInstructorCoverOnCalendarDate(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = portalNormKeyStr(staffId);
+      if(!iso || !sid) return false;
+      const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      for(let i = 0; i < list.length; i++){
+        const row = list[i];
+        if(!row || String(row.status || 'active') !== 'active') continue;
+        if(String(row.override_type || '').trim() !== 'instructor_reassign') continue;
+        if(normaliseIsoDate(row.session_date) !== iso) continue;
+        const pl = portalOverrideCoverPayload(row);
+        const cover = portalNormKeyStr(pl && pl.covering_staff_id);
+        if(cover && cover === sid) return true;
+      }
+      return false;
+    }
+    try{ window.portalStaffHasInstructorCoverOnCalendarDate = portalStaffHasInstructorCoverOnCalendarDate; }catch(_){}
     /** Logged-in staff was replaced by a cover instructor for this slot (their shift is off). */
     function portalOverrideIsInstructorReplacedOffRow(row){
       if(String(row && row.override_type || '').trim() !== 'instructor_reassign') return false;
@@ -6685,14 +6703,7 @@
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
-      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)){
-        const iso = normaliseIsoDate(row && row.session_date);
-        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(iso && sid && typeof portalTermStaffExtraCalendarDates === 'function'
-          && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
-          return 'new_shift';
-        }
-      }
+      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'new_shift';
       if(P && typeof P.overrideIsRosterDayGroupRow === 'function' && P.overrideIsRosterDayGroupRow(row)){
         if(P.overrideRosterDayGroupIsNewShift && P.overrideRosterDayGroupIsNewShift(row)) return 'new_shift';
         return 'roster_day';
@@ -6927,6 +6938,26 @@
       })) return items;
       return items.filter(function(it){ return String(it && it.kind || '') !== 'other'; });
     }
+    /** One New shift card per calendar day (instructor cover / spreadsheet day group). */
+    function portalCollapseNewShiftOverrideQuickMenuItems(items){
+      if(!items || !items.length) return items || [];
+      const byIso = Object.create(null);
+      const rest = [];
+      for(let i = 0; i < items.length; i++){
+        const it = items[i];
+        if(String(it && it.kind || '') !== 'new_shift'){
+          rest.push(it);
+          continue;
+        }
+        const iso = String(it.iso || '').trim();
+        if(!iso){
+          rest.push(it);
+          continue;
+        }
+        if(!byIso[iso]) byIso[iso] = it;
+      }
+      return rest.concat(Object.keys(byIso).map(function(k){ return byIso[k]; }));
+    }
     /** One Session Cancelled card per day when the logged-in instructor was replaced by cover. */
     function portalCollapseShiftCancelledOverrideQuickMenuItems(items){
       if(!items || !items.length) return items || [];
@@ -6989,6 +7020,7 @@
     function portalFinalizeOverrideQuickMenuItems(items, dayIso){
       let out = portalDedupeAbsentOverrideQuickMenuItems(items || []);
       out = portalDedupeScheduleChangeOverrideQuickMenuItems(out);
+      out = portalCollapseNewShiftOverrideQuickMenuItems(out);
       out = portalCollapseShiftCancelledOverrideQuickMenuItems(out);
       out = portalCollapseCancelledOverrideQuickMenuItems(out, dayIso);
       out = portalHideScheduleChangesWhenShiftCancelled(out);
@@ -7789,6 +7821,8 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return true;
       if(portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0) return true;
       if(portalTermDateForcedComplete(iso, sid)) return true;
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
@@ -9428,6 +9462,8 @@
           const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
           if(portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return true;
         }
+        if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+          && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return true;
         return false;
       }catch(_){ return false; }
     }
@@ -9446,6 +9482,10 @@
         if(typeof isHalfTermDay === 'function' && isHalfTermDay(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), halfWeeks)) return true;
         const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
         if(iso && typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
+          return false;
+        }
+        if(iso && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+          && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
           return false;
         }
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
@@ -12006,6 +12046,10 @@
       if(typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
         return false;
       }
+      if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
+        return false;
+      }
       const d = new Date(iso + 'T12:00:00');
       if(isNaN(d.getTime())) return true;
       const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
@@ -12023,6 +12067,10 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cell) : '';
       const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      if(iso && sid && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
+        return false;
+      }
       if(typeof portalTermCalendarDayIsRed === 'function'
         && portalTermCalendarDayIsRed(cell.getFullYear(), cell.getMonth(), cell.getDate(), sid, halfWeeks)){
         return true;
@@ -12557,6 +12605,11 @@
     /** Term grid red: after term end (e.g. Jul 18+), half-term, staff off, away / cover. */
     function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(sid && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
+        return false;
+      }
       const extraRed = isHalfTermDay(year, monthIndex, day, weekStartStrings)
         || Boolean(staffId && portalTermStaffOffWeekdayOnDate(iso, staffId))
         || Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
@@ -13187,10 +13240,12 @@
             portalTermStaffExtraCalendarDates(termStaffId).indexOf(isoKey) >= 0
             || (typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(isoKey, termStaffId))
           );
-          const isWorked = extraCatchUp || (worked.includes(w) && (rosterApplies || exportWorked));
+          const instructorCoverDay = termStaffId && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+            && portalStaffHasInstructorCoverOnCalendarDate(isoKey, termStaffId);
+          const isWorked = extraCatchUp || instructorCoverDay || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;
-          const halfBlocksNav = half && !exportWorked && !extraCatchUp;
+          const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay;
           if(halfBlocksNav){
             cls += ' half-term';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
