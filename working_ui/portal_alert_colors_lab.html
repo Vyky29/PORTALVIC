@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260615-trial-eddie-mc" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-orbit-gold" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -455,8 +455,11 @@
     function defaultHalos(){
       return [
         { id: 'idle', label: 'Sin alerta', cssClass: 'avatar-wrap--portal-orbit-idle', c1:'#2d84b3', c2:'#4f8fca', c3:'#1d4f8f', pulse: false, note: 'Órbita oculta en idle' },
-        { id: 'schedule', label: 'Schedule only', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#22c55e', c2:'#16a34a', c3:'#4ade80', pulse: true, note: 'Roster sin trial' },
-        { id: 'schedule-trial', label: 'Schedule + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: true, note: 'Al menos un trial' },
+        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#f9bf2e', c2:'#f4b740', c3:'#ffe08a', pulse: false, note: 'Amarillo corporativo (Quick menu)' },
+        { id: 'schedule-trial-only', label: 'Trial / new participant', cssClass: 'avatar-wrap--portal-alert-schedule-trial-only', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: false, note: 'Lila — solo órbita' },
+        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#f9bf2e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Amarillo + lila alternado' },
+        { id: 'schedule-makeup', label: 'Make up', cssClass: 'avatar-wrap--portal-alert-schedule-makeup', c1:'#ec4899', c2:'#db2777', c3:'#f9a8d4', pulse: false, note: 'Rosa' },
+        { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#2d84b3', c2:'#1d4f8f', c3:'#4f8fca', pulse: false, note: 'Azul oscuro' },
         { id: 'reminder', label: 'Reminder / feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#f97316', c2:'#f9bf2e', c3:'#ea580c', pulse: false, note: 'Naranja + dorado (cw/ccw)' },
         { id: 'announcement', label: 'Announcement', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo' },
         { id: 'reminder-schedule', label: 'Reminder + schedule', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#f97316', c2:'#22c55e', c3:'#16a34a', pulse: true, note: 'Alterna naranja/verde' },
