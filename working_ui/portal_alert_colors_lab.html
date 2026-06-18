@@ -353,9 +353,12 @@
           <div id="labHaloGrid"></div>
         </div>
       </div>
-      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — catálogo de tarjetas</h3>
-      <p class="lab-lead">Todas las filas Today de producción en un solo panel: hora/venue · nombre · chip · nota de área PNG. Mismo markup que <code>staff_dashboard.html</code>.</p>
+      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — ciclo de feedback (mismas sesiones)</h3>
+      <p class="lab-lead">Tres estados del mismo día: <strong>antes de la sesión</strong> (blanco, sin chip) → <strong>después, pendiente</strong> (naranja) → <strong>todo enviado</strong> (verde). Mismo markup que <code>staff_dashboard.html</code>.</p>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodaySection"></div>
+      <h3 style="margin:20px 0 8px;font-size:.9rem">Today — catálogo de overrides y otros</h3>
+      <p class="lab-lead">Trial, makeup, absent, cancelled, training, slot abierto, etc.</p>
+      <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodayOverridesSection"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
       <div class="lab-chip-demo-grid" id="labChipDemos"></div>
       <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
@@ -1124,19 +1127,43 @@
 
     function renderTodaySection(){
       var host = document.getElementById('labTodaySection');
+      var overrideHost = document.getElementById('labTodayOverridesSection');
       if(!host) return;
       var teachingPool = areaNoteSymbol('Teaching Pool');
       var bigPool = areaNoteSymbol('Big Pool');
       var wallNote = areaNoteSymbol('Wall');
       var hubRoom = areaNoteSymbol('Hub Room');
-      var rows = [
-        todayCatalogRow('', '4 to 4.30', 'Acton', 'Elijah', '', '', teachingPool),
+      var lifecycleBase = [
+        { time: '4 to 4.30', venue: 'Acton', name: 'Elijah', pool: teachingPool },
+        { time: '4.30 to 5', venue: 'Acton', name: 'Aqsa', pool: bigPool },
+        { time: '5 to 5.30', venue: 'Acton', name: 'Bediako', pool: teachingPool },
+        { time: '5.30 to 6', venue: 'Acton', name: 'Hazem', pool: bigPool }
+      ];
+      function lifecycleRows(mode){
+        return lifecycleBase.map(function(r){
+          if(mode === 'before'){
+            return todayCatalogRow('', r.time, r.venue, r.name, '', '', r.pool);
+          }
+          if(mode === 'pending'){
+            return todayCatalogRow('session-card--review-needed', r.time, r.venue, r.name,
+              'portal-session-slot-chip--pending', 'Pending', r.pool);
+          }
+          return todayCatalogRow('session-card--review-done', r.time, r.venue, r.name,
+            'portal-session-slot-chip--submitted', 'Submitted', r.pool);
+        }).join('');
+      }
+      host.innerHTML =
+        todayDayPanel('TODAY', 'Antes de la sesión', lifecycleRows('before'),
+          'Sesión aún no terminada · tarjeta blanca · sin chip bajo el nombre.') +
+        todayDayPanel('TODAY', 'Después de la sesión — Pending', lifecycleRows('pending'),
+          'Sesión terminada · feedback pendiente · <code>session-card--review-needed</code> + chip naranja.') +
+        todayDayPanel('TODAY', 'Todo enviado — Submitted', lifecycleRows('submitted'),
+          'Register/feedback completado · <code>session-card--review-done</code> + chip verde.');
+
+      if(!overrideHost) return;
+      var overrideRows = [
         todayCatalogRow('session-card--ov-blue', '4.30 to 5', 'Acton', 'Aqsa',
           'portal-session-slot-chip--updated', 'Updated', bigPool),
-        todayCatalogRow('session-card--review-needed', '5 to 5.30', 'Acton', 'Bediako',
-          'portal-session-slot-chip--pending', 'Pending', teachingPool),
-        todayCatalogRow('session-card--review-done', '5.30 to 6', 'Acton', 'Hazem',
-          'portal-session-slot-chip--submitted', 'Submitted', bigPool),
         todayCatalogRow('override--absent session-card--ov-green', '6 to 6.30', 'Acton', 'Mary',
           'portal-session-slot-chip--absent', 'Absent', teachingPool),
         todayCatalogRow('session-card--ov-green override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
@@ -1159,10 +1186,7 @@
       ].join('');
 
       var legend =
-        '<strong>Normal</strong> (blanco, sin chip) · '+
         '<strong>Updated</strong> (<code>session-card--ov-blue</code> + chip azul) · '+
-        '<strong>Outstanding</strong> (<code>session-card--review-needed</code> + Pending naranja) · '+
-        '<strong>Submitted</strong> (<code>session-card--review-done</code> + verde) · '+
         '<strong>Absent</strong> (verde + chip teal) · '+
         '<strong>Cancelled</strong> (verde reviewed + chip negro) · '+
         '<strong>Trial/New Participant</strong> (lila) · '+
@@ -1170,7 +1194,7 @@
         '<strong>Training / Shadowing / Meeting</strong> (admin session_add) · '+
         '<strong>Slot abierto</strong> (amarillo) · <strong>Closed</strong> (rojo claro).';
 
-      host.innerHTML = todayDayPanel('TODAY', 'Catálogo', rows, legend);
+      overrideHost.innerHTML = todayDayPanel('TODAY', 'Catálogo', overrideRows, legend);
     }
 
     function renderChipLegend(){
