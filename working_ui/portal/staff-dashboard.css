@@ -4664,6 +4664,13 @@
       background:linear-gradient(180deg,#a78bfa,#7c3aed);
       border:1px solid rgba(91,33,182,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(124,58,237,.22);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--trial > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
     }
     .portal-session-slot-chip--plain{
       color:var(--muted);

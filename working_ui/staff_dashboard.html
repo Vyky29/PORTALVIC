@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-absent-chip-teal" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-trial-chip-label" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -5968,7 +5968,7 @@
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
       }
       if(!!item.portalOverrideTrialTag || isTrialSym){
-        return '<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial"><span>Trial</span></span>';
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>';
       }
       if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>';
