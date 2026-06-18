@@ -100,6 +100,7 @@
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
+  <script src="/portal/portal_venue_report_schedule.js?v=20260614-day-centre-venue"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-lane-caption" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-faq-v2" />
 </head>
@@ -3889,8 +3890,27 @@
     try{ window.portalApplyAfterInSheetQuickAbsence = portalApplyAfterInSheetQuickAbsence; }catch(_){}
 
     const PORTAL_IS_LEAD_APP = false;
-    const PORTAL_VENUE_JB_LEADS = ["john", "berta"];
-    const PORTAL_VENUE_SUNDAY_POOL = ["roberto", "dan", "aurora"];
+
+    function portalVenueScheduleCtx(){
+      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      return {
+        viewDay: viewDay,
+        sessionsModel: sessionsModel || [],
+        hasShiftToday: portalStaffHasVenueShiftOnView(STAFF_DASHBOARD_ID),
+        parseStartMin: portalParseRosterStartMin
+      };
+    }
+    function portalParseRosterStartMin(t){
+      const raw = String(t || '').trim();
+      if(!raw) return null;
+      const hm = raw.match(/^(\d{1,2})(?:[:.](\d{2}))?/);
+      if(!hm) return null;
+      let h = Number(hm[1]);
+      const m = Number(hm[2] || 0);
+      if(!Number.isFinite(h) || !Number.isFinite(m)) return null;
+      if(h <= 7 && !/[ap]m/i.test(raw)) h += 12;
+      return h * 60 + m;
+    }
 
     function portalStaffHasVenueShiftOnView(staffId){
       try{
@@ -3909,11 +3929,10 @@
     }
     function portalCanOpenVenueReportNormally(){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
-      if(!id || !viewDay) return false;
-      if(PORTAL_VENUE_JB_LEADS.includes(id)) return portalStaffHasVenueShiftOnView(id);
-      if(viewDay === 'Sunday' && PORTAL_VENUE_SUNDAY_POOL.includes(id)) return portalStaffHasVenueShiftOnView(id);
-      return false;
+      if(!id) return false;
+      const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
+      if(!sched || typeof sched.portalVenueReportScopeApplies !== 'function') return false;
+      return sched.portalVenueReportScopeApplies(id, portalVenueScheduleCtx());
     }
 
     function portalMinutesNow(){
@@ -3933,33 +3952,9 @@
     }
     function portalVenueTimeWindowsForUser(){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      const dayName = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
-      let dowView = new Date().getDay();
-      try{
-        if(dayName){
-          const ad = getViewAnchorCalendarDate(dayName);
-          if(ad && !isNaN(ad.getTime())) dowView = ad.getDay();
-        }
-      }catch(_){}
-      if(PORTAL_VENUE_JB_LEADS.includes(id)){
-        if(dowView === 0){
-          return { label: 'jb-sun', openStart: 9 * 60 + 15, openEnd: 9 * 60 + 25, closeStart: 14 * 60, closeEnd: 14 * 60 + 30 };
-        }
-        if(dowView >= 1 && dowView <= 5){
-          return { label: 'jb-week', openStart: 16 * 60 + 15, openEnd: 16 * 60 + 25, closeStart: 18 * 60, closeEnd: 18 * 60 + 20 };
-        }
-        return null;
-      }
-      if(dowView === 0 && PORTAL_VENUE_SUNDAY_POOL.includes(id)){
-        return {
-          label: 'pool-sun',
-          openStart: 8 * 60 + 30,
-          openEnd: 8 * 60 + 55,
-          closeStart: 15 * 60,
-          closeEnd: 15 * 60 + 30
-        };
-      }
-      return null;
+      const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
+      if(!sched || typeof sched.portalVenueTimeWindowsForStaff !== 'function') return null;
+      return sched.portalVenueTimeWindowsForStaff(id, portalVenueScheduleCtx());
     }
     function portalViewCalendarDateKey(){
       try{
@@ -4032,16 +4027,13 @@
     }
     function portalVenueLocalKey(kind){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
       const dateKey = portalViewCalendarDateKey();
-      if(viewDay === 'Sunday' && PORTAL_VENUE_SUNDAY_POOL.includes(id)){
-        const shared = portalPoolSundaySharedSignature(viewDay);
-        if(shared){
-          const slug = shared.replace(/[^a-z0-9]+/gi, '_').slice(0, 96);
-          return 'portalVenue_' + kind + '_' + dateKey + '_poolsun_' + slug;
-        }
-      }
-      return 'portalVenue_' + kind + '_' + dateKey + '_' + id;
+      const w = portalVenueTimeWindowsForUser();
+      const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
+      const slug = sched && typeof sched.portalVenueLocalScopeSlug === 'function'
+        ? sched.portalVenueLocalScopeSlug(w)
+        : String(w && w.label || id).replace(/[^a-z0-9]+/gi, '_').slice(0, 64);
+      return 'portalVenue_' + kind + '_' + dateKey + '_' + slug;
     }
     function portalVenueFlagIsDone(kind){
       try{ return localStorage.getItem(portalVenueLocalKey(kind)) === '1'; }catch(e){ return false; }
@@ -4093,13 +4085,17 @@
     }
     try{ window.portalStaffTodayShiftEndedForFeedbackReminders = portalStaffTodayShiftEndedForFeedbackReminders; }catch(_){}
     function portalVenueReportScopeApplies(){
-      return false;
-    }
-    /** Pool Sunday: no opening reminder if first client/available slot starts at or after 9:30. */
-    function portalPoolStaffSkipVenueOpeningRow(){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      if(!PORTAL_VENUE_SUNDAY_POOL.includes(id)) return false;
-      if(String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim() !== 'Sunday') return false;
+      const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
+      if(!sched || typeof sched.portalVenueReportScopeApplies !== 'function') return false;
+      return sched.portalVenueReportScopeApplies(id, portalVenueScheduleCtx());
+    }
+    /** Pool Sunday: skip opening reminder when first slot starts at or after 9:30 (legacy pool co-leads). */
+    function portalPoolStaffSkipVenueOpeningRow(){
+      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      if(viewDay !== 'Sunday') return false;
+      const w = portalVenueTimeWindowsForUser();
+      if(!w || !w.opening) return false;
       const list = (dashboardData.today || []).filter(function(it){
         return it && (it.kind === 'client' || it.kind === 'available') && typeof it.sessionStartTs === 'number';
       });
@@ -4111,11 +4107,12 @@
       const d = new Date(minTs);
       return d.getHours() * 60 + d.getMinutes() >= 9 * 60 + 30;
     }
-    /** Pool Sunday: no closing reminder if last shift is the ~2:00–2:30pm block (others close later). */
+    /** Pool Sunday: skip closing when last block is the short ~2:00–2:30pm slot. */
     function portalPoolStaffSkipVenueClosingRow(){
-      const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      if(!PORTAL_VENUE_SUNDAY_POOL.includes(id)) return false;
-      if(String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim() !== 'Sunday') return false;
+      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      if(viewDay !== 'Sunday') return false;
+      const w = portalVenueTimeWindowsForUser();
+      if(!w || !w.closing) return false;
       const list = (dashboardData.today || []).filter(function(it){
         return it && (it.kind === 'client' || it.kind === 'available') &&
           typeof it.sessionEndTs === 'number' && typeof it.sessionStartTs === 'number';
@@ -4365,10 +4362,12 @@
         const w = portalVenueTimeWindowsForUser();
         const m = portalMinutesNow();
         if(w){
-          venueOpenNeed = !openDone && m > w.openEnd;
+          if(w.openEnd != null) venueOpenNeed = !openDone && m > w.openEnd;
           if(typeof portalPoolStaffSkipVenueOpeningRow === 'function' && portalPoolStaffSkipVenueOpeningRow()) venueOpenNeed = false;
-          venueCloseNeed = !closeDone && m > w.closeEnd;
+          if(w.closeEnd != null) venueCloseNeed = !closeDone && m > w.closeEnd;
           if(typeof portalPoolStaffSkipVenueClosingRow === 'function' && portalPoolStaffSkipVenueClosingRow()) venueCloseNeed = false;
+          if(!w.opening) venueOpenNeed = false;
+          if(!w.closing) venueCloseNeed = false;
         }
       }
       const rosterAttention = typeof portalStaffRosterOverrideAttentionState === 'function'
