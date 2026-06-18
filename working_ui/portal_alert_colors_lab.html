@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-cancelled-grey-dark" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-shadowing-green" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -262,6 +262,19 @@
       color:#fff !important;
       -webkit-text-fill-color:#fff !important;
     }
+    /* Today · Training / Meeting — neutral card (matches production Elijah-style) */
+    #labLiveScope .lab-today-panel .session-card.session-card--ov-training,
+    #labLiveScope .lab-today-panel .session-card.session-card--ov-meeting{
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%) !important;
+      border-color:rgba(45,132,179,.34) !important;
+      box-shadow:0 1px 4px rgba(23,50,71,.07) !important;
+    }
+    /* Today · Shadowing — green card */
+    #labLiveScope .lab-today-panel .session-card.session-card--ov-shadowing{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%) !important;
+      border-color:rgba(132,204,22,.45) !important;
+      box-shadow:0 1px 4px rgba(101,163,13,.12) !important;
+    }
     .lab-today-lifecycle-head{
       margin:16px 12px 8px;padding:8px 12px;border-radius:10px;
       font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -419,7 +432,7 @@
         </div>
       </div>
       <h3 style="margin:20px 0 8px;font-size:.9rem">Today — ciclo de vida (3 formas)</h3>
-      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — catálogo completo (normal, trial, makeup, Updated by admin, training, NO PARTICIPANT, Closed…) · <strong>(2) sesión empezada</strong> — naranja + Pending · <strong>(3) review hecho</strong> — verde + Submitted / Absent / Cancelled. Chips: <strong>texto blanco</strong> sobre color del tipo.</p>
+      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — catálogo completo (normal, trial, makeup, Updated by admin, training, NO PARTICIPANT, Closed…) · <strong>(2) sesión empezada</strong> — naranja + solo chip Pending · <strong>(3) review hecho</strong> — verde + solo Submitted / Absent / Cancelled. Chips: <strong>texto blanco</strong> sobre color del tipo.</p>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodaySection"></div>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodayOverridesSection" hidden aria-hidden="true"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
@@ -595,9 +608,9 @@
           sampleTitle: 'SHADOWING - Acton (17th/Jun)', sampleSub: '2 to 4 · Pool · Acton',
           haloNote: 'schedule-shadowing (cielo)',
           colors: {
-            bg1:'#f0f9ff', bg2:'#e0f2fe', border:'rgba(14,165,233,.42)', shadow:'rgba(14,165,233,.2)',
-            strong:'#0369a1', sub:'#0284c7', iconBg:'rgba(14,165,233,.2)', iconFg:'#0369a1', iconBorder:'rgba(14,165,233,.35)',
-            chipBg:'#e0f2fe', chipFg:'#075985', chipBorder:'rgba(14,165,233,.4)', termGlow:'rgba(14,165,233,.48)'
+            bg1:'#f7fee7', bg2:'#ecfccb', border:'rgba(132,204,22,.45)', shadow:'rgba(101,163,13,.12)',
+            strong:'#4d7c0f', sub:'#65a30d', iconBg:'rgba(132,204,22,.22)', iconFg:'#4d7c0f', iconBorder:'rgba(132,204,22,.38)',
+            chipBg:'#ecfccb', chipFg:'#3f6212', chipBorder:'rgba(132,204,22,.42)', termGlow:'rgba(132,204,22,.5)'
           }
         },
         {
@@ -819,7 +832,11 @@
         }
         if(ov.id === 'training' || ov.id === 'shadowing' || ov.id === 'meeting'){
           var tsel = '#labLiveScope .lab-today-panel .session-card--ov-'+ov.id;
-          lines.push(tsel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important;box-shadow:0 4px 14px '+c.shadow+' !important}');
+          if(ov.id === 'training' || ov.id === 'meeting'){
+            lines.push(tsel+'{background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%) !important;border-color:rgba(45,132,179,.34) !important;box-shadow:0 1px 4px rgba(23,50,71,.07) !important}');
+          } else {
+            lines.push(tsel+'{background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%) !important;border-color:rgba(132,204,22,.45) !important;box-shadow:0 1px 4px rgba(101,163,13,.12) !important}');
+          }
           lines.push(tsel+' .session-line--name .session-meta-name{color:#000 !important}');
         }
       });
@@ -1291,7 +1308,7 @@
           'portal-session-slot-chip--updated', 'Updated by admin', bigPool),
         todayCatalogRowTraining('session-card--ov-training', '10 to 11', 'Westway', 'Training session', 'Swimming Instructors', ['Javi'], hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
-          'portal-session-slot-chip--shadowing', 'Roberto / Aqsa', teachingPool),
+          'portal-session-slot-chip--shadowing', 'Roberto / AQSA', teachingPool),
         todayCatalogRowShadowingHost('', '2 to 4', 'Acton', 'Samira', 'Alex shadowing you', teachingPool),
         todayCatalogRowMeeting('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting', 'Swimming Instructors', ['Javi', 'Raul'], hubRoom),
         todayCatalogRow('session-card--available', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
@@ -1301,14 +1318,10 @@
       var phase2 = [
         todayCatalogRow('session-card--review-needed', '5 to 5.30', 'Acton', 'Bediako',
           'portal-session-slot-chip--pending', 'Pending', teachingPool),
-        todayCatalogRowChips('session-card--ov-pink override--replace session-card--review-needed', '11 to 12', 'Acton', 'Eddie Ri', [
-          ['portal-session-slot-chip--makeup', 'Make up'],
-          ['portal-session-slot-chip--pending', 'Pending']
-        ], hubRoom),
-        todayCatalogRowChips('session-card--ov-trial override--trial session-card--review-needed', '4.30 to 5', 'Westway', 'Chaitanya', [
-          ['portal-session-slot-chip--trial', 'Trial/New Participant'],
-          ['portal-session-slot-chip--pending', 'Pending']
-        ], teachingPool),
+        todayCatalogRow('session-card--ov-pink override--replace session-card--review-needed', '11 to 12', 'Acton', 'Eddie Ri',
+          'portal-session-slot-chip--pending', 'Pending', hubRoom),
+        todayCatalogRow('session-card--ov-trial override--trial session-card--review-needed', '4.30 to 5', 'Westway', 'Chaitanya',
+          'portal-session-slot-chip--pending', 'Pending', teachingPool),
         todayCatalogRow('session-card--admin-adjusted session-card--review-needed', '4.30 to 5', 'Acton', 'Ayman',
           'portal-session-slot-chip--pending', 'Pending', laneSe)
       ].join('');
@@ -1316,10 +1329,8 @@
       var phase3 = [
         todayCatalogRow('session-card--review-done', '5.30 to 6', 'Acton', 'Hazem',
           'portal-session-slot-chip--submitted', 'Submitted', bigPool),
-        todayCatalogRowChips('session-card--ov-pink override--replace session-card--review-done', '11 to 12', 'Acton', 'Eddie Ri', [
-          ['portal-session-slot-chip--makeup', 'Make up'],
-          ['portal-session-slot-chip--submitted', 'Submitted']
-        ], hubRoom),
+        todayCatalogRow('session-card--ov-pink override--replace session-card--review-done', '11 to 12', 'Acton', 'Eddie Ri',
+          'portal-session-slot-chip--submitted', 'Submitted', hubRoom),
         todayCatalogRow('session-card--review-done override--absent session-card--ov-green', '6 to 6.30', 'Acton', 'Mary',
           'portal-session-slot-chip--absent', 'Absent', teachingPool),
         todayCatalogRow('session-card--review-done session-card--ov-green override--portal-cancelled', '4 to 5', 'Westway', 'James',
@@ -1336,9 +1347,9 @@
           '<div class="today-grid today-grid--session-scroll"><div class="today-grid-rows" role="list">'+
             todayLifecycleHead('before', '1 · Antes de la sesión', 'todos los tipos · sin Pending')+
             phase1+
-            todayLifecycleHead('pending', '2 · Sesión empezada / review pendiente', 'naranja + Pending (+ chip previo si aplica)')+
+            todayLifecycleHead('pending', '2 · Sesión empezada / review pendiente', 'naranja + solo Pending (sin trial/makeup/etc.)')+
             phase2+
-            todayLifecycleHead('done', '3 · Review completado', 'verde + Submitted / Absent / Cancelled')+
+            todayLifecycleHead('done', '3 · Review completado', 'verde + solo Submitted / Absent / Cancelled')+
             phase3+
           '</div></div>'+
           '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). <strong>Training / Meeting:</strong> card blanca (Elijah) + chips azules. <strong>Shadowing:</strong> card y chips verdes. <strong>Shadowing host (Samira):</strong> card blanca + chip rojo.</p>'+
@@ -1357,7 +1368,7 @@
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors + Javi', 'Training · azul · equipo + directores'],
-        ['portal-session-slot-chip--shadowing', 'Roberto / Aqsa', 'Shadowing · verde · host / participante'],
+        ['portal-session-slot-chip--shadowing', 'Roberto / AQSA', 'Shadowing · verde · host / participante'],
         ['portal-sched-ov-badge override--shadowing-host', 'Alex shadowing you', 'Shadowing host · rojo · compañero en tu sesión'],
         ['portal-session-slot-chip--meeting', 'Swimming Instructors + Javi/Raul', 'Meeting · card blanca · chips azules (training)'],
         ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']

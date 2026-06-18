@@ -5146,6 +5146,18 @@
       -webkit-appearance:none;
       appearance:none;
     }
+    /* Override tones must follow base .session-card (same specificity, later wins) */
+    .session-card.session-card--ov-training,
+    .session-card.session-card--ov-meeting{
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      border-color:rgba(45,132,179,.34);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
+    }
+    .session-card.session-card--ov-shadowing{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.45);
+      box-shadow:0 1px 4px rgba(101,163,13,.12);
+    }
     .session-card.session-card--empty{
       grid-template-columns:1fr;
       justify-items:stretch;

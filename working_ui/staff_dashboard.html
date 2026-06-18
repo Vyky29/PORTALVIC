@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-cancelled-grey-dark" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-shadowing-green" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -6077,7 +6077,8 @@
       const hosts = portalSessionAddSplitNames(String(payload.trainer || '').trim());
       const host = hosts[0] || '';
       const participant = portalShadowingParticipantForSessionAdd(ov, sessionDateIso);
-      if(host && participant) return host + ' / ' + participant;
+      const participantLabel = participant ? String(participant).trim().toUpperCase() : '';
+      if(host && participantLabel) return host + ' / ' + participantLabel;
       if(hosts.length > 1) return hosts.join(' / ');
       return host || participant || '';
     }
@@ -6458,6 +6459,23 @@
     }
 
     /** Status chips below participant name (override context + feedback + slot time change). */
+    function portalTodayFeedbackLifecycleChipHtml(item){
+      if(!item || item.kind !== 'client' || !item.sessionKey || item.noSessionFeedbackRequired || item.portalOverrideSuppressReviewOrange) return '';
+      const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
+      if(r.absent){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>';
+      }
+      if(r.cancelled){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>';
+      }
+      if(r.feedbackDone){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
+      }
+      if(isSessionStartedForItem(item)){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+      }
+      return '';
+    }
     function todaySessionChipBelowNameHtml(item){
       if(!item) return '';
       const pillText = String(item.portalOverrideAlertPill || '').trim();
@@ -6479,6 +6497,9 @@
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
       }
 
+      const lifecycleChip = portalTodayFeedbackLifecycleChipHtml(item);
+      if(lifecycleChip) return lifecycleChip;
+
       if(typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)){
         push(portalShadowingHostBadgeHtml(item.portalShadowingHostLabels));
       } else if(String(item.clientId || '').trim().toLowerCase() !== 'meeting' && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
@@ -6496,19 +6517,9 @@
       }
 
       if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
-        const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
-        const started = isSessionStartedForItem(item);
         const ended = isSessionEndedForFeedback(item);
+        const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
-        if(r.absent){
-          push('<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>');
-        } else if(r.cancelled){
-          push('<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>');
-        } else if(r.feedbackDone){
-          push('<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>');
-        } else if(started){
-          push('<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>');
-        }
         if(timeUpdated && !started && !ended){
           push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>');
         }
