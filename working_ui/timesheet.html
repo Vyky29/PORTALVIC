@@ -4,11 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Timesheet</title>
-  <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
+  <script src="/portal/portal_orientation_lock.js?v=20260625-horizontal-lock"></script>
   <script>
     (function () {
       try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {}
-      if (typeof portalLockLandscape === "function") void portalLockLandscape();
+      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
+      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
     })();
   </script>
   <style id="portal-hide-wp-chrome">
@@ -1548,19 +1549,8 @@
       function unlockTimesheetOrientation() {
         if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
       }
-      function retryTimesheetLandscapeLock() {
-        if (typeof portalLockLandscape !== "function") return;
-        try {
-          if (window.matchMedia && window.matchMedia("(max-width:900px)").matches) {
-            void portalLockLandscape();
-          }
-        } catch (_) {}
-      }
       window.addEventListener("pagehide", unlockTimesheetOrientation);
       window.addEventListener("beforeunload", unlockTimesheetOrientation);
-      document.addEventListener("DOMContentLoaded", retryTimesheetLandscapeLock);
-      window.addEventListener("pageshow", retryTimesheetLandscapeLock);
-      document.addEventListener("pointerdown", retryTimesheetLandscapeLock, { once: true, passive: true });
       var backBtn = document.getElementById("backBtn");
       if (backBtn) backBtn.addEventListener("click", unlockTimesheetOrientation);
     })();

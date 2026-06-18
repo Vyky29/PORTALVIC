@@ -16,6 +16,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Expenses</title>
+  <script src="/portal/portal_orientation_lock.js?v=20260625-horizontal-lock"></script>
+  <script>
+    (function () {
+      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
+      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
+    })();
+  </script>
   <style id="portal-expenses-styles">
     :root{
       --navy:#0a3d62;
@@ -122,7 +129,9 @@
     }
     .total{display:flex;gap:10px;justify-content:flex-end;font-weight:700}
     .hidden{display:none}
-    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+    @media (max-width:760px){
+      html:not(.portal-force-landscape) .grid{grid-template-columns:1fr}
+    }
     *,*::before,*::after{box-sizing:border-box}
     html,body{overflow-x:hidden}
     .wrap{min-width:0;max-width:100%}
@@ -132,17 +141,18 @@
     td,th{min-width:0;overflow-wrap:break-word;word-break:normal}
     .btn{min-height:44px;touch-action:manipulation}
     @media (max-width:560px){
-      .body{padding:8px;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
-      .wrap{border-radius:12px}
-      fieldset{padding:10px}
-      .autofill-line{font-size:14px}
-      .table-wrap{padding:6px 4px 8px}
-      table{width:100%;min-width:0;max-width:none;table-layout:fixed}
-      th,td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
-      col.ex-col-desc{width:38%;min-width:0}
-      col.ex-col-amt{width:20%;min-width:0}
-      col.ex-col-rcpt{width:42%;min-width:0}
-      thead th{
+      html:not(.portal-force-landscape) .body{padding:8px;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
+      html:not(.portal-force-landscape) .wrap{border-radius:12px}
+      html:not(.portal-force-landscape) fieldset{padding:10px}
+      html:not(.portal-force-landscape) .autofill-line{font-size:14px}
+      html:not(.portal-force-landscape) .table-wrap{padding:6px 4px 8px}
+      html:not(.portal-force-landscape) table{width:100%;min-width:0;max-width:none;table-layout:fixed}
+      html:not(.portal-force-landscape) th,
+      html:not(.portal-force-landscape) td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
+      html:not(.portal-force-landscape) col.ex-col-desc{width:38%;min-width:0}
+      html:not(.portal-force-landscape) col.ex-col-amt{width:20%;min-width:0}
+      html:not(.portal-force-landscape) col.ex-col-rcpt{width:42%;min-width:0}
+      html:not(.portal-force-landscape) thead th{
         --th-head-fs:clamp(10.5px, 3.1vw, 12px);
         font-size:var(--th-head-fs);
         line-height:1.2;
@@ -154,7 +164,7 @@
         overflow-wrap:normal;
         white-space:normal;
       }
-      thead th.th-compact{
+      html:not(.portal-force-landscape) thead th.th-compact{
         font-size:var(--th-head-fs);
         line-height:1.2;
         text-align:center;
@@ -164,24 +174,24 @@
         overflow-wrap:normal;
         word-break:normal;
       }
-      .th-desk{display:none}
-      .th-mob{
+      html:not(.portal-force-landscape) .th-desk{display:none}
+      html:not(.portal-force-landscape) .th-mob{
         display:inline;
         white-space:normal;
         text-align:center;
         max-width:100%;
       }
-      .toolbar{flex-direction:column;align-items:stretch;gap:10px}
-      .toolbar .total{justify-content:flex-start}
-      .ctl{font-size:16px;min-width:0}
-      input[type="file"].ctl{
+      html:not(.portal-force-landscape) .toolbar{flex-direction:column;align-items:stretch;gap:10px}
+      html:not(.portal-force-landscape) .toolbar .total{justify-content:flex-start}
+      html:not(.portal-force-landscape) .ctl{font-size:16px;min-width:0}
+      html:not(.portal-force-landscape) input[type="file"].ctl{
         padding:6px 4px;
         font-size:clamp(10px, 2.85vw, 12px);
         max-width:100%;
         width:100%;
         box-sizing:border-box;
       }
-      input[type="file"].ctl::file-selector-button{
+      html:not(.portal-force-landscape) input[type="file"].ctl::file-selector-button{
         font:inherit;
         font-weight:700;
         font-size:clamp(9px, 2.65vw, 11px);
@@ -193,7 +203,7 @@
         color:#0b2a5b;
         white-space:nowrap;
       }
-      input[type="file"].ctl::-webkit-file-upload-button{
+      html:not(.portal-force-landscape) input[type="file"].ctl::-webkit-file-upload-button{
         font:inherit;
         font-weight:700;
         font-size:clamp(9px, 2.65vw, 11px);
@@ -206,6 +216,72 @@
         white-space:nowrap;
       }
     }
+    /* Mobile expenses: stay horizontal (native lock or CSS rotate). */
+    @media (max-width:900px) and (orientation:portrait){
+      html.portal-force-landscape{
+        overflow:hidden;
+        position:fixed;
+        inset:0;
+        width:100%;
+        height:100%;
+      }
+      html.portal-force-landscape body.portal-expenses-page{
+        position:fixed;
+        top:0;
+        left:100vw;
+        width:100vh;
+        height:100vw;
+        max-width:none;
+        min-height:0;
+        transform:rotate(90deg);
+        transform-origin:top left;
+        overflow-x:hidden;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+        padding:0;
+      }
+    }
+    @media (max-width:900px){
+      html.portal-force-landscape body.portal-expenses-page{
+        padding:max(6px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
+      }
+      html.portal-force-landscape body.portal-expenses-page .pe-shell{
+        max-width:none;
+        width:100%;
+      }
+      html.portal-force-landscape body.portal-expenses-page .pe-page-title{
+        font-size:20px;
+        margin-bottom:10px;
+      }
+      html.portal-force-landscape body.portal-expenses-page .wrap{
+        border-radius:12px;
+        max-width:none;
+      }
+      html.portal-force-landscape body.portal-expenses-page .body{padding:10px 12px}
+      html.portal-force-landscape body.portal-expenses-page .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      html.portal-force-landscape body.portal-expenses-page .table-wrap{padding:4px 2px 6px}
+      html.portal-force-landscape body.portal-expenses-page table{min-width:0;width:100%;table-layout:auto}
+      html.portal-force-landscape body.portal-expenses-page th,
+      html.portal-force-landscape body.portal-expenses-page td{padding:5px 6px;font-size:11px}
+      html.portal-force-landscape body.portal-expenses-page .th-desk{display:inline}
+      html.portal-force-landscape body.portal-expenses-page .th-mob{display:none}
+      html.portal-force-landscape body.portal-expenses-page .toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}
+      html.portal-force-landscape body.portal-expenses-page .toolbar .total{justify-content:flex-end}
+    }
+    @media (max-width:900px) and (orientation:landscape){
+      body.portal-expenses-page{
+        padding:max(6px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
+      }
+      body.portal-expenses-page .pe-shell{max-width:none;width:100%}
+      body.portal-expenses-page .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      body.portal-expenses-page .table-wrap{padding:4px 2px 6px}
+      body.portal-expenses-page table{min-width:0;width:100%}
+      body.portal-expenses-page th,body.portal-expenses-page td{padding:5px 6px;font-size:11px}
+      body.portal-expenses-page .th-desk{display:inline}
+      body.portal-expenses-page .th-mob{display:none}
+      body.portal-expenses-page .toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}
+    }
+    html.portal-force-landscape,body.portal-force-landscape{min-height:100dvh}
 
     .pe-summary-root[hidden]{display:none!important}
     .ex-summary-container{
@@ -266,7 +342,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
 </head>
-<body>
+<body class="portal-expenses-page">
   <form id="expenseForm" novalidate>
     <div class="pe-shell">
     <div class="pe-topbar" role="navigation" aria-label="Return to dashboard">
@@ -1034,19 +1110,15 @@
       }
     }, 400);
     </script>
-  <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script>
     (function () {
-      if (typeof portalLockLandscape === "function") void portalLockLandscape();
       function unlockExpensesOrientation() {
         if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
       }
       window.addEventListener("pagehide", unlockExpensesOrientation);
       window.addEventListener("beforeunload", unlockExpensesOrientation);
       var closeBtn = document.getElementById("expenses-close-portal");
-      if (closeBtn) {
-        closeBtn.addEventListener("click", unlockExpensesOrientation);
-      }
+      if (closeBtn) closeBtn.addEventListener("click", unlockExpensesOrientation);
     })();
   </script>
 </body>
