@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-schedule-green" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-gold-orange" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -6561,16 +6561,22 @@
         const t1 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(oldR.anchor_end) : String(oldR.anchor_end || '').trim();
         const venue = String(oldR.anchor_venue || '').trim();
         const slot = t0 && t1 ? (t0 + ' – ' + t1) : (t0 || t1 || '');
-        const wasLbl = typeof portalOverrideUndoPreviousTypeLabel === 'function' ? portalOverrideUndoPreviousTypeLabel(oldR.override_type) : '';
-        const subParts = [];
-        if(slot) subParts.push(slot);
-        if(venue) subParts.push(venue);
-        if(wasLbl) subParts.push(wasLbl);
+        const clientName = typeof portalClientDisplayNameForOverride === 'function'
+          ? portalClientDisplayNameForOverride(oldR)
+          : '';
+        const clientShort = clientName || (typeof portalClientFirstNameTokenForOverride === 'function'
+          ? portalClientFirstNameTokenForOverride(oldR)
+          : '');
+        const dateLbl = typeof portalOverrideRevertCardDateLabel === 'function'
+          ? portalOverrideRevertCardDateLabel(iso)
+          : '';
+        const title = clientShort ? (clientShort + ' - change undone') : 'Change undone';
+        const sub = dateLbl ? (dateLbl + ' goes back to normal') : 'Goes back to normal';
         qList.push({
           revertId: rid,
           iso: iso,
-          title: 'Change undone — back to normal',
-          sub: subParts.join(' · '),
+          title: title,
+          sub: sub,
           _sort: Date.now()
         });
         while(qList.length > 30) qList.shift();
@@ -6610,6 +6616,28 @@
       if(mod10 === 2) return n + 'ND';
       if(mod10 === 3) return n + 'RD';
       return n + 'TH';
+    }
+    /** Short date for revert quick-menu subtitle, e.g. `Sat 28th Jun`. */
+    function portalOverrideRevertCardDateLabel(iso){
+      const rowIso = normaliseIsoDate(iso);
+      if(!rowIso) return '';
+      const parts = rowIso.split('-');
+      if(parts.length !== 3) return rowIso;
+      const y = Number(parts[0]), mo = Number(parts[1]) - 1, da = Number(parts[2]);
+      const d = new Date(y, mo, da);
+      if(isNaN(d.getTime())) return rowIso;
+      let wd = '';
+      let mon = '';
+      try{
+        wd = d.toLocaleDateString('en-GB', { weekday: 'short' });
+        mon = d.toLocaleDateString('en-GB', { month: 'short' });
+      }catch(_){
+        return rowIso;
+      }
+      if(!wd || !mon) return rowIso;
+      const ord = portalOverrideOrdinalDaySuffix(da);
+      const dayOrd = ord ? (String(da) + ord.replace(/^\d+/, '').toLowerCase()) : String(da);
+      return wd + ' ' + dayOrd + ' ' + mon;
     }
     /** Uppercase ordinal date for New shift quick-menu titles, e.g. `18TH JUNE`. */
     function portalOverrideNewShiftCardDateLabel(iso){
@@ -6865,7 +6893,7 @@
             ? portalOverrideNewShiftCardDateLabel(isoNav)
             : '';
           title = datePart ? ('NEW SHIFT (' + datePart + ')') : 'NEW SHIFT';
-          sub = 'Tap to view the participants for this day.';
+          sub = '';
         }else{
           title = 'Schedule change';
           const dayLabel = isoNav && typeof portalOverrideSessionDateDisplayLabel === 'function'
@@ -7137,6 +7165,7 @@
           if(!r || !portalScheduleOverrideRowAppliesToLoggedInStaff(r)) continue;
           const iso = normaliseIsoDate(r.session_date);
           if(!iso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)) continue;
+          if(String(r.override_type || '') === 'slot_open') continue;
           if(String(r.override_type || '') === 'client_absence_announced'){
             const slotKey = portalOverrideAbsentQuickMenuSlotKey(r);
             const hasClient = !!String(r.anchor_client_id || '').trim();
@@ -7165,8 +7194,8 @@
           byIso[qiso].push({
             id: rid,
             iso: qiso,
-            title: String(q.title || 'Change undone — back to normal'),
-            sub: String(q.sub || ''),
+          title: String(q.title || 'Change undone'),
+          sub: String(q.sub || 'Goes back to normal'),
             kind: 'reverted',
             _sort: Number(q._sort) || Date.now()
           });

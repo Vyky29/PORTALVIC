@@ -466,8 +466,8 @@
       100%{box-shadow:0 0 0 1px rgba(245,158,11,.38),0 12px 30px rgba(245,158,11,.34)}
     }
     @keyframes avatar-outline-reminder-warm{
-      0%,100%{box-shadow:0 0 0 1px rgba(249,191,46,.42),0 12px 30px rgba(249,115,22,.32)}
-      50%{box-shadow:0 0 0 2px rgba(244,183,64,.68),0 16px 38px rgba(234,88,12,.42)}
+      0%,100%{box-shadow:0 0 0 1px rgba(234,88,12,.48),0 12px 30px rgba(234,88,12,.36)}
+      50%{box-shadow:0 0 0 2px rgba(194,65,12,.72),0 16px 38px rgba(234,88,12,.5)}
     }
     .avatar-wrap.avatar-wrap--portal-alert .avatar-aura{
       background:
@@ -485,28 +485,28 @@
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-aura{
       background:
         radial-gradient(circle at 40% 35%, rgba(255,255,255,.78) 0%, transparent 42%),
-        radial-gradient(circle at 72% 68%, rgba(249,115,22,.34) 0%, transparent 48%),
-        radial-gradient(circle at 50% 50%, rgba(234,88,12,.22) 0%, transparent 58%);
+        radial-gradient(circle at 72% 68%, rgba(234,88,12,.38) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(194,65,12,.26) 0%, transparent 58%);
     }
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar{
-      background:linear-gradient(135deg,#fde68a 0%,#fbbf24 48%,#f59e0b 100%);
+      background:linear-gradient(135deg,#fdba74 0%,#f97316 46%,#ea580c 100%);
       animation:avatar-outline-reminder-warm 1.12s ease-in-out infinite;
     }
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar.avatar--brand-default img{
-      background:linear-gradient(180deg,#fffbeb,#fef3c7);
+      background:linear-gradient(180deg,#ffedd5,#fed7aa);
     }
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle{fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(2n){fill:#ea580c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(3n){fill:#fb923c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:#fb923c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle{fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(2n){fill:#c2410c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(3n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:#f97316 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:#ea580c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#f97316 !important}
-    @keyframes avatar-outline-schedule-green{
-      0%,100%{box-shadow:0 0 0 1px rgba(34,197,94,.4),0 12px 30px rgba(22,163,74,.3)}
-      50%{box-shadow:0 0 0 2px rgba(34,197,94,.62),0 16px 38px rgba(22,163,74,.42)}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#c2410c !important}
+    @keyframes avatar-outline-schedule-gold{
+      0%,100%{box-shadow:0 0 0 1px rgba(249,191,46,.42),0 12px 30px rgba(244,183,64,.34)}
+      50%{box-shadow:0 0 0 2px rgba(249,191,46,.68),0 16px 38px rgba(244,183,64,.48)}
     }
-    @keyframes avatar-outline-schedule-green-purple{
-      0%,100%{box-shadow:0 0 0 1px rgba(34,197,94,.38),0 12px 30px rgba(22,163,74,.28)}
+    @keyframes avatar-outline-schedule-gold-purple{
+      0%,100%{box-shadow:0 0 0 1px rgba(249,191,46,.42),0 12px 30px rgba(249,191,46,.32)}
       50%{box-shadow:0 0 0 2px rgba(124,58,237,.58),0 16px 38px rgba(167,139,250,.42)}
     }
     @keyframes avatar-outline-schedule-makeup{
@@ -517,37 +517,38 @@
       0%,100%{box-shadow:0 0 0 1px rgba(13,148,136,.4),0 12px 30px rgba(15,118,110,.3)}
       50%{box-shadow:0 0 0 2px rgba(13,148,136,.62),0 16px 38px rgba(15,118,110,.42)}
     }
-    @keyframes avatar-outline-reminder-schedule-green{
-      0%,100%{box-shadow:0 0 0 1px rgba(249,115,22,.42),0 12px 30px rgba(249,115,22,.32)}
-      50%{box-shadow:0 0 0 2px rgba(34,197,94,.58),0 16px 36px rgba(22,163,74,.4)}
+    @keyframes avatar-outline-reminder-schedule-gold{
+      0%,100%{box-shadow:0 0 0 1px rgba(234,88,12,.44),0 12px 30px rgba(234,88,12,.34)}
+      50%{box-shadow:0 0 0 2px rgba(249,191,46,.62),0 16px 36px rgba(244,183,64,.42)}
     }
     @keyframes avatar-outline-reminder-schedule-gold-purple{
       0%,100%{box-shadow:0 0 0 1px rgba(249,115,22,.42),0 12px 30px rgba(249,115,22,.32)}
       50%{box-shadow:0 0 0 2px rgba(124,58,237,.58),0 16px 36px rgba(167,139,250,.4)}
     }
-    @keyframes avatar-outline-announcement-schedule-green{
+    @keyframes avatar-outline-announcement-schedule-gold{
       0%,100%{box-shadow:0 0 0 1px rgba(220,38,38,.38),0 12px 30px rgba(220,38,38,.32)}
-      50%{box-shadow:0 0 0 2px rgba(34,197,94,.58),0 16px 36px rgba(22,163,74,.4)}
+      50%{box-shadow:0 0 0 2px rgba(249,191,46,.58),0 16px 36px rgba(244,183,64,.4)}
     }
     @keyframes avatar-outline-announcement-schedule-gold-purple{
       0%,100%{box-shadow:0 0 0 1px rgba(220,38,38,.38),0 12px 30px rgba(220,38,38,.32)}
       50%{box-shadow:0 0 0 2px rgba(124,58,237,.58),0 16px 36px rgba(167,139,250,.4)}
     }
-    /* New shift / schedule — green orbit, spin only */
+    /* New shift / schedule — corporate gold (Quick menu), orbit spin only */
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-aura{
       background:
         radial-gradient(circle at 40% 35%, rgba(255,255,255,.78) 0%, transparent 42%),
-        radial-gradient(circle at 72% 68%, rgba(34,197,94,.28) 0%, transparent 48%),
-        radial-gradient(circle at 50% 50%, rgba(22,163,74,.18) 0%, transparent 58%);
+        radial-gradient(circle at 72% 68%, rgba(249,191,46,.34) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(244,183,64,.22) 0%, transparent 58%),
+        radial-gradient(circle at 50% 50%, rgba(255,224,138,.18) 45%, transparent 72%);
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar{
-      animation:avatar-outline-schedule-green 1.12s ease-in-out infinite;
+      animation:avatar-outline-schedule-gold 1.12s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:#22c55e !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#16a34a !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#4ade80 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#ffe08a !important}
     /* Trial / new participant only — purple orbit */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -558,24 +559,24 @@
         radial-gradient(circle at 50% 50%, rgba(124,58,237,.2) 0%, transparent 58%);
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar{
-      animation:avatar-outline-schedule-green-purple 1.15s ease-in-out infinite;
+      animation:avatar-outline-schedule-gold-purple 1.15s ease-in-out infinite;
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle{fill:#a78bfa !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle:nth-child(2n){fill:#7c3aed !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle:nth-child(3n){fill:#c4b5fd !important}
-    /* New shift + trial — green and purple dots */
+    /* New shift + trial — gold and purple dots */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-aura{
       background:
         radial-gradient(circle at 40% 35%, rgba(255,255,255,.76) 0%, transparent 42%),
-        radial-gradient(circle at 28% 72%, rgba(34,197,94,.2) 0%, transparent 46%),
+        radial-gradient(circle at 28% 72%, rgba(249,191,46,.22) 0%, transparent 46%),
         radial-gradient(circle at 72% 68%, rgba(167,139,250,.26) 0%, transparent 48%);
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar{
-      animation:avatar-outline-schedule-green-purple 1.15s ease-in-out infinite;
+      animation:avatar-outline-schedule-gold-purple 1.15s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer circle:nth-child(2n+1){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer circle:nth-child(2n){fill:#a78bfa !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer circle:nth-child(3n){fill:#7c3aed !important}
     /* Make up — pink orbit */
@@ -626,40 +627,40 @@
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar{
-      animation:avatar-outline-reminder-schedule-green 1.15s ease-in-out infinite;
+      animation:avatar-outline-reminder-schedule-gold 1.15s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar{
-      animation:avatar-outline-announcement-schedule-green 1.15s ease-in-out infinite;
+      animation:avatar-outline-announcement-schedule-gold 1.15s ease-in-out infinite;
     }
     .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+2){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+3){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+3){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar{
       animation:avatar-outline-reminder-schedule-gold-purple 1.18s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar-orbit-layer circle:nth-child(2n+1){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar-orbit-layer circle:nth-child(2n+1){fill:#ea580c !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-trial .avatar-orbit-layer circle:nth-child(2n){fill:#a78bfa !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-schedule-trial .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-schedule-trial .avatar-orbit-layer circle:nth-child(2n){fill:#a78bfa !important}
@@ -673,8 +674,8 @@
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n+1){fill:#dc2626 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n+2){fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n+3){fill:#22c55e !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n+2){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n+3){fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-both-schedule-trial .avatar-orbit-layer circle:nth-child(4n){fill:#a78bfa !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule-trial .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule-trial .avatar-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
@@ -1887,10 +1888,10 @@
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue{
-      background:#f97316;
+      background:#ea580c;
       border:2px solid #ffedd5;
       color:#fff;
-      box-shadow:0 6px 22px rgba(234,88,12,.42);
+      box-shadow:0 6px 22px rgba(194,65,12,.48);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-copy strong{color:#fff}
@@ -2326,31 +2327,31 @@
       background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
       border-color:rgba(21,128,61,.62);
     }
-    /* New shift — green (Alerts quick menu) */
+    /* New shift — corporate yellow (Alerts quick menu) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift{
-      background:linear-gradient(180deg,#ecfdf5 0%,#bbf7d0 100%);
-      border:2px solid rgba(21,128,61,.5);
+      background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
+      border:2px solid rgba(255,255,255,.42);
       color:var(--ink);
-      box-shadow:0 6px 20px rgba(34,197,94,.24);
+      box-shadow:0 6px 20px rgba(220,160,30,.32);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong,
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong{color:#065f46}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong{color:#78350f}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub,
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub{color:#047857}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub{color:#92400e}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev,
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev{color:rgba(6,95,70,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev{color:rgba(120,53,15,.55)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-icon,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-icon{
-      background:rgba(34,197,94,.22);
-      color:#047857;
-      border-color:rgba(21,128,61,.38);
+      background:rgba(255,255,255,.28);
+      color:#b45309;
+      border-color:rgba(180,120,20,.32);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift:hover,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift:hover{
-      background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
-      border-color:rgba(21,128,61,.62);
-      box-shadow:0 10px 28px rgba(34,197,94,.32);
+      background:linear-gradient(180deg,#ffc94a 0%,#f0b32a 100%);
+      border-color:#fff;
+      box-shadow:0 10px 28px rgba(200,145,25,.45),0 0 0 1px rgba(255,228,150,.45);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active),
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active){
@@ -3310,11 +3311,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
     #portalOperationalReminderList .setup-row--qm-ov-new-shift{
-      background:linear-gradient(180deg,#ecfdf5 0%,#bbf7d0 100%);
-      border-color:rgba(21,128,61,.42);
+      background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
+      border-color:rgba(220,160,30,.42);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#065f46}
-    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#047857}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#78350f}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#92400e}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
       border-color:rgba(220,38,38,.4);
       background:linear-gradient(180deg,rgba(254,226,226,.96) 0%,rgba(255,255,255,.99) 100%);

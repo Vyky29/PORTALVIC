@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-schedule-green" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-halo-gold-orange" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -70,9 +70,12 @@
     .lab-group-row td{background:#eef6fc;font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#2d84b3}
     .lab-swatch{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.12);vertical-align:-2px;margin-right:4px}
     .lab-halo-grid{
-      display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:14px;
-      overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
-      padding:2px 2px 10px;margin-top:0;scroll-snap-type:x proximity;
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
+      padding:0;margin-top:0;min-width:0;
+    }
+    .lab-halo-section--individual .lab-halo-grid--individual-row + .lab-halo-grid--individual-row{margin-top:14px}
+    @media(max-width:720px){
+      .lab-halo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
     .lab-halo-section{margin-top:18px;min-width:0}
     .lab-halo-section:first-child{margin-top:0}
@@ -80,9 +83,9 @@
       margin:0 0 10px 2px;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lab-muted);
     }
     .lab-halo-cell{
-      display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px;
+      display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;
       border-radius:14px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);
-      min-width:0;flex:0 0 auto;width:min(152px,42vw);scroll-snap-align:start;
+      min-width:0;width:100%;
     }
     .lab-halo-cell .lab-halo-label{font-size:.72rem;font-weight:700;text-align:center;overflow-wrap:anywhere;line-height:1.3}
     .lab-halo-cell .lab-halo-class{font-size:.65rem;color:var(--lab-muted);text-align:center;overflow-wrap:anywhere}
@@ -227,7 +230,7 @@
       <h1>Lab colores — Portal staff</h1>
       <p>Halos del logo (header), tarjetas del quick menu y chips. Mismas clases que <a href="/staff_dashboard.html">staff_dashboard.html</a>. Los cambios se guardan en este navegador.</p>
       <div class="lab-callout">
-        <strong>Dos catálogos separados</strong> — (1) <em>Tipos de override</em>: trial, makeup, absent… → tarjetas + chips. (2) <em>Modos de halo</em>: estado global del logo. Previews: <strong>Individual</strong> → <strong>Mixto</strong> (incl. 3 y 4 tipos). New shift = <strong>verde</strong>; Outstanding feedback = naranja; Ann/Reminders = rojo.
+        <strong>Dos catálogos separados</strong> — (1) <em>Tipos de override</em>: trial, makeup, absent… → tarjetas + chips. (2) <em>Modos de halo</em>: estado global del logo. Previews: <strong>Individual</strong> → <strong>Mixto</strong> (incl. 3 y 4 tipos). New shift = <strong>amarillo corporativo</strong>; Outstanding feedback = <strong>naranja intenso</strong>; Ann/Reminders = rojo.
       </div>
       <div class="lab-toolbar">
         <button type="button" class="lab-btn" id="labReset">Restaurar defaults</button>
@@ -356,7 +359,7 @@
       { label: 'Swimming training', cardClass: 'menu-btn--training-role-swimming', donde: 'Training grid · role modules' },
       { label: 'Training (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=training' },
       { label: 'Shadowing (Today)', cardClass: 'session-card--ov-yellow', donde: 'Today · session_add kind=shadowing' },
-      { label: 'Revertido (quick menu)', cardClass: 'menu-btn--qm-ov-reverted', donde: 'Cambio deshecho — vuelve al roster normal' }
+      { label: 'Revertido (quick menu)', cardClass: 'menu-btn--qm-ov-reverted', donde: 'Nombre — change undone · fecha goes back to normal' }
     ];
 
     var TODAY_CATALOG = [
@@ -389,6 +392,20 @@
 
     function defaultOverrides(){
       return [
+        {
+          id: 'new_shift', label: 'New shift', cuando: 'instructor cover / roster day group',
+          cardClass: 'menu-btn--qm-ov-new-shift',
+          pillClass: '', weekClass: '', termClass: '', miniClass: '',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'NEW SHIFT (18TH JUNE)', sampleSub: '',
+          haloNote: 'schedule (amarillo corporativo)',
+          colors: {
+            bg1:'#ffe9a8', bg2:'#f9bf2e', border:'rgba(255,255,255,.42)', shadow:'rgba(220,160,30,.32)',
+            strong:'#78350f', sub:'#92400e', iconBg:'rgba(255,255,255,.28)', iconFg:'#b45309', iconBorder:'rgba(180,120,20,.32)',
+            chipBg:'#ffe9a8', chipFg:'#78350f', chipBorder:'rgba(180,120,20,.32)', termGlow:'rgba(249,191,46,.55)'
+          }
+        },
         {
           id: 'trial', label: 'Trial', cuando: 'client_replace_in_slot + is_trial',
           cardClass: 'menu-btn--qm-ov-trial',
@@ -448,20 +465,6 @@
             strong:'#991b1b', sub:'#b91c1c', iconBg:'rgba(220,38,38,.18)', iconFg:'#b91c1c', iconBorder:'rgba(220,38,38,.32)',
             chipBg:'#fee2e2', chipFg:'#991b1b', chipBorder:'rgba(220,38,38,.38)', termGlow:'rgba(220,38,38,.48)'
           }
-        },
-        {
-          id: 'slot', label: 'Slot reopened', cuando: 'slot_open override',
-          cardClass: 'menu-btn--qm-ov-slot-opened',
-          pillClass: '', weekClass: '', termClass: '', miniClass: '',
-          tomorrowClass: '', tomorrowRowClass: '',
-          pillText: '', weekText: '',
-          sampleTitle: 'Slot reopened', sampleSub: 'Bloque abierto en tu roster',
-          haloNote: 'schedule (verde)',
-          colors: {
-            bg1:'#ecfeff', bg2:'#cffafe', border:'rgba(8,145,178,.45)', shadow:'rgba(8,145,178,.18)',
-            strong:'#0e7490', sub:'#155e75', iconBg:'rgba(34,211,238,.22)', iconFg:'#0e7490', iconBorder:'rgba(8,145,178,.38)',
-            chipBg:'#cffafe', chipFg:'#0e7490', chipBorder:'rgba(8,145,178,.4)', termGlow:'rgba(8,145,178,.45)'
-          }
         }
       ];
     }
@@ -470,22 +473,22 @@
       return [
         /* Individual — one colour family */
         { id: 'idle', label: 'Sin alerta', cssClass: 'avatar-wrap--portal-orbit-idle', c1:'#2d84b3', c2:'#4f8fca', c3:'#1d4f8f', pulse: false, note: 'Órbita oculta en idle' },
-        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#22c55e', c2:'#16a34a', c3:'#4ade80', pulse: false, note: 'Verde — cambio de roster / cover' },
+        { id: 'schedule', label: 'New shift', cssClass: 'avatar-wrap--portal-alert-schedule', c1:'#f9bf2e', c2:'#f4b740', c3:'#ffe08a', pulse: false, note: 'Amarillo corporativo (Quick menu)' },
         { id: 'schedule-trial-only', label: 'Trial / new participant', cssClass: 'avatar-wrap--portal-alert-schedule-trial-only', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: false, note: 'Lila — solo órbita' },
         { id: 'schedule-makeup', label: 'Make up', cssClass: 'avatar-wrap--portal-alert-schedule-makeup', c1:'#ec4899', c2:'#db2777', c3:'#f9a8d4', pulse: false, note: 'Rosa' },
         { id: 'schedule-absent', label: 'Absent', cssClass: 'avatar-wrap--portal-alert-schedule-absent', c1:'#0d9488', c2:'#0f766e', c3:'#2dd4bf', pulse: false, note: 'Teal — ausencia anunciada' },
         { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#2d84b3', c2:'#1d4f8f', c3:'#4f8fca', pulse: false, note: 'Azul oscuro' },
-        { id: 'reminder', label: 'Outstanding Feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#f97316', c2:'#ea580c', c3:'#fb923c', pulse: false, note: 'Naranja — feedback pendiente' },
+        { id: 'reminder', label: 'Outstanding Feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#ea580c', c2:'#c2410c', c3:'#f97316', pulse: false, note: 'Naranja intenso — feedback pendiente' },
         { id: 'announcement', label: 'Announcements/Reminders', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo — firma pendiente' },
         /* Mixed — two alert families */
-        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#22c55e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Verde + lila alternado' },
-        { id: 'reminder-schedule', label: 'Outstanding feedback + New shift', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#f97316', c2:'#22c55e', c3:'#16a34a', pulse: false, note: 'Naranja + verde alternado' },
-        { id: 'reminder-schedule-trial', label: 'Outstanding feedback + trial', cssClass: 'avatar-wrap--portal-alert-reminder-schedule-trial', c1:'#f97316', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Naranja + lila' },
+        { id: 'schedule-trial', label: 'New shift + trial', cssClass: 'avatar-wrap--portal-alert-schedule-trial', c1:'#f9bf2e', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Amarillo + lila alternado' },
+        { id: 'reminder-schedule', label: 'Outstanding feedback + New shift', cssClass: 'avatar-wrap--portal-alert-reminder-schedule', c1:'#ea580c', c2:'#f9bf2e', c3:'#f4b740', pulse: false, note: 'Naranja + amarillo alternado' },
+        { id: 'reminder-schedule-trial', label: 'Outstanding feedback + trial', cssClass: 'avatar-wrap--portal-alert-reminder-schedule-trial', c1:'#ea580c', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Naranja + lila' },
         { id: 'ann-schedule-trial', label: 'Ann/Reminders + trial', cssClass: 'avatar-wrap--portal-alert-announcement-schedule-trial', c1:'#dc2626', c2:'#a78bfa', c3:'#7c3aed', pulse: false, note: 'Rojo + lila' },
         /* Mixed — three alert families */
-        { id: 'both-schedule', label: 'Ann/Reminders + Feedback + New shift', cssClass: 'avatar-wrap--portal-alert-both-schedule', productionOnly: true, c1:'#dc2626', c2:'#f97316', c3:'#22c55e', pulse: false, note: 'Rojo · naranja · verde (3n)' },
+        { id: 'both-schedule', label: 'Ann/Reminders + Feedback + New shift', cssClass: 'avatar-wrap--portal-alert-both-schedule', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo (3n)' },
         /* Mixed — four alert families */
-        { id: 'both-schedule-trial', label: 'Ann/Reminders + Feedback + New shift + Trial', cssClass: 'avatar-wrap--portal-alert-both-schedule-trial', productionOnly: true, c1:'#dc2626', c2:'#f97316', c3:'#22c55e', pulse: false, note: 'Rojo · naranja · verde · lila (4n)' }
+        { id: 'both-schedule-trial', label: 'Ann/Reminders + Feedback + New shift + Trial', cssClass: 'avatar-wrap--portal-alert-both-schedule-trial', productionOnly: true, c1:'#dc2626', c2:'#ea580c', c3:'#f9bf2e', pulse: false, note: 'Rojo · naranja · amarillo · lila (4n)' }
       ];
     }
 
@@ -512,9 +515,12 @@
 
     function mergeOverrideDefaults(saved){
       var defaults = defaultOverrides();
-      return saved.map(function(s){
-        var def = defaults.find(function(d){ return d.id === s.id; }) || {};
-        return Object.assign({}, def, s, { colors: Object.assign({}, def.colors || {}, s.colors || {}) });
+      var byId = {};
+      (saved || []).forEach(function(s){ if(s && s.id && s.id !== 'slot') byId[s.id] = s; });
+      return defaults.map(function(d){
+        var s = byId[d.id];
+        if(!s) return d;
+        return Object.assign({}, d, s, { colors: Object.assign({}, d.colors || {}, s.colors || {}) });
       });
     }
     function mergeHaloDefaults(saved){
@@ -792,8 +798,18 @@
             '<span class="lab-halo-class">'+esc(h.cssClass)+'</span></div>';
         }).join('');
       }
-      function pushSection(title, list){
+      function pushSection(title, list, opts){
         if(!list.length) return '';
+        opts = opts || {};
+        if(opts.individualRows){
+          var half = Math.ceil(list.length / 2);
+          var row1 = list.slice(0, half);
+          var row2 = list.slice(half);
+          return '<div class="lab-halo-section lab-halo-section--individual"><h4 class="lab-halo-section-title">'+esc(title)+'</h4>'+
+            '<div class="lab-halo-grid lab-halo-grid--individual-row">'+renderCells(row1)+'</div>'+
+            (row2.length ? ('<div class="lab-halo-grid lab-halo-grid--individual-row">'+renderCells(row2)+'</div>') : '')+
+            '</div>';
+        }
         return '<div class="lab-halo-section"><h4 class="lab-halo-section-title">'+esc(title)+'</h4><div class="lab-halo-grid">'+
           renderCells(list)+'</div></div>';
       }
@@ -809,7 +825,7 @@
         else mixedTwo.push(h);
       });
       host.innerHTML =
-        pushSection('Individual', individual)+
+        pushSection('Individual', individual, { individualRows: true })+
         pushSection('Mixto — 2 tipos', mixedTwo)+
         pushSection('Mixto — 3 tipos', mixedThree)+
         pushSection('Mixto — 4 tipos', mixedFour);
@@ -905,9 +921,16 @@
       var overrideBtns = state.overrides.map(function(ov){
         return '<button type="button" class="menu-btn notice menu-btn--qm-tile '+esc(ov.cardClass)+' menu-btn--portal-pulse">'+
           '<div class="menu-btn-icon" aria-hidden="true">'+CAL+'</div>'+
-          '<div class="menu-btn-copy"><strong>'+esc(ov.sampleTitle)+'</strong><span class="menu-btn-sub">'+esc(ov.sampleSub)+'</span></div>'+
+          '<div class="menu-btn-copy"><strong>'+esc(ov.sampleTitle)+'</strong>'+
+          (ov.sampleSub ? '<span class="menu-btn-sub">'+esc(ov.sampleSub)+'</span>' : '')+
+          '</div>'+
           '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
       }).join('');
+      overrideBtns += '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-ov-reverted menu-btn--portal-pulse">'+
+        '<div class="menu-btn-icon" aria-hidden="true">'+CAL+'</div>'+
+        '<div class="menu-btn-copy"><strong>Eddie Ri - change undone</strong>'+
+        '<span class="menu-btn-sub">Sat 28th Jun goes back to normal</span></div>'+
+        '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
       var annPending = menuBtnHtml({
         id: 'announcementNewNotice',
         classes: 'announcement menu-btn--announcement-attention menu-btn--portal-pulse',
@@ -969,13 +992,6 @@
         title: 'Swimming Training',
         sub: 'Modules linked to your role'
       });
-      var reverted = menuBtnHtml({
-        classes: 'menu-btn--qm-ov-reverted menu-btn--portal-pulse',
-        icon: CAL,
-        title: 'Change undone — Eddie Ri back to normal',
-        sub: 'Sat 28 Jun · trial removed, roster restored'
-      });
-
       host.innerHTML =
         '<section class="sheet menu-sheet--logo-lite lab-compare-sheet" id="menuSheet">'+
           '<p class="lab-sub" style="margin:0 0 10px">Schedule overrides (logo-lite top)</p>'+
@@ -984,7 +1000,7 @@
               '<div class="portal-qm-override-stack">'+overrideBtns+'</div>'+
             '</div>'+
           '</div>'+
-          '<div id="portalQuickMenuReminderBannerHost">'+reverted+'</div>'+
+          '<div id="portalQuickMenuReminderBannerHost"></div>'+
           '<div class="menu-group" id="portalQuickMenuNotificationsGroup" style="margin-top:16px">'+
             '<div class="menu-group-title">Announcements</div>'+
             '<div class="menu-grid menu-grid--portal-notices menu-grid--portal-announcements-split" id="portalQuickMenuNoticesGrid">'+
