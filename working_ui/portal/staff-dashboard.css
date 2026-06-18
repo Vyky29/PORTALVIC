@@ -3529,6 +3529,12 @@
       border-color:rgba(245,158,11,.42);
       box-shadow:0 1px 4px rgba(249,191,46,.18);
     }
+    .portal-sched-ov-badge.override--shadowing-host{
+      background:linear-gradient(180deg,#fecaca 0%,#f87171 100%);
+      color:#fff;
+      border-color:rgba(185,28,28,.52);
+      box-shadow:0 1px 4px rgba(220,38,38,.22);
+    }
     /* Changed by Admin — same yellow card as No Participant (until session starts) */
     .section-card--today .session-card.session-card--admin-adjusted,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{

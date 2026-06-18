@@ -472,9 +472,9 @@
       { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
       { estado: 'NO PARTICIPANT (slot abierto)', card: 'session-card--available session-card--ov-yellow', chip: '—' },
       { estado: 'Closed', card: 'session-card--closed', chip: '—' },
-      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'portal-session-slot-chip--training' },
+      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'portal-session-slot-chip--training · equipo + directores' },
       { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing · host name' },
-      { estado: 'Shadowing host (compañero en tu sesión)', card: 'session-card--admin-adjusted', chip: 'portal-sched-ov-badge override--admin-shift' },
+      { estado: 'Shadowing host (compañero en tu sesión)', card: 'session-card--admin-adjusted', chip: 'portal-sched-ov-badge override--shadowing-host' },
       { estado: 'Meeting (admin session_add)', card: 'session-card--ov-meeting', chip: 'portal-session-slot-chip--meeting' },
     ];
 
@@ -1082,7 +1082,7 @@
     }
 
     function shadowingHostBadge(label){
-      return '<span class="portal-sched-ov-badge override--admin-shift" title="A colleague is shadowing your session">'+
+      return '<span class="portal-sched-ov-badge override--shadowing-host" title="A colleague is shadowing your session">'+
         esc(label)+'</span>';
     }
 
@@ -1247,6 +1247,23 @@
       return todayCardHtml(classes, time, venue, name, chips, poolNote || '', !!asDiv, false, true);
     }
 
+    function todayCatalogRowTraining(classes, time, venue, name, groupLabel, directors, poolNote, asDiv){
+      var cls = 'portal-session-slot-chip portal-session-slot-chip--training';
+      var rows = '';
+      if(groupLabel){
+        rows += '<div class="session-meeting-chip-row"><span class="'+cls+'" aria-label="'+esc(groupLabel)+'"><span>'+esc(groupLabel)+'</span></span></div>';
+      }
+      if(directors && directors.length){
+        rows += '<div class="session-meeting-chip-row session-meeting-chip-row--directors">';
+        directors.forEach(function(n){
+          rows += '<span class="'+cls+'" aria-label="'+esc(n)+'"><span>'+esc(n)+'</span></span>';
+        });
+        rows += '</div>';
+      }
+      var chips = rows ? '<div class="session-chips-below-name session-chips-below-name--meeting-stack">'+rows+'</div>' : '';
+      return todayCardHtml(classes, time, venue, name, chips, poolNote || '', !!asDiv, false, true);
+    }
+
     function todayLifecycleHead(kind, title, sub){
       var cls = kind === 'pending' ? 'lab-today-lifecycle-head--pending'
         : (kind === 'done' ? 'lab-today-lifecycle-head--done' : 'lab-today-lifecycle-head--before');
@@ -1272,8 +1289,7 @@
           'portal-session-slot-chip--makeup', 'Make up', hubRoom),
         todayCatalogRow('session-card--admin-adjusted', '4.30 to 5', 'Acton', 'Aqsa',
           'portal-session-slot-chip--updated', 'Updated by admin', bigPool),
-        todayCatalogRow('session-card--ov-training', '10 to 11', 'Westway', 'Training session',
-          'portal-session-slot-chip--training', 'with Javi', hubRoom),
+        todayCatalogRowTraining('session-card--ov-training', '10 to 11', 'Westway', 'Training session', 'Swimming Instructors', ['Javi'], hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
           'portal-session-slot-chip--shadowing', 'Roberto', teachingPool),
         todayCatalogRowShadowingHost('session-card--admin-adjusted', '2 to 4', 'Acton', 'Samira', 'Alex shadowing you', teachingPool),
@@ -1325,7 +1341,7 @@
             todayLifecycleHead('done', '3 · Review completado', 'verde + Submitted / Absent / Cancelled')+
             phase3+
           '</div></div>'+
-          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). Chips: texto blanco sobre fondo sólido del tipo (trial = lila más oscuro que la card). <code>Updated by admin</code> = card amarilla + chip ámbar. <strong>Shadowing:</strong> el shadower ve card cielo + chip con el host (<code>Roberto</code>); el host (Roberto) ve su sesión con participante + chip ámbar <code>Alex shadowing you</code>.</p>'+
+          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). Chips: texto blanco sobre fondo sólido del tipo (trial = lila más oscuro que la card). <code>Updated by admin</code> = card amarilla + chip ámbar. <strong>Training / Meeting:</strong> línea 1 equipo, línea 2 directores. <strong>Shadowing host:</strong> chip rojo <code>Alex shadowing you</code> en sesión del participante.</p>'+
         '</div>';
 
       if(overrideHost) overrideHost.innerHTML = '';
@@ -1340,16 +1356,16 @@
         ['portal-session-slot-chip--updated', 'Updated by admin', 'Amarillo · card amarilla'],
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
-        ['portal-session-slot-chip--training', 'with Javi', 'Training · azul'],
+        ['portal-session-slot-chip--training', 'Swimming Instructors + Javi', 'Training · azul · equipo + directores'],
         ['portal-session-slot-chip--shadowing', 'Roberto', 'Shadowing · cielo · host (desde shadower)'],
-        ['portal-sched-ov-badge override--admin-shift', 'Alex shadowing you', 'Shadowing host · card amarilla · compañero en tu sesión'],
+        ['portal-sched-ov-badge override--shadowing-host', 'Alex shadowing you', 'Shadowing host · rojo · compañero en tu sesión'],
         ['portal-session-slot-chip--meeting', 'Attendee', 'Meeting · lima'],
         ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']
       ];
       return '<div class="lab-chip-demo-box" style="grid-column:1/-1"><h4>Chips bajo nombre (Today)</h4>'+
         '<div class="lab-chip-legend">'+chips.map(function(c){
           var demo = String(c[0] || '').indexOf('portal-sched-ov-badge') === 0
-            ? shadowingHostBadge(c[1])
+            ? (String(c[0]).indexOf('shadowing-host') >= 0 ? shadowingHostBadge(c[1]) : slotChip(c[0], c[1]))
             : slotChip(c[0], c[1]);
           return '<div class="lab-chip-legend-item">'+demo+
             '<span class="lab-chip-legend-label"><code>'+c[0]+'</code> · '+esc(c[2])+'</span></div>';

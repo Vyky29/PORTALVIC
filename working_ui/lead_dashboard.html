@@ -4637,7 +4637,7 @@
       return labels.map(function(lab){
         const esc = escapeHtml(String(lab || '').trim());
         if(!esc) return '';
-        return '<span class="portal-sched-ov-badge override--admin-shift" title="A colleague is shadowing your session">' + esc + '</span>';
+        return '<span class="portal-sched-ov-badge override--shadowing-host" title="A colleague is shadowing your session">' + esc + '</span>';
       }).join('');
     }
     function portalTodaySessionOverrideCardClass(item){
@@ -4884,13 +4884,14 @@
       }
       return null;
     }
-    function portalMeetingSessionChipsRowsHtml(detail){
+    function portalSessionStackedChipsRowsHtml(detail, tone){
       detail = detail || {};
       const group = String(detail.group || '').trim();
       const directors = Array.isArray(detail.directors)
         ? detail.directors.map(function(n){ return String(n || '').trim(); }).filter(Boolean)
         : [];
-      const cls = 'portal-session-slot-chip portal-session-slot-chip--meeting';
+      const mod = tone === 'training' ? 'training' : 'meeting';
+      const cls = 'portal-session-slot-chip portal-session-slot-chip--' + mod;
       let out = '';
       if(group){
         const g = escapeHtml(group);
@@ -4906,13 +4907,58 @@
       }
       return out;
     }
-    function todaySessionMeetingChipsRowHtml(item){
+    function portalMeetingSessionChipsRowsHtml(detail){
+      return portalSessionStackedChipsRowsHtml(detail, 'meeting');
+    }
+    function portalSessionAddTrainingDetail(payload, staffRoleTrack){
+      const detail = portalSessionAddMeetingDetail(payload);
+      if(detail.group || !detail.directors.length) return detail;
+      const track = String(staffRoleTrack || '').toLowerCase().replace(/[\s_-]+/g, '');
+      const groupByTrack = {
+        swimming: 'Swimming Instructors',
+        swimminglead: 'Swimming Instructors',
+        lead: 'Leads',
+        climbing: 'Climbing Instructors',
+        support: 'Support Staff',
+        supportlead: 'Support Staff'
+      };
+      const inferred = groupByTrack[track];
+      if(inferred) return { group: inferred, directors: detail.directors };
+      return detail;
+    }
+    function portalTodayStackedPeopleDetailFromItem(item){
+      if(!item) return null;
+      const cid = String(item.clientId || '').trim().toLowerCase();
+      if(cid !== 'meeting' && cid !== 'training') return null;
+      const detail = item.portalSessionAddMeetingDetail;
+      if(detail && (detail.group || (detail.directors && detail.directors.length))) return detail;
+      if(cid === 'meeting' && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
+        return portalSessionAddMeetingDetail({ attendees: item.portalSessionAddChips });
+      }
+      if(cid === 'training'){
+        if(Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
+          const names = item.portalSessionAddChips.map(function(c){
+            return String(c || '').replace(/^with\s+/i, '').trim();
+          }).filter(Boolean);
+          return portalSessionAddTrainingDetail({ trainer: names.join(', ') }, staffRoleTrackForTodayBuild());
+        }
+        const pl = item.__portalScheduleOverride && item.__portalScheduleOverride.payload;
+        if(pl) return portalSessionAddTrainingDetail(pl, staffRoleTrackForTodayBuild());
+      }
+      return null;
+    }
+    function todaySessionStackedPeopleChipsRowHtml(item){
       if(String(item && item.portalOverrideAlertPill || '').trim().toUpperCase() === 'COMPLETED') return '';
-      const detail = portalTodayMeetingDetailFromItem(item);
+      const cid = String(item && item.clientId || '').trim().toLowerCase();
+      if(cid !== 'meeting' && cid !== 'training') return '';
+      const detail = portalTodayStackedPeopleDetailFromItem(item);
       if(!detail || (!detail.group && !(detail.directors && detail.directors.length))) return '';
-      const rows = portalMeetingSessionChipsRowsHtml(detail);
+      const rows = portalSessionStackedChipsRowsHtml(detail, cid === 'training' ? 'training' : 'meeting');
       if(!rows) return '';
       return '<div class="session-chips-below-name session-chips-below-name--meeting-stack">' + rows + '</div>';
+    }
+    function todaySessionMeetingChipsRowHtml(item){
+      return todaySessionStackedPeopleChipsRowHtml(item);
     }
     function portalStaffNormRosterKey(v){
       return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -5219,7 +5265,7 @@
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
-      const meetingChipsRow = todaySessionMeetingChipsRowHtml(item);
+      const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const addChipsHtml = !meetingChipsRow && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length
         && String(item.portalOverrideAlertPill || '').trim().toUpperCase() !== 'COMPLETED'
         ? portalPlainSessionSlotChipsHtml(item.portalSessionAddChips) : '';
@@ -7596,8 +7642,10 @@
         const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
         const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
         const areaNote = portalSessionAddAreaNoteLabel(locRaw);
-        const peopleChips = kind === 'meeting' ? [] : portalSessionAddPeopleChips(kind, ov.payload);
-        const meetingDetail = kind === 'meeting' ? portalSessionAddMeetingDetail(ov.payload) : null;
+        const peopleChips = (kind === 'meeting' || kind === 'training') ? [] : portalSessionAddPeopleChips(kind, ov.payload);
+        const meetingDetail = kind === 'meeting'
+          ? portalSessionAddMeetingDetail(ov.payload)
+          : (kind === 'training' ? portalSessionAddTrainingDetail(ov.payload, staffRoleTrackForTodayBuild()) : null);
         const venueTitle = String(ov.anchor_venue || '').trim()
           .replace(/\S+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); });
         extra.push({
