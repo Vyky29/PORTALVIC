@@ -429,6 +429,7 @@
     if (grid) {
       grid.classList.toggle("topbar-tools-grid--eight", useEightGrid);
       grid.classList.toggle("topbar-tools-grid--lead", useSixGrid);
+      grid.classList.toggle("topbar-tools-grid--dense", useSixGrid && visibleToolCount >= 4);
       grid.classList.remove("topbar-tools-grid--ceo-full");
     }
     var leadRow = document.querySelector(".topbar-lead");

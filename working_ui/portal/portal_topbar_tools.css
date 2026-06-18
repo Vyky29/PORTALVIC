@@ -531,6 +531,35 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   height:var(--topbar-tool-ico-size-6);
   flex:0 0 var(--topbar-tool-ico-size-6);
 }
+.topbar-tools-grid--dense .topbar-tool-btn{
+  padding:1px 2px 2px;
+  gap:0;
+  justify-content:center;
+}
+.topbar-tools-grid--dense .topbar-tool-btn__ico{
+  width:clamp(17px,calc(var(--topbar-tools-cell) - 16px),22px);
+  height:clamp(17px,calc(var(--topbar-tools-cell) - 16px),22px);
+  flex:0 0 clamp(17px,calc(var(--topbar-tools-cell) - 16px),22px);
+  margin-top:0;
+}
+.topbar-tools-grid--dense .topbar-tool-label{
+  flex:0 0 auto;
+  min-height:7px;
+  font-size:clamp(6.5px,calc(var(--topbar-tools-cell) * 0.19),8px);
+  line-height:1.12;
+  letter-spacing:.01em;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.topbar-tools-grid--eight.topbar-tools-grid--dense .topbar-tool-btn__ico{
+  width:clamp(15px,calc(var(--topbar-tools-cell) - 15px),20px);
+  height:clamp(15px,calc(var(--topbar-tools-cell) - 15px),20px);
+  flex:0 0 clamp(15px,calc(var(--topbar-tools-cell) - 15px),20px);
+}
+.topbar-tools-grid--eight.topbar-tools-grid--dense .topbar-tool-label{
+  font-size:clamp(6px,calc(var(--topbar-tools-cell) * 0.2),7.5px);
+}
 .topbar-tool-btn__ico svg{
   display:block;
   width:100%;

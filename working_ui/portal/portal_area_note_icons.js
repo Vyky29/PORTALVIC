@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260616-lane-only-label";
+  var ICON_IMG_VER = "20260618-lane-caption";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -237,13 +237,15 @@
     var nameLineH = nameFont * 1.22;
     if (scrollMode) {
       var scrollH = Math.round(nameLineH * 2.05);
+      var scrollLabelFs = 8;
+      var scrollStackGap = 1;
       return {
         iconPx: 30,
         areaIconPx: scrollH,
-        labelFs: 0,
+        labelFs: scrollLabelFs,
         symbolColMax: Math.min(88, Math.ceil(scrollH * venueAspect) + 4),
-        stackGap: 0,
-        labelBlock: 0,
+        stackGap: scrollStackGap,
+        labelBlock: Math.ceil(scrollLabelFs * 1.12) + scrollStackGap,
       };
     }
     var dense = n >= 6;
@@ -273,13 +275,16 @@
       Math.max(58, Math.ceil(areaIconPx * venueAspect) + 4)
     );
     var iconPx = Math.max(dense ? 24 : 26, Math.round(areaIconPx * 0.92));
+    var labelFs = Math.max(8, Math.min(11, Math.round(nameFont * 0.65)));
+    var stackGap = Math.max(1, Math.round(labelFs * 0.12));
+    var labelBlock = Math.ceil(labelFs * 1.12) + stackGap;
     return {
       iconPx: iconPx,
       areaIconPx: areaIconPx,
-      labelFs: 0,
+      labelFs: labelFs,
       symbolColMax: symbolColMax,
-      stackGap: 0,
-      labelBlock: 0,
+      stackGap: stackGap,
+      labelBlock: labelBlock,
     };
   }
 
@@ -296,9 +301,10 @@
     var key = ICONS[label] ? label : portalNormalizeAreaNoteKey(label);
     if (!key || !ICONS[key]) return "";
     if (key === "lane-de" || key === "lane-se") {
+      var laneMeta = ICONS[key];
       return portalAreaNoteIconHtml(label, {
         showLabel: true,
-        labelText: portalDisplayAreaNoteLabel(label),
+        labelText: (laneMeta && laneMeta.label) || portalDisplayAreaNoteLabel(label),
         layout: "stack",
         venueSessionCard: true,
       });
