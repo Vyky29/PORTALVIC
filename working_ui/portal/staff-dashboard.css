@@ -4859,9 +4859,9 @@
     }
     .portal-session-slot-chip--meeting{
       color:#fff;
-      background:linear-gradient(145deg,#84cc16,#65a30d);
-      border:1px solid rgba(101,163,13,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
+      background:linear-gradient(145deg,#3b82f6,#2563eb);
+      border:1px solid rgba(37,99,235,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(37,99,235,.22);
     }
     .section-card--today .session-card-body--today-ov-split .session-line--name .session-name-stack{
       gap:2px;
@@ -5977,6 +5977,17 @@
       background:rgba(37,99,235,.12);
       color:#1d4ed8;
       border:1px solid rgba(37,99,235,.28);
+    }
+    .week-override-tag--training,
+    .week-override-tag--meeting{
+      background:rgba(37,99,235,.12);
+      color:#1d4ed8;
+      border:1px solid rgba(37,99,235,.28);
+    }
+    .week-override-tag--shadowing{
+      background:rgba(101,163,13,.12);
+      color:#3f6212;
+      border:1px solid rgba(101,163,13,.42);
     }
     .week-override-badges-row{
       display:flex;

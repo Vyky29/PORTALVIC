@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-shadowing-green" />
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-week-tag-colors" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
     *{box-sizing:border-box}
@@ -441,7 +441,7 @@
     </section>
   </div>
 
-  <script src="/portal/portal_area_note_icons.js?v=20260616-lane-only-label"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260614-area-label-unify"></script>
   <script>
   (function(){
     var STORAGE_KEY = 'portalLabAlertColorsV2';
@@ -623,9 +623,9 @@
           sampleTitle: 'MEETING - Hub (18th/Jun)', sampleSub: '9 to 10 · Hub Room · Acton',
           haloNote: 'schedule-meeting (lima)',
           colors: {
-            bg1:'#f7fee7', bg2:'#ecfccb', border:'rgba(132,204,22,.45)', shadow:'rgba(132,204,22,.2)',
-            strong:'#4d7c0f', sub:'#65a30d', iconBg:'rgba(132,204,22,.22)', iconFg:'#4d7c0f', iconBorder:'rgba(132,204,22,.38)',
-            chipBg:'#ecfccb', chipFg:'#3f6212', chipBorder:'rgba(132,204,22,.42)', termGlow:'rgba(132,204,22,.5)'
+            bg1:'#eff6ff', bg2:'#e0f2fe', border:'rgba(37,99,235,.42)', shadow:'rgba(37,99,235,.18)',
+            strong:'#1d4ed8', sub:'#2563eb', iconBg:'rgba(59,130,246,.22)', iconFg:'#1d4ed8', iconBorder:'rgba(37,99,235,.35)',
+            chipBg:'#e0f2fe', chipFg:'#1d4ed8', chipBorder:'rgba(37,99,235,.4)', termGlow:'rgba(37,99,235,.5)'
           }
         }
       ];
@@ -817,7 +817,13 @@
           lines.push('#labLiveScope .'+ov.pillClass+' > span{color:'+c.chipFg+' !important}');
         }
         if(ov.weekClass){
-          lines.push('#labLiveScope .'+ov.weekClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
+          if(ov.id === 'training' || ov.id === 'meeting'){
+            lines.push('#labLiveScope .'+ov.weekClass+'{background:rgba(37,99,235,.12) !important;color:#1d4ed8 !important;border-color:rgba(37,99,235,.28) !important}');
+          } else if(ov.id === 'shadowing'){
+            lines.push('#labLiveScope .'+ov.weekClass+'{background:rgba(101,163,13,.12) !important;color:#3f6212 !important;border-color:rgba(101,163,13,.42) !important}');
+          } else {
+            lines.push('#labLiveScope .'+ov.weekClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
+          }
         }
         if(ov.termClass){
           lines.push('#labLiveScope .'+ov.termClass+'{border-color:'+c.chipBorder+' !important}');

@@ -296,19 +296,16 @@
   global.portalAreaNoteIconHtml = portalAreaNoteIconHtml;
   global.portalTodayAreaNoteMetrics = portalTodayAreaNoteMetrics;
 
-  /** TODAY right column: full composite PNG for all notes except Lane (DE/SE). */
+  /** TODAY right column: icon crop + HTML label (same size for every area, Lane SE reference). */
   global.portalAreaNoteTodayColumnHtml = function portalAreaNoteTodayColumnHtml(label) {
     var key = ICONS[label] ? label : portalNormalizeAreaNoteKey(label);
     if (!key || !ICONS[key]) return "";
-    if (key === "lane-de" || key === "lane-se") {
-      var laneMeta = ICONS[key];
-      return portalAreaNoteIconHtml(label, {
-        showLabel: true,
-        labelText: (laneMeta && laneMeta.label) || portalDisplayAreaNoteLabel(label),
-        layout: "stack",
-        venueSessionCard: false,
-      });
-    }
-    return portalAreaNoteIconHtml(label, { showLabel: false, venueSessionCard: true });
+    var meta = ICONS[key];
+    return portalAreaNoteIconHtml(label, {
+      showLabel: true,
+      labelText: portalAreaNoteCaptionLabel(key, meta) || portalDisplayAreaNoteLabel(label),
+      layout: "stack",
+      venueSessionCard: false,
+    });
   };
 })(typeof window !== "undefined" ? window : globalThis);

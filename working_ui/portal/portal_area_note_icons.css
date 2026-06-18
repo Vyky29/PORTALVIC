@@ -190,17 +190,41 @@
   height:18px;
 }
 
-/* TODAY session cards (staff + lead): composite PNG (icon + caption baked in). */
-.section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label){
+/* TODAY session cards (staff + lead): crop baked PNG caption; HTML label under icon. */
+.section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label),
+.section-card--today .session-today-override-pool-note .session-area-note-stack:has(.session-area-note-label){
   gap:0;
   height:auto;
   flex:0 0 auto;
   align-self:center;
   justify-content:center;
 }
-.section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label) .session-area-note-label{
+.section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label) .session-area-note-label,
+.section-card--today .session-today-override-pool-note .session-area-note-stack:has(.session-area-note-label) .session-area-note-label{
   margin-top:1px;
   line-height:1.05;
+}
+.section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon{
+  --area-note-visible-ratio:0.66;
+  flex:0 0 auto;
+  width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
+  height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--area-note-visible-ratio));
+  max-width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
+  max-height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--area-note-visible-ratio));
+  aspect-ratio:auto;
+  overflow:hidden;
+  align-items:flex-start;
+  justify-content:center;
+}
+.section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon .session-area-note-img,
+.section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon .session-area-note-svg{
+  width:100%;
+  height:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
+  max-width:100%;
+  max-height:none;
+  object-fit:contain;
+  object-position:top center;
+  display:block;
 }
 .staff-dashboard .section-card--today .session-card .session-area-note-stack > .session-venue-visual,
 .lead-dashboard .section-card--today .session-card .session-area-note-stack > .session-venue-visual,
@@ -272,37 +296,6 @@
   color:var(--area-note-accent, var(--muted));
   line-height:1.1;
 }
-/* Lane PNGs bake old Shark/Fish captions — crop caption; HTML label sits directly under icon. */
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se),
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de){
-  gap:0;
-  justify-content:center;
-  height:auto;
-}
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se) .session-area-note-icon--lane-se,
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de) .session-area-note-icon--lane-de{
-  --lane-visible-ratio:0.66;
-  flex:0 0 auto;
-  width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
-  height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--lane-visible-ratio));
-  max-width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
-  max-height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--lane-visible-ratio));
-  aspect-ratio:auto;
-  overflow:hidden;
-  align-items:flex-start;
-  justify-content:center;
-}
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-se) .session-area-note-icon--lane-se .session-area-note-img,
-.section-card--today .session-area-note-stack:has(.session-area-note-icon--lane-de) .session-area-note-icon--lane-de .session-area-note-img{
-  width:100%;
-  height:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
-  max-width:100%;
-  max-height:none;
-  object-fit:contain;
-  object-position:top center;
-  display:block;
-}
-
 /* Label tint matched to each area-note PNG accent. */
 .session-area-note-stack:has(.session-area-note-icon--big-pool),
 .session-area-note-inline:has(.session-area-note-icon--big-pool){ --area-note-accent:#3f4a54; }
