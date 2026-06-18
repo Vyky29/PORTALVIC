@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-no-meridiem" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-trial-pending-orange" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -228,6 +228,27 @@
       overflow:hidden;
       text-overflow:ellipsis;
       overflow-wrap:normal;
+    }
+    .lab-today-panel .session-chips-below-name--meeting-stack{
+      flex-direction:column;
+      flex-wrap:nowrap;
+      align-items:center;
+      gap:3px;
+    }
+    .lab-today-panel .session-meeting-chip-row{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      width:100%;
+      min-width:0;
+    }
+    .lab-today-panel .session-meeting-chip-row--directors .portal-session-slot-chip{
+      max-width:calc(50% - 2px);
+      padding:4px 7px;
+      font-size:10px;
     }
     .lab-today-panel .portal-session-slot-chip--cancelled,
     #labLiveScope .portal-session-slot-chip--cancelled{
@@ -1065,11 +1086,13 @@
       return s.replace(/\s{2,}/g, ' ').trim();
     }
 
-    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml, asDiv, chipsWrap){
+    function todayCardHtml(classes, time, venue, name, chipHtml, poolHtml, asDiv, chipsWrap, chipsPrebuilt){
       var tag = asDiv ? 'div' : 'button';
       var typeAttr = asDiv ? '' : ' type="button"';
       var chipsCls = chipsWrap ? ' session-chips-below-name--wrap' : '';
-      var chips = chipHtml ? '<div class="session-chips-below-name'+chipsCls+'">'+chipHtml+'</div>' : '';
+      var chips = chipHtml
+        ? (chipsPrebuilt ? chipHtml : '<div class="session-chips-below-name'+chipsCls+'">'+chipHtml+'</div>')
+        : '';
       var timeLabel = labStripMeridiem(time);
       return '<'+tag+typeAttr+' class="session-card '+classes+'" role="listitem">'+
         '<div class="session-card-body">'+
@@ -1195,6 +1218,23 @@
       return todayCardHtml(classes, time, venue, name, chipHtml, poolNote || '', !!asDiv, (chipSpecs || []).length > 1);
     }
 
+    function todayCatalogRowMeeting(classes, time, venue, name, groupLabel, directors, poolNote, asDiv){
+      var cls = 'portal-session-slot-chip portal-session-slot-chip--meeting';
+      var rows = '';
+      if(groupLabel){
+        rows += '<div class="session-meeting-chip-row"><span class="'+cls+'" aria-label="'+esc(groupLabel)+'"><span>'+esc(groupLabel)+'</span></span></div>';
+      }
+      if(directors && directors.length){
+        rows += '<div class="session-meeting-chip-row session-meeting-chip-row--directors">';
+        directors.forEach(function(n){
+          rows += '<span class="'+cls+'" aria-label="'+esc(n)+'"><span>'+esc(n)+'</span></span>';
+        });
+        rows += '</div>';
+      }
+      var chips = rows ? '<div class="session-chips-below-name session-chips-below-name--meeting-stack">'+rows+'</div>' : '';
+      return todayCardHtml(classes, time, venue, name, chips, poolNote || '', !!asDiv, false, true);
+    }
+
     function todayLifecycleHead(kind, title, sub){
       var cls = kind === 'pending' ? 'lab-today-lifecycle-head--pending'
         : (kind === 'done' ? 'lab-today-lifecycle-head--done' : 'lab-today-lifecycle-head--before');
@@ -1224,11 +1264,7 @@
           'portal-session-slot-chip--training', 'with Javi', hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
           'portal-session-slot-chip--shadowing', 'Roberto', teachingPool),
-        todayCatalogRowChips('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting', [
-          ['portal-session-slot-chip--meeting', 'Swimming Instructors'],
-          ['portal-session-slot-chip--meeting', 'Javi'],
-          ['portal-session-slot-chip--meeting', 'Raul']
-        ], hubRoom),
+        todayCatalogRowMeeting('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting', 'Swimming Instructors', ['Javi', 'Raul'], hubRoom),
         todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
         todayCatalogRow('session-card--closed', '12 to 1', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
       ].join('');

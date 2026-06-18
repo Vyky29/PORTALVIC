@@ -3481,6 +3481,10 @@
       background:rgba(252,233,241,.92);
       border-color:rgba(136,14,79,.72);
     }
+    .session-card--ov-trial{
+      background:#f5f0ff;
+      border-color:rgba(167,139,250,.5);
+    }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
       border-color:#c2185b;
@@ -3570,7 +3574,21 @@
       border-color:var(--reviewOrangeBorder);
       box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
     }
+    .section-card--today .session-card.session-card--ov-trial.session-card--review-needed,
+    .section-card--today .session-card.override--trial.session-card--review-needed{
+      background:var(--reviewOrangeBg);
+      border-color:var(--reviewOrangeBorder);
+      box-shadow:0 0 0 1px var(--reviewOrangeGlow),0 8px 22px var(--reviewOrangeGlow);
+    }
     .section-card--today .session-card.session-card--ov-pink.session-card--review-done{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
+    .section-card--today .session-card.session-card--ov-trial.session-card--review-done,
+    .section-card--today .session-card.override--trial.session-card--review-done,
+    .section-card--today .session-card.session-card--ov-trial.session-card--review-incident,
+    .section-card--today .session-card.override--trial.session-card--review-incident{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
@@ -4513,6 +4531,35 @@
       text-overflow:ellipsis;
       overflow-wrap:normal;
       text-align:center;
+    }
+    .section-card--today .session-chips-below-name--meeting-stack{
+      flex-direction:column;
+      flex-wrap:nowrap;
+      align-items:center;
+      gap:3px;
+    }
+    .section-card--today .session-meeting-chip-row{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      width:100%;
+      min-width:0;
+    }
+    .section-card--today .session-meeting-chip-row .portal-session-slot-chip{
+      max-width:100%;
+    }
+    .section-card--today .session-meeting-chip-row--directors .portal-session-slot-chip{
+      max-width:calc(50% - 2px);
+      padding:4px 7px;
+      font-size:10px;
+    }
+    .section-card--today .session-meeting-chip-row--directors .portal-session-slot-chip > span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;
@@ -8650,4 +8697,38 @@
       clip:rect(0,0,0,0) !important;
       white-space:nowrap !important;
       border:0 !important;
+    }
+
+    /* Cancelled quick-menu tile — terminal layer (keep last in file) */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuScheduleOverridesTop.portal-qm-override-top-host .menu-btn.menu-btn--qm-tile.menu-btn--qm-ov-cancelled,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled,
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled{
+      background:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      background-color:#525252 !important;
+      background-image:linear-gradient(180deg,#707070 0%,#525252 100%) !important;
+      border:2px solid rgba(255,255,255,.22) !important;
+      color:#fff !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.32) !important;
+    }
+    #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong,
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{
+      color:#fff !important;
+      -webkit-text-fill-color:#fff !important;
+    }
+    #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub,
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{
+      color:#f0f0f0 !important;
+      -webkit-text-fill-color:#f0f0f0 !important;
+    }
+    #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev,
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{
+      color:rgba(255,255,255,.7) !important;
+      -webkit-text-fill-color:rgba(255,255,255,.7) !important;
+    }
+    #menuSheet #portalQuickMenuScheduleOverridesTop .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon,
+    #menuSheet #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
+      background:rgba(255,255,255,.16) !important;
+      color:#fff !important;
+      border-color:rgba(255,255,255,.24) !important;
     }
