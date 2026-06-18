@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-trial-chip-label" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-cancelled-today-row" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -1103,6 +1103,8 @@
       var teachingPool = areaNoteSymbol('Teaching Pool');
       var bigPool = areaNoteSymbol('Big Pool');
 
+      var wallNote = areaNoteSymbol('Wall');
+
       var panelTodayPending = todayDayPanel('TODAY', '16/06/2026',
         todayCardHtml('session-card--review-needed', '4.30 to 5', 'Acton', 'Bediako',
           slotChip('portal-session-slot-chip--pending', 'Pending'), teachingPool)+
@@ -1121,7 +1123,12 @@
         todayCardHtml('', '6 to 6.30', 'Acton', 'Maiyar', '', teachingPool),
         'Sesiones normales — blanco, sin chip. Nota de área PNG a la derecha (Teaching Pool, Big Pool…).');
 
-      host.innerHTML = panelTodayPending + panelThuNormal;
+      var panelCancelled = todayDayPanel('TODAY', '20/06/2026',
+        todayCardHtml('session-card--ov-red override--portal-cancelled', '4 to 5 pm', 'Westway', 'James',
+          slotChip('portal-session-slot-chip--cancelled', 'Cancelled'), wallNote),
+        'Cancelado — <strong>nombre del participante</strong>, chip negro <strong>Cancelled</strong>, nota de área a la derecha.');
+
+      host.innerHTML = panelTodayPending + panelThuNormal + panelCancelled;
     }
 
     function renderChipLegend(){

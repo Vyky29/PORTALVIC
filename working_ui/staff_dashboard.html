@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-trial-chip-label" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-cancelled-today-row" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -5845,6 +5845,7 @@
     function portalTodayItemOverrideClass(item){
       const pill = String(item && item.portalOverrideAlertPill || '').trim().toUpperCase();
       if(pill === 'ABSENT') return 'override--absent';
+      if(pill === 'CANCELLED') return 'override--portal-cancelled';
       const type = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
       if(type === 'slot_clear_client' && item && item.__portalScheduleOverride && item.__portalScheduleOverride.payload && item.__portalScheduleOverride.payload.cancelled_by_admin) return 'override--portal-cancelled';
       if(item && item.portalOverrideTrialTag) return 'override--trial';
@@ -5876,6 +5877,25 @@
       if(!s) return s;
       var stripped = s.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
       return stripped || s;
+    }
+    function portalTodayClientNotesForSession(s){
+      const cid = String(s && s.clientId || '').trim();
+      const low = cid.toLowerCase();
+      try{
+        const mapped = (typeof clientNotesById !== 'undefined' && clientNotesById)
+          ? (clientNotesById[cid] || clientNotesById[low])
+          : null;
+        if(mapped && String(mapped.name || '').trim()) return mapped;
+      }catch(_){}
+      const disp = portalParticipantDisplayName(String(s && (s.clientDisplay || s.clientName || cid) || '').trim());
+      return {
+        name: disp || 'Participant',
+        generalLead: '',
+        specialty: '',
+        specialtyClimbing: '',
+        specialtyFitness: '',
+        generalInfoSheet: ''
+      };
     }
     function portalOverrideReplacementClientId(payload){
       if(!payload) return '';
@@ -9233,7 +9253,7 @@
           if(ov && ov.override_type === 'slot_clear_client' && !replaceOvSameSlot){
             const isCancelledByAdmin = !!(ov.payload && ov.payload.cancelled_by_admin);
             if(isCancelledByAdmin){
-              const cCan = clientNotesById[s.clientId] || { name: String(s.clientId || '').trim().toLowerCase() || 'Participant', generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' };
+              const cCan = portalTodayClientNotesForSession(s);
               const showSpecCan = !isBespokeActivity(activity);
               let poolLocationCan = resolvePoolLocationLabelFromSession(s, activity, cCan, viewDay);
               if(supportHidePoolNote) poolLocationCan = null;
@@ -9260,8 +9280,9 @@
                 actionsDisabled: true,
                 detailsOpenAllowed: true,
                 portalOverrideSuppressReviewOrange: true,
-                portalOverrideCardTone: 'green',
-                portalOverrideAlertPill: 'CANCELLED'
+                portalOverrideCardTone: 'red',
+                portalOverrideAlertPill: 'CANCELLED',
+                __portalScheduleOverride: ov
               }, meta);
             }
             const makeupFromClear = portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote);
@@ -9419,7 +9440,7 @@
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const isCancelledByAdmin = !!(slotOv.payload && slotOv.payload.cancelled_by_admin);
           if(isCancelledByAdmin){
-            const cCan = clientNotesById[base.clientId] || { name: String(base.clientId || '').trim().toLowerCase() || 'Participant', generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' };
+            const cCan = portalTodayClientNotesForSession(s);
             const activityCan = (s.activity || 'Swimming').trim();
             const timeCan = rosterSlotTimeLabel(s);
             let poolLocationCan = resolvePoolLocationLabelFromSession(s, activityCan, cCan, viewDay);
@@ -9447,7 +9468,7 @@
               actionsDisabled: true,
               detailsOpenAllowed: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'green',
+              portalOverrideCardTone: 'red',
               portalOverrideAlertPill: 'CANCELLED',
               scheduleAdminAdjusted: true,
               sessionVenue: String(s.venue || '').trim() || '—',

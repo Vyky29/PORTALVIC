@@ -3455,7 +3455,11 @@
       border-color:#b71c1c;
     }
     .session-card.override--absent{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder);box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow)}
-    .session-card.override--portal-cancelled{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder);box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow)}
+    .session-card.override--portal-cancelled{
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:rgba(123,18,18,.78);
+      box-shadow:0 0 0 1px rgba(123,18,18,.12),0 8px 22px rgba(123,18,18,.08);
+    }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
@@ -4550,9 +4554,9 @@
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--cancelled,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--cancelled{
       color:#fff;
-      background:#b71c1c;
-      border:1px solid rgba(123,18,18,.92);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(123,18,18,.24);
+      background:linear-gradient(145deg,#262626,#171717);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 2px 10px rgba(0,0,0,.28);
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--completed,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--completed{
@@ -5551,9 +5555,9 @@
     }
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill{
       color:#fff;
-      background:#b71c1c;
-      border:1px solid rgba(123,18,18,.92);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(123,18,18,.24);
+      background:linear-gradient(145deg,#262626,#171717);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 2px 10px rgba(0,0,0,.28);
     }
     /* Next session · make-up: same size as Absent; agreed pink (#d94f93 → #c2185b), white text */
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill{
