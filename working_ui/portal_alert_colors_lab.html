@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-chip-white" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-chips-inline" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260618-area-stack-tight" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -193,15 +193,53 @@
       overflow-wrap:anywhere;
     }
     .lab-today-panel .session-chips-below-name{
-      flex-wrap:wrap;min-width:0;overflow:visible !important;
-      flex-direction:row;align-items:center;justify-content:center;gap:4px;
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      min-width:0;
+      overflow:visible !important;
     }
     .lab-today-panel .session-chips-below-name--wrap{
-      flex-direction:row;
+      flex-wrap:nowrap;
       justify-content:center;
+      gap:3px;
     }
     .lab-today-panel .session-chips-below-name .portal-session-slot-chip{
-      max-width:100%;overflow:hidden;text-overflow:ellipsis;
+      flex:0 1 auto;
+      min-width:0;
+      max-width:none;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .lab-today-panel .session-chips-below-name--wrap .portal-session-slot-chip{
+      max-width:calc(50% - 2px);
+      padding:4px 7px;
+      font-size:10px;
+    }
+    .lab-today-panel .session-chips-below-name:not(.session-chips-below-name--wrap) .portal-session-slot-chip{
+      max-width:100%;
+    }
+    .lab-today-panel .session-chips-below-name--wrap .portal-session-slot-chip--trial > span,
+    .lab-today-panel .session-chips-below-name--wrap .portal-session-slot-chip--updated > span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      overflow-wrap:normal;
+    }
+    .lab-today-panel .portal-session-slot-chip--cancelled,
+    #labLiveScope .portal-session-slot-chip--cancelled{
+      color:#fff !important;
+      background:linear-gradient(145deg,#707070,#525252) !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(0,0,0,.28) !important;
+    }
+    .lab-today-panel .portal-session-slot-chip--cancelled > span,
+    #labLiveScope .portal-session-slot-chip--cancelled > span{
+      color:#fff !important;
+      -webkit-text-fill-color:#fff !important;
     }
     .lab-today-lifecycle-head{
       margin:16px 12px 8px;padding:8px 12px;border-radius:10px;
@@ -721,15 +759,19 @@
     function cardSelector(cardClass){
       var base = '#labLiveScope #menuSheet.menu-sheet--logo-lite';
       return base+' .portal-qm-override-top-host .menu-btn.'+cardClass+
+        ', '+base+' #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.'+cardClass+
+        ', '+base+' #portalQuickMenuNotificationsGroup .menu-btn.'+cardClass+
         ', '+base+' #portalQuickMenuReminderBannerHost .menu-btn.'+cardClass;
     }
 
     function buildLiveCss(){
       var lines = [];
+      lines.push('#labLiveScope .portal-session-slot-chip--cancelled{background:linear-gradient(145deg,#707070,#525252) !important;color:#fff !important;border:1px solid rgba(255,255,255,.22) !important}');
+      lines.push('#labLiveScope .portal-session-slot-chip--cancelled > span{color:#fff !important;-webkit-text-fill-color:#fff !important}');
       state.overrides.forEach(function(ov){
         var c = ov.id === 'cancelled' ? cancelledCanonicalColors() : (ov.colors || {});
         var sel = cardSelector(ov.cardClass);
-        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border:2px solid '+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important;color:'+c.strong+' !important}');
+        lines.push(sel+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;background-color:'+c.bg2+' !important;border:2px solid '+c.border+' !important;box-shadow:0 6px 18px '+c.shadow+' !important;color:'+c.strong+' !important}');
         lines.push(sel+' .menu-btn-copy strong{color:'+c.strong+' !important;-webkit-text-fill-color:'+c.strong+' !important}');
         lines.push(sel+' .menu-btn-sub{color:'+c.sub+' !important;-webkit-text-fill-color:'+c.sub+' !important}');
         lines.push(sel+' .menu-btn-chev{color:'+c.strong+'99 !important}');

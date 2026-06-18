@@ -4475,7 +4475,7 @@
     .section-card--today .session-line--name .session-chips-below-name{
       display:flex;
       flex-direction:row;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
       align-items:center;
       justify-content:center;
       gap:4px;
@@ -4485,14 +4485,33 @@
       margin-top:4px;
     }
     .section-card--today .session-chips-below-name--wrap{
-      flex-direction:row;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
       justify-content:center;
+      gap:3px;
     }
     .section-card--today .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .session-chips-below-name .portal-sched-ov-badge{
-      max-width:100%;
+      flex:0 1 auto;
       min-width:0;
+      max-width:none;
+    }
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip,
+    .section-card--today .session-chips-below-name--wrap .portal-sched-ov-badge{
+      max-width:calc(50% - 2px);
+      padding:4px 7px;
+      font-size:10px;
+    }
+    .section-card--today .session-chips-below-name:not(.session-chips-below-name--wrap) .portal-session-slot-chip,
+    .section-card--today .session-chips-below-name:not(.session-chips-below-name--wrap) .portal-sched-ov-badge{
+      max-width:100%;
+    }
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--trial > span,
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated > span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      overflow-wrap:normal;
+      text-align:center;
     }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;
@@ -4635,9 +4654,9 @@
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--cancelled,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--cancelled{
       color:#fff;
-      background:linear-gradient(145deg,#262626,#171717);
-      border:1px solid rgba(255,255,255,.18);
-      box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 2px 10px rgba(0,0,0,.28);
+      background:linear-gradient(145deg,#707070,#525252);
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 10px rgba(0,0,0,.28);
     }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--completed,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--completed{
