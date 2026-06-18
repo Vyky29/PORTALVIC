@@ -609,21 +609,51 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit-layer circle{fill:#0d9488 !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit-layer circle:nth-child(2n){fill:#0f766e !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit-layer circle:nth-child(3n){fill:#2dd4bf !important}
-    /* Undo change — dark blue orbit */
+    /* Undo change — grey orbit */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-aura{
       background:
         radial-gradient(circle at 40% 35%, rgba(255,255,255,.78) 0%, transparent 42%),
-        radial-gradient(circle at 72% 68%, rgba(45,132,179,.3) 0%, transparent 48%),
-        radial-gradient(circle at 50% 50%, rgba(29,79,143,.2) 0%, transparent 58%);
+        radial-gradient(circle at 72% 68%, rgba(161,161,170,.32) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(113,113,122,.22) 0%, transparent 58%);
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar{
+      animation:avatar-outline-schedule-grey 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle{fill:#a1a1aa !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle:nth-child(2n){fill:#71717a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle:nth-child(3n){fill:#d4d4d8 !important}
+    /* Cancelled — black orbit */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-aura{
+      background:
+        radial-gradient(circle at 40% 35%, rgba(255,255,255,.22) 0%, transparent 42%),
+        radial-gradient(circle at 72% 68%, rgba(23,23,23,.55) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.35) 0%, transparent 58%);
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar{
+      animation:avatar-outline-schedule-black 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-orbit-layer circle{fill:#171717 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-orbit-layer circle:nth-child(2n){fill:#404040 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-cancelled .avatar-orbit-layer circle:nth-child(3n){fill:#525252 !important}
+    /* Training — light blue orbit (former undo palette) */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-aura{
+      background:
+        radial-gradient(circle at 40% 35%, rgba(255,255,255,.78) 0%, transparent 42%),
+        radial-gradient(circle at 72% 68%, rgba(59,130,246,.28) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(37,99,235,.18) 0%, transparent 58%);
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar{
       animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle{fill:var(--blue) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle:nth-child(2n){fill:#1d4f8f !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-undo .avatar-orbit-layer circle:nth-child(3n){fill:#4f8fca !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle{fill:#3b82f6 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(2n){fill:#2563eb !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(3n){fill:#93c5fd !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar{
@@ -717,6 +747,14 @@
     @keyframes avatar-outline-alert-blue{
       0%,100%{box-shadow:0 0 0 1px rgba(45,132,179,.38),0 12px 30px rgba(45,132,179,.34)}
       50%{box-shadow:0 0 0 2px rgba(45,132,179,.68),0 16px 38px rgba(45,132,179,.48)}
+    }
+    @keyframes avatar-outline-schedule-grey{
+      0%,100%{box-shadow:0 0 0 1px rgba(113,113,122,.38),0 12px 30px rgba(113,113,122,.28)}
+      50%{box-shadow:0 0 0 2px rgba(113,113,122,.58),0 16px 38px rgba(113,113,122,.38)}
+    }
+    @keyframes avatar-outline-schedule-black{
+      0%,100%{box-shadow:0 0 0 1px rgba(0,0,0,.45),0 12px 30px rgba(0,0,0,.35)}
+      50%{box-shadow:0 0 0 2px rgba(0,0,0,.72),0 16px 38px rgba(0,0,0,.48)}
     }
     /* Chat + announcement — red and blue dots */
     .avatar-wrap.avatar-wrap--portal-alert-chat-ann .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
@@ -2401,29 +2439,43 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#fef2f2 0%,#fee2e2 100%);
-      border:2px solid rgba(220,38,38,.45);
-      color:var(--ink);
-      box-shadow:0 6px 18px rgba(220,38,38,.2);
+      background:linear-gradient(180deg,#262626 0%,#171717 100%);
+      border:2px solid rgba(255,255,255,.18);
+      color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#991b1b}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#b91c1c}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(153,27,27,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65)}
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(220,38,38,.18);
-      color:#b91c1c;
-      border-color:rgba(220,38,38,.32);
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      border-color:rgba(255,255,255,.22);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training{
-      background:linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%);
-      border:2px solid rgba(99,102,241,.42);
-      box-shadow:0 6px 18px rgba(99,102,241,.2);
+      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
+      border:2px solid rgba(37,99,235,.42);
+      box-shadow:0 6px 18px rgba(37,99,235,.18);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-copy strong{color:#4338ca}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-sub{color:#4f46e5}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-chev{color:rgba(67,56,202,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-copy strong{color:#1d4ed8}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-sub{color:#2563eb}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-chev{color:rgba(29,78,216,.55)}
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training .menu-btn-icon{
-      background:rgba(99,102,241,.22);color:#4338ca;border-color:rgba(99,102,241,.35);
+      background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted{
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
+      border:2px solid rgba(113,113,122,.45);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(113,113,122,.2);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted .menu-btn-copy strong{color:#3f3f46}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted .menu-btn-sub{color:#52525b}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(63,63,70,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
+      background:rgba(161,161,170,.28);
+      color:#52525b;
+      border-color:rgba(113,113,122,.4);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing{
       background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
@@ -2460,8 +2512,16 @@
       box-shadow:0 10px 26px rgba(124,58,237,.28);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover{
-      border-color:rgba(220,38,38,.6);
-      box-shadow:0 10px 26px rgba(220,38,38,.28);
+      border-color:rgba(255,255,255,.35);
+      box-shadow:0 10px 26px rgba(0,0,0,.45);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training:hover{
+      border-color:rgba(37,99,235,.6);
+      box-shadow:0 10px 26px rgba(37,99,235,.26);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted:hover{
+      border-color:rgba(113,113,122,.65);
+      box-shadow:0 10px 26px rgba(113,113,122,.28);
     }
     /* Legacy per-kind override tiles (unused in logo-lite alerts; session pills unchanged) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent{
@@ -2507,18 +2567,18 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
-      background:linear-gradient(180deg,#fef2f2 0%,#fee2e2 100%);
-      border:2px solid rgba(220,38,38,.45);
-      color:var(--ink);
-      box-shadow:0 6px 18px rgba(220,38,38,.2);
+      background:linear-gradient(180deg,#262626 0%,#171717 100%);
+      border:2px solid rgba(255,255,255,.18);
+      color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#991b1b}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#b91c1c}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(153,27,27,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-copy strong{color:#fff}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-sub{color:#f4f4f5}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-chev{color:rgba(255,255,255,.65)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled .menu-btn-icon{
-      background:rgba(248,113,113,.28);
-      color:#b91c1c;
-      border-color:rgba(220,38,38,.35);
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      border-color:rgba(255,255,255,.22);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-slot-opened{
       background:linear-gradient(180deg,#ecfeff 0%,#cffafe 100%);
@@ -3300,30 +3360,30 @@
       box-shadow:0 10px 26px rgba(236,72,153,.28);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover{
-      border-color:rgba(220,38,38,.6);
-      box-shadow:0 10px 26px rgba(220,38,38,.28);
+      border-color:rgba(255,255,255,.35);
+      box-shadow:0 10px 26px rgba(0,0,0,.45);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-other:hover{
       border-color:rgba(71,85,105,.5);
       box-shadow:0 10px 24px rgba(15,23,42,.14);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted{
-      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
-      border:2px solid rgba(37,99,235,.42);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
+      border:2px solid rgba(113,113,122,.45);
       color:var(--ink);
-      box-shadow:0 6px 18px rgba(37,99,235,.18);
+      box-shadow:0 6px 18px rgba(113,113,122,.2);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-copy strong{color:#1d4ed8}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-sub{color:#2563eb}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(29,78,216,.5)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-copy strong{color:#3f3f46}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-sub{color:#52525b}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(63,63,70,.55)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
-      background:rgba(59,130,246,.22);
-      color:#1d4ed8;
-      border-color:rgba(37,99,235,.35);
+      background:rgba(161,161,170,.28);
+      color:#52525b;
+      border-color:rgba(113,113,122,.4);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-reverted:hover{
-      border-color:rgba(37,99,235,.6);
-      box-shadow:0 10px 26px rgba(37,99,235,.26);
+      border-color:rgba(113,113,122,.65);
+      box-shadow:0 10px 26px rgba(113,113,122,.28);
     }
     #portalOperationalReminderList .setup-row--qm-ov-absent{
       border-color:rgba(5,150,105,.4);
@@ -3350,11 +3410,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#92400e}
     #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#b45309}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
-      border-color:rgba(220,38,38,.4);
-      background:linear-gradient(180deg,rgba(254,226,226,.96) 0%,rgba(255,255,255,.99) 100%);
+      border-color:rgba(255,255,255,.18);
+      background:linear-gradient(180deg,#262626 0%,#171717 100%);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-text strong{color:#991b1b}
-    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-sub{color:#b91c1c}
+    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-text strong{color:#fff}
+    #portalOperationalReminderList .setup-row--qm-ov-cancelled .setup-row-sub{color:#f4f4f5}
     #portalOperationalReminderList .setup-row--qm-ov-slot-opened{
       border-color:rgba(8,145,178,.42);
       background:linear-gradient(180deg,rgba(236,254,255,.98) 0%,rgba(255,255,255,.99) 100%);
@@ -3368,11 +3428,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-other .setup-row-text strong{color:#0f172a}
     #portalOperationalReminderList .setup-row--qm-ov-other .setup-row-sub{color:#475569}
     #portalOperationalReminderList .setup-row--qm-ov-reverted{
-      border-color:rgba(37,99,235,.38);
-      background:linear-gradient(180deg,rgba(224,242,254,.96) 0%,rgba(255,255,255,.99) 100%);
+      border-color:rgba(113,113,122,.45);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-reverted .setup-row-text strong{color:#1d4ed8}
-    #portalOperationalReminderList .setup-row--qm-ov-reverted .setup-row-sub{color:#2563eb}
+    #portalOperationalReminderList .setup-row--qm-ov-reverted .setup-row-text strong{color:#3f3f46}
+    #portalOperationalReminderList .setup-row--qm-ov-reverted .setup-row-sub{color:#52525b}
     #menuSheet #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--feedback-incomplete.menu-btn--reminder-stack-secondary{
       animation:none;
       background:#fb923c;
@@ -3463,8 +3523,8 @@
       border-color:rgba(200,160,40,.55);
     }
     .session-card--ov-training{
-      background:linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%);
-      border-color:rgba(99,102,241,.42);
+      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
+      border-color:rgba(37,99,235,.42);
     }
     .session-card--ov-shadowing{
       background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);

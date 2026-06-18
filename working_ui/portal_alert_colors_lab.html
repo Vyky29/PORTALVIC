@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-new-shift-soft-yellow" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-undo-grey-cancel-black-training-blue" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260616-lane-only-label" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -207,15 +207,15 @@
     .lab-chip-legend-item{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
     .lab-chip-legend-item span.lab-chip-legend-label{font-size:.68rem;color:var(--lab-muted);max-width:100%;overflow-wrap:anywhere}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted{
-      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
-      border:2px solid rgba(37,99,235,.42);
-      box-shadow:0 6px 18px rgba(37,99,235,.18);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
+      border:2px solid rgba(113,113,122,.45);
+      box-shadow:0 6px 18px rgba(113,113,122,.2);
     }
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-copy strong{color:#1d4ed8}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-sub{color:#2563eb}
-    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(29,78,216,.5)}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-copy strong{color:#3f3f46}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-sub{color:#52525b}
+    #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-chev{color:rgba(63,63,70,.55)}
     #labLiveScope #menuSheet.menu-sheet--logo-lite .menu-btn.menu-btn--qm-ov-reverted .menu-btn-icon{
-      background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
+      background:rgba(161,161,170,.28);color:#52525b;border-color:rgba(113,113,122,.4);
     }
     /* Override tiles: production colours (logo-lite) */
     #labLiveScope #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile{
@@ -479,11 +479,11 @@
           tomorrowClass: 'tomorrow-cancelled-pill', tomorrowRowClass: '',
           pillText: 'CANCELLED', weekText: 'Cancelled',
           sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Wall · Acton',
-          haloNote: 'schedule (verde)',
+          haloNote: 'schedule-cancelled (negro)',
           colors: {
-            bg1:'#fef2f2', bg2:'#fee2e2', border:'rgba(220,38,38,.42)', shadow:'rgba(220,38,38,.2)',
-            strong:'#991b1b', sub:'#b91c1c', iconBg:'rgba(220,38,38,.18)', iconFg:'#b91c1c', iconBorder:'rgba(220,38,38,.32)',
-            chipBg:'#fee2e2', chipFg:'#991b1b', chipBorder:'rgba(220,38,38,.38)', termGlow:'rgba(220,38,38,.48)'
+            bg1:'#262626', bg2:'#171717', border:'rgba(255,255,255,.18)', shadow:'rgba(0,0,0,.35)',
+            strong:'#fff', sub:'#f4f4f5', iconBg:'rgba(255,255,255,.14)', iconFg:'#fff', iconBorder:'rgba(255,255,255,.22)',
+            chipBg:'#171717', chipFg:'#fff', chipBorder:'rgba(255,255,255,.22)', termGlow:'rgba(0,0,0,.48)'
           }
         },
         {
@@ -493,11 +493,11 @@
           tomorrowClass: '', tomorrowRowClass: '',
           pillText: '', weekText: '',
           sampleTitle: 'TRAINING - Westway (16th/Jun)', sampleSub: '10 to 11 am · Room · Westway',
-          haloNote: 'schedule-training (índigo)',
+          haloNote: 'schedule-training (azul — antiguo undo)',
           colors: {
-            bg1:'#eef2ff', bg2:'#e0e7ff', border:'rgba(99,102,241,.42)', shadow:'rgba(99,102,241,.2)',
-            strong:'#4338ca', sub:'#4f46e5', iconBg:'rgba(99,102,241,.22)', iconFg:'#4338ca', iconBorder:'rgba(99,102,241,.35)',
-            chipBg:'#e0e7ff', chipFg:'#3730a3', chipBorder:'rgba(99,102,241,.4)', termGlow:'rgba(99,102,241,.5)'
+            bg1:'#eff6ff', bg2:'#e0f2fe', border:'rgba(37,99,235,.42)', shadow:'rgba(37,99,235,.18)',
+            strong:'#1d4ed8', sub:'#2563eb', iconBg:'rgba(59,130,246,.22)', iconFg:'#1d4ed8', iconBorder:'rgba(37,99,235,.35)',
+            chipBg:'#e0f2fe', chipFg:'#1d4ed8', chipBorder:'rgba(37,99,235,.4)', termGlow:'rgba(37,99,235,.5)'
           }
         },
         {
@@ -539,10 +539,11 @@
         { id: 'schedule-trial-only', label: 'Trial / new participant', cssClass: 'avatar-wrap--portal-alert-schedule-trial-only', c1:'#a78bfa', c2:'#7c3aed', c3:'#c4b5fd', pulse: false, note: 'Lila — solo órbita' },
         { id: 'schedule-makeup', label: 'Make up', cssClass: 'avatar-wrap--portal-alert-schedule-makeup', c1:'#ec4899', c2:'#db2777', c3:'#f9a8d4', pulse: false, note: 'Rosa' },
         { id: 'schedule-absent', label: 'Absent', cssClass: 'avatar-wrap--portal-alert-schedule-absent', c1:'#0d9488', c2:'#0f766e', c3:'#2dd4bf', pulse: false, note: 'Teal — ausencia anunciada' },
-        { id: 'schedule-training', label: 'Training', cssClass: 'avatar-wrap--portal-alert-schedule-training', c1:'#6366f1', c2:'#4f46e5', c3:'#a5b4fc', pulse: false, note: 'Índigo — session_add training' },
+        { id: 'schedule-training', label: 'Training', cssClass: 'avatar-wrap--portal-alert-schedule-training', c1:'#3b82f6', c2:'#2563eb', c3:'#93c5fd', pulse: false, note: 'Azul — session_add training (antiguo undo)' },
         { id: 'schedule-shadowing', label: 'Shadowing', cssClass: 'avatar-wrap--portal-alert-schedule-shadowing', c1:'#0ea5e9', c2:'#0284c7', c3:'#7dd3fc', pulse: false, note: 'Cielo — session_add shadowing' },
         { id: 'schedule-meeting', label: 'Meeting', cssClass: 'avatar-wrap--portal-alert-schedule-meeting', c1:'#84cc16', c2:'#65a30d', c3:'#bef264', pulse: false, note: 'Lima — session_add meeting' },
-        { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#2d84b3', c2:'#1d4f8f', c3:'#4f8fca', pulse: false, note: 'Azul oscuro' },
+        { id: 'schedule-cancelled', label: 'Cancelled', cssClass: 'avatar-wrap--portal-alert-schedule-cancelled', c1:'#171717', c2:'#404040', c3:'#525252', pulse: false, note: 'Negro — cancelled / shift_cancelled' },
+        { id: 'schedule-undo', label: 'Undo change', cssClass: 'avatar-wrap--portal-alert-schedule-undo', c1:'#a1a1aa', c2:'#71717a', c3:'#d4d4d8', pulse: false, note: 'Gris — change undone' },
         { id: 'reminder', label: 'Outstanding Feedback', cssClass: 'avatar-wrap--portal-alert-reminder', c1:'#ea580c', c2:'#c2410c', c3:'#f97316', pulse: false, note: 'Naranja intenso — feedback pendiente' },
         { id: 'announcement', label: 'Announcements/Reminders', cssClass: 'avatar-wrap--portal-alert', c1:'#dc2626', c2:'#ef4444', c3:'#991b1b', pulse: false, note: 'Rojo — firma pendiente' },
         /* Mixed — two alert families */
@@ -853,7 +854,7 @@
       var individualIds = {
         idle:1, schedule:1, 'schedule-trial-only':1, 'schedule-makeup':1, 'schedule-absent':1,
         'schedule-training':1, 'schedule-shadowing':1, 'schedule-meeting':1,
-        'schedule-undo':1, reminder:1, announcement:1
+        'schedule-cancelled':1, 'schedule-undo':1, reminder:1, announcement:1
       };
       var mixedTwoIds = {
         'schedule-trial':1, 'reminder-schedule':1, 'reminder-schedule-trial':1, 'ann-schedule-trial':1
