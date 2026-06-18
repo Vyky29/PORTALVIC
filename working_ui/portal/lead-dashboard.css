@@ -4375,7 +4375,7 @@
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
       display:grid;
-      grid-template-columns:minmax(72px,84px) minmax(0,1fr) var(--today-symbol-col-max,72px);
+      grid-template-columns:minmax(64px, 76px) minmax(0,1fr) var(--today-symbol-col-max,72px);
       align-items:stretch;
       align-content:stretch;
       column-gap:4px;
@@ -4419,8 +4419,9 @@
       font-weight:700;
       line-height:1.15;
       color:#000;
-      white-space:normal;
-      overflow-wrap:anywhere;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
       max-width:100%;
       min-width:0;
     }

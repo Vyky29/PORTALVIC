@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-updated-yellow" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260618-no-meridiem" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -11653,11 +11653,12 @@
         function part(t){
           var p = String(t || '').split(':');
           var h = Number(p[0] || 0), m = Number(p[1] || 0);
-          var suffix = h >= 12 ? 'pm' : 'am';
           h = h % 12; if(h === 0) h = 12;
-          return m === 0 ? String(h) : (h + '.' + String(m).padStart(2, '0'));
+          if(m === 0) return String(h);
+          if(m === 30) return h + '.30';
+          return h + '.' + String(m).padStart(2, '0');
         }
-        return part(start) + ' to ' + part(end) + ' ' + (Number(String(end || '').split(':')[0] || 0) >= 12 ? 'pm' : 'am');
+        return part(start) + ' to ' + part(end);
       }
       function portalNextSessionCandidateRows(staffId, weekdayName, isoYmd){
         var id = String(staffId || '').trim().toLowerCase();
@@ -11731,7 +11732,8 @@
               }
             }
             var c = (notes || {})[effClientId] || (nameFromReplace ? { name: nameFromReplace, avatarFile: '' } : {});
-            var slot = String(s.timeSlotLabel || '').trim();
+            var slotRaw = String(s.timeSlotLabel || '').trim();
+            var slot = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(slotRaw) : slotRaw;
             var activity = String(s.activity || 'Swimming').trim();
             var areaNote = rosterAreaLabelForSession(s, activity, portalStaffIsSupportWorkerForAreaNotes()) || '';
             var manualOv = String(s && s.override || '').trim().toUpperCase();
