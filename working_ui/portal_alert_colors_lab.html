@@ -472,10 +472,10 @@
       { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
       { estado: 'NO PARTICIPANT (slot abierto)', card: 'session-card--available session-card--ov-yellow', chip: '—' },
       { estado: 'Closed', card: 'session-card--closed', chip: '—' },
-      { estado: 'Training (admin session_add)', card: 'session-card--ov-training', chip: 'portal-session-slot-chip--training · equipo + directores' },
-      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing · host name' },
-      { estado: 'Shadowing host (compañero en tu sesión)', card: 'session-card--admin-adjusted', chip: 'portal-sched-ov-badge override--shadowing-host' },
-      { estado: 'Meeting (admin session_add)', card: 'session-card--ov-meeting', chip: 'portal-session-slot-chip--meeting' },
+      { estado: 'Training (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--training · equipo + directores' },
+      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing · verde' },
+      { estado: 'Shadowing host (compañero en tu sesión)', card: '(default blanco)', chip: 'portal-sched-ov-badge override--shadowing-host' },
+      { estado: 'Meeting (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--training · azul' },
     ];
 
     var CARD_FIELDS = [
@@ -1231,7 +1231,7 @@
     }
 
     function todayCatalogRowMeeting(classes, time, venue, name, groupLabel, directors, poolNote, asDiv){
-      var cls = 'portal-session-slot-chip portal-session-slot-chip--meeting';
+      var cls = 'portal-session-slot-chip portal-session-slot-chip--training';
       var rows = '';
       if(groupLabel){
         rows += '<div class="session-meeting-chip-row"><span class="'+cls+'" aria-label="'+esc(groupLabel)+'"><span>'+esc(groupLabel)+'</span></span></div>';
@@ -1292,7 +1292,7 @@
         todayCatalogRowTraining('session-card--ov-training', '10 to 11', 'Westway', 'Training session', 'Swimming Instructors', ['Javi'], hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
           'portal-session-slot-chip--shadowing', 'Roberto', teachingPool),
-        todayCatalogRowShadowingHost('session-card--admin-adjusted', '2 to 4', 'Acton', 'Samira', 'Alex shadowing you', teachingPool),
+        todayCatalogRowShadowingHost('', '2 to 4', 'Acton', 'Samira', 'Alex shadowing you', teachingPool),
         todayCatalogRowMeeting('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting', 'Swimming Instructors', ['Javi', 'Raul'], hubRoom),
         todayCatalogRow('session-card--available session-card--ov-yellow', '11 to 4', 'Westway', 'NO PARTICIPANT', '', '', teachingPool, true),
         todayCatalogRow('session-card--closed', '12 to 1', 'Acton', 'Closed', '', '', '<span class="session-pool-na" aria-hidden="true">—</span>')
@@ -1341,7 +1341,7 @@
             todayLifecycleHead('done', '3 · Review completado', 'verde + Submitted / Absent / Cancelled')+
             phase3+
           '</div></div>'+
-          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). Chips: texto blanco sobre fondo sólido del tipo (trial = lila más oscuro que la card). <code>Updated by admin</code> = card amarilla + chip ámbar. <strong>Training / Meeting:</strong> línea 1 equipo, línea 2 directores. <strong>Shadowing host:</strong> chip rojo <code>Alex shadowing you</code> en sesión del participante.</p>'+
+          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). <strong>Training / Meeting:</strong> card blanca (Elijah) + chips azules. <strong>Shadowing:</strong> card y chips verdes. <strong>Shadowing host (Samira):</strong> card blanca + chip rojo.</p>'+
         '</div>';
 
       if(overrideHost) overrideHost.innerHTML = '';
@@ -1357,9 +1357,9 @@
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors + Javi', 'Training · azul · equipo + directores'],
-        ['portal-session-slot-chip--shadowing', 'Roberto', 'Shadowing · cielo · host (desde shadower)'],
+        ['portal-session-slot-chip--shadowing', 'Roberto', 'Shadowing · verde · card + chip'],
         ['portal-sched-ov-badge override--shadowing-host', 'Alex shadowing you', 'Shadowing host · rojo · compañero en tu sesión'],
-        ['portal-session-slot-chip--meeting', 'Attendee', 'Meeting · lima'],
+        ['portal-session-slot-chip--meeting', 'Swimming Instructors + Javi/Raul', 'Meeting · card blanca · chips azules (training)'],
         ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']
       ];
       return '<div class="lab-chip-demo-box" style="grid-column:1/-1"><h4>Chips bajo nombre (Today)</h4>'+

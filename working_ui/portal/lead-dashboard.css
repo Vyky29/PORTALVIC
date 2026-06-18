@@ -3483,6 +3483,38 @@
       background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);
       border-color:rgba(200,160,40,.55);
     }
+    .session-card--ov-training{
+      background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
+      border-color:rgba(37,99,235,.42);
+    }
+    .session-card--ov-shadowing{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.45);
+    }
+    .session-card--ov-meeting{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.45);
+    }
+    .section-card--today .session-card.session-card--ov-training,
+    .section-card--today .session-card.session-card--ov-meeting{
+      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
+      border-color:rgba(45,132,179,.34);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
+    }
+    .section-card--today .session-card.session-card--ov-training:hover,
+    .section-card--today .session-card.session-card--ov-meeting:hover{
+      border-color:rgba(45,132,179,.48);
+      box-shadow:0 4px 14px rgba(23,50,71,.1);
+    }
+    .section-card--today .session-card.session-card--ov-shadowing{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.45);
+      box-shadow:0 1px 4px rgba(101,163,13,.12);
+    }
+    .section-card--today .session-card.session-card--ov-shadowing:hover{
+      border-color:rgba(101,163,13,.55);
+      box-shadow:0 4px 14px rgba(101,163,13,.18);
+    }
     .session-card--ov-pink{
       background:rgba(252,233,241,.92);
       border-color:rgba(136,14,79,.72);
@@ -4566,6 +4598,24 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+    }
+    .portal-session-slot-chip--training{
+      color:#fff;
+      background:linear-gradient(145deg,#3b82f6,#2563eb);
+      border:1px solid rgba(37,99,235,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(37,99,235,.22);
+    }
+    .portal-session-slot-chip--shadowing{
+      color:#fff;
+      background:linear-gradient(145deg,#84cc16,#65a30d);
+      border:1px solid rgba(101,163,13,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
+    }
+    .portal-session-slot-chip--meeting{
+      color:#fff;
+      background:linear-gradient(145deg,#84cc16,#65a30d);
+      border:1px solid rgba(101,163,13,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
     }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;

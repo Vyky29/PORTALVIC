@@ -4630,7 +4630,8 @@
       return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
     }
     function portalTodayItemUsesAdminShiftCardStyle(item){
-      return portalTodayItemShowsAdminShiftBadge(item) || portalTodayItemShowsShadowingHostAlert(item);
+      if(portalTodayItemShowsShadowingHostAlert(item)) return false;
+      return portalTodayItemShowsAdminShiftBadge(item);
     }
     function portalShadowingHostBadgeHtml(labels){
       if(!Array.isArray(labels) || !labels.length) return '';
@@ -4953,7 +4954,7 @@
       if(cid !== 'meeting' && cid !== 'training') return '';
       const detail = portalTodayStackedPeopleDetailFromItem(item);
       if(!detail || (!detail.group && !(detail.directors && detail.directors.length))) return '';
-      const rows = portalSessionStackedChipsRowsHtml(detail, cid === 'training' ? 'training' : 'meeting');
+      const rows = portalSessionStackedChipsRowsHtml(detail, 'training');
       if(!rows) return '';
       return '<div class="session-chips-below-name session-chips-below-name--meeting-stack">' + rows + '</div>';
     }
