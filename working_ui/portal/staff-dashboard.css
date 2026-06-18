@@ -2327,31 +2327,31 @@
       background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
       border-color:rgba(21,128,61,.62);
     }
-    /* New shift — corporate yellow (Alerts quick menu) */
+    /* New shift — soft corporate yellow (Alerts quick menu; halo dots stay --sen-gold) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift,
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift{
-      background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
-      border:2px solid rgba(255,255,255,.42);
+      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
+      border:2px solid rgba(245,158,11,.42);
       color:var(--ink);
-      box-shadow:0 6px 20px rgba(220,160,30,.32);
+      box-shadow:0 6px 18px rgba(249,191,46,.22);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong,
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong{color:#78350f}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-copy strong{color:#92400e}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub,
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub{color:#92400e}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-sub{color:#b45309}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev,
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev{color:rgba(120,53,15,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-chev{color:rgba(146,64,14,.55)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-icon,
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift .menu-btn-icon{
-      background:rgba(255,255,255,.28);
+      background:rgba(249,191,46,.24);
       color:#b45309;
-      border-color:rgba(180,120,20,.32);
+      border-color:rgba(245,158,11,.35);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift:hover,
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift:hover{
-      background:linear-gradient(180deg,#ffc94a 0%,#f0b32a 100%);
-      border-color:#fff;
-      box-shadow:0 10px 28px rgba(200,145,25,.45),0 0 0 1px rgba(255,228,150,.45);
+      background:linear-gradient(180deg,#fef3c7 0%,#fde68a 100%);
+      border-color:rgba(245,158,11,.55);
+      box-shadow:0 10px 26px rgba(249,191,46,.28);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active),
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active){
@@ -3311,11 +3311,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
     #portalOperationalReminderList .setup-row--qm-ov-new-shift{
-      background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
-      border-color:rgba(220,160,30,.42);
+      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
+      border-color:rgba(245,158,11,.42);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#78350f}
-    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#92400e}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-text strong{color:#92400e}
+    #portalOperationalReminderList .setup-row--qm-ov-new-shift .setup-row-sub{color:#b45309}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
       border-color:rgba(220,38,38,.4);
       background:linear-gradient(180deg,rgba(254,226,226,.96) 0%,rgba(255,255,255,.99) 100%);
