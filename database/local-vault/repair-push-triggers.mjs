@@ -32,9 +32,11 @@ run("node database/local-vault/sync-vapid-public-js.mjs");
 run("node database/local-vault/apply-chat-admin-push.mjs");
 run("node database/local-vault/apply-incoming-call-push.mjs");
 run("node database/local-vault/apply-staff-dm-push.mjs");
+run("node database/local-vault/apply-announcement-push.mjs");
 run("npx supabase db query --linked -f database/local-vault/step-chat-admin-push.local.sql");
 run("npx supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql");
 run("npx supabase db query --linked -f database/local-vault/step-staff-dm-push.local.sql");
+run("npx supabase db query --linked -f database/local-vault/step-announcement-push.local.sql");
 
 const edgeEnv = path.join(root, "local-secrets/edge-secrets.env");
 if (fs.existsSync(edgeEnv)) {
