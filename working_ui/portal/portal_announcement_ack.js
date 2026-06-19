@@ -133,7 +133,11 @@
   ) {
     if (!global.portalAnnouncementAckIsArchivedSigned(rec, key)) return false;
     if (typeof hidePastFn === "function" && hidePastFn(rec)) return false;
-    return global.portalAnnouncementAckRecordIsLive(rec, key, liveIdSet);
+    var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+    var annId =
+      String(rec.portalAnnouncementId || "").trim() ||
+      global.portalAnnouncementIdFromAckKey(key);
+    return !!(annId && liveSet[annId]);
   };
 
   /** Drop pre-launch / orphan announcement ack rows from localStorage. */
@@ -175,6 +179,72 @@
     } catch (e) {
       try {
         console.warn("[portal] prune pre-launch announcement acks", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
+  /** After Supabase hydrate: drop signed rows whose announcement id is no longer published (incl. empty live set). */
+  global.portalPruneStaleSignedAnnouncementAcks = function portalPruneStaleSignedAnnouncementAcks(
+    loadMap,
+    saveMap,
+    liveIdSet
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var ack = loadMap();
+      var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+      var changed = false;
+      Object.keys(ack).forEach(function (k) {
+        var rec = ack[k];
+        if (!rec || typeof rec !== "object") {
+          delete ack[k];
+          changed = true;
+          return;
+        }
+        if (!global.portalAnnouncementAckIsArchivedSigned(rec, k)) return;
+        var annId =
+          String(rec.portalAnnouncementId || "").trim() ||
+          global.portalAnnouncementIdFromAckKey(k);
+        if (!annId || !liveSet[annId]) {
+          delete ack[k];
+          changed = true;
+        }
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] prune stale signed announcement acks", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
+  /** After Supabase hydrate: drop signed reminder rows no longer in the admin reminder list. */
+  global.portalPruneStaleReminderAcks = function portalPruneStaleReminderAcks(
+    loadMap,
+    saveMap,
+    liveRemIdSet
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var ack = loadMap();
+      var liveSet = liveRemIdSet && typeof liveRemIdSet === "object" ? liveRemIdSet : {};
+      var changed = false;
+      Object.keys(ack).forEach(function (k) {
+        if (String(k || "").indexOf("portal-rem:") !== 0) return;
+        var remId = String(k.slice("portal-rem:".length) || "").trim();
+        if (!remId || !liveSet[remId]) {
+          delete ack[k];
+          changed = true;
+        }
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] prune stale reminder acks", e);
       } catch (_) {}
       return false;
     }

@@ -15,7 +15,7 @@
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260615-signed-history"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260615-prune-stale-signed"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-phase2"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -8307,6 +8307,7 @@
           if(String(row.message_type || '').toLowerCase().trim() !== 'announcement') return;
           dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
         });
+        dashboardData.portalLiveReminderIdSet = {};
         const preserved = dashboardData.notices.filter(function(n){
           return !n || n.type !== 'announcement' || !n.portalAnnouncementId;
         });
@@ -8334,6 +8335,7 @@
               created_at: row.created_at,
               onAckAction: String(row.on_ack_action || '').trim()
             });
+            dashboardData.portalLiveReminderIdSet[id] = true;
             return;
           }
           if(existing[id]) return;
@@ -8404,6 +8406,20 @@
             portalAnnouncementAckMapLoad,
             portalAnnouncementAckMapSave,
             dashboardData.portalLiveAnnouncementIdSet || {}
+          );
+        }
+        if(typeof portalPruneStaleSignedAnnouncementAcks === 'function'){
+          portalPruneStaleSignedAnnouncementAcks(
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            dashboardData.portalLiveAnnouncementIdSet || {}
+          );
+        }
+        if(typeof portalPruneStaleReminderAcks === 'function'){
+          portalPruneStaleReminderAcks(
+            portalReminderAckMapLoad,
+            portalReminderAckMapSave,
+            dashboardData.portalLiveReminderIdSet || {}
           );
         }
         dashboardData.portalAnnouncementAcksMerged = true;
@@ -8614,10 +8630,15 @@
       const remLive = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin)
         ? dashboardData.portalRemindersFromAdmin
         : [];
+      const remLiveSet = dashboardData && dashboardData.portalLiveReminderIdSet && typeof dashboardData.portalLiveReminderIdSet === 'object'
+        ? dashboardData.portalLiveReminderIdSet
+        : {};
       Object.keys(remAck).forEach(function(k){
         const rec = remAck[k];
         if(!rec || typeof rec !== 'object') return;
         if(String(k || '').indexOf('portal-rem:') !== 0) return;
+        const remId = String(rec.portalAdminReminderId || k.slice('portal-rem:'.length) || '').trim();
+        if(dashboardData && dashboardData.portalAnnouncementAcksMerged && remId && !remLiveSet[remId]) return;
         let text = String(rec.text || '').trim();
         let title = String(rec.title || 'Reminder').trim() || 'Reminder';
         if(!text || title === 'Reminder'){
