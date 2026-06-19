@@ -167,8 +167,11 @@
     if (dl.error) throw dl.error;
     var blob = dl.data;
     var contentType = "image/jpeg";
-    if (/\.webm$/i.test(toPath)) contentType = "video/webm";
+    if (blob && blob.type && blob.type !== "application/octet-stream") {
+      contentType = String(blob.type).split(";")[0];
+    } else if (/\.webm$/i.test(toPath)) contentType = "video/webm";
     else if (/\.mp4$/i.test(toPath)) contentType = "video/mp4";
+    else if (/\.png$/i.test(toPath)) contentType = "image/png";
     var up = await client.storage.from(ACH_BUCKET).upload(toPath, blob, {
       contentType: contentType,
       upsert: false,
@@ -763,6 +766,7 @@
           vid.className = "portal-admin-achievements-viewer__video portal-achievement-protected";
           vid.controls = true;
           vid.playsInline = true;
+          vid.muted = false;
           vid.setAttribute("playsinline", "");
           stage.appendChild(vid);
         }
@@ -771,6 +775,7 @@
           img.removeAttribute("src");
         }
         vid.hidden = false;
+        vid.muted = false;
         vid.src = url;
         try {
           vid.load();

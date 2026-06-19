@@ -53,6 +53,28 @@ function contentTypeForPath(p) {
   return "image/jpeg";
 }
 
+function contentTypeForBlob(blob, storagePath) {
+  const t = String((blob && blob.type) || "").trim();
+  if (t && t !== "application/octet-stream") return t.split(";")[0];
+  return contentTypeForPath(storagePath);
+}
+
+async function moveStorage(admin, fromPath, toPath) {
+  if (typeof admin.storage.from(BUCKET).move === "function") {
+    const mv = await admin.storage.from(BUCKET).move(fromPath, toPath);
+    if (!mv.error) return "move";
+  }
+  const dl = await admin.storage.from(BUCKET).download(fromPath);
+  if (dl.error || !dl.data || !dl.data.size) throw dl.error || new Error("Missing source blob");
+  const up = await admin.storage.from(BUCKET).upload(toPath, dl.data, {
+    contentType: contentTypeForBlob(dl.data, toPath),
+    upsert: false,
+  });
+  if (up.error) throw up.error;
+  await admin.storage.from(BUCKET).remove([fromPath]);
+  return "copy";
+}
+
 async function blobOk(admin, storagePath) {
   const dl = await admin.storage.from(BUCKET).download(storagePath);
   return !dl.error && dl.data && dl.data.size > 0 ? dl.data : null;
@@ -108,16 +130,13 @@ async function main() {
       const rm = await admin.storage.from(BUCKET).remove([participantPath]);
       if (rm.error) console.warn("  remove participant copy", rm.error.message);
     } else {
-      const up = await admin.storage.from(BUCKET).upload(inbox, blob, {
-        contentType: contentTypeForPath(inbox),
-        upsert: false,
-      });
-      if (up.error) {
-        console.error("  upload inbox failed", inbox, up.error.message);
+      try {
+        await moveStorage(admin, participantPath, inbox);
+      } catch (moveErr) {
+        console.error("  move inbox failed", inbox, moveErr.message || moveErr);
         stats.errors += 1;
         continue;
       }
-      await admin.storage.from(BUCKET).remove([participantPath]);
     }
 
     const upd = await admin

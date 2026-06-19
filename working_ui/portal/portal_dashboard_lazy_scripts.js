@@ -8,7 +8,7 @@
   var STAFF_LAZY_SCRIPTS = [
     "/portal/teflon_guide_demo_data.js?v=20260604-guide-roster",
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
-    "/portal/portal_participant_achievements.js?v=20260614-ios-camera-fix",
+    "/portal/portal_participant_achievements.js?v=20260619-video-audio-fix",
     "/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels",
     "/portal/portal_induction.js?v=20260614-induction-canonical",
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",
@@ -21,7 +21,7 @@
   ];
 
   var LEAD_LAZY_SCRIPTS = [
-    "/portal/portal_participant_achievements.js?v=20260614-ios-camera-fix",
+    "/portal/portal_participant_achievements.js?v=20260619-video-audio-fix",
     "/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels",
     "/portal/portal_induction.js?v=20260613-required-induction",
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",

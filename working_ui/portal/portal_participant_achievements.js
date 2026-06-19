@@ -1584,6 +1584,7 @@
             "portal-achievements-viewer__video portal-screenshot-protected portal-achievement-protected";
           vid.controls = true;
           vid.playsInline = true;
+          vid.muted = false;
           vid.setAttribute("playsinline", "");
           stage.appendChild(vid);
         }
@@ -1592,6 +1593,7 @@
           img.removeAttribute("src");
         }
         vid.hidden = false;
+        vid.muted = false;
         vid.src = url;
         try {
           vid.load();
