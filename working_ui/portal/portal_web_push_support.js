@@ -91,6 +91,15 @@
       return " Server push keys are not configured — contact IT.";
     }
     if (global.Notification && global.Notification.permission === "denied") {
+      if (env.isIOS && env.mobile) {
+        if (portalIsStandalonePwa()) {
+          return " iPhone (Home Screen app): Settings → Notifications → find this portal app → Allow Notifications. Then return here, refresh, and tap Register this device.";
+        }
+        return " iPhone: open Safari → Share → Add to Home Screen, open the portal from that icon, then allow notifications. If blocked: Settings → Safari → Advanced → Website Data, or Settings → Notifications for the home-screen app.";
+      }
+      if (env.isAndroid) {
+        return " Android: Chrome → lock or ⓘ in the address bar → Permissions → Notifications → Allow. Or Chrome menu → Settings → Site settings → Notifications → this site → Allow.";
+      }
       if (env.isMac && env.isSafari) {
         return " Safari: Settings → Websites → Notifications → this site → Allow. Also System Settings → Notifications → Safari.";
       }
@@ -523,6 +532,85 @@
     return wp || { ok: false, reason: "unknown" };
   }
 
+  function portalBuildNotificationDeniedHelpHtml() {
+    var env = portalNotifyEnvironment();
+    var steps = [];
+    if (env.isIOS && env.mobile) {
+      if (portalIsStandalonePwa()) {
+        steps = [
+          "Open the iPhone <strong>Settings</strong> app (leave the portal).",
+          "Tap <strong>Notifications</strong>.",
+          "Find this portal app (same name as your Home Screen icon).",
+          "Turn on <strong>Allow Notifications</strong>.",
+          "Return to the portal, pull down to refresh or close and reopen the app, then tap <strong>Register this device</strong>.",
+        ];
+      } else {
+        steps = [
+          "In Safari, tap <strong>Share</strong> → <strong>Add to Home Screen</strong>.",
+          "Open the portal from that Home Screen icon (not the Safari tab).",
+          "Tap <strong>Turn on notifications</strong> and choose <strong>Allow</strong>.",
+          "If you previously blocked alerts: iPhone <strong>Settings → Notifications</strong> → your portal app → Allow.",
+        ];
+      }
+    } else if (env.isAndroid) {
+      steps = [
+        "In Chrome, tap the <strong>lock or ⓘ</strong> icon in the address bar.",
+        "Open <strong>Permissions</strong> → <strong>Notifications</strong> → <strong>Allow</strong>.",
+        "Return to the portal and tap <strong>Register this device</strong>.",
+      ];
+    } else if (env.desktop) {
+      steps = [
+        "Click the <strong>lock icon</strong> (or site info) left of the address bar.",
+        "Open <strong>Site settings</strong> → <strong>Notifications</strong> → <strong>Allow</strong>.",
+        "Refresh this page, then tap <strong>Register this device</strong>.",
+      ];
+    } else {
+      steps = [
+        "Open your browser settings for this website.",
+        "Set <strong>Notifications</strong> to <strong>Allow</strong>.",
+        "Refresh this page and try again.",
+      ];
+    }
+    return (
+      "<strong>Notifications are blocked.</strong> Follow these steps, then refresh:" +
+      "<ol class=\"portal-alerts-denied-steps\">" +
+      steps
+        .map(function (s) {
+          return "<li>" + s + "</li>";
+        })
+        .join("") +
+      "</ol>"
+    );
+  }
+
+  function portalShowNotificationDeniedHelp(opts) {
+    opts = opts || {};
+    var helpEl =
+      typeof document !== "undefined"
+        ? document.getElementById("portalNotifyDeniedHelp")
+        : null;
+    var statusEl =
+      typeof document !== "undefined"
+        ? document.getElementById("portalNotifyStatus")
+        : null;
+    var html = portalBuildNotificationDeniedHelpHtml();
+    if (helpEl) {
+      helpEl.innerHTML = html;
+      helpEl.hidden = false;
+      if (opts.scroll !== false) {
+        try {
+          helpEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } catch (_s) {}
+      }
+    }
+    if (statusEl) {
+      statusEl.textContent =
+        "Blocked — allow notifications in device settings, then refresh this page." +
+        portalNotifyEnvironmentHint(portalNotifyEnvironment(), "denied");
+    }
+    return html;
+  }
+
   function portalSyncNotifyVapidHint(vapidEl) {
     if (!vapidEl) return;
     vapidEl.textContent = portalVapidStatusText();
@@ -585,5 +673,7 @@
   global.portalEnsureFreshPushSubscription = portalEnsureFreshPushSubscription;
   global.portalPostPushSubscriptionToServer = portalPostPushSubscriptionToServer;
   global.portalServerHasPushEndpoint = portalServerHasPushEndpoint;
+  global.portalShowNotificationDeniedHelp = portalShowNotificationDeniedHelp;
+  global.portalBuildNotificationDeniedHelpHtml = portalBuildNotificationDeniedHelpHtml;
   global.portalShowBackgroundChatNotification = portalShowBackgroundChatNotification;
 })(typeof window !== "undefined" ? window : globalThis);

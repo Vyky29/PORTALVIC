@@ -126,7 +126,11 @@
       }
     } else if (p === "denied") {
       syncTestButton(testBtn, p);
-      syncDeniedHelp(true);
+      if (typeof global.portalShowNotificationDeniedHelp === "function") {
+        global.portalShowNotificationDeniedHelp({ scroll: false });
+      } else {
+        syncDeniedHelp(true);
+      }
       statusEl.textContent =
         "Blocked — allow notifications for this site in browser settings." + ctx;
       if (btn) {
@@ -173,13 +177,23 @@
     if (typeof Notification === "undefined") return;
     var statusEl = qNotify("portalNotifyStatus");
     if (Notification.permission === "denied") {
-      syncDeniedHelp(true);
-      if (statusEl) {
-        statusEl.textContent =
-          "Blocked — allow notifications for this site in browser settings." +
-          notifyContextHint("denied");
+      if (typeof global.portalShowNotificationDeniedHelp === "function") {
+        global.portalShowNotificationDeniedHelp({ scroll: true });
+      } else {
+        syncDeniedHelp(true);
+        if (statusEl) {
+          statusEl.textContent =
+            "Blocked — allow notifications for this site in browser settings." +
+            notifyContextHint("denied");
+        }
       }
-      refresh();
+      void Notification.requestPermission().then(function (r) {
+        if (r === "granted" && typeof global.portalRegisterPushAfterGrant === "function") {
+          return global.portalRegisterPushAfterGrant(statusEl);
+        }
+      }).finally(function () {
+        refresh();
+      });
       return;
     }
     if (Notification.permission === "granted") {
@@ -366,4 +380,17 @@
     bindAlertsSheetUi();
     refresh();
   });
+
+  if (!global.__PORTAL_NOTIFY_FOCUS_BOUND__) {
+    global.__PORTAL_NOTIFY_FOCUS_BOUND__ = true;
+    global.addEventListener("focus", function () {
+      if (typeof Notification !== "undefined" && Notification.permission !== "denied") {
+        refresh();
+      }
+    });
+    global.addEventListener("visibilitychange", function () {
+      if (!global.document || global.document.visibilityState !== "visible") return;
+      if (typeof Notification !== "undefined") refresh();
+    });
+  }
 })(typeof window !== "undefined" ? window : globalThis);

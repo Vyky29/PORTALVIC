@@ -1004,6 +1004,8 @@
     .portal-alerts-panel{margin:0;padding:0 0 16px;max-width:24rem;min-width:0}
     .portal-alerts-lead{margin:0 0 18px;font-size:14px;line-height:1.45;color:var(--muted);overflow-wrap:break-word}
     .portal-alerts-hint{margin:0 0 10px;font-size:13px;line-height:1.4;overflow-wrap:break-word}
+    .portal-alerts-denied-steps{margin:8px 0 0;padding-left:1.2rem;font-size:13px;line-height:1.45}
+    .portal-alerts-denied-steps li{margin:0 0 6px;min-width:0;overflow-wrap:break-word}
     .portal-alerts-block{margin:0 0 20px;min-width:0}
     .portal-alerts-status{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--blue);min-width:0;overflow-wrap:break-word}
     .portal-alerts-section-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--ink)}
