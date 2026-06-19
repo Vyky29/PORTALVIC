@@ -1,7 +1,6 @@
 <!--
   Source for Elementor HTML widget on https://www.clubsensational.org/climbingregistration/
-  Javi signature: WP Media .../2026/06/javi-a.png; embedded fallback in HTML if URL fails.
-  Repo copy: portal/climbing_instructor_signatures/javi-a.png
+  Supervisor signatures: portal/climbing_instructor_signatures/*-signature.png (Alex, Bismark, Carlos, Javi, Andres).
   Paste this file into the Elementor HTML widget on climbingregistration, publish.
 -->
 <!DOCTYPE html>
@@ -1013,7 +1012,6 @@ a {
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://portalvic.vercel.app/portal/climbing_javi_sig_fallback.js"></script>
   <script>
     (function(){
       var form = document.getElementById('juniorForm');
@@ -1098,11 +1096,8 @@ a {
           'Alex S': SIG + 'alex-signature.png',
           'Bismark G': SIG + 'bismark-signature.png',
           'Carlos H': SIG + 'carlos-signature.png',
-          'Javi A': {
-            url: SIG + 'javi-a.png',
-            fallback: (window.JAVI_ARRANZ_SIG_FALLBACK || '')
-          },
-          'Andres B': SIG + 'andres.png'
+          'Javi A': SIG + 'javi-signature.png',
+          'Andres B': SIG + 'andres-signature.png'
         };
         var supervisorSelect = document.getElementById('supervisor_name');
         var supervisorSig = document.getElementById('supervisor_signature');
