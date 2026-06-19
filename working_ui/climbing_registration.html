@@ -1301,6 +1301,7 @@
 
           var JsPDF = window.jspdf && window.jspdf.jsPDF;
           if (!JsPDF) { alert('Could not load PDF generator. Check your connection and try again.'); return; }
+          try {
           var doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
           var M = 14, pageW = doc.internal.pageSize.getWidth(), W = pageW - 2 * M, y1 = 18, y2 = 18, lineH = 4.2, maxY = 277;
           if (pdfLogoDataUrl) { try { doc.addImage(pdfLogoDataUrl, 'PNG', pageW - M - 52, 10, 52, 20); } catch(e) {} }
