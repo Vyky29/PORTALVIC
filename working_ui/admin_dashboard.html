@@ -57,7 +57,7 @@
   <script src="/portal/portal_onboarding_admin_entry.js?v=20260614-michelle-session"></script>
   <script src="/portal/portal_induction.js?v=20260614-induction-canonical"></script>
   <script src="/portal/portal_induction_admin_entry.js?v=20260614-induction-canonical"></script>
-  <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
+  <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/portal-parent-notify-templates.js?v=20260622-parent-templates-v2"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -19920,6 +19920,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         state.settingsHubSnapshot = snap;
         if(state.view !== 'settings') return;
         root.innerHTML = window.PortalAdminSettingsHub.renderHtml(snap);
+        portalAdminBindParentNotifyTestSend();
+        portalAdminBindParentNotifyTestWhatsApp();
         state._settingsHubRepaintOnly = true;
         bindView('settings');
         state._settingsHubRepaintOnly = false;

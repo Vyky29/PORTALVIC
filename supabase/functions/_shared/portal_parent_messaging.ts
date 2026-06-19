@@ -305,6 +305,12 @@ function whatsappTemplateBodyParam(body: string, template: string): string {
   if (template !== "hello_world") {
     text = text.replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "").trim();
   }
+  // Meta template {{1}} rejects newlines/tabs and 5+ consecutive spaces.
+  text = text
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/ {5,}/g, "    ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
   return text.slice(0, 1024);
 }
 

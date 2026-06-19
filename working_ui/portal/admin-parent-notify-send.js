@@ -108,6 +108,12 @@
       method_not_allowed: 'Invalid request method.'
     };
     if (map[code]) return map[code];
+    if (/^whatsapp_401/i.test(code) || /authentication error/i.test(code)) {
+      return 'WhatsApp token expired — generate a new token in Meta Business Suite, update META_WHATSAPP_TOKEN in Supabase secrets, then run npm run apply:whatsapp.';
+    }
+    if (/132018|newline|new-line|consecutive spaces/i.test(code)) {
+      return 'WhatsApp template rejected the message format — try again (portal now strips line breaks automatically).';
+    }
     if (data && Array.isArray(data.warnings) && data.warnings.length) {
       return data.warnings.map(formatNotifyError).join('; ');
     }
