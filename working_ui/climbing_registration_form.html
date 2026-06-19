@@ -530,17 +530,26 @@ a {
 
     .supervisor-sig-wrap{
       padding:8px;
-      min-height:44px;
+      min-height:72px;
+      background:#fff;
+      border:1px solid #bbb;
+      border-radius:6px;
+      display:flex;
+ align-items:center;
+      justify-content:center;
     }
     .supervisor-sig-img{
       display:none;
-      max-width:160px;
-      max-height:50px;
+      width:100%;
+      max-width:100%;
+      max-height:72px;
       object-fit:contain;
-      margin-bottom:6px;
     }
-    .supervisor-sig-img[src]:not([src=""]){
+    .supervisor-sig-wrap.has-signature .supervisor-sig-img.is-visible{
       display:block;
+    }
+    .supervisor-sig-wrap.has-signature #supervisor_signature{
+      display:none;
     }
 
     .parent-sig-canvas-wrap{
@@ -1084,20 +1093,22 @@ a {
         });
       }
 
-      (function(){        var SUPERVISOR_SIGNATURES = {
-          'Alex S': 'https://www.clubsensational.org/wp-content/uploads/2026/03/alex.png',
-          'Bismark G': 'https://www.clubsensational.org/wp-content/uploads/2026/03/bismark.png',
-          'Carlos H': 'https://www.clubsensational.org/wp-content/uploads/2026/03/Carlos.png',
+      (function(){        var SIG = '/portal/climbing_instructor_signatures/';
+        var SUPERVISOR_SIGNATURES = {
+          'Alex S': SIG + 'alex.png',
+          'Bismark G': SIG + 'bismark.png',
+          'Carlos H': SIG + 'carlos-h.png',
           'Javi A': {
-            url: 'https://www.clubsensational.org/wp-content/uploads/2026/06/javi-a.png',
+            url: SIG + 'javi-a.png',
             fallback: (window.JAVI_ARRANZ_SIG_FALLBACK || '')
           },
-          'Andres B': 'https://www.clubsensational.org/wp-content/uploads/2026/03/andres.png'
+          'Andres B': SIG + 'andres.png'
         };
         var supervisorSelect = document.getElementById('supervisor_name');
         var supervisorSig = document.getElementById('supervisor_signature');
         var supervisorImg = document.getElementById('supervisor_signature_img');
         var supervisorImgHidden = document.getElementById('supervisor_signature_image');
+        var supervisorWrap = supervisorImg ? supervisorImg.closest('.supervisor-sig-wrap') : null;
         if (supervisorSelect && supervisorSig) {
           function supervisorSigEntry(name){
             return name ? SUPERVISOR_SIGNATURES[name] : null;
@@ -1110,39 +1121,52 @@ a {
             if (!entry || typeof entry === 'string') return '';
             return entry.fallback || '';
           }
-          function setSupervisorHiddenFromSrc(src){
-            if (!supervisorImgHidden || !src) return;
-            if (String(src).indexOf('data:') === 0) {
-              supervisorImgHidden.value = src;
-              return;
+          function imageToDataUrl(img, cb){
+            try {
+              if (!img.naturalWidth) { cb(''); return; }
+              var c = document.createElement('canvas');
+              c.width = img.naturalWidth;
+              c.height = img.naturalHeight;
+              c.getContext('2d').drawImage(img, 0, 0);
+              cb(c.toDataURL('image/png'));
+            } catch (e) {
+              cb(img.src && String(img.src).indexOf('data:') === 0 ? img.src : '');
             }
-            fetch(src, { mode: 'cors' }).then(function(r){
-              if (!r.ok) throw new Error('fetch_failed');
-              return r.blob();
-            }).then(function(blob){
-              var fr = new FileReader();
-              fr.onload = function(){ supervisorImgHidden.value = fr.result; };
-              fr.readAsDataURL(blob);
-            }).catch(function(){});
+          }
+          function setSupervisorHiddenFromImg(img){
+            if (!supervisorImgHidden || !img) return;
+            imageToDataUrl(img, function(dataUrl){
+              if (dataUrl) supervisorImgHidden.value = dataUrl;
+            });
+          }
+          function clearSupervisorSignature(){
+            if (supervisorImg) {
+              supervisorImg.removeAttribute('src');
+              supervisorImg.classList.remove('is-visible');
+            }
+            if (supervisorWrap) supervisorWrap.classList.remove('has-signature');
+            if (supervisorImgHidden) supervisorImgHidden.value = '';
           }
           function applySupervisorSignature(entry){
             var primary = supervisorSigPrimary(entry);
             var fallback = supervisorSigFallback(entry);
             var src = primary || fallback || '';
-            if (supervisorImg) {
-              supervisorImg.onerror = function(){
-                if (fallback && supervisorImg.src !== fallback) {
-                  supervisorImg.onerror = null;
-                  supervisorImg.src = fallback;
-                  supervisorImg.style.display = 'block';
-                  setSupervisorHiddenFromSrc(fallback);
-                }
-              };
-              supervisorImg.src = src;
-              supervisorImg.style.display = src ? 'block' : 'none';
-            }
-            if (supervisorImgHidden) supervisorImgHidden.value = '';
-            if (src) setSupervisorHiddenFromSrc(src);
+            clearSupervisorSignature();
+            if (!supervisorImg || !src) return;
+            supervisorImg.onload = function(){
+              supervisorImg.classList.add('is-visible');
+              if (supervisorWrap) supervisorWrap.classList.add('has-signature');
+              setSupervisorHiddenFromImg(supervisorImg);
+            };
+            supervisorImg.onerror = function(){
+              if (fallback && supervisorImg.src !== fallback) {
+                supervisorImg.onerror = null;
+                supervisorImg.src = fallback;
+                return;
+              }
+              clearSupervisorSignature();
+            };
+            supervisorImg.src = src;
           }
           function copySupervisorToSignature(){
             var name = supervisorSelect.value || '';

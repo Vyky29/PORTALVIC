@@ -27,6 +27,7 @@
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260618-yossi-makeup-cache"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
+  <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -324,6 +325,7 @@
       { id:'portal_docs_passport', label:'Passports' },
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
+      { id:'portal_participant_documents', label:'Participant documents', hubLabel:'Participant docs' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'Settings' },
       { id:'portal_device_notifications', label:'Device notifications', navAction:'device_notifications', skipBottomNav:true },
@@ -346,7 +348,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -14687,12 +14689,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card-pad" style="overflow:auto;padding:0;border-top:1px solid var(--line)"><table class="tbl" id="paxBookingFinanceSheetTable" style="min-width:1020px"><thead><tr><th>Participant</th><th>Pay method</th><th>Services</th><th>Cost</th><th>Sessions</th><th>Total</th><th>VAT</th><th>Invoice</th><th>Rec</th><th>Paid</th><th>Out</th><th>Funding</th><th>Next</th><th>Period</th><th>CFK vs sheet</th><th>Actions</th></tr></thead><tbody>'+paxPayTbody+'</tbody></table></div></div>'+
         '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="c4k_payments">Open programme payments</button></div>'+
         '</div>';
+      var paxDocsPanel = (window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.workspacePanelHtml === 'function')
+        ? window.PortalParticipantDocuments.workspacePanelHtml(P.name || '')
+        : '<div class="pax-contacts-more-inner"><p class="muted" style="margin:0">Participant documents module failed to load.</p></div>';
       return (
         '<div class="pax-contacts-workspace">'+
         '<div class="pax-contacts-ws-head"><strong>'+esc(P.name||'—')+'</strong><span class="muted" style="font-weight:600;font-size:13px"> · '+esc(P.id)+'</span></div>'+
         '<div class="c4k-tabs" role="tablist">'+
         tabBtn('ov','Overview',true)+tabBtn('preg','Registration',false)+tabBtn('asm','Assessment',false)+tabBtn('svc','Services',false)+tabBtn('ses','Sessions',false)+
-        tabBtn('att','Attendance & Credits',false)+tabBtn('bill','Booking & Billing',false)+tabBtn('pay','Payments',false)+tabBtn('rpt','Reports',false)+tabBtn('rev','Term Reviews',false)+
+        tabBtn('att','Attendance & Credits',false)+tabBtn('bill','Booking & Billing',false)+tabBtn('pay','Payments',false)+tabBtn('docs','Documents',false)+tabBtn('rpt','Reports',false)+tabBtn('rev','Term Reviews',false)+
         '</div>'+
         '<div class="pax-contacts-ws-main">'+
         '<div data-c4k-panel="ov" class="c4k-panel is-on">'+
@@ -14729,6 +14734,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div data-c4k-panel="att" class="c4k-panel">'+paxAttPanel+'</div>'+
         '<div data-c4k-panel="bill" class="c4k-panel">'+paxBillPanel+'</div>'+
         '<div data-c4k-panel="pay" class="c4k-panel">'+paxPayPanel+'</div>'+
+        '<div data-c4k-panel="docs" class="c4k-panel">'+paxDocsPanel+'</div>'+
         '<div data-c4k-panel="rpt" class="c4k-panel">'+paxRptPanel+'</div>'+
         '<div data-c4k-panel="rev" class="c4k-panel">'+paxRevPanel+'</div>'+
         '</div>'+
@@ -18056,6 +18062,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalDocsPresetFilter = 'all';
         html = viewPortalDocuments();
       }else if(id==='portal_payslips') html = viewPortalPayslips();
+      else if(id==='portal_participant_documents') html = viewPortalParticipantDocuments();
       else if(id==='portal_docs_portalpin') html = viewPortalPins();
       else if(id.indexOf('portal_docs_')===0){
         window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
@@ -18844,7 +18851,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Access operational documents, payslips, timesheets, expenses, certificates, passports, checklists and first aid records.',
         preview:['Payslips','Timesheets','Expenses','Certificates','Passports and checklists','First aid records'],
         status:'Use this area to find generated PDFs, staff documents and compliance records.',
-        primary:['portal_documents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
+        primary:['portal_documents','portal_participant_documents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
         secondary:['portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
       },
       {
@@ -19169,6 +19176,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card"><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblClients"><thead><tr><th>Participant</th><th>Programme</th><th>Sessions (YTD)</th><th>Attendance %</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
     }
 
+    function portalParticipantDocumentsConfigureOnce(){
+      if(window.__portalParticipantDocumentsConfigured || !window.PortalParticipantDocuments) return;
+      window.__portalParticipantDocumentsConfigured = true;
+      window.PortalParticipantDocuments.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewPortalParticipantDocuments(){
+      portalParticipantDocumentsConfigureOnce();
+      return window.PortalParticipantDocuments ? window.PortalParticipantDocuments.viewHtml() : '<p class="page-intro">Participant documents module failed to load.</p>';
+    }
+    function bindPortalParticipantDocumentsModule(){
+      portalParticipantDocumentsConfigureOnce();
+      if(window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.bindModule === 'function'){
+        window.PortalParticipantDocuments.bindModule();
+      }
+    }
     function portalDocumentsConfigureOnce(){
       if(window.__portalDocumentsConfigured || !window.PortalDocuments) return;
       window.__portalDocumentsConfigured = true;
@@ -21038,7 +21070,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -21375,6 +21407,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_docs_portalpin') bindPortalPinsModule();
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
+      else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='portal_push_devices') bindPortalPushDevicesModule();
@@ -21561,6 +21594,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   main.querySelectorAll('[data-c4k-panel]').forEach(function(pn){
                     pn.classList.toggle('is-on', pn.getAttribute('data-c4k-panel') === tid);
                   });
+                  if(tid === 'docs' && window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.bindWorkspacePanel === 'function'){
+                    window.PortalParticipantDocuments.bindWorkspacePanel(wrap);
+                  }
                 }
               }
               return;

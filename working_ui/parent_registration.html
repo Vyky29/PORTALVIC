@@ -170,7 +170,9 @@
     .submit-row button:disabled{opacity:.6;cursor:not-allowed;}
     .required-mark{color:var(--red);}
   </style>
+  <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/portal/parent_form_submit.js"></script>
 </head>
 <body>
   <div class="page">
@@ -619,7 +621,37 @@
         ], pageW, M, maxY);
 
         var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
-        doc.save('ClubSENsational_Registration_' + safeName + '.pdf');
+        var filename = 'ClubSENsational_Registration_' + safeName + '.pdf';
+        var pdfBlob = doc.output('blob');
+        doc.save(filename);
+
+        if (window.portalSubmitParentForm) {
+          var photoFile = photoInput.files && photoInput.files[0];
+          window.portalSubmitParentForm({
+            form_type: 'client_registration',
+            participant_name: val('participant_name'),
+            participant_dob: val('participant_dob'),
+            parent_name: val('parent_name'),
+            parent_email: val('parent_email'),
+            parent_phone: val('parent_phone'),
+            pdf: pdfBlob,
+            pdf_filename: filename,
+            photo: photoFile || null,
+            photo_filename: photoFile ? photoFile.name : undefined,
+            payload: {
+              relationship: radio('relationship'),
+              participant_gender: val('participant_gender'),
+              participant_school: val('participant_school'),
+              ehcp: radio('ehcp'),
+              social_worker: radio('social_worker')
+            }
+          }).then(function(){
+            alert('Thank you — your registration was sent to clubSENsational. The PDF was also downloaded to your device.');
+          }).catch(function(err){
+            console.error(err);
+            alert('PDF downloaded, but upload to clubSENsational failed. Please email the PDF to the club or try again later.');
+          });
+        }
       } catch (err) {
         console.error(err);
         alert('Could not create PDF. Please check all fields and try again.');
