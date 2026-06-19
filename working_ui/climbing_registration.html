@@ -1047,6 +1047,7 @@
       }
 
       (function(){        var SIG = '/portal/climbing_instructor_signatures/';
+        var STAFF = '/portal/staff_photos/';
         var SUPERVISOR_SIGNATURES = {
           'Alex S': SIG + 'alex-signature.png',
           'Bismark G': SIG + 'bismark-signature.png',
@@ -1055,15 +1056,13 @@
           'Andres B': SIG + 'andres-signature.png'
         };
         var SUPERVISOR_PHOTOS = {
-          'Alex S': SIG + 'alex.png',
-          'Bismark G': SIG + 'bismark.png',
-          'Carlos H': SIG + 'carlos-h.png',
-          'Javi A': SIG + 'javi.png',
-          'Andres B': SIG + 'andres.png'
+          'Alex S': STAFF + 'alex.png',
+          'Bismark G': STAFF + 'bismark.png',
+          'Carlos H': STAFF + 'carlos.png',
+          'Javi A': STAFF + 'javi.png',
+          'Andres B': STAFF + 'andres.png'
         };
-        var SUPERVISOR_PHOTO_FALLBACKS = {
-          'Javi A': SIG + 'javi-a.png'
-        };
+        var SUPERVISOR_PHOTO_FALLBACKS = {};
         var supervisorSelect = document.getElementById('supervisor_name');
         var supervisorSig = document.getElementById('supervisor_signature');
         var supervisorImg = document.getElementById('supervisor_signature_img');
