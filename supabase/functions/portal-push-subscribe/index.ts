@@ -52,11 +52,32 @@ Deno.serve(async (req) => {
     });
   }
 
-  let body: { subscription?: Record<string, unknown> };
+  let body: { subscription?: Record<string, unknown>; register_app?: string };
   try {
     body = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const registerApp = String(body?.register_app ?? "portal").trim().toLowerCase();
+  if (registerApp === "cs_cliq") {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        reason: "cs_cliq-push-disabled",
+        message: "Push alerts are registered from the staff portal only.",
+      }),
+      {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+  if (registerApp !== "portal") {
+    return new Response(JSON.stringify({ error: "Invalid register_app" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -80,6 +101,7 @@ Deno.serve(async (req) => {
     user_id: user.id,
     endpoint,
     subscription_json: sub,
+    register_app: "portal",
     updated_at: new Date().toISOString(),
   };
 
@@ -103,6 +125,7 @@ Deno.serve(async (req) => {
         .from("portal_push_subscriptions")
         .select("endpoint, updated_at")
         .eq("user_id", user.id)
+        .eq("register_app", "portal")
         .order("updated_at", { ascending: false });
       if (!listErr && rows?.length) {
         const keep = new Set<string>([endpoint]);

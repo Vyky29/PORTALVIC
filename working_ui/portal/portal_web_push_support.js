@@ -294,7 +294,7 @@
     var endpoint = String(sub.endpoint || "").trim();
     var subJson = sub.toJSON();
     var fnRes = await client.functions.invoke("portal-push-subscribe", {
-      body: { subscription: subJson },
+      body: { subscription: subJson, register_app: "portal" },
     });
     if (fnRes.error) {
       var st = Number(
@@ -314,8 +314,8 @@
     var env = portalNotifyEnvironment();
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
-    var buildKey = "portal_cs_cliq_push_build";
-    var buildVal = "20260612-closed-push-v1";
+    var buildKey = "portal_web_push_build";
+    var buildVal = "20260619-portal-only-v1";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&

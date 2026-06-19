@@ -12811,7 +12811,7 @@
         const subJson = sub.toJSON();
         if(box.client && typeof box.client.functions.invoke === 'function'){
           const fnRes = await box.client.functions.invoke('portal-push-subscribe', {
-            body: { subscription: subJson }
+            body: { subscription: subJson, register_app: 'portal' }
           });
           if(!fnRes.error) return { ok: true };
           const st = Number(fnRes.error.status || fnRes.error.context && fnRes.error.context.status || 0);
@@ -12831,7 +12831,7 @@
             'Authorization': 'Bearer ' + token,
             'apikey': anon
           },
-          body: JSON.stringify({ subscription: subJson })
+          body: JSON.stringify({ subscription: subJson, register_app: 'portal' })
         });
         if(!res.ok){
           if(res.status === 401 || res.status === 403) window.__PORTAL_WPS_SKIP__ = true;

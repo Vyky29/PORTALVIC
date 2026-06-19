@@ -161,7 +161,8 @@ Deno.serve(async (req) => {
     const { data: subsRaw, error: subErr } = await admin
       .from("portal_push_subscriptions")
       .select("user_id, endpoint, subscription_json, updated_at")
-      .in("user_id", expandedIds);
+      .in("user_id", expandedIds)
+      .eq("register_app", "portal");
 
     if (subErr) {
       results.push({ userId: t.userId, pending: n, error: subErr.message });

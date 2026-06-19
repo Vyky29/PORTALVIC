@@ -666,8 +666,9 @@ export async function sendPushPayloadToUserIds(
 
   const { data: subsRaw, error: subErr } = await admin
     .from("portal_push_subscriptions")
-    .select("user_id, endpoint, subscription_json, updated_at")
-    .in("user_id", expandedIds);
+    .select("user_id, endpoint, subscription_json, updated_at, register_app")
+    .in("user_id", expandedIds)
+    .eq("register_app", "portal");
 
   if (subErr) {
     console.error("[portal-webpush] subs", subErr);
