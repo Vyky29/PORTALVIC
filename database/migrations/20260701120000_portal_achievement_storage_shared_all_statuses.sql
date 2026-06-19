@@ -22,7 +22,4 @@ create policy portal_achievement_storage_select_staff_shared
     )
   );
 
-comment on policy portal_achievement_storage_select_staff_shared on storage.objects is
-  'Own folder or any achievement photo/video row (draft, attached, archived) — co-instructors and feedback viewers.';
-
 commit;

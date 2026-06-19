@@ -23599,17 +23599,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function adminTouchCompactLayoutActive(){
       try{
-        if(adminIsDesktopShell()) return false;
-        var w = window.innerWidth || document.documentElement.clientWidth || 0;
-        var h = window.innerHeight || document.documentElement.clientHeight || 0;
-        if(w <= ADMIN_MOBILE_MAX_WIDTH) return true;
-        /* Landscape phone: width often exceeds 899px — still use drawer nav + topbar chat */
-        if(w < 1280 && h <= 640){
-          try{
-            if(matchMedia('(orientation: landscape)').matches) return true;
-          }catch(_land){}
-        }
-        return false;
+        /* Tablets (iPad portrait + landscape): overlay nav — no persistent fixed rail below desktop shell. */
+        return !adminIsDesktopShell();
       }catch(e){ return false; }
     }
     function adminIsMobileNavLayout(){

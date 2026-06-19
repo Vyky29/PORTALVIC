@@ -16,7 +16,7 @@
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
   <script src="/portal/portal_web_push_support.js?v=20260619-denied-help"></script>
 <script src="/portal/portal_alerts_notifications_ui.js?v=20260619-denied-help"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260619-perm-skip"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260619-ann-inbox"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-phase2"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-week-tag-white-v2" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-ipad-full" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -169,7 +169,7 @@
       var on;
       if(stored === '1') on = true;
       else if(stored === '0') on = false;
-      else on = true;
+      else on = narrow;
       applyMobilePreview(on, { persist: false });
       if(!mq || !mq.addEventListener) return;
       mq.addEventListener('change', function(){
@@ -3337,9 +3337,12 @@
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         if(!st) return;
         if(!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed)) return;
+        const tabVisible = typeof document !== 'undefined' && document.visibilityState === 'visible';
+        const suppressFeedbackPush = tabVisible && !!st.sessionFeedbackNeed;
+        if(suppressFeedbackPush && !st.venueOpenNeed && !st.venueCloseNeed) return;
         const level = typeof portalReminderUrgencyLevel === 'function' ? portalReminderUrgencyLevel(st) : 0;
         const bodyParts = [];
-        if(st.sessionFeedbackNeed){
+        if(st.sessionFeedbackNeed && !suppressFeedbackPush){
           const n = Math.max(0, Number(st.sessionFeedbackCount) || 0);
           if(n > 0) bodyParts.push('Incomplete sessions (x' + n + ').');
         }
@@ -8354,6 +8357,13 @@
         if(annInjected.length){
           dashboardData.notices = annInjected.concat(preserved);
         }
+        if(typeof portalReconcileAnnouncementAckKeys === 'function'){
+          portalReconcileAnnouncementAckKeys(
+            dashboardData.notices || [],
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave
+          );
+        }
         const annIds = visible
           .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
           .map(function(row){ return String(row.id || ''); })
@@ -8408,6 +8418,13 @@
         }
         if(typeof portalPruneStaleSignedAnnouncementAcks === 'function'){
           portalPruneStaleSignedAnnouncementAcks(
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            dashboardData.portalLiveAnnouncementIdSet || {}
+          );
+        }
+        if(typeof portalPruneSupersededPortalReadyAnnouncementAcks === 'function'){
+          portalPruneSupersededPortalReadyAnnouncementAcks(
             portalAnnouncementAckMapLoad,
             portalAnnouncementAckMapSave,
             dashboardData.portalLiveAnnouncementIdSet || {}
@@ -9731,6 +9748,13 @@
               portalAnnouncementAckMapSave,
               liveSet
             );
+            if(typeof portalPruneSupersededPortalReadyAnnouncementAcks === 'function'){
+              portalPruneSupersededPortalReadyAnnouncementAcks(
+                portalAnnouncementAckMapLoad,
+                portalAnnouncementAckMapSave,
+                liveSet
+              );
+            }
           }
         }
         if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
@@ -12743,6 +12767,11 @@
           void portalPersistAnnouncementAckToSupabase(pending);
         }
         }
+        try{
+          const sysDone = JSON.parse(sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {};
+          sysDone[key] = Date.now();
+          sessionStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone));
+        }catch(_sysAnn){}
         portalAnnouncementLockRequired = false;
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();

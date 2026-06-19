@@ -1,6 +1,6 @@
 -- Fixed CS Cliq CEO channels:
---   all_ceos     ? Raúl, Victor, Javier Arranz (Palan) only
---   ceo_liaison  ? executive trio + Sevitha
+--   all_ceos     - Raul, Victor, Javier Arranz (Palan) only
+--   ceo_liaison  - executive trio + Sevitha
 
 begin;
 

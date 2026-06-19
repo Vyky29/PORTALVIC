@@ -23,6 +23,7 @@
     "apply:sevitha-office-portal": "node database/local-vault/apply-sevitha-office-portal.mjs",
     "apply:staff-participant-access": "node database/local-vault/apply-staff-participant-access.mjs",
     "apply:cancellation-repair": "node database/local-vault/apply-cancellation-repair.mjs",
+    "apply:achievement-shared-pool": "node database/local-vault/apply-achievement-shared-pool.mjs",
     "verify:sevitha-office-portal": "node database/local-vault/verify-sevitha-office-portal.mjs",
     "deploy:sevitha-document-hub": "supabase functions deploy portal-admin-hr-files-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-expenses-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-documents-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-hr-file-signed-url --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb"
   },

@@ -49,11 +49,6 @@
     var targetRole = String(row.target_staff_role || "").trim();
     var targetRoleBlank = !targetRole;
 
-    var onAck = String(row.on_ack_action || "").trim();
-    if (onAck === "portal_permissions" && ctx.hasPortalPushSubscription === true) {
-      return false;
-    }
-
     if (delivery === "single_user") {
       return !!uid && targetUser === uid;
     }
@@ -145,6 +140,66 @@
     return !!(annId && liveSet[annId]);
   };
 
+  /** Merge legacy title-key ack rows onto portal-ann:{uuid} after Supabase hydrate. */
+  global.portalReconcileAnnouncementAckKeys = function portalReconcileAnnouncementAckKeys(
+    notices,
+    loadMap,
+    saveMap
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var list = Array.isArray(notices) ? notices : [];
+      if (!list.length) return false;
+      var ack = loadMap();
+      var changed = false;
+      list.forEach(function (n) {
+        if (!n || !n.portalAnnouncementId) return;
+        var canon = "portal-ann:" + String(n.portalAnnouncementId).trim();
+        if (!canon || ack[canon]) return;
+        var wantTitle = String(n.title || "")
+          .trim()
+          .toLowerCase();
+        Object.keys(ack).forEach(function (k) {
+          if (ack[canon]) return;
+          var rec = ack[k];
+          if (!rec || typeof rec !== "object") return;
+          var signedAt = Number(rec.signedAt || 0);
+          if (!Number.isFinite(signedAt) || signedAt <= 0) return;
+          var recAnnId = String(rec.portalAnnouncementId || "").trim();
+          if (recAnnId && recAnnId === String(n.portalAnnouncementId).trim()) {
+            ack[canon] = Object.assign({}, rec, { portalAnnouncementId: recAnnId });
+            if (k !== canon) {
+              delete ack[k];
+            }
+            changed = true;
+            return;
+          }
+          if (k.indexOf("portal-ann:") === 0) return;
+          var recTitle = String(rec.title || "")
+            .trim()
+            .toLowerCase();
+          if (wantTitle && recTitle === wantTitle) {
+            ack[canon] = Object.assign({}, rec, {
+              portalAnnouncementId: String(n.portalAnnouncementId).trim(),
+              title: rec.title || n.title,
+              text: rec.text || n.text || "",
+              href: rec.href || n.href || "",
+            });
+            delete ack[k];
+            changed = true;
+          }
+        });
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] reconcile announcement ack keys", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
   /** Drop pre-launch / orphan announcement ack rows from localStorage. */
   global.portalPrunePreLaunchAnnouncementAcks = function portalPrunePreLaunchAnnouncementAcks(
     loadMap,
@@ -163,6 +218,14 @@
         if (!rec || typeof rec !== "object") {
           delete ack[k];
           changed = true;
+          return;
+        }
+        var annId =
+          String(rec.portalAnnouncementId || "").trim() ||
+          global.portalAnnouncementIdFromAckKey(k);
+        var signedAt = Number(rec.signedAt || 0);
+        /* Never drop a worker signature for a still-published announcement. */
+        if (annId && liveSet[annId] && Number.isFinite(signedAt) && signedAt > 0) {
           return;
         }
         if (global.portalAnnouncementAckIsArchivedSigned(rec, k)) {
@@ -211,6 +274,10 @@
         var annId =
           String(rec.portalAnnouncementId || "").trim() ||
           global.portalAnnouncementIdFromAckKey(k);
+        var signedAt = Number(rec.signedAt || 0);
+        if (annId && liveSet[annId] && Number.isFinite(signedAt) && signedAt > 0) {
+          return;
+        }
         if (!annId || !liveSet[annId]) {
           delete ack[k];
           changed = true;
@@ -579,9 +646,60 @@
     }
   };
 
+  /** Drop superseded "Portal is ready" local ack rows (title-key or old uuid) after the thank-you notice shipped. */
+  global.portalPruneSupersededPortalReadyAnnouncementAcks = function portalPruneSupersededPortalReadyAnnouncementAcks(
+    loadMap,
+    saveMap,
+    liveIdSet
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+      var ack = loadMap();
+      var changed = false;
+      Object.keys(ack).forEach(function (k) {
+        var rec = ack[k];
+        if (!rec || typeof rec !== "object") return;
+        var title = String(rec.title || "")
+          .trim()
+          .toLowerCase();
+        if (title.indexOf("portal is ready") === -1) return;
+        var annId =
+          String(rec.portalAnnouncementId || "").trim() ||
+          global.portalAnnouncementIdFromAckKey(k);
+        if (annId && liveSet[annId]) return;
+        delete ack[k];
+        changed = true;
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] prune superseded portal-ready acks", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
   /** User gesture: run default portal permissions when signable asks for it. */
   global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(item) {
     if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
+    try {
+      var box = readBox();
+      var client = box && box.client;
+      var uid =
+        (box.session && box.session.user && box.session.user.id) ||
+        (box.staff_profile && box.staff_profile.id) ||
+        "";
+      if (
+        typeof global.portalWorkerHasPortalPushSubscription === "function" &&
+        client &&
+        uid
+      ) {
+        var hasPush = await global.portalWorkerHasPortalPushSubscription(client, uid);
+        if (hasPush) return null;
+      }
+    } catch (_) {}
     if (typeof global.portalRequestDefaultPortalPermissions === "function") {
       return await global.portalRequestDefaultPortalPermissions();
     }

@@ -6522,6 +6522,15 @@
     }
     /* Real view on wide screens: width follows stage (no fixed 390px column); mobile simulator stays narrow */
     @media (min-width:721px){
+      body:not(.dev-mobile-preview) .app{
+        max-width:100%;
+        width:100%;
+        padding-left:max(12px, env(safe-area-inset-left, 0px));
+        padding-right:max(12px, env(safe-area-inset-right, 0px));
+      }
+      body:not(.dev-mobile-preview) .app::after{
+        max-width:100%;
+      }
       body:not(.dev-mobile-preview) .sheet.sheet--fullscreen.sheet--mobile-frame{
         left:0;
         right:0;
