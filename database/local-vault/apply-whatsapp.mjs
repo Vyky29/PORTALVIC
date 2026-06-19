@@ -33,6 +33,8 @@ const WHATSAPP_KEYS = [
   "META_WHATSAPP_PHONE_NUMBER_ID",
   "META_WHATSAPP_TOKEN",
   "META_WHATSAPP_TEMPLATE_LANG",
+  "META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+  "META_WHATSAPP_APP_SECRET",
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE",
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",
@@ -105,6 +107,7 @@ if (args.has("--secrets-only")) {
 
 const functions = [
   "portal-parent-notify-send",
+  "portal-whatsapp-webhook",
   "staff-profile-otp-request",
 ];
 
@@ -116,5 +119,5 @@ for (const slug of functions) {
 
 console.log("\nDone. WhatsApp secrets synced + functions deployed.");
 console.log("Test: admin dashboard → Settings → Send test WhatsApp");
-console.log("API inbox (replies): Meta Business Suite — Admin → Settings → Open Meta inbox");
+console.log("API inbox (replies): Family messages in admin + Meta Business Suite inbox");
 console.log("Company chats: WhatsApp Business app on phone (separate number — not this API ID).");

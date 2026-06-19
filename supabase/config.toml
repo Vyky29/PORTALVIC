@@ -437,3 +437,7 @@ verify_jwt = false
 
 [functions.portal-push-dispatch-outstanding-feedback]
 verify_jwt = false
+
+# Meta WhatsApp webhook — no Supabase JWT; signature + verify token in function.
+[functions.portal-whatsapp-webhook]
+verify_jwt = false

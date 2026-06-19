@@ -102,4 +102,48 @@ Staff profile OTP uses `META_WHATSAPP_TEMPLATE_NAME` if set (optional). Parent n
 4. Admin → Settings → test WhatsApp on your mobile.
 5. Scheduling → save an override → **Notify parent** → Send now (email and/or WhatsApp).
 
-**Replies** to the API number: [Meta Business Suite inbox](https://business.facebook.com/latest/inbox/all) (Admin → Settings → Open Meta inbox).
+**Replies** to the API number: **Family messages** in admin (after webhook below) and [Meta Business Suite inbox](https://business.facebook.com/latest/inbox/all).
+
+---
+
+## Inbound replies webhook (V3)
+
+Store family replies in **Admin → Family messages** (not only Meta inbox).
+
+### 1. Secrets (`local-secrets/secrets.env`)
+
+```env
+META_WHATSAPP_WEBHOOK_VERIFY_TOKEN=paste-a-long-random-string-here
+META_WHATSAPP_APP_SECRET=paste-from-meta-app-settings-basic
+```
+
+`META_WHATSAPP_APP_SECRET` is **App secret** in [Meta for Developers](https://developers.facebook.com/) → your app → **Settings → Basic**. Used to verify `X-Hub-Signature-256`.
+
+### 2. Deploy
+
+Apply DB migration `20260620120000_portal_parent_whatsapp_inbound.sql` on Portal Supabase, then:
+
+```bash
+npm run apply:whatsapp
+```
+
+This syncs secrets and deploys `portal-whatsapp-webhook`.
+
+### 3. Meta webhook URL
+
+In **Meta for Developers** → your app → **WhatsApp → Configuration**:
+
+| Field | Value |
+|-------|--------|
+| **Callback URL** | `https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-whatsapp-webhook` |
+| **Verify token** | Same as `META_WHATSAPP_WEBHOOK_VERIFY_TOKEN` |
+
+Subscribe to **messages** for your WhatsApp Business account. Click **Verify and save**.
+
+### 4. Test
+
+1. **Send now** a WhatsApp to your mobile from Scheduling.
+2. Reply from that phone to the API number.
+3. **Family messages → Refresh** — reply appears with blue **Reply** chip.
+
+Older replies before webhook setup are **not** backfilled.

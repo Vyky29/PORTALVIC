@@ -143,6 +143,25 @@
   color: #b91c1c;
 }
 
+.portal-pnlog-chip--in {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.portal-pnlog-row--in {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(239, 246, 255, 0.45);
+}
+
+.portal-pnlog-row--in[open] {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
+.portal-pnlog-detail--in .portal-pnlog-detail__body {
+  background: rgba(255, 255, 255, 0.95);
+}
+
 .portal-pnlog-chip--muted {
   background: rgba(100, 116, 139, 0.12);
   color: #475569;
