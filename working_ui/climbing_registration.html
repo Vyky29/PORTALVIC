@@ -654,7 +654,7 @@
         <h1>Junior Registration Form and<br>Climbing Parental Consent<br>for Junior Climbing</h1>
       </div>
       <div class="logo" aria-label="Everyone Active logo">
-        <img decoding="async" id="logoEveryone" src="https://www.clubsensational.org/wp-content/uploads/2026/03/everyone-active-logo.png" alt="Everyone Active" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+        <img decoding="async" id="logoEveryone" src="/portal/everyone-active-logo.png" alt="Everyone Active" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
         <svg class="logo-svg-fallback" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 52" style="display:none;" role="img" aria-label="Everyone Active">
           <text x="0" y="26" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#111">everyone</text>
           <path d="M95 8 Q108 2 122 10" stroke="#e31d1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
@@ -1017,17 +1017,29 @@
         form.addEventListener('change', onFieldChange);
       }
 
-      var LOGO_EVERYONE_URL = 'https://www.clubsensational.org/wp-content/uploads/2026/03/everyone-active-logo.png';
+      var LOGO_EVERYONE_URL = '/portal/everyone-active-logo.png';
       var pdfLogoDataUrl = null;
       var logoEveryone = document.getElementById('logoEveryone');
-      if (logoEveryone && LOGO_EVERYONE_URL) logoEveryone.src = LOGO_EVERYONE_URL;
-      if (LOGO_EVERYONE_URL) {
-        fetch(LOGO_EVERYONE_URL, { mode: 'cors' }).then(function(r){ return r.blob(); }).then(function(blob){
-          var fr = new FileReader();
-          fr.onload = function(){ pdfLogoDataUrl = fr.result; };
-          fr.readAsDataURL(blob);
-        }).catch(function(){});
+      function cacheEveryoneLogoForPdf(img) {
+        if (!img || !img.naturalWidth) return;
+        try {
+          var c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          pdfLogoDataUrl = c.toDataURL('image/png');
+        } catch (_e) {}
       }
+      if (logoEveryone) {
+        logoEveryone.src = LOGO_EVERYONE_URL;
+        if (logoEveryone.complete) cacheEveryoneLogoForPdf(logoEveryone);
+        else logoEveryone.addEventListener('load', function () { cacheEveryoneLogoForPdf(logoEveryone); });
+      }
+      (function preloadEveryoneLogoForPdf() {
+        var preload = new Image();
+        preload.onload = function () { cacheEveryoneLogoForPdf(preload); };
+        preload.src = LOGO_EVERYONE_URL;
+      })();
 
       function setTodayCasualDate(){
         var today = new Date();
