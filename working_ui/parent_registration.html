@@ -659,6 +659,75 @@
       return y + 4;
     }
 
+    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY){
+      var photoSize = 46;
+      var gap = 10;
+      var textW = pageW - M * 2 - photoSize - gap;
+      var photoX = pageW - M - photoSize;
+      if (y > maxY - 30) { doc.addPage(); y = 18; }
+
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(45, 132, 179);
+      doc.text('Participant', M, y);
+      y += 7;
+
+      var boxY = y - 1;
+      doc.setDrawColor(45, 132, 179);
+      doc.setLineWidth(0.35);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
+      if (photoDataUrl) {
+        try {
+          var imgFmt = photoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+          doc.addImage(photoDataUrl, imgFmt, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
+        } catch (imgErr) {
+          console.warn(imgErr);
+        }
+      }
+
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      var lineY = y;
+      lines.forEach(function(row){
+        if (!row[1]) return;
+        var label = row[0] + ': ';
+        var text = doc.splitTextToSize(label + row[1], textW);
+        if (lineY + text.length * 4 > maxY) {
+          doc.addPage();
+          lineY = 18;
+          doc.setFontSize(9);
+        }
+        doc.text(text, M, lineY);
+        lineY += text.length * 4 + 2;
+      });
+
+      return Math.max(lineY, boxY + photoSize) + 6;
+    }
+
+    var pdfBrandLogoDataUrl = null;
+    (function preloadPdfBrandLogo(){
+      var logoEl = document.querySelector('.brand-logo-shell img');
+      function cacheFromImage(img){
+        if (!img || !img.naturalWidth) return;
+        try {
+          var c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          pdfBrandLogoDataUrl = c.toDataURL('image/png');
+        } catch (_e) {}
+      }
+      if (logoEl) {
+        if (logoEl.complete) cacheFromImage(logoEl);
+        else logoEl.addEventListener('load', function(){ cacheFromImage(logoEl); });
+      }
+      var preload = new Image();
+      preload.onload = function(){ cacheFromImage(preload); };
+      preload.src = '/portal/F-02-1.png';
+    })();
+
     form.addEventListener('submit', function(e){
       e.preventDefault();
       if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -679,7 +748,16 @@
         var M = 14;
         var pageW = doc.internal.pageSize.getWidth();
         var maxY = doc.internal.pageSize.getHeight() - 14;
-        var y = 18;
+        var y = 14;
+        var logoSize = 24;
+        if (pdfBrandLogoDataUrl) {
+          try {
+            doc.addImage(pdfBrandLogoDataUrl, 'PNG', M, y, logoSize, logoSize);
+            y += logoSize + 5;
+          } catch (logoErr) {
+            console.warn(logoErr);
+          }
+        }
 
         doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
@@ -689,19 +767,7 @@
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
         doc.text('Submitted: ' + new Date().toLocaleString('en-GB'), M, y);
-        y += 8;
-
-        try {
-          var imgFmt = photoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-          var imgW = 55;
-          var imgH = 55;
-          doc.addImage(photoDataUrl, imgFmt, pageW - M - imgW, 14, imgW, imgH);
-          doc.setFontSize(9);
-          doc.setTextColor(0, 0, 0);
-          doc.text('Participant photo', pageW - M - imgW, 72);
-        } catch (imgErr) {
-          console.warn(imgErr);
-        }
+        y += 10;
 
         doc.setTextColor(0, 0, 0);
         y = addSection(doc, y, 'Parent / guardian', [
@@ -713,12 +779,12 @@
           ['Postcode', val('parent_postcode')]
         ], pageW, M, maxY);
 
-        y = addSection(doc, y, 'Participant', [
+        y = addParticipantSection(doc, y, [
           ['Name', val('participant_name')],
           ['Date of birth', fmtDate(val('participant_dob'))],
           ['Gender', val('participant_gender')],
           ['School / college / residential', val('participant_school')]
-        ], pageW, M, maxY);
+        ], photoDataUrl, pageW, M, maxY);
 
         y = addSection(doc, y, 'Medical & support plans', [
           ['EHCP', radio('ehcp')],
