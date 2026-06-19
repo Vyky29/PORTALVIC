@@ -8,7 +8,8 @@
   var BUCKET = "participant-achievements";
   var LEAD_INBOX_CLIENT_ID = "_inbox";
   var LEAD_INBOX_CLIENT_NAME = "Inbox";
-  var MAX_PHOTOS = 10;
+  /** Legacy export; capture is unlimited — feedback attach uses FEEDBACK_MAX_ATTACH. */
+  var MAX_PHOTOS = null;
   var MAX_EDGE_PX = 3840;
   var JPEG_QUALITY = 0.92;
   var MAX_VIDEO_MS = 60000;
@@ -145,10 +146,9 @@
     }
   }
 
-  /** Staff per participant: 10/day. Lead inbox: no cap. */
+  /** Unlimited capture per participant/day; feedback submit caps attachments separately. */
   function maxPhotosForCurrentParticipant() {
-    if (isLeadInboxMode() || isInboxParticipant(state.participant)) return null;
-    return MAX_PHOTOS;
+    return null;
   }
 
   function isAtPhotoLimit() {
@@ -950,6 +950,13 @@
       upsert: false,
     });
     if (up.error) throw up.error;
+    var verifyPhoto = await client.storage.from(BUCKET).download(path);
+    if (verifyPhoto.error) {
+      try {
+        await client.storage.from(BUCKET).remove([path]);
+      } catch (_rm) {}
+      throw verifyPhoto.error;
+    }
 
     var staffName = "";
     try {
@@ -1010,6 +1017,13 @@
       upsert: false,
     });
     if (up.error) throw up.error;
+    var verifyVideo = await client.storage.from(BUCKET).download(path);
+    if (verifyVideo.error) {
+      try {
+        await client.storage.from(BUCKET).remove([path]);
+      } catch (_rm) {}
+      throw verifyVideo.error;
+    }
 
     var staffName = "";
     try {
@@ -1057,9 +1071,65 @@
     var client = cfg.getClient();
     if (!client) return "";
     var res = await client.storage.from(BUCKET).createSignedUrl(path, 3600);
-    if (res.error || !res.data || !res.data.signedUrl) return "";
-    signedUrlCache[path] = res.data.signedUrl;
-    return res.data.signedUrl;
+    if (res.error || !res.data) return "";
+    var url = String(res.data.signedUrl || res.data.signedURL || "").trim();
+    if (url) signedUrlCache[path] = url;
+    return url;
+  }
+
+  function appendMediaThumb(parent, url, row) {
+    while (parent.firstChild) parent.removeChild(parent.firstChild);
+    var who = String((row && row.staff_display_name) || "").trim();
+    if (!url) {
+      var empty = document.createElement("span");
+      empty.className = "portal-achievements-thumb__empty muted";
+      empty.textContent = "No preview";
+      parent.appendChild(empty);
+      return;
+    }
+    if (rowMediaType(row) === "video") {
+      var video = document.createElement("video");
+      video.src = url;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute("playsinline", "");
+      video.preload = "metadata";
+      video.draggable = false;
+      video.className = "portal-screenshot-protected portal-achievement-protected";
+      video.addEventListener("error", function () {
+        while (parent.firstChild) parent.removeChild(parent.firstChild);
+        var miss = document.createElement("span");
+        miss.className = "portal-achievements-thumb__empty muted";
+        miss.textContent = "Video unavailable";
+        parent.appendChild(miss);
+      });
+      parent.appendChild(video);
+      var badge = document.createElement("span");
+      badge.className = "portal-achievements-thumb__video-badge";
+      badge.setAttribute("aria-hidden", "true");
+      badge.innerHTML = ICON_VIDEO + (row && row.duration_ms ? " " + esc(formatDurationMs(row.duration_ms)) : "");
+      parent.appendChild(badge);
+    } else {
+      var img = document.createElement("img");
+      img.src = url;
+      img.alt = "";
+      img.draggable = false;
+      img.className = "portal-screenshot-protected portal-achievement-protected";
+      img.addEventListener("error", function () {
+        while (parent.firstChild) parent.removeChild(parent.firstChild);
+        var miss = document.createElement("span");
+        miss.className = "portal-achievements-thumb__empty muted";
+        miss.textContent = "File missing";
+        parent.appendChild(miss);
+      });
+      parent.appendChild(img);
+    }
+    if (who) {
+      var whoEl = document.createElement("span");
+      whoEl.className = "portal-achievements-thumb__by";
+      whoEl.textContent = who;
+      parent.appendChild(whoEl);
+    }
   }
 
   async function fetchInboxDraftPhotos(sessionDate) {
@@ -1185,7 +1255,7 @@
     if (hintEl) {
       hintEl.textContent = isLeadInboxMode()
         ? "Take photos for the admin inbox (no participant), or pick anyone with a session today."
-        : "Same participants as your Today list (A–Z).";
+        : "Same participants as your Today list (A–Z). Photos and videos are shared with co-workers on that participant today.";
     }
     if (!host) return;
     var uniq = getTodayParticipantList();
@@ -1524,7 +1594,7 @@
               " of " +
               state.photos.length
           );
-          cell.innerHTML = mediaThumbInnerHtml(url, row);
+          appendMediaThumb(cell, url, row);
           var delBtn = document.createElement("button");
           delBtn.type = "button";
           delBtn.className = "portal-achievements-thumb__delete";
@@ -1686,6 +1756,15 @@
         void refreshGallery();
       });
     }
+
+    if (!global.__portalAchievementsGallerySyncBound) {
+      global.__portalAchievementsGallerySyncBound = true;
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden || !state.participant) return;
+        if (state.captureMode !== "gallery" && !isAchievementCameraOpen()) return;
+        void refreshGallery();
+      });
+    }
   }
 
   function openSheet(opts) {
@@ -1819,8 +1898,8 @@
     }
   }
 
-  /** Max achievement photos a worker can attach to one session feedback. */
-  var FEEDBACK_MAX_ATTACH = 3;
+  /** Max achievement photos/videos attachable to one session feedback. */
+  var FEEDBACK_MAX_ATTACH = 10;
 
   /** Enforce the attach cap: once FEEDBACK_MAX_ATTACH are ticked, disable the rest. */
   function syncFeedbackPickLimit(host) {
@@ -1874,7 +1953,7 @@
     for (var i = 0; i < picks.length; i++) {
       (function (el, path, row) {
         void signedUrlFor(path).then(function (url) {
-          el.innerHTML = mediaThumbInnerHtml(url, row);
+          appendMediaThumb(el, url, row);
         });
       })(picks[i], picks[i].getAttribute("data-path"), rows[i]);
     }

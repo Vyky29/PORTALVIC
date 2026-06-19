@@ -118,7 +118,56 @@
 
   async function signedUrl(client, path) {
     var res = await client.storage.from("participant-achievements").createSignedUrl(path, 3600);
-    return res.data && res.data.signedUrl ? res.data.signedUrl : "";
+    if (res.error || !res.data) return "";
+    return String(res.data.signedUrl || res.data.signedURL || "").trim();
+  }
+
+  function appendThumbMedia(parent, url, row) {
+    while (parent.firstChild) parent.removeChild(parent.firstChild);
+    if (!url) {
+      var empty = document.createElement("span");
+      empty.className = "portal-admin-achievement-thumb__empty muted";
+      empty.textContent = "No preview";
+      parent.appendChild(empty);
+      return;
+    }
+    if (rowMediaType(row) === "video") {
+      var video = document.createElement("video");
+      video.src = url;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute("playsinline", "");
+      video.preload = "metadata";
+      video.draggable = false;
+      video.className = "portal-achievement-protected";
+      video.addEventListener("error", function () {
+        while (parent.firstChild) parent.removeChild(parent.firstChild);
+        var miss = document.createElement("span");
+        miss.className = "portal-admin-achievement-thumb__empty muted";
+        miss.textContent = "Video unavailable";
+        parent.appendChild(miss);
+      });
+      parent.appendChild(video);
+      var badge = document.createElement("span");
+      badge.className = "portal-admin-achievement-thumb__video-badge";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = "Video";
+      parent.appendChild(badge);
+      return;
+    }
+    var img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.draggable = false;
+    img.className = "portal-achievement-protected";
+    img.addEventListener("error", function () {
+      while (parent.firstChild) parent.removeChild(parent.firstChild);
+      var miss = document.createElement("span");
+      miss.className = "portal-admin-achievement-thumb__empty muted";
+      miss.textContent = "File missing";
+      parent.appendChild(miss);
+    });
+    parent.appendChild(img);
   }
 
   async function fetchAllPhotos(client) {
@@ -127,7 +176,7 @@
     var fallback = await client
       .from("portal_participant_achievement_photos")
       .select(
-        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key"
+        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key, media_type, duration_ms"
       )
       .in("status", ["draft", "attached", "archived_unused"])
       .order("client_name", { ascending: true })
@@ -821,7 +870,8 @@
     var grid = detailRoot.querySelector(".portal-admin-achievement-gallery");
     for (var i = 0; i < group.photos.length; i++) {
       (function (row, photoIndex) {
-        signedUrl(client, row.storage_path).then(function (url) {
+        signedUrl(client, row.storage_path)
+          .then(function (url) {
           var caption = photoCaption(row);
           var btn = document.createElement("button");
           btn.type = "button";
@@ -849,9 +899,13 @@
             pick.appendChild(document.createTextNode("Select"));
             wrap.appendChild(pick);
           }
-          btn.innerHTML =
-            adminThumbInnerHtml(url, row) +
-            '<span class="portal-admin-achievement-thumb__cap">' +
+          var mediaSlot = document.createElement("div");
+          mediaSlot.className = "portal-admin-achievement-thumb__media";
+          appendThumbMedia(mediaSlot, url, row);
+          btn.appendChild(mediaSlot);
+          var cap = document.createElement("span");
+          cap.className = "portal-admin-achievement-thumb__cap";
+          cap.innerHTML =
             '<span class="chip chip--' +
             statusChipClass(row.status) +
             '">' +
@@ -862,7 +916,8 @@
             "</span>" +
             '<span class="portal-admin-achievement-thumb__title">' +
             esc(caption) +
-            "</span></span>";
+            "</span>";
+          btn.appendChild(cap);
           btn.addEventListener("dblclick", function (e) {
             e.preventDefault();
             void openViewer(group.photos, photoIndex);
@@ -905,7 +960,10 @@
           }
           if (actionBar.childNodes.length) wrap.appendChild(actionBar);
           grid.appendChild(wrap);
-        });
+        })
+          .catch(function (err) {
+            console.warn("[achievements] thumb", err);
+          });
       })(group.photos[i], i);
     }
   }

@@ -1217,6 +1217,22 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   display: block;
 }
 
+.portal-admin-achievement-thumb__media {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.portal-admin-achievement-thumb__media img,
+.portal-admin-achievement-thumb__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
 .portal-admin-achievement-thumb__empty {
   display: flex;
   align-items: center;
@@ -1447,6 +1463,19 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   align-self: flex-start;
   max-width: 100%;
   color: var(--danger, #b91c1c);
+}
+
+.portal-achievements-thumb__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 72px;
+  font-size: 11px;
+  padding: 8px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.06);
 }
 
 .portal-achievements-thumb__open video,

@@ -389,8 +389,21 @@
     return portalStaffIsCeoTopbarFullAccess();
   }
 
-  /** Programme leads + Victor/Raúl/Javi — lead-style session photos (Inbox, org-wide picker). */
+  function portalStaffIsAppRoleLead() {
+    try {
+      if (global.__PORTAL_TOPBAR_IS_LEAD__) return true;
+      var profile = (global.__PORTAL_SUPABASE__ || {}).staff_profile;
+      return String((profile && profile.app_role) || "")
+        .trim()
+        .toLowerCase() === "lead";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** Any app_role lead + programme leads + Victor/Raúl/Javi — inbox photos without picking a participant. */
   global.portalStaffHasLeadPhotoInboxAccess = function portalStaffHasLeadPhotoInboxAccess() {
+    if (portalStaffIsAppRoleLead()) return true;
     if (portalStaffIsProgrammeLeadTopbar()) return true;
     return portalStaffIsCeoTopbarFullAccess();
   };
