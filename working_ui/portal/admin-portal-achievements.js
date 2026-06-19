@@ -122,6 +122,82 @@
     return String(res.data.signedUrl || res.data.signedURL || "").trim();
   }
 
+  function inboxAssignNewPath(storagePath, clientId) {
+    var cid = normalizeClientId(clientId);
+    var from = String(storagePath || "").trim();
+    if (!from || !cid || cid === INBOX_CLIENT_ID) {
+      throw new Error("Invalid assign destination.");
+    }
+    if (from.indexOf("/_inbox/") === -1) {
+      throw new Error("Photo is not in the lead inbox folder.");
+    }
+    var to = from.replace("/_inbox/", "/" + cid + "/");
+    if (to === from) throw new Error("Could not compute destination path.");
+    return to;
+  }
+
+  function inboxAlternatePathForAssignedRow(row) {
+    var path = String((row && row.storage_path) || "").trim();
+    var cid = normalizeClientId(row && row.client_id);
+    if (!path || !cid || cid === INBOX_CLIENT_ID || path.indexOf("/_inbox/") >= 0) return "";
+    return path.replace("/" + cid + "/", "/_inbox/");
+  }
+
+  async function storageObjectExists(client, path) {
+    path = String(path || "").trim();
+    if (!path) return false;
+    var res = await client.storage.from(ACH_BUCKET).download(path);
+    return !res.error;
+  }
+
+  async function moveAchievementStorage(client, fromPath, toPath) {
+    fromPath = String(fromPath || "").trim();
+    toPath = String(toPath || "").trim();
+    if (!fromPath || !toPath || fromPath === toPath) {
+      throw new Error("Missing storage path for move.");
+    }
+    if (typeof client.storage.from(ACH_BUCKET).move === "function") {
+      var mv = await client.storage.from(ACH_BUCKET).move(fromPath, toPath);
+      if (!mv.error) return;
+    }
+    var dl = await client.storage.from(ACH_BUCKET).download(fromPath);
+    if (dl.error) throw dl.error;
+    var blob = dl.data;
+    var contentType = "image/jpeg";
+    if (/\.webm$/i.test(toPath)) contentType = "video/webm";
+    else if (/\.mp4$/i.test(toPath)) contentType = "video/mp4";
+    var up = await client.storage.from(ACH_BUCKET).upload(toPath, blob, {
+      contentType: contentType,
+      upsert: false,
+    });
+    if (up.error) throw up.error;
+    var rm = await client.storage.from(ACH_BUCKET).remove([fromPath]);
+    if (rm.error && !/not found|object not found/i.test(String(rm.error.message || ""))) {
+      console.warn("[achievements] storage remove after copy", rm.error);
+    }
+  }
+
+  async function repairBrokenAssignedPhotoPaths(client, rows) {
+    if (!client || !Array.isArray(rows)) return 0;
+    var repaired = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row || normalizeClientId(row.client_id) === INBOX_CLIENT_ID) continue;
+      var path = String(row.storage_path || "").trim();
+      var alt = inboxAlternatePathForAssignedRow(row);
+      if (!path || !alt) continue;
+      if (await storageObjectExists(client, path)) continue;
+      if (!(await storageObjectExists(client, alt))) continue;
+      try {
+        await moveAchievementStorage(client, alt, path);
+        repaired += 1;
+      } catch (e) {
+        console.warn("[achievements] repair assigned photo", row.id, e);
+      }
+    }
+    return repaired;
+  }
+
   function appendThumbMedia(parent, url, row) {
     while (parent.firstChild) parent.removeChild(parent.firstChild);
     if (!url) {
@@ -335,15 +411,41 @@
     }
   }
 
-  async function assignInboxPhoto(photoId, clientId, clientName) {
+  async function assignInboxPhoto(photoId, clientId, clientName, storagePath) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
+    photoId = String(photoId || "").trim();
+    storagePath = String(storagePath || "").trim();
+    if (!photoId) throw new Error("Missing photo id.");
+    if (!storagePath) {
+      var rowRes = await client
+        .from("portal_participant_achievement_photos")
+        .select("storage_path, client_id, status")
+        .eq("id", photoId)
+        .maybeSingle();
+      if (rowRes.error) throw rowRes.error;
+      if (!rowRes.data) throw new Error("Photo not found.");
+      if (normalizeClientId(rowRes.data.client_id) !== INBOX_CLIENT_ID) {
+        throw new Error("Photo is no longer in the inbox.");
+      }
+      storagePath = String(rowRes.data.storage_path || "").trim();
+    }
+    var newPath = inboxAssignNewPath(storagePath, clientId);
+    await moveAchievementStorage(client, storagePath, newPath);
     var res = await client.rpc("portal_admin_assign_achievement_photo", {
       p_photo_id: photoId,
       p_client_id: clientId,
       p_client_name: clientName,
+      p_new_storage_path: newPath,
     });
-    if (res.error) throw res.error;
+    if (res.error) {
+      try {
+        if (await storageObjectExists(client, newPath)) {
+          await client.storage.from(ACH_BUCKET).remove([newPath]);
+        }
+      } catch (_rollback) {}
+      throw res.error;
+    }
     return res.data;
   }
 
@@ -804,7 +906,7 @@
           var chain = Promise.resolve();
           ids.forEach(function (pid) {
             chain = chain.then(function () {
-              return assignInboxPhoto(pid, target.key, target.clientName);
+              return assignInboxPhoto(pid, target.key, target.clientName, row.storage_path);
             });
           });
           void chain
@@ -979,6 +1081,15 @@
     if (status && !stayOnKey) status.textContent = "Loading…";
     try {
       var rows = await fetchAllPhotos(client);
+      var repaired = await repairBrokenAssignedPhotoPaths(client, rows);
+      if (repaired > 0) {
+        rows = await fetchAllPhotos(client);
+        if (status) {
+          status.textContent =
+            "Repaired " + repaired + " photo(s) after inbox assign. Reloading…";
+          status.className = "portal-forms-status";
+        }
+      }
       var groups = groupByParticipant(rows);
       directoryState.groups = groups;
       directoryState.byKey = Object.create(null);
