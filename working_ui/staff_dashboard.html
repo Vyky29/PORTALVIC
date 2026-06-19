@@ -15,9 +15,10 @@
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script defer src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
-  <script defer src="/portal/portal_web_push_support.js?v=20260619-denied-help"></script>
-<script defer src="/portal/portal_alerts_notifications_ui.js?v=20260619-denied-help"></script>
-  <script defer src="/portal/portal_announcement_ack.js?v=20260615-ann-sync-perf"></script>
+  <script defer src="/portal/portal_web_push_support.js?v=20260619-ann-race-fix"></script>
+  <script defer src="/portal/portal_ensure_web_push.js?v=20260619-ann-race-fix"></script>
+<script defer src="/portal/portal_alerts_notifications_ui.js?v=20260619-ann-race-fix"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260619-ann-race-fix"></script>
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>
@@ -11051,7 +11052,6 @@
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const client = box && box.client;
         if(!client || !dashboardData || !Array.isArray(dashboardData.notices)){
-          if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
           return;
         }
         const res = await client
@@ -11231,6 +11231,7 @@
           portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
         }
       }catch(_){
+      }finally{
         if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
       }
     }
@@ -14911,6 +14912,9 @@
       if(id === 'menuSheet'){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
+          void portalHydrateAnnouncementsFromSupabase();
+        }
       }
       if(id === 'setupReminderSheet' && backdropEl){
         backdropEl.classList.add('sheet-backdrop--focus');
@@ -16811,6 +16815,14 @@
         try {
           window.dispatchEvent(new CustomEvent("portal:staff-identity-resolved"));
         } catch (_) {}
+        if (
+          dashboardData.portalAnnouncementAcksMerged &&
+          typeof portalSyncAnnouncementsAndRemindersUi === "function"
+        ) {
+          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+        } else if (typeof portalHydrateAnnouncementsFromSupabase === "function") {
+          void portalHydrateAnnouncementsFromSupabase();
+        }
       }
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
@@ -17009,9 +17021,6 @@
             : dayNameFromDate(new Date());
         }
 
-        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
-          void portalHydrateAnnouncementsFromSupabase();
-        }
         if(typeof portalSyncSwimmingInstructorQuickMenus === 'function'){
           void portalSyncSwimmingInstructorQuickMenus().then(function(){
             if(typeof portalSyncTopbarRoleTools === 'function') portalSyncTopbarRoleTools({ isLead: false });
@@ -17067,6 +17076,12 @@
           if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
         })();
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
+        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
+          await portalHydrateAnnouncementsFromSupabase();
+        }
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+        }
         if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{
             if (runId !== _rehydrateRun) return;
