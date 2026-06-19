@@ -165,13 +165,45 @@
     .section-head__label{min-width:0;overflow-wrap:break-word;}
     .section-body{padding:14px;}
     .field{margin-bottom:14px;min-width:0;}
-    .field label{
+    .field-label{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      font-weight:600;
+      font-size:13px;
+      margin-bottom:6px;
+      min-width:0;
+    }
+    .field-label__icon{
+      flex:0 0 auto;
+      width:22px;
+      height:22px;
+      margin-top:1px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:6px;
+      background:var(--blueSoft);
+      color:var(--blue);
+    }
+    .field-label__icon svg{width:14px;height:14px;display:block;}
+    .field-label__text{min-width:0;overflow-wrap:break-word;flex:1;}
+    .field > label:not(.field-label){
       display:block;
       font-weight:600;
       font-size:13px;
       margin-bottom:6px;
       overflow-wrap:break-word;
     }
+    .field-followup{
+      margin-top:-4px;
+      margin-bottom:14px;
+      padding:10px 12px;
+      border-left:3px solid var(--sen-gold);
+      background:var(--goldSoft);
+      border-radius:0 8px 8px 0;
+    }
+    .field-followup[hidden]{display:none !important;}
     .field .hint{
       font-weight:400;
       color:var(--muted);
@@ -341,8 +373,8 @@
     </div>
 
     <div class="notice" id="formNotice">
-      Fill in all sections below. You must add a <strong>photo of the participant</strong> (face or ID document).
-      Tap <strong>Submit form</strong> to download a PDF — email it to clubSENsational or bring it to your first session.
+      Fill in <strong>all</strong> sections below (every question is required). You must add a <strong>photo of the participant</strong> (face or ID document).
+      Tap <strong>Submit form</strong> — your answers are sent to clubSENsational automatically and a PDF is saved on your device.
     </div>
 
     <form id="regForm" novalidate>
@@ -352,12 +384,12 @@
           <span class="section-head__label">Parent / guardian</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label for="parent_name">Name <span class="required-mark">*</span></label>
+          <div class="field" data-icon="user">
+            <label class="field-label" for="parent_name"><span class="field-label__text">Name <span class="required-mark">*</span></span></label>
             <input type="text" id="parent_name" name="parent_name" required autocomplete="name" />
           </div>
-          <div class="field">
-            <label>Relationship to participant <span class="required-mark">*</span></label>
+          <div class="field" data-icon="users">
+            <label class="field-label"><span class="field-label__text">Relationship to participant <span class="required-mark">*</span></span></label>
             <div class="checks">
               <label class="check-row"><input type="radio" name="relationship" value="Mother" required /> Mother</label>
               <label class="check-row"><input type="radio" name="relationship" value="Father" /> Father</label>
@@ -365,21 +397,21 @@
             </div>
           </div>
           <div class="grid-2">
-            <div class="field">
-              <label for="parent_phone">Phone <span class="required-mark">*</span></label>
+            <div class="field" data-icon="phone">
+              <label class="field-label" for="parent_phone"><span class="field-label__text">Phone <span class="required-mark">*</span></span></label>
               <input type="tel" id="parent_phone" name="parent_phone" required autocomplete="tel" />
             </div>
-            <div class="field">
-              <label for="parent_email">Email address <span class="required-mark">*</span></label>
+            <div class="field" data-icon="email">
+              <label class="field-label" for="parent_email"><span class="field-label__text">Email address <span class="required-mark">*</span></span></label>
               <input type="email" id="parent_email" name="parent_email" required autocomplete="email" />
             </div>
           </div>
-          <div class="field">
-            <label for="parent_address">Address <span class="required-mark">*</span></label>
+          <div class="field" data-icon="home">
+            <label class="field-label" for="parent_address"><span class="field-label__text">Address <span class="required-mark">*</span></span></label>
             <input type="text" id="parent_address" name="parent_address" required autocomplete="street-address" />
           </div>
-          <div class="field">
-            <label for="parent_postcode">Postcode <span class="required-mark">*</span></label>
+          <div class="field" data-icon="map">
+            <label class="field-label" for="parent_postcode"><span class="field-label__text">Postcode <span class="required-mark">*</span></span></label>
             <input type="text" id="parent_postcode" name="parent_postcode" required autocomplete="postal-code" />
           </div>
         </div>
@@ -391,27 +423,27 @@
           <span class="section-head__label">Participant</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label for="participant_name">Name <span class="required-mark">*</span></label>
+          <div class="field" data-icon="user">
+            <label class="field-label" for="participant_name"><span class="field-label__text">Name <span class="required-mark">*</span></span></label>
             <input type="text" id="participant_name" name="participant_name" required />
           </div>
           <div class="grid-2">
-            <div class="field">
-              <label for="participant_dob">Date of birth <span class="required-mark">*</span></label>
+            <div class="field" data-icon="calendar">
+              <label class="field-label" for="participant_dob"><span class="field-label__text">Date of birth <span class="required-mark">*</span></span></label>
               <input type="date" id="participant_dob" name="participant_dob" required />
             </div>
-            <div class="field">
-              <label for="participant_gender">Gender</label>
-              <input type="text" id="participant_gender" name="participant_gender" />
+            <div class="field" data-icon="gender">
+              <label class="field-label" for="participant_gender"><span class="field-label__text">Gender <span class="required-mark">*</span></span></label>
+              <input type="text" id="participant_gender" name="participant_gender" required />
             </div>
           </div>
-          <div class="field">
-            <label for="participant_school">School / college / residential</label>
-            <input type="text" id="participant_school" name="participant_school" />
+          <div class="field" data-icon="school">
+            <label class="field-label" for="participant_school"><span class="field-label__text">School / college / residential <span class="required-mark">*</span></span></label>
+            <input type="text" id="participant_school" name="participant_school" required />
           </div>
 
-          <div class="field">
-            <label for="participant_photo">Participant photo (face or ID) <span class="required-mark">*</span></label>
+          <div class="field" data-icon="camera">
+            <label class="field-label" for="participant_photo"><span class="field-label__text">Participant photo (face or ID) <span class="required-mark">*</span></span></label>
             <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. Used for identification on trips and sessions.</p>
             <div class="photo-box" id="photoBox">
               <input type="file" id="participant_photo" name="participant_photo" accept="image/jpeg,image/png,image/webp,image/heic,image/*" capture="user" required />
@@ -427,55 +459,65 @@
           <span class="section-head__label">Medical &amp; support plans</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label>Does the participant have an EHCP?</label>
+          <div class="field" data-icon="clipboard">
+            <label class="field-label"><span class="field-label__text">Does the participant have an EHCP? <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="ehcp" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="ehcp" value="Yes" required /> Yes</label>
               <label class="check-row"><input type="radio" name="ehcp" value="No" /> No</label>
               <label class="check-row"><input type="radio" name="ehcp" value="In progress" /> In progress</label>
             </div>
           </div>
-          <div class="field">
-            <label for="ehcp_details">EHCP details</label>
-            <textarea id="ehcp_details" name="ehcp_details"></textarea>
+          <div class="field-followup" id="ehcpFollowup" hidden>
+            <div class="field" data-icon="note" style="margin-bottom:0">
+              <label class="field-label" for="ehcp_details"><span class="field-label__text">EHCP details <span class="required-mark">*</span></span></label>
+              <textarea id="ehcp_details" name="ehcp_details"></textarea>
+            </div>
           </div>
-          <div class="field">
-            <label>Is the participant supported by a social worker?</label>
+          <div class="field" data-icon="users">
+            <label class="field-label"><span class="field-label__text">Is the participant supported by a social worker? <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="social_worker" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="social_worker" value="Yes" required /> Yes</label>
               <label class="check-row"><input type="radio" name="social_worker" value="No" /> No</label>
               <label class="check-row"><input type="radio" name="social_worker" value="Not sure" /> Not sure</label>
             </div>
           </div>
-          <div class="field">
-            <label for="social_worker_contact">If yes, social worker name &amp; email</label>
-            <input type="text" id="social_worker_contact" name="social_worker_contact" />
+          <div class="field-followup" id="socialWorkerFollowup" hidden>
+            <div class="field" data-icon="email" style="margin-bottom:0">
+              <label class="field-label" for="social_worker_contact"><span class="field-label__text">Social worker name &amp; email <span class="required-mark">*</span></span></label>
+              <input type="text" id="social_worker_contact" name="social_worker_contact" />
+            </div>
           </div>
-          <div class="field">
-            <label for="motivators">Motivators or favourite activities</label>
-            <textarea id="motivators" name="motivators"></textarea>
+          <div class="field" data-icon="star">
+            <label class="field-label" for="motivators"><span class="field-label__text">Motivators or favourite activities <span class="required-mark">*</span></span></label>
+            <textarea id="motivators" name="motivators" required placeholder="Write motivators, or &quot;None&quot; if not applicable"></textarea>
           </div>
-          <div class="field">
-            <label for="dislikes">Dislikes or things to avoid</label>
-            <textarea id="dislikes" name="dislikes"></textarea>
+          <div class="field" data-icon="ban">
+            <label class="field-label" for="dislikes"><span class="field-label__text">Dislikes or things to avoid <span class="required-mark">*</span></span></label>
+            <textarea id="dislikes" name="dislikes" required placeholder="Write dislikes, or &quot;None&quot; if not applicable"></textarea>
           </div>
-          <div class="field">
-            <label for="medication">Regular medication (name and dosage if applicable)</label>
-            <textarea id="medication" name="medication"></textarea>
+          <div class="field" data-icon="pill">
+            <label class="field-label" for="medication"><span class="field-label__text">Regular medication (name and dosage if applicable) <span class="required-mark">*</span></span></label>
+            <textarea id="medication" name="medication" required placeholder="Write medication details, or &quot;None&quot;"></textarea>
           </div>
-          <div class="field">
-            <label for="allergies">Diagnosed allergies (food or environmental)</label>
-            <textarea id="allergies" name="allergies"></textarea>
+          <div class="field" data-icon="alert">
+            <label class="field-label" for="allergies"><span class="field-label__text">Diagnosed allergies (food or environmental) <span class="required-mark">*</span></span></label>
+            <textarea id="allergies" name="allergies" required placeholder="Write allergies, or &quot;None&quot;"></textarea>
           </div>
-          <div class="field">
-            <label for="medical_conditions">Relevant medical conditions</label>
-            <textarea id="medical_conditions" name="medical_conditions"></textarea>
+          <div class="field" data-icon="heart">
+            <label class="field-label" for="medical_conditions"><span class="field-label__text">Relevant medical conditions <span class="required-mark">*</span></span></label>
+            <textarea id="medical_conditions" name="medical_conditions" required placeholder="Write conditions, or &quot;None&quot;"></textarea>
           </div>
-          <div class="field">
-            <label>Health or emergency plan in place?</label>
+          <div class="field" data-icon="shield">
+            <label class="field-label"><span class="field-label__text">Health or emergency plan in place? <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="health_plan" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="health_plan" value="Yes" required /> Yes</label>
               <label class="check-row"><input type="radio" name="health_plan" value="No" /> No</label>
+            </div>
+          </div>
+          <div class="field-followup" id="healthPlanFollowup" hidden>
+            <div class="field" data-icon="note" style="margin-bottom:0">
+              <label class="field-label" for="health_plan_details"><span class="field-label__text">Health / emergency plan details <span class="required-mark">*</span></span></label>
+              <textarea id="health_plan_details" name="health_plan_details"></textarea>
             </div>
           </div>
         </div>
@@ -487,9 +529,10 @@
           <span class="section-head__label">Behaviour</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label>Known triggers</label>
-            <div class="checks" data-name="triggers">
+          <div class="field" data-icon="zap">
+            <label class="field-label"><span class="field-label__text">Known triggers <span class="required-mark">*</span></span></label>
+            <p class="hint">Select all that apply (at least one).</p>
+            <div class="checks" data-checkbox-required="triggers">
               <label class="check-row"><input type="checkbox" name="triggers" value="Loud or unexpected noise" /> Loud or unexpected noise</label>
               <label class="check-row"><input type="checkbox" name="triggers" value="Transitions or changes to routine" /> Transitions or changes to routine</label>
               <label class="check-row"><input type="checkbox" name="triggers" value="Waiting or delays" /> Waiting or delays</label>
@@ -498,11 +541,13 @@
               <label class="check-row"><input type="checkbox" name="triggers" value="Fatigue or hunger" /> Fatigue or hunger</label>
               <label class="check-row"><input type="checkbox" name="triggers" value="Physical proximity or touch" /> Physical proximity or touch</label>
               <label class="check-row"><input type="checkbox" name="triggers" value="Group settings or crowds" /> Group settings or crowds</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="None identified" /> None identified</label>
             </div>
           </div>
-          <div class="field">
-            <label>Strategies that help regulate</label>
-            <div class="checks">
+          <div class="field" data-icon="sun">
+            <label class="field-label"><span class="field-label__text">Strategies that help regulate <span class="required-mark">*</span></span></label>
+            <p class="hint">Select all that apply (at least one).</p>
+            <div class="checks" data-checkbox-required="strategies">
               <label class="check-row"><input type="checkbox" name="strategies" value="Movement / space to pace or jump" /> Movement / space to pace or jump</label>
               <label class="check-row"><input type="checkbox" name="strategies" value="Pressure or deep touch" /> Pressure or deep touch</label>
               <label class="check-row"><input type="checkbox" name="strategies" value="Preferred toy or object" /> Preferred toy or object</label>
@@ -510,23 +555,24 @@
               <label class="check-row"><input type="checkbox" name="strategies" value="Quiet space or break" /> Quiet space or break</label>
               <label class="check-row"><input type="checkbox" name="strategies" value="Supportive adult staying nearby" /> Supportive adult staying nearby</label>
               <label class="check-row"><input type="checkbox" name="strategies" value="Breathing exercises / calming prompts" /> Breathing exercises / calming prompts</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="None identified" /> None identified</label>
             </div>
           </div>
-          <div class="field">
-            <label for="behaviour_notes">Additional notes on behaviour</label>
-            <textarea id="behaviour_notes" name="behaviour_notes"></textarea>
+          <div class="field" data-icon="note">
+            <label class="field-label" for="behaviour_notes"><span class="field-label__text">Additional notes on behaviour <span class="required-mark">*</span></span></label>
+            <textarea id="behaviour_notes" name="behaviour_notes" required placeholder="Write notes, or &quot;None&quot;"></textarea>
           </div>
-          <div class="field">
-            <label>Support when regulated (calm and engaged)</label>
+          <div class="field" data-icon="check">
+            <label class="field-label"><span class="field-label__text">Support when regulated (calm and engaged) <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="support_regulated" value="1to1" /> 1to1</label>
+              <label class="check-row"><input type="radio" name="support_regulated" value="1to1" required /> 1to1</label>
               <label class="check-row"><input type="radio" name="support_regulated" value="2to1" /> 2to1</label>
             </div>
           </div>
-          <div class="field">
-            <label>Support when dysregulated</label>
+          <div class="field" data-icon="alert">
+            <label class="field-label"><span class="field-label__text">Support when dysregulated <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="support_dysregulated" value="Can self-regulate with minimal prompts" /> Can self-regulate with minimal prompts</label>
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="Can self-regulate with minimal prompts" required /> Can self-regulate with minimal prompts</label>
               <label class="check-row"><input type="radio" name="support_dysregulated" value="Needs adult nearby and occasional guidance" /> Needs adult nearby and occasional guidance</label>
               <label class="check-row"><input type="radio" name="support_dysregulated" value="Needs active adult support throughout episodes" /> Needs active adult support throughout episodes</label>
               <label class="check-row"><input type="radio" name="support_dysregulated" value="Requires continuous supervision when distressed" /> Requires continuous supervision from an adult when distressed</label>
@@ -542,9 +588,10 @@
           <span class="section-head__label">Communication</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label>Expressive communication (select all that apply)</label>
-            <div class="checks">
+          <div class="field" data-icon="chat">
+            <label class="field-label"><span class="field-label__text">Expressive communication (select all that apply) <span class="required-mark">*</span></span></label>
+            <p class="hint">Select at least one option.</p>
+            <div class="checks" data-checkbox-required="expressive_comm">
               <label class="check-row"><input type="checkbox" name="expressive_comm" value="Mainly communicates through behaviour" /> Mainly communicates through behaviour</label>
               <label class="check-row"><input type="checkbox" name="expressive_comm" value="Gestural or non-verbal cues" /> Gestural or non-verbal cues</label>
               <label class="check-row"><input type="checkbox" name="expressive_comm" value="Verbal – full sentences" /> Verbal – full sentences</label>
@@ -554,17 +601,17 @@
               <label class="check-row"><input type="checkbox" name="expressive_comm" value="Uses PECS or visuals" /> Uses PECS or visuals to express needs</label>
             </div>
           </div>
-          <div class="field">
-            <label>How does the participant best understand instructions?</label>
+          <div class="field" data-icon="ear">
+            <label class="field-label"><span class="field-label__text">How does the participant best understand instructions? <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="understand_instructions" value="Verbal instructions only" /> Verbal instructions only</label>
+              <label class="check-row"><input type="radio" name="understand_instructions" value="Verbal instructions only" required /> Verbal instructions only</label>
               <label class="check-row"><input type="radio" name="understand_instructions" value="Verbal + gestures" /> Verbal + gestures</label>
               <label class="check-row"><input type="radio" name="understand_instructions" value="Visual support needed" /> Visual support needed (symbols, schedules, first-then boards)</label>
             </div>
           </div>
-          <div class="field">
-            <label for="comm_strategies">Preferred communication strategies that work well</label>
-            <textarea id="comm_strategies" name="comm_strategies"></textarea>
+          <div class="field" data-icon="note">
+            <label class="field-label" for="comm_strategies"><span class="field-label__text">Preferred communication strategies that work well <span class="required-mark">*</span></span></label>
+            <textarea id="comm_strategies" name="comm_strategies" required placeholder="Write strategies, or &quot;None&quot;"></textarea>
           </div>
         </div>
       </section>
@@ -575,45 +622,45 @@
           <span class="section-head__label">Independence</span>
         </div>
         <div class="section-body">
-          <div class="field">
-            <label>Mobility &amp; physical independence</label>
+          <div class="field" data-icon="walk">
+            <label class="field-label"><span class="field-label__text">Mobility &amp; physical independence <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="mobility" value="Walks independently" /> Walks independently</label>
+              <label class="check-row"><input type="radio" name="mobility" value="Walks independently" required /> Walks independently</label>
               <label class="check-row"><input type="radio" name="mobility" value="Uses mobility aids" /> Uses mobility aids (wheelchair, walker)</label>
               <label class="check-row"><input type="radio" name="mobility" value="Needs adult assistance for transitions" /> Needs adult assistance for transitions or moving between spaces</label>
             </div>
           </div>
-          <div class="field">
-            <label>Personal care</label>
+          <div class="field" data-icon="care">
+            <label class="field-label"><span class="field-label__text">Personal care <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="personal_care" value="Fully independent" /> Fully independent (toileting, dressing)</label>
+              <label class="check-row"><input type="radio" name="personal_care" value="Fully independent" required /> Fully independent (toileting, dressing)</label>
               <label class="check-row"><input type="radio" name="personal_care" value="Needs physical assistance or supervision" /> Needs physical assistance or supervision</label>
             </div>
           </div>
-          <div class="field">
-            <label>Task engagement</label>
+          <div class="field" data-icon="tasks">
+            <label class="field-label"><span class="field-label__text">Task engagement <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="task_engagement" value="Can follow a simple routine independently" /> Can follow a simple routine independently</label>
+              <label class="check-row"><input type="radio" name="task_engagement" value="Can follow a simple routine independently" required /> Can follow a simple routine independently</label>
               <label class="check-row"><input type="radio" name="task_engagement" value="Needs 1:1 support to complete most activities" /> Needs 1:1 support to complete most activities</label>
             </div>
           </div>
-          <div class="field">
-            <label>Transitions &amp; flexibility</label>
+          <div class="field" data-icon="shuffle">
+            <label class="field-label"><span class="field-label__text">Transitions &amp; flexibility <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="transitions" value="Adapts easily to change" /> Adapts easily to change in activities or environment</label>
+              <label class="check-row"><input type="radio" name="transitions" value="Adapts easily to change" required /> Adapts easily to change in activities or environment</label>
               <label class="check-row"><input type="radio" name="transitions" value="Struggles with unexpected changes or waiting" /> Struggles with unexpected changes or waiting time</label>
             </div>
           </div>
-          <div class="field">
-            <label>Risk awareness &amp; safety</label>
+          <div class="field" data-icon="shield">
+            <label class="field-label"><span class="field-label__text">Risk awareness &amp; safety <span class="required-mark">*</span></span></label>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="risk_awareness" value="Understands basic safety rules" /> Understands basic safety rules</label>
+              <label class="check-row"><input type="radio" name="risk_awareness" value="Understands basic safety rules" required /> Understands basic safety rules</label>
               <label class="check-row"><input type="radio" name="risk_awareness" value="No awareness of danger" /> No awareness of danger – needs constant supervision</label>
             </div>
           </div>
-          <div class="field">
-            <label for="anything_else">Anything else we should know?</label>
-            <textarea id="anything_else" name="anything_else"></textarea>
+          <div class="field" data-icon="help">
+            <label class="field-label" for="anything_else"><span class="field-label__text">Anything else we should know? <span class="required-mark">*</span></span></label>
+            <textarea id="anything_else" name="anything_else" required placeholder="Write anything else, or &quot;None&quot;"></textarea>
           </div>
         </div>
       </section>
@@ -637,6 +684,93 @@
     var photoPreview = document.getElementById('photoPreview');
     var photoBox = document.getElementById('photoBox');
     var photoDataUrl = null;
+
+    var FIELD_ICONS = {
+      user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+      email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>',
+      home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      gender: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 7V2M12 22v-5M7 12H2M22 12h-5"/></svg>',
+      school: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+      camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
+      note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+      star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      ban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+      pill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5 3.5 13.5a5.66 5.66 0 0 1 8-8l7 7a5.66 5.66 0 0 1-8 8z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>',
+      alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+      shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+      chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      ear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a6 6 0 1 1 12 0c0 3.5-2 5.5-2 8.5a2 2 0 0 1-4 0"/><path d="M6 15h.01"/></svg>',
+      walk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13" cy="4" r="2"/><path d="m5 20 4-9 4 2 3-6 3 7"/></svg>',
+      care: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 9v12h16V9l-8-6z"/><path d="M9 21v-6h6v6"/></svg>',
+      tasks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+      shuffle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>',
+      help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    };
+
+    function decorateFieldIcons() {
+      form.querySelectorAll('.field[data-icon]').forEach(function (field) {
+        var key = field.getAttribute('data-icon');
+        var svg = FIELD_ICONS[key];
+        var label = field.querySelector(':scope > .field-label');
+        if (!label || !svg || label.querySelector('.field-label__icon')) return;
+        var textEl = label.querySelector('.field-label__text');
+        var icon = document.createElement('span');
+        icon.className = 'field-label__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = svg;
+        label.insertBefore(icon, label.firstChild);
+      });
+    }
+
+    function setupYesNoFollowups() {
+      var rules = [
+        { radio: 'ehcp', show: ['Yes', 'In progress'], panel: 'ehcpFollowup', input: 'ehcp_details' },
+        { radio: 'social_worker', show: ['Yes'], panel: 'socialWorkerFollowup', input: 'social_worker_contact' },
+        { radio: 'health_plan', show: ['Yes'], panel: 'healthPlanFollowup', input: 'health_plan_details' }
+      ];
+      rules.forEach(function (rule) {
+        var panel = document.getElementById(rule.panel);
+        var input = document.getElementById(rule.input);
+        function sync() {
+          var v = radio(rule.radio);
+          var open = rule.show.indexOf(v) >= 0;
+          if (panel) panel.hidden = !open;
+          if (input) {
+            if (open) input.setAttribute('required', 'required');
+            else {
+              input.removeAttribute('required');
+              input.value = '';
+            }
+          }
+        }
+        form.querySelectorAll('[name="' + rule.radio + '"]').forEach(function (el) {
+          el.addEventListener('change', sync);
+        });
+        sync();
+      });
+    }
+
+    function validateCheckboxGroups() {
+      var ok = true;
+      form.querySelectorAll('[data-checkbox-required]').forEach(function (wrap) {
+        var name = wrap.getAttribute('data-checkbox-required');
+        if (!form.querySelector('[name="' + name + '"]:checked')) ok = false;
+      });
+      if (!ok) alert('Please select at least one option in each multi-choice question.');
+      return ok;
+    }
+
+    decorateFieldIcons();
+    setupYesNoFollowups();
 
     photoInput.addEventListener('change', function(){
       var file = photoInput.files && photoInput.files[0];
@@ -772,6 +906,7 @@
 
     form.addEventListener('submit', function(e){
       e.preventDefault();
+      if (!validateCheckboxGroups()) return;
       if (!form.checkValidity()) { form.reportValidity(); return; }
       if (!photoDataUrl) {
         alert('Please add a participant photo (face or ID).');
@@ -839,7 +974,8 @@
           ['Medication', val('medication')],
           ['Allergies', val('allergies')],
           ['Medical conditions', val('medical_conditions')],
-          ['Health / emergency plan', radio('health_plan')]
+          ['Health / emergency plan', radio('health_plan')],
+          ['Health plan details', val('health_plan_details')]
         ], pageW, M, maxY);
 
         y = addSection(doc, y, 'Behaviour', [
