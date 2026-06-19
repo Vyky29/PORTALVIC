@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-week-tags-original" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-next-session-layout" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -11246,7 +11246,6 @@
           if(half){
             cls += ' half-term';
             if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
-            else cls += ' term-cal-day--ov-pulse-day-off';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = afterTermEnd
@@ -11279,7 +11278,7 @@
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
             } else if(fb === 'late'){
-              cls += ' term-feedback-late term-cal-day--ov-pulse-outstanding';
+              cls += ' term-feedback-late';
               label = `${day}, feedback overdue, complete review`;
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="1" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
@@ -11292,7 +11291,6 @@
           } else {
             cls += ' half-term';
             if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
-            else cls += ' term-cal-day--ov-pulse-day-off';
             label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
@@ -11474,16 +11472,10 @@
               : (src
                 ? `<div class="calendar-day-avatar calendar-day-avatar--photo"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.remove();"/></div>`
                 : `<div class="calendar-day-avatar calendar-day-avatar--initials">${escapeHtml(clientInitials(row.name))}</div>`);
-            const noteRaw = String(row.areaNote || '').trim();
-            const activityRaw = String(row.activity || '').trim();
           const ovRaw = String(row.futureOverrideLabel || '').trim();
           const isMakeUpTomorrowRow = row.futureOverrideTone === 'pink'
             && /make\s*up/i.test(ovRaw);
-          const noteHtml = typeof portalTomorrowAreaNoteHtml === 'function'
-            ? portalTomorrowAreaNoteHtml(noteRaw, activityRaw)
-            : '';
           let makeupPillHtml = '';
-          let noteWithOverride = [noteRaw, activityRaw, ovRaw].filter(Boolean).join(' · ');
           if(isMakeUpTomorrowRow){
             makeupPillHtml = '<span class="tomorrow-makeup-pill" aria-label="Make up session"><span>MAKE UP</span></span>';
           }
@@ -11494,6 +11486,9 @@
             ? '<span class="tomorrow-cancelled-pill" aria-label="Cancelled"><span>CANCELLED</span></span>'
             : '';
           const overrideHtml = makeupPillHtml + absentPillHtml + cancelledPillHtml;
+          const identityOverrideHtml = overrideHtml
+            ? `<div class="calendar-day-tomorrow-override">${overrideHtml}</div>`
+            : '';
           const ovToneCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green'
             ? ' calendar-day--tomorrow-ov-done'
             : (row.futureOverrideTone === 'pink'
@@ -11504,11 +11499,11 @@
                 ? ' calendar-day--tomorrow-ov-done'
                 : (row.futureOverrideTone === 'admin' ? ' calendar-day--tomorrow-ov-admin' : ''))));
             const aria = escapeHtml(
-            `${row.name}${noteWithOverride ? ', ' + noteWithOverride : ''}${makeupPillHtml ? ', Make up' : ''}, ${timeShown}, ${row.venue}${absentPillHtml ? ', Absent' : ''}${cancelledPillHtml ? ', Cancelled' : ''}`
+            `${row.name}${ovRaw ? ', ' + ovRaw : ''}${makeupPillHtml ? ', Make up' : ''}, ${timeShown}, ${row.venue}${absentPillHtml ? ', Absent' : ''}${cancelledPillHtml ? ', Cancelled' : ''}`
             );
             const absentRowCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' calendar-day--tomorrow-absent-noninteractive' : '';
             const absentRowTab = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' tabindex="-1"' : '';
-            const rowInner = `${avatar}<div class="calendar-day-tomorrow-identity"><span class="calendar-day-name">${n}</span>${noteHtml}</div><div class="calendar-day-tomorrow-override">${overrideHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
+            const rowInner = `${avatar}<div class="calendar-day-tomorrow-identity"><span class="calendar-day-name">${n}</span>${identityOverrideHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
             const rawClientId = escapeHtml(String(row.clientId || '').trim());
             const rawName = escapeHtml(String(row.name || '').trim());
             const timeSub = escapeHtml(String(timeShown || '').trim());

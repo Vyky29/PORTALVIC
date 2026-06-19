@@ -5689,11 +5689,12 @@
       line-height:1.2;
       letter-spacing:.01em;
       overflow-wrap:break-word;
+      color:#fff;
     }
     .week-override-tag--admin{
-      background:rgba(46,96,170,.14);
-      color:#274f85;
-      border:1px solid rgba(46,96,170,.3);
+      color:#fff;
+      background:linear-gradient(145deg,#3b6eb8,#274f85);
+      border:1px solid rgba(39,79,133,.45);
     }
     .week-override-tag--pink{
       color:#fff;
@@ -5722,14 +5723,14 @@
     }
     .week-override-tag--training,
     .week-override-tag--meeting{
-      background:rgba(37,99,235,.12);
-      color:#1d4ed8;
-      border:1px solid rgba(37,99,235,.28);
+      color:#fff;
+      background:linear-gradient(145deg,#3b82f6,#2563eb);
+      border:1px solid rgba(37,99,235,.45);
     }
     .week-override-tag--shadowing{
-      background:rgba(101,163,13,.12);
-      color:#3f6212;
-      border:1px solid rgba(101,163,13,.42);
+      color:#fff;
+      background:linear-gradient(145deg,#84cc16,#65a30d);
+      border:1px solid rgba(101,163,13,.45);
     }
     .week-override-badges-row{
       display:flex;
@@ -5740,10 +5741,10 @@
       min-width:0;
       margin-top:4px;
     }
-    /* Tomorrow sheet: foto | nombre+nota | override | chip hora+sede */
+    /* Next session sheet: foto | nombre + chip override | slot + venue */
     .calendar-day--tomorrow{
       display:grid;
-      grid-template-columns:44px minmax(0,1fr) auto max-content;
+      grid-template-columns:44px minmax(0,1fr) max-content;
       gap:8px 10px;
       align-items:center;
       padding:10px 12px;
@@ -5800,6 +5801,9 @@
     .week-absent-under-service .week-override-tag{
       margin-top:0;
     }
+    .calendar-day-tomorrow-override .tomorrow-absent-pill,
+    .calendar-day-tomorrow-override .tomorrow-cancelled-pill,
+    .calendar-day-tomorrow-override .tomorrow-makeup-pill,
     .calendar-day-tomorrow-middle .tomorrow-absent-pill,
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill,
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill{
@@ -5825,12 +5829,14 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+    .calendar-day-tomorrow-override .tomorrow-absent-pill,
     .calendar-day-tomorrow-middle .tomorrow-absent-pill{
       color:#fff;
       background:linear-gradient(145deg,#0d9488,#0f766e);
       border:1px solid rgba(15,118,110,.5);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(13,148,136,.28);
     }
+    .calendar-day-tomorrow-override .tomorrow-cancelled-pill,
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill{
       color:#fff;
       background:linear-gradient(145deg,#262626,#171717);
@@ -5838,12 +5844,14 @@
       box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 2px 10px rgba(0,0,0,.28);
     }
     /* Next session · make-up: same size as Absent; agreed pink (#d94f93 → #c2185b), white text */
+    .calendar-day-tomorrow-override .tomorrow-makeup-pill,
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill{
       color:#fff;
       background:linear-gradient(180deg,#d94f93,#c2185b);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(194,24,91,.22);
     }
+    .calendar-day-tomorrow-override .tomorrow-makeup-pill > span,
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill > span{
       color:#fff;
       font-size:inherit;
@@ -5856,6 +5864,8 @@
       white-space:nowrap;
       min-width:0;
     }
+    .calendar-day-tomorrow-override .tomorrow-absent-pill > span,
+    .calendar-day-tomorrow-override .tomorrow-cancelled-pill > span,
     .calendar-day-tomorrow-middle .tomorrow-absent-pill > span,
     .calendar-day-tomorrow-middle .tomorrow-cancelled-pill > span{
       font-size:inherit;
@@ -5870,7 +5880,7 @@
       flex-direction:column;
       align-items:flex-start;
       justify-content:center;
-      gap:2px;
+      gap:4px;
       min-width:0;
     }
     .calendar-day-tomorrow-note{
@@ -5897,13 +5907,14 @@
     }
     .calendar-day-tomorrow-override{
       display:flex;
-      flex-direction:column;
-      align-items:flex-start;
-      justify-content:center;
+      flex-direction:row;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-start;
       gap:4px;
-      flex-shrink:0;
       min-width:0;
-      max-width:9rem;
+      max-width:100%;
+      margin-top:2px;
     }
     .calendar-day-tomorrow-middle{
       display:flex;
@@ -6353,14 +6364,16 @@
     .term-cal-day.term-cal-day--ov-pulse-both{
       animation:termOvPulseBothCell 2.2s ease-in-out infinite;
     }
-    .term-cal-day.term-cal-day--ov-pulse-outstanding{
-      animation:termOvPulseOutstandingCell 1.75s ease-in-out infinite;
-    }
+    .term-cal-day.term-cal-day--ov-pulse-outstanding,
     .term-cal-day.term-cal-day--ov-pulse-day-off{
-      animation:termOvPulseDayOffCell 1.75s ease-in-out infinite;
+      animation:none;
     }
     .term-cal-day.term-cal-day--ov-pulse-shift-removed{
       animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;
+      background:var(--dangerSoft);
+      border-color:rgba(185,28,28,.72);
+      color:#991b1b;
+      box-shadow:0 0 0 2px rgba(185,28,28,.45),0 6px 16px rgba(185,28,28,.2);
     }
     @media (prefers-reduced-motion:reduce){
       .term-cal-day.term-cal-day--ov-pulse-makeup,
