@@ -165,6 +165,54 @@
     return [];
   }
 
+  function staffBaselineShiftDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var t = termCfg();
+    var map = t.termStaffShiftDatesByProfileKey;
+    if (!map || typeof map !== "object" || !id) return null;
+    if (!Object.prototype.hasOwnProperty.call(map, id)) return [];
+    var raw = map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  function staffAwayDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var map = termCfg().termStaffAwayDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  /** Date was on the published term timetable (zero-hours availability lock). */
+  function staffHadBaselineShiftOnDate(iso, staffId) {
+    var key = normIso(iso);
+    var dates = staffBaselineShiftDates(staffId);
+    if (!key || !dates) return false;
+    return dates.indexOf(key) >= 0;
+  }
+
+  /**
+   * Intense red: removed from an original term shift (e.g. requested day off from scheduled days).
+   * Normal red only: day off that was never on the baseline (cover added later then removed).
+   */
+  function staffRemovedFromBaselineShiftOnDate(iso, staffId, opts) {
+    opts = opts || {};
+    var key = normIso(iso);
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!key || !id) return false;
+    if (!staffHadBaselineShiftOnDate(key, id)) return false;
+    if (typeof opts.hasInstructorCover === "function" && opts.hasInstructorCover(key, id)) {
+      return false;
+    }
+    if (typeof opts.rosterApplies === "function" && opts.rosterApplies(key, id)) {
+      return false;
+    }
+    if (staffAwayDates(id).indexOf(key) >= 0) return true;
+    if (typeof opts.dayIsRed === "function" && opts.dayIsRed(key, id)) return true;
+    return false;
+  }
+
   function staffOffWeekdayOnDate(iso, staffId) {
     var id = String(staffId || "").trim().toLowerCase();
     if (!iso || !id) return false;
@@ -206,6 +254,10 @@
     feedbackAssumeComplete: feedbackAssumeComplete,
     applyView: applyView,
     workedWeekdaysForStaff: workedWeekdaysForStaff,
+    staffBaselineShiftDates: staffBaselineShiftDates,
+    staffAwayDates: staffAwayDates,
+    staffHadBaselineShiftOnDate: staffHadBaselineShiftOnDate,
+    staffRemovedFromBaselineShiftOnDate: staffRemovedFromBaselineShiftOnDate,
     staffOffWeekdayOnDate: staffOffWeekdayOnDate,
     dayIsRed: dayIsRed,
   };

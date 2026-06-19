@@ -95,7 +95,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-next-session-note" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-week-tags-original" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -886,7 +886,7 @@
   </section>
 
   <script src="portal/term_from_timetable.js?v=20260611-madre-feedback"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster"></script>
   <script src="portal/roster_master_dashboard_rows.js?v=20260614-madre-roster"></script>
   <script src="portal/session_feedback_portal_data.js?v=20260609-tinashe-june"></script>
@@ -905,7 +905,7 @@
   <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260609-photo-repair"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260614-term-baseline-pulse"></script>
   <script src="/portal/portal_participant_photos.js?v=20260610-chat-avatar-sanitize"></script>
   <script src="/portal/portal_topbar_header.js?v=20260618-topbar-dense-labels"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
@@ -3826,9 +3826,27 @@
       const lead = portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
       return Date.now() >= (t - lead);
     }
+    function isSessionStartedForItem(item){
+      if(STAFF_DASH_FORCE_SESSIONS_ENDED) return true;
+      try{
+        if(portalStaffIsDemoAccount() && item && item.sessionKey && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__.has(item.sessionKey)){
+          return false;
+        }
+      }catch(_e){}
+      const t = item && item.sessionStartTs;
+      if(t == null) return false;
+      return Date.now() >= t;
+    }
+    function portalSessionItemRosterTimeUpdated(item){
+      if(!item) return false;
+      if(!!item.portalRosterTimeUpdated) return true;
+      const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
+      if(ovType === 'slot_update') return true;
+      return String(item.portalOverrideAlertPill || '').trim().toUpperCase() === 'UPDATED';
+    }
     /**
      * True when this weekday (current week strip) still has a replace / make-up slot
-     * whose end time is in the future — week row may use pink + “Make Up Session” tag.
+     * whose end time is in the future — week row may use pink + “Make Up” tag.
      */
     function portalWeekDayHasReplaceMakeUpPinkActive(dayName){
       try{
@@ -4737,7 +4755,7 @@
       }
       return String(nm == null ? '' : nm).trim();
     }
-    /** Override detail column (separate from pool/room notes). */
+    /** Override detail column (legacy); schedule chips now live below the name. */
     function todaySessionOverrideDetailHtml(item){
       const pillText = String(item && item.portalOverrideAlertPill || '').trim();
       const pillNorm = pillText.toUpperCase();
@@ -4772,21 +4790,9 @@
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
 
-    /** Pool/room details column. */
+    /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
       if(item.kind === 'closed') return '<span class="session-pool-na" aria-hidden="true">—</span>';
-      const pillNorm = String(item && item.portalOverrideAlertPill || '').trim().toUpperCase();
-      if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY' || pillNorm === 'CANCELLED'){
-        return todaySessionOverrideDetailHtml(item);
-      }
-      if(String(item && item.portalOverrideAlertPill || '').trim()){
-        return todaySessionOverrideDetailHtml(item);
-      }
-      const symNormRow = String(item && item.portalOverrideSymbolText || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      const isMakeUpRowThird = !!item.portalOverrideMakeUpTag || symNormRow === 'make up' || symNormRow === 'make up session';
-      if(isMakeUpRowThird){
-        return '<span class="session-pool-na" aria-hidden="true">—</span>';
-      }
       return todaySessionPoolColumnHtml(item);
     }
     function todaySessionSingleLineNoteText(item){
@@ -4799,12 +4805,8 @@
       const v = item && item.sessionVenue != null ? String(item.sessionVenue).trim() : '';
       return v || '—';
     }
-    /** True when override chip/symbol occupies the right column (area PNG hidden to avoid clutter). */
+    /** Pool note stays in the right column; overrides moved below the name. */
     function portalTodaySessionOverrideMovesPoolToCenter(item){
-      if(!item) return false;
-      if(String(item.portalOverrideAlertPill || '').trim()) return true;
-      if(String(item.portalOverrideSymbolText || '').trim()) return true;
-      if(item.portalOverrideMakeUpTag) return true;
       return false;
     }
     /** Pool / room label HTML (right column when no override; under name when override splits layout). */
@@ -5274,13 +5276,88 @@
       if(locRaw === 'both') return 'Hub Room';
       return '';
     }
-    function portalPlainSessionSlotChipsHtml(chips){
+    function portalPlainSessionSlotChipsHtml(chips, tone){
       if(!Array.isArray(chips) || !chips.length) return '';
+      const t = String(tone || '').trim().toLowerCase();
+      const cls = t === 'training' ? 'portal-session-slot-chip--training'
+        : (t === 'shadowing' ? 'portal-session-slot-chip--shadowing'
+        : (t === 'meeting' ? 'portal-session-slot-chip--meeting' : 'portal-session-slot-chip--plain'));
       return chips.map(function(tx){
         const esc = escapeHtml(String(tx || '').trim());
         if(!esc) return '';
-        return '<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + esc + '"><span>' + esc + '</span></span>';
+        return '<span class="portal-session-slot-chip '+cls+'" aria-label="' + esc + '"><span>' + esc + '</span></span>';
       }).join('');
+    }
+    function portalTodayFeedbackLifecycleChipHtml(item){
+      if(!item || item.kind !== 'client' || !item.sessionKey || item.noSessionFeedbackRequired || item.portalOverrideSuppressReviewOrange) return '';
+      const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
+      if(r.absent){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>';
+      }
+      if(r.cancelled){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>';
+      }
+      if(r.feedbackDone){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
+      }
+      if(isSessionStartedForItem(item)){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+      }
+      return '';
+    }
+    function todaySessionChipBelowNameHtml(item){
+      if(!item) return '';
+      const pillText = String(item.portalOverrideAlertPill || '').trim();
+      const pillNorm = pillText.toUpperCase();
+      const sym = String(item.portalOverrideSymbolText || '').trim();
+      const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
+      const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
+      const isTrialSym = symNorm === 'trial';
+      const chips = [];
+      const push = function(html){ if(html) chips.push(html); };
+
+      if(pillNorm === 'ABSENT' || pillNorm === 'ABSENT\nTODAY'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent"><span>Absent</span></span>';
+      }
+      if(pillNorm === 'CANCELLED'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>';
+      }
+      if(pillNorm === 'COMPLETED'){
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
+      }
+
+      const lifecycleChip = portalTodayFeedbackLifecycleChipHtml(item);
+      if(lifecycleChip) return lifecycleChip;
+
+      if(typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)){
+        push(portalShadowingHostBadgeHtml(item.portalShadowingHostLabels));
+      } else if(String(item.clientId || '').trim().toLowerCase() !== 'meeting' && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
+        push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips, item.portalOverrideCardTone));
+      } else if(!!item.portalOverrideTrialTag || isTrialSym){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
+      } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>');
+      } else if(pillText && pillNorm !== 'UPDATED'){
+        const display = escapeHtml(pillText).replace(/\n/g, ' ');
+        push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
+      } else if(sym && !isMakeUpSym){
+        const tx = escapeHtml(sym);
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
+      }
+
+      if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+        const ended = isSessionEndedForFeedback(item);
+        const started = isSessionStartedForItem(item);
+        const timeUpdated = portalSessionItemRosterTimeUpdated(item);
+        if(timeUpdated && !started && !ended){
+          push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>');
+        }
+      }
+
+      if(!chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>');
+      }
+      return chips.join('');
     }
     function todaySessionPoolColumnHtml(item){
       if(!item || item.kind === 'closed'){
@@ -5305,44 +5382,17 @@
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
-      const ovBadge = item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge
-        ? '<span class="portal-sched-ov-badge override--admin-shift" title="Schedule changed in Admin Scheduling &amp; Cover">Changed by Admin</span>'
-        : '';
-      const shadowHostBadge = typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)
-        ? portalShadowingHostBadgeHtml(item.portalShadowingHostLabels)
-        : '';
-      const symNorm = String(item.portalOverrideSymbolText || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      const isMakeUpOverride = !!item.portalOverrideMakeUpTag || symNorm === 'make up' || symNorm === 'make up session';
-      const inlineOverrideTop = '';
-      const split = portalTodaySessionOverrideMovesPoolToCenter(item);
-      const hasAlertPill = !!String(item.portalOverrideAlertPill || '').trim();
-      const makeUpNoteHtml = !split && isMakeUpOverride
-        ? (function(){
-            const lbl = todaySessionSingleLineNoteText(item);
-            return lbl && typeof portalAreaNoteIconHtml === 'function' ? portalAreaNoteIconHtml(lbl) : '';
-          })()
-        : '';
-      const makeUpPillHtml = !split && isMakeUpOverride && !hasAlertPill
-        ? '<span class="session-makeup-pill" aria-label="Make up session"><span>MAKEUP</span></span>'
-        : '';
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
-      const addChipsHtml = !meetingChipsRow && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length
-        && String(item.portalOverrideAlertPill || '').trim().toUpperCase() !== 'COMPLETED'
-        ? portalPlainSessionSlotChipsHtml(item.portalSessionAddChips) : '';
-      const addChipsWrapCls = !meetingChipsRow && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length > 1
-        ? ' session-chips-below-name--wrap' : '';
-      const addChipsRow = meetingChipsRow || (addChipsHtml
-        ? '<div class="session-chips-below-name' + addChipsWrapCls + '">' + addChipsHtml + '</div>' : '');
-      const poolCenterHtml = '';
-      const namePart = `<span class="session-name-stack">${inlineOverrideTop}${shadowHostBadge || ovBadge}${nameCore}${addChipsRow}${poolCenterHtml}${makeUpNoteHtml}${makeUpPillHtml}</span>`;
-      const bodyCls = split ? 'session-card-body session-card-body--today-ov-split' : 'session-card-body';
-      const rightColInner = split
-        ? `<span class="session-right-status">${todaySessionOverrideDetailHtml(item)}</span>`
-        : `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
-      return `<div class="${bodyCls}">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
+      const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
+      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
+      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
+      const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
+      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
+      return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
 
     function staffRoleTrackForTodayBuild(){
@@ -7484,7 +7534,7 @@
             sessionEndTs,
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual),
             portalOverrideCardTone: makeUpPink ? 'pink' : '',
-            portalOverrideSymbolText: makeUpPink ? 'Make Up Session' : '',
+            portalOverrideSymbolText: makeUpPink ? 'Make Up' : '',
             portalOverrideHideAdminBadge: !!hasReplaceOv,
             portalOverrideAlertPill: ''
           }, meta);
@@ -7676,7 +7726,7 @@
           scheduleAdminAdjusted: true,
           portalOverrideMakeUpTag: hasReplaceCoverOv,
           portalOverrideCardTone: makeUpPinkCover ? 'pink' : '',
-          portalOverrideSymbolText: makeUpPinkCover ? 'Make Up Session' : '',
+          portalOverrideSymbolText: makeUpPinkCover ? 'Make Up' : '',
           portalOverrideHideAdminBadge: !!hasReplaceCoverOv,
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
@@ -9014,7 +9064,7 @@
               var rec = (typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(fbItem) : null) || {};
               if(typeof isSessionEndedForFeedback === 'function' && !isSessionEndedForFeedback(fbItem)){
                 futureOverrideTone = 'pink';
-                futureOverrideLabel = 'Make Up Session';
+                futureOverrideLabel = 'Make Up';
               } else if(typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(fbItem)){
                 if(!rec.feedbackDone && !rec.absent && !rec.cancelled){
                   futureOverrideTone = 'pending-feedback';
@@ -10209,7 +10259,7 @@
       });
       if(!best) return null;
       if(best.type === 'client_replace_in_slot'){
-        return { tone: 'pink', label: 'Make Up Session', priority: 3, type: best.type };
+        return { tone: 'pink', label: 'Make Up', priority: 3, type: best.type };
       }
       if(best.type === 'slot_clear_client'){
         return { tone: 'clear', label: 'No participant', priority: 1, type: best.type };
@@ -10299,8 +10349,8 @@
           ariaBits.push('Trial');
         }
         if(dayFlags.hasMakeUp){
-          badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up Session') + '</span>');
-          ariaBits.push('Make Up Session');
+          badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up') + '</span>');
+          ariaBits.push('Make Up');
         }
         if(dayFlags.hasTraining){
           badgeParts.push('<span class="week-override-tag week-override-tag--training">' + escapeHtml('Training') + '</span>');
@@ -10341,8 +10391,18 @@
         const c = formatClientCount(dashboardData.tomorrow.length);
         tomorrowCard.setAttribute('aria-label', 'Open next session list — ' + c);
         const nextRows = Array.isArray(dashboardData.tomorrow) ? dashboardData.tomorrow : [];
-        const hasMakeUp = nextRows.some(function(r){ return String(r && r.futureOverrideTone || '').trim() === 'pink'; });
-        tomorrowCard.classList.toggle('mini-card--ov-pink', hasMakeUp);
+        if(typeof portalApplyNextSessionMiniCardPulse === 'function'){
+          portalApplyNextSessionMiniCardPulse(tomorrowCard, nextRows);
+        }
+      }
+      const termCard = document.querySelector('.section-card--overview .mini-card[data-open="termSheet"]');
+      if(termCard){
+        const termFlags = typeof portalComputeTermOverviewPulseFlags === 'function'
+          ? portalComputeTermOverviewPulseFlags(STAFF_DASHBOARD_ID)
+          : {};
+        if(typeof portalApplyTermMiniCardPulse === 'function'){
+          portalApplyTermMiniCardPulse(termCard, termFlags);
+        }
       }
       if(weekCard){
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
@@ -10520,6 +10580,60 @@
           : '';
         return Boolean(cov && cov !== sid);
       });
+    }
+    function portalTermStaffRemovedFromBaselineShiftOnDate(isoYmd, staffId){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(!ptd || typeof ptd.staffRemovedFromBaselineShiftOnDate !== 'function') return false;
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
+      const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
+      return ptd.staffRemovedFromBaselineShiftOnDate(iso, sid, {
+        rosterApplies: function(key, id){
+          const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          return typeof portalStaffRosterAppliesOnCalendarDate === 'function'
+            && portalStaffRosterAppliesOnCalendarDate(key, dayWord, id);
+        },
+        hasInstructorCover: function(key, id){
+          return typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+            && portalStaffHasInstructorCoverOnCalendarDate(key, id);
+        },
+        dayIsRed: function(key, id){
+          const d = new Date(key + 'T12:00:00');
+          return typeof portalTermCalendarDayIsRed === 'function'
+            && portalTermCalendarDayIsRed(d.getFullYear(), d.getMonth(), d.getDate(), id, halfWeeks);
+        }
+      });
+    }
+    function portalComputeTermOverviewPulseFlags(staffId){
+      const out = { baselineRemoved: false, outstanding: false, dayOff: false };
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return out;
+      const y = Number(dashboardData.termCalendarYear) || new Date().getFullYear();
+      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [5, 6];
+      const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
+      const firstDomMap = dashboardData.termCalendarFirstDom || {};
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      const ptd = window.PortalTermCalendarDashboard;
+      months.forEach(function(monthIndex){
+        const lastDay = new Date(y, monthIndex + 1, 0).getDate();
+        let firstDom = 1;
+        if(Object.prototype.hasOwnProperty.call(firstDomMap, monthIndex)){
+          const fd = Math.floor(Number(firstDomMap[monthIndex]));
+          if(Number.isFinite(fd) && fd > 1) firstDom = Math.min(fd, lastDay);
+        }
+        for(let day = firstDom; day <= lastDay; day++){
+          const iso = termCalendarDateKey(y, monthIndex, day);
+          if(ptd && typeof ptd.staffDateInView === 'function' && !ptd.staffDateInView(iso, sid)) continue;
+          if(portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.baselineRemoved = true;
+          const fb = getTermFeedbackStateForDay(y, monthIndex, day);
+          if(fb === 'late' && iso <= todayKey) out.outstanding = true;
+          const isRed = typeof portalTermCalendarDayIsRed === 'function'
+            && portalTermCalendarDayIsRed(y, monthIndex, day, sid, halfWeeks);
+          if(isRed && !portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.dayOff = true;
+        }
+      });
+      return out;
     }
     function isHalfTermDay(year, monthIndex, day, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
@@ -11126,8 +11240,13 @@
           const isWorked = worked.includes(w) && (rosterApplies || exportWorked);
           let cls = 'term-cal-day';
           let label;
+          const baselineShiftRemoved = termStaffId
+            && typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
+            && portalTermStaffRemovedFromBaselineShiftOnDate(isoKey, termStaffId);
           if(half){
             cls += ' half-term';
+            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
+            else cls += ' term-cal-day--ov-pulse-day-off';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = afterTermEnd
@@ -11160,7 +11279,7 @@
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
             } else if(fb === 'late'){
-              cls += ' term-feedback-late';
+              cls += ' term-feedback-late term-cal-day--ov-pulse-outstanding';
               label = `${day}, feedback overdue, complete review`;
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="1" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
@@ -11172,6 +11291,8 @@
             }
           } else {
             cls += ' half-term';
+            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
+            else cls += ' term-cal-day--ov-pulse-day-off';
             label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);

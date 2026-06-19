@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-next-session-note" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-week-tags-original" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -527,7 +527,7 @@
           id: 'trial', label: 'Trial', cuando: 'client_replace_in_slot + is_trial',
           cardClass: 'menu-btn--qm-ov-trial',
           pillClass: 'portal-ov-alert-pill--trial', weekClass: 'week-override-tag--trial',
-          termClass: 'term-cal-day--ov-pulse-trial', miniClass: 'mini-card--ov-trial',
+          termClass: 'term-cal-day--ov-pulse-trial', miniClass: 'mini-card--ov-pulse-trial',
           tomorrowClass: 'tomorrow-trial-pill', tomorrowRowClass: 'calendar-day--tomorrow-ov-trial',
           pillText: 'TRIAL', weekText: 'Trial',
           sampleTitle: 'TRIAL/NEW - Chaitanya (15th/Jun)', sampleSub: '4.30 to 5 · Teaching Pool · Westway',
@@ -542,22 +542,22 @@
           id: 'makeup', label: 'MakeUp', cuando: 'Replace sin trial',
           cardClass: 'menu-btn--qm-ov-makeup',
           pillClass: 'portal-ov-alert-pill--makeup', weekClass: 'week-override-tag--pink',
-          termClass: 'term-cal-day--ov-pulse-makeup', miniClass: 'mini-card--ov-pink',
+          termClass: 'term-cal-day--ov-pulse-makeup', miniClass: 'mini-card--ov-pulse-makeup',
           tomorrowClass: 'tomorrow-makeup-pill', tomorrowRowClass: 'calendar-day--tomorrow-ov-pink',
-          pillText: 'MAKE UP', weekText: 'Make Up Session',
+          pillText: 'MAKE UP', weekText: 'Make Up',
           sampleTitle: 'MAKE UP - Eddie Ri (13th/Jun)', sampleSub: '11.00 to 12.00 · Hub Room · Acton',
           haloNote: 'schedule (verde) si no hay trial',
           colors: {
             bg1:'#fdf2f8', bg2:'#fce7f3', border:'rgba(219,39,119,.42)', shadow:'rgba(236,72,153,.22)',
             strong:'#9d174d', sub:'#be185d', iconBg:'rgba(236,72,153,.2)', iconFg:'#be185d', iconBorder:'rgba(219,39,119,.35)',
-            chipBg:'#fce7f3', chipFg:'#fff', chipBorder:'rgba(219,39,119,.4)', termGlow:'rgba(236,72,153,.5)'
+            chipBg:'#d94f93', chipFg:'#fff', chipBorder:'rgba(140,24,70,.34)', termGlow:'rgba(236,72,153,.5)'
           }
         },
         {
           id: 'absent', label: 'Absent', cuando: 'client_absence_announced',
           cardClass: 'menu-btn--qm-ov-absent',
           pillClass: 'portal-ov-alert-pill--absent', weekClass: 'week-override-tag--absents',
-          termClass: 'term-cal-day--ov-pulse-absent', miniClass: 'mini-card--ov-green',
+          termClass: 'term-cal-day--ov-pulse-absent', miniClass: 'mini-card--ov-pulse-absent',
           tomorrowClass: 'tomorrow-absent-pill', tomorrowRowClass: '',
           pillText: 'ABSENT', weekText: 'Absents',
           sampleTitle: 'ABSENT - Mary (14th/Jun)', sampleSub: '10.00 to 11.00 · Small Pool · Acton',
@@ -572,7 +572,7 @@
           id: 'cancelled', label: 'Cancelled', cuando: 'slot_clear_client + cancelled',
           cardClass: 'menu-btn--qm-ov-cancelled',
           pillClass: 'portal-ov-alert-pill--cancelled', weekClass: 'week-override-tag--cancelled',
-          termClass: 'term-cal-day--ov-pulse-cancelled', miniClass: '',
+          termClass: 'term-cal-day--ov-pulse-cancelled', miniClass: 'mini-card--ov-pulse-cancelled',
           tomorrowClass: 'tomorrow-cancelled-pill', tomorrowRowClass: '',
           pillText: 'CANCELLED', weekText: 'Cancelled',
           sampleTitle: 'CANCELLED - James (20th/Jun)', sampleSub: '2.00 to 3.00 · Wall · Acton',
@@ -587,7 +587,7 @@
           id: 'training', label: 'Training', cuando: 'session_add kind=training',
           cardClass: 'menu-btn--qm-ov-training',
           pillClass: '', weekClass: 'week-override-tag--training',
-          termClass: 'term-cal-day--ov-pulse-training', miniClass: '',
+          termClass: 'term-cal-day--ov-pulse-training', miniClass: 'mini-card--ov-pulse-training',
           tomorrowClass: '', tomorrowRowClass: '',
           pillText: '', weekText: 'Training',
           sampleTitle: 'TRAINING - Westway (16th/Jun)', sampleSub: '10 to 11 · Room · Westway',
@@ -602,7 +602,7 @@
           id: 'shadowing', label: 'Shadowing', cuando: 'session_add kind=shadowing',
           cardClass: 'menu-btn--qm-ov-shadowing',
           pillClass: '', weekClass: 'week-override-tag--shadowing',
-          termClass: 'term-cal-day--ov-pulse-shadowing', miniClass: '',
+          termClass: 'term-cal-day--ov-pulse-shadowing', miniClass: 'mini-card--ov-pulse-shadowing',
           tomorrowClass: '', tomorrowRowClass: '',
           pillText: '', weekText: 'Shadowing',
           sampleTitle: 'SHADOWING - Acton (17th/Jun)', sampleSub: '2 to 4 · Pool · Acton',
@@ -617,7 +617,7 @@
           id: 'meeting', label: 'Meeting', cuando: 'session_add kind=meeting',
           cardClass: 'menu-btn--qm-ov-meeting',
           pillClass: '', weekClass: 'week-override-tag--meeting',
-          termClass: 'term-cal-day--ov-pulse-meeting', miniClass: '',
+          termClass: 'term-cal-day--ov-pulse-meeting', miniClass: 'mini-card--ov-pulse-meeting',
           tomorrowClass: '', tomorrowRowClass: '',
           pillText: '', weekText: 'Meeting',
           sampleTitle: 'MEETING - Hub (18th/Jun)', sampleSub: '9 to 10 · Hub Room · Acton',
@@ -626,6 +626,48 @@
             bg1:'#eff6ff', bg2:'#e0f2fe', border:'rgba(37,99,235,.42)', shadow:'rgba(37,99,235,.18)',
             strong:'#1d4ed8', sub:'#2563eb', iconBg:'rgba(59,130,246,.22)', iconFg:'#1d4ed8', iconBorder:'rgba(37,99,235,.35)',
             chipBg:'#e0f2fe', chipFg:'#1d4ed8', chipBorder:'rgba(37,99,235,.4)', termGlow:'rgba(37,99,235,.5)'
+          }
+        },
+        {
+          id: 'outstanding', label: 'Outstanding feedback', cuando: 'feedback pendiente (tarjeta naranja / late en Term)',
+          cardClass: '', pillClass: '', weekClass: '',
+          termClass: 'term-cal-day--ov-pulse-outstanding', miniClass: 'mini-card--ov-pulse-outstanding',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'OUTSTANDING - Cliente', sampleSub: 'Sesión terminada · feedback pendiente',
+          haloNote: 'reminder (naranja)',
+          colors: {
+            bg1:'#fff7ed', bg2:'#ffedd5', border:'rgba(234,88,12,.42)', shadow:'rgba(234,88,12,.2)',
+            strong:'#9a3412', sub:'#c2410c', iconBg:'rgba(251,146,60,.24)', iconFg:'#c2410c', iconBorder:'rgba(234,88,12,.35)',
+            chipBg:'#fb923c', chipFg:'#fff', chipBorder:'rgba(234,88,12,.4)', termGlow:'rgba(234,88,12,.5)'
+          }
+        },
+        {
+          id: 'day_off', label: 'Day off', cuando: 'día libre / no en rota (rojo normal — nunca fue shift del term)',
+          cardClass: '', pillClass: '', weekClass: '',
+          termClass: 'term-cal-day--ov-pulse-day-off', miniClass: 'mini-card--ov-pulse-day-off',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'DAY OFF', sampleSub: 'No shift on rota',
+          haloNote: '—',
+          colors: {
+            bg1:'#fff1f1', bg2:'#ffe4e4', border:'rgba(217,83,79,.42)', shadow:'rgba(217,83,79,.18)',
+            strong:'#991b1b', sub:'#b91c1c', iconBg:'rgba(248,113,113,.22)', iconFg:'#b91c1c', iconBorder:'rgba(217,83,79,.35)',
+            chipBg:'#fecaca', chipFg:'#991b1b', chipBorder:'rgba(217,83,79,.4)', termGlow:'rgba(217,83,79,.48)'
+          }
+        },
+        {
+          id: 'shift_removed', label: 'Removed from term shift', cuando: 'quitado del timetable original del term (rojo intenso parpadeante)',
+          cardClass: '', pillClass: '', weekClass: '',
+          termClass: 'term-cal-day--ov-pulse-shift-removed', miniClass: 'mini-card--ov-pulse-shift-removed',
+          tomorrowClass: '', tomorrowRowClass: '',
+          pillText: '', weekText: '',
+          sampleTitle: 'SHIFT REMOVED - Javier', sampleSub: 'Era shift del term · ya no trabaja ese día',
+          haloNote: '—',
+          colors: {
+            bg1:'#fef2f2', bg2:'#fee2e2', border:'rgba(185,28,28,.55)', shadow:'rgba(185,28,28,.28)',
+            strong:'#7f1d1d', sub:'#b91c1c', iconBg:'rgba(239,68,68,.28)', iconFg:'#991b1b', iconBorder:'rgba(185,28,28,.45)',
+            chipBg:'#dc2626', chipFg:'#fff', chipBorder:'rgba(185,28,28,.55)', termGlow:'rgba(220,38,38,.62)'
           }
         }
       ];
@@ -816,21 +858,11 @@
           lines.push('#labLiveScope .'+ov.pillClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
           lines.push('#labLiveScope .'+ov.pillClass+' > span{color:'+c.chipFg+' !important}');
         }
-        if(ov.weekClass){
-          if(ov.id === 'training' || ov.id === 'meeting'){
-            lines.push('#labLiveScope .'+ov.weekClass+'{background:rgba(37,99,235,.12) !important;color:#1d4ed8 !important;border-color:rgba(37,99,235,.28) !important}');
-          } else if(ov.id === 'shadowing'){
-            lines.push('#labLiveScope .'+ov.weekClass+'{background:rgba(101,163,13,.12) !important;color:#3f6212 !important;border-color:rgba(101,163,13,.42) !important}');
-          } else {
-            lines.push('#labLiveScope .'+ov.weekClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
-          }
-        }
         if(ov.termClass){
           lines.push('#labLiveScope .'+ov.termClass+'{border-color:'+c.chipBorder+' !important}');
         }
         if(ov.miniClass){
-          lines.push('#labLiveScope .'+ov.miniClass+'{background:linear-gradient(180deg,'+c.bg1+' 0%,'+c.bg2+' 100%) !important;border-color:'+c.border+' !important}');
-          lines.push('#labLiveScope .'+ov.miniClass+' .mini-card-icon{background:'+c.iconBg+' !important;color:'+c.iconFg+' !important}');
+          /* Overview mini-card: borde parpadeante como Term — sin relleno de color */
         }
         if(ov.tomorrowClass){
           lines.push('#labLiveScope .'+ov.tomorrowClass+'{background:'+c.chipBg+' !important;color:'+c.chipFg+' !important;border-color:'+c.chipBorder+' !important}');
@@ -1395,6 +1427,15 @@
       var weekTags = state.overrides.filter(function(o){ return o.weekClass; }).map(function(o){
         return '<span class="week-override-tag '+esc(o.weekClass)+'">'+esc(o.weekText||o.label)+'</span>';
       }).join('');
+      function weekRowHtml(tone, dayAbbr){
+        var toneCls = tone ? ' calendar-day--week-row--'+tone : '';
+        return '<div class="calendar-day calendar-day--week-row'+toneCls+'" style="max-width:360px">'+
+          '<span class="week-day-icon" aria-hidden="true">'+esc(dayAbbr)+'</span>'+
+          '<div class="week-row-detail">'+
+            '<span class="week-venue-seg"><span class="week-venue-count">2</span> <span class="week-venue-unit">Swimming</span></span>'+
+            '<span class="week-override-badges-row">'+weekTags+'</span>'+
+          '</div></div>';
+      }
       var termCells = state.overrides.filter(function(o){ return o.termClass; }).map(function(o, i){
         return '<div><div class="term-cal"><div class="term-cal-day active '+esc(o.termClass)+'" role="gridcell">'+
           '<span class="term-cal-day-num">'+(10+i*3)+'</span></div></div>'+
@@ -1403,16 +1444,25 @@
       var firstPill = state.overrides.find(function(o){ return o.pillClass; });
       var firstTomorrow = state.overrides.find(function(o){ return o.tomorrowClass; });
       var firstMini = state.overrides.find(function(o){ return o.miniClass; });
+      var miniCards = state.overrides.filter(function(o){ return o.miniClass; }).map(function(o){
+        var title = o.id === 'outstanding' || o.id === 'shift_removed' || o.id === 'day_off' ? 'Term' : 'Next session';
+        return '<div class="mini-card '+esc(o.miniClass)+'" style="pointer-events:none;min-width:92px;flex:1;max-width:120px">'+
+          '<span class="mini-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 3h6M12 3v2"/></svg></span>'+
+          '<div class="mini-card-text"><div class="title">'+esc(title)+'</div></div></div>';
+      }).join('');
 
       host.innerHTML =
-        '<div class="lab-chip-demo-box"><h4>Week — fila de tags</h4>'+
-          '<div class="calendar-day calendar-day--week-row" style="max-width:360px">'+
-            '<span class="week-day-icon" aria-hidden="true">Su</span>'+
-            '<div class="week-row-detail">'+
-              '<span class="week-venue-seg"><span class="week-venue-count">2</span> <span class="week-venue-unit">Swimming</span></span>'+
-              '<span class="week-override-badges-row">'+weekTags+'</span>'+
-            '</div></div>'+
-          '<p class="lab-sub">flex wrap · gap 6px · alineadas bajo el resumen del día</p></div>'+
+        '<div class="lab-chip-demo-box"><h4>Week — fila de tags (normal)</h4>'+
+          weekRowHtml('work', 'Su')+
+          '<p class="lab-sub">flex wrap · gap 6px · alineadas bajo el resumen del día · tags con colores de producción (Make Up rosa sólido)</p></div>'+
+
+        '<div class="lab-chip-demo-box"><h4>Week — pending (feedback pendiente)</h4>'+
+          weekRowHtml('work-feedback', 'Th')+
+          '<p class="lab-sub">Caja naranja · <code>calendar-day--week-row--work-feedback</code> · badge del día sigue azul</p></div>'+
+
+        '<div class="lab-chip-demo-box"><h4>Week — terminado (review hecho)</h4>'+
+          weekRowHtml('work-done', 'Mo')+
+          '<p class="lab-sub">Caja verde · <code>calendar-day--week-row--work-done</code></p></div>'+
 
         (firstTomorrow ? (
           '<div class="lab-chip-demo-box"><h4>Next session</h4>'+
@@ -1440,12 +1490,10 @@
               '<span style="font-weight:700">Cliente · 3 to 4</span></div></div>'
         ) : '')+
 
-        (firstMini ? (
-          '<div class="lab-chip-demo-box"><h4>Overview mini-card</h4>'+
-            '<div class="section-card--overview lab-mini-overview">'+
-              '<div class="mini-card '+esc(firstMini.miniClass)+'" style="pointer-events:none">'+
-                '<div class="mini-card-icon" aria-hidden="true">⏱</div>'+
-                '<div class="title">Next session</div><div class="value">1 client</div></div></div></div>'
+        (miniCards ? (
+          '<div class="lab-chip-demo-box" style="grid-column:1/-1"><h4>Overview mini-cards — parpadeo borde (sin contador, sin relleno)</h4>'+
+            '<div class="section-card--overview lab-mini-overview" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px">'+miniCards+'</div>'+
+            '<p class="lab-sub">Naranja = outstanding · Rojo = day off · Rojo intenso = quitado del shift original del term · Resto = overrides Next session</p></div>'
         ) : '')+
 
         '<div class="lab-chip-demo-box" style="grid-column:1/-1"><h4>Term — parpadeo (sin texto)</h4>'+
@@ -1480,7 +1528,7 @@
         id: id, label: label, cuando: 'Describe cuándo aparece…',
         cardClass: 'menu-btn--qm-ov-'+id.replace(/-/g,'_'),
         pillClass: 'portal-ov-alert-pill--'+id, weekClass: 'week-override-tag--'+id,
-        termClass: 'term-cal-day--ov-pulse-'+id, miniClass: '', tomorrowClass: 'tomorrow-'+id+'-pill',
+        termClass: 'term-cal-day--ov-pulse-'+id, miniClass: 'mini-card--ov-pulse-'+id, tomorrowClass: 'tomorrow-'+id+'-pill',
         tomorrowRowClass: '', pillText: label.toUpperCase(), weekText: label,
         sampleTitle: label+' - Cliente', sampleSub: 'Horario · Venue',
         haloNote: 'schedule (verde) salvo trial',

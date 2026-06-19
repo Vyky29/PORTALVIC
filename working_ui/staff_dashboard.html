@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-next-session-note" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-week-tags-original" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -899,7 +899,7 @@
   </section>
 
   <script src="/portal/term_from_timetable.js?v=20260613-lulia-next-session-cover"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-anas-cli"></script>
   <script src="/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260614-madre-roster"></script>
@@ -917,7 +917,7 @@
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260609-photo-repair"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260614-term-baseline-pulse"></script>
   <script src="/portal/portal_participant_photos.js?v=20260613-participant-photos-all"></script>
   <script src="/portal/portal_topbar_header.js?v=20260618-topbar-dense-labels"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
@@ -5022,7 +5022,7 @@
     }
     /**
      * True when this weekday (current week strip) still has a replace / make-up slot
-     * whose end time is in the future — week row may use pink + “Make Up Session” tag.
+     * whose end time is in the future — week row may use pink + “Make Up” tag.
      */
     function portalWeekDayHasReplaceMakeUpPinkActive(dayName){
       try{
@@ -8218,7 +8218,7 @@
         portalOverrideMakeUpTag: !isTrial,
         portalOverrideTrialTag: isTrial,
         portalOverrideCardTone: slotWasUpdated ? 'yellow' : (isTrial ? 'trial' : (makeUpPink ? 'pink' : '')),
-        portalOverrideSymbolText: isTrial ? 'Trial' : (makeUpPink ? 'Make Up Session' : ''),
+        portalOverrideSymbolText: isTrial ? 'Trial' : (makeUpPink ? 'Make Up' : ''),
         portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,
@@ -10001,7 +10001,7 @@
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual) && !isTrialOv,
             portalOverrideTrialTag: isTrialOv,
             portalOverrideCardTone: slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : (makeUpPink ? 'pink' : '')),
-            portalOverrideSymbolText: isTrialOv ? 'Trial' : (makeUpPink ? 'Make Up Session' : ''),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (makeUpPink ? 'Make Up' : ''),
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
             portalRosterTimeUpdated: !!slotWasUpdated
@@ -10197,7 +10197,7 @@
           portalOverrideMakeUpTag: hasReplaceCoverOv && !isTrialCoverOv,
           portalOverrideTrialTag: isTrialCoverOv,
           portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : ''),
-          portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up Session' : ''),
+          portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up' : ''),
           portalOverrideHideAdminBadge: false,
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
@@ -11980,7 +11980,7 @@
                   futureOverrideLabel = 'Trial';
                 } else {
                   futureOverrideTone = 'pink';
-                  futureOverrideLabel = 'Make Up Session';
+                  futureOverrideLabel = 'Make Up';
                 }
               } else if(typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(fbItem)){
                 if(!rec.feedbackDone && !rec.absent && !rec.cancelled){
@@ -13259,7 +13259,7 @@
         if(portalOverrideIsTrial(best.ov)){
           return { tone: 'trial', label: 'Trial', priority: 3, type: best.type };
         }
-        return { tone: 'pink', label: 'Make Up Session', priority: 3, type: best.type };
+        return { tone: 'pink', label: 'Make Up', priority: 3, type: best.type };
       }
       if(best.type === 'slot_clear_client'){
         return { tone: 'clear', label: 'NO PARTICIPANT', priority: 1, type: best.type };
@@ -13375,8 +13375,8 @@
           ariaBits.push('Trial');
         }
         if(dayFlags.hasMakeUp){
-          badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up Session') + '</span>');
-          ariaBits.push('Make Up Session');
+          badgeParts.push('<span class="week-override-tag week-override-tag--pink">' + escapeHtml('Make Up') + '</span>');
+          ariaBits.push('Make Up');
         }
         if(dayFlags.hasUpdated){
           badgeParts.push('<span class="week-override-tag week-override-tag--updated">' + escapeHtml('Updated') + '</span>');
@@ -13420,10 +13420,18 @@
         const c = formatClientCount(dashboardData.tomorrow.length);
         tomorrowCard.setAttribute('aria-label', 'Open next session list — ' + c);
         const nextRows = Array.isArray(dashboardData.tomorrow) ? dashboardData.tomorrow : [];
-        const hasMakeUp = nextRows.some(function(r){ return String(r && r.futureOverrideTone || '').trim() === 'pink'; });
-        const hasTrial = nextRows.some(function(r){ return String(r && r.futureOverrideTone || '').trim() === 'trial'; });
-        tomorrowCard.classList.toggle('mini-card--ov-pink', hasMakeUp);
-        tomorrowCard.classList.toggle('mini-card--ov-trial', hasTrial);
+        if(typeof portalApplyNextSessionMiniCardPulse === 'function'){
+          portalApplyNextSessionMiniCardPulse(tomorrowCard, nextRows);
+        }
+      }
+      const termCard = document.querySelector('.section-card--overview .mini-card[data-open="termSheet"]');
+      if(termCard){
+        const termFlags = typeof portalComputeTermOverviewPulseFlags === 'function'
+          ? portalComputeTermOverviewPulseFlags(STAFF_DASHBOARD_ID)
+          : {};
+        if(typeof portalApplyTermMiniCardPulse === 'function'){
+          portalApplyTermMiniCardPulse(termCard, termFlags);
+        }
       }
       if(weekCard){
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
@@ -13701,6 +13709,61 @@
           : '';
         return Boolean(cov && cov !== sid);
       });
+    }
+    /** Original term shift removed (intense red) vs ad-hoc cover day off (normal red). */
+    function portalTermStaffRemovedFromBaselineShiftOnDate(isoYmd, staffId){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(!ptd || typeof ptd.staffRemovedFromBaselineShiftOnDate !== 'function') return false;
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
+      const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
+      return ptd.staffRemovedFromBaselineShiftOnDate(iso, sid, {
+        rosterApplies: function(key, id){
+          const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          return typeof portalStaffRosterAppliesOnCalendarDate === 'function'
+            && portalStaffRosterAppliesOnCalendarDate(key, dayWord, id);
+        },
+        hasInstructorCover: function(key, id){
+          return typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+            && portalStaffHasInstructorCoverOnCalendarDate(key, id);
+        },
+        dayIsRed: function(key, id){
+          const d = new Date(key + 'T12:00:00');
+          return typeof portalTermCalendarDayIsRed === 'function'
+            && portalTermCalendarDayIsRed(d.getFullYear(), d.getMonth(), d.getDate(), id, halfWeeks);
+        }
+      });
+    }
+    function portalComputeTermOverviewPulseFlags(staffId){
+      const out = { baselineRemoved: false, outstanding: false, dayOff: false };
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return out;
+      const y = Number(dashboardData.termCalendarYear) || new Date().getFullYear();
+      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [5, 6];
+      const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
+      const firstDomMap = dashboardData.termCalendarFirstDom || {};
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      const ptd = window.PortalTermCalendarDashboard;
+      months.forEach(function(monthIndex){
+        const lastDay = new Date(y, monthIndex + 1, 0).getDate();
+        let firstDom = 1;
+        if(Object.prototype.hasOwnProperty.call(firstDomMap, monthIndex)){
+          const fd = Math.floor(Number(firstDomMap[monthIndex]));
+          if(Number.isFinite(fd) && fd > 1) firstDom = Math.min(fd, lastDay);
+        }
+        for(let day = firstDom; day <= lastDay; day++){
+          const iso = termCalendarDateKey(y, monthIndex, day);
+          if(ptd && typeof ptd.staffDateInView === 'function' && !ptd.staffDateInView(iso, sid)) continue;
+          if(portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.baselineRemoved = true;
+          const fb = getTermFeedbackStateForDay(y, monthIndex, day);
+          if(fb === 'late' && iso <= todayKey) out.outstanding = true;
+          const isRed = typeof portalTermCalendarDayIsRed === 'function'
+            && portalTermCalendarDayIsRed(y, monthIndex, day, sid, halfWeeks);
+          if(isRed && !portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.dayOff = true;
+        }
+      });
+      return out;
     }
     function isHalfTermDay(year, monthIndex, day, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
@@ -14283,8 +14346,13 @@
           let cls = 'term-cal-day';
           let label;
           const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay;
+          const baselineShiftRemoved = termStaffId
+            && typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
+            && portalTermStaffRemovedFromBaselineShiftOnDate(isoKey, termStaffId);
           if(halfBlocksNav){
             cls += ' half-term';
+            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
+            else cls += ' term-cal-day--ov-pulse-day-off';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = afterTermEnd
@@ -14317,7 +14385,7 @@
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
             } else if(fb === 'late'){
-              cls += ' term-feedback-late';
+              cls += ' term-feedback-late term-cal-day--ov-pulse-outstanding';
               label = `${day}, feedback overdue, complete review`;
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="1" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
@@ -14329,6 +14397,8 @@
             }
           } else {
             cls += ' half-term';
+            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
+            else cls += ' term-cal-day--ov-pulse-day-off';
             label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);

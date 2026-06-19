@@ -126,4 +126,95 @@
   global.portalClientsGridSignature = function portalClientsGridSignature(mode, ids) {
     return String(mode || "") + ";" + (ids || []).join(",");
   };
+
+  var OVERVIEW_MINI_PULSE_CLASSES = [
+    "mini-card--ov-pulse-makeup",
+    "mini-card--ov-pulse-trial",
+    "mini-card--ov-pulse-absent",
+    "mini-card--ov-pulse-cancelled",
+    "mini-card--ov-pulse-admin-shift",
+    "mini-card--ov-pulse-training",
+    "mini-card--ov-pulse-shadowing",
+    "mini-card--ov-pulse-meeting",
+    "mini-card--ov-pulse-outstanding",
+    "mini-card--ov-pulse-day-off",
+    "mini-card--ov-pulse-shift-removed",
+    "mini-card--ov-pulse-both",
+  ];
+
+  global.portalApplyOverviewMiniCardPulse = function portalApplyOverviewMiniCardPulse(cardEl, pulseCls) {
+    if (!cardEl) return;
+    OVERVIEW_MINI_PULSE_CLASSES.forEach(function (cls) {
+      cardEl.classList.remove(cls);
+    });
+    cardEl.classList.remove("mini-card--ov-pink", "mini-card--ov-trial", "mini-card--ov-green");
+    if (pulseCls) cardEl.classList.add(pulseCls);
+  };
+
+  global.portalTermMiniCardPulseClass = function portalTermMiniCardPulseClass(flags) {
+    flags = flags || {};
+    if (flags.baselineRemoved) return "mini-card--ov-pulse-shift-removed";
+    if (flags.outstanding) return "mini-card--ov-pulse-outstanding";
+    if (flags.dayOff) return "mini-card--ov-pulse-day-off";
+    return "";
+  };
+
+  var NEXT_SESSION_MINI_PULSE_CLASSES = OVERVIEW_MINI_PULSE_CLASSES.slice();
+
+  global.portalNextSessionMiniCardPulseClass = function portalNextSessionMiniCardPulseClass(rows) {
+    var flags = {
+      trial: false,
+      makeup: false,
+      absent: false,
+      cancelled: false,
+      admin: false,
+      training: false,
+      shadowing: false,
+      meeting: false,
+      outstanding: false,
+    };
+    (rows || []).forEach(function (row) {
+      var tone = String(row && row.futureOverrideTone || "").trim();
+      if (tone === "trial") flags.trial = true;
+      else if (tone === "pink") flags.makeup = true;
+      else if (tone === "absent-green") flags.absent = true;
+      else if (tone === "cancelled-green") flags.cancelled = true;
+      else if (tone === "admin") flags.admin = true;
+      else if (tone === "training") flags.training = true;
+      else if (tone === "shadowing") flags.shadowing = true;
+      else if (tone === "meeting") flags.meeting = true;
+      else if (tone === "pending-feedback") flags.outstanding = true;
+    });
+    var count =
+      (flags.trial ? 1 : 0) +
+      (flags.makeup ? 1 : 0) +
+      (flags.absent ? 1 : 0) +
+      (flags.cancelled ? 1 : 0) +
+      (flags.admin ? 1 : 0) +
+      (flags.training ? 1 : 0) +
+      (flags.shadowing ? 1 : 0) +
+      (flags.meeting ? 1 : 0);
+    if (count >= 2) return "mini-card--ov-pulse-both";
+    if (flags.trial) return "mini-card--ov-pulse-trial";
+    if (flags.makeup) return "mini-card--ov-pulse-makeup";
+    if (flags.absent) return "mini-card--ov-pulse-absent";
+    if (flags.cancelled) return "mini-card--ov-pulse-cancelled";
+    if (flags.admin) return "mini-card--ov-pulse-admin-shift";
+    if (flags.training) return "mini-card--ov-pulse-training";
+    if (flags.shadowing) return "mini-card--ov-pulse-shadowing";
+    if (flags.meeting) return "mini-card--ov-pulse-meeting";
+    if (flags.outstanding) return "mini-card--ov-pulse-outstanding";
+    return "";
+  };
+
+  global.portalApplyNextSessionMiniCardPulse = function portalApplyNextSessionMiniCardPulse(cardEl, rows) {
+    global.portalApplyOverviewMiniCardPulse(
+      cardEl,
+      global.portalNextSessionMiniCardPulseClass(rows)
+    );
+  };
+
+  global.portalApplyTermMiniCardPulse = function portalApplyTermMiniCardPulse(cardEl, flags) {
+    global.portalApplyOverviewMiniCardPulse(cardEl, global.portalTermMiniCardPulseClass(flags));
+  };
 })(typeof window !== "undefined" ? window : globalThis);
