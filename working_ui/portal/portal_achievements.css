@@ -1714,8 +1714,11 @@ body.portal-achievements-viewer-open .admin-topbar {
   pointer-events: none;
 }
 
-.portal-achievements-viewer__close,
-.portal-achievements-viewer__nav {
+.portal-admin-achievements-viewer .portal-achievements-viewer__topbar {
+  padding-right: max(10px, env(safe-area-inset-right));
+}
+
+.portal-admin-achievements-viewer .portal-achievements-viewer__nav {
   position: relative;
   z-index: 6;
 }

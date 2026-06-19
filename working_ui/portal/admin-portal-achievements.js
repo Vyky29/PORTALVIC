@@ -26,7 +26,12 @@
   };
 
   var viewerState = { photos: [], index: -1, busy: false };
-  var directoryState = { groups: [], byKey: Object.create(null), activeKey: "" };
+  var directoryState = {
+    groups: [],
+    byKey: Object.create(null),
+    activeKey: "",
+    lastDetailView: null,
+  };
   var inboxSelection = Object.create(null);
 
   function configure(options) {
@@ -268,20 +273,52 @@
     return fallback.data || [];
   }
 
+  function resolveStayOnKey(stayOnKey, byKey) {
+    stayOnKey = normalizeClientId(stayOnKey);
+    if (!stayOnKey) return "";
+    if (byKey[stayOnKey]) return stayOnKey;
+    var keys = Object.keys(byKey);
+    for (var i = 0; i < keys.length; i++) {
+      if (normalizeClientId(keys[i]) === stayOnKey) return keys[i];
+    }
+    return stayOnKey;
+  }
+
+  function stubGroupForStayKey(stayOnKey) {
+    stayOnKey = normalizeClientId(stayOnKey);
+    if (!stayOnKey) return null;
+    var last = directoryState.lastDetailView;
+    if (last && normalizeClientId(last.key) === stayOnKey) {
+      return { key: stayOnKey, clientName: last.clientName || stayOnKey, photos: [] };
+    }
+    if (isInboxGroupKey(stayOnKey)) {
+      return { key: INBOX_CLIENT_ID, clientName: INBOX_CLIENT_NAME, photos: [] };
+    }
+    return { key: stayOnKey, clientName: stayOnKey, photos: [] };
+  }
+
   function applyPhotoRows(rows, status, stayOnKey) {
+    stayOnKey = normalizeClientId(stayOnKey);
     var groups = groupByParticipant(rows);
     directoryState.groups = groups;
     directoryState.byKey = Object.create(null);
     groups.forEach(function (g) {
       directoryState.byKey[g.key] = g;
     });
-    if (stayOnKey && directoryState.byKey[stayOnKey]) {
-      directoryState.activeKey = stayOnKey;
-      if (status) {
-        status.textContent = "";
-        status.className = "portal-forms-status";
+    if (stayOnKey) {
+      var detailKey = resolveStayOnKey(stayOnKey, directoryState.byKey);
+      if (!directoryState.byKey[detailKey]) {
+        var stub = stubGroupForStayKey(stayOnKey);
+        if (stub) directoryState.byKey[detailKey] = stub;
       }
-      return renderParticipantDetail(stayOnKey);
+      if (directoryState.byKey[detailKey]) {
+        directoryState.activeKey = detailKey;
+        if (status) {
+          status.textContent = "";
+          status.className = "portal-forms-status";
+        }
+        return renderParticipantDetail(detailKey);
+      }
     }
     directoryState.activeKey = "";
     if (status) {
@@ -557,6 +594,49 @@
     return canvas;
   }
 
+  async function replaceAchievementStorageObject(client, path, blob, contentType) {
+    path = String(path || "").trim();
+    if (!path) throw new Error("Missing storage path.");
+    contentType = contentType || "image/jpeg";
+    var up = await client.storage.from(ACH_BUCKET).upload(path, blob, {
+      contentType: contentType,
+      upsert: true,
+    });
+    if (!up.error) return;
+    if (!/row-level security|403|401|not allowed/i.test(String(up.error.message || ""))) {
+      throw up.error;
+    }
+    var rm = await client.storage.from(ACH_BUCKET).remove([path]);
+    if (rm.error && !/not found|object not found/i.test(String(rm.error.message || ""))) {
+      console.warn("[achievements] storage remove before rotate re-upload", rm.error);
+    }
+    up = await client.storage.from(ACH_BUCKET).upload(path, blob, {
+      contentType: contentType,
+      upsert: false,
+    });
+    if (up.error) throw up.error;
+  }
+
+  async function updateRotatedPhotoDimensions(client, row, width, height, byteSize) {
+    var res = await client.rpc("portal_admin_update_achievement_photo_dimensions", {
+      p_photo_id: row.id,
+      p_width: width,
+      p_height: height,
+      p_byte_size: byteSize,
+    });
+    if (!res.error) return res.data;
+    var upd = await client
+      .from("portal_participant_achievement_photos")
+      .update({
+        width: width,
+        height: height,
+        byte_size: byteSize,
+      })
+      .eq("id", row.id);
+    if (upd.error) throw upd.error;
+    return { width: width, height: height };
+  }
+
   async function rotatePhoto(row, degrees) {
     if (rowMediaType(row) === "video") throw new Error("Videos cannot be rotated.");
     var client = cfg.getClient();
@@ -574,20 +654,10 @@
         0.92
       );
     });
-    var up = await client.storage.from(ACH_BUCKET).upload(row.storage_path, blob, {
-      contentType: "image/jpeg",
-      upsert: true,
-    });
-    if (up.error) throw up.error;
-    var upd = await client
-      .from("portal_participant_achievement_photos")
-      .update({
-        width: canvas.width,
-        height: canvas.height,
-        byte_size: blob.size,
-      })
-      .eq("id", row.id);
-    if (upd.error) throw upd.error;
+    await replaceAchievementStorageObject(client, row.storage_path, blob, "image/jpeg");
+    await updateRotatedPhotoDimensions(client, row, canvas.width, canvas.height, blob.size);
+    row.width = canvas.width;
+    row.height = canvas.height;
     return { width: canvas.width, height: canvas.height };
   }
 
@@ -621,7 +691,6 @@
       "portalAdminAchievementsViewerNext",
       "portalAdminAchievementsViewerDelete",
       "portalAdminAchievementsViewerRotate",
-      "portalAdminAchievementsViewerClose",
       "portalAdminAchievementsViewerBack",
     ].forEach(function (id) {
       var el = document.getElementById(id);
@@ -850,16 +919,21 @@
 
   /** Drill-down: one participant's photos with caption DD/MM/YYYY-Photographer-HH:MM. */
   async function renderParticipantDetail(key) {
-    key = String(key || "").trim();
+    key = normalizeClientId(String(key || "").trim());
     directoryState.activeKey = key;
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
     var statusEl = document.getElementById("portalAdminAchievementsStatus");
     var group = directoryState.byKey[key];
+    if (!group && key) {
+      group = stubGroupForStayKey(key);
+      if (group) directoryState.byKey[key] = group;
+    }
     if (!host || !group) {
       renderDirectory();
       return;
     }
+    directoryState.lastDetailView = { key: key, clientName: group.clientName };
     var staffList = uniqueStaffNames(group.photos);
     var isInbox = isInboxGroupKey(key);
     var assignTargets = isInbox ? participantAssignOptions(key) : [];
@@ -1124,7 +1198,14 @@
 
   async function refresh(opts) {
     opts = opts || {};
-    var stayOnKey = opts.stayOnKey != null ? String(opts.stayOnKey).trim() : "";
+    var stayOnKey =
+      opts.stayOnKey != null
+        ? String(opts.stayOnKey).trim()
+        : opts.resetView
+          ? ""
+          : String(directoryState.activeKey || "").trim();
+    stayOnKey = normalizeClientId(stayOnKey);
+    var repairStayKey = stayOnKey || normalizeClientId(directoryState.activeKey);
     var skipRepair = !!opts.skipRepair;
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
@@ -1152,7 +1233,7 @@
                 "Repaired " + repaired + " photo(s) after inbox assign. Reloading…";
               status.className = "portal-forms-status";
             }
-            return refresh({ stayOnKey: directoryState.activeKey, skipRepair: true });
+            return refresh({ stayOnKey: repairStayKey, skipRepair: true });
           })
           .catch(function (err) {
             console.warn("[achievements] background repair", err);
@@ -1175,11 +1256,6 @@
     if (backBtn && !backBtn.getAttribute("data-bound")) {
       backBtn.setAttribute("data-bound", "1");
       backBtn.addEventListener("click", closeViewer);
-    }
-    var closeBtn = document.getElementById("portalAdminAchievementsViewerClose");
-    if (closeBtn && !closeBtn.getAttribute("data-bound")) {
-      closeBtn.setAttribute("data-bound", "1");
-      closeBtn.addEventListener("click", closeViewer);
     }
     if (viewer && !viewer.getAttribute("data-bound")) {
       viewer.setAttribute("data-bound", "1");
@@ -1237,7 +1313,7 @@
     if (btn) {
       btn.addEventListener("click", function () {
         directoryState.activeKey = "";
-        void refresh();
+        void refresh({ resetView: true });
       });
     }
     var host = document.getElementById("portalAdminAchievementsList");
@@ -1255,7 +1331,7 @@
         }
       });
     }
-    void refresh();
+    void refresh({ resetView: true });
   }
 
   function viewHtml() {
@@ -1273,7 +1349,6 @@
       '<div class="portal-achievements-viewer__topbar">' +
       '<button type="button" class="portal-achievements-viewer__back" id="portalAdminAchievementsViewerBack">&larr; Back to gallery</button>' +
       "</div>" +
-      '<button type="button" class="portal-achievements-viewer__close" id="portalAdminAchievementsViewerClose" aria-label="Close">×</button>' +
       '<div class="portal-achievements-viewer__stage portal-achievement-protected">' +
       '<img id="portalAdminAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img" />' +
       "</div>" +
