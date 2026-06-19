@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
     updated_at: new Date().toISOString(),
   };
 
-  const { error: upErr } = await supabase.from("portal_push_subscriptions").upsert(
+  const writeClient = admin ?? supabase;
+  const { error: upErr } = await writeClient.from("portal_push_subscriptions").upsert(
     row,
     { onConflict: "user_id,endpoint" },
   );

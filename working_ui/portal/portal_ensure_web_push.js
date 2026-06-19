@@ -13,8 +13,8 @@
   }
 
   global.portalEnsureWebPushSubscription = async function portalEnsureWebPushSubscription() {
-    if (global.__PORTAL_WPS_IN_FLIGHT) return { ok: true, reason: "in-flight" };
-    global.__PORTAL_WPS_IN_FLIGHT = true;
+    if (global.__PORTAL_WPS_IN_FLIGHT_PROMISE) return global.__PORTAL_WPS_IN_FLIGHT_PROMISE;
+    global.__PORTAL_WPS_IN_FLIGHT_PROMISE = (async function () {
     try {
       var env =
         typeof global.portalNotifyEnvironment === "function"
@@ -86,8 +86,12 @@
         console.warn("[portal] portalEnsureWebPushSubscription", e);
       } catch (_) {}
       return { ok: false, reason: "exception" };
+    }
+    })();
+    try {
+      return await global.__PORTAL_WPS_IN_FLIGHT_PROMISE;
     } finally {
-      global.__PORTAL_WPS_IN_FLIGHT = false;
+      global.__PORTAL_WPS_IN_FLIGHT_PROMISE = null;
     }
   };
 })(typeof window !== "undefined" ? window : globalThis);

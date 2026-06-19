@@ -407,12 +407,15 @@
     if (reason === "no-sw" || reason === "sw-timeout") {
       return "Service worker not ready — refresh the page and try again.";
     }
-    if (reason === "subscribe-http") {
+    if (reason === "subscribe-fn" || reason === "subscribe-http") {
       return (
         "Could not save subscription (HTTP " +
         String(wp.status || "?") +
         "). Check Edge Function portal-push-subscribe."
       );
+    }
+    if (reason === "server-missing") {
+      return "Device not saved on server — tap Register this device again.";
     }
     if (reason === "no-notify-perm") {
       return "Allow notifications when the browser asks.";

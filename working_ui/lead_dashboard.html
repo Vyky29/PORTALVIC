@@ -12787,8 +12787,8 @@
      * @returns {Promise<{ok?:boolean,reason?:string}>}
      */
     window.portalEnsureWebPushSubscription = async function portalEnsureWebPushSubscription(){
-      if(window.__PORTAL_WPS_IN_FLIGHT) return { ok: true, reason: 'in-flight' };
-      window.__PORTAL_WPS_IN_FLIGHT = true;
+      if(window.__PORTAL_WPS_IN_FLIGHT_PROMISE) return window.__PORTAL_WPS_IN_FLIGHT_PROMISE;
+      window.__PORTAL_WPS_IN_FLIGHT_PROMISE = (async function(){
       try{
         if(typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return { ok: false, reason: 'no-sw' };
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return { ok: false, reason: 'no-notify-perm' };
@@ -12848,8 +12848,12 @@
       }catch(e){
         console.debug('[portal] portalEnsureWebPushSubscription', e);
         return { ok: false, reason: 'exception' };
+      }
+      })();
+      try{
+        return await window.__PORTAL_WPS_IN_FLIGHT_PROMISE;
       }finally{
-        window.__PORTAL_WPS_IN_FLIGHT = false;
+        window.__PORTAL_WPS_IN_FLIGHT_PROMISE = null;
       }
     };
 
