@@ -33,9 +33,11 @@
     { "source": "/induction", "destination": "/general-induction/index.html" },
     { "source": "/sw-term-review", "destination": "/swtermreview.html" },
     { "source": "/sw-term-review/", "destination": "/swtermreview.html" },
-    { "source": "/parent/climbing-registration", "destination": "/parent_climbing_registration.html" },
+    { "source": "/parent/climbing-registration", "destination": "/climbing_registration.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
-    { "source": "/climbing-registration", "destination": "/parent_climbing_registration.html" },
+    { "source": "/climbing-registration", "destination": "/climbing_registration.html" },
+    { "source": "/climbing_registration", "destination": "/climbing_registration.html" },
+    { "source": "/parent_climbing_registration.html", "destination": "/climbing_registration.html" },
     { "source": "/registration-form", "destination": "/parent_registration.html" }
   ],
   "headers": [

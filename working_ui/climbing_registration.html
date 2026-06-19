@@ -1,9 +1,15 @@
 <!DOCTYPE html>
+<!--
+  PORTALVIC · Vercel (canonical). Public climbing registration — no WordPress/Elementor.
+  URLs: /climbing-registration · /parent/climbing-registration · /climbing_registration.html
+  Submit: PDF download + Supabase upload (portal-parent-form-submit).
+-->
 <html lang="en-GB">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Climbing registration — ClubSENsational</title>
+  <link rel="canonical" href="https://portalvic.vercel.app/climbing-registration" />
+  <title>Climbing registration — clubSENsational</title>
   <style>
     :root{
       --red:#c62828;
@@ -392,28 +398,102 @@
       background:#d4e8f7 !important;
     }
 
+    .supervisor-profile{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 12px;
+      flex:1;
+      min-width:0;
+      background:#fff;
+    }
+    .supervisor-profile[hidden],
+    .supervisor-select[hidden]{
+      display:none !important;
+    }
+    .supervisor-photo{
+      width:72px;
+      height:72px;
+      border-radius:50%;
+      object-fit:cover;
+      flex:0 0 auto;
+      border:3px solid #d4e8f7;
+      background:#eaf5fb;
+    }
+    .supervisor-profile-text{
+      min-width:0;
+      flex:1;
+    }
+    .supervisor-display-name{
+      display:block;
+      font-weight:700;
+      font-size:16px;
+      color:#173247;
+      overflow-wrap:break-word;
+    }
+    .supervisor-change-btn{
+      margin-top:6px;
+      padding:0;
+      border:none;
+      background:none;
+      color:#2d84b3;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      text-decoration:underline;
+    }
+
     .supervisor-sig-wrap{
-      padding:8px;
+      padding:8px 10px;
       min-height:72px;
       background:#fff;
       border:1px solid #bbb;
       border-radius:6px;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
+      gap:8px;
+      min-width:0;
     }
     .supervisor-sig-img{
       display:none;
       width:100%;
       max-width:100%;
-      max-height:72px;
+      max-height:64px;
       object-fit:contain;
+    }
+    .supervisor-sig-name{
+      display:none;
+      width:100%;
+      font-weight:700;
+      font-size:14px;
+      line-height:1.25;
+      text-align:center;
+      color:#173247;
+      overflow-wrap:break-word;
+      min-width:0;
     }
     .supervisor-sig-wrap.has-signature .supervisor-sig-img.is-visible{
       display:block;
     }
+    .supervisor-sig-wrap.has-signature .supervisor-sig-name{
+      display:block;
+    }
     .supervisor-sig-wrap.has-signature #supervisor_signature{
       display:none;
+    }
+    .supervisor-sig-wrap:not(.has-signature) #supervisor_signature{
+      display:block;
+      width:100%;
+      border:none;
+      outline:none;
+      padding:8px 4px;
+      min-height:44px;
+      font:inherit;
+      background:transparent;
+      text-align:center;
+      color:#555;
     }
 
     .parent-sig-canvas-wrap{
@@ -807,7 +887,7 @@
         <div class="signature-grid">
           <div class="sig-cell sig-cell-supervisor">
             <label>Name of Supervisor:</label>
-            <select name="supervisor_name" id="supervisor_name">
+            <select name="supervisor_name" id="supervisor_name" class="supervisor-select">
               <option value="">— Select supervisor —</option>
               <option value="Alex S">Alex S</option>
               <option value="Bismark G">Bismark G</option>
@@ -815,12 +895,20 @@
               <option value="Javi A">Javi A</option>
               <option value="Andres B">Andres B</option>
             </select>
+            <div class="supervisor-profile" id="supervisor_profile" hidden>
+              <img decoding="async" id="supervisor_photo" class="supervisor-photo" src="" alt="" />
+              <div class="supervisor-profile-text">
+                <span class="supervisor-display-name" id="supervisor_display_name"></span>
+                <button type="button" class="supervisor-change-btn" id="supervisor_change_btn">Change supervisor</button>
+              </div>
+            </div>
           </div>
           <div class="sig-cell">
             <label>Signature of supervisor:</label>
             <div class="supervisor-sig-wrap">
               <img decoding="async" id="supervisor_signature_img" src="" alt="" class="supervisor-sig-img">
-              <input type="text" name="supervisor_signature" id="supervisor_signature" readonly>
+              <span class="supervisor-sig-name" id="supervisor_signature_name"></span>
+              <input type="text" name="supervisor_signature" id="supervisor_signature" readonly aria-hidden="true" tabindex="-1">
               <input type="hidden" name="supervisor_signature_image" id="supervisor_signature_image">
             </div>
           </div>
@@ -966,14 +1054,64 @@
           'Javi A': SIG + 'javi-signature.png',
           'Andres B': SIG + 'andres-signature.png'
         };
+        var SUPERVISOR_PHOTOS = {
+          'Alex S': SIG + 'alex.png',
+          'Bismark G': SIG + 'bismark.png',
+          'Carlos H': SIG + 'carlos-h.png',
+          'Javi A': SIG + 'javi.png',
+          'Andres B': SIG + 'andres.png'
+        };
+        var SUPERVISOR_PHOTO_FALLBACKS = {
+          'Javi A': SIG + 'javi-a.png'
+        };
         var supervisorSelect = document.getElementById('supervisor_name');
         var supervisorSig = document.getElementById('supervisor_signature');
         var supervisorImg = document.getElementById('supervisor_signature_img');
         var supervisorImgHidden = document.getElementById('supervisor_signature_image');
         var supervisorWrap = supervisorImg ? supervisorImg.closest('.supervisor-sig-wrap') : null;
+        var supervisorProfile = document.getElementById('supervisor_profile');
+        var supervisorPhoto = document.getElementById('supervisor_photo');
+        var supervisorDisplayName = document.getElementById('supervisor_display_name');
+        var supervisorSigName = document.getElementById('supervisor_signature_name');
+        var supervisorChangeBtn = document.getElementById('supervisor_change_btn');
         if (supervisorSelect && supervisorSig) {
           function supervisorSigEntry(name){
             return name ? SUPERVISOR_SIGNATURES[name] : null;
+          }
+          function supervisorPhotoSrc(name){
+            return name ? (SUPERVISOR_PHOTOS[name] || '') : '';
+          }
+          function supervisorPhotoFallback(name){
+            return name ? (SUPERVISOR_PHOTO_FALLBACKS[name] || '') : '';
+          }
+          function showSupervisorSelectOnly(){
+            if (supervisorSelect) supervisorSelect.hidden = false;
+            if (supervisorProfile) supervisorProfile.hidden = true;
+          }
+          function showSupervisorProfile(name){
+            if (!name) {
+              showSupervisorSelectOnly();
+              return;
+            }
+            if (supervisorSelect) supervisorSelect.hidden = true;
+            if (supervisorProfile) supervisorProfile.hidden = false;
+            if (supervisorDisplayName) supervisorDisplayName.textContent = name;
+            if (supervisorPhoto) {
+              supervisorPhoto.alt = name + ' — supervisor photo';
+              var primary = supervisorPhotoSrc(name);
+              var fallback = supervisorPhotoFallback(name);
+              supervisorPhoto.hidden = false;
+              supervisorPhoto.onerror = function(){
+                if (fallback && supervisorPhoto.src.indexOf(fallback) === -1) {
+                  supervisorPhoto.src = fallback;
+                  return;
+                }
+                supervisorPhoto.hidden = true;
+                supervisorPhoto.removeAttribute('src');
+              };
+              supervisorPhoto.onload = function(){ supervisorPhoto.hidden = false; };
+              supervisorPhoto.src = primary || fallback || '';
+            }
           }
           function supervisorSigPrimary(entry){
             if (!entry) return '';
@@ -1008,16 +1146,19 @@
             }
             if (supervisorWrap) supervisorWrap.classList.remove('has-signature');
             if (supervisorImgHidden) supervisorImgHidden.value = '';
+            if (supervisorSigName) supervisorSigName.textContent = '';
           }
-          function applySupervisorSignature(entry){
+          function applySupervisorSignature(entry, name){
             var primary = supervisorSigPrimary(entry);
             var fallback = supervisorSigFallback(entry);
             var src = primary || fallback || '';
             clearSupervisorSignature();
+            if (supervisorSigName && name) supervisorSigName.textContent = name;
             if (!supervisorImg || !src) return;
             supervisorImg.onload = function(){
               supervisorImg.classList.add('is-visible');
               if (supervisorWrap) supervisorWrap.classList.add('has-signature');
+              if (supervisorSigName && name) supervisorSigName.textContent = name;
               setSupervisorHiddenFromImg(supervisorImg);
             };
             supervisorImg.onerror = function(){
@@ -1033,9 +1174,24 @@
           function copySupervisorToSignature(){
             var name = supervisorSelect.value || '';
             supervisorSig.value = name;
-            applySupervisorSignature(supervisorSigEntry(name));
+            if (name) showSupervisorProfile(name);
+            else showSupervisorSelectOnly();
+            applySupervisorSignature(supervisorSigEntry(name), name);
+            var nameCell = supervisorSelect.closest('.sig-cell-supervisor');
+            var sigCell = supervisorWrap ? supervisorWrap.closest('.sig-cell') : null;
+            if (typeof updateFilledClass === 'function') {
+              if (nameCell) updateFilledClass(nameCell);
+              if (sigCell) updateFilledClass(sigCell);
+            }
           }
           supervisorSelect.addEventListener('change', copySupervisorToSignature);
+          if (supervisorChangeBtn) {
+            supervisorChangeBtn.addEventListener('click', function(){
+              supervisorSelect.value = '';
+              copySupervisorToSignature();
+              supervisorSelect.focus();
+            });
+          }
           copySupervisorToSignature();
         }
       })();

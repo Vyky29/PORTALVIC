@@ -6,13 +6,17 @@
   <title>Client registration — ClubSENsational</title>
   <style>
     :root{
-      --red:#c62828;
-      --text:#222;
-      --muted:#555;
-      --line:#5d5d5d;
-      --fill:#e7e7e7;
+      --blue:#2d84b3;
+      --blueSoft:#eaf5fb;
+      --gold:#f4b740;
+      --sen-gold:#f9bf2e;
+      --goldSoft:#fff4df;
+      --ink:#173247;
+      --text:#314555;
+      --muted:#728290;
+      --line:rgba(23,50,71,.12);
       --bg:#ffffff;
-      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --shadow:0 18px 50px rgba(23,50,71,.08);
       --radius:12px;
     }
     *{box-sizing:border-box;}
@@ -20,8 +24,9 @@
     body{
       font-family:Arial,Helvetica,sans-serif;
       color:var(--text);
-      background:#fff;
+      background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);
       line-height:1.4;
+      min-height:100vh;
     }
     .page{
       width:100%;
@@ -40,13 +45,22 @@
     }
     .title-block h1{
       margin:0;
-      color:var(--red);
+      color:var(--ink);
       font-size:clamp(20px,4vw,28px);
       line-height:1.15;
       text-transform:uppercase;
       font-weight:700;
       max-width:100%;
       overflow-wrap:break-word;
+    }
+    .title-block h1::after{
+      content:"";
+      display:block;
+      width:56px;
+      height:4px;
+      margin-top:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--sen-gold),var(--gold));
     }
     .title-block p{
       margin:8px 0 0;
@@ -55,32 +69,100 @@
       max-width:100%;
       overflow-wrap:break-word;
     }
-    .logo img{max-width:140px;height:auto;display:block;}
+    .brand-logo{flex:0 0 auto;}
+    .brand-logo-stage{
+      position:relative;
+      width:112px;
+      height:112px;
+      display:grid;
+      place-items:center;
+    }
+    .brand-orbit-svg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:0;
+      overflow:visible;
+    }
+    .orbit-layer--cw{transform-origin:0 0;animation:orbit-cw 18s linear infinite;}
+    .orbit-layer--ccw{transform-origin:0 0;animation:orbit-ccw 14s linear infinite;}
+    @keyframes orbit-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes orbit-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+    @media (prefers-reduced-motion:reduce){
+      .orbit-layer--cw,.orbit-layer--ccw{animation:none}
+    }
+    .brand-logo-shell{
+      position:relative;
+      z-index:1;
+      width:72%;
+      aspect-ratio:1;
+      border-radius:50%;
+      overflow:hidden;
+      background:var(--bg);
+      display:grid;
+      place-items:center;
+      box-shadow:
+        0 0 0 2px rgba(249,191,46,.45),
+        0 0 14px rgba(249,191,46,.35),
+        0 0 28px rgba(45,132,179,.12);
+    }
+    .brand-logo-shell img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform:scale(1.32);
+      transform-origin:center center;
+      display:block;
+    }
     .notice{
-      background:#fff8e1;
-      border:1px solid #ffe082;
+      background:var(--goldSoft);
+      border:1px solid rgba(249,191,46,.45);
+      border-left:4px solid var(--sen-gold);
       border-radius:var(--radius);
       padding:12px 14px;
       margin-bottom:20px;
       font-size:14px;
       overflow-wrap:break-word;
+      color:var(--ink);
     }
     form{display:block;}
     .section{
-      border:1px solid #ddd;
+      border:1px solid var(--line);
       border-radius:var(--radius);
       margin-bottom:18px;
       overflow:hidden;
       box-shadow:var(--shadow);
+      background:var(--bg);
     }
     .section-head{
-      background:var(--red);
+      background:linear-gradient(135deg,var(--ink) 0%,var(--blue) 100%);
       color:#fff;
-      padding:10px 14px;
+      padding:12px 14px;
       font-weight:700;
-      font-size:15px;
+      font-size:14px;
       text-transform:uppercase;
+      letter-spacing:.03em;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      border-bottom:3px solid var(--sen-gold);
     }
+    .section-head__icon{
+      flex:0 0 auto;
+      width:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      background:var(--sen-gold);
+      color:var(--ink);
+    }
+    .section-head__icon svg{width:18px;height:18px;display:block;}
+    .section-head__label{min-width:0;overflow-wrap:break-word;}
     .section-body{padding:14px;}
     .field{margin-bottom:14px;min-width:0;}
     .field label{
@@ -106,10 +188,18 @@
       width:100%;
       max-width:100%;
       padding:10px 12px;
-      border:1px solid #bbb;
+      border:1px solid var(--line);
       border-radius:8px;
       font:inherit;
       background:#fff;
+      color:var(--text);
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus{
+      outline:none;
+      border-color:rgba(45,132,179,.45);
+      box-shadow:0 0 0 3px var(--blueSoft);
     }
     .field textarea{min-height:80px;resize:vertical;}
     .checks{
@@ -134,7 +224,7 @@
       text-align:center;
       background:#fafafa;
     }
-    .photo-box.has-photo{border-color:var(--red);background:#fff;}
+    .photo-box.has-photo{border-color:var(--blue);background:#fff;}
     .photo-preview{
       max-width:100%;
       max-height:240px;
@@ -157,7 +247,7 @@
       text-align:center;
     }
     .submit-row button{
-      background:var(--red);
+      background:linear-gradient(180deg,var(--blue) 0%,#2676a0 100%);
       color:#fff;
       border:none;
       border-radius:999px;
@@ -166,9 +256,11 @@
       font-weight:700;
       cursor:pointer;
       min-width:min(100%,280px);
+      box-shadow:0 8px 22px rgba(45,132,179,.28);
     }
+    .submit-row button:hover:not(:disabled){filter:brightness(1.04);}
     .submit-row button:disabled{opacity:.6;cursor:not-allowed;}
-    .required-mark{color:var(--red);}
+    .required-mark{color:var(--blue);font-weight:700;}
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -181,8 +273,34 @@
         <h1>Client details &amp; support form</h1>
         <p>Complete at home, then submit to download a PDF for clubSENsational.</p>
       </div>
-      <div class="logo">
-        <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/Logo-CS-rojo-300x300.png" alt="ClubSENsational" />
+      <div class="brand-logo">
+        <div class="brand-logo-stage">
+          <svg class="brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <g transform="translate(100,100)">
+              <g class="orbit-layer orbit-layer--cw">
+                <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
+                <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
+                <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
+                <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
+              </g>
+              <g class="orbit-layer orbit-layer--ccw">
+                <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
+                <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
+                <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+              </g>
+            </g>
+          </svg>
+          <div class="brand-logo-shell">
+            <img
+              src="/portal/F-02-1.png"
+              alt="clubSENsational — Autism Consultancy Services"
+              width="200"
+              height="200"
+              decoding="async"
+              onerror="this.onerror=null;this.src='/portal/portal_crest.svg'"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -193,7 +311,10 @@
 
     <form id="regForm" novalidate>
       <section class="section">
-        <div class="section-head">Parent / guardian</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="section-head__label">Parent / guardian</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label for="parent_name">Name <span class="required-mark">*</span></label>
@@ -229,7 +350,10 @@
       </section>
 
       <section class="section">
-        <div class="section-head">Participant</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <span class="section-head__label">Participant</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label for="participant_name">Name <span class="required-mark">*</span></label>
@@ -262,7 +386,10 @@
       </section>
 
       <section class="section">
-        <div class="section-head">Medical &amp; support plans</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+          <span class="section-head__label">Medical &amp; support plans</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label>Does the participant have an EHCP?</label>
@@ -319,7 +446,10 @@
       </section>
 
       <section class="section">
-        <div class="section-head">Behaviour</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>
+          <span class="section-head__label">Behaviour</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label>Known triggers</label>
@@ -371,7 +501,10 @@
       </section>
 
       <section class="section">
-        <div class="section-head">Communication</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <span class="section-head__label">Communication</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label>Expressive communication (select all that apply)</label>
@@ -401,7 +534,10 @@
       </section>
 
       <section class="section">
-        <div class="section-head">Independence</div>
+        <div class="section-head">
+          <span class="section-head__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+          <span class="section-head__label">Independence</span>
+        </div>
         <div class="section-body">
           <div class="field">
             <label>Mobility &amp; physical independence</label>
@@ -506,7 +642,7 @@
       if (y > maxY - 20) { doc.addPage(); y = 18; }
       doc.setFontSize(11);
       doc.setFont(undefined, 'bold');
-      doc.setTextColor(198, 40, 40);
+      doc.setTextColor(45, 132, 179);
       doc.text(title, M, y);
       y += 6;
       doc.setFont(undefined, 'normal');
@@ -547,7 +683,7 @@
 
         doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(198, 40, 40);
+        doc.setTextColor(45, 132, 179);
         doc.text('ClubSENsational — Client Registration', M, y);
         y += 10;
         doc.setFontSize(10);
