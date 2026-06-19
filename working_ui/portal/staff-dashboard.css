@@ -6034,7 +6034,6 @@
       flex:1;
       font-size:17px;
       line-height:1.35;
-      color:var(--ink);
     }
     .week-venue-seg{
       display:inline-flex;
@@ -6057,6 +6056,8 @@
     }
     .week-override-tag{
       display:inline-flex;align-items:center;
+      position:relative;
+      z-index:1;
       max-width:100%;
       margin-top:2px;
       padding:2px 8px;
@@ -6069,53 +6070,63 @@
       color:#fff;
       -webkit-text-fill-color:#fff;
     }
-    .calendar-day--week-row .week-override-badges-row .week-override-tag{
+    .calendar-day--week-row .week-override-badges-row .week-override-tag,
+    .calendar-day--week-row .week-override-badges-row .week-override-tag[class*="week-override-tag--"]{
       color:#fff;
       -webkit-text-fill-color:#fff;
     }
     .week-override-tag--admin{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#3b6eb8,#274f85);
       border:1px solid rgba(39,79,133,.45);
     }
     .week-override-tag--pink{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(180deg,#d94f93,#c2185b);
       border:1px solid rgba(140,24,70,.34);
     }
     .week-override-tag--trial{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#8b5cf6,#7c3aed);
       border:1px solid rgba(109,40,217,.55);
     }
     .week-override-tag--absent{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#0d9488,#0f766e);
       border:1px solid rgba(15,118,110,.5);
     }
     .week-override-tag--absents{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#0d9488,#0f766e);
       border:1px solid rgba(15,118,110,.5);
     }
     .week-override-tag--cancelled{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#707070,#525252);
       border:1px solid rgba(255,255,255,.22);
     }
     .week-override-tag--updated{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#facc15,#ca8a04);
       border:1px solid rgba(161,98,7,.42);
     }
     .week-override-tag--training,
     .week-override-tag--meeting{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#3b82f6,#2563eb);
       border:1px solid rgba(37,99,235,.45);
     }
     .week-override-tag--shadowing{
       color:#fff;
+      -webkit-text-fill-color:#fff;
       background:linear-gradient(145deg,#84cc16,#65a30d);
       border:1px solid rgba(101,163,13,.45);
     }

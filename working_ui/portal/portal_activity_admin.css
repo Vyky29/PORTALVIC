@@ -147,8 +147,24 @@
   white-space: nowrap;
 }
 
-.portal-sready-embed {
-  max-width: 100%;
+.portal-push-endpoint {
+  font-size: 12px;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-push-devices-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-push-devices-embed .portal-push-devices-list li {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-sready-kpis-wrap {

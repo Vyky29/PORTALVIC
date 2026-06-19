@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-next-session-layout" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-week-tag-white-v2" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -11493,9 +11493,7 @@
           ? 'I have read and understood this reminder.'
           : 'I have read and understood this announcement.';
         const signKey = portalSignableSignatureKey(pending);
-        const signBtnLabel = (typeof portalSignableItemTriggersPortalPermissions === 'function' && portalSignableItemTriggersPortalPermissions(pending))
-          ? 'Sign and turn on portal features'
-          : 'Sign and submit';
+        const signBtnLabel = 'Sign and submit';
         const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
           ? portalFormatSignableMessageHtml(txt)
           : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
