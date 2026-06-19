@@ -52,6 +52,7 @@
   <script src="/portal/portal_induction.js?v=20260614-induction-canonical"></script>
   <script src="/portal/portal_induction_admin_entry.js?v=20260614-induction-canonical"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260622-parent-templates-v2"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm"></script>
@@ -8848,60 +8849,84 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
+    function notifyParentTemplateOpts(){
+      return {
+        effectiveParticipantLabel: bookingEffectiveParticipantLabel,
+        bookingMoney: bookingMoney,
+        isTrialOverride: typeof schedOverrideIsTrial === 'function' ? schedOverrideIsTrial : null
+      };
+    }
     function notifyParentMessagePayment(slot, ov, meta, snap){
-      var client = bookingEffectiveParticipantLabel(slot, ov) || String(slot.clientDisplay || 'this participant').trim();
-      var when = String(slot.whenLabel || '').trim();
-      var venue = String(slot.venue || '').trim();
-      var service = String(meta && meta.service || slot.programme || 'sessions').trim();
-      var out = snap && typeof snap.outstanding === 'number' ? snap.outstanding : 0;
-      var nd = snap && snap.nextDue;
-      var balLine = 'Amount currently outstanding: '+bookingMoney(out)+'.';
-      if(nd && nd.dueDate){
-        balLine += ' Next instalment: '+bookingMoney(nd.left)+' due '+nd.dueDate+'.';
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.payment === 'function'){
+        return T.payment(slot, ov, meta, snap, notifyParentTemplateOpts());
       }
-      return (
-        'Hi'+(meta && meta.parentCarerName ? ' '+meta.parentCarerName : '')+',\n\n'+
-        'This is ClubSENsational.\n\n'+
-        'We are writing about fees for '+client+' — '+service+(when ? (' ('+when+')') : '')+(venue ? (' at '+venue+'.') : '.')+'\n\n'+
-        balLine+'\n\n'+
-        'Please use your usual bank reference, or reply if you need the details again.\n\n'+
-        'Thank you,\n'+
-        'ClubSENsational'
-      );
+      var client = bookingEffectiveParticipantLabel(slot, ov) || String(slot.clientDisplay || 'this participant').trim();
+      return 'Hi,\n\nPayment reminder for '+client+'.';
     }
     function notifyParentMessageInstructor(slot, ov, meta, newInstructorName){
-      var client = bookingEffectiveParticipantLabel(slot, ov) || String(slot.clientDisplay || 'this participant').trim();
-      var when = String(slot.whenLabel || '').trim();
-      var venue = String(slot.venue || '').trim();
-      var oldI = String(slot.staffName || '').trim();
-      var newI = String(newInstructorName || '').trim() || '[new instructor — edit here]';
-      var greet = meta && meta.parentCarerName ? ('Hi '+meta.parentCarerName+',\n\n') : 'Hi,\n\n';
-      return (
-        greet+
-        'This is ClubSENsational.\n\n'+
-        'We are writing about '+client+"'s session"+(when ? (' '+when) : '')+(venue ? (' at '+venue+'.') : '.')+'\n\n'+
-        'There has been a change of instructor. The session will now be with '+newI+(oldI ? (' (instead of '+oldI+').') : '.')+'\n\n'+
-        'We will send a separate photo of '+newI+' so you can show '+client+' before the session.\n\n'+
-        'If you have any questions, just reply to this message.\n\n'+
-        'Thank you,\n'+
-        'ClubSENsational'
-      );
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.instructorChange === 'function'){
+        return T.instructorChange(slot, ov, meta, newInstructorName, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nInstructor update for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentMessageAbsence(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.absence === 'function'){
+        return T.absence(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nAbsence update for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentMessageMakeup(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.makeup === 'function'){
+        return T.makeup(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nMake up session update for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentMessageTrial(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.trial === 'function'){
+        return T.trial(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nTrial session update for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentMessageCancelled(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.cancelled === 'function'){
+        return T.cancelled(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nSession cancelled for '+String(slot.clientDisplay || 'participant')+'.';
     }
     function notifyParentMessageBookingConfirmation(slot, meta, svc){
-      var client = String(slot.clientDisplay || (svc && svc.pax) || 'this participant').trim();
-      var when = String(slot.whenLabel || '').trim();
-      var venue = String(slot.venue || '').trim();
-      var service = String((meta && meta.service) || slot.programme || (svc && svc.programme) || 'sessions').trim();
-      var ref = svc && svc.bookingRef ? String(svc.bookingRef).trim() : '';
-      return (
-        'Hi'+(meta && meta.parentCarerName ? ' '+meta.parentCarerName : '')+',\n\n'+
-        'This is ClubSENsational.\n\n'+
-        'This confirms '+client+"'s booking for "+service+(when ? (' ('+when+')') : '')+(venue ? (' at '+venue+'.') : '.')+
-        (ref ? (' Booking ref: '+ref+'.') : '')+'\n\n'+
-        'If anything looks wrong, reply to this email and we will help.\n\n'+
-        'Thank you,\n'+
-        'ClubSENsational'
-      );
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.bookingConfirmation === 'function'){
+        return T.bookingConfirmation(slot, meta, svc);
+      }
+      return 'Hi,\n\nBooking confirmation for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentSubjectForKind(kind, clientDisplay){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.subjectForKind === 'function'){
+        return T.subjectForKind(kind, clientDisplay);
+      }
+      return 'ClubSENsational · '+String(clientDisplay || '').trim();
+    }
+    function notifyParentBodyForKind(kind, ctx){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.bodyForKind === 'function'){
+        ctx = ctx || {};
+        ctx.opts = notifyParentTemplateOpts();
+        return T.bodyForKind(kind, ctx);
+      }
+      if(kind === 'payment_due') return notifyParentMessagePayment(ctx.slot, ctx.ov, ctx.meta, ctx.snap || { outstanding:0, nextDue:null });
+      if(kind === 'absence_announced') return notifyParentMessageAbsence(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'makeup_scheduled') return notifyParentMessageMakeup(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'trial_scheduled') return notifyParentMessageTrial(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'session_cancelled') return notifyParentMessageCancelled(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'booking_confirmation') return notifyParentMessageBookingConfirmation(ctx.slot, ctx.meta, ctx.svc);
+      return notifyParentMessageInstructor(ctx.slot, ctx.ov, ctx.meta, ctx.newInstructorName);
     }
     function portalCommsOrderOpenParentNotify(svcIdx){
       var rawKey = String(state.commsOrderDetailKey || '').trim();
@@ -8968,9 +8993,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var ci = $('schedFormCoverInput');
               if(ci && ci.value) newName = String(ci.value).trim();
             }
-            var body = kind === 'instructor_change'
-              ? notifyParentMessageInstructor(slot, ov, meta, newName)
-              : notifyParentMessagePayment(slot, ov, meta, snap || { outstanding:0, nextDue:null });
+            var body = notifyParentBodyForKind(kind, {
+              slot: slot,
+              ov: ov,
+              meta: meta,
+              snap: snap || { outstanding:0, nextDue:null },
+              newInstructorName: newName
+            });
             return { ov: ov, meta: meta, snap: snap, body: body };
           });
         }finally{
@@ -8979,11 +9008,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(!pack) return;
       var meta = adminParentNotifyPrefillFromDirectory(pack.meta, slot);
-      var subj = kind === 'instructor_change'
-        ? 'Instructor update · '+String(slot.clientDisplay || '').trim()
-        : kind === 'booking_confirmation'
-          ? 'Booking confirmation · '+String(slot.clientDisplay || '').trim()
-          : 'Payment reminder · '+String(slot.clientDisplay || '').trim();
+      var subj = notifyParentSubjectForKind(kind, slot.clientDisplay);
       var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
       if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
       var hideSaveContact = !!(opts && opts.hideSaveContact);
@@ -10950,9 +10975,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<div class="card card-pad" style="margin-top:12px;border-style:dashed">'+
         '<div class="kpi-l">Parent messaging</div>'+
-        '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parents do not use this portal. Draft WhatsApp or email here; attach the instructor photo in your app as usual. Use <strong>Change Instructor</strong> above first so the covering name is suggested in the text.</p>'+
+        '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Attach the instructor photo separately when needed.</p>'+
         '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTrial">Trial</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyMakeup">Make up</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyCancelled">Cancelled</button>'+
         '<button type="button" class="btn btn--ghost btn--sm" id="schedParentNotifyPay">Payment reminder</button>'+
         '</div></div>'+
         '<p class="muted" id="schedFormErr" style="margin:10px 0 0;min-height:1.2em;color:var(--danger)"></p></div>';
@@ -10977,14 +11006,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ bindSchedDrawerFormControls(); }catch(e){}
       try{ schedUpdateTermMismatchBanner(slot, ''); }catch(_tw0){}
       try{ schedPopulateMoveTargetSelect(slot); }catch(_mv){}
+      function schedOpenParentNotifyForKind(notifyKind){
+        openParentNotifyModal({ kind: notifyKind, slot: slot, useSchedOverrides: true });
+      }
       var snI = $('schedParentNotifyInstructor');
-      if(snI) snI.onclick = function(){
-        openParentNotifyModal({ kind:'instructor_change', slot: slot, useSchedOverrides: true });
-      };
+      if(snI) snI.onclick = function(){ schedOpenParentNotifyForKind('instructor_change'); };
+      var snA = $('schedParentNotifyAbsence');
+      if(snA) snA.onclick = function(){ schedOpenParentNotifyForKind('absence_announced'); };
+      var snT = $('schedParentNotifyTrial');
+      if(snT) snT.onclick = function(){ schedOpenParentNotifyForKind('trial_scheduled'); };
+      var snM = $('schedParentNotifyMakeup');
+      if(snM) snM.onclick = function(){ schedOpenParentNotifyForKind('makeup_scheduled'); };
+      var snC = $('schedParentNotifyCancelled');
+      if(snC) snC.onclick = function(){ schedOpenParentNotifyForKind('session_cancelled'); };
       var snP = $('schedParentNotifyPay');
-      if(snP) snP.onclick = function(){
-        openParentNotifyModal({ kind:'payment_due', slot: slot, useSchedOverrides: true });
-      };
+      if(snP) snP.onclick = function(){ schedOpenParentNotifyForKind('payment_due'); };
       var termBtn = $('schedOpenTermSlotBtn');
       if(termBtn) termBtn.onclick = function(){
         closeSchedDrawer();

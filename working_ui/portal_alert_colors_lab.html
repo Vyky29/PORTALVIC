@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-next-session-layout" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-week-tag-white" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -135,6 +135,12 @@
     @media(min-width:780px){.lab-chip-demo-grid{grid-template-columns:1fr 1fr}}
     .lab-chip-demo-box{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid rgba(23,50,71,.08);min-width:0}
     .lab-chip-demo-box h4{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)}
+    /* Week tags — white text on solid chips (match Today portal-session-slot-chip) */
+    #labChipDemos .week-override-tag,
+    #labLiveScope .week-override-tag{
+      color:#fff !important;
+      -webkit-text-fill-color:#fff !important;
+    }
     .lab-term-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-top:8px}
     .lab-term-row .term-cal{width:auto;max-width:none;flex:0 0 auto}
     .lab-term-demo-item{flex:0 0 auto;min-width:0;text-align:center}
@@ -599,7 +605,7 @@
           colors: {
             bg1:'#eff6ff', bg2:'#e0f2fe', border:'rgba(37,99,235,.42)', shadow:'rgba(37,99,235,.18)',
             strong:'#1d4ed8', sub:'#2563eb', iconBg:'rgba(59,130,246,.22)', iconFg:'#1d4ed8', iconBorder:'rgba(37,99,235,.35)',
-            chipBg:'#e0f2fe', chipFg:'#1d4ed8', chipBorder:'rgba(37,99,235,.4)', termGlow:'rgba(37,99,235,.5)'
+            chipBg:'#2563eb', chipFg:'#fff', chipBorder:'rgba(37,99,235,.45)', termGlow:'rgba(37,99,235,.5)'
           }
         },
         {
@@ -614,7 +620,7 @@
           colors: {
             bg1:'#f7fee7', bg2:'#ecfccb', border:'rgba(132,204,22,.45)', shadow:'rgba(101,163,13,.12)',
             strong:'#4d7c0f', sub:'#65a30d', iconBg:'rgba(132,204,22,.22)', iconFg:'#4d7c0f', iconBorder:'rgba(132,204,22,.38)',
-            chipBg:'#ecfccb', chipFg:'#3f6212', chipBorder:'rgba(132,204,22,.42)', termGlow:'rgba(132,204,22,.5)'
+            chipBg:'#65a30d', chipFg:'#fff', chipBorder:'rgba(101,163,13,.45)', termGlow:'rgba(132,204,22,.5)'
           }
         },
         {
@@ -629,7 +635,7 @@
           colors: {
             bg1:'#eff6ff', bg2:'#e0f2fe', border:'rgba(37,99,235,.42)', shadow:'rgba(37,99,235,.18)',
             strong:'#1d4ed8', sub:'#2563eb', iconBg:'rgba(59,130,246,.22)', iconFg:'#1d4ed8', iconBorder:'rgba(37,99,235,.35)',
-            chipBg:'#e0f2fe', chipFg:'#1d4ed8', chipBorder:'rgba(37,99,235,.4)', termGlow:'rgba(37,99,235,.5)'
+            chipBg:'#2563eb', chipFg:'#fff', chipBorder:'rgba(37,99,235,.45)', termGlow:'rgba(37,99,235,.5)'
           }
         },
         {

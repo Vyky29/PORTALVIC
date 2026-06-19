@@ -520,7 +520,7 @@
       '<a class="btn btn--sec btn--sm" id="portalAdminMetaWhatsappInboxLink" href="https://business.facebook.com/latest/inbox/all" target="_blank" rel="noopener noreferrer">Open Meta inbox (API number)</a></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5e0f5;background:linear-gradient(180deg,#f5faff,#eaf4fc)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test WhatsApp</h3>' +
-      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Sends via the <strong>API number</strong> (not the company mobile). After Meta secrets and an approved template are set in Supabase, test on your own phone first. Meta usually requires an approved template for cold outbound — set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Sends via the <strong>API number</strong> (not the company mobile). Approved template <code>portal_parent_update</code> (one body variable) covers payment, instructor, absence and make-up drafts — see repo <code>database/META-WHATSAPP-PARENT-NOTIFY-TEMPLATES.md</code>. Set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match Meta.</p>' +
       '<label class="muted" for="portalAdminParentNotifyTestWa" style="display:block;margin-bottom:6px">WhatsApp number (digits, country code)</label>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
       '<input id="portalAdminParentNotifyTestWa" class="inp" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 447..." style="flex:1 1 220px;min-width:0;max-width:100%" />' +

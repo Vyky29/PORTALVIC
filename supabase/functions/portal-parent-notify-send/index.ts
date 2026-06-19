@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
     const kind = str(payload.kind, 64).toLowerCase();
     const waOpts = kind === "whatsapp_test"
       ? { templateName: "hello_world", templateLang: "en_US" }
-      : undefined;
+      : { kind };
     const sent = await sendParentMobileMessage(parentPhone!, bodyText, waOpts);
     if (sent.ok) {
       whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";

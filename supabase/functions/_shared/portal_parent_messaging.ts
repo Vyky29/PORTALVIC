@@ -276,7 +276,29 @@ export type SendWhatsappResult =
 export type WhatsappSendOptions = {
   templateName?: string;
   templateLang?: string;
+  kind?: string;
 };
+
+/** Resolve Meta template name for parent notify kind (env fallback chain). */
+export function resolveParentNotifyWhatsappTemplate(kind: string): string {
+  const k = String(kind || "").trim().toLowerCase();
+  const byKind: Record<string, string> = {
+    payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
+    instructor_change: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",
+    instructor_reassign: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",
+    absence_announced: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_ABSENCE",
+    makeup_scheduled: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_MAKEUP",
+    trial_scheduled: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_TRIAL",
+    session_cancelled: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_CANCELLED",
+    booking_confirmation: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_BOOKING",
+  };
+  const specificKey = byKind[k];
+  if (specificKey) {
+    const specific = (Deno.env.get(specificKey) ?? "").trim();
+    if (specific) return specific;
+  }
+  return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+}
 
 function whatsappTemplateBodyParam(body: string, template: string): string {
   let text = String(body || "").trim();
@@ -310,7 +332,7 @@ export async function sendParentMessageViaWhatsapp(
   const to = phoneE164.replace(/^\+/, "");
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
   const template = (opts?.templateName ??
-    Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+    resolveParentNotifyWhatsappTemplate(opts?.kind ?? "")).trim();
   const preferredLang = (opts?.templateLang ?? Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") ??
     "en").trim() || "en";
 

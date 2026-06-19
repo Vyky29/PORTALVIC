@@ -5533,7 +5533,7 @@
     .calendar-list{display:grid;gap:10px}
     .calendar-day{border:1px solid rgba(23,50,71,.09);border-radius:15px;padding:13px 14px;background:#fff}
     .calendar-day strong{display:block;font-size:14px;color:var(--ink);margin-bottom:4px}
-    .calendar-day span{font-size:12px;color:var(--muted);line-height:1.4}
+    .calendar-day span:not(.week-override-tag):not(.week-day-icon):not(.week-venue-count):not(.week-venue-unit){font-size:12px;color:var(--muted);line-height:1.4}
     /* This week: blue = day with sessions (future or still pending reviews); orange = session ended, feedback due; green = all feedback done; off = red */
     .calendar-day.calendar-day--week-row{
       display:flex;
@@ -5690,6 +5690,11 @@
       letter-spacing:.01em;
       overflow-wrap:break-word;
       color:#fff;
+      -webkit-text-fill-color:#fff;
+    }
+    .calendar-day--week-row .week-override-badges-row .week-override-tag{
+      color:#fff;
+      -webkit-text-fill-color:#fff;
     }
     .week-override-tag--admin{
       color:#fff;
