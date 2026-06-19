@@ -29,6 +29,9 @@
       if (typeof global.portalRefreshTodayNextParticipantPhotos === "function") {
         global.portalRefreshTodayNextParticipantPhotos();
       }
+      if (typeof global.portalRefreshDashboardParticipantPhotos === "function") {
+        global.portalRefreshDashboardParticipantPhotos();
+      }
     }, 140);
   }
 
@@ -261,17 +264,22 @@
     }, delayMs == null ? 120 : delayMs);
   };
 
-  global.portalTodaySessionCardsSignature = function portalTodaySessionCardsSignature(rows, reviewClassFn) {
+  global.portalTodaySessionCardsSignature = function portalTodaySessionCardsSignature(rows, reviewClassFn, photoUrlFn) {
     return (rows || [])
       .map(function (item) {
         var row = item || {};
         var reviewCls =
           typeof reviewClassFn === "function" ? String(reviewClassFn(row) || "").trim() : "";
+        var photo = "";
+        if (typeof photoUrlFn === "function") {
+          photo = normalizePhotoUrl(photoUrlFn(row));
+        }
         return [
           String(row.sessionKey || ""),
           String(row.kind || ""),
           String(row.portalOverrideAlertPill || ""),
           reviewCls,
+          photo,
         ].join(":");
       })
       .join("|");

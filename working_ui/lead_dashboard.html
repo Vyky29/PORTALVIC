@@ -905,8 +905,8 @@
   <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260614-term-baseline-pulse"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260610-chat-avatar-sanitize"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260614-photo-repair"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260614-photo-repair"></script>
   <script src="/portal/portal_topbar_header.js?v=20260618-topbar-dense-labels"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-victor-lead-photo"></script>
@@ -10005,7 +10005,11 @@
       }
       const list = dashboardData.today.slice(0, 9);
       const todaySig = typeof portalTodaySessionCardsSignature === 'function'
-        ? portalTodaySessionCardsSignature(list, sessionReviewRowClass)
+        ? portalTodaySessionCardsSignature(list, sessionReviewRowClass, function(row){
+          return typeof resolveParticipantPhotoUrl === 'function'
+            ? resolveParticipantPhotoUrl(row && row.name, row && row.clientId)
+            : '';
+        })
         : '';
       if(todaySig && grid.getAttribute('data-today-cards-sig') === todaySig && grid.querySelector('.today-grid-rows')){
         applyTodayGridSizing(grid, count);
@@ -11585,7 +11589,12 @@
           tl.innerHTML = '<div class="clients-grid-empty" role="status">No sessions on your next work day in the next three weeks.</div>';
           tl.setAttribute('data-tomorrow-sig', 'empty');
         } else if(tl.getAttribute('data-tomorrow-sig') === tomorrowSig && tl.querySelector('.calendar-day--tomorrow, .calendar-day--tomorrow-btn')){
-          /* keep existing participant photos — avoid reload flicker */
+          if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+            portalRefreshDashboardParticipantPhotos(tl, {
+              resolvePhotoUrl: resolveParticipantPhotoUrl,
+              escapeHtml: escapeHtml
+            });
+          }
         } else {
           tl.setAttribute('data-tomorrow-sig', tomorrowSig);
           const photoLoadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
@@ -11607,7 +11616,7 @@
               || (typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl(row.name, row.clientId) : '')
               || (typeof clientPhotoUrl === 'function' ? clientPhotoUrl(row.name) : '');
             const avatar = typeof portalParticipantCalendarAvatarHtml === 'function'
-              ? portalParticipantCalendarAvatarHtml(row.name, src, escapeHtml)
+              ? portalParticipantCalendarAvatarHtml(row.name, src, escapeHtml, row.clientId)
               : (src
                 ? `<div class="calendar-day-avatar calendar-day-avatar--photo"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.remove();"/></div>`
                 : `<div class="calendar-day-avatar calendar-day-avatar--initials">${escapeHtml(clientInitials(row.name))}</div>`);
@@ -11660,6 +11669,12 @@
       if(termTitle) termTitle.textContent = dashboardData.termName || 'Summer Term 2026';
       renderTermCalendarGrid();
       renderQuickMenuSetupVisibility();
+      if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+        portalRefreshDashboardParticipantPhotos(document.getElementById('tomorrowList') || document, {
+          resolvePhotoUrl: resolveParticipantPhotoUrl,
+          escapeHtml: escapeHtml
+        });
+      }
       portalDebugLogAbsentAggregates();
     }
 
@@ -13602,6 +13617,12 @@
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
           if (typeof renderLists === "function") renderLists();
+          if(typeof portalRefreshDashboardParticipantPhotos === "function"){
+            portalRefreshDashboardParticipantPhotos(document, {
+              resolvePhotoUrl: resolveParticipantPhotoUrl,
+              escapeHtml: escapeHtml
+            });
+          }
 
           if(typeof window.portalApplyAfterIncidentReturnFromUrl === "function"){
             window.portalApplyAfterIncidentReturnFromUrl();

@@ -292,18 +292,21 @@
   }
 
   /** Term / tomorrow list avatar — photo or gender-coloured initials circle. */
-  function portalParticipantCalendarAvatarHtml(name, photoUrl, esc) {
+  function portalParticipantCalendarAvatarHtml(name, photoUrl, esc, clientId) {
     esc = typeof esc === "function" ? esc : defaultEsc;
     name = String(name || "").trim();
     var candidates = participantPhotoPathCandidates(name, photoUrl);
     photoUrl = candidates.length ? candidates[0] : "";
     var photoFallbacks = candidates.slice(1).join("|");
     var nameAttr = ' data-participant-name="' + esc(name) + '"';
+    var cid = String(clientId || "").trim();
+    var clientAttr = cid ? ' data-participant-client-id="' + esc(cid) + '"' : "";
     if (photoUrl) {
       var loadAttr = photoLoadAttr();
       return (
         '<div class="calendar-day-avatar calendar-day-avatar--photo"' +
         nameAttr +
+        clientAttr +
         ">" +
         '<img class="portal-screenshot-protected" src="' +
         esc(photoUrl) +
@@ -316,8 +319,88 @@
       );
     }
     var cls = "calendar-day-avatar calendar-day-avatar--initials" + portalParticipantGenderClass(name, "calendar-day-avatar--");
-    return '<div class="' + esc(cls.trim()) + '"' + nameAttr + ">" + esc(portalParticipantInitials(name)) + "</div>";
+    return '<div class="' + esc(cls.trim()) + '"' + nameAttr + clientAttr + ">" + esc(portalParticipantInitials(name)) + "</div>";
   }
+
+  function resolveDashboardParticipantPhotoUrl(name, clientId, ctx) {
+    ctx = ctx || {};
+    if (typeof ctx.resolvePhotoUrl === "function") {
+      return normalizePhotoUrl(ctx.resolvePhotoUrl(name, clientId)) || "";
+    }
+    return portalParticipantPhotoUrl(name) || "";
+  }
+
+  /** Repair participant photos after roster hydrate or when list re-render was skipped. */
+  global.portalRefreshDashboardParticipantPhotos = function portalRefreshDashboardParticipantPhotos(root, ctx) {
+    root = root || document;
+    ctx = ctx || {};
+    var esc = typeof ctx.escapeHtml === "function" ? ctx.escapeHtml : defaultEsc;
+
+    root.querySelectorAll(".calendar-day-avatar[data-participant-name]").forEach(function (wrap) {
+      var name = String(wrap.getAttribute("data-participant-name") || "").trim();
+      if (!name) return;
+      var clientId = String(wrap.getAttribute("data-participant-client-id") || "").trim();
+      if (!clientId) {
+        var rowBtn = wrap.closest("[data-next-session-client]");
+        if (rowBtn) clientId = String(rowBtn.getAttribute("data-next-session-client") || "").trim();
+      }
+      var url = resolveDashboardParticipantPhotoUrl(name, clientId, ctx);
+      var img = wrap.querySelector("img.portal-screenshot-protected");
+      if (wrap.classList.contains("calendar-day-avatar--initials")) {
+        if (!url) return;
+        wrap.outerHTML = portalParticipantCalendarAvatarHtml(name, url, esc, clientId);
+        return;
+      }
+      if (!url) return;
+      if (!img) {
+        wrap.outerHTML = portalParticipantCalendarAvatarHtml(name, url, esc, clientId);
+        return;
+      }
+      var norm = normalizePhotoUrl(img.getAttribute("src") || img.src || "");
+      if (norm !== url) {
+        img.setAttribute("src", url);
+        return;
+      }
+      if (img.complete && img.naturalWidth > 0) return;
+      if (img.getAttribute("data-photo-fallbacks")) {
+        portalParticipantPhotoTryFallback(img);
+        return;
+      }
+      var retry = img.src;
+      img.src = "";
+      img.src = retry;
+    });
+
+    root.querySelectorAll(".clients-grid-card[data-client-id]").forEach(function (card) {
+      var clientId = String(card.getAttribute("data-client-id") || "").trim();
+      var av = card.querySelector(".clients-grid-avatar");
+      if (!av) return;
+      var img = av.querySelector("img.clients-grid-avatar-img");
+      if (img && img.complete && img.naturalWidth > 0) return;
+      var nameEl = card.querySelector(".clients-grid-name");
+      var name = nameEl ? String(nameEl.textContent || "").trim() : "";
+      var url = resolveDashboardParticipantPhotoUrl(name, clientId, ctx);
+      if (!url) return;
+      if (!img) {
+        var loadAttr = photoLoadAttr();
+        av.innerHTML =
+          esc(portalParticipantInitials(name)) +
+          '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' +
+          esc(url) +
+          '" alt=""' +
+          loadAttr +
+          ' decoding="async" draggable="false" onerror="this.remove()">';
+        return;
+      }
+      if (normalizePhotoUrl(img.getAttribute("src") || img.src || "") !== url) {
+        img.setAttribute("src", url);
+      } else if (!img.complete || !img.naturalWidth) {
+        var retrySrc = img.src;
+        img.src = "";
+        img.src = retrySrc;
+      }
+    });
+  };
 
   global.portalParticipantCalendarAvatarFallback = function (img) {
     try {
