@@ -146,8 +146,37 @@
   async function storageObjectExists(client, path) {
     path = String(path || "").trim();
     if (!path) return false;
-    var res = await client.storage.from(ACH_BUCKET).download(path);
-    return !res.error;
+    try {
+      var signed = await client.storage.from(ACH_BUCKET).createSignedUrl(path, 60);
+      if (signed.error || !signed.data) return false;
+      var url = String(signed.data.signedUrl || signed.data.signedURL || "").trim();
+      if (!url) return false;
+      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timer = ctrl
+        ? setTimeout(function () {
+            try {
+              ctrl.abort();
+            } catch (_a) {}
+          }, 8000)
+        : null;
+      var res = await fetch(url, {
+        method: "HEAD",
+        signal: ctrl ? ctrl.signal : undefined,
+      });
+      if (timer) clearTimeout(timer);
+      if (res.ok) return true;
+      if (res.status === 405 || res.status === 501) {
+        res = await fetch(url, {
+          method: "GET",
+          headers: { Range: "bytes=0-0" },
+          signal: ctrl ? ctrl.signal : undefined,
+        });
+        return res.ok || res.status === 206;
+      }
+      return false;
+    } catch (_e) {
+      return false;
+    }
   }
 
   async function moveAchievementStorage(client, fromPath, toPath) {
@@ -249,16 +278,47 @@
   async function fetchAllPhotos(client) {
     var res = await client.rpc("portal_admin_list_achievement_photos_all");
     if (!res.error) return res.data || [];
+    console.warn("[achievements] list RPC failed, using table fallback", res.error);
     var fallback = await client
       .from("portal_participant_achievement_photos")
       .select(
-        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key, media_type, duration_ms"
+        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key"
       )
       .in("status", ["draft", "attached", "archived_unused"])
       .order("client_name", { ascending: true })
       .order("created_at", { ascending: true });
     if (fallback.error) throw fallback.error;
     return fallback.data || [];
+  }
+
+  function applyPhotoRows(rows, status, stayOnKey) {
+    var groups = groupByParticipant(rows);
+    directoryState.groups = groups;
+    directoryState.byKey = Object.create(null);
+    groups.forEach(function (g) {
+      directoryState.byKey[g.key] = g;
+    });
+    if (stayOnKey && directoryState.byKey[stayOnKey]) {
+      directoryState.activeKey = stayOnKey;
+      if (status) {
+        status.textContent = "";
+        status.className = "portal-forms-status";
+      }
+      return renderParticipantDetail(stayOnKey);
+    }
+    directoryState.activeKey = "";
+    if (status) {
+      status.textContent =
+        rows.length +
+        " photo(s) · " +
+        groups.length +
+        " participant" +
+        (groups.length === 1 ? "" : "s") +
+        ". Tap a participant to see their photos.";
+      status.className = "portal-forms-status";
+    }
+    renderDirectory();
+    return Promise.resolve();
   }
 
   /** Two-digit pad. */
@@ -903,10 +963,20 @@
             return;
           }
           bulkAssignBtn.disabled = true;
+          var rowsById = Object.create(null);
+          draftPhotos.forEach(function (row) {
+            rowsById[String(row.id)] = row;
+          });
           var chain = Promise.resolve();
           ids.forEach(function (pid) {
             chain = chain.then(function () {
-              return assignInboxPhoto(pid, target.key, target.clientName, row.storage_path);
+              var row = rowsById[pid];
+              return assignInboxPhoto(
+                pid,
+                target.key,
+                target.clientName,
+                row && row.storage_path
+              );
             });
           });
           void chain
@@ -1073,54 +1143,43 @@
   async function refresh(opts) {
     opts = opts || {};
     var stayOnKey = opts.stayOnKey != null ? String(opts.stayOnKey).trim() : "";
+    var skipRepair = !!opts.skipRepair;
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
     var status = document.getElementById("portalAdminAchievementsStatus");
-    if (!client || !host) return;
+    if (!host) return;
+    if (!client) {
+      if (status) {
+        status.textContent = "Sign in required to load achievement photos.";
+        status.className = "portal-forms-status is-error";
+      }
+      host.innerHTML = "";
+      return;
+    }
     closeViewer();
     if (status && !stayOnKey) status.textContent = "Loading…";
     try {
       var rows = await fetchAllPhotos(client);
-      var repaired = await repairBrokenAssignedPhotoPaths(client, rows);
-      if (repaired > 0) {
-        rows = await fetchAllPhotos(client);
-        if (status) {
-          status.textContent =
-            "Repaired " + repaired + " photo(s) after inbox assign. Reloading…";
-          status.className = "portal-forms-status";
-        }
+      await applyPhotoRows(rows, status, stayOnKey);
+      if (!skipRepair) {
+        void repairBrokenAssignedPhotoPaths(client, rows)
+          .then(function (repaired) {
+            if (!repaired) return;
+            if (status) {
+              status.textContent =
+                "Repaired " + repaired + " photo(s) after inbox assign. Reloading…";
+              status.className = "portal-forms-status";
+            }
+            return refresh({ stayOnKey: directoryState.activeKey, skipRepair: true });
+          })
+          .catch(function (err) {
+            console.warn("[achievements] background repair", err);
+          });
       }
-      var groups = groupByParticipant(rows);
-      directoryState.groups = groups;
-      directoryState.byKey = Object.create(null);
-      groups.forEach(function (g) {
-        directoryState.byKey[g.key] = g;
-      });
-      if (stayOnKey && directoryState.byKey[stayOnKey]) {
-        directoryState.activeKey = stayOnKey;
-        if (status) {
-          status.textContent = "";
-          status.className = "portal-forms-status";
-        }
-        await renderParticipantDetail(stayOnKey);
-        return;
-      }
-      directoryState.activeKey = "";
-      if (status) {
-        status.textContent =
-          rows.length +
-          " photo(s) · " +
-          groups.length +
-          " participant" +
-          (groups.length === 1 ? "" : "s") +
-          ". Tap a participant to see their photos.";
-        status.className = "portal-forms-status";
-      }
-      renderDirectory();
     } catch (e) {
       console.error(e);
       if (status) {
-        status.textContent = e.message || "Error loading photos.";
+        status.textContent = (e && e.message) || "Error loading photos.";
         status.className = "portal-forms-status is-error";
       }
       host.innerHTML = "";
