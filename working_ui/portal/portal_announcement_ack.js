@@ -49,6 +49,11 @@
     var targetRole = String(row.target_staff_role || "").trim();
     var targetRoleBlank = !targetRole;
 
+    var onAck = String(row.on_ack_action || "").trim();
+    if (onAck === "portal_permissions" && ctx.hasPortalPushSubscription === true) {
+      return false;
+    }
+
     if (delivery === "single_user") {
       return !!uid && targetUser === uid;
     }
@@ -540,6 +545,26 @@
 
   global.portalSignableItemTriggersPortalPermissions = function portalSignableItemTriggersPortalPermissions(item) {
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "portal_permissions";
+  };
+
+  /** True when this worker already registered portal Web Push (skip onboarding announcements). */
+  global.portalWorkerHasPortalPushSubscription = async function portalWorkerHasPortalPushSubscription(
+    client,
+    userId
+  ) {
+    userId = String(userId || "").trim();
+    if (!client || !userId) return false;
+    try {
+      var res = await client
+        .from("portal_push_subscriptions")
+        .select("endpoint")
+        .eq("user_id", userId)
+        .eq("register_app", "portal")
+        .limit(1);
+      return !res.error && Array.isArray(res.data) && res.data.length > 0;
+    } catch (_) {
+      return false;
+    }
   };
 
   global.portalHasPendingPermissionsSignable = function portalHasPendingPermissionsSignable() {

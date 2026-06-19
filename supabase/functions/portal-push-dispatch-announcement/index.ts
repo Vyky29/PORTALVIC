@@ -165,6 +165,30 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, sent: 0, targets: 0 });
   }
 
+  const onAckAction = String(record.on_ack_action ?? "").trim();
+  if (onAckAction === "portal_permissions") {
+    const permIds = [...targetUserIds];
+    const { data: regRows, error: regErr } = await admin
+      .from("portal_push_subscriptions")
+      .select("user_id")
+      .in("user_id", permIds)
+      .eq("register_app", "portal");
+    if (regErr) {
+      console.error("[portal-push-announcement] portal_permissions subs", regErr);
+      return jsonResponse({ error: regErr.message }, 500);
+    }
+    for (const row of regRows ?? []) {
+      const uid = String(row.user_id ?? "").trim();
+      if (uid) targetUserIds.delete(uid);
+    }
+    return jsonResponse({
+      ok: true,
+      sent: 0,
+      targets: targetUserIds.size,
+      note: "portal_permissions in-app only — staff with portal push already registered are skipped",
+    });
+  }
+
   const ids = [...targetUserIds];
   const { data: subs, error: subErr } = await admin
     .from("portal_push_subscriptions")

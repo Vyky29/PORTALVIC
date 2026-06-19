@@ -18,7 +18,7 @@
   <script defer src="/portal/portal_web_push_support.js?v=20260619-inflight-fix"></script>
   <script defer src="/portal/portal_ensure_web_push.js?v=20260619-inflight-fix"></script>
 <script defer src="/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix"></script>
-  <script defer src="/portal/portal_announcement_ack.js?v=20260619-ann-race-fix"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260619-perm-skip"></script>
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>
@@ -11070,6 +11070,9 @@
           appRole: prof && prof.app_role,
           staffRole: prof && prof.staff_role
         };
+        if(typeof portalWorkerHasPortalPushSubscription === 'function'){
+          workerInboxCtx.hasPortalPushSubscription = await portalWorkerHasPortalPushSubscription(client, workerInboxCtx.authUserId);
+        }
         const inboxRows = typeof portalStaffAnnouncementRowVisibleOnWorkerInbox === 'function'
           ? res.data.filter(function(row){ return portalStaffAnnouncementRowVisibleOnWorkerInbox(row, workerInboxCtx); })
           : res.data;
