@@ -2522,6 +2522,39 @@
       border-color:rgba(124,58,237,.55);
       box-shadow:0 10px 26px rgba(124,58,237,.28);
     }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift{
+      background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
+      border:2px solid rgba(14,116,144,.38);
+      box-shadow:0 6px 18px rgba(14,116,144,.16);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-copy strong{
+      color:#0c4a6e;
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-sub,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-sub{
+      color:#0369a1;
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-chev,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-chev{
+      color:rgba(12,74,110,.5);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-icon,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-icon{
+      background:rgba(14,116,144,.16);
+      color:#0e7490;
+      border-color:rgba(14,116,144,.32);
+    }
+    #menuSheet.menu-sheet--logo-lite .menu-group-title--lead-team-shift{
+      margin-top:4px;
+    }
+    .portal-lead-team-qm-stack{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-width:0;
+    }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled:hover,
@@ -4079,6 +4112,71 @@
       font-weight:inherit;
     }
     .today-section-date:empty{display:none}
+
+    /* Programme lead — team on shift today (Phase 1) */
+    .portal-lead-team-today-host{
+      margin:0 0 10px;
+      padding:0 12px;
+      min-width:0;
+    }
+    .portal-lead-team-today-host[hidden]{display:none !important}
+    .portal-lead-team-today{
+      border:1px solid rgba(45,132,179,.22);
+      border-radius:14px;
+      background:linear-gradient(180deg,#f8fcff 0%,#eef6fb 100%);
+      padding:10px 12px;
+      min-width:0;
+      box-shadow:0 1px 5px rgba(23,50,71,.06);
+    }
+    .portal-lead-team-today__head{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:baseline;
+      gap:6px 10px;
+      margin-bottom:8px;
+      min-width:0;
+    }
+    .portal-lead-team-today__title{
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      color:#2d84b3;
+    }
+    .portal-lead-team-today__programme{
+      flex:1 1 auto;
+      min-width:0;
+      font-size:11px;
+      font-weight:600;
+      color:var(--muted);
+      overflow-wrap:break-word;
+    }
+    .portal-lead-team-today__chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      min-width:0;
+    }
+    .portal-lead-team-today__chip{
+      display:inline-flex;
+      align-items:center;
+      max-width:100%;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      line-height:1.2;
+      color:#0c4a6e;
+      background:rgba(45,132,179,.12);
+      border:1px solid rgba(45,132,179,.24);
+      overflow-wrap:break-word;
+    }
+    .portal-lead-team-today__empty{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+      overflow-wrap:break-word;
+    }
 
     .section-head h2{margin:0;font-size:19px;color:var(--ink)}
     .section-head p{margin:3px 0 0;font-size:12px;color:var(--muted)}

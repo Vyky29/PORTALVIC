@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-week-tags-original" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-lead-team-phase1" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260618-topbar-dense-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -324,6 +324,7 @@
           <span class="today-section-title__label" id="todayHeadingLabel">TODAY</span><span class="today-section-date" id="todayDateLine"></span>
         </h2>
       </div>
+      <div class="portal-lead-team-today-host" id="portalLeadTeamTodayHost" hidden aria-live="polite"></div>
       <div class="today-grid" id="todayGrid" aria-live="polite">
                 <div class="today-grid-fallback" id="todayGridFallback" hidden aria-hidden="true">
           <div class="today-grid-rows" role="list">
@@ -435,6 +436,8 @@
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
           <div class="menu-group-title" id="portalQuickMenuAdminChangesHeading" hidden>Admin Changes</div>
           <div id="portalQuickMenuScheduleOverridesTop" class="portal-qm-override-top-host" hidden></div>
+          <div class="menu-group-title menu-group-title--lead-team-shift" id="portalLeadTeamShiftHeading" hidden>Team shift changes</div>
+          <div id="portalLeadTeamShiftQuickHost" class="portal-lead-team-qm-host portal-qm-override-top-host" hidden></div>
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements/Reminders</div>
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Feedbacks</div>
@@ -926,6 +929,7 @@
   <script src="/portal/portal_area_note_icons.js?v=20260614-next-session-note"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260612-programme-leads-staff-home"></script>
+  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260614-lead-team-phase1"></script>
   <script src="/portal/portal_staff_photos.js?v=20260616-warn-rate-limit"></script>
 <script src="/portal/portal_sheet_back.js?v=20260614-dock-nav-v2"></script>
   <script>
@@ -4902,6 +4906,7 @@
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
         if(typeof portalMaybeNotifyReminders === 'function') portalMaybeNotifyReminders(st);
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
       }catch(_){}
     }
 
@@ -8915,6 +8920,7 @@
         if(typeof renderLists === 'function') renderLists();
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
       }catch(_syncOv){}
     };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
@@ -12919,6 +12925,7 @@
             portalRefreshTodayNextParticipantPhotos(grid);
           }
           if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+          if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
           return;
         }
         const fb = document.getElementById('todayGridFallback');
@@ -12987,6 +12994,7 @@
         });
       });
       if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
     }
 
     function formatClientCount(n){
@@ -15919,6 +15927,9 @@
         if(typeof window.portalSyncServiceLeadsQuickMenu === 'function'){
           window.portalSyncServiceLeadsQuickMenu();
         }
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
+          window.portalSyncLeadTeamShiftUi();
+        }
       }catch(_sl){}
     });
     window.addEventListener('portal:location-permission-change', function(){
@@ -15966,6 +15977,7 @@
           }
           if(typeof closeSheet === 'function') closeSheet();
           if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+          if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
           return;
         }
         const fbGo = e.target.closest('[data-action="open-pending-feedback"]');
@@ -16377,6 +16389,9 @@
         }
         if (typeof window.portalSyncServiceLeadsQuickMenu === "function") {
           window.portalSyncServiceLeadsQuickMenu();
+        }
+        if (typeof window.portalSyncLeadTeamShiftUi === "function") {
+          window.portalSyncLeadTeamShiftUi();
         }
         if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
           window.__PORTAL_LOGOUT_FN__ = portalLogout;
@@ -16844,6 +16859,9 @@
         }
         if(typeof window.portalSyncServiceLeadsQuickMenu === 'function'){
           window.portalSyncServiceLeadsQuickMenu();
+        }
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
+          window.portalSyncLeadTeamShiftUi();
         }
         dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
         if (typeof window.portalSyncTopbarStaffPhoto === "function") {
