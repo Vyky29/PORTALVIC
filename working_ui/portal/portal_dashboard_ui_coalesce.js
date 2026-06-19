@@ -151,11 +151,7 @@
     if (pulseCls) cardEl.classList.add(pulseCls);
   };
 
-  global.portalTermMiniCardPulseClass = function portalTermMiniCardPulseClass(flags) {
-    flags = flags || {};
-    if (flags.baselineRemoved) return "mini-card--ov-pulse-shift-removed";
-    if (flags.outstanding) return "mini-card--ov-pulse-outstanding";
-    if (flags.dayOff) return "mini-card--ov-pulse-day-off";
+  global.portalTermMiniCardPulseClass = function portalTermMiniCardPulseClass(_flags) {
     return "";
   };
 
