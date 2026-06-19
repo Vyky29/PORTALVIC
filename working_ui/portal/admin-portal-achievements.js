@@ -117,6 +117,9 @@
   }
 
   async function signedUrl(client, path) {
+    path = String(path || "").trim();
+    if (!path) return "";
+    if (!(await storageObjectExists(client, path))) return "";
     var res = await client.storage.from("participant-achievements").createSignedUrl(path, 3600);
     if (res.error || !res.data) return "";
     return String(res.data.signedUrl || res.data.signedURL || "").trim();
@@ -146,37 +149,8 @@
   async function storageObjectExists(client, path) {
     path = String(path || "").trim();
     if (!path) return false;
-    try {
-      var signed = await client.storage.from(ACH_BUCKET).createSignedUrl(path, 60);
-      if (signed.error || !signed.data) return false;
-      var url = String(signed.data.signedUrl || signed.data.signedURL || "").trim();
-      if (!url) return false;
-      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      var timer = ctrl
-        ? setTimeout(function () {
-            try {
-              ctrl.abort();
-            } catch (_a) {}
-          }, 8000)
-        : null;
-      var res = await fetch(url, {
-        method: "HEAD",
-        signal: ctrl ? ctrl.signal : undefined,
-      });
-      if (timer) clearTimeout(timer);
-      if (res.ok) return true;
-      if (res.status === 405 || res.status === 501) {
-        res = await fetch(url, {
-          method: "GET",
-          headers: { Range: "bytes=0-0" },
-          signal: ctrl ? ctrl.signal : undefined,
-        });
-        return res.ok || res.status === 206;
-      }
-      return false;
-    } catch (_e) {
-      return false;
-    }
+    var res = await client.storage.from(ACH_BUCKET).download(path);
+    return !res.error && !!(res.data && res.data.size);
   }
 
   async function moveAchievementStorage(client, fromPath, toPath) {
@@ -492,6 +466,9 @@
     }
     var newPath = inboxAssignNewPath(storagePath, clientId);
     await moveAchievementStorage(client, storagePath, newPath);
+    if (!(await storageObjectExists(client, newPath))) {
+      throw new Error("Photo file did not copy to the participant folder. Nothing was assigned.");
+    }
     var res = await client.rpc("portal_admin_assign_achievement_photo", {
       p_photo_id: photoId,
       p_client_id: clientId,
