@@ -12540,8 +12540,14 @@
       const adminTitle = document.getElementById('portalQuickMenuAdminChangesHeading');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
-        grp.hidden = true;
-        return;
+        const pendingAnnCount = typeof portalActiveAnnouncementItems === 'function'
+          ? portalActiveAnnouncementItems().length
+          : 0;
+        const hasNoticesEarly = !!(grid && grid.childElementCount > 0);
+        if(!pendingAnnCount && !hasNoticesEarly){
+          grp.hidden = true;
+          return;
+        }
       }
       const wellbeingSlot = document.getElementById('portalQuickMenuWellbeingReviewSlot');
       const hasPolicy = !!(policySlot && !policySlot.hidden);

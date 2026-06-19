@@ -311,11 +311,20 @@
       var reg =
         typeof global.portalRegisterPushAfterGrant === "function"
           ? global.portalRegisterPushAfterGrant(statusEl)
-          : Promise.resolve();
-      void reg.then(function () {
-        sendTestNotification(statusEl);
-        refresh();
+          : typeof global.portalEnsureWebPushSubscription === "function"
+            ? global.portalEnsureWebPushSubscription()
+            : Promise.resolve();
+      void reg.then(function (wp) {
+        sendTestNotification(statusEl).then(function () {
+          if (wp && !wp.ok && statusEl && typeof global.portalSubscribeFailureMessage === "function") {
+            statusEl.textContent =
+              "Test banner worked. Background push still needs: " +
+              global.portalSubscribeFailureMessage(wp);
+          }
+          refresh();
+        });
       });
+      return;
     }
   }
 
