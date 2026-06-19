@@ -13,7 +13,7 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/lead_dashboard.html en producción.
   -->
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
-  <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
+  <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
   <script src="/portal/portal_web_push_support.js?v=20260619-denied-help"></script>
 <script src="/portal/portal_alerts_notifications_ui.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260615-ann-sync-perf"></script>
@@ -12792,7 +12792,9 @@
       try{
         if(typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return { ok: false, reason: 'no-sw' };
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return { ok: false, reason: 'no-notify-perm' };
-        const vapid = PORTAL_VAPID_PUBLIC_KEY;
+        const vapid = (typeof window !== 'undefined' && window.__PORTAL_VAPID_PUBLIC_KEY__)
+          ? String(window.__PORTAL_VAPID_PUBLIC_KEY__).trim()
+          : String(PORTAL_VAPID_PUBLIC_KEY || '').trim();
         if(!vapid) return { ok: false, reason: 'no-vapid' };
         const reg = typeof window.portalAwaitServiceWorkerReady === 'function'
           ? await window.portalAwaitServiceWorkerReady(15000)
