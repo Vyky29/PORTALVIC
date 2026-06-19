@@ -12800,7 +12800,6 @@
         const keyU8 = portalUrlBase64ToUint8Array(vapid);
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.session || !box.session.access_token) return { ok: false, reason: 'no-session' };
-        if(window.__PORTAL_WPS_SKIP__) return { ok: false, reason: 'skipped' };
         if(typeof window.portalEnsureFreshPushSubscription === 'function'){
           const fresh = await window.portalEnsureFreshPushSubscription(reg, vapid, box.client, box.session);
           return fresh && fresh.ok ? { ok: true } : (fresh || { ok: false, reason: 'subscribe-failed' });
@@ -12822,7 +12821,6 @@
           });
           if(!fnRes.error) return { ok: true };
           const st = Number(fnRes.error.status || fnRes.error.context && fnRes.error.context.status || 0);
-          if(st === 401 || st === 403) window.__PORTAL_WPS_SKIP__ = true;
           console.debug('[portal] portal-push-subscribe', fnRes.error);
           return { ok: false, reason: 'subscribe-fn', status: st || 0 };
         }
@@ -12841,7 +12839,6 @@
           body: JSON.stringify({ subscription: subJson, register_app: 'portal' })
         });
         if(!res.ok){
-          if(res.status === 401 || res.status === 403) window.__PORTAL_WPS_SKIP__ = true;
           let detail = '';
           try{ detail = await res.text(); }catch(_){}
           console.debug('[portal] portal-push-subscribe', res.status, detail);

@@ -175,6 +175,9 @@
 
   function onEnableClick() {
     if (typeof Notification === "undefined") return;
+    try {
+      global.__PORTAL_WPS_SKIP__ = false;
+    } catch (_s) {}
     var statusEl = qNotify("portalNotifyStatus");
     if (Notification.permission === "denied") {
       if (typeof global.portalShowNotificationDeniedHelp === "function") {
@@ -285,6 +288,9 @@
   }
 
   function onTestClick() {
+    try {
+      global.__PORTAL_WPS_SKIP__ = false;
+    } catch (_s) {}
     var statusEl = qNotify("portalNotifyStatus");
     if (typeof Notification === "undefined") return;
     if (Notification.permission === "default") {
