@@ -11226,8 +11226,8 @@
           );
         }
         dashboardData.portalAnnouncementAcksMerged = true;
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         if(annInjected.length || remList.length || annIds.length){
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderAnnouncementsSheetContent === 'function'){
             const sh = document.getElementById('announcementsSheet');
             if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
