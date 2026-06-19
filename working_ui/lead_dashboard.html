@@ -9710,23 +9710,25 @@
     }
     function portalSyncAnnouncementsAndRemindersUiCore(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
-      if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
-        const liveSet = portalLiveAnnouncementIdSet();
-        if(Object.keys(liveSet).length > 0){
-          portalPrunePreLaunchAnnouncementAcks(
-            portalAnnouncementAckMapLoad,
-            portalAnnouncementAckMapSave,
-            liveSet
-          );
-        }
-      }
-      if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
-      if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
-      if(typeof portalResetStaffDemoAnnouncementAckIfFlagged === 'function') portalResetStaffDemoAnnouncementAckIfFlagged();
-      if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
-      if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
       const fp = portalAnnouncementsUiFingerprint();
       const fpUnchanged = fp === _portalAnnUiLastFp && !opts.force;
+      if(!fpUnchanged){
+        if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
+          const liveSet = portalLiveAnnouncementIdSet();
+          if(Object.keys(liveSet).length > 0){
+            portalPrunePreLaunchAnnouncementAcks(
+              portalAnnouncementAckMapLoad,
+              portalAnnouncementAckMapSave,
+              liveSet
+            );
+          }
+        }
+        if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
+        if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
+        if(typeof portalResetStaffDemoAnnouncementAckIfFlagged === 'function') portalResetStaffDemoAnnouncementAckIfFlagged();
+        if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
+        if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
+      }
       if(!fpUnchanged){
         _portalAnnUiLastFp = fp;
         if(typeof renderNotices === 'function') renderNotices();
@@ -10001,13 +10003,22 @@
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
+      const list = dashboardData.today.slice(0, 9);
+      const todaySig = typeof portalTodaySessionCardsSignature === 'function'
+        ? portalTodaySessionCardsSignature(list, sessionReviewRowClass)
+        : '';
+      if(todaySig && grid.getAttribute('data-today-cards-sig') === todaySig && grid.querySelector('.today-grid-rows')){
+        applyTodayGridSizing(grid, count);
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        return;
+      }
       const fb = document.getElementById('todayGridFallback');
       if(fb) fb.remove();
       grid.innerHTML = '';
       grid.removeAttribute('data-day-off-sig');
       grid.classList.remove('today-grid--day-off');
       applyTodayGridSizing(grid, count);
-      const list = dashboardData.today.slice(0, 9);
+      grid.setAttribute('data-today-cards-sig', todaySig || '');
       const rowsWrap = document.createElement('div');
       rowsWrap.className = 'today-grid-rows';
       rowsWrap.setAttribute('role', 'list');
@@ -10449,13 +10460,8 @@
         }
       }
       const termCard = document.querySelector('.section-card--overview .mini-card[data-open="termSheet"]');
-      if(termCard){
-        const termFlags = typeof portalComputeTermOverviewPulseFlags === 'function'
-          ? portalComputeTermOverviewPulseFlags(STAFF_DASHBOARD_ID)
-          : {};
-        if(typeof portalApplyTermMiniCardPulse === 'function'){
-          portalApplyTermMiniCardPulse(termCard, termFlags);
-        }
+      if(termCard && typeof portalApplyTermMiniCardPulse === 'function'){
+        portalApplyTermMiniCardPulse(termCard, null);
       }
       if(weekCard){
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
@@ -10931,10 +10937,44 @@
       }
       return applicable > 0;
     }
+    function portalTermRebuildInputSignature(){
+      const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      let ovPart = '0';
+      try{
+        const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        ovPart = String(rows.length);
+        rows.forEach(function(r){
+          ovPart += '|' + String(r && r.id || '') + ':' + String(r && (r.updated_at || r.created_at) || '');
+        });
+      }catch(_){}
+      let revPart = '0';
+      try{
+        Object.keys(sessionReviewMapMemory || {}).forEach(function(k){
+          const r = sessionReviewMapMemory[k];
+          if(!r) return;
+          revPart += ';' + k + ':' + (r.feedbackDone ? '1' : '0') + (r.absent ? 'a' : '') + (r.cancelled ? 'c' : '');
+        });
+      }catch(_){}
+      return [
+        sid,
+        String((sessionsModel || []).length),
+        ovPart,
+        revPart,
+        String(dashboardData.termDashboardCalendarFrom || ''),
+        String(dashboardData.termDashboardCalendarTo || '')
+      ].join('\0');
+    }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
+      const rebuildSig = portalTermRebuildInputSignature();
+      if(typeof window !== 'undefined'
+        && window.__PORTAL_TERM_REBUILD_LAST_SIG__ === rebuildSig
+        && dashboardData.termFeedbackByDate
+        && Object.keys(dashboardData.termFeedbackByDate).length){
+        return;
+      }
       const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
       if(!worked.length) return;
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
@@ -11166,6 +11206,7 @@
       }
       dashboardData.termShiftEndByDate = endMap;
       dashboardData.termFeedbackByDate = fbMap;
+      try{ if(typeof window !== 'undefined') window.__PORTAL_TERM_REBUILD_LAST_SIG__ = rebuildSig; }catch(_){}
     }
     function portalOldestIsoDateNeedingTermFeedback(){
       try{
@@ -11222,10 +11263,36 @@
       requestAnimationFrame(function(){ requestAnimationFrame(focusCell); });
     }
     try{ window.portalOpenTermSheetAndFocusOldestFeedbackDay = portalOpenTermSheetAndFocusOldestFeedbackDay; }catch(e){}
-    function renderTermCalendarGrid(){
+    function renderTermCalendarGrid(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
       const el = document.getElementById('termGrid');
       if(!el) return;
       rebuildTermShiftAndFeedbackFromSessionModel();
+      let ovCount = 0;
+      try{
+        ovCount = (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).length;
+      }catch(_){}
+      const domSig = typeof portalTermGridDomSignature === 'function'
+        ? portalTermGridDomSignature({
+          staffId: STAFF_DASHBOARD_ID,
+          termCalendarYear: dashboardData.termCalendarYear,
+          termCalendarMonths: dashboardData.termCalendarMonths,
+          termFeedbackByDate: dashboardData.termFeedbackByDate,
+          overrideCount: ovCount
+        })
+        : '';
+      const termSheetOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
+      if(!opts.force && domSig && el.getAttribute('data-term-grid-sig') === domSig && el.querySelector('.term-cal-month')){
+        return;
+      }
+      if(!opts.force && !termSheetOpen){
+        if(typeof portalScheduleTermGridIdleRender === 'function'){
+          portalScheduleTermGridIdleRender(function(){
+            renderTermCalendarGrid({ force: true });
+          }, 160);
+          return;
+        }
+      }
       const y = Number(dashboardData.termCalendarYear) || 2026;
       let months = Array.isArray(dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
         ? dashboardData.termCalendarMonths.map(Number).filter(m => m >= 0 && m <= 11)
@@ -11374,6 +11441,7 @@
         blocks.push(`<section class="term-cal-month" aria-label="${monthCaption}">${parts.join('')}</section>`);
       });
       el.innerHTML = blocks.join('');
+      if(domSig) el.setAttribute('data-term-grid-sig', domSig);
     }
 
     function renderQuickMenuSetupVisibility(){
@@ -11592,7 +11660,6 @@
       if(termTitle) termTitle.textContent = dashboardData.termName || 'Summer Term 2026';
       renderTermCalendarGrid();
       renderQuickMenuSetupVisibility();
-      if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       portalDebugLogAbsentAggregates();
     }
 
@@ -11708,6 +11775,7 @@
       }
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
+        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
       }
       if(id === 'clientsSheet'){
         if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();

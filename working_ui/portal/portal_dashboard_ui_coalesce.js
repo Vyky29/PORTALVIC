@@ -213,4 +213,67 @@
   global.portalApplyTermMiniCardPulse = function portalApplyTermMiniCardPulse(cardEl, flags) {
     global.portalApplyOverviewMiniCardPulse(cardEl, global.portalTermMiniCardPulseClass(flags));
   };
+
+  var termGridIdleTimer = null;
+  var termGridIdleGen = 0;
+
+  global.portalTermGridDomSignature = function portalTermGridDomSignature(opts) {
+    opts = opts || {};
+    var fb = opts.termFeedbackByDate || {};
+    var fbPart = "";
+    var keys = Object.keys(fb);
+    for (var i = 0; i < keys.length; i++) {
+      fbPart += keys[i] + ":" + fb[keys[i]] + ";";
+    }
+    return [
+      String(opts.staffId || ""),
+      String(opts.termCalendarYear || ""),
+      (opts.termCalendarMonths || []).join(","),
+      String(keys.length),
+      fbPart,
+      String(opts.overrideCount || 0),
+    ].join("|");
+  };
+
+  global.portalScheduleTermGridIdleRender = function portalScheduleTermGridIdleRender(fn, delayMs) {
+    if (typeof fn !== "function") return;
+    termGridIdleGen += 1;
+    var gen = termGridIdleGen;
+    if (termGridIdleTimer) global.clearTimeout(termGridIdleTimer);
+    termGridIdleTimer = global.setTimeout(function () {
+      termGridIdleTimer = null;
+      if (gen !== termGridIdleGen) return;
+      var run = function () {
+        if (gen !== termGridIdleGen) return;
+        try {
+          fn();
+        } catch (e) {
+          try {
+            console.warn("[portal] term grid idle render", e);
+          } catch (_) {}
+        }
+      };
+      if (typeof global.requestIdleCallback === "function") {
+        global.requestIdleCallback(run, { timeout: 1200 });
+      } else {
+        run();
+      }
+    }, delayMs == null ? 120 : delayMs);
+  };
+
+  global.portalTodaySessionCardsSignature = function portalTodaySessionCardsSignature(rows, reviewClassFn) {
+    return (rows || [])
+      .map(function (item) {
+        var row = item || {};
+        var reviewCls =
+          typeof reviewClassFn === "function" ? String(reviewClassFn(row) || "").trim() : "";
+        return [
+          String(row.sessionKey || ""),
+          String(row.kind || ""),
+          String(row.portalOverrideAlertPill || ""),
+          reviewCls,
+        ].join(":");
+      })
+      .join("|");
+  };
 })(typeof window !== "undefined" ? window : globalThis);
