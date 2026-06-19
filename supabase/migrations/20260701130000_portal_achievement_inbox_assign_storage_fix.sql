@@ -2,6 +2,8 @@
 
 begin;
 
+drop function if exists public.portal_admin_assign_achievement_photo(uuid, text, text);
+
 create or replace function public.portal_admin_assign_achievement_photo(
   p_photo_id uuid,
   p_client_id text,

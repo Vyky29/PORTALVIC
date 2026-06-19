@@ -84,7 +84,7 @@
     "service": "Climbing Activity",
     "days": ["Sunday"],
     "time_ranges": ["10-2"],
-    "instructors": ["Alex", "Carlos", "Bismark"],
+    "instructors": ["Alex", "Carlos", "Bismark", "Javi"],
     "notes": ""
   },
   {

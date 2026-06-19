@@ -425,6 +425,31 @@ body.portal-achievements-viewer-open .dock-bar {
   background: #000;
 }
 
+.portal-ach-cam-exit-btn {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  z-index: 6;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.portal-ach-cam-exit-btn:active {
+  background: rgba(0, 0, 0, 0.72);
+}
+
 .portal-achievements-camera-fs__flash {
   position: absolute;
   inset: 0;
@@ -506,21 +531,59 @@ body.portal-achievements-viewer-open .dock-bar {
 
 .portal-achievements-camera-fs__footer {
   position: relative;
-  padding: 58px 10px 4px;
+  padding: 6px 12px 4px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.portal-achievements-camera-fs__mode-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  max-width: min(280px, 100%);
+  margin: 0 auto;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  position: relative;
+  z-index: 5;
   min-width: 0;
 }
 
+.portal-achievements-camera-fs__controls-row {
+  display: grid;
+  grid-template-columns: minmax(44px, 1fr) auto minmax(44px, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  position: relative;
+  z-index: 4;
+}
+
+.portal-achievements-camera-fs__controls-row .portal-ach-cam-gallery {
+  justify-self: start;
+}
+
+.portal-achievements-camera-fs__controls-row .portal-ach-cam-flip {
+  justify-self: end;
+}
+
 .portal-achievements-camera-fs__shutter-wrap {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0;
   pointer-events: none;
+  justify-self: center;
 }
 
 .portal-achievements-camera-fs__shutter {
@@ -533,6 +596,8 @@ body.portal-achievements-viewer-open .dock-bar {
   cursor: pointer;
   flex-shrink: 0;
   pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.35),
     0 4px 18px rgba(0, 0, 0, 0.45);
@@ -639,6 +704,10 @@ body.portal-achievements-viewer-open .dock-bar {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 5;
 }
 
 .portal-ach-cam-gallery.has-thumb {
@@ -707,18 +776,46 @@ body.portal-achievements-viewer-open .dock-bar {
   min-width: 0;
 }
 
-.portal-ach-cam-mode.is-active {
-  color: #facc15;
+.portal-ach-cam-mode--segment {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.portal-ach-cam-mode.is-active .portal-ach-cam-mode__ico {
-  background: rgba(255, 255, 255, 0.92);
+.portal-ach-cam-mode--segment .portal-ach-cam-mode__ico {
+  width: 28px;
+  height: 28px;
+}
+
+.portal-ach-cam-mode--segment .portal-ach-cam-mode__label {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.portal-ach-cam-mode--segment.is-active {
+  color: #000;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.portal-ach-cam-mode--segment.is-active .portal-ach-cam-mode__ico {
+  background: rgba(0, 0, 0, 0.08);
   color: #000;
 }
 
+.portal-ach-cam-mode:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .portal-ach-cam-flip {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 0;
   background: rgba(255, 255, 255, 0.14);
@@ -729,6 +826,10 @@ body.portal-achievements-viewer-open .dock-bar {
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 5;
 }
 
 .portal-ach-cam-flip svg {
@@ -777,8 +878,27 @@ body.portal-achievements-viewer-open .dock-bar {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: center;
+  gap: 14px;
   padding: 4px 0 0;
   min-height: 0;
+}
+
+.portal-achievements-camera-fs.is-landscape-rail .portal-achievements-camera-fs__mode-row {
+  flex-direction: column;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
+.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-mode--segment {
+  width: 100%;
+}
+
+.portal-achievements-camera-fs.is-landscape-rail .portal-achievements-camera-fs__controls-row {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 14px;
 }
 
 .portal-achievements-camera-fs.is-landscape-rail .portal-achievements-camera-fs__shutter-wrap {
@@ -786,8 +906,8 @@ body.portal-achievements-viewer-open .dock-bar {
   left: auto;
   top: auto;
   transform: none;
-  order: 2;
-  flex: 1;
+  order: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -795,6 +915,7 @@ body.portal-achievements-viewer-open .dock-bar {
   gap: 10px;
   padding: 8px 0;
   pointer-events: none;
+  justify-self: center;
 }
 
 .portal-achievements-camera-fs.is-landscape-rail .portal-achievements-camera-fs__shutter {
@@ -802,34 +923,9 @@ body.portal-achievements-viewer-open .dock-bar {
   height: 64px;
 }
 
-.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-close-chip {
-  order: -1;
-  margin-bottom: 4px;
-}
-
-.portal-achievements-camera-fs.is-landscape-rail .portal-achievements-camera-fs__bar {
-  order: 1;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 14px;
-  padding: 0;
-}
-
-.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-bar__side {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  width: 100%;
-  padding: 0;
-  background: transparent;
-}
-
-.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-bar__side--left,
-.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-bar__side--right {
-  gap: 12px;
+.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-gallery,
+.portal-achievements-camera-fs.is-landscape-rail .portal-ach-cam-flip {
+  justify-self: center;
 }
 
 .portal-achievements-gallery-grid {
