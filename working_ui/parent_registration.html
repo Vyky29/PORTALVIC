@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client registration — ClubSENsational</title>
+  <style>
+    :root{
+      --red:#c62828;
+      --text:#222;
+      --muted:#555;
+      --line:#5d5d5d;
+      --fill:#e7e7e7;
+      --bg:#ffffff;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:12px;
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;width:100%;}
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--text);
+      background:#fff;
+      line-height:1.4;
+    }
+    .page{
+      width:100%;
+      min-height:100vh;
+      padding:24px 16px 48px;
+      max-width:920px;
+      margin:0 auto;
+    }
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+    .title-block h1{
+      margin:0;
+      color:var(--red);
+      font-size:clamp(20px,4vw,28px);
+      line-height:1.15;
+      text-transform:uppercase;
+      font-weight:700;
+      max-width:100%;
+      overflow-wrap:break-word;
+    }
+    .title-block p{
+      margin:8px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      max-width:100%;
+      overflow-wrap:break-word;
+    }
+    .logo img{max-width:140px;height:auto;display:block;}
+    .notice{
+      background:#fff8e1;
+      border:1px solid #ffe082;
+      border-radius:var(--radius);
+      padding:12px 14px;
+      margin-bottom:20px;
+      font-size:14px;
+      overflow-wrap:break-word;
+    }
+    form{display:block;}
+    .section{
+      border:1px solid #ddd;
+      border-radius:var(--radius);
+      margin-bottom:18px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .section-head{
+      background:var(--red);
+      color:#fff;
+      padding:10px 14px;
+      font-weight:700;
+      font-size:15px;
+      text-transform:uppercase;
+    }
+    .section-body{padding:14px;}
+    .field{margin-bottom:14px;min-width:0;}
+    .field label{
+      display:block;
+      font-weight:600;
+      font-size:13px;
+      margin-bottom:6px;
+      overflow-wrap:break-word;
+    }
+    .field .hint{
+      font-weight:400;
+      color:var(--muted);
+      font-size:12px;
+      margin-top:4px;
+      overflow-wrap:break-word;
+    }
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="tel"],
+    .field input[type="date"],
+    .field textarea,
+    .field select{
+      width:100%;
+      max-width:100%;
+      padding:10px 12px;
+      border:1px solid #bbb;
+      border-radius:8px;
+      font:inherit;
+      background:#fff;
+    }
+    .field textarea{min-height:80px;resize:vertical;}
+    .checks{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .checks label.check-row{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      font-weight:400;
+      font-size:14px;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .checks input{margin-top:3px;flex:0 0 auto;}
+    .photo-box{
+      border:2px dashed #ccc;
+      border-radius:var(--radius);
+      padding:16px;
+      text-align:center;
+      background:#fafafa;
+    }
+    .photo-box.has-photo{border-color:var(--red);background:#fff;}
+    .photo-preview{
+      max-width:100%;
+      max-height:240px;
+      margin:12px auto 0;
+      display:none;
+      border-radius:8px;
+      object-fit:contain;
+    }
+    .photo-preview.visible{display:block;}
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    @media(min-width:640px){
+      .grid-2{grid-template-columns:1fr 1fr;}
+    }
+    .submit-row{
+      margin-top:24px;
+      text-align:center;
+    }
+    .submit-row button{
+      background:var(--red);
+      color:#fff;
+      border:none;
+      border-radius:999px;
+      padding:14px 32px;
+      font-size:16px;
+      font-weight:700;
+      cursor:pointer;
+      min-width:min(100%,280px);
+    }
+    .submit-row button:disabled{opacity:.6;cursor:not-allowed;}
+    .required-mark{color:var(--red);}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="title-block">
+        <h1>Client details &amp; support form</h1>
+        <p>Complete at home, then submit to download a PDF for clubSENsational.</p>
+      </div>
+      <div class="logo">
+        <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/Logo-CS-rojo-300x300.png" alt="ClubSENsational" />
+      </div>
+    </div>
+
+    <div class="notice">
+      Fill in all sections below. You must add a <strong>photo of the participant</strong> (face or ID document).
+      Tap <strong>Submit form</strong> to download a PDF — email it to clubSENsational or bring it to your first session.
+    </div>
+
+    <form id="regForm" novalidate>
+      <section class="section">
+        <div class="section-head">Parent / guardian</div>
+        <div class="section-body">
+          <div class="field">
+            <label for="parent_name">Name <span class="required-mark">*</span></label>
+            <input type="text" id="parent_name" name="parent_name" required autocomplete="name" />
+          </div>
+          <div class="field">
+            <label>Relationship to participant <span class="required-mark">*</span></label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="relationship" value="Mother" required /> Mother</label>
+              <label class="check-row"><input type="radio" name="relationship" value="Father" /> Father</label>
+              <label class="check-row"><input type="radio" name="relationship" value="Legal guardian" /> Legal guardian</label>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="parent_phone">Phone <span class="required-mark">*</span></label>
+              <input type="tel" id="parent_phone" name="parent_phone" required autocomplete="tel" />
+            </div>
+            <div class="field">
+              <label for="parent_email">Email address <span class="required-mark">*</span></label>
+              <input type="email" id="parent_email" name="parent_email" required autocomplete="email" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="parent_address">Address <span class="required-mark">*</span></label>
+            <input type="text" id="parent_address" name="parent_address" required autocomplete="street-address" />
+          </div>
+          <div class="field">
+            <label for="parent_postcode">Postcode <span class="required-mark">*</span></label>
+            <input type="text" id="parent_postcode" name="parent_postcode" required autocomplete="postal-code" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">Participant</div>
+        <div class="section-body">
+          <div class="field">
+            <label for="participant_name">Name <span class="required-mark">*</span></label>
+            <input type="text" id="participant_name" name="participant_name" required />
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="participant_dob">Date of birth <span class="required-mark">*</span></label>
+              <input type="date" id="participant_dob" name="participant_dob" required />
+            </div>
+            <div class="field">
+              <label for="participant_gender">Gender</label>
+              <input type="text" id="participant_gender" name="participant_gender" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="participant_school">School / college / residential</label>
+            <input type="text" id="participant_school" name="participant_school" />
+          </div>
+
+          <div class="field">
+            <label for="participant_photo">Participant photo (face or ID) <span class="required-mark">*</span></label>
+            <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. Used for identification on trips and sessions.</p>
+            <div class="photo-box" id="photoBox">
+              <input type="file" id="participant_photo" name="participant_photo" accept="image/jpeg,image/png,image/webp,image/heic,image/*" capture="user" required />
+              <img id="photoPreview" class="photo-preview" alt="Participant photo preview" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">Medical &amp; support plans</div>
+        <div class="section-body">
+          <div class="field">
+            <label>Does the participant have an EHCP?</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="ehcp" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="ehcp" value="No" /> No</label>
+              <label class="check-row"><input type="radio" name="ehcp" value="In progress" /> In progress</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="ehcp_details">EHCP details</label>
+            <textarea id="ehcp_details" name="ehcp_details"></textarea>
+          </div>
+          <div class="field">
+            <label>Is the participant supported by a social worker?</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="social_worker" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="social_worker" value="No" /> No</label>
+              <label class="check-row"><input type="radio" name="social_worker" value="Not sure" /> Not sure</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="social_worker_contact">If yes, social worker name &amp; email</label>
+            <input type="text" id="social_worker_contact" name="social_worker_contact" />
+          </div>
+          <div class="field">
+            <label for="motivators">Motivators or favourite activities</label>
+            <textarea id="motivators" name="motivators"></textarea>
+          </div>
+          <div class="field">
+            <label for="dislikes">Dislikes or things to avoid</label>
+            <textarea id="dislikes" name="dislikes"></textarea>
+          </div>
+          <div class="field">
+            <label for="medication">Regular medication (name and dosage if applicable)</label>
+            <textarea id="medication" name="medication"></textarea>
+          </div>
+          <div class="field">
+            <label for="allergies">Diagnosed allergies (food or environmental)</label>
+            <textarea id="allergies" name="allergies"></textarea>
+          </div>
+          <div class="field">
+            <label for="medical_conditions">Relevant medical conditions</label>
+            <textarea id="medical_conditions" name="medical_conditions"></textarea>
+          </div>
+          <div class="field">
+            <label>Health or emergency plan in place?</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="health_plan" value="Yes" /> Yes</label>
+              <label class="check-row"><input type="radio" name="health_plan" value="No" /> No</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">Behaviour</div>
+        <div class="section-body">
+          <div class="field">
+            <label>Known triggers</label>
+            <div class="checks" data-name="triggers">
+              <label class="check-row"><input type="checkbox" name="triggers" value="Loud or unexpected noise" /> Loud or unexpected noise</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Transitions or changes to routine" /> Transitions or changes to routine</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Waiting or delays" /> Waiting or delays</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Sensory overload" /> Sensory overload (e.g. lights, textures)</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Being told no / denied access" /> Being told &ldquo;no&rdquo; / denied access</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Fatigue or hunger" /> Fatigue or hunger</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Physical proximity or touch" /> Physical proximity or touch</label>
+              <label class="check-row"><input type="checkbox" name="triggers" value="Group settings or crowds" /> Group settings or crowds</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Strategies that help regulate</label>
+            <div class="checks">
+              <label class="check-row"><input type="checkbox" name="strategies" value="Movement / space to pace or jump" /> Movement / space to pace or jump</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Pressure or deep touch" /> Pressure or deep touch</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Preferred toy or object" /> Preferred toy or object</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Visual support" /> Visual support (first/then, countdown, etc.)</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Quiet space or break" /> Quiet space or break</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Supportive adult staying nearby" /> Supportive adult staying nearby</label>
+              <label class="check-row"><input type="checkbox" name="strategies" value="Breathing exercises / calming prompts" /> Breathing exercises / calming prompts</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="behaviour_notes">Additional notes on behaviour</label>
+            <textarea id="behaviour_notes" name="behaviour_notes"></textarea>
+          </div>
+          <div class="field">
+            <label>Support when regulated (calm and engaged)</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="support_regulated" value="1to1" /> 1to1</label>
+              <label class="check-row"><input type="radio" name="support_regulated" value="2to1" /> 2to1</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Support when dysregulated</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="Can self-regulate with minimal prompts" /> Can self-regulate with minimal prompts</label>
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="Needs adult nearby and occasional guidance" /> Needs adult nearby and occasional guidance</label>
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="Needs active adult support throughout episodes" /> Needs active adult support throughout episodes</label>
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="Requires continuous supervision when distressed" /> Requires continuous supervision from an adult when distressed</label>
+              <label class="check-row"><input type="radio" name="support_dysregulated" value="May require support from two adults" /> May require support from two adults to safely regulate</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">Communication</div>
+        <div class="section-body">
+          <div class="field">
+            <label>Expressive communication (select all that apply)</label>
+            <div class="checks">
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Mainly communicates through behaviour" /> Mainly communicates through behaviour</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Gestural or non-verbal cues" /> Gestural or non-verbal cues</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Verbal – full sentences" /> Verbal – full sentences</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Verbal – limited words or scripts" /> Verbal – limited words or scripts</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Uses signs (e.g. Makaton)" /> Uses signs (e.g. Makaton)</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Uses AAC" /> Uses AAC (tablet, GoTalk, speech device)</label>
+              <label class="check-row"><input type="checkbox" name="expressive_comm" value="Uses PECS or visuals" /> Uses PECS or visuals to express needs</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>How does the participant best understand instructions?</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="understand_instructions" value="Verbal instructions only" /> Verbal instructions only</label>
+              <label class="check-row"><input type="radio" name="understand_instructions" value="Verbal + gestures" /> Verbal + gestures</label>
+              <label class="check-row"><input type="radio" name="understand_instructions" value="Visual support needed" /> Visual support needed (symbols, schedules, first-then boards)</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="comm_strategies">Preferred communication strategies that work well</label>
+            <textarea id="comm_strategies" name="comm_strategies"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">Independence</div>
+        <div class="section-body">
+          <div class="field">
+            <label>Mobility &amp; physical independence</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="mobility" value="Walks independently" /> Walks independently</label>
+              <label class="check-row"><input type="radio" name="mobility" value="Uses mobility aids" /> Uses mobility aids (wheelchair, walker)</label>
+              <label class="check-row"><input type="radio" name="mobility" value="Needs adult assistance for transitions" /> Needs adult assistance for transitions or moving between spaces</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Personal care</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="personal_care" value="Fully independent" /> Fully independent (toileting, dressing)</label>
+              <label class="check-row"><input type="radio" name="personal_care" value="Needs physical assistance or supervision" /> Needs physical assistance or supervision</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Task engagement</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="task_engagement" value="Can follow a simple routine independently" /> Can follow a simple routine independently</label>
+              <label class="check-row"><input type="radio" name="task_engagement" value="Needs 1:1 support to complete most activities" /> Needs 1:1 support to complete most activities</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Transitions &amp; flexibility</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="transitions" value="Adapts easily to change" /> Adapts easily to change in activities or environment</label>
+              <label class="check-row"><input type="radio" name="transitions" value="Struggles with unexpected changes or waiting" /> Struggles with unexpected changes or waiting time</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Risk awareness &amp; safety</label>
+            <div class="checks">
+              <label class="check-row"><input type="radio" name="risk_awareness" value="Understands basic safety rules" /> Understands basic safety rules</label>
+              <label class="check-row"><input type="radio" name="risk_awareness" value="No awareness of danger" /> No awareness of danger – needs constant supervision</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="anything_else">Anything else we should know?</label>
+            <textarea id="anything_else" name="anything_else"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="submit-row">
+        <button type="submit" id="submitBtn">Submit form</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+  (function(){
+    var form = document.getElementById('regForm');
+    var photoInput = document.getElementById('participant_photo');
+    var photoPreview = document.getElementById('photoPreview');
+    var photoBox = document.getElementById('photoBox');
+    var photoDataUrl = null;
+
+    photoInput.addEventListener('change', function(){
+      var file = photoInput.files && photoInput.files[0];
+      photoDataUrl = null;
+      if (!file) {
+        photoPreview.classList.remove('visible');
+        photoBox.classList.remove('has-photo');
+        return;
+      }
+      if (!file.type.match(/^image\//)) {
+        alert('Please choose an image file (JPEG, PNG, etc.).');
+        photoInput.value = '';
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        alert('Photo is too large. Please use an image under 8 MB.');
+        photoInput.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        photoDataUrl = ev.target.result;
+        photoPreview.src = photoDataUrl;
+        photoPreview.classList.add('visible');
+        photoBox.classList.add('has-photo');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function val(name){ var el = form.elements[name]; return el ? (el.value || '').trim() : ''; }
+    function radio(name){ var els = form.querySelectorAll('[name="'+name+'"]'); for (var i=0;i<els.length;i++) if (els[i].checked) return els[i].value; return ''; }
+    function checks(name){
+      var out = [];
+      form.querySelectorAll('[name="'+name+'"]:checked').forEach(function(el){ out.push(el.value); });
+      return out.join('; ');
+    }
+    function fmtDate(iso){
+      if (!iso) return '';
+      var p = iso.split('-');
+      if (p.length !== 3) return iso;
+      return p[2]+'/'+p[1]+'/'+p[0];
+    }
+
+    function addSection(doc, y, title, lines, pageW, M, maxY){
+      if (y > maxY - 20) { doc.addPage(); y = 18; }
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(198, 40, 40);
+      doc.text(title, M, y);
+      y += 6;
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      lines.forEach(function(row){
+        if (!row[1]) return;
+        var label = row[0] + ': ';
+        var text = doc.splitTextToSize(label + row[1], pageW - M * 2);
+        if (y + text.length * 4 > maxY) { doc.addPage(); y = 18; doc.setFontSize(9); }
+        doc.text(text, M, y);
+        y += text.length * 4 + 2;
+      });
+      return y + 4;
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+      if (!photoDataUrl) {
+        alert('Please add a participant photo (face or ID).');
+        photoInput.focus();
+        return;
+      }
+
+      var JsPDF = window.jspdf && window.jspdf.jsPDF;
+      if (!JsPDF) { alert('Could not load PDF generator. Check your connection and try again.'); return; }
+
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+
+      try {
+        var doc = new JsPDF({ unit: 'mm', format: 'a4' });
+        var M = 14;
+        var pageW = doc.internal.pageSize.getWidth();
+        var maxY = doc.internal.pageSize.getHeight() - 14;
+        var y = 18;
+
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(198, 40, 40);
+        doc.text('ClubSENsational — Client Registration', M, y);
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text('Submitted: ' + new Date().toLocaleString('en-GB'), M, y);
+        y += 8;
+
+        try {
+          var imgFmt = photoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+          var imgW = 55;
+          var imgH = 55;
+          doc.addImage(photoDataUrl, imgFmt, pageW - M - imgW, 14, imgW, imgH);
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          doc.text('Participant photo', pageW - M - imgW, 72);
+        } catch (imgErr) {
+          console.warn(imgErr);
+        }
+
+        doc.setTextColor(0, 0, 0);
+        y = addSection(doc, y, 'Parent / guardian', [
+          ['Name', val('parent_name')],
+          ['Relationship', radio('relationship')],
+          ['Phone', val('parent_phone')],
+          ['Email', val('parent_email')],
+          ['Address', val('parent_address')],
+          ['Postcode', val('parent_postcode')]
+        ], pageW, M, maxY);
+
+        y = addSection(doc, y, 'Participant', [
+          ['Name', val('participant_name')],
+          ['Date of birth', fmtDate(val('participant_dob'))],
+          ['Gender', val('participant_gender')],
+          ['School / college / residential', val('participant_school')]
+        ], pageW, M, maxY);
+
+        y = addSection(doc, y, 'Medical & support plans', [
+          ['EHCP', radio('ehcp')],
+          ['EHCP details', val('ehcp_details')],
+          ['Social worker', radio('social_worker')],
+          ['Social worker contact', val('social_worker_contact')],
+          ['Motivators', val('motivators')],
+          ['Dislikes', val('dislikes')],
+          ['Medication', val('medication')],
+          ['Allergies', val('allergies')],
+          ['Medical conditions', val('medical_conditions')],
+          ['Health / emergency plan', radio('health_plan')]
+        ], pageW, M, maxY);
+
+        y = addSection(doc, y, 'Behaviour', [
+          ['Triggers', checks('triggers')],
+          ['Regulation strategies', checks('strategies')],
+          ['Additional notes', val('behaviour_notes')],
+          ['Support when regulated', radio('support_regulated')],
+          ['Support when dysregulated', radio('support_dysregulated')]
+        ], pageW, M, maxY);
+
+        y = addSection(doc, y, 'Communication', [
+          ['Expressive communication', checks('expressive_comm')],
+          ['Understands instructions', radio('understand_instructions')],
+          ['Preferred strategies', val('comm_strategies')]
+        ], pageW, M, maxY);
+
+        y = addSection(doc, y, 'Independence', [
+          ['Mobility', radio('mobility')],
+          ['Personal care', radio('personal_care')],
+          ['Task engagement', radio('task_engagement')],
+          ['Transitions', radio('transitions')],
+          ['Risk awareness', radio('risk_awareness')],
+          ['Anything else', val('anything_else')]
+        ], pageW, M, maxY);
+
+        var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+        doc.save('ClubSENsational_Registration_' + safeName + '.pdf');
+      } catch (err) {
+        console.error(err);
+        alert('Could not create PDF. Please check all fields and try again.');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
