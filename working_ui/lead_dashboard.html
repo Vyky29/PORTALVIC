@@ -15,7 +15,7 @@
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260612-reminder-ack-copy"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260615-signed-history"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-phase2"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -8582,14 +8582,17 @@
     }
     function portalAnnouncementHistoryRows(){
       const ack = portalAnnouncementAckMapLoad();
+      const liveSet = portalLiveAnnouncementIdSet();
       const out = [];
       Object.keys(ack).forEach(function(k){
         const rec = ack[k];
         if(!rec || typeof rec !== 'object') return;
-        if(typeof portalAnnouncementAckIsArchivedSigned === 'function'){
+        if(typeof portalAnnouncementAckShouldShowInSignedHistory === 'function'){
+          if(!portalAnnouncementAckShouldShowInSignedHistory(rec, k, liveSet, portalAnnouncementAckPastHideWindow)) return;
+        }else if(typeof portalAnnouncementAckIsArchivedSigned === 'function'){
           if(!portalAnnouncementAckIsArchivedSigned(rec, k)) return;
-        }else if(typeof portalAnnouncementAckRecordIsLive === 'function'){
-          if(!portalAnnouncementAckRecordIsLive(rec, k, portalLiveAnnouncementIdSet())) return;
+          if(typeof portalAnnouncementAckPastHideWindow === 'function' && portalAnnouncementAckPastHideWindow(rec)) return;
+          if(typeof portalAnnouncementAckRecordIsLive === 'function' && !portalAnnouncementAckRecordIsLive(rec, k, liveSet)) return;
         }
         out.push({
           key: k,

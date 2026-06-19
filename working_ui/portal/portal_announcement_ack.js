@@ -124,6 +124,18 @@
     return !!(annId && liveSet[annId]);
   };
 
+  /** Signed log row: still published, not past per-worker hide window. */
+  global.portalAnnouncementAckShouldShowInSignedHistory = function portalAnnouncementAckShouldShowInSignedHistory(
+    rec,
+    key,
+    liveIdSet,
+    hidePastFn
+  ) {
+    if (!global.portalAnnouncementAckIsArchivedSigned(rec, key)) return false;
+    if (typeof hidePastFn === "function" && hidePastFn(rec)) return false;
+    return global.portalAnnouncementAckRecordIsLive(rec, key, liveIdSet);
+  };
+
   /** Drop pre-launch / orphan announcement ack rows from localStorage. */
   global.portalPrunePreLaunchAnnouncementAcks = function portalPrunePreLaunchAnnouncementAcks(
     loadMap,
@@ -144,7 +156,15 @@
           changed = true;
           return;
         }
-        if (global.portalAnnouncementAckIsArchivedSigned(rec, k)) return;
+        if (global.portalAnnouncementAckIsArchivedSigned(rec, k)) {
+          if (
+            !global.portalAnnouncementAckRecordIsLive(rec, k, liveSet)
+          ) {
+            delete ack[k];
+            changed = true;
+          }
+          return;
+        }
         if (!global.portalAnnouncementAckRecordIsLive(rec, k, liveSet)) {
           delete ack[k];
           changed = true;

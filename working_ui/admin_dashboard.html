@@ -12,6 +12,10 @@
     bootstrapDashboardSupabase({ page: "admin" });
   </script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260615-push-restore"></script>
+  <script src="/portal/portal_ensure_web_push.js?v=20260615-push-restore"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260615-admin-alerts"></script>
+  <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260625-shadowing-host" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
@@ -23008,8 +23012,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role2, target_user_id:null };
       }
       if(to === 'single_user'){
-        var uid = String($('cmpTargetUser') && $('cmpTargetUser').value || '').trim();
-        if(!uid) return { ok:false, message:'Choose a worker for individual users.' };
+        var pu = $('cmpTargetUser');
+        var uid = String(pu && pu.value || '').trim();
+        if(!uid || (pu && pu.selectedIndex <= 0)){
+          return { ok:false, message:'Choose a worker under individual users.' };
+        }
         return { ok:true, audience_scope:'all_staff', delivery_scope:'single_user', target_staff_role:null, target_user_id:uid };
       }
       return { ok:true, audience_scope:'all_staff', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
@@ -23227,6 +23234,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
       if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      if(row.delivery_scope === 'single_user' && !row.target_user_id){
+        return Promise.resolve({ ok:false, skip:false, message:'Choose a worker under individual users.' });
+      }
+      if(row.delivery_scope !== 'single_user') row.target_user_id = null;
+      if(row.delivery_scope !== 'staff_role') row.target_staff_role = null;
       portalApplyOnAckActionFromComposer(row);
       return client.from('portal_staff_announcements').update(row).eq('id', id).select('id').then(function(res){
         if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
@@ -23283,6 +23295,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       row.priority = pri;
       if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
       if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      if(row.delivery_scope === 'single_user' && !row.target_user_id){
+        return Promise.resolve({ ok:false, skip:false, message:'Choose a worker under individual users.' });
+      }
+      if(row.delivery_scope !== 'single_user') row.target_user_id = null;
+      if(row.delivery_scope !== 'staff_role') row.target_staff_role = null;
       portalApplyOnAckActionFromComposer(row);
       function publishRow(uid){
         if(uid) row.created_by = uid;
