@@ -415,6 +415,8 @@ body.portal-achievements-viewer-open .dock-bar {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .portal-achievements-camera-fs__viewport {
@@ -460,15 +462,15 @@ body.portal-achievements-viewer-open .dock-bar {
 }
 
 .portal-achievements-camera-fs__flash.is-active {
-  animation: portal-ach-cam-flash 0.22s ease-out forwards;
+  animation: portal-ach-cam-flash 0.34s ease-out forwards;
 }
 
 @keyframes portal-ach-cam-flash {
   0% {
     opacity: 0;
   }
-  12% {
-    opacity: 0.92;
+  10% {
+    opacity: 1;
   }
   100% {
     opacity: 0;
@@ -483,6 +485,7 @@ body.portal-achievements-viewer-open .dock-bar {
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -493,6 +496,10 @@ body.portal-achievements-viewer-open .dock-bar {
   background: #000;
   padding-bottom: max(6px, env(safe-area-inset-bottom));
   min-width: 0;
+  position: relative;
+  z-index: 8;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .portal-achievements-camera-fs__zoom {
@@ -576,14 +583,15 @@ body.portal-achievements-viewer-open .dock-bar {
   left: auto;
   top: auto;
   transform: none;
-  z-index: 2;
+  z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0;
-  pointer-events: none;
+  pointer-events: auto;
   justify-self: center;
+  touch-action: manipulation;
 }
 
 .portal-achievements-camera-fs__shutter {
@@ -786,6 +794,9 @@ body.portal-achievements-viewer-open .dock-bar {
   border-radius: 999px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 6;
+  pointer-events: auto;
 }
 
 .portal-ach-cam-mode--segment .portal-ach-cam-mode__ico {
@@ -914,7 +925,7 @@ body.portal-achievements-viewer-open .dock-bar {
   justify-content: center;
   gap: 10px;
   padding: 8px 0;
-  pointer-events: none;
+  pointer-events: auto;
   justify-self: center;
 }
 

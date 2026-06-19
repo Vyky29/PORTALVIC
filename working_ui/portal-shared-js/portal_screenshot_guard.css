@@ -56,11 +56,18 @@ html.portal-screenshot-worker-sensitive-hidden .portal-achievement-protected img
   filter: brightness(0) !important;
 }
 
+body.portal-achievements-camera-open .portal-achievements-camera-fs,
+body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport,
+body.portal-achievements-camera-open .portal-achievements-camera-fs__chrome,
+body.portal-achievements-camera-open .portal-achievements-camera-fs__footer,
+body.portal-achievements-camera-open .portal-achievements-camera-fs__bar,
 body.portal-achievements-camera-open .portal-achievements-camera-fs__video,
-body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport video {
+body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport video,
+body.portal-achievements-camera-open .portal-achievements-camera-fs__chrome button {
   visibility: visible !important;
   opacity: 1 !important;
   filter: none !important;
+  pointer-events: auto !important;
 }
 
 .portal-screenshot-protected img,
