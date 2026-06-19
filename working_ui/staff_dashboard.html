@@ -16,7 +16,7 @@
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script defer src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
 <script defer src="/portal/portal_alerts_notifications_ui.js?v=20260610-worker-alerts"></script>
-  <script defer src="/portal/portal_announcement_ack.js?v=20260615-prune-stale-signed"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260615-ann-sync-perf"></script>
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260617-michelle-planner"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>
@@ -9091,13 +9091,7 @@
               if(__PORTAL_STAFF_ANN_RT_DEB) clearTimeout(__PORTAL_STAFF_ANN_RT_DEB);
               __PORTAL_STAFF_ANN_RT_DEB = setTimeout(function(){
                 __PORTAL_STAFF_ANN_RT_DEB = null;
-                void portalHydrateAnnouncementsFromSupabase().then(function(){
-                  if(typeof portalSyncAnnouncementsAndRemindersUi === "function") portalSyncAnnouncementsAndRemindersUi();
-                  if(typeof renderAnnouncementsSheetContent === "function"){
-                    var sh = document.getElementById("announcementsSheet");
-                    if(sh && sh.classList.contains("open")) renderAnnouncementsSheetContent();
-                  }
-                });
+                void portalHydrateAnnouncementsFromSupabase();
               }, 400);
             }
           )
@@ -11226,14 +11220,9 @@
           );
         }
         dashboardData.portalAnnouncementAcksMerged = true;
-        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-        if(annInjected.length || remList.length || annIds.length){
-          if(typeof renderAnnouncementsSheetContent === 'function'){
-            const sh = document.getElementById('announcementsSheet');
-            if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
-          }
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
         }
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       }catch(_){
         if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
       }
@@ -12666,7 +12655,27 @@
         }
       }catch(_){}
     }
-    function portalSyncAnnouncementsAndRemindersUi(){
+    let _portalAnnSyncTimer = null;
+    let _portalAnnUiLastFp = '';
+    function portalAnnouncementsUiFingerprint(){
+      const active = typeof portalActiveAnnouncementItems === 'function' ? portalActiveAnnouncementItems().length : 0;
+      const signed = typeof portalSignedMessageHistoryRows === 'function'
+        ? portalSignedMessageHistoryRows().length
+        : (typeof portalAnnouncementHistoryRows === 'function' ? portalAnnouncementHistoryRows().length : 0);
+      const merged = dashboardData && dashboardData.portalAnnouncementAcksMerged ? '1' : '0';
+      return String(active) + '|' + String(signed) + '|' + merged;
+    }
+    function portalSyncAnnouncementsAndRemindersUi(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
+      if(_portalAnnSyncTimer) clearTimeout(_portalAnnSyncTimer);
+      const delay = opts.immediate ? 0 : 90;
+      _portalAnnSyncTimer = setTimeout(function(){
+        _portalAnnSyncTimer = null;
+        portalSyncAnnouncementsAndRemindersUiCore(opts);
+      }, delay);
+    }
+    function portalSyncAnnouncementsAndRemindersUiCore(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
       if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
         const liveSet = portalLiveAnnouncementIdSet();
         if(Object.keys(liveSet).length > 0){
@@ -12682,17 +12691,30 @@
       if(typeof portalResetStaffDemoAnnouncementAckIfFlagged === 'function') portalResetStaffDemoAnnouncementAckIfFlagged();
       if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
       if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
-      if(typeof renderNotices === 'function') renderNotices();
-      else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-      if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
-      if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
+      const fp = portalAnnouncementsUiFingerprint();
+      const fpUnchanged = fp === _portalAnnUiLastFp && !opts.force;
+      if(!fpUnchanged){
+        _portalAnnUiLastFp = fp;
+        if(typeof renderNotices === 'function') renderNotices();
+        else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
+        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+      }
+      const annSheet = document.getElementById('announcementsSheet');
+      if(annSheet && annSheet.classList.contains('open') && typeof renderAnnouncementsSheetContent === 'function'){
+        renderAnnouncementsSheetContent();
+      }
       if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
         if(!dashboardData || dashboardData.portalAnnouncementAcksMerged !== false){
           portalMaybeNotifyUnsignedAnnouncementPending();
         }
       }
-      if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
     }
+    /** @deprecated internal */
+    function portalSyncAnnouncementsAndRemindersUiImmediate(opts){
+      portalSyncAnnouncementsAndRemindersUiCore(Object.assign({ force: true }, opts || {}));
+    }
+    window.portalSyncAnnouncementsAndRemindersUi = portalSyncAnnouncementsAndRemindersUi;
 
     const TODAY_DAY_OFF_ICON =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
@@ -16852,9 +16874,7 @@
         }
 
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
-          void portalHydrateAnnouncementsFromSupabase().then(function(){
-            if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          });
+          void portalHydrateAnnouncementsFromSupabase();
         }
         if(typeof portalSyncSwimmingInstructorQuickMenus === 'function'){
           void portalSyncSwimmingInstructorQuickMenus().then(function(){

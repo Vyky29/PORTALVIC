@@ -19,19 +19,6 @@
     if (typeof global.portalRefreshAlertsNotifyUi === "function") {
       global.portalRefreshAlertsNotifyUi();
     }
-    if (
-      typeof Notification !== "undefined" &&
-      Notification.permission === "granted" &&
-      typeof global.portalRegisterPushAfterGrant === "function"
-    ) {
-      void global.portalRegisterPushAfterGrant(
-        document.getElementById("portalNotifyStatus")
-      ).then(function () {
-        if (typeof global.portalRefreshAlertsNotifyUi === "function") {
-          global.portalRefreshAlertsNotifyUi();
-        }
-      });
-    }
   }
 
   function openSheet() {
@@ -141,9 +128,6 @@
 
   function init() {
     bindUi();
-    if (typeof global.portalRefreshAlertsNotifyUi === "function") {
-      global.portalRefreshAlertsNotifyUi();
-    }
   }
 
   global.portalAdminOpenAlertsNotificationsSheet = openSheet;
@@ -157,22 +141,30 @@
 
   global.addEventListener("portal:supabase-ready", function () {
     bindUi();
-    if (typeof global.portalRegisterPortalServiceWorker === "function") {
-      void global.portalRegisterPortalServiceWorker();
-    }
-    if (
-      typeof Notification !== "undefined" &&
-      Notification.permission === "granted" &&
-      typeof global.portalEnsureWebPushSubscription === "function"
-    ) {
-      void global.portalEnsureWebPushSubscription();
-    }
-    if (typeof global.portalRefreshAlertsNotifyUi === "function") {
-      global.portalRefreshAlertsNotifyUi();
+    var deferPush = function () {
+      if (typeof global.portalRegisterPortalServiceWorker === "function") {
+        void global.portalRegisterPortalServiceWorker();
+      }
+      if (
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted" &&
+        typeof global.portalEnsureWebPushSubscription === "function"
+      ) {
+        void global.portalEnsureWebPushSubscription();
+      }
+    };
+    if (typeof global.requestIdleCallback === "function") {
+      global.requestIdleCallback(deferPush, { timeout: 4000 });
+    } else {
+      global.setTimeout(deferPush, 1200);
     }
   });
 
   if (typeof global.portalRegisterPortalServiceWorker === "function") {
-    void global.portalRegisterPortalServiceWorker();
+    if (typeof global.requestIdleCallback === "function") {
+      global.requestIdleCallback(function () {
+        void global.portalRegisterPortalServiceWorker();
+      }, { timeout: 5000 });
+    }
   }
 })(typeof window !== "undefined" ? window : globalThis);
