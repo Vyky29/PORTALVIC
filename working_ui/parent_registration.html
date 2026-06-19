@@ -261,6 +261,42 @@
     .submit-row button:hover:not(:disabled){filter:brightness(1.04);}
     .submit-row button:disabled{opacity:.6;cursor:not-allowed;}
     .required-mark{color:var(--blue);font-weight:700;}
+    .parent-submit-done{
+      display:none;
+      margin-top:24px;
+      padding:24px 20px;
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,#eef8f1 0%,#e8f7ef 100%);
+      border:1px solid rgba(21,115,71,.28);
+      text-align:center;
+      max-width:520px;
+      margin-left:auto;
+      margin-right:auto;
+    }
+    .parent-submit-done:not([hidden]){display:block;}
+    .parent-submit-done__icon{
+      width:52px;
+      height:52px;
+      margin:0 auto 12px;
+      border-radius:50%;
+      background:var(--blue);
+      color:#fff;
+      font-size:28px;
+      line-height:52px;
+      font-weight:700;
+    }
+    .parent-submit-done h2{
+      margin:0 0 10px;
+      color:var(--ink);
+      font-size:1.25rem;
+    }
+    .parent-submit-done p{
+      margin:0;
+      color:var(--text);
+      font-size:15px;
+      line-height:1.5;
+      overflow-wrap:break-word;
+    }
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -304,7 +340,7 @@
       </div>
     </div>
 
-    <div class="notice">
+    <div class="notice" id="formNotice">
       Fill in all sections below. You must add a <strong>photo of the participant</strong> (face or ID document).
       Tap <strong>Submit form</strong> to download a PDF — email it to clubSENsational or bring it to your first session.
     </div>
@@ -586,6 +622,12 @@
         <button type="submit" id="submitBtn">Submit form</button>
       </div>
     </form>
+
+    <div id="parentSubmitDone" class="parent-submit-done" hidden role="status" aria-live="polite">
+      <div class="parent-submit-done__icon" aria-hidden="true">✓</div>
+      <h2>Thank you — you&apos;re all set</h2>
+      <p data-parent-submit-msg></p>
+    </div>
   </div>
 
   <script>
@@ -742,6 +784,7 @@
 
       var btn = document.getElementById('submitBtn');
       btn.disabled = true;
+      btn.textContent = 'Sending…';
 
       try {
         var doc = new JsPDF({ unit: 'mm', format: 'a4' });
@@ -827,38 +870,48 @@
         var pdfBlob = doc.output('blob');
         doc.save(filename);
 
-        if (window.portalSubmitParentForm) {
-          var photoFile = photoInput.files && photoInput.files[0];
-          window.portalSubmitParentForm({
-            form_type: 'client_registration',
-            participant_name: val('participant_name'),
-            participant_dob: val('participant_dob'),
-            parent_name: val('parent_name'),
-            parent_email: val('parent_email'),
-            parent_phone: val('parent_phone'),
-            pdf: pdfBlob,
-            pdf_filename: filename,
-            photo: photoFile || null,
-            photo_filename: photoFile ? photoFile.name : undefined,
-            payload: {
-              relationship: radio('relationship'),
-              participant_gender: val('participant_gender'),
-              participant_school: val('participant_school'),
-              ehcp: radio('ehcp'),
-              social_worker: radio('social_worker')
-            }
-          }).then(function(){
-            alert('Thank you — your registration was sent to clubSENsational. The PDF was also downloaded to your device.');
-          }).catch(function(err){
-            console.error(err);
-            alert('PDF downloaded, but upload to clubSENsational failed. Please email the PDF to the club or try again later.');
-          });
+        if (!window.portalSubmitParentForm) {
+          throw new Error('Portal upload is not configured.');
         }
+        var photoFile = photoInput.files && photoInput.files[0];
+        window.portalSubmitParentForm({
+          form_type: 'client_registration',
+          participant_name: val('participant_name'),
+          participant_dob: val('participant_dob'),
+          parent_name: val('parent_name'),
+          parent_email: val('parent_email'),
+          parent_phone: val('parent_phone'),
+          pdf: pdfBlob,
+          pdf_filename: filename,
+          photo: photoFile || null,
+          photo_filename: photoFile ? photoFile.name : undefined,
+          payload: {
+            relationship: radio('relationship'),
+            participant_gender: val('participant_gender'),
+            participant_school: val('participant_school'),
+            ehcp: radio('ehcp'),
+            social_worker: radio('social_worker')
+          }
+        }).then(function(){
+          if (window.portalFinishParentSubmit) {
+            window.portalFinishParentSubmit({
+              formEl: form,
+              successEl: document.getElementById('parentSubmitDone'),
+              noticeEl: document.getElementById('formNotice'),
+              submitBtn: btn
+            });
+          }
+        }).catch(function(err){
+          console.error(err);
+          btn.disabled = false;
+          btn.textContent = 'Submit form';
+          alert('Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
+        });
       } catch (err) {
         console.error(err);
         alert('Could not create PDF. Please check all fields and try again.');
-      } finally {
         btn.disabled = false;
+        btn.textContent = 'Submit form';
       }
     });
   })();

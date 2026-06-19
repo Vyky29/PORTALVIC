@@ -12,6 +12,32 @@
     return String(global.SUPABASE_ANON_KEY || '').trim();
   }
 
+  function finishParentSubmit(opts) {
+    opts = opts || {};
+    var form = opts.formEl;
+    var panel = opts.successEl;
+    var notice = opts.noticeEl;
+    var btn = opts.submitBtn;
+    if (form) form.setAttribute('hidden', 'hidden');
+    if (notice) notice.setAttribute('hidden', 'hidden');
+    if (panel) {
+      panel.removeAttribute('hidden');
+      var msg = panel.querySelector('[data-parent-submit-msg]');
+      if (msg) {
+        msg.textContent =
+          opts.message ||
+          'Your form was sent to clubSENsational. A PDF copy was saved on your device. You do not need to email us — you can close this page.';
+      }
+      try {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_e) {}
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Submitted';
+    }
+  }
+
   function submitParentForm(opts) {
     var options = opts || {};
     var pdfBlob = options.pdf;
@@ -73,4 +99,5 @@
   }
 
   global.portalSubmitParentForm = submitParentForm;
+  global.portalFinishParentSubmit = finishParentSubmit;
 })(typeof window !== 'undefined' ? window : globalThis);
