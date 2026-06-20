@@ -121,20 +121,20 @@
     return best;
   }
 
-  /** Day Centre SwimFarm — opening Mon/Tue/Wed/Fri; closing per assignee below. */
+  /** Day Centre SwimFarm — Michelle opens Mon/Tue/Wed/Fri; closing per assignee below. */
   var DAY_CENTRE = {
     venue: "SwimFarm",
     label: "Day Centre",
     openDows: [1, 2, 3, 5],
     openByDow: {
       1: { serviceStart: mins(11, 0), openEnd: mins(10, 55) },
-      2: { serviceStart: mins(12, 30), openEnd: mins(12, 25) },
+      2: { serviceStart: mins(11, 0), openEnd: mins(10, 55) },
       3: { serviceStart: mins(11, 0), openEnd: mins(10, 55) },
       5: { serviceStart: mins(11, 0), openEnd: mins(10, 55) },
     },
     closeByDow: {
       1: { serviceEnd: mins(18, 30), closeEnd: mins(18, 45) },
-      2: { serviceEnd: mins(15, 0), closeEnd: mins(15, 15) },
+      2: { serviceEnd: mins(16, 0), closeEnd: mins(16, 0) },
       3: { serviceEnd: mins(18, 30), closeEnd: mins(18, 45) },
       5: { serviceEnd: mins(18, 30), closeEnd: mins(18, 45) },
     },
@@ -155,7 +155,7 @@
   var VICTOR_THU = {
     venue: "SwimFarm",
     label: "SwimFarm (Thu)",
-    closeEnd: mins(17, 15),
+    closeEnd: mins(17, 30),
     serviceEnd: mins(17, 0),
   };
 
@@ -169,30 +169,30 @@
     serviceEnd: mins(18, 30),
   };
 
-  /** Sunday pool — per-person windows. */
+  /** Sunday — pool (Roberto) and programme leaders (John, Berta). */
   var SUNDAY = {
     roberto: {
       venue: "SwimFarm",
       label: "Sunday pool (Roberto)",
-      openEnd: mins(8, 55),
+      openEnd: mins(8, 40),
       closeEnd: mins(15, 30),
-      serviceStart: mins(9, 0),
+      serviceStart: mins(8, 45),
       serviceEnd: mins(15, 15),
     },
     berta: {
       venue: "SwimFarm",
-      label: "Sunday SwimFarm (Berta)",
-      openEnd: mins(9, 25),
+      label: "Sunday leader (Berta)",
+      openEnd: mins(9, 15),
       closeEnd: mins(14, 30),
-      serviceStart: mins(9, 30),
-      serviceEnd: mins(14, 15),
+      serviceStart: mins(9, 0),
+      serviceEnd: mins(14, 30),
     },
     john: {
       venue: "SwimFarm",
-      label: "Sunday bespoke (John)",
-      openEnd: mins(9, 20),
-      closeEnd: mins(14, 45),
-      serviceStart: mins(9, 25),
+      label: "Sunday leader (John)",
+      openEnd: mins(9, 15),
+      closeEnd: mins(14, 30),
+      serviceStart: mins(9, 0),
       serviceEnd: mins(14, 30),
     },
   };
@@ -232,7 +232,7 @@
     var id = normStaffId(staffId);
     if (dow == null) dow = dowFromDayName(dayName);
 
-    if (id === "roberto" && dow === 4 && staffOnDayCentreRoster(id, dayName, sessionsModel)) {
+    if (id === "roberto" && dow === 4 && dayHasDayCentreSessions(dayName, sessionsModel)) {
       return {
         kind: "open",
         scopeKey: "roberto_thu_open",
@@ -283,22 +283,20 @@
       return null;
     }
 
-    if (DAY_CENTRE.openDows.indexOf(dow) < 0) return null;
-    if (!staffOnDayCentreRoster(id, dayName, sessionsModel)) return null;
+    if (id === "michelle" && DAY_CENTRE.openDows.indexOf(dow) >= 0) {
+      if (!dayHasDayCentreSessions(dayName, sessionsModel)) return null;
+      var cfgOpen = DAY_CENTRE.openByDow[dow];
+      if (!cfgOpen) return null;
+      return {
+        kind: "open",
+        scopeKey: "day_centre_open_" + dow,
+        venue: DAY_CENTRE.venue,
+        label: DAY_CENTRE.label,
+        openEnd: cfgOpen.openEnd,
+      };
+    }
 
-    var cfg = DAY_CENTRE.openByDow[dow];
-    if (!cfg) return null;
-
-    var earliest = dayCentreEarliestStartMin(id, dayName, sessionsModel, parseStartMin);
-    if (earliest != null && earliest > cfg.serviceStart + 30) return null;
-
-    return {
-      kind: "open",
-      scopeKey: "day_centre_open_" + dow,
-      venue: DAY_CENTRE.venue,
-      label: DAY_CENTRE.label,
-      openEnd: cfg.openEnd,
-    };
+    return null;
   }
 
   function closingDuty(staffId, dow, dayName, sessionsModel, viewDateIso) {
@@ -333,7 +331,7 @@
       }
     }
 
-    if (id === "michelle" && dow === 2 && staffOnDayCentreRoster(id, dayName, sessionsModel)) {
+    if (id === "michelle" && dow === 2 && dayHasDayCentreSessions(dayName, sessionsModel)) {
       return {
         kind: "close",
         scopeKey: "day_centre_close_2",
