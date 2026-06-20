@@ -414,6 +414,16 @@ header.topbar .topbar-profile-card h1.topbar-name,
   width:100%;
   max-width:var(--topbar-tools-cell);
 }
+.topbar-tool-cell--row-last-solo{
+  grid-column:1 / -1;
+  justify-self:center;
+  width:var(--topbar-tools-cell);
+  max-width:var(--topbar-tools-cell);
+}
+.topbar-tool-cell--row-last-solo .topbar-tool-btn{
+  width:100%;
+  max-width:var(--topbar-tools-cell);
+}
 .topbar-tool-label{
   display:block;
   width:100%;

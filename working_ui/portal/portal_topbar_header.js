@@ -241,6 +241,30 @@
     return n;
   }
 
+  /** Even visible counts → strict 2-column grid; odd counts keep PHOTO centered on row 1. */
+  function portalSyncTopbarToolsGridLayout() {
+    var grid = document.getElementById("topbarToolsGrid");
+    if (!grid) return;
+    var n = countVisibleTopbarToolCells();
+    var achievements = document.getElementById("topbarToolCellAchievements");
+    var useSoloFirstRow = n > 0 && n % 2 === 1;
+    if (achievements) {
+      achievements.classList.toggle("topbar-tool-cell--row1-solo", useSoloFirstRow);
+    }
+    var cells = grid.querySelectorAll(".topbar-tool-cell");
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].classList.remove("topbar-tool-cell--row-last-solo");
+    }
+    if (n > 1 && n % 2 === 1) {
+      for (var j = cells.length - 1; j >= 0; j--) {
+        if (!cells[j].hidden) {
+          cells[j].classList.add("topbar-tool-cell--row-last-solo");
+          break;
+        }
+      }
+    }
+  }
+
   function canonicalTopbarStaffKey(value) {
     var k = String(value || "")
       .trim()
@@ -456,6 +480,7 @@
     if (isCeo && !isLeadShell && !isProgrammeLead && typeof global.portalSyncCeoFullTopbarTools === "function") {
       global.portalSyncCeoFullTopbarTools();
     }
+    portalSyncTopbarToolsGridLayout();
   };
 
   global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;

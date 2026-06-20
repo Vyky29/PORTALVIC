@@ -86,6 +86,25 @@
       return false;
     }
 
+    /* CEO/admin on staff dashboard: same inbox as leads (all_staff + leads-wide). */
+    if (appRole === "ceo" || appRole === "admin") {
+      if (delivery === "single_user") {
+        return !!uid && targetUser === uid;
+      }
+      if (
+        delivery === "staff_role" &&
+        audience === "all_staff" &&
+        targetRole &&
+        staffRole === targetRole
+      ) {
+        return true;
+      }
+      if (delivery === "everyone" && !targetUser && targetRoleBlank) {
+        return audience === "all_staff" || audience === "leads";
+      }
+      return false;
+    }
+
     return false;
   };
 
