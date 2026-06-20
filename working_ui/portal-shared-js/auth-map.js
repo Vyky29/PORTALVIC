@@ -325,6 +325,7 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+  if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 
