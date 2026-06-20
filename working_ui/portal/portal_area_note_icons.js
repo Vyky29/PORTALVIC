@@ -253,29 +253,19 @@
     var rowPad = dense ? 4 : 6;
     var nameMult = { 1: 2.85, 2: 2.65, 3: 2.45, 4: 2.25, 5: 2.05 };
     var areaIconPx;
-    if (n <= 5) {
-      areaIconPx = Math.round(nameLineH * (nameMult[n] || 2.05));
-    } else {
-      var rowFit =
-        rowH > 0 ? Math.floor((rowH - rowPad * 2) * (dense ? 0.82 : 0.88)) : 0;
-      var nameFit = Math.round(nameLineH * (dense ? 1.95 : 2.15));
-      areaIconPx = rowFit > 0 ? Math.min(rowFit, nameFit) : nameFit;
-    }
-    var minCap = n <= 2 ? 44 : n <= 4 ? 38 : n <= 5 ? 34 : 28;
-    var maxCap = Math.round(nameLineH * (n <= 1 ? 3.15 : n <= 3 ? 2.95 : n <= 5 ? 2.75 : 2.35));
-    areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
     if (rowH > 0) {
-      areaIconPx = Math.min(
-        areaIconPx,
-        Math.max(minCap, Math.floor((rowH - rowPad * 2) * (n <= 5 ? 0.72 : 0.85)))
-      );
+      /* Icon fills most of the row; label stays a fixed small caption below. */
+      areaIconPx = Math.round(rowH * 0.74 - 10);
+    } else {
+      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
+      areaIconPx = areaByCount[n] || 38;
     }
-    var symbolColMax = Math.min(
-      108,
-      Math.max(58, Math.ceil(areaIconPx * venueAspect) + 4)
-    );
-    var iconPx = Math.max(dense ? 24 : 26, Math.round(areaIconPx * 0.92));
-    var labelFs = Math.max(8, Math.min(11, Math.round(nameFont * 0.65)));
+    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
+    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : 36;
+    areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
+    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
+    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
+    var labelFs = n <= 2 ? 8 : n <= 4 ? 8 : 7;
     var stackGap = 0;
     var labelBlock = Math.ceil(labelFs * 1.12) + stackGap;
     return {
