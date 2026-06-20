@@ -96,8 +96,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-ipad-full" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260622-topbar-even-grid" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260621-today-names-5plus" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260621-topbar-labels-readability" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
@@ -9411,19 +9411,18 @@
       }
     }
 
-    /** Scale topbar display name to fill the middle column (photo | name | date). */
+    /** Scale topbar display name to fit profile card / name band. */
     function portalFitTopbarName(){
       const h1 = document.getElementById('staffName');
       const givenEl = document.getElementById('staffNameGiven');
       const surEl = document.getElementById('staffNameSurname');
       if(!h1 || !givenEl) return;
-      if(document.getElementById('topbarProfileCard')){
-        h1.style.fontSize = '';
-        return;
-      }
-      const minPx = 12;
-      const maxPx = 17;
-      const avail = h1.clientWidth;
+      const inProfileCard = !!document.getElementById('topbarProfileCard');
+      const minPx = inProfileCard ? 10 : 12;
+      const maxPx = inProfileCard ? 15 : 17;
+      h1.style.fontSize = '';
+      givenEl.style.fontSize = '';
+      const avail = Math.max(0, h1.clientWidth - 6);
       if(avail < 12) return;
       let chosen = minPx;
       for(let fs = maxPx; fs >= minPx; fs--){
@@ -10013,6 +10012,10 @@
       let areaIconPx = Math.max(38, Math.round(34 + (1 - t) * 10));
       let gapPx = n >= 7 ? 2 : (n >= 4 ? 3 : Math.round(4 + (3 - n) * 0.5));
       let padY = n >= 8 ? 2 : (n >= 5 ? 3 : 4);
+      if(n >= 5 && n <= 6){
+        nameFs = Math.max(13, nameFs);
+        iconPx = Math.min(iconPx, 30);
+      }
       if(scrollMode){
         timeFs = 12;
         nameFs = 14;
@@ -10033,7 +10036,7 @@
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
       grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 0) + 'px');
       grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 0) + 'px');
-      grid.style.setProperty('--today-symbol-col-max', areaM.symbolColMax + 'px');
+      grid.style.setProperty('--today-symbol-col-max', (n >= 5 ? Math.min(areaM.symbolColMax, 62) : areaM.symbolColMax) + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
     }
