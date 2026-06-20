@@ -8825,6 +8825,16 @@
       }catch(_){}
       try{
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        if(sid && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+          const now = new Date();
+          const from = portalIsoYmdFromDate(now);
+          const toD = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120);
+          const to = portalIsoYmdFromDate(toD);
+          portalStaffInstructorCoverCalendarIsoKeys(sid, from, to).forEach(add);
+        }
+      }catch(_){}
+      try{
+        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(sid && typeof portalTermStaffExtraCalendarDates === 'function'){
           portalTermStaffExtraCalendarDates(sid).forEach(add);
         }
@@ -10029,8 +10039,8 @@
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() === 'override_void') return;
         if(ov.override_type !== 'instructor_reassign') return;
-        const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
-        if(!cov || cov !== staffId) return;
+        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        if(!cov || cov !== portalNormKeyStr(staffId)) return;
         const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
@@ -10039,14 +10049,12 @@
           clientId: String(ov.anchor_client_id || '').toLowerCase(),
           staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
           status: 'Scheduled',
-          activity: 'Swimming'
+          activity: String(ov.payload && ov.payload.activity || ov.payload && ov.payload.service || 'Swimming').trim() || 'Swimming',
+          rosterService: String(ov.payload && ov.payload.service || '').trim(),
+          session_date: sessionDateKey
         };
         const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
         const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
-        if(typeof portalStaffRosterOpenSlotOverlapsWindow === 'function'
-          && portalStaffRosterOpenSlotOverlapsWindow(cov, sessionDateKey, anchorDayWord, coverWinStart, coverWinEnd)){
-          return;
-        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         const slotOv = portalTodayScheduleOverrideForSession(base, sessionDateKey);
@@ -10170,8 +10178,8 @@
         if(slotOv && slotOv.override_type === 'client_replace_in_slot' && slotOv.payload){
           nameFromReplaceC = portalOverrideReplacementClientName(slotOv.payload);
         }
-        const c = clientNotesById[effCoverId] || (nameFromReplaceC ? { name: nameFromReplaceC, generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' } : null);
-        if(!c) return;
+        const c = portalClientNotesLookup(effCoverId) || portalTodayClientNotesForSession(Object.assign({}, base, { clientId: effCoverId || base.clientId }));
+        if(!c || !String(c.name || effCoverId || base.clientId || '').trim()) return;
         const activity = (s.activity || 'Swimming').trim();
         const time = rosterSlotTimeLabel(s);
         const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effCoverId);
@@ -10368,7 +10376,20 @@
     function portalStaffMarkInitialTodayScheduleSettled(){
       try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = true; }catch(_){}
     }
+    function portalStaffEnsureInitialTodayScheduleSettledSoon(){
+      try{
+        if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__) return;
+        window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = setTimeout(function(){
+          window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = null;
+          if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return;
+          portalStaffMarkInitialTodayScheduleSettled();
+          try{ if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay(); }catch(_){}
+          try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+        }, 12000);
+      }catch(_){}
+    }
     try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
+    try{ portalStaffEnsureInitialTodayScheduleSettledSoon(); }catch(_){}
     /** Live Today: staff has a dated shift on the anchor calendar day (Summer Term 2 timetable). */
     function portalStaffLiveTodayHasScheduledShift(staffId, anchorDate){
       try{
@@ -11956,6 +11977,10 @@
           if(viewTo && iso && iso > viewTo) continue;
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
+          try{
+            var builtRows = typeof portalBuildTodayRowsForIso === 'function' ? portalBuildTodayRowsForIso(iso) : [];
+            if(builtRows.length) return { date: d, weekdayName: wname };
+          }catch(_built){}
         }
         return null;
       }
