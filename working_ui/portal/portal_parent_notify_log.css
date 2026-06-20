@@ -158,6 +158,21 @@
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
 }
 
+.portal-pnlog-reply-btn--head {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.portal-pnlog-row__side .portal-pnlog-reply-btn--head {
+  align-self: flex-end;
+}
+
+@media (max-width: 640px) {
+  .portal-pnlog-row__side .portal-pnlog-reply-btn--head {
+    align-self: flex-start;
+  }
+}
+
 .portal-pnlog-reply-hint {
   margin: 0;
   font-size: 13px;

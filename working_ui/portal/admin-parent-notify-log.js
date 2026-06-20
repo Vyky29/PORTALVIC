@@ -13,6 +13,15 @@
     getClient: function () {
       return null;
     },
+    toast: function () {},
+    getSupabaseUrl: function () {
+      return "";
+    },
+    getAnonKey: function () {
+      return "";
+    },
+    openModal: null,
+    closeModal: null,
   };
 
   var state = {
@@ -42,6 +51,11 @@
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
     if (options.getClient) cfg.getClient = options.getClient;
+    if (options.toast) cfg.toast = options.toast;
+    if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
+    if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
+    if (options.openModal) cfg.openModal = options.openModal;
+    if (options.closeModal) cfg.closeModal = options.closeModal;
   }
 
   function esc(s) {
@@ -201,6 +215,234 @@
     return t.slice(0, 117) + "…";
   }
 
+  function threadContextForPhone(phone) {
+    var digits = phoneDigits(phone);
+    var ctx = {
+      parentName: "",
+      parentWhatsapp: digits,
+      parentEmail: "",
+      clientDisplay: "",
+      sessionDate: "",
+      venue: "",
+    };
+    if (!digits) return ctx;
+    (state.timeline || []).forEach(function (item) {
+      if (item.direction !== "out") return;
+      var row = item.row;
+      if (phoneDigits(row.parent_phone) !== digits) return;
+      if (row.client_display && !ctx.clientDisplay) ctx.clientDisplay = String(row.client_display).trim();
+      if (row.parent_name && !ctx.parentName) ctx.parentName = String(row.parent_name).trim();
+      if (row.parent_email && !ctx.parentEmail) ctx.parentEmail = String(row.parent_email).trim();
+      if (row.session_date && !ctx.sessionDate) ctx.sessionDate = String(row.session_date).trim();
+      if (row.venue && !ctx.venue) ctx.venue = String(row.venue).trim();
+    });
+    return ctx;
+  }
+
+  function replySubject(clientDisplay, parentName) {
+    var label = String(clientDisplay || parentName || "Family").trim();
+    return "Message · " + (label || "Family");
+  }
+
+  function replyDraftBody(parentName, inboundText) {
+    var greet = String(parentName || "").trim();
+    var head = greet ? "Hi " + greet + ",\n\n" : "Hi,\n\n";
+    var quote = String(inboundText || "").trim();
+    var quoteBlock = quote
+      ? "\n\n(Re their message: “" + quote.replace(/[\r\n\t]+/g, " ").slice(0, 280) + "”)\n\n"
+      : "\n\n";
+    return head + "This is ClubSENsational." + quoteBlock + "\n\nThank you,\nClubSENsational";
+  }
+
+  function ensureParentNotifySendConfigured() {
+    if (!global.PortalParentNotifySend) return false;
+    global.PortalParentNotifySend.configure({
+      esc: cfg.esc,
+      toast: cfg.toast,
+      getClient: cfg.getClient,
+      getSupabaseUrl: cfg.getSupabaseUrl,
+      getAnonKey: cfg.getAnonKey,
+    });
+    return true;
+  }
+
+  function formatSendError(err, data) {
+    if (global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatNotifyError === "function") {
+      return global.PortalParentNotifySend.formatNotifyError(err, data);
+    }
+    return String(err || "send_failed").replace(/_/g, " ");
+  }
+
+  function openReplyModal(inRow) {
+    if (!inRow) return;
+    if (typeof cfg.openModal !== "function" || typeof cfg.closeModal !== "function") {
+      cfg.toast("Reply unavailable — refresh the page.", "err");
+      return;
+    }
+    if (!ensureParentNotifySendConfigured()) {
+      cfg.toast("Send module not loaded — refresh the page.", "err");
+      return;
+    }
+    var ctx = threadContextForPhone(inRow.from_phone);
+    if (inRow.contact_name && !ctx.parentName) ctx.parentName = String(inRow.contact_name).trim();
+    var subj = replySubject(ctx.clientDisplay, ctx.parentName);
+    var body = replyDraftBody(ctx.parentName, inRow.body_text);
+    var defaultChannel = ctx.parentEmail ? "whatsapp" : "whatsapp";
+
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">Reply to parent</h2></div><div class="modal-b">' +
+        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:anywhere">Send via the portal WhatsApp API — same thread as this family reply. Logged in Family messages.</p>' +
+        '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">' +
+        '<div><label class="muted" for="pnlogParentName">Parent / carer name</label><input id="pnlogParentName" class="inp" style="max-width:100%" value="' +
+        esc(ctx.parentName) +
+        '" /></div>' +
+        (ctx.clientDisplay
+          ? '<div><label class="muted">Participant</label><p class="muted" style="margin:6px 0 0;overflow-wrap:anywhere">' +
+            esc(ctx.clientDisplay) +
+            "</p></div>"
+          : "") +
+        '<div style="grid-column:1/-1"><label class="muted" for="pnlogParentWa">WhatsApp (digits, incl. country code)</label><input id="pnlogParentWa" class="inp" style="max-width:100%" value="' +
+        esc(ctx.parentWhatsapp) +
+        '" autocomplete="off" /></div>' +
+        (ctx.parentEmail
+          ? '<div style="grid-column:1/-1"><label class="muted" for="pnlogParentEmail">Email (optional)</label><input id="pnlogParentEmail" class="inp" type="email" style="max-width:100%" value="' +
+            esc(ctx.parentEmail) +
+            '" autocomplete="off" /></div>'
+          : "") +
+        "</div>" +
+        '<fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0"><legend class="muted" style="margin-bottom:6px">Send channel</legend>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;min-width:0">' +
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="whatsapp"' +
+        (defaultChannel === "whatsapp" ? " checked" : "") +
+        ' /> <span>WhatsApp</span></label>' +
+        (ctx.parentEmail
+          ? '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="email" /> <span>Email</span></label>' +
+            '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="both" /> <span>Both</span></label>'
+          : "") +
+        "</div></fieldset>" +
+        '<label class="muted" for="pnlogBody" style="display:block;margin-top:12px">Message</label>' +
+        '<textarea class="txa" id="pnlogBody" style="min-height:200px;max-width:100%">' +
+        esc(body) +
+        "</textarea>" +
+        '<p class="muted" id="pnlogSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:anywhere;display:none" role="status"></p>' +
+        "</div>" +
+        '<div class="modal-f" style="flex-wrap:wrap;gap:8px">' +
+        '<button type="button" class="btn btn--ghost" id="pnlogClose">Close</button>' +
+        '<button type="button" class="btn btn--pri" id="pnlogSend" style="background:#15803d;border-color:#15803d">Send now</button>' +
+        "</div>"
+    );
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+    function selectedChannel() {
+      var r = document.querySelector('input[name="pnlogChannel"]:checked');
+      return r && r.value ? String(r.value) : "whatsapp";
+    }
+    function updateSendButton() {
+      var ch = selectedChannel();
+      var wa = phoneDigits(($("pnlogParentWa") && $("pnlogParentWa").value) || "");
+      var em = (($("pnlogParentEmail") && $("pnlogParentEmail").value) || "").trim();
+      var btn = $("pnlogSend");
+      if (!btn) return;
+      var needEm = ch === "email" || ch === "both";
+      var needWa = ch === "whatsapp" || ch === "both";
+      btn.disabled = !((!needEm || em) && (!needWa || wa));
+    }
+    $("pnlogClose").onclick = function () {
+      cfg.closeModal();
+    };
+    ["pnlogBody", "pnlogParentWa", "pnlogParentEmail", "pnlogParentName"].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener("input", updateSendButton);
+    });
+    document.querySelectorAll('input[name="pnlogChannel"]').forEach(function (el) {
+      el.addEventListener("change", updateSendButton);
+    });
+    updateSendButton();
+    $("pnlogSend").onclick = function () {
+      var ch = selectedChannel();
+      var msgBody = (($("pnlogBody") && $("pnlogBody").value) || "").trim();
+      var em = (($("pnlogParentEmail") && $("pnlogParentEmail").value) || "").trim();
+      var wa = phoneDigits(($("pnlogParentWa") && $("pnlogParentWa").value) || "");
+      if (!msgBody) {
+        cfg.toast("Message is empty", "err");
+        return;
+      }
+      if ((ch === "email" || ch === "both") && !em) {
+        cfg.toast("Enter an email address", "err");
+        return;
+      }
+      if ((ch === "whatsapp" || ch === "both") && !wa) {
+        cfg.toast("Enter a WhatsApp number", "err");
+        return;
+      }
+      var btn = $("pnlogSend");
+      var statusEl = $("pnlogSendStatus");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Sending…";
+      }
+      if (statusEl) {
+        statusEl.style.display = "none";
+        statusEl.textContent = "";
+      }
+      void global.PortalParentNotifySend.send({
+        kind: "custom",
+        channel: ch,
+        parentName: (($("pnlogParentName") && $("pnlogParentName").value) || "").trim(),
+        parentEmail: em,
+        parentWhatsapp: wa,
+        subject: subj,
+        body: msgBody,
+        clientDisplay: ctx.clientDisplay || null,
+        sessionDate: ctx.sessionDate || null,
+        venue: ctx.venue || null,
+      }).then(function (res) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Send now";
+        }
+        updateSendButton();
+        if (!res || !res.ok) {
+          var err = formatSendError(res && res.error, res && res.data);
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.textContent = err;
+          } else {
+            cfg.toast(err, "err");
+          }
+          return;
+        }
+        var msg =
+          global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
+            ? global.PortalParentNotifySend.formatSendResult(res.data)
+            : "Sent.";
+        cfg.toast(msg, "ok");
+        cfg.closeModal();
+        void loadRows(true);
+      }).catch(function () {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Send now";
+        }
+        updateSendButton();
+        if (statusEl) {
+          statusEl.style.display = "block";
+          statusEl.textContent = "Send failed — check your connection.";
+        } else {
+          cfg.toast("Send failed", "err");
+        }
+      });
+    };
+    var backdrop = document.getElementById("modalBackdrop");
+    if (backdrop) {
+      backdrop.onclick = function (e) {
+        if (e.target === backdrop) cfg.closeModal();
+      };
+    }
+  }
+
   function renderOutboundDetail(row) {
     if (!row) return "";
     var ch = String(row.channel || "").toLowerCase();
@@ -285,8 +527,11 @@
       '<pre class="portal-pnlog-detail__body">' +
       esc(String(row.body_text || "")) +
       "</pre>" +
-      '<p class="muted portal-pnlog-reply-hint">To reply, use <strong>Send now</strong> from Scheduling or Bookings with this parent’s WhatsApp number.</p>' +
-      "</div>"
+      '<div class="portal-pnlog-detail__actions">' +
+      '<button type="button" class="btn btn--pri btn--sm portal-pnlog-reply-btn" data-inbound-id="' +
+      esc(String(row.id || "")) +
+      '">Reply</button>' +
+      "</div></div>"
     );
   }
 
@@ -339,6 +584,9 @@
             '<span class="portal-pnlog-row__when muted">' +
             inWhen +
             "</span>" +
+            '<button type="button" class="btn btn--pri btn--sm portal-pnlog-reply-btn portal-pnlog-reply-btn--head" data-inbound-id="' +
+            esc(String(inRow.id || "")) +
+            '">Reply</button>' +
             "</span></summary>" +
             '<div class="portal-pnlog-row__body">' +
             renderInboundDetail(inRow) +
@@ -395,6 +643,38 @@
         );
       })
       .join("");
+    bindReplyActions();
+  }
+
+  function findInboundRow(id) {
+    var want = String(id || "").trim();
+    if (!want) return null;
+    for (var i = 0; i < (state.timeline || []).length; i++) {
+      var item = state.timeline[i];
+      if (item.direction !== "in") continue;
+      if (String(item.row.id || "") === want) return item.row;
+    }
+    return null;
+  }
+
+  function bindReplyActions() {
+    var list = document.getElementById("portalParentNotifyLogList");
+    if (!list || list.getAttribute("data-reply-bound") === "1") return;
+    list.setAttribute("data-reply-bound", "1");
+    list.addEventListener("mousedown", function (e) {
+      if (e.target.closest(".portal-pnlog-reply-btn")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+    list.addEventListener("click", function (e) {
+      var btn = e.target.closest(".portal-pnlog-reply-btn");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var row = findInboundRow(btn.getAttribute("data-inbound-id"));
+      if (row) openReplyModal(row);
+    });
   }
 
   function bindFilters() {
@@ -511,7 +791,7 @@
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<h1 class="page-title">Family messages</h1>' +
-      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus inbound <strong>WhatsApp replies</strong> to the API number. Read replies here; respond with <strong>Send now</strong> on the same parent number.</p>' +
+      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus inbound <strong>WhatsApp replies</strong>. Use <strong>Reply</strong> on any family message to respond in the same thread.</p>' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search participant, phone, text…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogChannel" class="sel portal-pnlog-toolbar__sel" aria-label="Channel filter">' +
