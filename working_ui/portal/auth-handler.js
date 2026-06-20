@@ -229,6 +229,8 @@ function portalNormalizeStaffKey(value) {
 }
 
 export function portalInferStaffKey(profile, authEmail) {
+  const fromEmail = resolveStaffKeyFromAuthEmail(authEmail);
+  if (fromEmail) return portalCanonicalStaffRosterKey(fromEmail);
   const u = portalNormalizeStaffKey(profile?.username);
   if (u) return portalCanonicalStaffRosterKey(u);
   const rawName = String(profile?.full_name || "").trim();
@@ -237,8 +239,6 @@ export function portalInferStaffKey(profile, authEmail) {
     const firstKey = portalNormalizeStaffKey(firstWord);
     if (firstKey) return portalCanonicalStaffRosterKey(firstKey);
   }
-  const fromEmail = resolveStaffKeyFromAuthEmail(authEmail);
-  if (fromEmail) return fromEmail;
   const fn = portalNormalizeStaffKey(profile?.full_name);
   if (fn) return portalCanonicalStaffRosterKey(fn);
   return "";

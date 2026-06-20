@@ -63,6 +63,13 @@
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
+    "victor@clubsensational.org": "victor",
+    "raul@clubsensational.org": "raul",
+    "javier@clubsensational.org": "javi",
+    "javi@clubsensational.org": "javi",
+    "javier@clbusensational.org": "javi",
+    "sevitha@clubsensational.org": "sevitha",
+    "info@clubsensational.org": "sevitha",
   };
 
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */
@@ -80,16 +87,104 @@
    * Authoritative roster key for the signed-in user (email / username / infer — not name guesses).
    * @returns {string}
    */
+  function portalStaffRosterDisplayName(rosterKey) {
+    var k = portalProfileRosterKey(rosterKey);
+    if (!k) return "";
+    var source = portalDashboardSource();
+    if (source && source.staffProfiles && source.staffProfiles[k]) {
+      var sn = String(source.staffProfiles[k].staffName || "").trim();
+      if (sn) return sn;
+    }
+    return "";
+  }
+
+  /**
+   * Topbar display name: roster spreadsheet label first (Javi vs Javier), then auth profile.
+   * @param {object} [profile]
+   * @param {object} [authUser] auth.users row or { email, user_metadata }
+   * @param {string} [staffIdOpt] resolved STAFF_DASHBOARD_ID when known
+   * @returns {string}
+   */
+  function portalStaffTopbarDisplayName(profile, authUser, staffIdOpt) {
+    var p = profile || {};
+    var user = authUser || null;
+    var email = user && user.email ? String(user.email) : "";
+    var sid = portalProfileRosterKey(staffIdOpt || "");
+    if (!sid) sid = portalPrimaryStaffRosterKey(p, user);
+    if (sid) {
+      var fromRoster = portalStaffRosterDisplayName(sid);
+      if (fromRoster) return fromRoster;
+    }
+    var blocked = sid && ROSTER_KEY_NEVER_CROSS[sid] ? ROSTER_KEY_NEVER_CROSS[sid] : [];
+    function nameWouldCross(keyGuess) {
+      var g = portalProfileRosterKey(keyGuess);
+      if (!g || !sid) return false;
+      return blocked.indexOf(g) >= 0;
+    }
+    var n = "";
+    if (p.full_name && !nameWouldCross(String(p.full_name).split(/\s+/)[0])) {
+      n = String(p.full_name || "").trim();
+    }
+    if (!n && p.username && !nameWouldCross(p.username)) {
+      n = String(p.username).trim();
+    }
+    if (!n && user) {
+      var meta = user.user_metadata || {};
+      var metaName = String(meta.full_name || meta.name || "").trim();
+      if (metaName && !nameWouldCross(metaName.split(/\s+/)[0])) n = metaName;
+    }
+    if (!n && sid) {
+      var canon = portalStaffRosterDisplayName(sid);
+      if (canon) return canon;
+    }
+    if (!n && email && !portalRosterKeyFromAuthEmail(email)) {
+      n = String(email.split("@")[0] || "").trim();
+    }
+    return n;
+  }
+
+  /**
+   * Signed-in roster key for schedule UI — never borrow javier when auth resolves javi (and vice versa).
+   * @param {object} [profile]
+   * @param {object} [authUser]
+   * @param {string} [currentIdOpt] STAFF_DASHBOARD_ID when known
+   * @returns {string}
+   */
+  function portalEffectiveStaffDashboardId(profile, authUser, currentIdOpt) {
+    var current = portalProfileRosterKey(
+      currentIdOpt ||
+        (typeof window !== "undefined" && window.STAFF_DASHBOARD_ID) ||
+        ""
+    );
+    var primary = portalPrimaryStaffRosterKey(profile, authUser);
+    if (!primary) return current;
+    if (
+      current &&
+      ROSTER_KEY_NEVER_CROSS[primary] &&
+      ROSTER_KEY_NEVER_CROSS[primary].indexOf(current) >= 0
+    ) {
+      return primary;
+    }
+    if (
+      current &&
+      ROSTER_KEY_NEVER_CROSS[current] &&
+      ROSTER_KEY_NEVER_CROSS[current].indexOf(primary) >= 0
+    ) {
+      return primary;
+    }
+    return current || primary;
+  }
+
   function portalPrimaryStaffRosterKey(profile, authUser) {
     var p = profile || {};
     var user = authUser || null;
     var email = user && user.email ? String(user.email) : "";
+    var fromEmail = portalRosterKeyFromAuthEmail(email);
+    if (fromEmail) return fromEmail;
     if (typeof window.portalInferStaffKey === "function") {
       var inferred = window.portalInferStaffKey(p, email);
       if (inferred) return portalProfileRosterKey(inferred);
     }
-    var fromEmail = portalRosterKeyFromAuthEmail(email);
-    if (fromEmail) return fromEmail;
     var fromUser = portalProfileRosterKey(p.username);
     if (fromUser && PORTAL_STAFF_CODE_TO_ROSTER_KEY[fromUser]) return PORTAL_STAFF_CODE_TO_ROSTER_KEY[fromUser];
     if (fromUser && !/^stf\d{3}$/.test(fromUser)) return fromUser;
@@ -262,6 +357,9 @@
   }
 
   window.portalPrimaryStaffRosterKey = portalPrimaryStaffRosterKey;
+  window.portalEffectiveStaffDashboardId = portalEffectiveStaffDashboardId;
+  window.portalStaffRosterDisplayName = portalStaffRosterDisplayName;
+  window.portalStaffTopbarDisplayName = portalStaffTopbarDisplayName;
   window.portalStaffRosterKeyCandidates = portalStaffRosterKeyCandidates;
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
   window.portalBootstrapFromMachineFallback = portalBootstrapFromMachineFallback;
