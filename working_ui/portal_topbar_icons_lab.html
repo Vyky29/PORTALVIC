@@ -81,6 +81,63 @@
     .lab-pill--custom{background:#cffafe;color:#0e7490}
     .lab-pill--default{background:#f1f5f9;color:#64748b}
     .lab-pill--lead{background:#fef3c7;color:#92400e}
+    .lab-pill--role-lead{background:rgba(139,92,246,.16);color:#5b21b6}
+    .lab-pill--role-support{background:rgba(20,184,166,.16);color:#0f766e}
+    .lab-pill--role-swim{background:rgba(249,115,22,.16);color:#c2410c}
+    .lab-pill--role-climb{background:rgba(100,116,139,.18);color:#334155}
+    .lab-pill--role-fitness{background:rgba(34,197,94,.16);color:#15803d}
+    .lab-pill--role-manager{background:rgba(59,130,246,.16);color:#1d4ed8}
+    .lab-pill--role-admin{background:rgba(14,116,144,.16);color:#0e7490}
+    .lab-role-group td{
+      background:#f8fafc;font-size:.72rem;font-weight:800;letter-spacing:.04em;
+      text-transform:uppercase;color:var(--lab-muted);text-align:left;padding:10px 8px 6px;
+    }
+    .lab-topbar-src{font-size:.68rem;color:var(--lab-muted);font-weight:600}
+    .lab-preview-picker{
+      display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+      margin:12px 0 14px;padding:12px;border-radius:14px;
+      background:#f8fafc;border:1px solid rgba(23,50,71,.08);min-width:0;
+    }
+    .lab-preview-picker__group{
+      display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+      align-items:center;min-width:0;width:100%;
+    }
+    .lab-preview-picker__group-label{
+      flex:0 0 100%;width:100%;margin:0 0 2px;
+      font-size:.68rem;font-weight:800;letter-spacing:.04em;
+      text-transform:uppercase;color:var(--lab-muted);text-align:center;
+    }
+    .lab-preview-picker__group + .lab-preview-picker__group{
+      margin-top:4px;padding-top:10px;border-top:1px dashed rgba(23,50,71,.1);
+    }
+    .lab-preview-chip{
+      border:1px solid rgba(23,50,71,.14);background:#fff;color:var(--lab-ink);
+      border-radius:999px;padding:6px 12px;font-size:.78rem;font-weight:700;
+      font-family:inherit;cursor:pointer;max-width:100%;min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      transition:background .15s,border-color .15s,box-shadow .15s;
+    }
+    .lab-preview-chip:hover{border-color:rgba(45,132,179,.45)}
+    .lab-preview-chip.is-active{
+      background:#173247;color:#fff;border-color:#173247;
+      box-shadow:0 2px 8px rgba(23,50,71,.18);
+    }
+    .lab-preview-chip--support_lead.is-active{background:#5b21b6;border-color:#5b21b6}
+    .lab-preview-chip--support.is-active{background:#0f766e;border-color:#0f766e}
+    .lab-preview-chip--swimming.is-active{background:#c2410c;border-color:#c2410c}
+    .lab-preview-chip--climbing.is-active{background:#475569;border-color:#475569}
+    .lab-preview-chip--fitness.is-active{background:#15803d;border-color:#15803d}
+    .lab-preview-chip--manager.is-active{background:#1d4ed8;border-color:#1d4ed8}
+    .lab-preview-chip--admin.is-active{background:#0e7490;border-color:#0e7490}
+    .lab-preview-nav{
+      display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;
+      margin:0 0 10px;
+    }
+    .lab-preview-nav .lab-btn{min-width:88px}
+    .lab-preview-nav__label{
+      font-size:.82rem;font-weight:700;color:var(--lab-ink);min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(100%,240px);
+    }
   </style>
 </head>
 <body>
@@ -119,7 +176,8 @@
           <thead>
             <tr>
               <th>Trabajador</th>
-              <th>Fuente</th>
+              <th>Rol</th>
+              <th>Topbar</th>
               <th>PHOTO</th>
               <th>VENUE</th>
               <th>PICKUP</th>
@@ -138,7 +196,13 @@
 
     <section class="lab-section" id="labPreviewSection">
       <h2 style="margin:0 0 6px;font-size:1.05rem">Preview en vivo</h2>
-      <p class="lab-lead" id="labPreviewCaption">Selecciona un trabajador en la tabla.</p>
+      <p class="lab-lead" id="labPreviewCaption">Elige un trabajador abajo o en la tabla.</p>
+      <div class="lab-preview-nav" aria-label="Navegar preview">
+        <button type="button" class="lab-btn lab-btn--sm" id="labPreviewPrev" aria-label="Trabajador anterior">‹ Anterior</button>
+        <span class="lab-preview-nav__label" id="labPreviewNavLabel">John</span>
+        <button type="button" class="lab-btn lab-btn--sm" id="labPreviewNext" aria-label="Trabajador siguiente">Siguiente ›</button>
+      </div>
+      <div class="lab-preview-picker" id="labPreviewPicker" role="tablist" aria-label="Seleccionar trabajador"></div>
       <div class="lab-preview-host" id="labPreviewHost"></div>
       <p class="lab-preview-meta" id="labPreviewMeta" hidden></p>
     </section>
@@ -151,7 +215,7 @@
     <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
   </div>
 
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260621-javi-palankas"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-bismark-dual-role"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-topbar-lab"></script>
   <script>
   (function(){
@@ -177,6 +241,26 @@
     };
     var LABEL = {photo:"PHOTO",venue:"VENUE",pickup:"PICKUP",review:"REVIEW",plan:"PLAN",lead:"LEAD",stats:"STATS"};
 
+    var ROLE_ORDER = ["support_lead","support","swimming","climbing","fitness","manager","admin",""];
+    var ROLE_LABELS = {
+      support_lead: "Support lead",
+      support: "Support worker",
+      swimming: "Swimming instructor",
+      climbing: "Climbing",
+      fitness: "Fitness",
+      manager: "Manager",
+      admin: "Admin"
+    };
+    var ROLE_PILL_CLASS = {
+      support_lead: "lab-pill--role-lead",
+      support: "lab-pill--role-support",
+      swimming: "lab-pill--role-swim",
+      climbing: "lab-pill--role-climb",
+      fitness: "lab-pill--role-fitness",
+      manager: "lab-pill--role-manager",
+      admin: "lab-pill--role-admin"
+    };
+
     var state = { selectedKey:"john", custom:{}, view:"table" };
 
     function rosterStaff(){
@@ -189,11 +273,48 @@
         out.push({
           key: k,
           name: String(p.staffName || k).trim() || k,
-          track: String(p.staffRoleTrack || "").trim()
+          track: String(p.staffRoleTrack || "").trim(),
+          tracks: Array.isArray(p.staffRoleTracks) && p.staffRoleTracks.length
+            ? p.staffRoleTracks.map(function(t){ return String(t || "").trim(); }).filter(Boolean)
+            : [String(p.staffRoleTrack || "").trim()].filter(Boolean)
         });
       });
-      out.sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {sensitivity:"base"}); });
+      out.sort(function(a,b){
+        var ra = ROLE_ORDER.indexOf(sortTrackForStaff(a));
+        var rb = ROLE_ORDER.indexOf(sortTrackForStaff(b));
+        if(ra < 0) ra = 99;
+        if(rb < 0) rb = 99;
+        if(ra !== rb) return ra - rb;
+        return a.name.localeCompare(b.name, undefined, {sensitivity:"base"});
+      });
       return out;
+    }
+
+    function roleLabel(track){
+      var t = String(track || "").trim();
+      return ROLE_LABELS[t] || (t ? t.replace(/_/g, " ") : "Sin rol");
+    }
+
+    function rolePillClass(track){
+      return ROLE_PILL_CLASS[String(track || "").trim()] || "lab-pill--default";
+    }
+
+    function rolePillHtml(track){
+      var cls = rolePillClass(track);
+      return '<span class="lab-pill '+cls+'">'+roleLabel(track)+'</span>';
+    }
+
+    function rolePillsHtml(tracks){
+      var list = Array.isArray(tracks) ? tracks : [tracks];
+      return list.filter(Boolean).map(function(t){ return rolePillHtml(t); }).join(" ");
+    }
+
+    function sortTrackForStaff(s){
+      var tracks = s.tracks && s.tracks.length ? s.tracks : [s.track];
+      for(var i=0;i<ROLE_ORDER.length;i++){
+        if(tracks.indexOf(ROLE_ORDER[i]) >= 0) return ROLE_ORDER[i];
+      }
+      return tracks[0] || s.track || "";
     }
 
     function loadCustom(){
@@ -341,9 +462,9 @@
       return !!(state.custom[key] && Object.keys(state.custom[key]).length);
     }
 
-    function sourceLabel(key){
+    function topbarSourceLabel(key){
+      if(isCustomKey(key)) return "custom";
       var exp = window.PORTAL_EXPLICIT_TOPBAR_PROFILES || {};
-      if(isCustomKey(key)) return "lab custom";
       if(exp[key]) return "explicit";
       return "default";
     }
@@ -352,7 +473,14 @@
       var body = document.getElementById("labStaffBody");
       if(!body) return;
       var rows = rosterStaff();
-      body.innerHTML = rows.map(function(s){
+      var html = [];
+      var lastTrack = null;
+      rows.forEach(function(s){
+        var groupTrack = sortTrackForStaff(s);
+        if(groupTrack !== lastTrack){
+          lastTrack = groupTrack;
+          html.push('<tr class="lab-role-group"><td colspan="12">'+roleLabel(groupTrack)+'</td></tr>');
+        }
         var p = effectiveProfile(s.key);
         var vis = visibleToolsFor(s.key, p);
         var mode = gridModeFor(s.key, p, vis.length);
@@ -363,22 +491,21 @@
         }).join("");
         var sel = s.key === state.selectedKey ? " is-selected" : "";
         var custom = isCustomKey(s.key) ? " is-custom" : "";
-        var pill = isCustomKey(s.key) ? '<span class="lab-pill lab-pill--custom">custom</span>' :
-          (sourceLabel(s.key) === "explicit" ? '<span class="lab-pill lab-pill--lead">explicit</span>' :
-          '<span class="lab-pill lab-pill--default">default</span>');
-        return '<tr class="lab-staff-row'+sel+custom+'" data-staff="'+s.key+'">'+
-          '<td class="lab-staff-name">'+s.name+' '+pill+'</td>'+
-          '<td class="lab-staff-src">'+sourceLabel(s.key)+'</td>'+
+        var topbarSrc = topbarSourceLabel(s.key);
+        html.push('<tr class="lab-staff-row'+sel+custom+'" data-staff="'+s.key+'">'+
+          '<td class="lab-staff-name">'+s.name+'</td>'+
+          '<td class="lab-staff-src">'+rolePillsHtml(s.tracks)+'</td>'+
+          '<td class="lab-staff-src"><span class="lab-topbar-src">'+topbarSrc+'</span></td>'+
           checks+
           '<td class="lab-count'+cntCls+'">'+vis.length+'</td>'+
-          '<td>'+mode+'</td></tr>';
-      }).join("");
+          '<td>'+mode+'</td></tr>');
+      });
+      body.innerHTML = html.join("");
 
       body.querySelectorAll(".lab-staff-row").forEach(function(tr){
         tr.addEventListener("click", function(e){
           if(e.target && e.target.matches("input[type=checkbox]")) return;
-          state.selectedKey = tr.getAttribute("data-staff");
-          renderAll();
+          selectStaff(tr.getAttribute("data-staff"), {scrollTable:false});
         });
       });
       body.querySelectorAll('input[type="checkbox"][data-tool]').forEach(function(cb){
@@ -401,6 +528,65 @@
           renderAll();
         });
       });
+    }
+
+    function selectStaff(key, opts){
+      if(!key) return;
+      state.selectedKey = key;
+      renderAll();
+      opts = opts || {};
+      if(opts.scrollTable !== false){
+        var row = document.querySelector('.lab-staff-row[data-staff="'+key+'"]');
+        if(row && typeof row.scrollIntoView === "function"){
+          row.scrollIntoView({block:"nearest", behavior:"smooth"});
+        }
+      }
+      var activeChip = document.querySelector('.lab-preview-chip.is-active');
+      if(activeChip && typeof activeChip.scrollIntoView === "function"){
+        activeChip.scrollIntoView({block:"nearest", inline:"center", behavior:"smooth"});
+      }
+    }
+
+    function renderPreviewPicker(){
+      var host = document.getElementById("labPreviewPicker");
+      if(!host) return;
+      var rows = rosterStaff();
+      var html = [];
+      var lastTrack = null;
+      rows.forEach(function(s){
+        var groupTrack = sortTrackForStaff(s);
+        if(groupTrack !== lastTrack){
+          if(lastTrack !== null) html.push("</div>");
+          lastTrack = groupTrack;
+          html.push('<div class="lab-preview-picker__group" role="presentation">'+
+            '<p class="lab-preview-picker__group-label">'+roleLabel(groupTrack)+'</p>');
+        }
+        var active = s.key === state.selectedKey ? " is-active" : "";
+        var trackCls = groupTrack ? " lab-preview-chip--"+groupTrack : "";
+        html.push('<button type="button" class="lab-preview-chip'+trackCls+active+'" role="tab"'+
+          ' aria-selected="'+(s.key === state.selectedKey ? "true" : "false")+'"'+
+          ' data-staff="'+s.key+'">'+s.name+'</button>');
+      });
+      if(lastTrack !== null) html.push("</div>");
+      host.innerHTML = html.join("");
+      host.querySelectorAll(".lab-preview-chip").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          selectStaff(btn.getAttribute("data-staff"), {scrollTable:false});
+        });
+      });
+      var navLabel = document.getElementById("labPreviewNavLabel");
+      if(navLabel){
+        var cur = rows.find(function(s){ return s.key === state.selectedKey; });
+        navLabel.textContent = cur ? cur.name : state.selectedKey;
+      }
+    }
+
+    function staffIndex(key){
+      var rows = rosterStaff();
+      for(var i=0;i<rows.length;i++){
+        if(rows[i].key === key) return i;
+      }
+      return -1;
     }
 
     function renderPreview(){
@@ -429,7 +615,7 @@
         var p = effectiveProfile(s.key);
         var vis = visibleToolsFor(s.key, p);
         return '<article class="lab-worker-card">'+
-          '<h3><span>'+s.name+'</span><span class="lab-count'+(vis.length>=7?" lab-count--warn":" lab-count--ok")+'">'+vis.length+'</span></h3>'+
+          '<h3><span>'+s.name+'</span><span>'+rolePillsHtml(s.tracks)+'</span></h3>'+
           '<div class="lab-mini-topbar-wrap" data-card="'+s.key+'"></div></article>';
       }).join("");
       host.querySelectorAll("[data-card]").forEach(function(w){
@@ -440,6 +626,7 @@
 
     function renderAll(){
       renderTable();
+      renderPreviewPicker();
       renderPreview();
       if(state.view === "cards"){
         renderCards();
@@ -489,9 +676,22 @@
         }
       });
     });
+    document.getElementById("labPreviewPrev").addEventListener("click", function(){
+      var rows = rosterStaff();
+      if(!rows.length) return;
+      var ix = staffIndex(state.selectedKey);
+      var nextIx = ix <= 0 ? rows.length - 1 : ix - 1;
+      selectStaff(rows[nextIx].key);
+    });
+    document.getElementById("labPreviewNext").addEventListener("click", function(){
+      var rows = rosterStaff();
+      if(!rows.length) return;
+      var ix = staffIndex(state.selectedKey);
+      var nextIx = ix < 0 || ix >= rows.length - 1 ? 0 : ix + 1;
+      selectStaff(rows[nextIx].key);
+    });
     document.getElementById("labSelectAll").addEventListener("click", function(){
-      state.selectedKey = rosterStaff()[0] ? rosterStaff()[0].key : "";
-      renderAll();
+      selectStaff(rosterStaff()[0] ? rosterStaff()[0].key : "");
     });
     document.getElementById("labResetCustom").addEventListener("click", function(){
       if(!confirm("¿Borrar todos los overrides del lab (localStorage)?")) return;

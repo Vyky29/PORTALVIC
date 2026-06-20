@@ -57,6 +57,74 @@ function rosterSource() {
   }
 }
 
+/** Same dated sunday overrides as staff_dashboard_spreadsheet_adapter (e.g. BISMARK → JAVI). */
+function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source) {
+  const raw = String(instructorsRaw || "").trim();
+  const iso = String(sessionDate || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return raw;
+  const overrides = source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
+  const day = overrides && overrides[iso] ? overrides[iso] : null;
+  const map = day && day.replaceInstructor ? day.replaceInstructor : null;
+  if (!map) return raw;
+  let out = raw;
+  Object.keys(map).forEach(function (fromKey) {
+    const to = String(map[fromKey] || "").trim();
+    if (!fromKey || !to) return;
+    const re = new RegExp(String(fromKey).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    out = out.replace(re, to);
+  });
+  return out;
+}
+
+function staffRoleTrack(staffKey) {
+  const k = normKey(staffKey);
+  if (!k) return "";
+  const src = rosterSource();
+  const prof = src && src.staffProfiles ? src.staffProfiles[k] : null;
+  return normKey(prof && prof.staffRoleTrack);
+}
+
+function teamMemberChipRole(staffKey) {
+  const k = normKey(staffKey);
+  if (k === "john" || k === "berta") return "support-lead";
+  const track = staffRoleTrack(k);
+  if (track === "swimming") return "swim-instructor";
+  if (track === "support" || track === "support_lead") return "support-worker";
+  return "default";
+}
+
+function resolvedInstructorsForRow(row, iso, source) {
+  return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource());
+}
+
+function staffOnInScopeRosterRow(staffKey, row, iso, scopes, source) {
+  if (!staffKey || !row || !scopes || !scopes.length) return false;
+  const slot = rosterRowToSlot(row, iso);
+  if (!portalLeadSlotInScope(slot, scopes)) return false;
+  const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, source));
+  return keys.indexOf(normKey(staffKey)) >= 0;
+}
+
+function ensureSundayMaProgrammeLeads(memberKeys, ctx, iso) {
+  if (!ctx || !portalLeadDayUsesProgrammeWideRoster(ctx.scopes, iso)) return;
+  if (weekdayFromIso(iso) !== "Sunday") return;
+  const hasSundayMa = ctx.scopes.some(function (s) {
+    return (
+      s.programmeWideRoster &&
+      s.weekdays &&
+      s.weekdays.indexOf("Sunday") >= 0 &&
+      s.venues &&
+      s.venues.some(function (v) {
+        return normKey(v).indexOf("swimfarm") >= 0;
+      })
+    );
+  });
+  if (!hasSundayMa) return;
+  ["john", "berta"].forEach(function (k) {
+    if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
+  });
+}
+
 function staffDisplayName(staffKey) {
   const k = normKey(staffKey);
   if (!k) return "";
@@ -208,7 +276,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     if (!rosterRowMatchesIso(row, iso)) return;
     const slot = rosterRowToSlot(row, iso);
     if (!portalLeadSlotInScope(slot, ctx.scopes)) return;
-    staffKeysFromInstructorLabel(row.instructors).forEach(function (k) {
+    staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src)).forEach(function (k) {
       if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });
   });
@@ -217,7 +285,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     if (String(ov.session_date || "").slice(0, 10) !== iso) return;
     if (String(ov.status || "active") !== "active") return;
     if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
-    if (!overrideTouchesProgrammeScope(ov, ctx.scopes, iso)) return;
+    if (!overrideAnchorOnInScopeRow(ov, ctx.scopes, iso)) return;
     const pl = parseOverridePayload(ov);
     const anchor = canonicalStaffKey(ov.anchor_staff_id);
     const cover = canonicalStaffKey(pl.covering_staff_id);
@@ -228,37 +296,41 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     if (cover && memberKeys.indexOf(cover) < 0) memberKeys.push(cover);
   });
 
-  memberKeys.sort(function (a, b) {
+  const filtered = memberKeys.filter(function (k) {
+    return rows.some(function (row) {
+      return staffOnInScopeRosterRow(k, row, iso, ctx.scopes, src);
+    });
+  });
+
+  ensureSundayMaProgrammeLeads(filtered, ctx, iso);
+
+  filtered.sort(function (a, b) {
     return staffDisplayName(a).localeCompare(staffDisplayName(b));
   });
 
   return {
     iso: iso,
     programmeLabel: activeProgrammeWideScopeLabel(ctx.scopes, iso),
-    members: memberKeys.map(function (k) {
-      return { key: k, name: staffDisplayName(k) };
+    members: filtered.map(function (k) {
+      return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
     }),
   };
 }
 
-function overrideTouchesProgrammeScope(ov, scopes, iso) {
+function overrideAnchorOnInScopeRow(ov, scopes, iso) {
   if (!ov || !scopes.length) return false;
   if (!portalLeadDayUsesProgrammeWideRoster(scopes, iso)) return false;
   const anchor = canonicalStaffKey(ov.anchor_staff_id);
+  if (!anchor) return false;
   const src = rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    if (!rosterRowMatchesIso(row, iso)) continue;
-    const slot = rosterRowToSlot(row, iso);
-    if (!portalLeadSlotInScope(slot, scopes)) continue;
-    const keys = staffKeysFromInstructorLabel(row.instructors);
-    if (!anchor || keys.indexOf(anchor) >= 0) return true;
-  }
   return rows.some(function (row) {
-    if (!rosterRowMatchesIso(row, iso)) return false;
-    return portalLeadSlotInScope(rosterRowToSlot(row, iso), scopes);
+    return staffOnInScopeRosterRow(anchor, row, iso, scopes, src);
   });
+}
+
+function overrideTouchesProgrammeScope(ov, scopes, iso) {
+  return overrideAnchorOnInScopeRow(ov, scopes, iso);
 }
 
 export function portalLeadTeamShiftChanges(ctx, opts) {
@@ -331,8 +403,14 @@ function renderTodayStrip(team) {
   }
   const chips = team.members
     .map(function (m) {
+      const role = m.chipRole && m.chipRole !== "default" ? m.chipRole : "";
+      const roleClass = role ? " portal-lead-team-today__chip--" + role : "";
       return (
-        '<span class="portal-lead-team-today__chip">' + escHtml(m.name || m.key) + "</span>"
+        '<span class="portal-lead-team-today__chip' +
+        roleClass +
+        '">' +
+        escHtml(m.name || m.key) +
+        "</span>"
       );
     })
     .join("");

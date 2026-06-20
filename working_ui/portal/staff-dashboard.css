@@ -4100,10 +4100,10 @@
     .today-section-date{
       display:inline;
       margin:0;
-      font-size:inherit;
-      font-weight:inherit;
-      line-height:inherit;
-      letter-spacing:inherit;
+      font-size:11px;
+      font-weight:700;
+      line-height:1.25;
+      letter-spacing:.02em;
       color:inherit;
       text-transform:none;
     }
@@ -4134,9 +4134,11 @@
       display:flex;
       flex-wrap:wrap;
       align-items:baseline;
+      justify-content:center;
       gap:6px 10px;
       margin-bottom:8px;
       min-width:0;
+      text-align:center;
     }
     .portal-lead-team-today__title{
       font-size:11px;
@@ -4146,18 +4148,20 @@
       color:#2d84b3;
     }
     .portal-lead-team-today__programme{
-      flex:1 1 auto;
+      flex:1 1 100%;
       min-width:0;
       font-size:11px;
       font-weight:600;
       color:var(--muted);
       overflow-wrap:break-word;
+      text-align:center;
     }
     .portal-lead-team-today__chips{
       display:flex;
       flex-wrap:wrap;
       gap:6px;
       min-width:0;
+      justify-content:center;
     }
     .portal-lead-team-today__chip{
       display:inline-flex;
@@ -4172,6 +4176,21 @@
       background:rgba(45,132,179,.12);
       border:1px solid rgba(45,132,179,.24);
       overflow-wrap:break-word;
+    }
+    .portal-lead-team-today__chip--support-lead{
+      color:#5b21b6;
+      background:rgba(139,92,246,.14);
+      border-color:rgba(139,92,246,.32);
+    }
+    .portal-lead-team-today__chip--support-worker{
+      color:#0f766e;
+      background:rgba(20,184,166,.14);
+      border-color:rgba(20,184,166,.3);
+    }
+    .portal-lead-team-today__chip--swim-instructor{
+      color:#c2410c;
+      background:rgba(249,115,22,.14);
+      border-color:rgba(249,115,22,.32);
     }
     .portal-lead-team-today__empty{
       margin:0;
@@ -4234,7 +4253,7 @@
       margin-bottom:0;
     }
     .section-card--today .today-grid{
-      --today-time-fs:13px;
+      --today-time-fs:11px;
       --today-name-fs:14px;
       --today-icon:32px;
       --today-row-gap:6px;

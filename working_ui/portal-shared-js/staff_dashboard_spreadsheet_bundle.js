@@ -21,7 +21,8 @@
       "leadOnDuty": "John",
       "replaceInstructor": {
         "JOHN, BERTA": "JOHN",
-        "BISMARK": "JAVI"
+        "ALEX": "BISMARK",
+        "CARLOS": "JAVI"
       }
     },
     "2026-06-28": {
@@ -91,6 +92,16 @@
       "staffName": "Bismark",
       "avatarFile": "portal/staff_photos/bismark.png?v=20260606-bismark-buena",
       "staffRoleTrack": "support",
+      "staffRoleTracks": [
+        "support",
+        "climbing"
+      ],
+      "staffClimbingWeekdays": [
+        "Monday",
+        "Wednesday",
+        "Friday",
+        "Sunday"
+      ],
       "canViewAll": false
     },
     "giuseppe": {
@@ -6535,7 +6546,7 @@
     {
       "client_name": "Rodin",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "ALEX",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6545,7 +6556,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "CARLOS",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6615,7 +6626,7 @@
     {
       "client_name": "Eiji",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "ALEX",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6625,7 +6636,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "CARLOS",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6755,7 +6766,7 @@
     {
       "client_name": "Yusuf Ah",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "ALEX",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6765,7 +6776,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "CARLOS",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6835,7 +6846,7 @@
     {
       "client_name": "Scott",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "ALEX",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6845,7 +6856,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "CARLOS",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6945,7 +6956,7 @@
     {
       "client_name": "Ayden W",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "ALEX",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -6955,7 +6966,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "CARLOS",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -13210,15 +13221,15 @@
     },
     {
       "client_name": "Sam",
-      "client_info": "1. Goals: Social participation in group activities.\n2. Medical: None known.\n3. Communication: Verbal \u2014 prefers calm, step-by-step instructions."
+      "client_info": "1. Goals: Social participation in group activities.\n2. Medical: None known.\n3. Communication: Verbal — prefers calm, step-by-step instructions."
     },
     {
       "client_name": "Vitin",
-      "client_info": "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n2. Medical: None known.\n3. Communication: Verbal \u2014 family present at home visits."
+      "client_info": "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n2. Medical: None known.\n3. Communication: Verbal — family present at home visits."
     },
     {
       "client_name": "Jordan",
-      "client_info": "1. Goals: Improve pool entry routine and floating.\n2. Medical: Epilepsy \u2014 emergency medication in bag; staff briefed on seizure protocol.\n3. Communication: Non-verbal; responds to gestures and picture cards."
+      "client_info": "1. Goals: Improve pool entry routine and floating.\n2. Medical: Epilepsy — emergency medication in bag; staff briefed on seizure protocol.\n3. Communication: Non-verbal; responds to gestures and picture cards."
     }
   ],
   "meta": {
