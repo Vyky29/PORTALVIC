@@ -869,11 +869,20 @@
     );
   }
 
-  /** portal_session_key ? date, optional HH:MM, client slug (handles 2026-05-18||aadam_ah). */
+  /** portal_session_key → date, optional HH:MM, client slug (handles 2026-05-18||aadam_ah and date|time|client|area). */
   function parsePortalSessionKeyFields(pk) {
     var raw = clean(pk);
     if (!raw) return { date: "", time: "", clientSlug: "" };
-    var parts = raw.split("|").map(clean);
+    var parts;
+    if (raw.indexOf("||") >= 0) {
+      parts = raw.split(/\|\|+/).map(clean).filter(function (p) {
+        return !!p;
+      });
+    } else {
+      parts = raw.split("|").map(clean).filter(function (p) {
+        return !!p;
+      });
+    }
     var date = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : "";
     var dayWord = date ? weekdayLongFromIso(date) : "";
     var time = "";
@@ -889,21 +898,37 @@
       }
       var sl = slugify(p);
       if (!sl || areaSlugs[sl]) continue;
+      if (sl === "day_centre" || sl === "bespoke_shared" || sl === "aquatic") continue;
       if (!clientSlug) clientSlug = sl;
     }
-    if (!clientSlug) {
-      for (var j = 1; j < parts.length; j++) {
-        if (!parts[j]) continue;
-        var tk2 = normTimeKey(parts[j], dayWord);
-        if (tk2 && /^\d{2}:\d{2}$/.test(tk2)) continue;
-        var sl2 = slugify(parts[j]);
-        if (!sl2 || areaSlugs[sl2]) continue;
-        clientSlug = sl2;
-        break;
+    if (!clientSlug && parts.length >= 3 && date) {
+      var mid = slugify(parts[1]);
+      var third = slugify(parts[2]);
+      if (mid && !areaSlugs[mid] && mid !== "day_centre" && mid !== "bespoke_shared" && mid !== "aquatic") {
+        var tkMid = normTimeKey(parts[1], dayWord);
+        if (!tkMid || !/^\d{2}:\d{2}$/.test(tkMid)) clientSlug = canonicalClientSlug(mid);
+      }
+      if (!clientSlug && third && !areaSlugs[third] && third !== "day_centre" && third !== "bespoke_shared" && third !== "aquatic") {
+        clientSlug = canonicalClientSlug(third);
+      }
+    }
+    if (!clientSlug && parts.length >= 2 && date) {
+      var only = slugify(parts[1]);
+      if (only && !areaSlugs[only] && only !== "day_centre" && only !== "bespoke_shared" && only !== "aquatic") {
+        var tkOnly = normTimeKey(parts[1], dayWord);
+        if (!tkOnly || !/^\d{2}:\d{2}$/.test(tkOnly)) clientSlug = canonicalClientSlug(only);
       }
     }
     if (clientSlug) clientSlug = canonicalClientSlug(clientSlug);
     return { date: date, time: time, clientSlug: clientSlug };
+  }
+
+  function prettyClientSlugLabel(slug) {
+    var s = canonicalClientSlug(slug);
+    if (!s || isMislabeledRosterAreaClientName(s)) return "";
+    return s.replace(/_/g, " ").replace(/\b\w/g, function (c) {
+      return c.toUpperCase();
+    });
   }
 
   function resolveRosterClientName(slug) {
@@ -916,13 +941,10 @@
     for (var i = 0; i < rows.length; i++) {
       if (canonicalClientSlug(rows[i].client_name) === s) return clean(rows[i].client_name);
     }
-    if (isMislabeledRosterAreaClientName(s)) return "";
-    return s.replace(/_/g, " ").replace(/\b\w/g, function (c) {
-      return c.toUpperCase();
-    });
+    return prettyClientSlugLabel(s);
   }
 
-  function enrichAbsentMark(mark) {
+  function enrichAbsentMark(mark, hub) {
     if (!mark) return mark;
     var m = mark;
     var pk = clean(m.portal_session_key);
@@ -933,6 +955,22 @@
     }
     if (!clean(m.session_time) && parsed.time) {
       m = Object.assign({}, m, { session_time: parsed.time });
+    }
+    if (hub && typeof hub.slotForAbsentMark === "function") {
+      var slot = hub.slotForAbsentMark(m);
+      if (slot) {
+        m = Object.assign({}, m, {
+          client_name: clean(slot.client_name) || clean(m.client_name),
+          service: clean(slot.service) || clean(m.service),
+          session_time:
+            clean(m.session_time) ||
+            slot.time_start ||
+            normTimeKey(slot.time_slot, slot.day || weekdayLongFromIso(slot.session_date)),
+        });
+      }
+    }
+    if (!clean(m.client_name) && parsed.clientSlug) {
+      m = Object.assign({}, m, { client_name: prettyClientSlugLabel(parsed.clientSlug) });
     }
     return m;
   }
@@ -3388,7 +3426,7 @@
       list.push(entry);
     }
     for (var n = 0; n < list.length; n++) {
-      list[n] = enrichAbsentMark(list[n]);
+      list[n] = enrichAbsentMark(list[n], this);
     }
     for (var n2 = 0; n2 < list.length; n2++) {
       var m2 = list[n2];
@@ -3727,7 +3765,7 @@
   };
 
   AdminSessionsHub.prototype.slotForAbsentMark = function (mark) {
-    mark = enrichAbsentMark(mark);
+    mark = enrichAbsentMark(mark, this);
     var iso = absentMarkDateIso(mark) || clean(mark.session_date);
     var pk = clean(mark.portal_session_key);
     var parsed = parsePortalSessionKeyFields(pk);
@@ -3737,32 +3775,48 @@
     var timeHint = normTimeKey(mark.session_time, weekdayLongFromIso(iso)) || parsed.time;
     var key = pk.toLowerCase();
     var keyNorm = key.replace(/\|+/g, "|");
-    var hits = [];
+    var pkNorm = normalizePortalSessionKey(pk);
     for (var i = 0; i < slots.length; i++) {
       var sk = clean(slots[i].session_key).toLowerCase();
       if (sk && (sk === key || sk === keyNorm)) return slots[i];
+      if (pkNorm) {
+        var aliases = feedbackAliasKeysForSlot(slots[i]);
+        for (var ai = 0; ai < aliases.length; ai++) {
+          var ak = clean(aliases[ai]).toLowerCase();
+          if (ak && (ak === key || ak === keyNorm || normalizePortalSessionKey(ak) === pkNorm)) {
+            return slots[i];
+          }
+        }
+      }
       if (parsed.time && slots[i].time_start === parsed.time && canonicalClientSlug(slots[i].client_name) === clientSlug) {
         return slots[i];
       }
       if (canonicalClientSlug(slots[i].client_name) !== clientSlug) continue;
-      hits.push(slots[i]);
+      if (timeHint && (slots[i].time_start === timeHint || normTimeKey(slots[i].time_slot) === timeHint)) {
+        return slots[i];
+      }
+    }
+    var hits = [];
+    for (var j = 0; j < slots.length; j++) {
+      if (canonicalClientSlug(slots[j].client_name) !== clientSlug) continue;
+      hits.push(slots[j]);
     }
     if (!hits.length) return null;
     if (timeHint) {
-      for (var j = 0; j < hits.length; j++) {
-        if (hits[j].time_start === timeHint) return hits[j];
-        if (normTimeKey(hits[j].time_slot) === timeHint) return hits[j];
+      for (var k = 0; k < hits.length; k++) {
+        if (hits[k].time_start === timeHint) return hits[k];
+        if (normTimeKey(hits[k].time_slot) === timeHint) return hits[k];
       }
     }
     if (hits.length === 1) return hits[0];
-    for (var k = 0; k < hits.length; k++) {
-      if (isDayCentreService(hits[k].service)) return hits[k];
+    for (var m = 0; m < hits.length; m++) {
+      if (isDayCentreService(hits[m].service)) return hits[m];
     }
     return hits[0];
   };
 
   AdminSessionsHub.prototype.absentMarkDisplay = function (mark) {
-    mark = enrichAbsentMark(mark);
+    mark = enrichAbsentMark(mark, this);
     var slot = this.slotForAbsentMark(mark);
     var client = slot ? slot.client_name : clean(mark.client_name) || "\u2014";
     var service = "\u2014";
