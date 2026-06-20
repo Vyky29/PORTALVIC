@@ -233,6 +233,8 @@
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
+    if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+    if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     return k;
   }
 

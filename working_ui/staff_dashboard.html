@@ -8571,10 +8571,67 @@
       return cell;
     }
     /** Client sessions assigned to this staff on this calendar day. */
+    var __portalAchievementsOrgSessionsCache = { sourceRef: null, model: [] };
+    /** All staff sessions from roster bundle — CEO/lead photo picker must not use only the signed-in worker's model. */
+    function portalAchievementsMergedOrgSessionsModel(){
+      try{
+        var source = typeof window.portalResolveStaffDashboardSource === 'function'
+          ? window.portalResolveStaffDashboardSource()
+          : (window.STAFF_DASHBOARD_SOURCE || null);
+        if(!source || !source.staffProfiles){
+          return Array.isArray(sessionsModel) ? sessionsModel : [];
+        }
+        if(__portalAchievementsOrgSessionsCache.sourceRef === source
+          && Array.isArray(__portalAchievementsOrgSessionsCache.model)
+          && __portalAchievementsOrgSessionsCache.model.length){
+          return __portalAchievementsOrgSessionsCache.model;
+        }
+        var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+        if(!Adapter){
+          return Array.isArray(sessionsModel) ? sessionsModel : [];
+        }
+        var merged = [];
+        var seen = Object.create(null);
+        Object.keys(source.staffProfiles).forEach(function(staffKey){
+          if(String(staffKey || '').trim().toLowerCase() === 'teflon') return;
+          var boot = null;
+          try{
+            boot = Adapter.bootstrap({ source: source, staffId: staffKey });
+          }catch(_bootErr){
+            boot = null;
+          }
+          if(!boot || !Array.isArray(boot.sessionsModel)) return;
+          boot.sessionsModel.forEach(function(s){
+            if(!s) return;
+            var st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
+            if(st === 'Closed' || st === 'Available') return;
+            var cid = String(s.clientId || '').trim().toLowerCase();
+            if(!cid || cid === 'closed' || cid === 'available') return;
+            var dedupe = [
+              cid,
+              normaliseIsoDate(s.session_date || s.sessionDate),
+              String(s.day || ''),
+              String(s.start || ''),
+              String(s.staffId || '')
+            ].join('|');
+            if(seen[dedupe]) return;
+            seen[dedupe] = true;
+            merged.push(s);
+          });
+        });
+        __portalAchievementsOrgSessionsCache = { sourceRef: source, model: merged };
+        return merged;
+      }catch(_){
+        return Array.isArray(sessionsModel) ? sessionsModel : [];
+      }
+    }
+    try{ window.portalAchievementsMergedOrgSessionsModel = portalAchievementsMergedOrgSessionsModel; }catch(_){}
+
     /** Lead / CEO photo picker: every participant with a session on the selected calendar day (all staff). */
     function portalAchievementsListOrgClientsForSelectedDay(){
       try{
-        var model = Array.isArray(sessionsModel) ? sessionsModel : [];
+        var model = portalAchievementsMergedOrgSessionsModel();
+        if(!model.length) model = Array.isArray(sessionsModel) ? sessionsModel : [];
         if(!model.length) return [];
         var viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
         var anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
