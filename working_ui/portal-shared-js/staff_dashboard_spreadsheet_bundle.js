@@ -57,6 +57,10 @@
       "staffName": "Roberto",
       "avatarFile": "portal/staff_photos/roberto.png?v=20260606-roberto-buena",
       "staffRoleTrack": "swimming",
+      "staffRoleTracks": [
+        "support",
+        "swimming"
+      ],
       "canViewAll": false
     },
     "dan": {

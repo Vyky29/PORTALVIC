@@ -51,55 +51,23 @@
 
   /**
    * Named swimming / special profiles (all include CLIENTS in the header).
-   * @type {Record<string, {photo:boolean,swReview:boolean,leadReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean}>}
+   * @type {Record<string, {photo:boolean,swReview:boolean,leadReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean,stats?:boolean}>}
    */
   var EXPLICIT_TOPBAR_PROFILES = {
-    sandra: {
+    alex: {
       photo: true,
       swReview: false,
-      venue: true,
+      leadReview: false,
+      venue: false,
       pickup: true,
-      planner: true,
+      planner: false,
       sixIcon: false,
-      leadExtras: false,
     },
-    roberto: {
+    andres: {
       photo: true,
-      swReview: true,
-      venue: true,
-      pickup: true,
-      planner: true,
-      sixIcon: false,
-      leadExtras: false,
-    },
-    aurora: {
-      photo: false,
-      swReview: true,
-      venue: true,
-      pickup: true,
-      planner: false,
-      sixIcon: false,
-    },
-    dan: {
-      photo: false,
-      swReview: true,
-      venue: true,
-      pickup: true,
-      planner: false,
-      sixIcon: false,
-    },
-    javier: {
-      photo: false,
-      swReview: true,
-      venue: true,
-      pickup: true,
-      planner: false,
-      sixIcon: false,
-    },
-    simon: {
-      photo: false,
-      swReview: true,
-      venue: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
       pickup: true,
       planner: false,
       sixIcon: false,
@@ -107,26 +75,20 @@
     angel: {
       photo: false,
       swReview: true,
-      venue: true,
+      leadReview: false,
+      venue: false,
       pickup: true,
       planner: false,
       sixIcon: false,
     },
-    youssef: {
+    aurora: {
       photo: true,
       swReview: true,
-      venue: true,
+      leadReview: false,
+      venue: false,
       pickup: true,
-      planner: true,
-      sixIcon: true,
-    },
-    lulia: {
-      photo: true,
-      swReview: true,
-      venue: true,
-      pickup: true,
-      planner: true,
-      sixIcon: true,
+      planner: false,
+      sixIcon: false,
     },
     berta: {
       photo: true,
@@ -135,6 +97,61 @@
       venue: true,
       pickup: true,
       planner: true,
+      sixIcon: false,
+      leadExtras: true,
+    },
+    bismark: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    carlos: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    dan: {
+      photo: false,
+      swReview: true,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    giuseppe: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    godsway: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    javier: {
+      photo: true,
+      swReview: true,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
       sixIcon: false,
     },
     john: {
@@ -146,6 +163,15 @@
       planner: true,
       sixIcon: false,
     },
+    lulia: {
+      photo: true,
+      swReview: true,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: true,
+      sixIcon: true,
+    },
     michelle: {
       photo: true,
       swReview: false,
@@ -155,41 +181,96 @@
       planner: true,
       sixIcon: false,
     },
-    victor: {
+    sandra: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    sevitha: {
       photo: true,
       swReview: true,
+      leadReview: false,
       venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
       leadExtras: true,
+    },
+    simon: {
+      photo: false,
+      swReview: true,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: false,
+      sixIcon: false,
+    },
+    youssef: {
+      photo: true,
+      swReview: true,
+      leadReview: false,
+      venue: false,
+      pickup: true,
+      planner: true,
+      sixIcon: true,
+    },
+    roberto: {
+      photo: true,
+      swReview: true,
+      leadReview: false,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: false,
+    },
+    victor: {
+      photo: true,
+      swReview: true,
+      leadReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: true,
+      stats: false,
     },
     raul: {
       photo: true,
       swReview: true,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
       leadExtras: true,
+      stats: false,
     },
     javi: {
       photo: true,
       swReview: true,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
       leadExtras: true,
+      stats: false,
     },
     palankas: {
       photo: true,
       swReview: true,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
       leadExtras: true,
+      stats: false,
     },
   };
 
@@ -369,23 +450,16 @@
   }
 
   function applyCeoStaffTopbarTools() {
-    setIdsVisible(CEO_STAFF_TOPBAR_IDS, true);
-    setIdsVisible(SWIMMING_TERM_REVIEW_IDS, false);
-    setIdsVisible(LEAD_TERM_REVIEW_IDS, false);
-    var plannerOn = !!String(
-      global.ROUTINES_PLANNER_HANDOFF_URL || global.ROUTINES_PLANNER_URL || "",
-    ).trim();
-    setIdsVisible(SWIMMING_PLANNER_IDS, plannerOn);
-    if (plannerOn && typeof global.portalEnableRoutinesPlannerUi === "function") {
-      try {
-        global.portalEnableRoutinesPlannerUi();
-      } catch (_) {}
-    }
-    SWIMMING_MENU_IDS.forEach(function (id) {
-      setElementVisible(id, false);
-    });
+    var staffKey = resolveCurrentStaffKey();
+    if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
+    var profile = resolveTopbarProfileForStaff(staffKey);
+    applyTopbarProfile(profile);
+    var showLead = !!profile.leadExtras;
+    var showStats = showLead && profile.stats !== false;
+    setIdsVisible(["topbarToolCellLeadReport", "topbarToolLeadReport"], showLead);
+    setIdsVisible(["topbarToolCellSessionsOverview", "topbarToolSessionsOverview"], showStats);
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = false;
-    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = false;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = showLead;
   }
 
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;
@@ -414,16 +488,8 @@
 
   async function portalSyncSwimmingInstructorQuickMenus() {
     if (portalStaffIsCeoTopbarFullAccess()) {
-      applyTopbarProfile({
-        photo: true,
-        swReview: true,
-        leadReview: false,
-        venue: true,
-        pickup: true,
-        planner: true,
-        sixIcon: false,
-        leadExtras: true,
-      });
+      var ceoKey = resolveCurrentStaffKey() || resolveProgrammeLeadStaffKeyFromAuth();
+      applyTopbarProfile(resolveTopbarProfileForStaff(ceoKey));
       try {
         if (typeof global.applySetupRoleTrainingRow === "function") {
           global.applySetupRoleTrainingRow();
@@ -504,10 +570,12 @@
       if (profile.photo) out.push("photo");
       if (venueOn) out.push("venue");
       if (profile.pickup) out.push("pickup");
+      if (profile.swReview) out.push("swReview");
+      if (profile.leadReview) out.push("leadReview");
       if (plannerOn) out.push("plan");
       if (showLeadExtras) {
         out.push("lead");
-        out.push("stats");
+        if (profile.stats !== false) out.push("stats");
       }
       return out;
     }
@@ -519,7 +587,7 @@
     if (plannerOn) out.push("plan");
     if (showLeadExtras) {
       out.push("lead");
-      out.push("stats");
+      if (profile.stats !== false) out.push("stats");
     }
     return out;
   }
