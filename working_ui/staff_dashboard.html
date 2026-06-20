@@ -10914,7 +10914,7 @@
       __spreadsheetBoot = hit.boot;
       sessionsModel = hit.boot.sessionsModel || [];
       clientNotesById = hit.boot.clientNotesById || {};
-      try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+      try{ portalStaffMarkRosterHydrated(); }catch(_){}
       portalApplyClientsInfoToNotes();
       if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
       if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
