@@ -316,11 +316,21 @@
     });
   }
 
+  function portalStaffVenueReportToolsAllowed() {
+    try {
+      if (typeof global.portalCanOpenVenueReportNormally === "function") {
+        return !!global.portalCanOpenVenueReportNormally();
+      }
+    } catch (_) {}
+    return true;
+  }
+
   function applyTopbarProfile(profile) {
     profile = profile || DEFAULT_TOPBAR_PROFILE;
+    var venueOn = !!profile.venue && portalStaffVenueReportToolsAllowed();
     setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, !!profile.photo);
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
-    setIdsVisible(SWIMMING_VENUE_IDS, !!profile.venue);
+    setIdsVisible(SWIMMING_VENUE_IDS, venueOn);
     setIdsVisible(SWIMMING_PICKUP_IDS, !!profile.pickup);
     setIdsVisible(SWIMMING_PLANNER_IDS, !!profile.planner);
     if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {

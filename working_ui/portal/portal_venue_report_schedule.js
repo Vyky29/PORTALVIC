@@ -426,7 +426,7 @@
   }
 
   function portalVenueReportScopeApplies(staffId, ctx) {
-    if (!ctx || !ctx.hasShiftToday) return false;
+    ctx = ctx || {};
     var duty = portalVenueReportDutyForStaff(staffId, ctx);
     return !!(duty.opening || duty.closing);
   }
