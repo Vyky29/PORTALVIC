@@ -11,6 +11,11 @@
     "topbarToolCellTermReview",
     "topbarToolTermReview",
   ];
+  var LEAD_TERM_REVIEW_IDS = [
+    "quickMenuStaffLeadTermReview",
+    "topbarToolCellLeadTermReview",
+    "topbarToolLeadTermReview",
+  ];
   var SWIMMING_ACHIEVEMENT_IDS = [
     "quickMenuParticipantAchievements",
     "topbarToolCellAchievements",
@@ -36,6 +41,7 @@
   var DEFAULT_TOPBAR_PROFILE = {
     photo: true,
     swReview: false,
+    leadReview: false,
     venue: true,
     pickup: true,
     planner: false,
@@ -45,7 +51,7 @@
 
   /**
    * Named swimming / special profiles (all include CLIENTS in the header).
-   * @type {Record<string, {photo:boolean,swReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean}>}
+   * @type {Record<string, {photo:boolean,swReview:boolean,leadReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean}>}
    */
   var EXPLICIT_TOPBAR_PROFILES = {
     sandra: {
@@ -124,7 +130,8 @@
     },
     berta: {
       photo: true,
-      swReview: true,
+      swReview: false,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
@@ -132,7 +139,8 @@
     },
     john: {
       photo: true,
-      swReview: true,
+      swReview: false,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
@@ -140,7 +148,8 @@
     },
     michelle: {
       photo: true,
-      swReview: true,
+      swReview: false,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
@@ -165,6 +174,15 @@
       leadExtras: true,
     },
     javi: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+      leadExtras: true,
+    },
+    palankas: {
       photo: true,
       swReview: true,
       venue: true,
@@ -330,6 +348,7 @@
     var venueOn = !!profile.venue && portalStaffVenueReportToolsAllowed();
     setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, !!profile.photo);
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
+    setIdsVisible(LEAD_TERM_REVIEW_IDS, !!profile.leadReview);
     setIdsVisible(SWIMMING_VENUE_IDS, venueOn);
     setIdsVisible(SWIMMING_PICKUP_IDS, !!profile.pickup);
     setIdsVisible(SWIMMING_PLANNER_IDS, !!profile.planner);
@@ -350,6 +369,7 @@
   function applyCeoStaffTopbarTools() {
     setIdsVisible(CEO_STAFF_TOPBAR_IDS, true);
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, false);
+    setIdsVisible(LEAD_TERM_REVIEW_IDS, false);
     var plannerOn = !!String(
       global.ROUTINES_PLANNER_HANDOFF_URL || global.ROUTINES_PLANNER_URL || "",
     ).trim();
@@ -395,6 +415,7 @@
       applyTopbarProfile({
         photo: true,
         swReview: true,
+        leadReview: false,
         venue: true,
         pickup: true,
         planner: true,
@@ -430,7 +451,20 @@
     { id: "photo", label: "PHOTO", cellId: "topbarToolCellAchievements", profileKey: "photo" },
     { id: "venue", label: "VENUE", cellId: "topbarToolCellVenue", profileKey: "venue" },
     { id: "pickup", label: "PICKUP", cellId: "topbarToolCellPickup", profileKey: "pickup" },
-    { id: "review", label: "REVIEW", cellId: "topbarToolCellTermReview", profileKey: "swReview" },
+    {
+      id: "swReview",
+      label: "SW REV",
+      cellId: "topbarToolCellTermReview",
+      profileKey: "swReview",
+      reviewKind: "swimming",
+    },
+    {
+      id: "leadReview",
+      label: "LEAD REV",
+      cellId: "topbarToolCellLeadTermReview",
+      profileKey: "leadReview",
+      reviewKind: "lead",
+    },
     { id: "plan", label: "PLAN", cellId: "topbarToolCellSessionPlanner", profileKey: "planner" },
     { id: "lead", label: "LEAD", cellId: "topbarToolCellLeadReport", leadExtra: true },
     { id: "stats", label: "STATS", cellId: "topbarToolCellSessionsOverview", leadExtra: true },
@@ -478,7 +512,8 @@
     if (profile.photo) out.push("photo");
     if (venueOn) out.push("venue");
     if (profile.pickup) out.push("pickup");
-    if (profile.swReview) out.push("review");
+    if (profile.swReview) out.push("swReview");
+    if (profile.leadReview && (isProgrammeLead || isLeadShell)) out.push("leadReview");
     if (plannerOn) out.push("plan");
     if (showLeadExtras) {
       out.push("lead");

@@ -99,7 +99,7 @@
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-ipad-full" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260622-topbar-even-grid" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260622-review-split" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script src="/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix"></script>
@@ -294,7 +294,13 @@
             <div class="topbar-tool-cell" id="topbarToolCellTermReview" hidden>
               <button type="button" class="topbar-tool-btn topbar-tool-btn--term-review" id="topbarToolTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">REVIEW</span>
+                <span class="topbar-tool-label" aria-hidden="true">SW REV</span>
+              </button>
+            </div>
+            <div class="topbar-tool-cell" id="topbarToolCellLeadTermReview" hidden aria-hidden="true">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-term-review" id="topbarToolLeadTermReview" data-portal-external-url="termreview.html" aria-label="Lead term review — review staff on your programme shifts">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">LEAD REV</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellSessionPlanner" hidden aria-hidden="true">
@@ -926,7 +932,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260614-photo-repair"></script>
   <script src="/portal/portal_topbar_header.js?v=20260622-topbar-grid-7fix"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-topbar-lab"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-review-split"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>

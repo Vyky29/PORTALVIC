@@ -78,6 +78,10 @@
       "staffName": "Youssef",
       "avatarFile": "portal/staff_photos/youssef.png",
       "staffRoleTrack": "swimming",
+      "staffRoleTracks": [
+        "support",
+        "swimming"
+      ],
       "canViewAll": false
     },
     "john": {
@@ -186,13 +190,17 @@
       "staffName": "Luliya",
       "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
       "staffRoleTrack": "support",
+      "staffRoleTracks": [
+        "support",
+        "swimming"
+      ],
       "canViewAll": false
     },
     "michelle": {
       "staffId": "michelle",
       "staffName": "Michelle",
       "avatarFile": "portal/staff_photos/michelle.png",
-      "staffRoleTrack": "support",
+      "staffRoleTrack": "support_lead",
       "canViewAll": false
     },
     "simon": {

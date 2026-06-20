@@ -150,6 +150,10 @@
         <code>staff_dashboard_spreadsheet_bundle.js</code>.
       </p>
       <p class="lab-lead">
+        <strong>SW REV</strong> = swimming term review (participantes, incl. covers en otras venues).
+        <strong>LEAD REV</strong> = lead term review (valorar trabajadores en sus shifts).
+      </p>
+      <p class="lab-lead">
         Marca/desmarca iconos por persona, simula <strong>venue duty</strong> (John domingo con VENUE = 7 botones)
         y exporta el bloque para pegar en <code>EXPLICIT_TOPBAR_PROFILES</code>.
       </p>
@@ -181,7 +185,8 @@
               <th>PHOTO</th>
               <th>VENUE</th>
               <th>PICKUP</th>
-              <th>REVIEW</th>
+              <th>SW REV</th>
+              <th>LEAD REV</th>
               <th>PLAN</th>
               <th>LEAD</th>
               <th>STATS</th>
@@ -215,31 +220,32 @@
     <pre class="lab-export" id="labExport" hidden aria-hidden="true"></pre>
   </div>
 
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-bismark-dual-role"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-topbar-lab"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260623-michelle-luliya-roles"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-review-split"></script>
   <script>
   (function(){
     var STORAGE_KEY = "portalLabTopbarProfilesV1";
-    var TOOL_ORDER = ["photo","venue","pickup","review","plan","lead","stats"];
-    var PROFILE_KEYS = ["photo","venue","pickup","swReview","planner","leadExtras"];
+    var TOOL_ORDER = ["photo","venue","pickup","swReview","leadReview","plan","lead","stats"];
+    var PROFILE_KEYS = ["photo","venue","pickup","swReview","leadReview","planner","leadExtras"];
     var TOOL_TO_PROFILE = {
-      photo:"photo", venue:"venue", pickup:"pickup", review:"swReview", plan:"planner"
+      photo:"photo", venue:"venue", pickup:"pickup", swReview:"swReview", leadReview:"leadReview", plan:"planner"
     };
     var SVG = {
       photo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
       venue:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg>',
       pickup:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg>',
-      review:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg>',
+      swReview:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg>',
+      leadReview:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
       plan:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h2v4M14 14h2v4"/></svg>',
       lead:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>',
       stats:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-9"/></svg>'
     };
     var BTN_CLASS = {
       photo:"topbar-tool-btn--achievements", venue:"topbar-tool-btn--venue", pickup:"topbar-tool-btn--pickup",
-      review:"topbar-tool-btn--term-review", plan:"topbar-tool-btn--session-planner",
+      swReview:"topbar-tool-btn--term-review", leadReview:"topbar-tool-btn--lead-term-review", plan:"topbar-tool-btn--session-planner",
       lead:"topbar-tool-btn--lead-report", stats:"topbar-tool-btn--sessions-overview"
     };
-    var LABEL = {photo:"PHOTO",venue:"VENUE",pickup:"PICKUP",review:"REVIEW",plan:"PLAN",lead:"LEAD",stats:"STATS"};
+    var LABEL = {photo:"PHOTO",venue:"VENUE",pickup:"PICKUP",swReview:"SW REV",leadReview:"LEAD REV",plan:"PLAN",lead:"LEAD",stats:"STATS"};
 
     var ROLE_ORDER = ["support_lead","support","swimming","climbing","fitness","manager","admin",""];
     var ROLE_LABELS = {
@@ -479,7 +485,7 @@
         var groupTrack = sortTrackForStaff(s);
         if(groupTrack !== lastTrack){
           lastTrack = groupTrack;
-          html.push('<tr class="lab-role-group"><td colspan="12">'+roleLabel(groupTrack)+'</td></tr>');
+          html.push('<tr class="lab-role-group"><td colspan="13">'+roleLabel(groupTrack)+'</td></tr>');
         }
         var p = effectiveProfile(s.key);
         var vis = visibleToolsFor(s.key, p);
@@ -643,6 +649,7 @@
         lines.push("    "+key+": {");
         lines.push("      photo: "+!!merged.photo+",");
         lines.push("      swReview: "+!!merged.swReview+",");
+        lines.push("      leadReview: "+!!merged.leadReview+",");
         lines.push("      venue: "+!!merged.venue+",");
         lines.push("      pickup: "+!!merged.pickup+",");
         lines.push("      planner: "+!!merged.planner+",");

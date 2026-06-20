@@ -86,7 +86,7 @@ function staffRoleTrack(staffKey) {
 
 function teamMemberChipRole(staffKey) {
   const k = normKey(staffKey);
-  if (k === "john" || k === "berta") return "support-lead";
+  if (k === "john" || k === "berta" || k === "michelle") return "support-lead";
   const track = staffRoleTrack(k);
   if (track === "swimming") return "swim-instructor";
   if (track === "support" || track === "support_lead") return "support-worker";

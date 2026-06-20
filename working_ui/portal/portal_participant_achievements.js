@@ -368,14 +368,20 @@
 
   function uploadErrorMessage(err) {
     var msg = String((err && err.message) || err || "").trim();
-    if (/row-level security|rls|policy/i.test(msg)) {
+    if (/mime|content type|file size|payload too large|invalid mime/i.test(msg)) {
+      return "File type or size not allowed. Videos must be under 50 MB — try a shorter clip.";
+    }
+    if (/row-level security|rls|policy|forbidden|not_authenticated/i.test(msg)) {
       return (
-        "Could not be saved (permissions). Ask ops to run Supabase migration " +
-        "20260626200000_portal_achievement_videos.sql, then sign out and in again."
+        "Could not be saved (portal permissions). Sign out and in again as Javi/Palankas. " +
+        "If it still fails, tell ops — achievement video SQL may need updating on Supabase."
       );
     }
-    if (/mime|content type|file size|payload too large/i.test(msg)) {
-      return "File type or size not allowed. Videos must be under 50 MB — try a shorter clip.";
+    if (/media_type|duration_ms|column.*does not exist/i.test(msg)) {
+      return (
+        "Video support is not fully enabled on the database yet. Tell ops to run migration " +
+        "20260626200000_portal_achievement_videos.sql on Supabase Portal."
+      );
     }
     return msg || "Could not save";
   }

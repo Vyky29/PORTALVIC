@@ -593,6 +593,16 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   background:rgba(45,132,179,.18) !important;
   border-color:rgba(45,132,179,.45);
 }
+.topbar-tool-btn--lead-term-review{
+  background:rgba(139,92,246,.14) !important;
+  color:#6d28d9 !important;
+  border-color:rgba(139,92,246,.34);
+}
+.topbar-tool-btn--lead-term-review:hover,
+.topbar-tool-btn--lead-term-review:focus-visible{
+  background:rgba(139,92,246,.2) !important;
+  border-color:rgba(139,92,246,.48);
+}
 .topbar-tool-btn--participants{
   background:var(--ink,#173247) !important;
   color:#fff !important;

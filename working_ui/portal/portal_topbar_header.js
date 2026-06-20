@@ -379,6 +379,7 @@
   var TOPBAR_QUICK_MENU_REFS = {
     topbarToolAchievements: "quickMenuParticipantAchievements",
     topbarToolTermReview: "quickMenuStaffTermReview",
+    topbarToolLeadTermReview: "quickMenuStaffLeadTermReview",
     topbarToolVenue: "quickMenuWorkVenue",
     topbarToolPickup: "quickMenuDropoffPickup",
     topbarToolLeadReport: "quickMenuLeadFeedbackReport",
