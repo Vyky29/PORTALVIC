@@ -944,7 +944,8 @@
     return prettyClientSlugLabel(s);
   }
 
-  function enrichAbsentMark(mark, hub) {
+  /** Parse portal_session_key only — safe inside slotForAbsentMark (no slot lookup). */
+  function enrichAbsentMarkFromKey(mark) {
     if (!mark) return mark;
     var m = mark;
     var pk = clean(m.portal_session_key);
@@ -956,6 +957,12 @@
     if (!clean(m.session_time) && parsed.time) {
       m = Object.assign({}, m, { session_time: parsed.time });
     }
+    return m;
+  }
+
+  function enrichAbsentMark(mark, hub) {
+    var m = enrichAbsentMarkFromKey(mark);
+    var parsed = parsePortalSessionKeyFields(clean(m.portal_session_key));
     if (hub && typeof hub.slotForAbsentMark === "function") {
       var slot = hub.slotForAbsentMark(m);
       if (slot) {
@@ -3765,7 +3772,7 @@
   };
 
   AdminSessionsHub.prototype.slotForAbsentMark = function (mark) {
-    mark = enrichAbsentMark(mark, this);
+    mark = enrichAbsentMarkFromKey(mark);
     var iso = absentMarkDateIso(mark) || clean(mark.session_date);
     var pk = clean(mark.portal_session_key);
     var parsed = parsePortalSessionKeyFields(pk);
