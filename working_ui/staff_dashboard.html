@@ -911,8 +911,8 @@
 
   <script src="/portal/term_from_timetable.js?v=20260613-lulia-next-session-cover"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260623-roberto-dual-role"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-javi-cover"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260621-javi-sun21-cover"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-javi-sun21-cover"></script>
   <script src="/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf"></script>
   <script src="/portal/roster_master_dashboard_rows.js?v=20260614-madre-roster"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
@@ -9705,7 +9705,35 @@
           return String(s.staffId || '').toLowerCase() === staffId
             && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
         });
-        if(!hasStaffOnIso && typeof portalBestStaffRosterIsoForWeekday === 'function'
+        if(!hasStaffOnIso){
+          var shiftExpected = typeof portalStaffHasShiftOnCalendarDate === 'function'
+            && portalStaffHasShiftOnCalendarDate(sessionDateKey, staffId) === true;
+          if(!shiftExpected && typeof portalTermStaffExtraCalendarDates === 'function'){
+            shiftExpected = portalTermStaffExtraCalendarDates(staffId).indexOf(sessionDateKey) >= 0;
+          }
+          if(shiftExpected && typeof window.portalBootstrapFromMachineFallback === 'function'){
+            try{
+              const fbShift = window.portalBootstrapFromMachineFallback(staffId);
+              if(fbShift && fbShift.boot && Array.isArray(fbShift.boot.sessionsModel)){
+                const onIso = fbShift.boot.sessionsModel.some(function(s){
+                  return String(s.staffId || '').toLowerCase() === staffId
+                    && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
+                });
+                if(onIso){
+                  baseModel = fbShift.boot.sessionsModel;
+                  sessionsModel = fbShift.boot.sessionsModel;
+                  if(fbShift.boot.clientNotesById){
+                    clientNotesById = Object.assign({}, clientNotesById || {}, fbShift.boot.clientNotesById);
+                  }
+                }
+              }
+            }catch(_fbShift){}
+          }
+        }
+        if(!baseModel.some(function(s){
+          return String(s.staffId || '').toLowerCase() === staffId
+            && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
+        }) && typeof portalBestStaffRosterIsoForWeekday === 'function'
           && !portalCalendarIsoUsesSummerDatedRosterOnly(sessionDateKey)){
           const altIso = portalBestStaffRosterIsoForWeekday(baseModel, staffId, anchorDayWord, anchor);
           const floor = portalTermSummerRosterFromIso();
@@ -11032,6 +11060,9 @@
       pushKey(profileForRoster && profileForRoster.full_name);
       pushKey(String((profileForRoster && profileForRoster.full_name) || '').split(/\s+/)[0]);
       pushKey(email.split('@')[0]);
+      if(typeof window.portalPrimaryStaffRosterKey === 'function'){
+        pushKey(window.portalPrimaryStaffRosterKey(profileForRoster || {}, user));
+      }
       if(typeof window.portalInferStaffKey === 'function') pushKey(window.portalInferStaffKey(profileForRoster, email));
       var i;
       for(i = 0; i < keys.length; i++){
