@@ -4,7 +4,6 @@
 (function (global) {
   "use strict";
 
-  var META_INBOX_URL = "https://business.facebook.com/latest/inbox/all";
   var FETCH_LIMIT = 200;
 
   var cfg = {
@@ -262,14 +261,7 @@
         : "") +
       '<pre class="portal-pnlog-detail__body">' +
       esc(String(row.body_text || "")) +
-      "</pre>" +
-      '<div class="portal-pnlog-detail__actions">' +
-      (row.parent_phone
-        ? '<a class="btn btn--ghost btn--sm" href="https://wa.me/' +
-          esc(phoneDigits(row.parent_phone)) +
-          '" target="_blank" rel="noopener noreferrer">Open WhatsApp app</a>'
-        : "") +
-      "</div></div>"
+      "</pre></div>"
     );
   }
 
@@ -293,16 +285,8 @@
       '<pre class="portal-pnlog-detail__body">' +
       esc(String(row.body_text || "")) +
       "</pre>" +
-      '<div class="portal-pnlog-detail__actions">' +
-      '<a class="btn btn--sec btn--sm" href="' +
-      esc(META_INBOX_URL) +
-      '" target="_blank" rel="noopener noreferrer">Open Meta inbox</a> ' +
-      (digits
-        ? '<a class="btn btn--ghost btn--sm" href="https://wa.me/' +
-          esc(digits) +
-          '" target="_blank" rel="noopener noreferrer">Open WhatsApp app</a>'
-        : "") +
-      "</div></div>"
+      '<p class="muted portal-pnlog-reply-hint">To reply, use <strong>Send now</strong> from Scheduling or Bookings with this parent’s WhatsApp number.</p>' +
+      "</div>"
     );
   }
 
@@ -527,9 +511,7 @@
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<h1 class="page-title">Family messages</h1>' +
-      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus <strong>WhatsApp replies</strong> to the API number when the Meta webhook is connected. You can still use <a href="' +
-      esc(META_INBOX_URL) +
-      '" target="_blank" rel="noopener noreferrer">Meta Business inbox</a> for two-way chat.</p>' +
+      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus inbound <strong>WhatsApp replies</strong> to the API number. Read replies here; respond with <strong>Send now</strong> on the same parent number.</p>' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search participant, phone, text…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogChannel" class="sel portal-pnlog-toolbar__sel" aria-label="Channel filter">' +
@@ -545,9 +527,6 @@
       '<option value="replies">Replies only</option>' +
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentNotifyLogRefresh">Refresh</button>' +
-      '<a class="btn btn--ghost btn--sm" href="' +
-      esc(META_INBOX_URL) +
-      '" target="_blank" rel="noopener noreferrer">Meta inbox</a>' +
       "</div>" +
       '<div id="portalParentNotifyLogStatus" class="portal-forms-status" role="status"></div>' +
       '<p id="portalParentNotifyLogCount" class="muted portal-pnlog-count"></p>' +

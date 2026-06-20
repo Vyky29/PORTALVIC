@@ -158,6 +158,15 @@
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
 }
 
+.portal-pnlog-reply-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 42rem;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
 .portal-pnlog-detail--in .portal-pnlog-detail__body {
   background: rgba(255, 255, 255, 0.95);
 }
