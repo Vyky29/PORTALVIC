@@ -425,6 +425,91 @@
   global.portalStaffIsSwimmingInstructor = function () {
     return Promise.resolve(false);
   };
+  /** Catalog for portal_topbar_icons_lab.html — order matches staff_dashboard topbar DOM. */
+  var PORTAL_TOPBAR_TOOL_CATALOG = [
+    { id: "photo", label: "PHOTO", cellId: "topbarToolCellAchievements", profileKey: "photo" },
+    { id: "venue", label: "VENUE", cellId: "topbarToolCellVenue", profileKey: "venue" },
+    { id: "pickup", label: "PICKUP", cellId: "topbarToolCellPickup", profileKey: "pickup" },
+    { id: "review", label: "REVIEW", cellId: "topbarToolCellTermReview", profileKey: "swReview" },
+    { id: "plan", label: "PLAN", cellId: "topbarToolCellSessionPlanner", profileKey: "planner" },
+    { id: "lead", label: "LEAD", cellId: "topbarToolCellLeadReport", leadExtra: true },
+    { id: "stats", label: "STATS", cellId: "topbarToolCellSessionsOverview", leadExtra: true },
+  ];
+
+  function portalStaffIsProgrammeLeadKey(staffKey) {
+    return staffKey === "berta" || staffKey === "john" || staffKey === "michelle";
+  }
+
+  /**
+   * Resolve which header tool ids are visible for a roster profile (lab + diagnostics).
+   * @param {object} profile
+   * @param {{staffKey?:string,venueDuty?:boolean,isLeadShell?:boolean,isCeoTopbar?:boolean,plannerUrlSet?:boolean}} opts
+   * @returns {string[]}
+   */
+  function portalComputeVisibleTopbarToolIds(profile, opts) {
+    opts = opts || {};
+    profile = profile || DEFAULT_TOPBAR_PROFILE;
+    var staffKey = canonicalStaffRosterKey(opts.staffKey || "");
+    var venueOn = !!profile.venue && opts.venueDuty !== false;
+    var isLeadShell = !!opts.isLeadShell;
+    var isCeoTopbar = !!opts.isCeoTopbar || (staffKey === "victor" || staffKey === "javi" || staffKey === "raul");
+    var isProgrammeLead =
+      isLeadShell || portalStaffIsProgrammeLeadKey(staffKey) || (isCeoTopbar && !!profile.leadExtras);
+    var showLeadExtras =
+      isLeadShell ||
+      isProgrammeLead ||
+      (!!profile.sixIcon && !!profile.leadExtras);
+    var plannerOn =
+      !!profile.planner &&
+      (opts.plannerUrlSet !== false) &&
+      !!String(global.ROUTINES_PLANNER_HANDOFF_URL || global.ROUTINES_PLANNER_URL || "").trim();
+    var out = [];
+    if (isCeoTopbar && !isLeadShell && !portalStaffIsProgrammeLeadKey(staffKey)) {
+      if (profile.photo) out.push("photo");
+      if (venueOn) out.push("venue");
+      if (profile.pickup) out.push("pickup");
+      if (plannerOn) out.push("plan");
+      if (showLeadExtras) {
+        out.push("lead");
+        out.push("stats");
+      }
+      return out;
+    }
+    if (profile.photo) out.push("photo");
+    if (venueOn) out.push("venue");
+    if (profile.pickup) out.push("pickup");
+    if (profile.swReview) out.push("review");
+    if (plannerOn) out.push("plan");
+    if (showLeadExtras) {
+      out.push("lead");
+      out.push("stats");
+    }
+    return out;
+  }
+
+  function portalTopbarGridModeForVisibleCount(n, profile, opts) {
+    opts = opts || {};
+    profile = profile || DEFAULT_TOPBAR_PROFILE;
+    var staffKey = canonicalStaffRosterKey(opts.staffKey || "");
+    var isProgrammeLead =
+      !!opts.isLeadShell ||
+      portalStaffIsProgrammeLeadKey(staffKey) ||
+      ((staffKey === "victor" || staffKey === "javi" || staffKey === "raul") && !!profile.leadExtras);
+    var showLeadExtras =
+      !!opts.isLeadShell ||
+      isProgrammeLead ||
+      (!!profile.sixIcon && !!profile.leadExtras);
+    if (n >= 7) return "eight";
+    if (showLeadExtras || n > 3 || !!profile.sixIcon) return "lead";
+    return "four";
+  }
+
+  global.PORTAL_TOPBAR_TOOL_CATALOG = PORTAL_TOPBAR_TOOL_CATALOG;
+  global.PORTAL_DEFAULT_TOPBAR_PROFILE = DEFAULT_TOPBAR_PROFILE;
+  global.PORTAL_EXPLICIT_TOPBAR_PROFILES = EXPLICIT_TOPBAR_PROFILES;
+  global.portalComputeVisibleTopbarToolIds = portalComputeVisibleTopbarToolIds;
+  global.portalTopbarGridModeForVisibleCount = portalTopbarGridModeForVisibleCount;
+  global.portalStaffIsProgrammeLeadKey = portalStaffIsProgrammeLeadKey;
   global.portalSyncSwimmingInstructorQuickMenus = portalSyncSwimmingInstructorQuickMenus;
   global.portalSyncSwimmingTermReviewQuickMenu = portalSyncSwimmingInstructorQuickMenus;
   global.portalResolveStaffTopbarProfile = resolveTopbarProfileForStaff;

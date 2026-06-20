@@ -241,13 +241,17 @@
     return n;
   }
 
-  /** Even visible counts → strict 2-column grid; odd counts keep PHOTO centered on row 1. */
+  /** Even counts → 2 columns; compact 6/8 grids never use row-1 solo (avoids John 7-icon overflow). */
   function portalSyncTopbarToolsGridLayout() {
     var grid = document.getElementById("topbarToolsGrid");
     if (!grid) return;
     var n = countVisibleTopbarToolCells();
+    var strictTwoCol =
+      grid.classList.contains("topbar-tools-grid--lead") ||
+      grid.classList.contains("topbar-tools-grid--eight") ||
+      grid.classList.contains("topbar-tools-grid--ceo-full");
     var achievements = document.getElementById("topbarToolCellAchievements");
-    var useSoloFirstRow = n > 0 && n % 2 === 1;
+    var useSoloFirstRow = !strictTwoCol && n === 1;
     if (achievements) {
       achievements.classList.toggle("topbar-tool-cell--row1-solo", useSoloFirstRow);
     }
