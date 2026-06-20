@@ -10303,6 +10303,35 @@
         const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
         return [start, end, staff, venue].join('|');
       }
+      /** Dedupe cover rows injected from instructor_reassign when roster already lists the same client slot. */
+      function portalTodayItemClientSlotDedupeKey(it){
+        const base = it && it.__portalBaseSession ? it.__portalBaseSession : (it || {});
+        const skParts = String(it && it.sessionKey || '').split('|');
+        const cid = String(it && it.clientId || base.clientId || '').trim().toLowerCase();
+        if(!cid || cid === 'available' || cid === 'closed' || cid === 'meeting' || cid === 'training' || cid === 'shadowing') return '';
+        const start = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.start || skParts[1] || '')
+          : String(base.start || skParts[1] || '').trim();
+        const end = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.end || '')
+          : String(base.end || '').trim();
+        const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
+        return [cid, start, end, venue].join('|');
+      }
+      function portalDedupeInstructorCoverExtras(primaryItems, extraItems){
+        if(!Array.isArray(primaryItems) || !Array.isArray(extraItems) || !extraItems.length) return extraItems || [];
+        const seen = Object.create(null);
+        primaryItems.forEach(function(it){
+          const k = portalTodayItemClientSlotDedupeKey(it);
+          if(k) seen[k] = true;
+        });
+        return extraItems.filter(function(it){
+          const ov = it && it.__portalScheduleOverride;
+          if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return true;
+          const k = portalTodayItemClientSlotDedupeKey(it);
+          return !k || !seen[k];
+        });
+      }
       function portalSuppressAvailableWhenSlotFilled(items){
         if(!Array.isArray(items) || !items.length) return items || [];
         const filled = Object.create(null);
@@ -10320,7 +10349,7 @@
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
-        portalSuppressAvailableWhenSlotFilled(primary.concat(extra)),
+        portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra))),
         sessionDateKey,
         anchorDayWord,
         anchor,
