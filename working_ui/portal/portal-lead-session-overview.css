@@ -147,11 +147,13 @@ body.portal-lead-session-overview-page {
 }
 /* Programme-lead week strip: full Mon–Sun, equal columns — no overlap. */
 .plso-shell .ash-week-block,
-.plso-shell .ash-week-sticky-anchor {
+.plso-shell .ash-week-sticky-anchor,
+.plso-shell .ash-feedback-week {
   min-width: 0;
   max-width: 100%;
 }
-.plso-shell .ash-day-row--week {
+.plso-shell .ash-day-row--week,
+.plso-shell .ash-day-row--feedback {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
@@ -160,7 +162,8 @@ body.portal-lead-session-overview-page {
   align-items: stretch;
   box-sizing: border-box;
 }
-.plso-shell .ash-day-row--week .ash-day-card {
+.plso-shell .ash-day-row--week .ash-day-card,
+.plso-shell .ash-day-row--feedback .ash-day-card {
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -202,19 +205,44 @@ body.portal-lead-session-overview-page {
   hyphens: auto;
 }
 @media (max-width: 1100px) {
-  .plso-shell .ash-week-block {
+  .plso-shell .ash-week-block,
+  .plso-shell .ash-week-sticky-anchor,
+  .plso-shell .ash-feedback-week {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
-  .plso-shell .ash-day-row--week {
-    grid-template-columns: repeat(7, minmax(92px, 1fr));
-    min-width: min(100%, 700px);
+  .plso-shell .ash-day-row--week,
+  .plso-shell .ash-day-row--feedback {
+    grid-template-columns: repeat(7, minmax(80px, 1fr));
+    min-width: min(100%, 580px);
   }
-}
-@media (max-width: 900px) {
-  .plso-shell .ash-day-row--week {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-width: 0;
+  .plso-shell .ash-day-card--week .ash-day-card__wd-full,
+  .plso-shell .ash-day-card--feedback .ash-day-card__wd-full {
+    display: none !important;
+  }
+  .plso-shell .ash-day-card--week .ash-day-card__wd-short,
+  .plso-shell .ash-day-card--feedback .ash-day-card__wd-short {
+    display: block !important;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+  .plso-shell .ash-day-card--week .ash-day-card__dt {
+    display: none;
+  }
+  .plso-shell .ash-day-card--week .ash-day-card__sessions strong {
+    font-size: clamp(14px, 4vw, 20px);
+    line-height: 1.1;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .plso-shell .ash-day-card--week .ash-day-card__sessions small {
+    font-size: 8px;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    max-width: 100%;
+    overflow-wrap: break-word;
   }
 }
 .c4k-sessions-hub-panel[hidden] {

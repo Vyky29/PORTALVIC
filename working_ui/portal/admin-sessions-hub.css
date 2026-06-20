@@ -262,17 +262,61 @@
     .ash-day-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
     .ash-day-row--week { margin-top: 2px; }
     @media (max-width: 900px) {
+      .ash-week-sticky-anchor,
+      .ash-week-block,
+      .ash-feedback-week {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        max-width: 100%;
+        min-width: 0;
+      }
       .ash-day-row {
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        overflow-x: visible;
-        gap: 4px;
-        padding-bottom: 0;
+        grid-template-columns: repeat(7, minmax(76px, 1fr));
+        gap: 6px;
+        min-width: min(100%, 560px);
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .ash-day-row .ash-day-card {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+      .ash-day-card--week .ash-day-card__wd-full,
+      .ash-day-card--feedback .ash-day-card__wd-full {
+        display: none !important;
+      }
+      .ash-day-card--week .ash-day-card__wd-short,
+      .ash-day-card--feedback .ash-day-card__wd-short {
+        display: block !important;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      .ash-day-card--week .ash-day-card__dt {
+        display: none;
+      }
+      .ash-day-card--week .ash-day-card__sessions strong {
+        font-size: clamp(14px, 4vw, 20px);
+        line-height: 1.1;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+      .ash-day-card--week .ash-day-card__sessions small {
+        font-size: 8px;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+        max-width: 100%;
+        overflow-wrap: break-word;
       }
     }
-    body.admin-touch-compact .ash-day-row--feedback {
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      overflow-x: visible;
-      gap: 4px;
+    body.admin-touch-compact .ash-day-row--feedback,
+    body.admin-touch-compact .ash-day-row--week {
+      grid-template-columns: repeat(7, minmax(76px, 1fr));
+      gap: 6px;
+      min-width: min(100%, 560px);
     }
     body.admin-touch-compact .ash-day-card--feedback {
       padding: 6px 3px 7px;
@@ -283,13 +327,51 @@
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt {
       display: none !important;
     }
-    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-full {
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-full,
+    body.admin-touch-compact .ash-day-card--week .ash-day-card__wd-full {
       display: none !important;
     }
-    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-short {
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-short,
+    body.admin-touch-compact .ash-day-card--week .ash-day-card__wd-short {
       display: block !important;
       font-size: 10px;
       font-weight: 800;
+    }
+    body.admin-touch-compact .ash-day-card--week {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      padding: 8px 4px;
+    }
+    body.admin-touch-compact .ash-day-card--week .ash-day-card__dt {
+      display: none !important;
+    }
+    body.admin-touch-compact .ash-day-card--week .ash-day-card__sessions strong {
+      font-size: 15px;
+      line-height: 1.1;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    body.admin-touch-compact .ash-day-card--week .ash-day-card__sessions small {
+      font-size: 8px;
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    body.admin-touch-compact .ash-day-card--week.ash-day-card--sel,
+    body.admin-touch-compact .ash-day-card--feedback.ash-day-card--sel {
+      border-width: 2px;
+      box-shadow: inset 0 0 0 2px var(--ash-day-col, #3b82f6);
+    }
+    body.admin-touch-compact .ash-week-sticky-anchor,
+    body.admin-touch-compact .ash-week-block,
+    body.admin-touch-compact .ash-feedback-week {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      max-width: 100%;
+      min-width: 0;
     }
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__bar {
       height: 6px;
@@ -1000,6 +1082,13 @@
     .override--shadowing { background: rgba(14,165,233,.14); color: #0369a1; border: 1px solid rgba(14,165,233,.35); }
     .override--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
+    .ash-status__compact { display: none; }
+    @media (max-width: 900px) {
+      .ash-status--wait .ash-status__wide { display: none; }
+      .ash-status--wait .ash-status__compact { display: inline; }
+    }
+    body.admin-touch-compact .ash-status--wait .ash-status__wide { display: none; }
+    body.admin-touch-compact .ash-status--wait .ash-status__compact { display: inline; }
     .ash-status--done { color: #166534; font-weight: 700; font-size: 12px; }
     .ash-status--absent { color: #b91c1c; font-weight: 700; font-size: 12px; }
     .ash-status--cancelled { color: #c2410c; font-weight: 700; font-size: 12px; }
