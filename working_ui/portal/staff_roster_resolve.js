@@ -51,6 +51,7 @@
     if (k === "aida") return "lulia";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+    if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];
     if (alias) return alias;
     return k;

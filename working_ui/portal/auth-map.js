@@ -1,12 +1,12 @@
 /**
  * Username → email for Supabase signInWithPassword (resolveDemoEmail for auth-handler).
  *
- * Executives: victor@, javi@ (Javi Arranz CEO), raul@, sevitha@ (Auth users).
+ * Executives: victor@, javi@ (Palankas Arranz CEO), raul@, sevitha@ (Auth users).
  * javier@ → login alias for javi@ (same CEO Auth user; not staff Javier Marquez).
  * info@ → login alias for Sevitha (same Auth as sevitha@).
  * admin@ → system From address only (no portal login).
  *
- * Staff roster keys: javi = Javi Arranz (CEO), javier = Javier Marquez (swimming).
+ * Staff roster keys: javi = Palankas Arranz (CEO), javier = Javier Marquez (swimming).
  */
 
 /** Canonical Auth emails for CEO + admin (one Supabase user each). CEO Auth email may be javier@; staff key is javi. */
@@ -93,6 +93,9 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Lulia: "stf021@staff.import.pending",
   Andres: "stf022@staff.import.pending",
   Javi: "javier@clubsensational.org",
+  Palankas: "javier@clubsensational.org",
+  "Palankas Arranz": "javier@clubsensational.org",
+  "Palankas Arranz Escorial": "javier@clubsensational.org",
   "Javi Arranz": "javier@clubsensational.org",
   "Javi Arranz Escorial": "javier@clubsensational.org",
   Raul: "raul@clubsensational.org",

@@ -20,7 +20,8 @@
     "2026-06-21": {
       "leadOnDuty": "John",
       "replaceInstructor": {
-        "JOHN, BERTA": "JOHN"
+        "JOHN, BERTA": "JOHN",
+        "BISMARK": "JAVI"
       }
     },
     "2026-06-28": {
@@ -150,7 +151,7 @@
     },
     "javi": {
       "staffId": "javi",
-      "staffName": "Javi",
+      "staffName": "Palankas",
       "avatarFile": "portal/staff_photos/javi.png",
       "staffRoleTrack": "manager",
       "canViewAll": true
