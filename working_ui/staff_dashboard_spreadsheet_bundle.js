@@ -22,7 +22,8 @@
       "replaceInstructor": {
         "JOHN, BERTA": "JOHN",
         "ALEX": "BISMARK",
-        "CARLOS": "JAVI"
+        "CARLOS": "JAVI",
+        "BISMARK": "JAVI"
       }
     },
     "2026-06-28": {
