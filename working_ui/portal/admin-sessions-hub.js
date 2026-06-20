@@ -3437,7 +3437,7 @@
       list.push(entry);
     }
     for (var n = 0; n < list.length; n++) {
-      list[n] = enrichAbsentMark(list[n], this);
+      list[n] = enrichAbsentMarkFromKey(list[n]);
     }
     for (var n2 = 0; n2 < list.length; n2++) {
       var m2 = list[n2];
@@ -3458,6 +3458,11 @@
       }
       var slotMatch = this.slotForAbsentMark(m2);
       if (slotMatch) {
+        var slotKey = clean(slotMatch.session_key).toLowerCase();
+        if (slotKey) {
+          if (!byKey[slotKey]) byKey[slotKey] = [];
+          byKey[slotKey].push(m2);
+        }
         var slotAliasKeys = feedbackAliasKeysForSlot(slotMatch);
         for (var sx = 0; sx < slotAliasKeys.length; sx++) {
           var sax = clean(slotAliasKeys[sx]).toLowerCase();
@@ -4309,7 +4314,6 @@
     var slotDayWord = weekdayLongFromIso(slot.session_date);
     for (var i = 0; i < list.length; i++) {
       var mk = list[i];
-      if (this.slotForAbsentMark(mk) === slot) return true;
       if (feedbackSessionDate(mk) !== slot.session_date) continue;
       if (canonicalClientSlug(mk.client_name) !== canonicalClientSlug(slot.client_name)) continue;
       var mt = normTimeKey(mk.session_time, slotDayWord);
