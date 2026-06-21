@@ -68,7 +68,7 @@ const JOHN_SCOPES = [
   },
   {
     id: "sunday-ma-swimfarm",
-    label: "Sunday — Multi-Activity (SwimFarm, with Berta)",
+    label: "Sunday — Multi-Activity (SwimFarm)",
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
@@ -97,7 +97,7 @@ const BERTA_SCOPES = [
   },
   {
     id: "sunday-ma-swimfarm",
-    label: "Sunday — Multi-Activity (SwimFarm, with John)",
+    label: "Sunday — Multi-Activity (SwimFarm)",
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
@@ -560,4 +560,77 @@ export function portalLeadProgrammeDayStats(iso, scopes, mapPortalRow) {
     }
   }
   return null;
+}
+
+function isPickupRosterClientName(nm) {
+  const n = normKey(String(nm || "").replace(/\s+/g, " "));
+  return n && n !== "closed" && n !== "available" && n !== "noclient";
+}
+
+function rosterRowSessionDateIso(r) {
+  return String((r && r.session_date) || "")
+    .trim()
+    .slice(0, 10);
+}
+
+function rosterRowAppliesOnIso(rows, r, iso, wd) {
+  if (String(r.day || "").trim() !== wd) return false;
+  const sd = rosterRowSessionDateIso(r);
+  if (sd) return sd === iso;
+  const cid = normKey(r.client_name);
+  if (!cid) return true;
+  for (let i = 0; i < rows.length; i++) {
+    const o = rows[i];
+    if (rosterRowSessionDateIso(o) !== iso) continue;
+    if (String(o.day || "").trim() !== wd) continue;
+    if (normKey(o.client_name) === cid) return false;
+  }
+  return true;
+}
+
+/**
+ * Programme-lead pickup roster: all clients on MA / Day Centre days (not instructor-filtered).
+ * @param {string} iso YYYY-MM-DD
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {string} authEmail
+ * @returns {string[]}
+ */
+export function portalLeadPickupRosterNamesForDate(iso, profile, authEmail) {
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
+  const scopes = portalLeadSessionScopesForProfile(profile, authEmail);
+  if (!scopes.length || !portalLeadDayUsesProgrammeWideRoster(scopes, day)) return [];
+  const leadKey = portalLeadProgrammeKey(profile, authEmail);
+  if (!leadKey) return [];
+  const wd = weekdayFromIso(day);
+  if (!wd) return [];
+  const src =
+    typeof globalThis !== "undefined" && globalThis.STAFF_DASHBOARD_SOURCE
+      ? globalThis.STAFF_DASHBOARD_SOURCE
+      : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const names = new Map();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isPickupRosterClientName(r.client_name)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    const slot = {
+      iso: day,
+      session_date: day,
+      day: wd,
+      client_name: r.client_name,
+      service: r.service,
+      venue: r.venue,
+      instructors: r.instructors,
+      instructor_label: r.instructors,
+    };
+    if (!portalLeadSlotInScopeForDay(slot, scopes, leadKey, day)) continue;
+    const nm = String(r.client_name || "").trim();
+    names.set(normKey(nm), nm);
+  }
+  return Array.from(names.values()).sort(function (a, b) {
+    return a.localeCompare(b, "en", { sensitivity: "base" });
+  });
 }

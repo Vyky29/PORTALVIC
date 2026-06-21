@@ -108,7 +108,87 @@ body.portal-logo-lead {
 }
 
 .lr-general-intro {
-  margin: 0 0 12px;
+  margin: 0;
+}
+
+.lr-submit-success-banner {
+  position: fixed;
+  left: 50%;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  transform: translateX(-50%) translateY(-12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(440px, calc(100vw - 28px));
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  color: #fff;
+  box-shadow:
+    0 12px 40px rgba(22, 101, 52, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.lr-submit-success-banner.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.lr-submit-success-banner[hidden] {
+  display: none !important;
+}
+
+.lr-submit-success-banner__icon {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.lr-submit-success-banner__icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.lr-submit-success-banner__text {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+body.portal-lead-feedback-page.lr-form-submitted-success .card {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+body.portal-lead-feedback-page.lr-form-submitted-success .plr-back {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+#lrGeneralSection,
+#lrDetailedSection {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+#lrGeneralSection > .field,
+#lrDetailedSection > .field {
+  margin: 0;
 }
 
 .lr-day-centre-grid {
@@ -116,6 +196,38 @@ body.portal-logo-lead {
   grid-template-columns: 1fr;
   gap: 10px;
   min-width: 0;
+}
+
+/* Session-details column: label+control groups need gap (wrappers break > label ~ label). */
+body.portal-lead-feedback-page .field.field--session-details > #lrParticipantSingleWrap:not([hidden]),
+body.portal-lead-feedback-page .field.field--session-details > #lrDayCentreParticipantsWrap:not([hidden]),
+body.portal-lead-feedback-page .field.field--session-details > #lrVenueFieldWrap,
+body.portal-lead-feedback-page .field.field--session-details > .session-date-field,
+body.portal-lead-feedback-page .field.field--session-details > label[for="lrSessionTime"],
+body.portal-lead-feedback-page .field.field--session-details > .lr-incidents-field {
+  margin-top: 22px;
+}
+
+body.portal-lead-feedback-page .field.field--session-details > .session-date-field {
+  margin-bottom: 0;
+}
+
+body.portal-lead-feedback-page .field.field--session-details #lrVenueFieldWrap > label,
+body.portal-lead-feedback-page .field.field--session-details .session-date-field > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: rgba(11, 18, 32, 0.92);
+  line-height: 1.25;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+body.portal-lead-feedback-page .field.field--session-details > #lrParticipantSingleWrap > label {
+  margin-bottom: 12px;
 }
 
 .lr-incidents-field {

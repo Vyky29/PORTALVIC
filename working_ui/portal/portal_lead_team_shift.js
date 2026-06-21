@@ -130,6 +130,9 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Wednesday" || wd === "Friday")) {
       return "john_bespoke_mwf";
     }
+    if (leadKey === "michelle" && sc.programmeWideRoster && sc.serviceKeys && sc.serviceKeys.indexOf("daycentre") >= 0) {
+      return "michelle_day_centre";
+    }
   }
   return "";
 }
@@ -157,46 +160,73 @@ function dedupeKeys(keys) {
   return out;
 }
 
+function filterProgrammeWideTeam(keys, leadKey) {
+  let pool = excludePeerProgrammeLead(keys, leadKey);
+  return dedupeKeys(
+    pool.filter(function (k) {
+      return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+    })
+  );
+}
+
 function filterSundayMaTeam(keys, leadKey) {
   let pool = excludePeerProgrammeLead(keys, leadKey);
-  pool = ensureLeadPresent(pool, leadKey);
-  const supportLeads = pool.filter(function (k) {
-    return teamMemberChipRole(k) === "support-lead" && k === leadKey;
-  });
   const supportWorkers = pool.filter(function (k) {
-    return teamMemberChipRole(k) === "support-worker";
+    return k !== leadKey && teamMemberChipRole(k) === "support-worker";
   });
   const swimInstructors = pool.filter(function (k) {
-    return teamMemberChipRole(k) === "swim-instructor";
+    return k !== leadKey && teamMemberChipRole(k) === "swim-instructor";
   });
-  return dedupeKeys(supportLeads.concat(supportWorkers.slice(0, 2), swimInstructors.slice(0, 3)));
+  return dedupeKeys(supportWorkers.slice(0, 2).concat(swimInstructors.slice(0, 3)));
 }
 
 function filterJohnBespokeTeam(keys) {
   const leadKey = "john";
   let pool = excludePeerProgrammeLead(keys, leadKey);
-  pool = ensureLeadPresent(pool, leadKey);
   const supportWorkers = pool.filter(function (k) {
     return k !== leadKey && teamMemberChipRole(k) === "support-worker";
   });
-  return dedupeKeys([leadKey].concat(supportWorkers.slice(0, 2)));
+  return dedupeKeys(supportWorkers.slice(0, 2));
 }
 
 function filterBertaWedTeam(keys) {
   const leadKey = "berta";
   let pool = excludePeerProgrammeLead(keys, leadKey);
-  pool = ensureLeadPresent(pool, leadKey);
   const others = pool.filter(function (k) {
     return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
-  return dedupeKeys([leadKey].concat(others.slice(0, 3)));
+  return dedupeKeys(others.slice(0, 3));
+}
+
+const TEAM_CHIP_ROLE_SORT = {
+  "support-lead": 0,
+  "support-worker": 1,
+  "swim-instructor": 2,
+  default: 3,
+};
+
+function sortTeamMemberKeys(keys) {
+  return keys.slice().sort(function (a, b) {
+    const ra = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(a)] ?? TEAM_CHIP_ROLE_SORT.default;
+    const rb = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(b)] ?? TEAM_CHIP_ROLE_SORT.default;
+    if (ra !== rb) return ra - rb;
+    return staffDisplayName(a).localeCompare(staffDisplayName(b), "en", { sensitivity: "base" });
+  });
 }
 
 function applyTeamDayFilter(keys, dayKind, leadKey) {
   if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
   if (dayKind === "john_bespoke_mwf") return filterJohnBespokeTeam(keys);
   if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
+  if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
   return keys.slice();
+}
+
+function teamProgrammeLabelForDay(scopes, iso) {
+  const raw = activeScopeLabelForDay(scopes, iso);
+  return String(raw || "")
+    .replace(/\s*,\s*with\s+[^,)]+/gi, "")
+    .trim();
 }
 
 function activeScopeLabelForDay(scopes, iso) {
@@ -394,14 +424,15 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);
-
-  memberKeys.sort(function (a, b) {
-    return staffDisplayName(a).localeCompare(staffDisplayName(b));
+  memberKeys = memberKeys.filter(function (k) {
+    return k !== ctx.leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
+
+  memberKeys = sortTeamMemberKeys(memberKeys);
 
   return {
     iso: iso,
-    programmeLabel: activeScopeLabelForDay(ctx.scopes, iso),
+    programmeLabel: teamProgrammeLabelForDay(ctx.scopes, iso),
     members: memberKeys.map(function (k) {
       return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
     }),

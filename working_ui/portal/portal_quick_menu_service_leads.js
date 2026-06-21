@@ -4,7 +4,10 @@
  * Staff shell: John, Berta, Michelle (programme leads).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
-import { portalLeadProgrammeKey } from "./portal_lead_session_scope.js";
+import {
+  portalLeadPickupRosterNamesForDate,
+  portalLeadProgrammeKey,
+} from "./portal_lead_session_scope.js";
 
 /** Executive leads on lead_dashboard.html */
 const LEAD_SHELL_SERVICE_LEAD_KEYS = new Set(["victor", "javi", "raul"]);
@@ -109,4 +112,5 @@ if (typeof window !== "undefined") {
   window.portalIsStaffDashboardShell = portalIsStaffDashboardShell;
   window.portalCanAccessServiceLeadsMenu = portalCanAccessServiceLeadsMenu;
   window.portalSyncServiceLeadsQuickMenu = portalSyncServiceLeadsQuickMenu;
+  window.portalLeadPickupRosterNamesForDate = portalLeadPickupRosterNamesForDate;
 }

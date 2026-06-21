@@ -259,43 +259,6 @@
       max-height:6rem;
       padding:10px 12px;
     }
-    .login-hint{
-      margin:0 0 12px;
-      font-size:.8125rem;
-      line-height:1.45;
-      color:var(--muted);
-      text-align:center;
-    }
-    .login-portal-url-notice{
-      margin:0 0 14px;
-      padding:10px 12px;
-      font-size:.8125rem;
-      line-height:1.45;
-      color:var(--ink);
-      text-align:center;
-      background:var(--blueSoft);
-      border:1px solid rgba(45,132,179,.22);
-      border-radius:12px;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-    .login-portal-url-notice a{
-      color:var(--blue);
-      font-weight:700;
-      text-decoration:none;
-    }
-    .login-portal-url-notice a:hover,
-    .login-portal-url-notice a:focus-visible{
-      text-decoration:underline;
-    }
-    .login-portal-url-notice--urgent{
-      background:var(--dangerSoft);
-      border-color:rgba(217,83,79,.35);
-      color:#7a2e2c;
-    }
-    .login-portal-url-notice--urgent a{
-      color:#a94442;
-    }
 
     @media (min-width: 900px) {
       body{
@@ -342,15 +305,6 @@
         flex-direction:column;
         justify-content:center;
         min-width:0;
-      }
-      .login-hint{
-        text-align:left;
-        font-size:.875rem;
-        margin-bottom:18px;
-      }
-      .login-portal-url-notice{
-        text-align:left;
-        font-size:.875rem;
       }
       .login-updated-msg.visible{
         text-align:left;
@@ -460,14 +414,6 @@
       <div class="login-panel">
       <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
 
-      <p id="loginPortalUrlNotice" class="login-portal-url-notice" role="note">
-        Staff portal — always sign in here:
-        <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>.
-        Do not use clubsensational.org for induction, documents or onboarding (those pages 404 there).
-      </p>
-
-      <p class="login-hint">Staff: your first name and the 4-digit PIN from the office.</p>
-
       <form id="login-form" novalidate method="post" action="">
         <input type="hidden" id="portalLoginApp" name="portal_login_app" value="" />
         <div class="field">
@@ -485,21 +431,6 @@
     </div>
   </div>
 
-  <script>
-    (function () {
-      var notice = document.getElementById("loginPortalUrlNotice");
-      if (!notice) return;
-      try {
-        var host = String(window.location.hostname || "").toLowerCase();
-        var ok =
-          host === "portalvic.vercel.app" ||
-          host === "localhost" ||
-          host === "127.0.0.1" ||
-          host.indexOf(".vercel.app") >= 0;
-        if (!ok) notice.classList.add("login-portal-url-notice--urgent");
-      } catch (_) {}
-    })();
-  </script>
   <script>
     (function () {
       if (window.__PORTAL_LOGIN_CS_CLIQ__ !== true) return;

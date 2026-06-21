@@ -32,6 +32,28 @@ function isDayCentreService(service) {
   return /day\s*centre/i.test(clean(service));
 }
 
+function isMultiActivityService(service) {
+  return /^multi-activity$/i.test(clean(service));
+}
+
+/** Programme-lead report uses one session band per service/day (Day Centre keeps roster slots). */
+function leadReportFixedSessionTime(iso, service) {
+  const wd = weekdayLongFromIso(iso);
+  const svc = clean(service);
+  if (!wd || !svc) return "";
+  if (isMultiActivityService(svc)) {
+    if (wd === "Sunday") return "9.30 to 2";
+    if (wd === "Wednesday") return "4.30 to 6";
+  }
+  if (
+    isBespokeService(svc) &&
+    (wd === "Monday" || wd === "Wednesday" || wd === "Friday")
+  ) {
+    return "4.30 to 6";
+  }
+  return "";
+}
+
 function isGroupService(service) {
   return !isBespokeService(service) && !isDayCentreService(service);
 }
@@ -464,17 +486,49 @@ function leadFeedbackNavigateBack() {
   } catch (_) {}
   try {
     const hub =
-      typeof window.portalResolveHubUrl === "function"
-        ? window.portalResolveHubUrl("lead")
-        : "lead_dashboard.html";
+      typeof window.portalStaffDashboardUrl === "function"
+        ? window.portalStaffDashboardUrl()
+        : "staff_dashboard.html";
     window.location.replace(hub);
   } catch (_) {
-    window.location.href = "lead_dashboard.html";
+    window.location.href = "staff_dashboard.html";
   }
 }
 
 function exitAfterSuccess() {
   leadFeedbackNavigateBack();
+}
+
+function showLeadReportSubmitSuccess(message) {
+  const msg = clean(message) || "Successful — lead report submitted.";
+  const banner = document.getElementById("lrSubmitSuccessBanner");
+  if (banner) {
+    const textEl = banner.querySelector(".lr-submit-success-banner__text");
+    if (textEl) textEl.textContent = msg;
+    banner.hidden = false;
+    banner.classList.add("is-visible");
+  }
+  document.body.classList.add("lr-form-submitted-success");
+  const form = document.getElementById("lrFeedbackForm");
+  if (form) {
+    form.setAttribute("aria-disabled", "true");
+  }
+  try {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (_) {
+    try {
+      window.scrollTo(0, 0);
+    } catch (_e) {}
+  }
+}
+
+function exitAfterSuccessWithDelay() {
+  const delayMs = 1800;
+  if (typeof window.portalRedirectAfterSubmitSuccess === "function") {
+    window.portalRedirectAfterSubmitSuccess("", delayMs, exitAfterSuccess);
+    return;
+  }
+  setTimeout(exitAfterSuccess, delayMs);
 }
 
 async function initVoiceInput(staffName) {
@@ -502,6 +556,9 @@ export async function bootPortalLeadFeedback() {
     throw new Error("lead_report_form_missing");
   }
   if (backBtn) backBtn.addEventListener("click", leadFeedbackNavigateBack);
+
+  serviceEl.disabled = true;
+  serviceEl.setAttribute("aria-busy", "true");
 
   let origin = clean(qs.get("origin") || "dashboard");
   if (origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
@@ -641,6 +698,15 @@ export async function bootPortalLeadFeedback() {
     if (clientIdHidden) clientIdHidden.value = ctx.clientId;
   }
 
+  function applyFixedSessionTimeBand(iso, service) {
+    const fixed = leadReportFixedSessionTime(iso, service);
+    if (!fixed) return false;
+    ctx.sessionTime = fixed;
+    if (timeInput) timeInput.value = fixed;
+    rebuildTimeSlotPills([]);
+    return true;
+  }
+
   function rebuildTimeSlotPills(slots) {
     if (!timeSlotWrap || !timeSlotOptions) return;
     const times = [];
@@ -686,6 +752,7 @@ export async function bootPortalLeadFeedback() {
     if (!matches.length) return;
     if (matches.length === 1) {
       applySlotToForm(matches[0]);
+      if (applyFixedSessionTimeBand(ctx.date, serviceEl.value)) return;
       rebuildTimeSlotPills([]);
       return;
     }
@@ -693,6 +760,14 @@ export async function bootPortalLeadFeedback() {
     if (venues.length === 1) {
       ctx.venue = venues[0];
       if (venueInput) venueInput.value = ctx.venue;
+    }
+    if (applyFixedSessionTimeBand(ctx.date, serviceEl.value)) {
+      const pick = matches[0];
+      ctx.portalSessionKey = buildLeadSessionKey(pick);
+      ctx.clientId = slugify(pick.client_name);
+      if (sessionKeyHidden) sessionKeyHidden.value = ctx.portalSessionKey;
+      if (clientIdHidden) clientIdHidden.value = ctx.clientId;
+      return;
     }
     rebuildTimeSlotPills(matches);
     const currentTime = clean(timeInput?.value || "");
@@ -737,7 +812,9 @@ export async function bootPortalLeadFeedback() {
         partInp.value = pick;
       }
       if (pick) applyParticipantSlot(pick);
-      else if (times.length === 1 && timeInput) {
+      else if (applyFixedSessionTimeBand(ctx.date, svc)) {
+        /* fixed band for bespoke Mon/Wed/Fri */
+      } else if (times.length === 1 && timeInput) {
         timeInput.value = times[0];
         ctx.sessionTime = times[0];
       } else {
@@ -754,6 +831,11 @@ export async function bootPortalLeadFeedback() {
         if (sessionKeyHidden) sessionKeyHidden.value = ctx.portalSessionKey;
       }
       rebuildTimeSlotPills(leadSlotsCache);
+    } else if (applyFixedSessionTimeBand(ctx.date, svc)) {
+      if (leadSlotsCache[0]) {
+        ctx.portalSessionKey = buildLeadSessionKey(leadSlotsCache[0]);
+        if (sessionKeyHidden) sessionKeyHidden.value = ctx.portalSessionKey;
+      }
     } else {
       if (times.length === 1 && timeInput && !clean(timeInput.value)) {
         timeInput.value = times[0];
@@ -787,14 +869,16 @@ export async function bootPortalLeadFeedback() {
 
   try {
     const { bootstrapDashboardSupabase } = await import(PORTAL_AUTH_MODULE);
-    await bootstrapDashboardSupabase({ page: "lead" });
+    await bootstrapDashboardSupabase({ page: "lead_report" });
   } catch (bootstrapErr) {
     console.warn("[lead-report] supabase bootstrap", bootstrapErr);
   }
 
   const auth = await resolveAuthContext();
   if (!auth) {
-    alert("Please sign in from the lead dashboard, then open Lead Feedback Report again.");
+    alert("Please sign in from the staff dashboard, then open Lead report again.");
+    serviceEl.disabled = false;
+    serviceEl.removeAttribute("aria-busy");
     return;
   }
   ctx.submittedByName = auth.submittedByName;
@@ -818,6 +902,9 @@ export async function bootPortalLeadFeedback() {
     applyServiceContext({ keepVenue: !!ctx.venue });
   } catch (e) {
     console.warn("[lead-report] roster / scope", e);
+  } finally {
+    serviceEl.disabled = false;
+    serviceEl.removeAttribute("aria-busy");
   }
 
   wireNameSuggest(partInp, document.getElementById("lrParticipantSuggest"), getLeadParticipantNames);
@@ -1018,11 +1105,14 @@ export async function bootPortalLeadFeedback() {
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting…";
+    let submitSucceeded = false;
     try {
       const { error } = await auth.supabase.from("lead_session_reports").insert([row]);
       if (error) throw error;
-      alert("Lead report submitted successfully.");
-      exitAfterSuccess();
+      submitSucceeded = true;
+      submitBtn.textContent = "Submitted";
+      showLeadReportSubmitSuccess("Successful — lead report submitted.");
+      exitAfterSuccessWithDelay();
     } catch (err) {
       console.error(err);
       alert(
@@ -1030,8 +1120,10 @@ export async function bootPortalLeadFeedback() {
           (err && err.message ? "\n" + String(err.message) : "")
       );
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit";
+      if (!submitSucceeded) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+      }
     }
   });
 }

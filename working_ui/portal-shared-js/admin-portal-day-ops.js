@@ -382,14 +382,12 @@
     if (leadTbody) {
       if (!lead.length) {
         leadTbody.innerHTML =
-          '<tr><td colspan="6"><div class="submission-state">No lead reports yet.</div></td></tr>';
+          '<tr><td colspan="4"><div class="submission-state">No lead reports yet.</div></td></tr>';
       } else {
         leadTbody.innerHTML = lead
           .map(function (r, i) {
             var who = esc(cellText(r.submitted_by_name));
             var svc = esc(cellText(r.service));
-            var act = esc(truncate(r.activity || r.session_activity || '—', 28));
-            var brief = esc(truncate(r.brief_description || r.description || '—', 120));
             return (
               '<tr class="portal-forms-data-row" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
@@ -402,12 +400,6 @@
               '</div></td>' +
               '<td class="cell-clip">' +
               svc +
-              '</td>' +
-              '<td class="cell-clip">' +
-              act +
-              '</td>' +
-              '<td class="cell-clip col-brief-desc">' +
-              brief +
               '</td>' +
               '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +

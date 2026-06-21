@@ -810,10 +810,9 @@
       openWeekStart: ctx.openWeekStart,
       tableClass: ' ash-table--overview portal-forms-table--lead-reports',
       headHtml:
-        '<th class="ash-td-center">Session date</th><th class="ash-td-center">Recorded</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Service</th><th class="ash-td-center">Activity</th>',
+        '<th class="ash-td-center">Session date</th><th class="ash-td-center">Recorded</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Service</th>',
       rowHtml: function (r, escFn) {
         var sd = rowDateIso(r.session_date) || rowDateIso(r.created_at);
-        var activity = leadReportActivity(r);
         var svcSub = portalFormsLeadServiceSubLine(r);
         var svcTitle = String(r.service || '') + (svcSub ? ' · ' + svcSub : '');
         return (
@@ -828,10 +827,6 @@
           escFn(svcTitle) +
           '">' +
           portalFormsLeadServiceHtml(r, escFn) +
-          '</td><td class="ash-td-center cell-clip" title="' +
-          escFn(activity) +
-          '">' +
-          escFn(truncate(activity || '—', 40)) +
           '</td></tr>'
         );
       }
@@ -856,13 +851,11 @@
     if (leadTbody) {
       if (!lead.length) {
         leadTbody.innerHTML =
-          '<tr><td colspan="6"><div class="submission-state">No lead reports yet.</div></td></tr>';
+          '<tr><td colspan="4"><div class="submission-state">No lead reports yet.</div></td></tr>';
       } else {
         leadTbody.innerHTML = lead
           .map(function (r, i) {
             var who = esc(cellText(r.submitted_by_name));
-            var activity = leadReportActivity(r);
-            var briefBody = leadReportBriefBody(r);
             var svcSub = portalFormsLeadServiceSubLine(r);
             var svcTitle = String(r.service || '') + (svcSub ? ' · ' + svcSub : '');
             return (
@@ -879,16 +872,6 @@
               esc(svcTitle) +
               '">' +
               portalFormsLeadServiceHtml(r, esc) +
-              '</td>' +
-              '<td class="cell-clip" title="' +
-              esc(activity) +
-              '">' +
-              esc(truncate(activity || '—', 28)) +
-              '</td>' +
-              '<td class="cell-clip col-brief-desc" title="' +
-              esc(briefBody) +
-              '">' +
-              esc(truncate(briefBody || '—', 120)) +
               '</td>' +
               '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +

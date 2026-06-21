@@ -373,6 +373,9 @@
       background:var(--goldSoft);
       border-color:rgba(124,58,237,.5);
     }
+    body.pickup-has-roster #pickupParticipantSearchBlock{
+      display:none;
+    }
 
     .pickup-staff-log{
       margin:0 0 16px;
@@ -1082,12 +1085,12 @@
   <div class="pickup-wrap">
     <div class="title-row">
       <h1>Drop Off &amp; Pick Up</h1>
-      <p>Record when a participant arrives and when they are collected. Tap someone on your roster today, pick an open handover below, or type a name and tap New.</p>
+      <p id="pickupIntroText">Record when a participant arrives and when they are collected. Tap someone on your roster today, pick an open handover below, or type a name and tap New.</p>
     </div>
 
     <section class="panel pickup-main">
       <div class="panel-body">
-        <div class="field participant-field">
+        <div id="pickupParticipantSearchBlock" class="field participant-field">
           <label for="searchInput"><span class="field-icon-pickup" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Participant name</label>
           <div class="participant-row">
             <div class="participant-field-wrap" style="min-width:0">
@@ -1249,6 +1252,10 @@
     </div>
   </div>
 
+  <script type="module">
+    import { portalLeadPickupRosterNamesForDate } from '/portal/portal_lead_session_scope.js?v=20260621-pickup-lead-roster';
+    window.portalLeadPickupRosterNamesForDate = portalLeadPickupRosterNamesForDate;
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260419-99"></script>
   <script>
     (async function(){
@@ -1499,29 +1506,77 @@
         }
       }
 
+      async function ensurePickupRosterSource(){
+        if(typeof globalThis !== 'undefined' && globalThis.STAFF_DASHBOARD_SOURCE) return true;
+        try{
+          await new Promise(function(resolve, reject){
+            var s = document.createElement('script');
+            s.src = '/portal/staff_dashboard_spreadsheet_bundle.js?v=20260621-pickup-lead-roster';
+            s.onload = function(){ resolve(); };
+            s.onerror = function(){ reject(new Error('roster bundle')); };
+            document.head.appendChild(s);
+          });
+        }catch(_){}
+        return !!(typeof globalThis !== 'undefined' && globalThis.STAFF_DASHBOARD_SOURCE);
+      }
+
+      async function loadProgrammeLeadPickupRoster(profile, authEmail){
+        try{
+          if(typeof window.portalLeadPickupRosterNamesForDate !== 'function') return [];
+          if(!await ensurePickupRosterSource()) return [];
+          return window.portalLeadPickupRosterNamesForDate(nowDate(), profile, authEmail) || [];
+        }catch(_){
+          return [];
+        }
+      }
+
+      function syncPickupRosterUiMode(){
+        const hasRoster = rosterTodayNames.length > 0;
+        document.body.classList.toggle('pickup-has-roster', hasRoster);
+        const intro = document.getElementById('pickupIntroText');
+        if(intro){
+          intro.textContent = hasRoster
+            ? 'Record when a participant arrives and when they are collected. Tap someone on your roster today, or pick an open handover below.'
+            : 'Record when a participant arrives and when they are collected. Tap someone on your roster today, pick an open handover below, or type a name and tap New.';
+        }
+        if(hasRoster && emptyState && formSection.classList.contains('hidden')){
+          emptyState.textContent = 'Tap a participant on your roster above to start a handover, or open an open handover below.';
+        }
+      }
+
       async function refreshRosterTodayNames(){
         let names = parseRosterTodayNames();
         let staffName = '';
+        let profileRow = null;
+        let authEmail = '';
         try{
           const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
           staffName = String(sp.get('staff') || sp.get('completedBy') || '').trim();
         }catch(_){}
-        if(!staffName && client && client.auth && typeof client.auth.getUser === 'function'){
+        if(client && client.auth && typeof client.auth.getUser === 'function'){
           try{
             const { data: authData } = await client.auth.getUser();
             const uid = authData && authData.user && authData.user.id;
+            authEmail = String((authData && authData.user && authData.user.email) || '').trim();
             if(uid){
-              const prof = await client.from('staff_profiles').select('full_name,username').eq('id', uid).maybeSingle();
+              const prof = await client.from('staff_profiles').select('*').eq('id', uid).maybeSingle();
               if(prof && prof.data){
-                staffName = String(prof.data.full_name || prof.data.username || '').trim();
+                profileRow = prof.data;
+                if(!staffName){
+                  staffName = String(prof.data.full_name || prof.data.username || '').trim();
+                }
               }
             }
           }catch(_){}
         }
         if(!names.length){
+          names = names.concat(await loadProgrammeLeadPickupRoster(profileRow, authEmail));
+        }
+        if(!names.length){
           names = names.concat(await loadRosterTodayFromSupabase(staffName));
         }
         rosterTodayNames = uniqueSortedNames(names);
+        syncPickupRosterUiMode();
         renderRosterTodayChips();
         refreshParticipantDatalist();
         renderStaffHandoverLog();
@@ -1554,8 +1609,7 @@
           btn.setAttribute('role', 'listitem');
           btn.textContent = name;
           btn.addEventListener('click', function(){
-            searchInput.value = name;
-            addNewParticipantFromInput();
+            addNewParticipantFromInput(name);
           });
           listEl.appendChild(btn);
         });
@@ -2472,9 +2526,13 @@
           const q = (searchInput.value || '').trim();
           const todayAll = read().filter(function(r){ return isTodaySession(r.sessionDate); });
           const openToday = todayAll.filter(isActiveHandover);
-          let msg = 'No open handovers for today yet. Add a new participant above.';
+          let msg = rosterTodayNames.length
+            ? 'No open handovers for today yet. Tap a participant on your roster above.'
+            : 'No open handovers for today yet. Add a new participant above.';
           if(todayAll.length && !openToday.length){
-            msg = 'No open handovers — today’s completed records are only in the database (not shown here). Add a new participant if needed.';
+            msg = rosterTodayNames.length
+              ? 'No open handovers — today’s completed records are only in the database (not shown here). Tap someone on your roster if needed.'
+              : 'No open handovers — today’s completed records are only in the database (not shown here). Add a new participant if needed.';
           } else if(q && openToday.length){
             msg = 'No open handover matches that name. Completed records are not listed here.';
           } else if(q){
@@ -2717,11 +2775,11 @@
         refreshHandoverSections();
       }
 
-      function addNewParticipantFromInput(){
-        const name = searchInput.value.trim();
+      function addNewParticipantFromInput(presetName){
+        const name = String(presetName != null ? presetName : searchInput.value).trim();
         if(!name){
           alert('Please enter the participant name first.');
-          searchInput.focus();
+          if(searchInput && typeof searchInput.focus === 'function') searchInput.focus();
           return;
         }
         const today = nowDate();

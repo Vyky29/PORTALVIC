@@ -81,12 +81,81 @@
     );
   }
 
+  function leadReportKind(r) {
+    if (r && r.is_bespoke_programme) return "bespoke";
+    var svc = clean(r && r.service).toLowerCase();
+    if (svc.indexOf("day centre") !== -1) return "dayCentre";
+    if (svc.indexOf("multi-activity") !== -1) return "multiActivity";
+    return "group";
+  }
+
+  function parseLeadSummaryLine(summary, label) {
+    var text = String(summary || "");
+    var escLabel = String(label || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var re = new RegExp("^" + escLabel + ":\\s*(.+)$", "im");
+    var m = text.match(re);
+    return m ? clean(m[1]) : "";
+  }
+
+  function leadReportDetailsCell(r) {
+    var kind = leadReportKind(r);
+    if (kind === "bespoke") {
+      var parts = [];
+      var eng = clean(r.engagement);
+      if (eng) parts.push("Engagement: " + eng);
+      var emo = parseLeadSummaryLine(r.summary_text, "Emotions");
+      if (emo) parts.push("Emotions: " + emo);
+      var indep = parseLeadSummaryLine(r.summary_text, "Independence");
+      if (indep) parts.push("Independence: " + indep);
+      var inc = clean(r.incidents);
+      if (inc) parts.push("Incidents: " + inc);
+      return parts.join(" · ") || "—";
+    }
+    if (kind === "multiActivity" || kind === "group") {
+      var gParts = [];
+      var act = parseLeadSummaryLine(r.summary_text, "Activity");
+      if (act) gParts.push("Activity: " + act);
+      var gEng = clean(r.engagement);
+      if (gEng) gParts.push("Engagement: " + gEng);
+      var gInc = clean(r.incidents);
+      if (gInc) gParts.push("Incidents: " + gInc);
+      return gParts.join(" · ") || "—";
+    }
+    if (kind === "dayCentre") {
+      var dcParts = [];
+      var names = clean(r.client_name);
+      if (names) dcParts.push("Participants: " + names);
+      var dcEng = clean(r.engagement);
+      if (dcEng) dcParts.push("Engagement: " + dcEng);
+      var dcInc = clean(r.incidents);
+      if (dcInc) dcParts.push("Incidents: " + dcInc);
+      return dcParts.join(" · ") || "—";
+    }
+    return clean(r.engagement) || "—";
+  }
+
+  function leadReportSummaryCell(r) {
+    var kind = leadReportKind(r);
+    if (kind === "bespoke") {
+      var pos = clean(r.brief_description);
+      var rel = clean(r.other_information);
+      var out = [];
+      if (pos) out.push("Positive: " + pos);
+      if (rel) out.push("Relevant: " + rel);
+      return out.join("\n\n") || "—";
+    }
+    var brief = clean(r.brief_description);
+    var extra = clean(r.other_information);
+    if (brief && extra) return brief + "\n\nOther: " + extra;
+    return brief || extra || "—";
+  }
+
   function leadReportActivity(r) {
-    return clean(r.brief_description || r.activity || r.other_information);
+    return leadReportDetailsCell(r);
   }
 
   function leadReportBriefBody(r) {
-    return clean(r.brief_description || r.summary_text);
+    return leadReportSummaryCell(r);
   }
 
   function leadTitle(r) {
@@ -96,23 +165,50 @@
   }
 
   function leadFields(r) {
+    var kind = leadReportKind(r);
     var out = [];
     out.push(qaRow("Submitted by", r.submitted_by_name));
     out.push(qaRow("Session date", formatDateOnly(r.session_date)));
     out.push(qaRow("Session time", r.session_time || "—"));
     out.push(qaRow("Service", r.service));
-    if (r.is_bespoke_programme) out.push(qaRow("Programme", "Bespoke Programme"));
-    if (clean(r.client_name)) out.push(qaRow("Participant / client", r.client_name));
-    out.push(qaRow("Engagement", r.engagement));
-    out.push(qaRow("Incidents reported", r.incidents));
-    var activity = leadReportActivity(r);
-    if (activity) out.push(qaRow("Activity / brief", activity, true));
-    if (clean(r.other_information)) out.push(qaRow("Other information", r.other_information, true));
-    var brief = leadReportBriefBody(r);
-    if (brief && brief !== activity) out.push(qaRow("Session summary", brief, true));
-    else if (clean(r.summary_text) && clean(r.summary_text) !== brief) {
-      out.push(qaRow("Full report", r.summary_text, true));
+    var venue = parseLeadSummaryLine(r.summary_text, "Venue");
+    if (venue) out.push(qaRow("Venue", venue));
+    if (kind === "bespoke") {
+      if (clean(r.client_name)) out.push(qaRow("Participant", r.client_name));
+      out.push(qaRow("Engagement", r.engagement));
+      var emo = parseLeadSummaryLine(r.summary_text, "Emotions");
+      if (emo) out.push(qaRow("Emotions / regulation", emo, true));
+      var indep = parseLeadSummaryLine(r.summary_text, "Independence");
+      if (indep) out.push(qaRow("Independence", indep));
+      out.push(qaRow("Positive feedback", r.brief_description, true));
+      if (clean(r.other_information)) {
+        out.push(qaRow("Relevant information", r.other_information, true));
+      }
+    } else if (kind === "dayCentre") {
+      if (clean(r.client_name)) out.push(qaRow("Participants", r.client_name, true));
+      out.push(qaRow("Overall group engagement", r.engagement));
+      out.push(qaRow("Session summary", r.brief_description, true));
+      if (clean(r.other_information)) {
+        out.push(qaRow("Other (optional)", r.other_information, true));
+      }
+    } else if (kind === "multiActivity") {
+      out.push(qaRow("Overall group engagement", r.engagement));
+      var maAct = parseLeadSummaryLine(r.summary_text, "Activity");
+      if (maAct) out.push(qaRow("Activity title", maAct));
+      out.push(qaRow("How did the session go?", r.brief_description, true));
+      if (clean(r.other_information)) {
+        out.push(qaRow("Anything else for the team", r.other_information, true));
+      }
+    } else {
+      out.push(qaRow("Overall group engagement", r.engagement));
+      var act = parseLeadSummaryLine(r.summary_text, "Activity");
+      if (act) out.push(qaRow("Activity delivered", act));
+      out.push(qaRow("Session summary", r.brief_description, true));
+      if (clean(r.other_information)) {
+        out.push(qaRow("Other (optional)", r.other_information, true));
+      }
     }
+    out.push(qaRow("Incidents reported", r.incidents));
     out.push(qaRow("Recorded", formatWhen(r.created_at)));
     return out.join("");
   }

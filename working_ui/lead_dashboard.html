@@ -910,7 +910,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260614-photo-repair"></script>
   <script src="/portal/portal_topbar_header.js?v=20260622-topbar-grid-7fix"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260623-ceo-topbar-no-stats"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260621-dan-sunday-photo"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
@@ -1303,16 +1303,30 @@
     function portalCollectTodayParticipantNames(){
       const out = [];
       const seen = new Set();
+      function add(nm){
+        const t = String(nm || '').trim();
+        if(!t) return;
+        const k = t.toLowerCase();
+        if(seen.has(k)) return;
+        seen.add(k);
+        out.push(t);
+      }
       try{
         (dashboardData.today || []).forEach(function(it){
           if(!it || it.kind !== 'client') return;
-          const nm = String(it.name || it.clientName || it.client || '').trim();
-          if(!nm) return;
-          const k = nm.toLowerCase();
-          if(seen.has(k)) return;
-          seen.add(k);
-          out.push(nm);
+          add(it.name || it.clientName || it.client);
         });
+      }catch(_){}
+      try{
+        if(typeof window.portalLeadPickupRosterNamesForDate === 'function'){
+          const iso = typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '';
+          const box = window.__PORTAL_SUPABASE__ || {};
+          const prof = box.staff_profile || null;
+          const em = box.session && box.session.user && box.session.user.email ? box.session.user.email : '';
+          if(iso && prof){
+            window.portalLeadPickupRosterNamesForDate(iso, prof, em).forEach(add);
+          }
+        }
       }catch(_){}
       return out.sort(function(a, b){
         return a.localeCompare(b, 'en', { sensitivity: 'base' });

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260610-portal-voice-auto"></script>
+  <script src="/portal-static-bootstrap.js?v=20260621-lead-report-auth"></script>
   <script src="/portal/portal_return_and_shell.js?v=20260617-lead-report-back"></script>
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
   <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260610-lead-visibility" />
-  <link rel="stylesheet" href="/portal-shared-js/portal_lead_feedback_theme.css?v=20260610-lead-roster" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_lead_feedback_theme.css?v=20260621-lead-success-banner" />
   <style id="portal-lead-feedback-layout">
     html {
       margin: 0;
@@ -21,7 +21,6 @@
       overflow-x: hidden;
       -webkit-text-size-adjust: 100%;
     }
-    /* iOS Safari: grid + justify-self center (flex + align-items:center pins content left) */
     body.portal-lead-feedback-page {
       margin: 0 !important;
       width: 100% !important;
@@ -29,19 +28,22 @@
       min-height: 100dvh;
       box-sizing: border-box;
       overflow-x: hidden;
-      display: grid !important;
-      grid-template-columns: minmax(0, 1fr) !important;
-      justify-items: center !important;
       padding-top: 12px;
       padding-bottom: 24px;
       padding-left: max(16px, env(safe-area-inset-left, 0px));
       padding-right: max(16px, env(safe-area-inset-right, 0px));
     }
+    body.portal-lead-feedback-page .portal-lead-feedback-shell {
+      width: min(100%, 760px);
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      min-width: 0;
+      box-sizing: border-box;
+    }
     body.portal-lead-feedback-page .plr-topbar {
-      justify-self: stretch !important;
-      width: 100% !important;
-      max-width: none !important;
-      margin: 0 0 8px !important;
+      width: 100%;
+      margin: 0 0 8px;
       min-width: 0;
       box-sizing: border-box;
     }
@@ -61,18 +63,16 @@
       min-width: 0;
     }
     body.portal-lead-feedback-page #portalPinIdentityBar {
-      justify-self: stretch !important;
-      width: 100% !important;
-      max-width: none !important;
-      margin: 0 0 12px !important;
+      width: min(100%, 760px);
+      max-width: 760px;
+      margin: 0 auto 12px;
       box-sizing: border-box;
     }
-    body.portal-lead-feedback-page > .wrap {
-      justify-self: stretch !important;
-      width: 100% !important;
-      max-width: 760px !important;
-      min-width: 0 !important;
-      margin: 0 !important;
+    body.portal-lead-feedback-page .portal-lead-feedback-shell > .wrap {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      margin: 0;
       box-sizing: border-box;
       overflow-x: hidden;
     }
@@ -99,9 +99,9 @@
         padding-left: max(12px, env(safe-area-inset-left, 0px));
         padding-right: max(12px, env(safe-area-inset-right, 0px));
       }
-      body.portal-lead-feedback-page > .wrap {
-        max-width: 100% !important;
-        width: 100% !important;
+      body.portal-lead-feedback-page .portal-lead-feedback-shell {
+        width: 100%;
+        max-width: 100%;
       }
     }
   </style>
@@ -110,6 +110,13 @@
   </script>
 </head>
 <body class="portal-lead-feedback-page portal-logo-lead">
+  <div id="lrSubmitSuccessBanner" class="lr-submit-success-banner" hidden role="status" aria-live="polite">
+    <span class="lr-submit-success-banner__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    </span>
+    <span class="lr-submit-success-banner__text">Successful — lead report submitted.</span>
+  </div>
+  <div class="portal-lead-feedback-shell">
   <nav class="plr-topbar" aria-label="Return to dashboard">
     <button type="button" class="plr-back" id="lrBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
   </nav>
@@ -297,9 +304,10 @@
       </form>
     </div>
   </div>
+  </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260610-voice-status-clear"></script>
   <script type="module">
-    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260617-lead-report-back")
+    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260621-lead-success-banner")
       .then(function (mod) {
         return mod.bootPortalLeadFeedback();
       })

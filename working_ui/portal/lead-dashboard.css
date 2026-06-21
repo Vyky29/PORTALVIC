@@ -4472,34 +4472,37 @@
       align-items:center;
       justify-content:center;
       gap:2px;
-      white-space:normal;
       min-width:0;
-      overflow:visible;
-      text-overflow:clip;
+      container-type:inline-size;
+      overflow:hidden;
     }
     .section-card--today .session-line--time-stack .session-slot-time{
-      font-size:var(--today-time-fs, 13px);
+      display:block;
+      width:100%;
+      max-width:100%;
+      font-size:clamp(7px, 17cqi, var(--today-time-fs, 13px));
       font-weight:700;
-      line-height:1.15;
+      line-height:1.1;
       color:#000;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:100%;
       min-width:0;
     }
     .section-card--today .session-line--time-stack .session-line-venue{
       display:block;
+      width:100%;
       max-width:100%;
       min-width:0;
-      font-size:12px;
+      font-size:clamp(9px, 14cqi, 12px);
       font-weight:600;
       letter-spacing:.01em;
       text-transform:capitalize;
       color:var(--muted);
-      line-height:1.2;
-      overflow-wrap:break-word;
-      word-break:break-word;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .section-card--today .session-line--name{
       align-self:stretch;

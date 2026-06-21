@@ -51,7 +51,8 @@
 
   /**
    * Named swimming / special profiles (all include CLIENTS in the header).
-   * @type {Record<string, {photo:boolean,swReview:boolean,leadReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean,stats?:boolean}>}
+   * photoDays: optional weekdays when Photo shows even if photo is false (e.g. Dan — Sundays only).
+   * @type {Record<string, {photo:boolean,photoDays?:string[],swReview:boolean,leadReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean,stats?:boolean}>}
    */
   var EXPLICIT_TOPBAR_PROFILES = {
     alex: {
@@ -120,6 +121,7 @@
     },
     dan: {
       photo: false,
+      photoDays: ["Sunday"],
       swReview: true,
       leadReview: false,
       venue: false,
@@ -426,10 +428,33 @@
     return true;
   }
 
+  function weekdayLongForPhotoGate(referenceDate) {
+    try {
+      var d = referenceDate instanceof Date ? referenceDate : new Date();
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", { weekday: "long" });
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function portalTopbarPhotoVisibleForProfile(profile, referenceDate) {
+    profile = profile || DEFAULT_TOPBAR_PROFILE;
+    if (profile.photo) return true;
+    var days = profile.photoDays;
+    if (!Array.isArray(days) || !days.length) return false;
+    var wd = weekdayLongForPhotoGate(referenceDate);
+    if (!wd) return false;
+    for (var i = 0; i < days.length; i += 1) {
+      if (String(days[i] || "").trim() === wd) return true;
+    }
+    return false;
+  }
+
   function applyTopbarProfile(profile) {
     profile = profile || DEFAULT_TOPBAR_PROFILE;
     var venueOn = !!profile.venue && portalStaffVenueReportToolsAllowed();
-    setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, !!profile.photo);
+    setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile));
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
     setIdsVisible(LEAD_TERM_REVIEW_IDS, !!profile.leadReview);
     setIdsVisible(SWIMMING_VENUE_IDS, venueOn);
@@ -567,7 +592,7 @@
       !!String(global.ROUTINES_PLANNER_HANDOFF_URL || global.ROUTINES_PLANNER_URL || "").trim();
     var out = [];
     if (isCeoTopbar && !isLeadShell && !portalStaffIsProgrammeLeadKey(staffKey)) {
-      if (profile.photo) out.push("photo");
+      if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
       if (venueOn) out.push("venue");
       if (profile.pickup) out.push("pickup");
       if (profile.swReview) out.push("swReview");
@@ -579,7 +604,7 @@
       }
       return out;
     }
-    if (profile.photo) out.push("photo");
+    if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
     if (venueOn) out.push("venue");
     if (profile.pickup) out.push("pickup");
     if (profile.swReview) out.push("swReview");
@@ -609,6 +634,7 @@
     return "four";
   }
 
+  global.portalTopbarPhotoVisibleForProfile = portalTopbarPhotoVisibleForProfile;
   global.PORTAL_TOPBAR_TOOL_CATALOG = PORTAL_TOPBAR_TOOL_CATALOG;
   global.PORTAL_DEFAULT_TOPBAR_PROFILE = DEFAULT_TOPBAR_PROFILE;
   global.PORTAL_EXPLICIT_TOPBAR_PROFILES = EXPLICIT_TOPBAR_PROFILES;
