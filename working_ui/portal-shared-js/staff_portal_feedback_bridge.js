@@ -407,9 +407,10 @@
       .trim()
       .toLowerCase();
     if (os === "absent" || os === "cancelled") return true;
+    /* MA / climbing / per-slot aquatic: each instructor+area is separate — use statusSlotResolved. */
+    if (statusRowNeedsPerStaffUnitFeedback(st)) return false;
     /* Reconciled status export (overview / feedback_complete) wins over per-unit submitted-row lookup. */
     if (st.feedbackComplete === true || os === "feedback_submitted") return true;
-    if (statusRowNeedsPerStaffUnitFeedback(st)) return false;
     return false;
   }
 

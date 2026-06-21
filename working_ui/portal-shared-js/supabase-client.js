@@ -395,6 +395,25 @@ function portalSessionKeyAreaToken(key) {
   return "";
 }
 
+function portalSubmittedKeyIsDateClientOnly(submittedKey) {
+  const parts = String(submittedKey || "")
+    .trim()
+    .split("|");
+  return parts.length >= 3 && parts[1] === "" && !!parts[2];
+}
+
+function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
+  const parts = String(rosterKey || "")
+    .trim()
+    .split("|");
+  const last = String(parts[parts.length - 1] || "")
+    .trim()
+    .toLowerCase();
+  if (last === "day_centre" || last === "bespoke_shared") return true;
+  if (parts.length >= 3 && parts[1] === "") return true;
+  return false;
+}
+
 function portalSessionKeyTimeToken(key) {
   const parts = String(key || "")
     .split("|")
@@ -413,18 +432,38 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   const sArea = portalSessionKeyAreaToken(submittedKey);
   const rArea = portalSessionKeyAreaToken(rosterKey);
   if (!sArea && !rArea) return true;
+  if (!sArea && rArea) {
+    const sTime = portalSessionKeyTimeToken(submittedKey);
+    const rTime = portalSessionKeyTimeToken(rosterKey);
+    /* Same clock time but different MA/climbing/aquatic area — not one feedback unit. */
+    if (sTime && rTime && sTime === rTime && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
+      return true;
+    }
+    return false;
+  }
   if (sArea && rArea) {
     if (sArea === rArea) return true;
     if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
+    if (sArea === "day_centre" || rArea === "day_centre") return true;
     if (
       (sArea.includes("hub") || sArea === "bespoke_shared") &&
       (rArea.includes("hub") || rArea === "bespoke_shared")
     ) {
       return true;
     }
+    if (
+      (sArea.includes("climb") || sArea === "climbing" || sArea === "climbing_wall") &&
+      (rArea.includes("climb") || rArea === "climbing" || rArea === "climbing_wall")
+    ) {
+      return true;
+    }
     return false;
   }
-  return true;
+  if (portalRosterKeyIsSharedFeedbackUnit(rosterKey)) return true;
+  if (portalSubmittedKeyIsDateClientOnly(submittedKey) && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
+    return true;
+  }
+  return false;
 }
 
 /**

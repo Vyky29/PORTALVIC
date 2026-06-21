@@ -738,7 +738,11 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   if (!sArea && rArea) {
     const sTime = portalSessionKeyTimeToken(submittedKey);
     const rTime = portalSessionKeyTimeToken(rosterKey);
-    if (sTime && rTime && sTime === rTime) return true;
+    /* Same clock time but different MA/climbing/aquatic area — not one feedback unit. */
+    if (sTime && rTime && sTime === rTime && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
+      return true;
+    }
+    return false;
   }
   if (sArea && rArea) {
     if (sArea === rArea) return true;
