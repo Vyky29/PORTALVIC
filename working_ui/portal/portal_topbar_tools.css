@@ -4,8 +4,8 @@
   --topbar-tools-gap-x:4px;
   --topbar-tools-gap-y:3px;
   --topbar-tools-cell-4:clamp(42px,11vw,48px);
-  --topbar-tools-cell-6:clamp(36px,9.5vw,42px);
-  --topbar-tools-cell-8:clamp(34px,9vw,40px);
+  --topbar-tools-cell-6:clamp(38px,10vw,44px);
+  --topbar-tools-cell-8:clamp(36px,9.5vw,42px);
   --topbar-tools-cell:var(--topbar-tools-cell-4);
   --topbar-tools-grid-rows:2;
   --topbar-tools-grid-w:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-x));
@@ -17,11 +17,12 @@
   --topbar-brand-visual-h:100px;
   --topbar-tools-block-width:var(--topbar-tools-grid-w);
   --topbar-name-band-h:24px;
-  --topbar-tool-ico-size:clamp(26px,calc(var(--topbar-tools-cell) - 13px),32px);
-  --topbar-tool-ico-size-6:clamp(22px,calc(var(--topbar-tools-cell) - 13px),28px);
-  --topbar-tool-label-size:7.5px;
-  --topbar-tool-label-size-6:8px;
-  --topbar-tool-label-size-8:7.5px;
+  --topbar-tool-label-band-h:13px;
+  --topbar-tool-ico-size:clamp(22px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 6px),28px);
+  --topbar-tool-ico-size-6:clamp(20px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 6px),26px);
+  --topbar-tool-label-size:8.5px;
+  --topbar-tool-label-size-6:8.5px;
+  --topbar-tool-label-size-8:8px;
   --topbar-profile-male-bg:#dceef3;
   --topbar-profile-male-border:#89b5c1;
   --topbar-profile-male-glow:rgba(137,181,193,0.32);
@@ -439,47 +440,40 @@ header.topbar .topbar-profile-card h1.topbar-name,
   max-width:var(--topbar-tools-cell);
 }
 .topbar-tool-label{
-  display:block;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  align-self:stretch;
   width:100%;
   max-width:100%;
   min-width:0;
+  height:var(--topbar-tool-label-band-h);
+  min-height:var(--topbar-tool-label-band-h);
+  max-height:var(--topbar-tool-label-band-h);
+  flex:none;
   font-size:var(--topbar-tool-label-size);
-  font-weight:600;
-  line-height:1.08;
-  letter-spacing:.02em;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:-0.01em;
   text-align:center;
-  text-transform:uppercase;
+  text-transform:none;
   color:inherit;
-  opacity:.94;
+  opacity:.96;
   overflow:hidden;
-  overflow-wrap:anywhere;
-  word-break:break-word;
+  text-overflow:ellipsis;
+  white-space:nowrap;
   pointer-events:none;
-  flex:0 1 auto;
-  max-height:2.25em;
 }
 .topbar-tool-label--spacer{
   visibility:hidden;
-  min-height:6px;
+  min-height:var(--topbar-tool-label-band-h);
 }
 .topbar-tools-grid--lead .topbar-tool-label,
 .topbar-tools-grid--ceo-full .topbar-tool-label{
   font-size:var(--topbar-tool-label-size-6);
-  letter-spacing:.015em;
-  white-space:normal;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  line-clamp:2;
 }
 .topbar-tools-grid--eight .topbar-tool-label{
   font-size:var(--topbar-tool-label-size-8);
-  letter-spacing:.01em;
-  white-space:normal;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  line-clamp:2;
 }
 .topbar-tool-cell--participants .topbar-tool-label{
   position:absolute;
@@ -524,20 +518,22 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   min-height:0;
   height:100%;
   max-height:var(--topbar-tools-cell);
-  padding:2px 1px 3px;
+  padding:2px 2px 1px;
   border-radius:9px;
   border:1px solid rgba(45,132,179,.28);
   background:#fff !important;
   color:var(--blue) !important;
   cursor:pointer;
-  display:inline-flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) var(--topbar-tool-label-band-h);
+  align-items:stretch;
+  justify-items:center;
   gap:0;
   box-shadow:0 1px 4px rgba(45,132,179,.1);
   -webkit-tap-highlight-color:transparent;
   position:relative;
+  overflow:hidden;
+  box-sizing:border-box;
 }
 .topbar-tools-grid--lead .topbar-tool-btn,
 .topbar-tools-grid--eight .topbar-tool-btn,
@@ -555,53 +551,41 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   display:flex;
   align-items:center;
   justify-content:center;
+  align-self:center;
   width:var(--topbar-tool-ico-size);
   height:var(--topbar-tool-ico-size);
+  max-width:var(--topbar-tool-ico-size);
+  max-height:calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 5px);
   min-width:0;
-  flex:0 0 var(--topbar-tool-ico-size);
+  flex:none;
   flex-shrink:0;
   pointer-events:none;
-  margin-top:1px;
 }
 .topbar-tools-grid--lead .topbar-tool-btn__ico,
 .topbar-tools-grid--eight .topbar-tool-btn__ico,
 .topbar-tools-grid--ceo-full .topbar-tool-btn__ico{
   width:var(--topbar-tool-ico-size-6);
   height:var(--topbar-tool-ico-size-6);
-  flex:0 0 var(--topbar-tool-ico-size-6);
+  max-width:var(--topbar-tool-ico-size-6);
+  max-height:calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 5px);
 }
 .topbar-tools-grid--dense .topbar-tool-btn{
-  padding:1px 1px 2px;
-  gap:0;
-  justify-content:flex-start;
+  padding:1px 2px 1px;
 }
 .topbar-tools-grid--dense .topbar-tool-btn__ico{
-  width:clamp(16px,calc(var(--topbar-tools-cell) - 18px),21px);
-  height:clamp(16px,calc(var(--topbar-tools-cell) - 18px),21px);
-  flex:0 0 clamp(16px,calc(var(--topbar-tools-cell) - 18px),21px);
-  margin-top:0;
+  width:clamp(16px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 7px),22px);
+  height:clamp(16px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 7px),22px);
+  max-height:calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px);
 }
 .topbar-tools-grid--dense .topbar-tool-label{
-  flex:0 1 auto;
-  min-height:0;
-  font-size:clamp(7px,calc(var(--topbar-tools-cell) * 0.21),8.5px);
-  line-height:1.1;
-  letter-spacing:.01em;
-  overflow:hidden;
-  white-space:normal;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  line-clamp:2;
-  max-height:2.2em;
+  font-size:clamp(7.5px,calc(var(--topbar-tools-cell) * 0.22),8.5px);
 }
 .topbar-tools-grid--eight.topbar-tools-grid--dense .topbar-tool-btn__ico{
-  width:clamp(14px,calc(var(--topbar-tools-cell) - 16px),19px);
-  height:clamp(14px,calc(var(--topbar-tools-cell) - 16px),19px);
-  flex:0 0 clamp(14px,calc(var(--topbar-tools-cell) - 16px),19px);
+  width:clamp(14px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 6px),20px);
+  height:clamp(14px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 6px),20px);
 }
 .topbar-tools-grid--eight.topbar-tools-grid--dense .topbar-tool-label{
-  font-size:clamp(6.75px,calc(var(--topbar-tools-cell) * 0.21),8px);
+  font-size:clamp(7px,calc(var(--topbar-tools-cell) * 0.21),8px);
 }
 .topbar-tool-btn__ico svg{
   display:block;
@@ -710,12 +694,6 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 }
 .topbar-tool-label--session-planner{
   font-size:var(--topbar-tool-label-size);
-  letter-spacing:.02em;
-  line-height:1.05;
-  white-space:nowrap;
-  max-width:100%;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
 .topbar-tools-grid--lead .topbar-tool-label--session-planner,
 .topbar-tools-grid--eight .topbar-tool-label--session-planner{
@@ -736,10 +714,12 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-side-block-w:clamp(112px,29vw,122px);
     --topbar-name-band-h:22px;
     --topbar-tools-cell-4:clamp(38px,10vw,44px);
-    --topbar-tools-cell-6:clamp(34px,9vw,38px);
-    --topbar-tools-cell-8:clamp(30px,8vw,34px);
-    --topbar-tool-label-size:6.5px;
-    --topbar-tool-label-size-6:7px;
+    --topbar-tools-cell-6:clamp(36px,9.5vw,40px);
+    --topbar-tools-cell-8:clamp(34px,9vw,38px);
+    --topbar-tool-label-band-h:12px;
+    --topbar-tool-label-size:8px;
+    --topbar-tool-label-size-6:7.75px;
+    --topbar-tool-label-size-8:7.5px;
   }
 }
 @media (max-width:360px){
@@ -747,9 +727,11 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-side-block-w:clamp(104px,28vw,114px);
     --topbar-name-band-h:20px;
     --topbar-tools-cell-4:clamp(36px,9.5vw,40px);
-    --topbar-tools-cell-6:clamp(32px,8.5vw,36px);
-    --topbar-tools-cell-8:clamp(28px,7.5vw,32px);
-    --topbar-tool-label-size:6px;
-    --topbar-tool-label-size-6:6.5px;
+    --topbar-tools-cell-6:clamp(34px,9vw,38px);
+    --topbar-tools-cell-8:clamp(32px,8.5vw,36px);
+    --topbar-tool-label-band-h:11px;
+    --topbar-tool-label-size:7.5px;
+    --topbar-tool-label-size-6:7.25px;
+    --topbar-tool-label-size-8:7px;
   }
 }

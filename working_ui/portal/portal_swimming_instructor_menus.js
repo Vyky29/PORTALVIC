@@ -516,26 +516,26 @@
   };
   /** Catalog for portal_topbar_icons_lab.html — order matches staff_dashboard topbar DOM. */
   var PORTAL_TOPBAR_TOOL_CATALOG = [
-    { id: "photo", label: "PHOTO", cellId: "topbarToolCellAchievements", profileKey: "photo" },
-    { id: "venue", label: "VENUE", cellId: "topbarToolCellVenue", profileKey: "venue" },
-    { id: "pickup", label: "PICKUP", cellId: "topbarToolCellPickup", profileKey: "pickup" },
+    { id: "photo", label: "Photo", cellId: "topbarToolCellAchievements", profileKey: "photo" },
+    { id: "venue", label: "Venue", cellId: "topbarToolCellVenue", profileKey: "venue" },
+    { id: "pickup", label: "PickUp", cellId: "topbarToolCellPickup", profileKey: "pickup" },
     {
       id: "swReview",
-      label: "SW REV",
+      label: "Review",
       cellId: "topbarToolCellTermReview",
       profileKey: "swReview",
       reviewKind: "swimming",
     },
     {
       id: "leadReview",
-      label: "LEAD REV",
+      label: "TermRev",
       cellId: "topbarToolCellLeadTermReview",
       profileKey: "leadReview",
       reviewKind: "lead",
     },
-    { id: "plan", label: "PLAN", cellId: "topbarToolCellSessionPlanner", profileKey: "planner" },
-    { id: "lead", label: "LEAD", cellId: "topbarToolCellLeadReport", leadExtra: true },
-    { id: "stats", label: "STATS", cellId: "topbarToolCellSessionsOverview", leadExtra: true },
+    { id: "plan", label: "Plan", cellId: "topbarToolCellSessionPlanner", profileKey: "planner" },
+    { id: "lead", label: "Lead", cellId: "topbarToolCellLeadReport", leadExtra: true },
+    { id: "stats", label: "Stats", cellId: "topbarToolCellSessionsOverview", leadExtra: true },
   ];
 
   function portalStaffIsProgrammeLeadKey(staffKey) {

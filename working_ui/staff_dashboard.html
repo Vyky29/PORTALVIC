@@ -99,7 +99,7 @@
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260621-today-names-5plus" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260621-topbar-labels-readability" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-topbar-in-tile-labels" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script src="/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix"></script>
@@ -276,31 +276,31 @@
             <div class="topbar-tool-cell topbar-tool-cell--row1-solo" id="topbarToolCellAchievements">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">PHOTO</span>
+                <span class="topbar-tool-label" aria-hidden="true">Photo</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellVenue">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">VENUE</span>
+                <span class="topbar-tool-label" aria-hidden="true">Venue</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellPickup">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--pickup" id="topbarToolPickup" data-portal-external-url="portal-pickup.html" aria-label="Pickup">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">PICKUP</span>
+                <span class="topbar-tool-label" aria-hidden="true">PickUp</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellTermReview" hidden>
               <button type="button" class="topbar-tool-btn topbar-tool-btn--term-review" id="topbarToolTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">SW REV</span>
+                <span class="topbar-tool-label" aria-hidden="true">Review</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellLeadTermReview" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-term-review" id="topbarToolLeadTermReview" data-portal-external-url="termreview.html" aria-label="Lead term review — review staff on your programme shifts">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">LEAD REV</span>
+                <span class="topbar-tool-label" aria-hidden="true">TermRev</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellSessionPlanner" hidden aria-hidden="true">
@@ -312,13 +312,13 @@
             <div class="topbar-tool-cell" id="topbarToolCellLeadReport" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-report" id="topbarToolLeadReport" data-portal-external-url="portal-lead-feedback.html" aria-label="Lead feedback report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">LEAD</span>
+                <span class="topbar-tool-label" aria-hidden="true">Lead</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellSessionsOverview" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--sessions-overview" id="topbarToolSessionsOverview" data-portal-external-url="portal-lead-session-overview.html" aria-label="Stats">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-9"/></svg></span>
-                <span class="topbar-tool-label" aria-hidden="true">STATS</span>
+                <span class="topbar-tool-label" aria-hidden="true">Stats</span>
               </button>
             </div>
           </div>
