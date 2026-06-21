@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260621-lead-report-table-slim"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260621-venue-review-merge-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260609-payslips-wait"></script>
@@ -2111,6 +2111,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         has_issues: adminSfStr(r.has_issues) || 'No',
         issues_reported: r.issues_reported != null ? String(r.issues_reported) : null,
         submitted_by_name: adminSfStr(r.submitted_by_name) || '—',
+        opening_or_closing: adminSfStr(r.opening_or_closing) || '',
         created_at: adminSfStr(r.created_at) || null
       };
     }

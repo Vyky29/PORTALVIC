@@ -112,14 +112,27 @@
   }
 
   function venueReviewMergeKey(r) {
+    if (!r) return '';
+    var id = String(r.id || '').trim();
+    if (id) return 'id:' + id;
     return (
-      String((r && r.review_date) || '').trim().substring(0, 10) +
+      String((r && r.review_date) || '')
+        .trim()
+        .substring(0, 10) +
       '|' +
       String((r && r.venue) || '')
         .trim()
         .toLowerCase() +
       '|' +
-      String((r && r.opening_or_closing) || '').trim()
+      String((r && r.opening_or_closing) || '')
+        .trim()
+        .toLowerCase() +
+      '|' +
+      String((r && r.submitted_by_user_id) || (r && r.submitted_by_name) || '')
+        .trim()
+        .toLowerCase() +
+      '|' +
+      String((r && r.review_time) || '').trim()
     );
   }
 
@@ -143,12 +156,15 @@
       out.push(r);
     });
     out.sort(function (a, b) {
+      var ca = String(a.created_at || '');
+      var cb = String(b.created_at || '');
+      if (ca !== cb) return cb.localeCompare(ca);
       var da = String(a.review_date || '');
       var db = String(b.review_date || '');
       if (da !== db) return db.localeCompare(da);
       var va = String(a.venue || '').localeCompare(String(b.venue || ''));
       if (va) return va;
-      return String(a.opening_or_closing || '').localeCompare(String(b.opening_or_closing || ''));
+      return String(a.submitted_by_name || '').localeCompare(String(b.submitted_by_name || ''));
     });
     payload.venue_reviews = out;
   }
