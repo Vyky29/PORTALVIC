@@ -611,14 +611,14 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   border-color:rgba(45,132,179,.45);
 }
 .topbar-tool-btn--lead-term-review{
-  background:rgba(139,92,246,.14) !important;
-  color:#6d28d9 !important;
-  border-color:rgba(139,92,246,.34);
+  background:rgba(244,63,94,.14) !important;
+  color:#be123c !important;
+  border-color:rgba(244,63,94,.36);
 }
 .topbar-tool-btn--lead-term-review:hover,
 .topbar-tool-btn--lead-term-review:focus-visible{
-  background:rgba(139,92,246,.2) !important;
-  border-color:rgba(139,92,246,.48);
+  background:rgba(244,63,94,.2) !important;
+  border-color:rgba(190,18,60,.48);
 }
 .topbar-tool-btn--participants{
   background:var(--ink,#173247) !important;

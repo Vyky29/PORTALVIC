@@ -105,23 +105,143 @@ function staffOnInScopeRosterRow(staffKey, row, iso, scopes, source) {
   return keys.indexOf(normKey(staffKey)) >= 0;
 }
 
-function ensureSundayMaProgrammeLeads(memberKeys, ctx, iso) {
-  if (!ctx || !portalLeadDayUsesProgrammeWideRoster(ctx.scopes, iso)) return;
-  if (weekdayFromIso(iso) !== "Sunday") return;
-  const hasSundayMa = ctx.scopes.some(function (s) {
-    return (
-      s.programmeWideRoster &&
-      s.weekdays &&
-      s.weekdays.indexOf("Sunday") >= 0 &&
-      s.venues &&
-      s.venues.some(function (v) {
-        return normKey(v).indexOf("swimfarm") >= 0;
-      })
-    );
+const PROGRAMME_LEAD_KEYS = new Set(["john", "berta", "michelle"]);
+
+function portalLeadTeamDayKind(ctx, iso) {
+  if (!ctx || !iso) return "";
+  const wd = weekdayFromIso(iso);
+  const leadKey = ctx.leadKey;
+  for (let i = 0; i < ctx.scopes.length; i++) {
+    const sc = ctx.scopes[i];
+    if (!sc.weekdays || sc.weekdays.indexOf(wd) < 0) continue;
+    const isMulti = sc.serviceKeys && sc.serviceKeys.indexOf("multi") >= 0;
+    const isBespoke = sc.serviceKeys && sc.serviceKeys.indexOf("bespoke") >= 0;
+    const venues = sc.venues || [];
+    const swimfarm = venues.some(function (v) {
+      return normKey(v).indexOf("swimfarm") >= 0;
+    });
+    const acton = venues.some(function (v) {
+      return normKey(v).indexOf("acton") >= 0;
+    });
+    if (wd === "Sunday" && sc.programmeWideRoster && isMulti && swimfarm) return "sunday_ma_swimfarm";
+    if (wd === "Wednesday" && leadKey === "berta" && sc.programmeWideRoster && isMulti && acton) {
+      return "berta_wed_acton_ma";
+    }
+    if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Wednesday" || wd === "Friday")) {
+      return "john_bespoke_mwf";
+    }
+  }
+  return "";
+}
+
+function excludePeerProgrammeLead(keys, leadKey) {
+  const peer = leadKey === "john" ? "berta" : leadKey === "berta" ? "john" : "";
+  if (!peer) return keys.slice();
+  return keys.filter(function (k) {
+    return k !== peer;
   });
-  if (!hasSundayMa) return;
-  ["john", "berta"].forEach(function (k) {
-    if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
+}
+
+function ensureLeadPresent(keys, leadKey) {
+  if (!leadKey) return keys.slice();
+  const out = keys.slice();
+  if (out.indexOf(leadKey) < 0) out.unshift(leadKey);
+  return out;
+}
+
+function dedupeKeys(keys) {
+  const out = [];
+  keys.forEach(function (k) {
+    if (k && out.indexOf(k) < 0) out.push(k);
+  });
+  return out;
+}
+
+function filterSundayMaTeam(keys, leadKey) {
+  let pool = excludePeerProgrammeLead(keys, leadKey);
+  pool = ensureLeadPresent(pool, leadKey);
+  const supportLeads = pool.filter(function (k) {
+    return teamMemberChipRole(k) === "support-lead" && k === leadKey;
+  });
+  const supportWorkers = pool.filter(function (k) {
+    return teamMemberChipRole(k) === "support-worker";
+  });
+  const swimInstructors = pool.filter(function (k) {
+    return teamMemberChipRole(k) === "swim-instructor";
+  });
+  return dedupeKeys(supportLeads.concat(supportWorkers.slice(0, 2), swimInstructors.slice(0, 3)));
+}
+
+function filterJohnBespokeTeam(keys) {
+  const leadKey = "john";
+  let pool = excludePeerProgrammeLead(keys, leadKey);
+  pool = ensureLeadPresent(pool, leadKey);
+  const supportWorkers = pool.filter(function (k) {
+    return k !== leadKey && teamMemberChipRole(k) === "support-worker";
+  });
+  return dedupeKeys([leadKey].concat(supportWorkers.slice(0, 2)));
+}
+
+function filterBertaWedTeam(keys) {
+  const leadKey = "berta";
+  let pool = excludePeerProgrammeLead(keys, leadKey);
+  pool = ensureLeadPresent(pool, leadKey);
+  const others = pool.filter(function (k) {
+    return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+  });
+  return dedupeKeys([leadKey].concat(others.slice(0, 3)));
+}
+
+function applyTeamDayFilter(keys, dayKind, leadKey) {
+  if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
+  if (dayKind === "john_bespoke_mwf") return filterJohnBespokeTeam(keys);
+  if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
+  return keys.slice();
+}
+
+function activeScopeLabelForDay(scopes, iso) {
+  const wd = weekdayFromIso(iso);
+  for (let i = 0; i < scopes.length; i++) {
+    const sc = scopes[i];
+    if (sc.weekdays && sc.weekdays.indexOf(wd) >= 0) return String(sc.label || sc.id || "Your programme");
+  }
+  return "";
+}
+
+function collectInScopeMemberKeys(iso, scopes, source) {
+  const rows = source && Array.isArray(source.rows) ? source.rows : [];
+  const memberKeys = [];
+  rows.forEach(function (row) {
+    if (!rosterRowMatchesIso(row, iso)) return;
+    const slot = rosterRowToSlot(row, iso);
+    if (!portalLeadSlotInScope(slot, scopes)) return;
+    staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, source)).forEach(function (k) {
+      if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
+    });
+  });
+  return memberKeys;
+}
+
+function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
+  scheduleOverrideRows().forEach(function (ov) {
+    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
+    if (!overrideAnchorOnInScopeRow(ov, scopes, iso)) return;
+    const pl = parseOverridePayload(ov);
+    const anchor = canonicalStaffKey(ov.anchor_staff_id);
+    const cover = canonicalStaffKey(pl.covering_staff_id);
+    if (anchor) {
+      const ix = memberKeys.indexOf(anchor);
+      if (ix >= 0) memberKeys.splice(ix, 1);
+    }
+    if (cover && memberKeys.indexOf(cover) < 0) memberKeys.push(cover);
+  });
+  return memberKeys.filter(function (k) {
+    const rows = source && Array.isArray(source.rows) ? source.rows : [];
+    return rows.some(function (row) {
+      return staffOnInScopeRosterRow(k, row, iso, scopes, source);
+    });
   });
 }
 
@@ -266,52 +386,23 @@ export function portalLeadTeamShiftContext() {
 export function portalLeadTeamOnShiftForIso(iso, ctx) {
   ctx = ctx || portalLeadTeamShiftContext();
   if (!ctx || !iso) return null;
-  if (!portalLeadDayUsesProgrammeWideRoster(ctx.scopes, iso)) return null;
+
+  const dayKind = portalLeadTeamDayKind(ctx, iso);
+  if (!dayKind) return null;
 
   const src = rosterSource();
-  const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  const memberKeys = [];
+  let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
+  memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+  memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);
 
-  rows.forEach(function (row) {
-    if (!rosterRowMatchesIso(row, iso)) return;
-    const slot = rosterRowToSlot(row, iso);
-    if (!portalLeadSlotInScope(slot, ctx.scopes)) return;
-    staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src)).forEach(function (k) {
-      if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
-    });
-  });
-
-  scheduleOverrideRows().forEach(function (ov) {
-    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
-    if (String(ov.status || "active") !== "active") return;
-    if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
-    if (!overrideAnchorOnInScopeRow(ov, ctx.scopes, iso)) return;
-    const pl = parseOverridePayload(ov);
-    const anchor = canonicalStaffKey(ov.anchor_staff_id);
-    const cover = canonicalStaffKey(pl.covering_staff_id);
-    if (anchor) {
-      const ix = memberKeys.indexOf(anchor);
-      if (ix >= 0) memberKeys.splice(ix, 1);
-    }
-    if (cover && memberKeys.indexOf(cover) < 0) memberKeys.push(cover);
-  });
-
-  const filtered = memberKeys.filter(function (k) {
-    return rows.some(function (row) {
-      return staffOnInScopeRosterRow(k, row, iso, ctx.scopes, src);
-    });
-  });
-
-  ensureSundayMaProgrammeLeads(filtered, ctx, iso);
-
-  filtered.sort(function (a, b) {
+  memberKeys.sort(function (a, b) {
     return staffDisplayName(a).localeCompare(staffDisplayName(b));
   });
 
   return {
     iso: iso,
-    programmeLabel: activeProgrammeWideScopeLabel(ctx.scopes, iso),
-    members: filtered.map(function (k) {
+    programmeLabel: activeScopeLabelForDay(ctx.scopes, iso),
+    members: memberKeys.map(function (k) {
       return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
     }),
   };
@@ -481,7 +572,7 @@ export function portalSyncLeadTeamShiftUi() {
 
     const iso = todayIsoYmd();
     const team = portalLeadTeamOnShiftForIso(iso, ctx);
-    const showToday = !!(team && portalLeadDayUsesProgrammeWideRoster(ctx.scopes, iso));
+    const showToday = !!(team && team.members.length);
 
     if (todayHost) {
       if (showToday) {
