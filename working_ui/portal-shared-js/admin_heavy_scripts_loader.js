@@ -7,12 +7,12 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260609-feedback-real",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster",
-      "/portal/roster_master_dashboard_rows.js?v=20260614-madre-roster",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260621-javi-madre-bismark-cover",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
-      "/portal/portal-roster-rows-merge.js?v=20260609-time-slot-norm",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260614-madre-roster",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback",
+      "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
+      "/portal/portal_roster_canonical.js?v=20260622-canonical-roster",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
