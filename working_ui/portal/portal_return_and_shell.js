@@ -69,7 +69,7 @@
     return portalSameOriginPageUrl("staff_dashboard.html");
   };
   global.portalLeadDashboardUrl = function () {
-    return portalSameOriginPageUrl("lead_dashboard.html");
+    return portalSameOriginPageUrl("staff_dashboard.html");
   };
   global.portalLoginUrl = function () {
     return portalSameOriginPageUrl("login.html");

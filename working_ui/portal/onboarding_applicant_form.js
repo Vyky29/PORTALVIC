@@ -192,7 +192,7 @@
     try {
       var qs = new URLSearchParams(global.location.search || "");
       if (String(qs.get("from") || "").trim().toLowerCase() === "lead") {
-        return "lead_dashboard.html";
+        return "staff_dashboard.html";
       }
       if (String(qs.get("from") || "").trim().toLowerCase() === "admin") {
         return "admin_dashboard.html";
@@ -205,7 +205,7 @@
       var staffRole = String((prof && prof.staff_role) || "").toLowerCase();
       var appRole = String((prof && prof.app_role) || "").toLowerCase();
       if (route.indexOf("lead") >= 0 || staffRole === "lead" || appRole === "lead") {
-        return "lead_dashboard.html";
+        return "staff_dashboard.html";
       }
     } catch (_) {}
     return "staff_dashboard.html";

@@ -20,27 +20,12 @@
     "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
   ];
 
-  var LEAD_LAZY_SCRIPTS = [
-    "/portal/portal_participant_achievements.js?v=20260619-video-audio-fix",
-    "/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels",
-    "/portal/portal_induction.js?v=20260613-required-induction",
-    "/portal/portal_induction_bind.js?v=20260604-induction-persist",
-    "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
-    "/portal/portal_guide_menu.js?v=20260614-no-menu-guide",
-    "/portal/portal-openai-assist.js?v=20260607-openai-assist-b",
-    "/portal/portal_help_bot.js?v=20260607-help-ai-b",
-    "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
-    "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
-  ];
+  var LEAD_LAZY_SCRIPTS = STAFF_LAZY_SCRIPTS;
 
   var inflight = null;
   var done = false;
 
   function dashboardShell() {
-    try {
-      var p = String(global.location && global.location.pathname || "").toLowerCase();
-      if (p.indexOf("lead_dashboard") >= 0) return "lead";
-    } catch (_) {}
     return "staff";
   }
 

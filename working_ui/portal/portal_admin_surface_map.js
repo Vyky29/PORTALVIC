@@ -154,7 +154,7 @@
     if (previewWorkerPortalActive()) return false;
     prof = profileRow(prof);
     pathname = String(pathname || (global.location && global.location.pathname) || "");
-    if (!/lead_dashboard|staff_dashboard/i.test(pathname)) return false;
+    if (!/staff_dashboard/i.test(pathname)) return false;
     if (isOpsAdmin(prof)) return true;
     return false;
   }

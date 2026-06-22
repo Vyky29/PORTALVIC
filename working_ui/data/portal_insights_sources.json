@@ -99,7 +99,7 @@
       "label": "Term grid session review (feedback / incident / absence flags)",
       "category": "term_quality",
       "status": "portal_localstorage_map",
-      "portal_html_path": "working_ui/staff_dashboard.html, working_ui/lead_dashboard.html",
+      "portal_html_path": "working_ui/staff_dashboard.html",
       "public_form_url": "",
       "spreadsheet_or_webhook": "TBD",
       "suggested_supabase_table": "portal_session_review_state",

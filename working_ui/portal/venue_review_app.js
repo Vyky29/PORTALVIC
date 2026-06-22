@@ -231,7 +231,7 @@ function venueReviewDashboardReturnUrl() {
     var rp = new URLSearchParams(location.search).get("rp");
     if (rp && /\.html(\?|$)/i.test(rp)) return new URL(rp, location.href).href;
   } catch (_) {}
-  return new URL("lead_dashboard.html", location.href).href;
+  return new URL("staff_dashboard.html", location.href).href;
 }
 
 function showCompletionPopupAndReturnDashboard() {

@@ -46,7 +46,7 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       mode: "lead",
       label: "Lead portal",
       sub: "Team overview, lead reports and support workflows",
-      url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
+      url: publishedUrl("staff_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
     },
     {
       mode: "admin",

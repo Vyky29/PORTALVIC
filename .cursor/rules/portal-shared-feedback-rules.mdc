@@ -1,6 +1,6 @@
 ---
 description: Shared vs per-staff session feedback rules (Day Centre, Bespoke trio, MA/climbing)
-globs: working_ui/portal/staff_portal_feedback_bridge.js,working_ui/portal-shared-js/staff_portal_feedback_bridge.js,working_ui/portal/supabase-client.js,working_ui/portal/admin-sessions-hub.js,working_ui/staff_dashboard.html,working_ui/lead_dashboard.html
+globs: working_ui/portal/staff_portal_feedback_bridge.js,working_ui/portal-shared-js/staff_portal_feedback_bridge.js,working_ui/portal/supabase-client.js,working_ui/portal/admin-sessions-hub.js,working_ui/staff_dashboard.html
 alwaysApply: false
 ---
 
@@ -31,6 +31,6 @@ alwaysApply: false
 - `staff_portal_feedback_bridge.js` — `dayCentreClientResolved`, `bespokeClientResolved`, `isBespokeSharedRosterSession`
 - `portal/supabase-client.js` — `portalFetchSubmittedReviewSessionKeys`, `portalFanOutFeedbackKeysOntoRosterMemory`
 - `admin-sessions-hub.js` — `isBespokeMultiStaffSharedSlot`, overview counts
-- `staff_dashboard.html` / `lead_dashboard.html` — `portalCollectRosterSessionKeysForReviewSync`, `portalRosterSessionIsBespokeShared`
+- `staff_dashboard.html` — `portalCollectRosterSessionKeysForReviewSync`, `portalRosterSessionIsBespokeShared`
 
 When changing feedback completion, update **staff, lead, admin hub, and Supabase RPC** together; test co-instructor (Roberto submits Fadi → Victor green).

@@ -53,7 +53,7 @@ Deploy **exact** function slugs (they define the URL path).
 
 ## Related portal pages
 
-- This flow is **standalone** for the annual update; do not wire it into `lead_dashboard.html` / `ceo_dashboard.html` unless explicitly requested.
+- This flow is **standalone** for the annual update; do not wire it into `staff_dashboard.html` / `ceo_dashboard.html` unless explicitly requested.
 
 ## Stakeholder briefing (other teams / admin portal)
 

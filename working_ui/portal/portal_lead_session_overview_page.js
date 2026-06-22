@@ -23,8 +23,7 @@ import {
 const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260620-absent-perf-fix";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
-  if (portalIsProgrammeLeadUser(profile, authEmail)) return "staff_dashboard.html";
-  return "lead_dashboard.html";
+  return "staff_dashboard.html";
 }
 
 const state = { tab: "feedback", scopes: [] };

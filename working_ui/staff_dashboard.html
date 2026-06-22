@@ -2108,7 +2108,11 @@
     function portalSeedAllReviewDoneFromPortalExports(){
       let changed = false;
       try{
-        const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || STAFF_DASHBOARD_ID
+          || ''
+        ).trim().toLowerCase();
         const resetV = '20260608-bespoke-trio-shared';
         const machineResetV = '20260621-sunday-cover-feedback';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
@@ -2247,13 +2251,23 @@
     }
 
     function portalFeedbackReturnHtmlFile(){
-      const p = String(typeof location !== 'undefined' ? location.pathname : '').toLowerCase();
-      if(p.indexOf('lead_dashboard') !== -1) return 'lead_dashboard.html';
       return 'staff_dashboard.html';
     }
     function portalFormFromPortalParam(){
-      const p = String(typeof location !== 'undefined' ? location.pathname : '').toLowerCase();
-      return p.indexOf('lead_dashboard') !== -1 ? 'lead' : 'staff';
+      try{
+        const qs = new URLSearchParams(String(typeof location !== 'undefined' ? location.search : ''));
+        const fp = String(qs.get('from_portal') || '').trim().toLowerCase();
+        if(fp === 'lead' || fp === 'lead_report') return fp === 'lead_report' ? 'lead_report' : 'lead';
+      }catch(_){}
+      try{
+        if(typeof portalIsStaffHomeProgrammeLead === 'function'){
+          const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+          const prof = box && box.staff_profile;
+          const email = String((box && box.session && box.session.user && box.session.user.email) || '').trim();
+          if(portalIsStaffHomeProgrammeLead(prof, email)) return 'lead';
+        }
+      }catch(_){}
+      return 'staff';
     }
     function portalAppendFromPortalQuery(url){
       const u = String(url || '');
@@ -8910,12 +8924,14 @@
     }
     try{ window.portalAchievementsListTodayParticipants = portalAchievementsListTodayParticipants; }catch(_){}
 
-    function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId){
+    function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId, modelOverride){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return false;
-      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      const model = Array.isArray(modelOverride)
+        ? modelOverride
+        : ((typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : []);
       return model.some(function(s){
         if(String(s.staffId || '').toLowerCase() !== sid) return false;
         if(!portalSessionClientActiveOnDate(s, iso)) return false;
@@ -8923,6 +8939,58 @@
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
       });
     }
+    /** Any worker: model/timetable says today should have cards but the Today list is still empty (rehydrate race). */
+    function portalStaffTodayScheduleCardsStillExpected(staffId, modelOverride){
+      const sid = String(staffId || (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '') || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim().toLowerCase();
+      if(!sid) return false;
+      if(typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return false;
+      const anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+        ? portalResolveTodaySectionCalendarDate()
+        : null;
+      if(!anchor || isNaN(anchor.getTime())) return false;
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+      const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+      if(!iso || !dayWord) return false;
+      if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+        && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid, modelOverride)){
+        return true;
+      }
+      if(!modelOverride){
+        try{
+          const guard = typeof window !== 'undefined' ? window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ : null;
+          if(Array.isArray(guard) && guard.length
+            && typeof portalStaffClientSessionsOnCalendarDate === 'function'
+            && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid, guard)){
+            return true;
+          }
+        }catch(_){}
+      }
+      const model = Array.isArray(modelOverride)
+        ? modelOverride
+        : ((typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : []);
+      if(!model.some(function(s){ return String(s.staffId || '').toLowerCase() === sid; })) return false;
+      if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid, anchor)) return true;
+      if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return true;
+      return false;
+    }
+    function portalStaffSessionsModelWouldDropToday(staffId, priorModel, nextModel){
+      return !!(Array.isArray(priorModel) && priorModel.length
+        && Array.isArray(nextModel)
+        && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+        && portalStaffTodayScheduleCardsStillExpected(staffId, priorModel)
+        && !portalStaffTodayScheduleCardsStillExpected(staffId, nextModel));
+    }
+    function portalStaffUpdateSessionsModelGuard(staffId, model){
+      const sid = String(staffId || (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '') || '').trim().toLowerCase();
+      if(!sid || !Array.isArray(model) || !model.length) return;
+      if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+        && portalStaffTodayScheduleCardsStillExpected(sid, model)){
+        try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = model.slice(); }catch(_){}
+      }
+    }
+    try{ window.portalStaffSessionsModelWouldDropToday = portalStaffSessionsModelWouldDropToday; }catch(_){}
+    try{ window.portalStaffUpdateSessionsModelGuard = portalStaffUpdateSessionsModelGuard; }catch(_){}
+    try{ window.portalStaffTodayScheduleCardsStillExpected = portalStaffTodayScheduleCardsStillExpected; }catch(_){}
     /** Pool shift dates from Staff Timetable (1 Jun+); null when map not loaded. */
     function portalTermStaffShiftDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -10796,6 +10864,10 @@
       }catch(_){}
       if(todayRows.length) return 'empty';
       const hydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+      if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+        && portalStaffTodayScheduleCardsStillExpected(sid)){
+        return 'sync';
+      }
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
         if(!hydrated) return 'sync';
         return 'empty';
@@ -11068,7 +11140,22 @@
           dashboardData.portalTodayEmptyPanelMode = 'sync';
         }
       }else if(!portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
-        dashboardData.portalTodayNextSessionPreview = portalStabilizeNextSessionPreview(null, prevPreview, id);
+        if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+          && portalStaffTodayScheduleCardsStillExpected(id)){
+          dashboardData.portalTodayNextSessionPreview = null;
+        }else{
+          dashboardData.portalTodayNextSessionPreview = portalStabilizeNextSessionPreview(null, prevPreview, id);
+        }
+      }
+      if(!rows.length && id && !todayOff
+        && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+        && portalStaffTodayScheduleCardsStillExpected(id)){
+        dashboardData.portalTodayEmptyPanelMode = 'sync';
+        dashboardData.portalTodayNextSessionPreview = null;
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
+        return [];
       }
       if(liveToday && !todayOff && rows.length && typeof collectSessionReviewPendingStats === 'function'){
         const stats = collectSessionReviewPendingStats();
@@ -11141,6 +11228,9 @@
         return [];
       }
       dashboardData.today = rows;
+      if(rows.length && typeof portalStaffUpdateSessionsModelGuard === 'function'){
+        portalStaffUpdateSessionsModelGuard(id, Array.isArray(modelOverride) ? modelOverride : sessionsModel);
+      }
       portalApplyTodayVenueMeta();
       return rows;
     }
@@ -11152,7 +11242,11 @@
       var maxTries = 12;
       var timer = setInterval(function(){
         tries += 1;
-        var sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        var sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || STAFF_DASHBOARD_ID
+          || ''
+        ).trim().toLowerCase();
         if(!sid || tries > maxTries){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
@@ -11182,7 +11276,11 @@
         }
         if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function') window.portalRebootstrapSessionsForPinnedStaff();
         else if(typeof window.portalBootstrapFromMachineFallback === 'function'){
-          const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+          const sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || STAFF_DASHBOARD_ID
+          || ''
+        ).trim().toLowerCase();
           const fb = sid ? window.portalBootstrapFromMachineFallback(sid) : null;
           if(fb && fb.boot && Array.isArray(fb.boot.sessionsModel) && fb.boot.sessionsModel.length){
             sessionsModel = fb.boot.sessionsModel;
@@ -11306,6 +11404,7 @@
       sessionsModel = hit.boot.sessionsModel || [];
       clientNotesById = hit.boot.clientNotesById || {};
       try{ portalStaffMarkRosterHydrated(); }catch(_){}
+      if(typeof portalStaffUpdateSessionsModelGuard === 'function') portalStaffUpdateSessionsModelGuard(sid, sessionsModel);
       portalApplyClientsInfoToNotes();
       if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
       if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
@@ -13434,7 +13533,11 @@
         applyTodayGridSizing(grid, 0);
         const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
-        const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || STAFF_DASHBOARD_ID
+          || ''
+        ).trim().toLowerCase();
         let panelMode = (dashboardData && dashboardData.portalTodayEmptyPanelMode)
           ? String(dashboardData.portalTodayEmptyPanelMode)
           : '';
@@ -13708,7 +13811,11 @@
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
       const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false, hasTraining: false, hasShadowing: false, hasMeeting: false, hasShadowingHost: false, shadowingHostLabels: [] };
       try{
-        const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || STAFF_DASHBOARD_ID
+          || ''
+        ).trim().toLowerCase();
         const d = String(dayName || '').trim();
         const iso = String(sessionDateIso || '').trim();
         if(!sid || !d || !iso) return out;
@@ -17156,8 +17263,11 @@
       var _staffRehydratePromise = null;
       var _staffRosterHydratedOk = false;
       function portalRebootstrapSessionsForPinnedStaff() {
-        var sid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);
+        var sid = portalLocalCanonicalStaffKey(
+          (typeof portalAuthStaffRosterId === "function" ? portalAuthStaffRosterId() : "") || STAFF_DASHBOARD_ID
+        );
         if (!String(sid || "").trim()) return;
+        var priorModel = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
         var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
         var source =
           typeof window.portalResolveStaffDashboardSource === "function"
@@ -17174,6 +17284,11 @@
           }
         }
         if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) return;
+        if (typeof portalStaffSessionsModelWouldDropToday === "function"
+          && portalStaffSessionsModelWouldDropToday(sid, priorModel, boot.sessionsModel)) {
+          console.debug("staff_dashboard: skip rebootstrap that would drop today sessions", sid);
+          return;
+        }
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = sid;
         try { window.STAFF_DASHBOARD_ID = sid; } catch (_) {}
@@ -17437,7 +17552,13 @@
               typeof window.portalPrimaryStaffRosterKey === "function" && user
                 ? portalLocalCanonicalStaffKey(window.portalPrimaryStaffRosterKey(p || profileForRoster, user))
                 : "";
-            if (prevSid && prevSid === staffId && (!authSid || authSid === staffId)) {
+            var shouldKeepRoster = !!(prevSid && prevSid === staffId && (!authSid || authSid === staffId));
+            if (!shouldKeepRoster && prevSid
+              && typeof portalStaffTodayScheduleCardsStillExpected === "function"
+              && portalStaffTodayScheduleCardsStillExpected(prevSid, sessionsModel)) {
+              shouldKeepRoster = true;
+            }
+            if (shouldKeepRoster) {
               console.debug("staff_dashboard: keep roster (empty re-bootstrap)", staffId);
               portalStaffFinishIdentityUi(profileForRoster, p, session);
               return;
@@ -17464,10 +17585,18 @@
         }
         if (runId !== _rehydrateRun) return;
 
+        var priorModelForGuard = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
+        if (typeof portalStaffSessionsModelWouldDropToday === "function"
+          && portalStaffSessionsModelWouldDropToday(staffId, priorModelForGuard, newSessions)) {
+          console.debug("staff_dashboard: keep roster (rehydrate would drop today sessions)", staffId);
+          newSessions = priorModelForGuard;
+        }
+
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = staffId;
         try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
         sessionsModel = newSessions;
+        if(typeof portalStaffUpdateSessionsModelGuard === 'function') portalStaffUpdateSessionsModelGuard(staffId, sessionsModel);
         _staffRosterHydratedOk = true;
         portalStaffMarkRosterHydrated();
         clientNotesById = boot.clientNotesById || {};
@@ -17572,7 +17701,15 @@
         if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{
             if (runId !== _rehydrateRun) return;
-            sessionsModel = await window.portalApplyScheduleOverridesToSessionsModelSafe();
+            var priorOverrideModel = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
+            var overrideModel = await window.portalApplyScheduleOverridesToSessionsModelSafe();
+            if(typeof portalStaffSessionsModelWouldDropToday === "function"
+              && portalStaffSessionsModelWouldDropToday(staffId, priorOverrideModel, overrideModel)){
+              console.debug("staff_dashboard: keep roster (overrides would drop today sessions)", staffId);
+            }else{
+              sessionsModel = overrideModel;
+              if(typeof portalStaffUpdateSessionsModelGuard === 'function') portalStaffUpdateSessionsModelGuard(staffId, sessionsModel);
+            }
           }catch(_e){}
         }
         if (runId !== _rehydrateRun) return;

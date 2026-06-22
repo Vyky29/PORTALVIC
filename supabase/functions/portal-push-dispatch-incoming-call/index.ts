@@ -92,11 +92,6 @@ function openBaseForProfile(prof: {
   const role = String(prof?.app_role || "").toLowerCase();
   const dr = String(prof?.dashboard_route || "").toLowerCase();
   if (role === "admin" || role === "ceo") return csCliq || admin || staff;
-  if (dr.includes("lead_dashboard")) {
-    if (/staff_dashboard\.html/i.test(staff)) {
-      return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
-    }
-  }
   return staff;
 }
 

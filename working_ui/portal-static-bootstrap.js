@@ -82,7 +82,7 @@
       ).toLowerCase();
       if (/login\.html(?:$|[?#])/.test(path) || /\/login(?:$|[/?#])/.test(path)) return;
       var sensitive =
-        /staff_dashboard|lead_dashboard|staff_profile_update|portal-|cancellation|observation|policies|pickup|certificates|ra_portal|risk_assessment|staff_wellbeing_checkin|staff_wellbeing_review|venue-review|incident|expenses|timesheet/i.test(
+        /staff_dashboard|staff_profile_update|portal-|cancellation|observation|policies|pickup|certificates|ra_portal|risk_assessment|staff_wellbeing_checkin|staff_wellbeing_review|venue-review|incident|expenses|timesheet/i.test(
           path
         );
       if (!sensitive) return;
@@ -344,7 +344,7 @@
   (function portalAnnualProfileQuickMenuBootstrap() {
     try {
       var path = String((location && location.pathname) || "").toLowerCase();
-      if (path.indexOf("staff_dashboard") < 0 && path.indexOf("lead_dashboard") < 0) return;
+      if (path.indexOf("staff_dashboard") < 0) return;
       window.addEventListener("portal:supabase-ready", function () {
         void window.portalSyncAnnualProfileQuickMenu();
       });
@@ -375,8 +375,7 @@
   /** Dashboard HTML for staff vs lead (forms + quick links). */
   window.portalResolveHubUrl = function portalResolveHubUrl(fromPortal) {
     var fp = String(fromPortal || "").trim().toLowerCase();
-    if (fp === "lead") return "lead_dashboard.html";
-    if (fp === "staff") return "staff_dashboard.html";
+    if (fp === "lead" || fp === "staff") return "staff_dashboard.html";
     try {
       var box = window.__PORTAL_SUPABASE__;
       var profile = box && box.staff_profile;
@@ -415,9 +414,7 @@
       ).toLowerCase();
       if (p.indexOf("staff_dashboard") >= 0) return "staff_dashboard.html";
       if (p.indexOf("portal-lead-feedback") >= 0) return "staff_dashboard.html";
-      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
-        return "lead_dashboard.html";
-      }
+      if (p.indexOf("portal-lead-session-overview") >= 0) return "staff_dashboard.html";
     } catch (_) {}
     return "staff_dashboard.html";
   };
@@ -429,9 +426,7 @@
       ).toLowerCase();
       if (p.indexOf("staff_dashboard") >= 0) return "staff";
       if (p.indexOf("portal-lead-feedback") >= 0) return "lead_report";
-      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
-        return "lead";
-      }
+      if (p.indexOf("portal-lead-session-overview") >= 0) return "lead";
     } catch (_) {}
     return "staff";
   };
@@ -476,7 +471,7 @@
           typeof window.portalResolveHubUrl === "function"
             ? window.portalResolveHubUrl(role)
             : role === "lead"
-              ? "lead_dashboard.html"
+              ? "staff_dashboard.html"
               : "staff_dashboard.html";
         hub = new URL(hubName, baseHref);
       }

@@ -90,17 +90,7 @@ function openBaseForProfile(prof: {
   const dr = String(prof?.dashboard_route || "").toLowerCase();
   if (role === "admin" || role === "ceo") {
     if (dr.includes("staff_dashboard") && staff) return staff;
-    if (dr.includes("lead_dashboard") && staff) {
-      if (/staff_dashboard\.html/i.test(staff)) {
-        return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
-      }
-    }
     return csCliq || admin || staff;
-  }
-  if (dr.includes("lead_dashboard") && staff) {
-    if (/staff_dashboard\.html/i.test(staff)) {
-      return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
-    }
   }
   return staff || admin;
 }

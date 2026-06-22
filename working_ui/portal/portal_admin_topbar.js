@@ -264,7 +264,7 @@
         mode: "lead",
         label: "Lead portal",
         title: "Open lead dashboard",
-        url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
+        url: publishedUrl("staff_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
       },
       {
         mode: "admin",

@@ -338,7 +338,6 @@
       { id:'logs', label:'Activity log' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
       { id:'portal_nav_staff', label:'Staff dashboard', externalUrl:'/staff_dashboard.html', skipBottomNav:true },
-      { id:'portal_nav_lead', label:'Lead dashboard', externalUrl:'/lead_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_ceo', label:'CEO dashboard', externalUrl:'/ceo_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_admin', label:'Operations admin', externalUrl:'/admin_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true },
@@ -356,7 +355,7 @@
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -18804,7 +18803,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_device_notifications:'Browser permission + Web Push for this device',
         portal_nav_alerts:'Unread venue / ops alerts',
         portal_nav_staff:'Open staff dashboard',
-        portal_nav_lead:'Open lead dashboard',
+        portal_nav_lead:'Lead session reports',
         portal_nav_ceo:'Open CEO dashboard',
         portal_nav_logout:'Sign out of Portal'
       };

@@ -1300,7 +1300,7 @@
           const fp = String(sp.get('from_portal') || '').toLowerCase();
           const src = String(sp.get('source') || fp || '').toLowerCase();
           if(src === 'lead'){
-            window.location.replace(typeof portalResolveHubUrl === 'function' ? portalResolveHubUrl('lead') : 'lead_dashboard.html');
+            window.location.replace(typeof portalResolveHubUrl === 'function' ? portalResolveHubUrl('lead') : 'staff_dashboard.html');
             return;
           }
           if(src === 'staff'){

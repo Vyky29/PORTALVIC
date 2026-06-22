@@ -283,7 +283,7 @@
         const from = String(new URLSearchParams(location.search).get("from") || "")
           .trim()
           .toLowerCase();
-        if (from === "lead") return "lead_dashboard.html";
+        if (from === "lead") return "staff_dashboard.html";
         if (from === "office") return "office_portal.html";
       } catch (_) {}
       return "staff_dashboard.html";

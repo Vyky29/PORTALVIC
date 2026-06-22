@@ -707,7 +707,7 @@ button{
       var pin = window.__PORTAL_PIN_IDENTITY__;
       if (pin && (pin.source === 'lead' || pin.source === 'staff')) return true;
     } catch (e) {}
-    return /staff_dashboard|lead_dashboard/i.test(String(location.pathname || ''));
+    return /staff_dashboard/i.test(String(location.pathname || ''));
   }
   async function portalResolveAuthUserFromClient(supabase){
     var authUser = null;
@@ -1251,7 +1251,7 @@ button{
   function portalHubBackHref(){
     var role = inferOrigin() === 'lead' ? 'lead' : (inferOrigin() === 'staff' ? 'staff' : '');
     if (typeof portalResolveHubUrl === 'function') return portalResolveHubUrl(role);
-    return inferOrigin() === 'lead' ? 'lead_dashboard.html' : 'staff_dashboard.html';
+    return inferOrigin() === 'lead' ? 'staff_dashboard.html' : 'staff_dashboard.html';
   }
   if (cancelBackLink) cancelBackLink.href = portalHubBackHref();
 

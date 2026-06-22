@@ -115,7 +115,7 @@ function portalPublishedAdminUrl() {
   return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL");
 }
 function portalPublishedLeadUrl() {
-  return portalPublishedPageUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL");
+  return portalPublishedStaffUrl();
 }
 function portalPublishedLoginUrl() {
   return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
@@ -277,13 +277,11 @@ function bindLogin() {
     if (fromWorkingUi) {
       if (effectiveRole === "ceo") return "ceo_dashboard.html";
       if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
-      if (effectiveRole === "lead") return "lead_dashboard.html";
       return "staff_dashboard.html";
     }
     const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
     if (effectiveRole === "ceo") return ceoUrl;
     if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
-    if (effectiveRole === "lead") return portalPublishedLeadUrl();
     return portalPublishedStaffUrl();
   }
 

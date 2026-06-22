@@ -117,7 +117,7 @@ function portalPublishedAdminUrl() {
   return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL");
 }
 function portalPublishedLeadUrl() {
-  return portalPublishedPageUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL");
+  return portalPublishedStaffUrl();
 }
 function portalPublishedLoginUrl() {
   return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
@@ -294,16 +294,14 @@ function inferDashboardRoute(profile, authEmail) {
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (fromWorkingUi) {
-    if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "lead_dashboard.html";
+    if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return "staff_dashboard.html";
     if (staffKey === "sevitha" || staffKey === "info") return "admin_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
-    if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
-  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return portalPublishedLeadUrl();
+  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return portalPublishedStaffUrl();
   if (staffKey === "sevitha" || staffKey === "info") return portalPublishedAdminUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
-  if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();
 }
 

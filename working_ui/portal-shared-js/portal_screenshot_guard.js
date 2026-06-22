@@ -429,7 +429,7 @@
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
       if (mode === "workers") return true;
       var path = String((global.location && global.location.pathname) || "").toLowerCase();
-      return /staff_dashboard\.html/.test(path) || /lead_dashboard\.html/.test(path);
+      return /staff_dashboard\.html/.test(path);
     } catch (_e9) {
       return false;
     }

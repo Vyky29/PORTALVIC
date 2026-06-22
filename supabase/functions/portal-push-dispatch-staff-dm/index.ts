@@ -34,15 +34,8 @@ function openBaseForProfile(prof: {
   app_role?: string | null;
   dashboard_route?: string | null;
 } | null): string {
-  const staff = staffPushOpenBase();
-  const role = String(prof?.app_role || "").toLowerCase();
-  const dr = String(prof?.dashboard_route || "").toLowerCase();
-  if (role === "lead" || dr.includes("lead_dashboard")) {
-    if (/staff_dashboard\.html/i.test(staff)) {
-      return staff.replace(/staff_dashboard\.html/i, "lead_dashboard.html");
-    }
-  }
-  return staff;
+  void prof;
+  return staffPushOpenBase();
 }
 
 function buildChatNotifyUrl(base: string, threadId: string): string {

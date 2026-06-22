@@ -136,16 +136,6 @@
     if (id && ACCORDION_BY_ID[id]) return ACCORDION_BY_ID[id];
     var key = String(label || "").trim().toLowerCase();
     if (key === "work" || key === "sessions & participants") {
-      try {
-        var path = String((global.location && global.location.pathname) || "").toLowerCase();
-        if (path.indexOf("lead_dashboard") >= 0) {
-          return {
-            theme: "work",
-            icon: ACCORDION_BY_TITLE["sessions & participants"].icon,
-            chips: ["Achievements", "Venue", "Lead report", "Pickup"],
-          };
-        }
-      } catch (_) {}
       if (ACCORDION_BY_TITLE["sessions & participants"]) return ACCORDION_BY_TITLE["sessions & participants"];
     }
     if (ACCORDION_BY_TITLE[key]) return ACCORDION_BY_TITLE[key];

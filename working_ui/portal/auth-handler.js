@@ -136,7 +136,7 @@ function portalPublishedAdminUrl() {
   return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL");
 }
 function portalPublishedLeadUrl() {
-  return portalPublishedPageUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL");
+  return portalPublishedStaffUrl();
 }
 function portalPublishedLoginUrl() {
   return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
@@ -419,11 +419,9 @@ export function portalStaffHomeHasLeadFieldTools(profile, authEmail) {
   );
 }
 
-/** True on lead_dashboard.html only — not standalone lead field tools (feedback report, …). */
+/** @deprecated Lead shell removed — programme/field leads use staff_dashboard.html. */
 export function portalIsLeadDashboardShellPage() {
-  if (typeof window === "undefined") return false;
-  const path = String(window.location.pathname || "").toLowerCase();
-  return path.includes("lead_dashboard");
+  return false;
 }
 
 /**
@@ -768,13 +766,12 @@ function inferDashboardRoute(profile, authEmail) {
     if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return "admin_dashboard.html";
     if (portalIsOperationsAdminUser(profile, authEmail)) return "office_portal.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
-    if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
   if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return portalPublishedAdminUrl();
   if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedOfficeUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
-  if (effectiveRole === "lead") return portalPublishedLeadUrl();
+  if (effectiveRole === "lead") return portalPublishedStaffUrl();
   return portalPublishedStaffUrl();
 }
 
@@ -1540,37 +1537,6 @@ export async function bootstrapDashboardSupabase(_opts) {
       ) {
         const dest = surfaceMap.adminDashboardUrl(surfaceMap.resolve(profile));
         window.location.replace(dest);
-        return;
-      }
-    }
-
-    if (
-      typeof window !== "undefined" &&
-      profile &&
-      page === "lead" &&
-      portalIsLeadDashboardShellPage()
-    ) {
-      let authEmail = String(session.user?.email || "").trim();
-      if (!authEmail) {
-        try {
-          const { data: udata } = await supabase.auth.getUser();
-          authEmail = String(udata?.user?.email || "").trim();
-        } catch {
-          /* ignore */
-        }
-      }
-      if (portalIsProgrammeLeadUser(profile, authEmail)) {
-        window.location.replace(portalPublishedStaffUrl());
-        return;
-      }
-      if (portalIsAdminHomeExecutiveUser(profile, authEmail)) {
-        window.location.replace(portalPublishedStaffUrl());
-        return;
-      }
-      const eff = portalInferEffectiveRole(profile, authEmail);
-      if (eff !== "lead" && eff !== "admin" && eff !== "ceo") {
-        const staffUrl = portalPublishedStaffUrl();
-        window.location.replace(staffUrl);
         return;
       }
     }

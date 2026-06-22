@@ -96,7 +96,19 @@
     try {
       var path = String((global.location && global.location.pathname) || "").toLowerCase();
       if (path.indexOf("admin_dashboard") >= 0) from = "admin";
-      else if (path.indexOf("lead_dashboard") >= 0) from = "lead";
+      else if (path.indexOf("staff_dashboard") >= 0) {
+        try {
+          var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+          var email = "";
+          try {
+            var u = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session && global.__PORTAL_SUPABASE__.session.user;
+            email = String((u && u.email) || "").trim();
+          } catch (_) {}
+          if (typeof global.portalCanAccessServiceLeadsMenu === "function" && global.portalCanAccessServiceLeadsMenu(prof, email)) {
+            from = "lead";
+          }
+        } catch (_) {}
+      }
     } catch (_) {}
     return u + (u.indexOf("?") >= 0 ? "&" : "?") + "from=" + from;
   }
@@ -286,7 +298,7 @@
   function bindDashboard() {
     try {
       var path = String((global.location && global.location.pathname) || "").toLowerCase();
-      if (path.indexOf("staff_dashboard") < 0 && path.indexOf("lead_dashboard") < 0) return;
+      if (path.indexOf("staff_dashboard") < 0) return;
       void global.portalSyncOnboardingQuickMenu();
     } catch (_) {}
   }

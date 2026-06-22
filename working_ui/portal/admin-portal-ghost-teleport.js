@@ -85,7 +85,7 @@
   }
 
   function dashboardHref(surface) {
-    return surface === "lead" ? "lead_dashboard.html" : "staff_dashboard.html";
+    return surface === "lead" ? "staff_dashboard.html" : "staff_dashboard.html";
   }
 
   function setStatus(html, isError) {

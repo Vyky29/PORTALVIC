@@ -2245,7 +2245,7 @@ button{
     const hubFallback =
       typeof portalResolveHubUrl === "function"
         ? portalResolveHubUrl(fromPortal)
-        : (fromPortal === "lead" ? "lead_dashboard.html" : "staff_dashboard.html");
+        : (fromPortal === "lead" ? "staff_dashboard.html" : "staff_dashboard.html");
     const baseTarget = returnUrl || storedReturn || hubFallback;
     let origin = "dashboard";
     try{
@@ -2906,7 +2906,7 @@ button{
           ? portalResolveHubUrl((qs.get("from_portal") || "").trim())
           : (typeof portalResolveHubUrl === "function"
             ? portalResolveHubUrl((qs.get("from_portal") || "").trim())
-            : ((qs.get("from_portal") || "").trim().toLowerCase() === "lead" ? "lead_dashboard.html" : "staff_dashboard.html"));
+            : ((qs.get("from_portal") || "").trim().toLowerCase() === "lead" ? "staff_dashboard.html" : "staff_dashboard.html"));
       var pr = typeof portalGetPortalReturnUrl === "function" ? portalGetPortalReturnUrl() : "";
       if(pr){
         try{ sessionStorage.setItem("__portal_feedback_return_v1", pr); }catch(_){}

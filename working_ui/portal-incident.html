@@ -1692,7 +1692,7 @@ button{
       const originLead = String(context.origin || "").trim().toLowerCase() === "lead";
       baseTarget = typeof portalResolveHubUrl === "function"
         ? portalResolveHubUrl(fp || (originLead ? "lead" : ""))
-        : (fp === "lead" || originLead ? "lead_dashboard.html" : "staff_dashboard.html");
+        : (fp === "lead" || originLead ? "staff_dashboard.html" : "staff_dashboard.html");
     }
 
     let target = baseTarget;

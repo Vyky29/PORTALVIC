@@ -118,7 +118,7 @@ export function portalVisitPageLabelFromLocation(loc) {
   const file = path.split("/").pop() || "";
   const map = {
     "staff_dashboard.html": "staff hub",
-    "lead_dashboard.html": "lead hub",
+    "staff_dashboard.html": "lead hub",
     "admin_dashboard.html": "admin hub",
     "ceo_dashboard.html": "ceo hub",
     "portal-timesheet.html": "timesheet",

@@ -1,6 +1,6 @@
 /**
  * Persist portal announcement signatures to Supabase (portal_staff_announcement_acks).
- * Loaded on staff_dashboard.html and lead_dashboard.html.
+ * Loaded on staff_dashboard.html and staff_dashboard.html.
  */
 (function (global) {
   if (typeof global === "undefined") return;

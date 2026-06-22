@@ -11,7 +11,6 @@
   "by_filename": {
     "login.html": "/login.html",
     "staff_dashboard.html": "/staff_dashboard.html",
-    "lead_dashboard.html": "/lead_dashboard.html",
     "admin_dashboard.html": "/admin_dashboard.html",
     "ceo_dashboard.html": "/ceo_dashboard.html",
     "company_insights.html": "/company_insights.html",

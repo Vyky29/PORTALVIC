@@ -129,7 +129,7 @@
   </div>
   <script>
     window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
-    window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
+    window.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
     window.PORTAL_ADMIN_DASHBOARD_URL = "admin_dashboard.html";
     window.PORTAL_CEO_DASHBOARD_URL = "ceo_dashboard.html";
     window.PORTAL_LOGIN_REDIRECT_URL = "login.html";
@@ -156,7 +156,7 @@
 
     function destUrl(kind) {
       if (kind === "staff") return window.PORTAL_STAFF_DASHBOARD_URL || "staff_dashboard.html";
-      if (kind === "lead") return window.PORTAL_LEAD_DASHBOARD_URL || "lead_dashboard.html";
+      if (kind === "lead") return window.PORTAL_LEAD_DASHBOARD_URL || "staff_dashboard.html";
       if (kind === "ceo") return window.PORTAL_CEO_DASHBOARD_URL || "ceo_dashboard.html";
       return window.PORTAL_ADMIN_DASHBOARD_URL || "admin_dashboard.html";
     }
