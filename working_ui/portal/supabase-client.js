@@ -1171,6 +1171,10 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(submittedFb, feedback);
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
+  for (const fk of absentAll) {
+    const exact = String(fk || "").trim();
+    if (exact && (rosterKeys || []).includes(exact)) absent.add(exact);
+  }
   const perStaffOwnOnly = new Set(
     (Array.isArray(opts.perStaffOwnFeedbackOnlyKeys) ? opts.perStaffOwnFeedbackOnlyKeys : [])
       .map((k) => String(k || "").trim())
