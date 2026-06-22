@@ -187,7 +187,7 @@ export async function portalListMyDocuments() {
   const targetUserId = portalDocumentsEffectiveUserId(user);
   const { data, error } = await supabase
     .from("documents")
-    .select("id, title, category, document_type, created_at, related_date, file_url, source_page")
+    .select("id, title, category, document_type, created_at, related_date, related_client, file_url, source_page")
     .eq("user_id", targetUserId)
     .is("hidden_by_user_at", null)
     .order("created_at", { ascending: false });

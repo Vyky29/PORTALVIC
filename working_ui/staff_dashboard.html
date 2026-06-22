@@ -18,7 +18,7 @@
   <script defer src="/portal/portal_web_push_support.js?v=20260619-inflight-fix"></script>
   <script defer src="/portal/portal_ensure_web_push.js?v=20260619-inflight-fix"></script>
 <script defer src="/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix"></script>
-  <script defer src="/portal/portal_announcement_ack.js?v=20260622-ceo-ann-inbox"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260623-contract-ack"></script>
   <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260622-sandra-visual-vic"></script>
@@ -12227,20 +12227,12 @@
         });
         dashboardData.portalLiveAnnouncementIdSet = {};
         visible.forEach(function(row){
-          if(String(row.message_type || '').toLowerCase().trim() !== 'announcement') return;
-          dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
+          var rowTyp = String(row.message_type || '').toLowerCase().trim();
+          if(rowTyp === 'announcement' || rowTyp === 'contract_signing'){
+            dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
+          }
         });
         dashboardData.portalLiveReminderIdSet = {};
-        const preserved = dashboardData.notices.filter(function(n){
-          return !n || n.type !== 'announcement' || !n.portalAnnouncementId;
-        });
-        const existing = {};
-        preserved.forEach(function(n){
-          if(n && n.portalAnnouncementId) existing[String(n.portalAnnouncementId)] = true;
-        });
-        const annInjected = [];
-        const remList = [];
-        const remSeen = {};
         const completedContractIds = {};
         const completedContractAnnIds = {};
         try{
@@ -12259,6 +12251,25 @@
             }
           }
         }catch(_cc){}
+        const preserved = dashboardData.notices.filter(function(n){
+          if(!n || typeof n !== 'object') return false;
+          var nTyp = String(n.type || '').trim();
+          if(nTyp === 'contract'){
+            var cid = String(n.portalContractId || '').trim();
+            if(cid && completedContractIds[cid]) return false;
+            var annId = String(n.portalAnnouncementId || '').trim();
+            if(annId && completedContractAnnIds[annId]) return false;
+            return true;
+          }
+          return nTyp !== 'announcement' || !n.portalAnnouncementId;
+        });
+        const existing = {};
+        preserved.forEach(function(n){
+          if(n && n.portalAnnouncementId) existing[String(n.portalAnnouncementId)] = true;
+        });
+        const annInjected = [];
+        const remList = [];
+        const remSeen = {};
         visible.forEach(function(row){
           const id = String(row.id || '');
           if(!id) return;
@@ -12294,12 +12305,16 @@
                   ackDone[canonKey] = {
                     title: portalFixMojibakeText(String(row.title || 'Employment contract signed').trim() || 'Employment contract signed'),
                     text: String(parsed && parsed.reference ? parsed.reference : '').trim(),
-                    href: contractId ? ('contract_sign.html?contract_id=' + encodeURIComponent(contractId)) : '',
+                    href: 'my_documents.html?category=documents&from=staff',
                     signedAt: Date.now(),
-                    portalAnnouncementId: id
+                    portalAnnouncementId: id,
+                    portalContractId: contractId || ''
                   };
                   if(contractId) ackDone['portal-ann:contract:' + contractId] = ackDone[canonKey];
                   portalAnnouncementAckMapSave(ackDone);
+                  if(typeof portalPersistAnnouncementAckToSupabase === 'function'){
+                    void portalPersistAnnouncementAckToSupabase({ portalAnnouncementId: id, title: ackDone[canonKey].title, text: ackDone[canonKey].text, href: ackDone[canonKey].href });
+                  }
                 }
               }catch(_ackFix){}
               existing[id] = true;
@@ -12342,7 +12357,10 @@
           );
         }
         const annIds = visible
-          .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
+          .filter(function(row){
+            var rowTyp = String(row.message_type || '').toLowerCase().trim();
+            return rowTyp === 'announcement' || rowTyp === 'contract_signing';
+          })
           .map(function(row){ return String(row.id || ''); })
           .filter(Boolean);
         const remIds = remList.map(function(r){ return String(r && r.portalAdminReminderId || '').trim(); }).filter(Boolean);
@@ -12553,7 +12571,9 @@
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
         const k = portalAnnouncementSignatureKey(n);
-        if(!!k && !annAck[k]) items.push(Object.assign({ type: 'announcement' }, n));
+        const contractKey = n && n.portalContractId ? ('portal-ann:contract:' + String(n.portalContractId)) : '';
+        const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]);
+        if(!acked) items.push(Object.assign({}, n));
       });
       const rems = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
       rems.forEach(function(r){

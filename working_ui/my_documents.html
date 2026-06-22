@@ -662,10 +662,13 @@
       }
     }
 
-    /** Employment contracts: in-app viewer + auto-regenerate blank PDFs. */
+    const PORTAL_CONTRACT_PDF_LAYOUT = "pdf_v3_layout";
+
+    /** Employment contracts: in-app viewer + auto-regenerate blank or legacy PDFs. */
     async function openEmploymentContractDocument(btn) {
       const fileUrl = String(btn.getAttribute("data-file-url") || "").trim();
       const docId = String(btn.getAttribute("data-doc-id") || "").trim();
+      const pdfLayout = String(btn.getAttribute("data-pdf-version") || "").trim();
       const title = btn.getAttribute("data-download-name") || "Employment contract";
       const desk = btn.querySelector(".btn-label-desk");
       const origDesk = desk ? desk.textContent : "";
@@ -673,11 +676,23 @@
       if (desk) desk.textContent = "Opening…";
       try {
         let currentPath = fileUrl;
+        const needsRegen =
+          pdfLayout !== PORTAL_CONTRACT_PDF_LAYOUT &&
+          docId &&
+          typeof html2pdf !== "undefined";
+        if ((needsRegen || !currentPath) && docId && typeof html2pdf !== "undefined") {
+          if (desk) desk.textContent = "Preparing PDF…";
+          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
+          await mod.portalRepairEmploymentContractByDocumentId(docId);
+          const docs = await portalListMyDocuments();
+          const fresh = (docs || []).find((d) => String(d.id || "") === docId);
+          if (fresh && fresh.file_url) currentPath = String(fresh.file_url);
+        }
         let signed = await portalCreateDocumentSignedUrl(currentPath, 3600);
         if (!signed) throw new Error("No URL");
         let blob = await fetchPdfBlobViaXHR(signed);
         if (blob.size <= 8000 && docId && typeof html2pdf !== "undefined") {
-          const mod = await import("./portal/portal_employment_contract.js?v=20260622-pdffix");
+          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
           await mod.portalRepairEmploymentContractByDocumentId(docId);
           const docs = await portalListMyDocuments();
           const fresh = (docs || []).find((d) => String(d.id || "") === docId);
@@ -896,12 +911,12 @@
                   isInductionCert
                     ? `data-induction-cert="1" data-file-url="${esc(doc.file_url || "")}" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}" data-download-name="${esc(displayTitle(doc))}"`
                     : isEmploymentContract
-                      ? `data-employment-contract="1" data-doc-id="${docId}" data-file-url="${esc(doc.file_url || "")}" data-download-name="${esc(displayTitle(doc))}"`
+                      ? `data-employment-contract="1" data-doc-id="${docId}" data-pdf-version="${esc(doc.related_client || "")}" data-file-url="${esc(doc.file_url || "")}" data-download-name="${esc(displayTitle(doc))}"`
                       : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
                 }>
                   <span class="btn-label-desk">${isInductionCert ? "View certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">${isInductionCert ? "View" : "Download"}</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
-                ${isPayslip || isInductionCert || ghostReadOnly ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
+                ${isPayslip || isInductionCert || isEmploymentContract || ghostReadOnly ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
             </div>
           `;
@@ -928,6 +943,14 @@
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-doc-id") || "";
           if (!id) return;
+          const rowEl = btn.closest(".row");
+          const isContractRow =
+            rowEl &&
+            rowEl.querySelector("button[data-employment-contract]");
+          if (isContractRow) {
+            alert("Employment contracts stay in My Documents and cannot be removed.");
+            return;
+          }
           if (
             !confirm(
               "Remove this document from your list? It will stay on file for records but will no longer appear here."

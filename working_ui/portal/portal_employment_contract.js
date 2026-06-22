@@ -2,6 +2,7 @@
  * Staff employment contract signing  uses Portal auth + documents bucket.
  */
 const PORTAL_CONTRACT_LOGO = "portal/portal_crest.svg";
+const PORTAL_CONTRACT_PDF_LAYOUT = "pdf_v3_layout";
 
 function portalContractParseBody(body) {
   try {
@@ -33,7 +34,7 @@ async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260622-pdffix";
+      const url = b + "contract-core.js?v=20260623-pdf-layout";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;
@@ -127,14 +128,15 @@ export async function portalCompleteEmploymentContract(opts) {
   });
   const blob = await portalContractHtmlToPdfBlob(html);
   const documentRow = await docsMod.portalUploadPdfAndCreateDocument({
-    blob,
-    document_type: "employment_contract",
-    category: "documents",
-    title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
-    source_page: "contract_sign",
-    related_date: row.contract_date,
-    reuseAuth: { supabase, user }
-  });
+      blob,
+      document_type: "employment_contract",
+      category: "documents",
+      title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
+      source_page: "contract_sign",
+      related_date: row.contract_date,
+      related_client: PORTAL_CONTRACT_PDF_LAYOUT,
+      reuseAuth: { supabase, user }
+    });
 
   if (!documentRow || !documentRow.id) {
     throw new Error("Could not save your signed PDF to My Documents. Please try again or contact HR.");
@@ -232,20 +234,28 @@ async function portalContractHtmlToPdfBlob(html) {
   const host = document.createElement("div");
   host.innerHTML = html;
   const target = host.querySelector(".contract-document") || host;
-  target.style.cssText = "width:794px;max-width:794px;background:#fff;color:#111;";
+  target.style.cssText =
+    "width:190mm;max-width:190mm;box-sizing:border-box;background:#fff;color:#111;margin:0;padding:0;";
   host.style.cssText =
-    "position:fixed;left:0;top:0;width:794px;opacity:0.01;pointer-events:none;z-index:2147483646;background:#fff;";
+    "position:fixed;left:-20000px;top:0;width:190mm;overflow:visible;opacity:1;pointer-events:none;z-index:-1;background:#fff;";
   document.body.appendChild(host);
   try {
     await portalContractWaitForImages(host);
     await portalContractWaitForPaint();
     const blob = await html2pdf()
       .set({
-        margin: 12,
+        margin: [10, 10, 10, 10],
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          scrollX: 0,
+          scrollY: 0
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+        pagebreak: { mode: ["css", "legacy"] }
       })
       .from(target)
       .outputPdf("blob");
@@ -294,6 +304,7 @@ async function portalUploadContractPdf(row, employeeSignature, supabase, user, d
     title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
     source_page: "contract_sign",
     related_date: row.contract_date,
+    related_client: PORTAL_CONTRACT_PDF_LAYOUT,
     reuseAuth: { supabase, user }
   });
 }
@@ -320,11 +331,13 @@ export async function portalRepairCompletedContractDocument(contractId, opts) {
   if (row.document_id && !force) {
     const { data: docRow } = await supabase
       .from("documents")
-      .select("file_url")
+      .select("file_url, related_client")
       .eq("id", row.document_id)
       .maybeSingle();
     const filePath = docRow && docRow.file_url ? String(docRow.file_url) : "";
-    if (filePath && (await portalContractStoredPdfLooksValid(supabase, filePath))) {
+    const layoutOk =
+      docRow && String(docRow.related_client || "") === PORTAL_CONTRACT_PDF_LAYOUT;
+    if (layoutOk && filePath && (await portalContractStoredPdfLooksValid(supabase, filePath))) {
       return row.document_id;
     }
   }
@@ -354,4 +367,4 @@ export function portalContractSignPageUrl(contractId) {
   return base + "contract_sign.html?contract_id=" + encodeURIComponent(contractId);
 }
 
-export { portalContractParseBody, portalContractLoadModule };
+export { portalContractParseBody, portalContractLoadModule, PORTAL_CONTRACT_PDF_LAYOUT };

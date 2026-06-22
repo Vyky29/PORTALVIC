@@ -583,20 +583,21 @@
   function buildPdfHtml(templateData, sigs) {
     const kind = normalizeContractKind(templateData && templateData.CONTRACT_KIND);
     const pdfStyles = '<style>' +
-      '.contract-document{font-family:Georgia,serif;color:#111;}' +
-      '.contract-letterhead{background:#fff;padding:18px 22px 12px;text-align:center;border-bottom:3px solid #c9a227;}' +
-      '.contract-logo{width:260px;max-width:260px;height:auto;display:block;margin:0 auto;}' +
+      '.contract-document{font-family:Georgia,serif;color:#111;box-sizing:border-box;width:100%;max-width:100%;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-letterhead{background:#fff;padding:14px 16px 10px;text-align:center;border-bottom:3px solid #c9a227;box-sizing:border-box;}' +
+      '.contract-logo{width:220px;max-width:100%;height:auto;display:block;margin:0 auto;}' +
       '.letterhead-legal{margin-top:8px;font-family:Arial,sans-serif;font-size:8pt;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#0f2744;}' +
-      '.contract-body{padding:18px 22px;}' +
+      '.contract-body{padding:12px 14px;box-sizing:border-box;}' +
       '.contract-doc-title{text-align:center;font-size:12pt;font-weight:700;color:#0f2744;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid #c9a227;}' +
       '.contract-opening{text-align:center;font-weight:600;color:#0f2744;margin:0 0 14px;font-size:10pt;}' +
       '.contract-section h3{font-family:Arial,sans-serif;font-size:8.5pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #c9a227;}' +
-      '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.45;text-align:justify;}' +
-      '.contract-parties{background:#e8f0f6;border:1px solid #b8cfd9;border-left:3px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;}' +
+      '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.45;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-parties{background:#e8f0f6;border:1px solid #b8cfd9;border-left:3px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;box-sizing:border-box;max-width:100%;overflow-wrap:break-word;}' +
       '.contract-parties strong{display:block;font-family:Arial,sans-serif;font-size:8pt;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
+      '.contract-parties p{overflow-wrap:break-word;word-wrap:break-word;}' +
       '.contract-signature-block{border-top:1px dashed #ccc;padding-top:8px;}' +
       '.contract-annex{page-break-before:always;margin-top:20px;padding-top:14px;border-top:2px solid #c9a227;}' +
-      '.contract-footer{font-family:Arial,sans-serif;font-size:7.5pt;color:#64748b;text-align:center;padding:10px 16px;border-top:1px solid #e2e8f0;background:#f7f9fb;}' +
+      '.contract-footer{font-family:Arial,sans-serif;font-size:7.5pt;color:#64748b;text-align:center;padding:10px 14px;border-top:1px solid #e2e8f0;background:#f7f9fb;box-sizing:border-box;}' +
       '</style>';
     return pdfStyles + renderContractHtml(fillTemplate(templateData, kind), true, sigs, kind);
   }

@@ -114,6 +114,11 @@
     key
   ) {
     if (!rec || typeof rec !== "object") return false;
+    var k = String(key || "").trim();
+    if (k.indexOf("portal-ann:contract:") === 0) {
+      var signedContractAt = Number(rec.signedAt || 0);
+      return Number.isFinite(signedContractAt) && signedContractAt >= global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_MS;
+    }
     var annId =
       String(rec.portalAnnouncementId || "").trim() ||
       global.portalAnnouncementIdFromAckKey(key);
@@ -152,6 +157,8 @@
   ) {
     if (!global.portalAnnouncementAckIsArchivedSigned(rec, key)) return false;
     if (typeof hidePastFn === "function" && hidePastFn(rec)) return false;
+    var k = String(key || "").trim();
+    if (k.indexOf("portal-ann:contract:") === 0) return true;
     var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
     var annId =
       String(rec.portalAnnouncementId || "").trim() ||
@@ -288,6 +295,10 @@
           delete ack[k];
           changed = true;
           return;
+        }
+        if (String(k || "").indexOf("portal-ann:contract:") === 0) {
+          var signedContractAt = Number(rec.signedAt || 0);
+          if (Number.isFinite(signedContractAt) && signedContractAt > 0) return;
         }
         if (!global.portalAnnouncementAckIsArchivedSigned(rec, k)) return;
         var annId =
