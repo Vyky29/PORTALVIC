@@ -198,6 +198,7 @@
 
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
   <script src="/portal/portal_induction.js?v=20260612-induction-view"></script>
   <script src="/portal/portal_induction_certificate.js?v=20260612-induction-view"></script>
@@ -661,6 +662,65 @@
       }
     }
 
+    /** Employment contracts: in-app viewer + auto-regenerate blank PDFs. */
+    async function openEmploymentContractDocument(btn) {
+      const fileUrl = String(btn.getAttribute("data-file-url") || "").trim();
+      const docId = String(btn.getAttribute("data-doc-id") || "").trim();
+      const title = btn.getAttribute("data-download-name") || "Employment contract";
+      const desk = btn.querySelector(".btn-label-desk");
+      const origDesk = desk ? desk.textContent : "";
+      btn.disabled = true;
+      if (desk) desk.textContent = "Opening…";
+      try {
+        let currentPath = fileUrl;
+        let signed = await portalCreateDocumentSignedUrl(currentPath, 3600);
+        if (!signed) throw new Error("No URL");
+        let blob = await fetchPdfBlobViaXHR(signed);
+        if (blob.size <= 8000 && docId && typeof html2pdf !== "undefined") {
+          const mod = await import("./portal/portal_employment_contract.js?v=20260622-pdffix");
+          await mod.portalRepairEmploymentContractByDocumentId(docId);
+          const docs = await portalListMyDocuments();
+          const fresh = (docs || []).find((d) => String(d.id || "") === docId);
+          if (fresh && fresh.file_url) {
+            currentPath = String(fresh.file_url);
+            signed = await portalCreateDocumentSignedUrl(currentPath, 3600);
+            if (signed) blob = await fetchPdfBlobViaXHR(signed);
+          }
+        }
+        if (!blob || blob.size <= 8000) {
+          alert(
+            "This contract PDF looks empty. Open the contract sign page once to regenerate it, then try again."
+          );
+          return;
+        }
+        const pdfBlob =
+          blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" });
+        const previewUrl = URL.createObjectURL(pdfBlob);
+        if (typeof docViewerCleanup === "function") {
+          try {
+            docViewerCleanup();
+          } catch (_e) {}
+        }
+        docViewerCleanup = () => URL.revokeObjectURL(previewUrl);
+        openDocumentViewer(title, previewUrl, async () => {
+          const base = sanitizeDownloadBasename(title);
+          const a = document.createElement("a");
+          a.href = previewUrl;
+          a.download = `${base}.pdf`;
+          a.rel = "noopener";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        });
+      } catch (err) {
+        console.warn("[my_documents] employment contract view", err);
+        alert("Could not open this contract right now.");
+      } finally {
+        btn.disabled = false;
+        if (desk) desk.textContent = origDesk || "View / Download";
+      }
+    }
+
     /** Escritorio: nueva pestaña. Móvil: XHR + blob + download (progreso en el botón; fallback: pestaña). */
     async function openOrDownloadDocument(fileUrl, downloadName, btn) {
       const mobLab = btn && btn.querySelector ? btn.querySelector(".btn-label-mob") : null;
@@ -820,6 +880,8 @@
           const isInductionCert =
             String((doc && doc.document_type) || "").toLowerCase() === "induction_certificate" ||
             docId === "portal-induction-certificate";
+          const isEmploymentContract =
+            String((doc && doc.document_type) || "").toLowerCase() === "employment_contract";
           html += `
             <div class="row">
               <div class="row-main minw0">
@@ -833,7 +895,9 @@
                 <button type="button" class="btn btn-outline" ${
                   isInductionCert
                     ? `data-induction-cert="1" data-file-url="${esc(doc.file_url || "")}" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}" data-download-name="${esc(displayTitle(doc))}"`
-                    : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
+                    : isEmploymentContract
+                      ? `data-employment-contract="1" data-doc-id="${docId}" data-file-url="${esc(doc.file_url || "")}" data-download-name="${esc(displayTitle(doc))}"`
+                      : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
                 }>
                   <span class="btn-label-desk">${isInductionCert ? "View certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">${isInductionCert ? "View" : "Download"}</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
@@ -848,7 +912,10 @@
       root.querySelectorAll("button[data-induction-cert]").forEach((btn) => {
         btn.addEventListener("click", () => openInductionCertificateInApp(btn));
       });
-      root.querySelectorAll("button[data-file-url]").forEach((btn) => {
+      root.querySelectorAll("button[data-employment-contract]").forEach((btn) => {
+        btn.addEventListener("click", () => openEmploymentContractDocument(btn));
+      });
+      root.querySelectorAll("button[data-file-url]:not([data-employment-contract]):not([data-induction-cert])").forEach((btn) => {
         btn.addEventListener("click", () =>
           openOrDownloadDocument(
             btn.getAttribute("data-file-url") || "",

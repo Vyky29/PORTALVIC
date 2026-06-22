@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260622-sign2"></script>
+  <script src="portal/contract-core.js?v=20260622-pdffix"></script>
   <script src="portal/portal_announcement_ack.js?v=20260622-sign2"></script>
   <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign2">
   <style>
@@ -81,7 +81,7 @@
       portalCompleteEmploymentContract,
       portalPersistContractAnnouncementAck,
       portalRepairCompletedContractDocument
-    } from "./portal/portal_employment_contract.js?v=20260622-sign2";
+    } from "./portal/portal_employment_contract.js?v=20260622-pdffix";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);

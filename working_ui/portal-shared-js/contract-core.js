@@ -562,10 +562,13 @@
         body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + block + '</p></div>';
       }
     });
+    const logoImg = forPdf
+      ? '<img src="' + logoSrc + '" alt="clubSENsational" class="contract-logo" width="260" height="188"' + (imgStyle ? ' style="' + imgStyle + ';max-width:260px;height:auto;"' : ' style="max-width:260px;height:auto;"') + '>'
+      : '<img src="' + logoSrc + '" srcset="' + LOGO_DISPLAY + ' 1x, assets/clubsensational-logo@2x.png?v=2 2x" alt="clubSENsational" class="contract-logo" width="260" height="188"' + (imgStyle ? ' style="' + imgStyle + ';max-width:260px;height:auto;"' : '') + '>';
     return (
       '<div class="contract-document">' +
       '<header class="contract-letterhead">' +
-      '<img src="' + logoSrc + '" srcset="' + LOGO_DISPLAY + ' 1x, assets/clubsensational-logo@2x.png?v=2 2x" alt="clubSENsational" class="contract-logo" width="260" height="188"' + (imgStyle ? ' style="' + imgStyle + ';max-width:260px;height:auto;"' : '') + '>' +
+      logoImg +
       '<div class="letterhead-legal">' + COMPANY_LEGAL_NAME + '</div>' +
       '</header>' +
       '<div class="contract-body">' +

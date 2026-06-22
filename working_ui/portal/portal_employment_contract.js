@@ -33,7 +33,7 @@ async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260521-1";
+      const url = b + "contract-core.js?v=20260622-pdffix";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;
@@ -125,34 +125,16 @@ export async function portalCompleteEmploymentContract(opts) {
     employeeSignatureDataUrl: employeeSignature,
     logoDataUrl: C.logoDataUrl || ""
   });
-  const wrap = document.createElement("div");
-  wrap.innerHTML = html;
-  wrap.style.cssText = "position:fixed;left:0;top:0;width:210mm;z-index:9999;background:#fff;";
-  document.body.appendChild(wrap);
-
-  let documentRow = null;
-  try {
-    const blob = await html2pdf()
-      .set({
-        margin: 12,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-      })
-      .from(wrap)
-      .outputPdf("blob");
-    documentRow = await docsMod.portalUploadPdfAndCreateDocument({
-      blob,
-      document_type: "employment_contract",
-      category: "documents",
-      title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
-      source_page: "contract_sign",
-      related_date: row.contract_date,
-      reuseAuth: { supabase, user }
-    });
-  } finally {
-    wrap.remove();
-  }
+  const blob = await portalContractHtmlToPdfBlob(html);
+  const documentRow = await docsMod.portalUploadPdfAndCreateDocument({
+    blob,
+    document_type: "employment_contract",
+    category: "documents",
+    title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
+    source_page: "contract_sign",
+    related_date: row.contract_date,
+    reuseAuth: { supabase, user }
+  });
 
   if (!documentRow || !documentRow.id) {
     throw new Error("Could not save your signed PDF to My Documents. Please try again or contact HR.");
@@ -220,6 +202,77 @@ export async function portalPersistContractAnnouncementAck(contractRow, contract
   }
 }
 
+async function portalContractWaitForImages(root) {
+  const imgs = root ? root.querySelectorAll("img") : [];
+  await Promise.all(
+    Array.from(imgs).map(
+      (img) =>
+        new Promise((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          setTimeout(resolve, 4000);
+        })
+    )
+  );
+}
+
+async function portalContractWaitForPaint() {
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  await new Promise((resolve) => setTimeout(resolve, 200));
+}
+
+async function portalContractHtmlToPdfBlob(html) {
+  if (typeof html2pdf === "undefined") {
+    throw new Error("PDF tools not available. Reload the page and try again.");
+  }
+  const host = document.createElement("div");
+  host.innerHTML = html;
+  const target = host.querySelector(".contract-document") || host;
+  target.style.cssText = "width:794px;max-width:794px;background:#fff;color:#111;";
+  host.style.cssText =
+    "position:fixed;left:0;top:0;width:794px;opacity:0.01;pointer-events:none;z-index:2147483646;background:#fff;";
+  document.body.appendChild(host);
+  try {
+    await portalContractWaitForImages(host);
+    await portalContractWaitForPaint();
+    const blob = await html2pdf()
+      .set({
+        margin: 12,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+      })
+      .from(target)
+      .outputPdf("blob");
+    if (!blob || blob.size < 8000) {
+      throw new Error("Generated PDF appears empty. Please try again.");
+    }
+    return blob;
+  } finally {
+    host.remove();
+  }
+}
+
+async function portalContractStoredPdfLooksValid(supabase, filePath) {
+  const path = String(filePath || "").trim();
+  if (!path || !supabase || !supabase.storage) return false;
+  try {
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 120);
+    if (error || !data || !data.signedUrl) return false;
+    const res = await fetch(data.signedUrl);
+    if (!res.ok) return false;
+    const blob = await res.blob();
+    return blob.size > 8000;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function portalUploadContractPdf(row, employeeSignature, supabase, user, docsMod, C) {
   if (!row || !employeeSignature) return null;
   if (typeof html2pdf === "undefined" || !docsMod.portalUploadPdfAndCreateDocument) return null;
@@ -233,38 +286,23 @@ async function portalUploadContractPdf(row, employeeSignature, supabase, user, d
     employeeSignatureDataUrl: employeeSignature,
     logoDataUrl: C.logoDataUrl || ""
   });
-  const wrap = document.createElement("div");
-  wrap.innerHTML = html;
-  wrap.style.cssText = "position:fixed;left:0;top:0;width:210mm;z-index:9999;background:#fff;";
-  document.body.appendChild(wrap);
-  try {
-    const blob = await html2pdf()
-      .set({
-        margin: 12,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-      })
-      .from(wrap)
-      .outputPdf("blob");
-    return await docsMod.portalUploadPdfAndCreateDocument({
-      blob,
-      document_type: "employment_contract",
-      category: "documents",
-      title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
-      source_page: "contract_sign",
-      related_date: row.contract_date,
-      reuseAuth: { supabase, user }
-    });
-  } finally {
-    wrap.remove();
-  }
+  const blob = await portalContractHtmlToPdfBlob(html);
+  return await docsMod.portalUploadPdfAndCreateDocument({
+    blob,
+    document_type: "employment_contract",
+    category: "documents",
+    title: "Employment contract \u2014 " + (row.contract_reference || row.role || "Signed"),
+    source_page: "contract_sign",
+    related_date: row.contract_date,
+    reuseAuth: { supabase, user }
+  });
 }
 
-/** Backfill My Documents PDF when a contract was marked completed without document_id. */
-export async function portalRepairCompletedContractDocument(contractId) {
+/** Backfill or replace a blank employment contract PDF in My Documents. */
+export async function portalRepairCompletedContractDocument(contractId, opts) {
   const id = String(contractId || "").trim();
   if (!id) return null;
+  const force = !!(opts && opts.force);
   const C = await portalContractLoadModule();
   const docsMod = await import(
     /* @vite-ignore */ new URL("./portal_documents.js?v=20260521-1", import.meta.url).href
@@ -276,13 +314,39 @@ export async function portalRepairCompletedContractDocument(contractId) {
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
-  if (error || !row || row.status !== "completed" || row.document_id || !row.employee_signature) {
+  if (error || !row || row.status !== "completed" || !row.employee_signature) {
     return row && row.document_id ? row.document_id : null;
   }
+  if (row.document_id && !force) {
+    const { data: docRow } = await supabase
+      .from("documents")
+      .select("file_url")
+      .eq("id", row.document_id)
+      .maybeSingle();
+    const filePath = docRow && docRow.file_url ? String(docRow.file_url) : "";
+    if (filePath && (await portalContractStoredPdfLooksValid(supabase, filePath))) {
+      return row.document_id;
+    }
+  }
   const documentRow = await portalUploadContractPdf(row, row.employee_signature, supabase, user, docsMod, C);
-  if (!documentRow || !documentRow.id) return null;
+  if (!documentRow || !documentRow.id) return row.document_id || null;
   await supabase.from("employment_contracts").update({ document_id: documentRow.id }).eq("id", id);
   return documentRow.id;
+}
+
+/** Regenerate a blank contract PDF when opening from My Documents. */
+export async function portalRepairEmploymentContractByDocumentId(documentId) {
+  const docId = String(documentId || "").trim();
+  if (!docId) return null;
+  const { supabase, user } = await portalContractGetAuth();
+  const { data: row, error } = await supabase
+    .from("employment_contracts")
+    .select("id")
+    .eq("document_id", docId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !row || !row.id) return null;
+  return portalRepairCompletedContractDocument(row.id, { force: true });
 }
 
 export function portalContractSignPageUrl(contractId) {
