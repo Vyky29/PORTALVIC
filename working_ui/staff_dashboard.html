@@ -12153,6 +12153,7 @@
     }
     function portalAnnouncementSignatureKey(item){
       if(!item || typeof item !== 'object') return '';
+      if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
       if(item.portalContractId) return 'portal-ann:contract:' + String(item.portalContractId);
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
       const t = String(item.title || '').trim().toLowerCase();
@@ -12240,6 +12241,24 @@
         const annInjected = [];
         const remList = [];
         const remSeen = {};
+        const completedContractIds = {};
+        const completedContractAnnIds = {};
+        try{
+          const uid = workerInboxCtx.authUserId;
+          if(uid){
+            const cr = await client
+              .from('employment_contracts')
+              .select('id,announcement_id,status')
+              .eq('user_id', uid)
+              .eq('status', 'completed');
+            if(!cr.error && Array.isArray(cr.data)){
+              cr.data.forEach(function(c){
+                if(c && c.id) completedContractIds[String(c.id)] = true;
+                if(c && c.announcement_id) completedContractAnnIds[String(c.announcement_id)] = true;
+              });
+            }
+          }
+        }catch(_cc){}
         visible.forEach(function(row){
           const id = String(row.id || '');
           if(!id) return;
@@ -12262,15 +12281,34 @@
           }
           if(typ === 'contract_signing'){
             if(existing[id]) return;
-            existing[id] = true;
             var contractId = '';
             try{
               var parsed = JSON.parse(String(row.body || '{}'));
               contractId = String(parsed.contract_id || parsed.contractId || '').trim();
             }catch(_c){}
+            if((contractId && completedContractIds[contractId]) || completedContractAnnIds[id]){
+              try{
+                var ackDone = portalAnnouncementAckMapLoad();
+                var canonKey = 'portal-ann:' + id;
+                if(!ackDone[canonKey]){
+                  ackDone[canonKey] = {
+                    title: portalFixMojibakeText(String(row.title || 'Employment contract signed').trim() || 'Employment contract signed'),
+                    text: String(parsed && parsed.reference ? parsed.reference : '').trim(),
+                    href: contractId ? ('contract_sign.html?contract_id=' + encodeURIComponent(contractId)) : '',
+                    signedAt: Date.now(),
+                    portalAnnouncementId: id
+                  };
+                  if(contractId) ackDone['portal-ann:contract:' + contractId] = ackDone[canonKey];
+                  portalAnnouncementAckMapSave(ackDone);
+                }
+              }catch(_ackFix){}
+              existing[id] = true;
+              return;
+            }
+            existing[id] = true;
             annInjected.push({
               type: 'contract',
-              title: String(row.title || 'Sign employment contract').trim() || 'Sign employment contract',
+              title: portalFixMojibakeText(String(row.title || 'Sign employment contract').trim() || 'Sign employment contract'),
               text: 'Review and sign your employment contract. Your signed PDF will be saved in My Documents.',
               href: 'contract_sign.html?contract_id=' + encodeURIComponent(contractId),
               portalAnnouncementId: id,
@@ -12627,6 +12665,11 @@
       }
       return { line1: raw, line2: '' };
     }
+    function portalFixMojibakeText(text){
+      return String(text || '')
+        .replace(/\uFFFD/g, '\u2014')
+        .replace(/\s+\?\s+/g, ' \u2014 ');
+    }
     async function portalLoadContractAnnouncementPreview(contractId){
       const host = document.getElementById('contractAnnPreview');
       if(!host || !contractId) return;
@@ -12696,7 +12739,7 @@
         portalAnnouncementLockRequired = true;
         const isReminder = portalSignableItemIsReminder(pending);
         const kindLabel = isReminder ? 'Reminder' : 'Announcement';
-        const t = String(pending.title || kindLabel).trim() || kindLabel;
+        const t = portalFixMojibakeText(String(pending.title || kindLabel).trim() || kindLabel);
         const txt = String(pending.text || '').trim() || (isReminder ? 'Please read this reminder carefully.' : 'Please read this update carefully.');
         const confirmLabel = isReminder
           ? 'I have read and understood this reminder.'

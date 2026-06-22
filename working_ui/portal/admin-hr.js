@@ -183,6 +183,14 @@
       ".hr-off-add input.hr-off-reason-in{flex:1;min-width:160px}",
       ".hr-off-add .hr-off-addbtn{font:inherit;font-weight:700;font-size:13px;border:0;background:#2d84b3;color:#fff;border-radius:9px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}",
       ".hr-off-empty{padding:0 16px 6px;color:#64748b;font-size:13px}",
+      ".hr-contract-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}",
+      ".hr-contract-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;background:#f0f7fb;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px}",
+      ".hr-contract-row b{color:#0c4a6e;font-size:14px}",
+      ".hr-contract-row .hr-contract-meta{color:#64748b;font-size:12px}",
+      ".hr-contract-row .hr-contract-pdf{margin-left:auto;font:inherit;font-weight:700;font-size:12px;border:1px solid #2d84b3;background:#fff;color:#2d84b3;border-radius:8px;padding:6px 12px;cursor:pointer}",
+      ".hr-contract-row .hr-contract-pdf:hover{background:#eff6ff}",
+      ".hr-contract-empty{padding:0 16px 6px;color:#64748b;font-size:13px}",
+      ".hr-contract-loading{padding:0 16px 6px;color:#64748b;font-size:13px}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminHrStyle";
@@ -720,6 +728,7 @@
     });
 
     var sections = daysOffSectionHtml(nameKey);
+    sections += employmentContractsSectionHtml();
     rows.forEach(function (r, idx) {
       var d = r.data || {};
       var keys = Object.keys(d);
@@ -761,6 +770,138 @@
     if (saveBtn) saveBtn.addEventListener("click", function () { savePerson(nameKey, screen, saveBtn); });
 
     bindDaysOff(screen, nameKey, displayName, personRow);
+    bindEmploymentContracts(screen, personRow);
+  }
+
+  function employmentContractsSectionHtml() {
+    var chev = '<svg class="hr-ico hr-sec__chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+    return '<details class="hr-sec" open data-sec="employment-contracts">'
+      + '<summary>' + icon("doc", 17) + '<span>Employment contracts (Portal)</span>' + chev + '</summary>'
+      + '<p class="hr-contract-loading" id="hrContractLoadMsg">Loading signed contracts…</p>'
+      + '<div class="hr-contract-list" id="hrContractList" hidden></div></details>';
+  }
+
+  function hrSupabaseUrl() {
+    var u = typeof global.SUPABASE_URL === "string" ? global.SUPABASE_URL.trim() : "";
+    return u || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+  }
+
+  function hrAdminAccessToken() {
+    var box = global.__PORTAL_SUPABASE__ || {};
+    if (box.session && box.session.access_token) return Promise.resolve(box.session.access_token);
+    var client = deps.getClient();
+    if (!client || !client.auth) return Promise.resolve("");
+    return client.auth.getSession().then(function (res) {
+      var s = res && res.data && res.data.session;
+      return s && s.access_token ? s.access_token : "";
+    });
+  }
+
+  function hrAdminSignedDocumentUrl(filePath) {
+    var path = String(filePath || "").trim().replace(/^\/+/, "");
+    if (!path) return Promise.resolve(null);
+    return hrAdminAccessToken().then(function (token) {
+      if (!token) return null;
+      return fetch(hrSupabaseUrl() + "/functions/v1/portal-admin-hr-file-signed-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ path: path, bucket: "documents", source: "portal" })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (body) {
+          if (body && body.signed_url) return body.signed_url;
+          if (body && body.data && body.data.signed_url) return body.data.signed_url;
+          return null;
+        })
+        .catch(function () { return null; });
+    });
+  }
+
+  function contractStatusLabel(status) {
+    var s = String(status || "").toLowerCase();
+    if (s === "completed") return "Signed";
+    if (s === "awaiting_employee") return "Awaiting signature";
+    if (s === "expired") return "Expired";
+    return status || "Unknown";
+  }
+
+  function loadPersonEmploymentContracts(staffId, screen) {
+    var listEl = screen && screen.querySelector("#hrContractList");
+    var msgEl = screen && screen.querySelector("#hrContractLoadMsg");
+    if (!listEl) return;
+    var uid = staffId ? String(staffId).trim() : "";
+    if (!uid) {
+      if (msgEl) msgEl.textContent = "No portal login linked — employment contracts appear here once the person has a staff account.";
+      return;
+    }
+    var client = deps.getClient();
+    if (!client) {
+      if (msgEl) msgEl.textContent = "Could not load contracts (not signed in).";
+      return;
+    }
+    client
+      .from("employment_contracts")
+      .select("id, contract_reference, status, role, completed_at, employee_signed_at, document_id, documents(file_url, title)")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .then(function (res) {
+        if (res.error) {
+          if (msgEl) msgEl.textContent = "Could not load contracts: " + (res.error.message || res.error);
+          return;
+        }
+        var rows = res.data || [];
+        if (msgEl) msgEl.hidden = true;
+        if (!rows.length) {
+          listEl.hidden = true;
+          if (msgEl) {
+            msgEl.hidden = false;
+            msgEl.textContent = "No employment contracts sent via the Portal yet.";
+          }
+          return;
+        }
+        listEl.hidden = false;
+        listEl.innerHTML = rows.map(function (c) {
+          var ref = esc(c.contract_reference || "Contract");
+          var role = c.role ? esc(c.role) : "";
+          var when = fmtDate(c.employee_signed_at || c.completed_at);
+          var status = contractStatusLabel(c.status);
+          var doc = c.documents && !Array.isArray(c.documents) ? c.documents : (Array.isArray(c.documents) ? c.documents[0] : null);
+          var filePath = doc && doc.file_url ? String(doc.file_url) : "";
+          var pdfBtn = filePath
+            ? '<button type="button" class="hr-contract-pdf" data-hr-contract-pdf="' + esc(filePath) + '">View PDF</button>'
+            : (c.status === "completed" ? '<span class="hr-contract-meta">PDF pending</span>' : "");
+          return '<div class="hr-contract-row" data-hr-contract-id="' + esc(c.id) + '">'
+            + '<b>' + ref + '</b>'
+            + (role ? '<span class="hr-contract-meta">' + role + '</span>' : "")
+            + '<span class="hr-contract-meta">' + esc(status) + (when ? " · " + esc(when) : "") + '</span>'
+            + pdfBtn
+            + '</div>';
+        }).join("");
+        bindEmploymentContractPdfButtons(screen);
+      });
+  }
+
+  function bindEmploymentContractPdfButtons(screen) {
+    if (!screen) return;
+    screen.querySelectorAll("[data-hr-contract-pdf]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var path = btn.getAttribute("data-hr-contract-pdf");
+        btn.disabled = true;
+        hrAdminSignedDocumentUrl(path).then(function (url) {
+          btn.disabled = false;
+          if (url) {
+            try { global.open(url, "_blank", "noopener,noreferrer"); } catch (_) {}
+          } else {
+            deps.toast("Could not open PDF. Try again or check admin access.");
+          }
+        });
+      });
+    });
+  }
+
+  function bindEmploymentContracts(screen, personRow) {
+    var staffId = personRow && personRow.staff_id ? personRow.staff_id : null;
+    loadPersonEmploymentContracts(staffId, screen);
   }
 
   function daysOffSectionHtml(nameKey) {

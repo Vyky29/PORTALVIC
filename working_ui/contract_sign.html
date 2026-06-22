@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260622-sign"></script>
-  <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign">
+  <script src="portal/contract-core.js?v=20260622-sign2"></script>
+  <script src="portal/portal_announcement_ack.js?v=20260622-sign2"></script>
+  <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign2">
   <style>
     :root { --navy:#0f2744; --gold:#c9a227; --grey-100:#f7f9fb; --grey-200:#e2e8f0; --grey-500:#64748b; --radius:8px; }
     *{box-sizing:border-box}
@@ -26,6 +27,11 @@
     .preview{padding:0}
     .err{background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:var(--radius);color:#b91c1c}
     .ok{background:#ecfdf5;border:1px solid #86efac;padding:1rem;border-radius:var(--radius);color:#166534}
+    .ok a{color:#0f2744;font-weight:600}
+    .ok-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+    .ok-actions a,.ok-actions button{display:inline-block;padding:.65rem 1rem;border-radius:var(--radius);font-weight:600;text-decoration:none;border:none;cursor:pointer;font-size:.95rem}
+    .ok-actions .primary{background:var(--gold);color:var(--navy)}
+    .ok-actions .secondary{background:var(--grey-200);color:var(--navy)}
     .hidden{display:none!important}
     label.ack{display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0;font-size:.95rem}
     input[type=text]{width:100%;padding:.6rem;border:1px solid var(--grey-200);border-radius:var(--radius);margin:.35rem 0 .5rem}
@@ -44,8 +50,12 @@
     <div id="loading"><p>Loading…</p></div>
     <div id="errorBox" class="err hidden"></div>
     <div id="doneBox" class="ok hidden">
-      <strong>Contract signed.</strong>
-      <p style="margin:.5rem 0 0">Your PDF is in <a href="my_documents.html?category=finance&amp;from=staff">Finance documents</a>. You can close this page and return to your <a href="staff_dashboard.html">dashboard</a>.</p>
+      <strong id="doneTitle">Contract signed.</strong>
+      <p id="doneMessage" style="margin:.5rem 0 0"></p>
+      <div class="ok-actions">
+        <a id="doneMyDocsBtn" class="primary" href="my_documents.html?category=documents&amp;from=staff">Open My Documents</a>
+        <a id="doneDashboardBtn" class="secondary" href="staff_dashboard.html">Back to dashboard</a>
+      </div>
     </div>
     <div id="signGrid" class="grid hidden">
       <div class="panel">
@@ -68,13 +78,17 @@
   <script type="module">
     import {
       portalFetchMyContract,
-      portalCompleteEmploymentContract
-    } from "./portal/portal_employment_contract.js?v=20260622-sign";
+      portalCompleteEmploymentContract,
+      portalPersistContractAnnouncementAck,
+      portalRepairCompletedContractDocument
+    } from "./portal/portal_employment_contract.js?v=20260622-sign2";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
     const contractId = params.get("contract_id") || "";
+    const MY_DOCS_DOCUMENTS = "my_documents.html?category=documents&from=staff";
+    const MY_DOCS_ALL = "my_documents.html?from=staff";
 
     let sigUrl = "";
     let padApi = null;
@@ -86,6 +100,15 @@
       ["loading", "errorBox", "doneBox", "signGrid"].forEach((x) => {
         $(x).classList.toggle("hidden", x !== id);
       });
+    }
+
+    function showDoneState(alreadySigned) {
+      $("doneTitle").textContent = alreadySigned ? "Contract already signed." : "Contract signed.";
+      $("doneMessage").textContent = alreadySigned
+        ? "This contract was signed earlier. Open My Documents to view your PDF."
+        : "Your signed PDF has been saved to My Records → Documents.";
+      $("doneMyDocsBtn").setAttribute("href", MY_DOCS_DOCUMENTS);
+      show("doneBox");
     }
 
     function contractNamesMatch(typed, expected) {
@@ -140,9 +163,9 @@
         if (logo) C.logoDataUrl = logo;
         const res = await portalFetchMyContract(contractId);
         if (res.completed) {
-          $("doneBox").querySelector("p").textContent =
-            "This contract was already signed. See My Documents.";
-          show("doneBox");
+          await portalPersistContractAnnouncementAck(res.contract, contractId);
+          await portalRepairCompletedContractDocument(contractId);
+          showDoneState(true);
           return;
         }
         contractRow = res.contract;
@@ -189,19 +212,7 @@
           employeeSignature: sigUrl,
           employeeTypedName: $("typedName").value.trim()
         });
-        try {
-          const ackKey = contractRow.announcement_id
-            ? "portal-ann:" + contractRow.announcement_id
-            : "portal-ann:contract:" + contractId;
-          const ack = JSON.parse(localStorage.getItem("portalAnnouncementAckMap_v1") || "{}");
-          ack[ackKey] = {
-            title: "Employment contract signed",
-            text: contractRow.contract_reference || "",
-            signedAt: Date.now()
-          };
-          localStorage.setItem("portalAnnouncementAckMap_v1", JSON.stringify(ack));
-        } catch (_) {}
-        show("doneBox");
+        showDoneState(false);
       } catch (e) {
         alert(e.message || e);
         updateSubmit();

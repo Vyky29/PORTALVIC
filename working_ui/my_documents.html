@@ -247,9 +247,14 @@
 
     const GROUPS = [
       {
+        key: "documents",
+        label: "Documents",
+        intro: "Signed employment contracts and other HR documents from the portal."
+      },
+      {
         key: "finance",
         label: "Finance",
-        intro: "Timesheet and expense PDFs generated when you submit in the portal."
+        intro: "Timesheet and expense PDFs."
       },
       {
         key: "reports",
@@ -273,7 +278,7 @@
         const c = String(new URLSearchParams(location.search).get("category") || "")
           .trim()
           .toLowerCase();
-        if (c === "finance" || c === "reports" || c === "training" || c === "payslips") return c;
+        if (c === "documents" || c === "finance" || c === "reports" || c === "training" || c === "payslips") return c;
       } catch (_) {}
       return "";
     }
@@ -367,6 +372,10 @@
       if (type === "induction_certificate") {
         return "clubSENsational General Induction Certificate";
       }
+      if (type === "employment_contract") {
+        const t = String((doc && doc.title) || "").trim();
+        return t || "Employment contract";
+      }
       return String((doc && doc.title) || "Document");
     }
     function displayMeta(doc) {
@@ -390,6 +399,7 @@
       if (t === "expense") return "expense";
       if (t === "staff_policy_ack") return "training";
       if (t === "payslip") return "payslip";
+      if (t === "employment_contract") return "file";
       if (t === "swim_term_review") return "report";
       if (t.includes("report")) return "report";
       if (t === "induction_certificate" || t.includes("train") || t.includes("induction") || t.includes("safeguard"))
@@ -725,6 +735,7 @@
       const cat = String((doc && doc.category) || "").toLowerCase();
       if (cat === categoryKey) return true;
       const t = String((doc && doc.document_type) || "").toLowerCase();
+      if (categoryKey === "documents" && (t === "employment_contract" || cat === "documents" || cat === "hr")) return true;
       if (categoryKey === "finance" && (t === "timesheet" || t === "expense")) return true;
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (
@@ -742,6 +753,9 @@
     }
 
     function emptyCopyForCategory(key) {
+      if (key === "documents") {
+        return "No documents yet. Signed employment contracts will appear here after you complete signing.";
+      }
       if (key === "finance") {
         return "No finance documents yet. Submit a timesheet or expense claim to generate a PDF here.";
       }
@@ -763,8 +777,13 @@
       const filterCat = parseCategoryFilter();
       const ghostReadOnly =
         typeof window.portalIsGhostViewMode === "function" && window.portalIsGhostViewMode();
-      const grouped = { finance: [], reports: [], training: [], payslips: [] };
+      const grouped = { documents: [], finance: [], reports: [], training: [], payslips: [] };
       (list || []).forEach((doc) => {
+        const t = String((doc && doc.document_type) || "").toLowerCase();
+        if (t === "employment_contract") {
+          grouped.documents.push(doc);
+          return;
+        }
         const cat = String(doc.category || "").toLowerCase();
         if (grouped[cat]) {
           grouped[cat].push(doc);

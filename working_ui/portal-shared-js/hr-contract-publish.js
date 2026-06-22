@@ -79,7 +79,7 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
     .from("portal_staff_announcements")
     .insert([
       {
-        title: `Sign employment contract${row.role ? " ù " + row.role : ""}`,
+        title: "Sign employment contract" + (row.role ? " \u2014 " + row.role : ""),
         body: annBody,
         message_type: "contract_signing",
         priority: "high",
