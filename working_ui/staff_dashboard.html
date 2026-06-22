@@ -1750,13 +1750,36 @@
       const today = portalLondonTodayIso();
       return !!(iso && today && iso >= today);
     }
-    /** Feedback chips stay neutral until export bundle + (for today+) Supabase sync — avoids Pending→green flips. */
+    /** Feedback chips stay neutral until export bundle + Supabase sync finish — avoids Pending→green flips. */
+    function portalStaffFeedbackPipelineReady(){
+      return !!(dashboardData && dashboardData.portalFeedbackPipelineReady);
+    }
+    window.portalStaffFeedbackPipelineReady = portalStaffFeedbackPipelineReady;
+    function portalStaffFinishFeedbackPipelineReady(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
+      try{
+        if(dashboardData){
+          if(opts.serverSynced !== false) dashboardData.portalFeedbackServerSynced = true;
+          dashboardData.portalFeedbackReconciled = true;
+          dashboardData.portalFeedbackPipelineReady = true;
+        }
+        if(typeof document !== 'undefined' && document.body){
+          document.body.classList.remove('staff-dashboard-feedback-syncing');
+        }
+      }catch(_){}
+    }
+    function portalStaffRefreshFeedbackDependentUi(){
+      try{
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+      }catch(_){}
+      if(typeof renderToday === 'function') renderToday();
+      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+      if(typeof renderMiniCounts === 'function') renderMiniCounts();
+      if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+      else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+    }
     function portalStaffFeedbackReviewUiReady(iso){
-      if(typeof window === 'undefined' || !window.__PORTAL_STAFF_FEEDBACK_DATA_READY__) return false;
-      if(iso && portalIsServerTruthFeedbackDay(iso)){
-        return !!(dashboardData && dashboardData.portalFeedbackServerSynced);
-      }
-      return true;
+      return portalStaffFeedbackPipelineReady();
     }
     /** All plausible session review keys for one Today row (aliases for server lookup). */
     function portalCollectItemSessionReviewKeyAliases(item, iso, dayWord){
@@ -2070,10 +2093,7 @@
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
           rebuildTermShiftAndFeedbackFromSessionModel();
         }
-        if(dashboardData){
-          dashboardData.portalFeedbackServerSynced = true;
-          dashboardData.portalFeedbackReconciled = true;
-        }
+        portalStaffFinishFeedbackPipelineReady({ serverSynced: true });
       }catch(_){}
     }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
@@ -3237,6 +3257,9 @@
       }catch(e){}
     }
     function collectSessionReviewPendingStats(){
+      if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
+        return { pending: [], eligible: 0, completed: 0, loading: true };
+      }
       const today = dashboardData.today || [];
       const pending = [];
       let eligible = 0;
@@ -3429,6 +3452,7 @@
     function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord, opts){
       opts = opts || {};
       try{
+        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
         if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
         if(typeof isSessionEndedForFeedback !== 'function') return 0;
         const list = portalTodayListItemsForCalendarDay(isoYmd, dayWord, opts);
@@ -4277,6 +4301,7 @@
     }
     function portalOutstandingSessionFeedbackCountAcrossTerm(){
       try{
+        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
           rebuildTermShiftAndFeedbackFromSessionModel();
         }
@@ -4407,6 +4432,7 @@
           sessionFeedbackNeed: false,
           sessionFeedbackCount: 0,
           sessionFeedbackTodayNeed: false,
+          sessionFeedbackLoading: true,
           safeguardingFeedbackPolicyActive: false,
           safeguardingFeedbackPolicyUnread: false,
           termIncomplete: false,
@@ -4419,12 +4445,13 @@
           rosterOverrideDayGroups: []
         };
       }
-      if(!dashboardData.portalFeedbackReconciled){
+      if(!portalStaffFeedbackPipelineReady()){
         return {
           setupPending: !!dashboardData.setupPending,
           sessionFeedbackNeed: false,
           sessionFeedbackCount: 0,
           sessionFeedbackTodayNeed: false,
+          sessionFeedbackLoading: true,
           safeguardingFeedbackPolicyActive: true,
           safeguardingFeedbackPolicyUnread: typeof portalSafeguardingFeedbackPolicyIsRead === 'function' ? !portalSafeguardingFeedbackPolicyIsRead() : false,
           termIncomplete: false,
@@ -4498,6 +4525,7 @@
         sessionFeedbackNeed,
         sessionFeedbackCount,
         sessionFeedbackTodayNeed: sessionFeedbackTodayNeed,
+        sessionFeedbackLoading: false,
         safeguardingFeedbackPolicyActive: true,
         safeguardingFeedbackPolicyUnread: typeof portalSafeguardingFeedbackPolicyIsRead === 'function' ? !portalSafeguardingFeedbackPolicyIsRead() : true,
         termIncomplete,
@@ -4592,7 +4620,7 @@
       try{
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         if(!st) return;
-        if(dashboardData && !dashboardData.portalFeedbackReconciled) return;
+        if(dashboardData && !portalStaffFeedbackPipelineReady()) return;
         if(!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed)) return;
         const tabVisible = typeof document !== 'undefined' && document.visibilityState === 'visible';
         const suppressFeedbackPush = tabVisible && !!st.sessionFeedbackNeed;
@@ -4775,10 +4803,16 @@
     }
     function portalBuildOutstandingFeedbackQuickMenuHtml(st){
       if(!dashboardData || !dashboardData.portalIdentityResolved) return '';
+      const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
+      if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
+        return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback menu-btn--qm-outstanding-feedback--syncing" disabled aria-busy="true" aria-label="Updating feedback status">' +
+          '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
+          '<div class="menu-btn-copy"><strong>Checking feedback status</strong><span class="menu-btn-sub">One moment…</span></div>' +
+          '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
+      }
       if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const need = !!(st.sessionFeedbackNeed);
       const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
-      const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
       const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
       const sub = need ? 'Complete session feedback' : 'All caught up through today';
@@ -4990,7 +5024,9 @@
           if(strong && span){
             strong.textContent = 'Reminder';
           let sub = 'Tasks';
-          if(st.sessionFeedbackNeed){
+          if(st.sessionFeedbackLoading){
+            sub = 'Checking feedback status…';
+          }else if(st.sessionFeedbackNeed){
               sub = (Number(st.sessionFeedbackCount) || 0) <= 1
               ? 'Complete your Session Feedback'
               : 'Complete your Session Feedbacks';
@@ -6579,6 +6615,7 @@
     /** Status chips below participant name (override context + feedback + slot time change). */
     function portalTodayFeedbackLifecycleChipHtml(item){
       if(!item || item.kind !== 'client' || !item.sessionKey || item.noSessionFeedbackRequired || item.portalOverrideSuppressReviewOrange) return '';
+      if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return '';
       const r = (typeof getEffectiveSessionReviewRecord === 'function' ? getEffectiveSessionReviewRecord(item) : getSessionReviewRecord(item)) || {};
       if(r.absent){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--absent" aria-label="Absent recorded"><span>Absent</span></span>';
@@ -11286,6 +11323,7 @@
       portalIdentityResolved: false,
       portalFeedbackReconciled: false,
       portalFeedbackServerSynced: false,
+      portalFeedbackPipelineReady: false,
       portalAnnouncementAcksMerged: false,
       avatarFile: (__spreadsheetBoot && __spreadsheetBoot.avatarFile) ? __spreadsheetBoot.avatarFile : '',
       /* Role training row colour: swimming | climbing | support | admin (support tint) | lead | manager | fitness */
@@ -16648,6 +16686,7 @@
     })();
 
     hydrateSessionReviewMapFromStorage();
+    try{ document.body.classList.add('staff-dashboard-feedback-syncing'); }catch(_){}
     var _portalDeferRosterUntilAuth = !STAFF_DASHBOARD_ID && !portalStaffDashIsEditorPreviewMode();
     if(_portalDeferRosterUntilAuth && typeof portalTryOptimisticRosterFromPersistedAuth === 'function'){
       if(portalTryOptimisticRosterFromPersistedAuth()) _portalDeferRosterUntilAuth = false;
@@ -17668,6 +17707,9 @@
             await portalMergeServerReviewStateForDashboard({ skipRender: true });
           }
         }catch(_preUiMerge){}
+        if(typeof portalStaffFinishFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
+          portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+        }
         _finishStaffRehydrateUi();
         function portalStaffRunBackgroundRosterRefresh(){
           void (async function portalStaffBackgroundRosterRefresh(){
@@ -17679,7 +17721,7 @@
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
-              await portalMergeServerReviewStateForDashboard();
+              await portalMergeServerReviewStateForDashboard({ skipRender: true });
             }
             if (runId !== _rehydrateRun) return;
             _finishStaffRehydrateUi();
@@ -17722,16 +17764,20 @@
           if(_portalFeedbackReadyMergeT) clearTimeout(_portalFeedbackReadyMergeT);
           _portalFeedbackReadyMergeT = setTimeout(function(){
             _portalFeedbackReadyMergeT = 0;
+            if(typeof portalStaffFeedbackPipelineReady === 'function'
+              && portalStaffFeedbackPipelineReady()
+              && window.__PORTAL_EXPORT_REVIEW_SEEDED__){
+              return;
+            }
             if(typeof portalMarkFeedbackReconciledFromExports === "function"){
               portalMarkFeedbackReconciledFromExports(true);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
               void portalMergeServerReviewStateForDashboard().then(function(){
-                if(typeof renderToday === "function") renderToday();
-                if(typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
+                if(typeof portalStaffRefreshFeedbackDependentUi === "function") portalStaffRefreshFeedbackDependentUi();
               });
-            }else if(typeof renderToday === "function"){
-              renderToday();
+            }else if(typeof portalStaffRefreshFeedbackDependentUi === "function"){
+              portalStaffRefreshFeedbackDependentUi();
             }
           }, 64);
         }catch(_fbReady){}

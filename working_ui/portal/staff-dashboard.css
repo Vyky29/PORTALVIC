@@ -1926,6 +1926,17 @@
       border-color:rgba(234,88,12,.38);
       box-shadow:0 4px 14px rgba(234,88,12,.14);
     }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--syncing{
+      background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);
+      border:1px solid rgba(100,116,139,.22);
+      color:var(--ink);
+      box-shadow:none;
+      animation:none;
+      opacity:.92;
+      cursor:wait;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--syncing .menu-btn-copy strong{color:#64748b}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--syncing .menu-btn-sub{color:#94a3b8}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue{
       background:#ea580c;
