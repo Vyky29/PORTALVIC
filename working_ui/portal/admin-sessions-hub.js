@@ -1906,6 +1906,9 @@
     var t = clean(name);
     if (!t) return "open";
     var low = t.toLowerCase();
+    var up = t.toUpperCase();
+    if (up === "HOME" || up === "CASA") return "home";
+    if (up === "MANAGER") return "manager";
     if (low === "closed") return "closed";
     if (
       low === "no client" ||
@@ -1947,6 +1950,13 @@
     }
     if (kind === "closed") {
       return '<span class="ash-pill ash-pill--closed">Closed</span>';
+    }
+    if (kind === "home") {
+      var homeLab = clean(name).toUpperCase() === "CASA" ? "HOME" : clean(name) || "HOME";
+      return '<span class="ash-pill ash-pill--home">' + esc(homeLab) + "</span>";
+    }
+    if (kind === "manager") {
+      return '<span class="ash-pill ash-pill--manager">' + esc("MANAGER") + "</span>";
     }
     return '<span class="ash-pill ash-pill--client">' + esc(name) + "</span>";
   }

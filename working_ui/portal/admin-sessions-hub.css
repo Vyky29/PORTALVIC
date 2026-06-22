@@ -1058,6 +1058,16 @@
     .ash-table tr:last-child td { border-bottom: none; }
     .ash-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #f1f5fb; font-size: 12px; font-weight: 700; color: var(--navy); margin: 2px 4px 2px 0; }
     .ash-pill--client { background: #dbeafe; color: #1e40af; }
+    .ash-pill--home {
+      background: linear-gradient(180deg, #ffb74d 0%, #ff8f00 100%);
+      color: #1a1a1a;
+      border: 1px solid rgba(255, 143, 0, 0.5);
+    }
+    .ash-pill--manager {
+      background: linear-gradient(180deg, #fff8e1 0%, #fff3e0 100%);
+      color: #e65100;
+      border: 1px solid rgba(255, 152, 0, 0.45);
+    }
     .ash-pill--no-participant {
       background: #fb923c;
       color: #fff;

@@ -3877,6 +3877,8 @@
     button.sched-pax-pill{cursor:pointer;transition:filter .12s ease,box-shadow .12s ease}
     button.sched-pax-pill:hover,button.sched-pax-pill:focus-visible{filter:brightness(0.97);outline:none;box-shadow:0 0 0 2px rgba(45,132,179,.22)}
     .sched-pax-pill--booked{background:#ecfdf5;color:#15803d;border-color:rgba(21,128,61,.28)}
+    .sched-pax-pill--home{background:linear-gradient(180deg,#ffb74d 0%,#ff8f00 100%);color:#1a1a1a;border-color:rgba(255,143,0,.5)}
+    .sched-pax-pill--manager{background:linear-gradient(180deg,#fff8e1 0%,#fff3e0 100%);color:#e65100;border-color:rgba(255,152,0,.45)}
     .sched-pax-pill--closed{background:var(--dangerSoft);color:var(--danger);border-color:rgba(220,38,38,.22)}
     .sched-pax-pill--trial{background:#f3e8ff;color:#7c3aed;border-color:rgba(124,58,237,.32)}
     .sched-pax-pill--open{background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);color:#78350f;border-color:rgba(244,183,64,.32)}
