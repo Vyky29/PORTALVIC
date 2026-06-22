@@ -6553,7 +6553,7 @@
     {
       "client_name": "Rodin",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6563,7 +6563,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "JAVIER",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6633,7 +6633,7 @@
     {
       "client_name": "Eiji",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6643,7 +6643,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "JAVIER",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6773,7 +6773,7 @@
     {
       "client_name": "Yusuf Ah",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6783,7 +6783,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "JAVIER",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6853,7 +6853,7 @@
     {
       "client_name": "Scott",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6863,7 +6863,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "JAVIER",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6963,7 +6963,7 @@
     {
       "client_name": "Ayden W",
       "day": "Sunday",
-      "instructors": "ANDRES",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -6973,7 +6973,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "JAVIER",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -13230,7 +13230,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-22T10:08:21Z",
+    "rosterMadreSyncedAt": "2026-06-22T10:09:40Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
