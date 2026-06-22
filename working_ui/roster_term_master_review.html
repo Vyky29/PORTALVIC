@@ -147,6 +147,7 @@
 <main id="app"><div class="empty">Cargando seed…</div></main>
 <section id="staffShiftsPanel" aria-label="Turnos staff">
   <div class="toolbar" style="margin-bottom:.4rem">
+    <span id="staffShiftsFilterLabel" class="status" style="flex:1 1 auto;min-width:0"></span>
     <input id="filterStaffShifts" type="search" placeholder="Filtrar fecha, staff, venue…" style="min-width:160px;padding:.3rem .45rem"/>
     <button type="button" id="btnAddStaffShift" class="ghost">+ Fila turno</button>
   </div>
@@ -510,10 +511,24 @@
     rd.readAsText(f); fileInput.value='';
   };
 
-  weekSelect.onchange = function(){ weekIdx=+weekSelect.value||0; render(); };
-  viewMode.onchange = function(){ fillWeekSelect(); render(); };
-  staffPick.onchange = render;
-  filterEl.oninput = function(){ render(); if(tabStaffShifts.classList.contains('active')) renderStaffShifts(); };
+  weekSelect.onchange = function(){
+    weekIdx=+weekSelect.value||0;
+    render();
+    if(tabStaffShifts.classList.contains('active')) renderStaffShifts();
+  };
+  viewMode.onchange = function(){
+    fillWeekSelect();
+    render();
+    if(tabStaffShifts.classList.contains('active')) renderStaffShifts();
+  };
+  staffPick.onchange = function(){
+    render();
+    if(tabStaffShifts.classList.contains('active')) renderStaffShifts();
+  };
+  filterEl.oninput = function(){
+    render();
+    if(tabStaffShifts.classList.contains('active')) renderStaffShifts();
+  };
 
   var tabParticipants = document.getElementById('tabParticipants');
   var tabStaffShifts = document.getElementById('tabStaffShifts');
@@ -534,14 +549,64 @@
   tabParticipants.onclick = function(){ showMadreTab('participants'); };
   tabStaffShifts.onclick = function(){ showMadreTab('staff'); };
 
+  function staffShiftMatchesFilters(r){
+    var q = String(filterStaffShifts && filterStaffShifts.value || '').trim().toLowerCase();
+    if(q){
+      var blob = [r.session_date,r.day,r.staff_name,r.staff_key,r.venue,r.time_range,r.raw_assignment].join(' ').toLowerCase();
+      if(blob.indexOf(q)<0) return false;
+    }
+    var staffOnly = String(staffPick.value||'').trim();
+    if(staffOnly){
+      var key = String(r.staff_key||'').trim().toLowerCase();
+      var name = String(r.staff_name||'').trim().toLowerCase();
+      if(key !== staffOnly.toLowerCase() && name !== staffOnly.toLowerCase()) return false;
+    }
+    if(viewMode.value === 'week' && state && state.weeks && state.weeks[weekIdx]){
+      var w = state.weeks[weekIdx];
+      var d = String(r.session_date||'').slice(0,10);
+      if(!d || d < w.start || d > w.end) return false;
+    }
+    return true;
+  }
+
+  function staffShiftsFilterLabel(){
+    var bits = [];
+    if(viewMode.value === 'week' && state && state.weeks && state.weeks[weekIdx]){
+      var w = state.weeks[weekIdx];
+      bits.push('S'+w.weekNum+' ('+fmtDate(w.start)+'–'+fmtDate(w.end)+')');
+    } else {
+      bits.push('Term completo');
+    }
+    var staffOnly = String(staffPick.value||'').trim();
+    if(staffOnly){
+      var opt = staffPick.options[staffPick.selectedIndex];
+      bits.push(opt ? opt.textContent : staffOnly);
+    } else {
+      bits.push('Todos los staff');
+    }
+    return bits.join(' · ');
+  }
+
   function renderStaffShifts(){
     if(!state || !staffTbody) return;
-    var q = String(filterStaffShifts && filterStaffShifts.value || '').trim().toLowerCase();
-    var rows = (state.staffShifts && state.staffShifts.rows) ? state.staffShifts.rows : [];
+    var rows = (state.staffShifts && state.staffShifts.rows) ? state.staffShifts.rows.slice() : [];
+    rows = rows.filter(staffShiftMatchesFilters);
+    rows.sort(function(a,b){
+      var da = String(a.session_date||''), db = String(b.session_date||'');
+      if(da !== db) return da.localeCompare(db);
+      return String(a.staff_name||'').localeCompare(String(b.staff_name||''));
+    });
+    var labelEl = document.getElementById('staffShiftsFilterLabel');
+    if(labelEl) labelEl.textContent = staffShiftsFilterLabel()+' · '+rows.length+' filas';
     staffTbody.innerHTML = '';
-    rows.forEach(function(r, idx){
-      var blob = [r.session_date,r.day,r.staff_name,r.venue,r.time_range].join(' ').toLowerCase();
-      if(q && blob.indexOf(q)<0) return;
+    if(!rows.length){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="6" style="text-align:center;color:#555;padding:1rem">Nada que mostrar — cambia semana, staff o filtro.</td>';
+      staffTbody.appendChild(tr);
+      return;
+    }
+    rows.forEach(function(r){
+      var idx = state.staffShifts.rows.indexOf(r);
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td><input data-k="session_date" data-i="'+idx+'" value="'+esc(r.session_date||'')+'"/></td>'+
