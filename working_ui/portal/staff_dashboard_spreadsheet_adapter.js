@@ -575,6 +575,15 @@
         rosterArea,
         timeSlotLabel,
       };
+      const instructorsRaw = String(row.instructors || "").trim();
+      if (
+        instructorsRaw &&
+        instructorsResolved &&
+        normalizePersonId(instructorsRaw) !== normalizePersonId(instructorsResolved)
+      ) {
+        baseSession.__portalSundayInstructorCover = true;
+        baseSession.__portalRosterInstructorBeforeOverride = instructorsRaw;
+      }
       if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
         baseSession.session_date = sessionDate;
       }

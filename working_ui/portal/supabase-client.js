@@ -376,6 +376,41 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const ownParts = partitionFeedbackRows(fb.data);
   const catchUpParts = partitionFeedbackRows(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
 
+  const perStaffOwnOnly = new Set(
+    (opts && Array.isArray(opts.perStaffOwnFeedbackOnlyKeys)
+      ? opts.perStaffOwnFeedbackOnlyKeys
+      : []
+    )
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const staffIdForPeer = String((opts && opts.staffId) || "").trim().toLowerCase();
+
+  function portalStaffOwnsSubmittedFeedbackRow(staffId, row) {
+    const sid = String(staffId || "").trim().toLowerCase();
+    if (!sid || !row) return false;
+    try {
+      const bridge =
+        typeof window !== "undefined" ? window.PortalStaffFeedbackBridge : null;
+      if (bridge && typeof bridge.staffOwnsInstructor === "function") {
+        return bridge.staffOwnsInstructor(
+          sid,
+          /** @type {{ completed_by_name?: string }} */ (row).completed_by_name
+        );
+      }
+    } catch (_) {}
+    const name = String(
+      /** @type {{ completed_by_name?: string }} */ (row).completed_by_name || ""
+    )
+      .trim()
+      .toLowerCase();
+    if (!name) return false;
+    const first = (name.split(/\s+/)[0] || "").trim();
+    if (sid === "javi" && (first === "javier" || name === "javier")) return false;
+    if (sid === "javier" && (first === "javi" || name === "javi")) return false;
+    return name === sid || first === sid || name.indexOf(sid) >= 0;
+  }
+
   /** Co-instructor: match peer-visible session_feedback rows onto roster keys (flexible key shapes). */
   function matchCoInstructorFeedbackToRosterKeys(peerRows) {
     const present = [];
@@ -398,6 +433,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       );
       for (const rk of rosterSessionKeys) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
+        if (perStaffOwnOnly.has(rk) && !portalStaffOwnsSubmittedFeedbackRow(staffIdForPeer, r)) {
+          continue;
+        }
         if (isAbs) {
           if (!seenA.has(rk)) {
             seenA.add(rk);
@@ -430,6 +468,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   for (const rk of rpcKeys) {
     const rks = String(rk || "").trim();
     if (!rks || peerParts.present.includes(rks) || peerParts.absent.includes(rks)) continue;
+    /* Substitute cover slots: RPC cannot verify submitter — own rows only. */
+    if (perStaffOwnOnly.has(rks)) continue;
     rpcPresent.push(rks);
   }
 
@@ -480,8 +520,37 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     fbPeerShared && !fbPeerShared.error ? fbPeerShared.data : null,
   ]);
 
+  /** Roster keys green from this user's session_feedback rows only (substitute / per-staff slots). */
+  const ownFeedbackKeys = [];
+  const seenOwnRk = new Set();
+  const ownRows = [
+    ...(Array.isArray(fb.data) ? fb.data : []),
+    ...(fbCatchUp && !fbCatchUp.error && Array.isArray(fbCatchUp.data) ? fbCatchUp.data : []),
+  ];
+  for (const r of ownRows) {
+    if (!r || typeof r !== "object") continue;
+    const pk = String(
+      /** @type {{ portal_session_key?: string }} */ (r).portal_session_key || ""
+    ).trim();
+    if (!pk) continue;
+    for (const rk of rosterSessionKeys) {
+      if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, {
+        feedbackMergeRules:
+          opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
+      })) {
+        continue;
+      }
+      if (!seenOwnRk.has(rk)) {
+        seenOwnRk.add(rk);
+        ownFeedbackKeys.push(rk);
+      }
+      break;
+    }
+  }
+
   return {
     feedbackKeys: feedbackMerged,
+    ownFeedbackKeys,
     absentFeedbackKeys,
     incidentKeys: dedupeKeys(inc.data),
     cancellationKeys: dedupeKeys(can.data),
@@ -838,6 +907,19 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
  */
 export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, rosterKeys, opts = {}) {
   const markAbsent = !!(opts && opts.markAbsent);
+  const perStaffOwnOnly = new Set(
+    (opts && Array.isArray(opts.perStaffOwnFeedbackOnlyKeys)
+      ? opts.perStaffOwnFeedbackOnlyKeys
+      : []
+    )
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const ownOnly = new Set(
+    (opts && Array.isArray(opts.ownFeedbackKeys) ? opts.ownFeedbackKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
   const base = () => ({
     feedbackDone: false,
     incident: false,
@@ -848,6 +930,7 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
+    if (!markAbsent && perStaffOwnOnly.has(rosterKey) && !ownOnly.has(rosterKey)) continue;
     for (const fk of submittedKeys || []) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
@@ -919,14 +1002,38 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     }
   }
   const rosterKeys = Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
+  const perStaffOwnOnly = new Set(
+    (Array.isArray(opts.perStaffOwnFeedbackOnlyKeys) ? opts.perStaffOwnFeedbackOnlyKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const ownOnly = new Set(
+    (Array.isArray(packs.ownFeedbackKeys) ? packs.ownFeedbackKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const fanOutOpts = Object.assign({}, opts, {
+    perStaffOwnFeedbackOnlyKeys: [...perStaffOwnOnly],
+    ownFeedbackKeys: [...ownOnly],
+  });
   if (rosterKeys.length && absentFb.length) {
-    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, absentFb, rosterKeys, { markAbsent: true })) {
+    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, absentFb, rosterKeys, Object.assign({ markAbsent: true }, fanOutOpts))) {
       changed = true;
     }
   }
   if (rosterKeys.length && submittedFb.length) {
-    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedFb, rosterKeys)) {
+    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedFb, rosterKeys, fanOutOpts)) {
       changed = true;
+    }
+  }
+  if (perStaffOwnOnly.size) {
+    for (const rk of perStaffOwnOnly) {
+      if (ownOnly.has(rk)) continue;
+      const prev = memory[rk];
+      if (prev && prev.feedbackDone && !prev.absent && !prev.cancelled) {
+        memory[rk] = { ...prev, feedbackDone: false };
+        changed = true;
+      }
     }
   }
   return changed;
@@ -1006,6 +1113,21 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(submittedFb, feedback);
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
+  const perStaffOwnOnly = new Set(
+    (Array.isArray(opts.perStaffOwnFeedbackOnlyKeys) ? opts.perStaffOwnFeedbackOnlyKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const ownOnly = new Set(
+    (Array.isArray(packs?.ownFeedbackKeys) ? packs.ownFeedbackKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  if (perStaffOwnOnly.size) {
+    for (const rk of perStaffOwnOnly) {
+      if (!ownOnly.has(rk)) feedback.delete(rk);
+    }
+  }
   for (const fk of submittedFb) {
     if (portalSubmittedKeyIsMergeFeedback(fk)) feedback.add(String(fk || "").trim());
   }
@@ -1050,6 +1172,20 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markResolved(submittedFb);
   markResolved(absentAll);
   markResolved(cancelledKeys);
+  const perStaffOwnOnly = new Set(
+    (Array.isArray(opts.perStaffOwnFeedbackOnlyKeys) ? opts.perStaffOwnFeedbackOnlyKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  const ownOnly = new Set(
+    (Array.isArray(packs.ownFeedbackKeys) ? packs.ownFeedbackKeys : [])
+      .map((k) => String(k || "").trim())
+      .filter(Boolean)
+  );
+  for (const rk of ownOnly) resolved.add(rk);
+  for (const rk of perStaffOwnOnly) {
+    if (!ownOnly.has(rk)) resolved.delete(rk);
+  }
 
   let changed = false;
   for (const rk of rosterKeys) {
