@@ -755,14 +755,105 @@
       return [...keys].slice(0, 400);
     }
 
+    function hmFromDbTime(t) {
+      const s = String(t || "").trim();
+      const m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return "";
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+    }
+
+    function normTimesheetStaffKey(v) {
+      return String(v || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+    }
+
+    function sessionMatchesScheduleOverride(s, dateKey, ov) {
+      if (String(ov.session_date || "").trim().slice(0, 10) !== dateKey) return false;
+      if (normTimesheetStaffKey(ov.anchor_staff_id) !== normTimesheetStaffKey(s.staffId)) return false;
+      const ovStart = hmFromDbTime(ov.anchor_start);
+      const sStart = String(s.start || "").trim().slice(0, 5);
+      if (ovStart && sStart && ovStart !== sStart) return false;
+      const ovClient = String(ov.anchor_client_id || "").trim().toLowerCase();
+      const sClient = String(s.clientId || "").trim().toLowerCase();
+      if (ovClient && sClient && ovClient !== sClient) return false;
+      return true;
+    }
+
+    async function fetchScheduleOverridesForPeriod(supabase, startIso, endIso) {
+      const { data, error } = await supabase
+        .from("schedule_overrides")
+        .select(
+          "session_date, anchor_start, anchor_end, anchor_staff_id, anchor_client_id, override_type, status"
+        )
+        .eq("status", "active")
+        .gte("session_date", startIso)
+        .lte("session_date", endIso);
+      if (error || !data) return [];
+      return data;
+    }
+
+    /** Mirror dashboard: admin absence / slot close counts as done for timesheet pay. */
+    function applyScheduleOverridesToReviewMap(memory, sessionsModel, dates, overrides) {
+      const completeByType = {
+        client_absence_announced: "absent",
+        slot_close: "cancelled",
+      };
+      for (const dateObj of dates || []) {
+        const dateKey = isoDate(dateObj);
+        const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
+          const st = String(s.status || "").toLowerCase();
+          return st !== "closed" && st !== "available";
+        });
+        rows.forEach((s) => {
+          const sk = `${dateKey}|${String(s.start || "").trim()}|${String(s.clientId || "").trim()}`;
+          for (let i = 0; i < (overrides || []).length; i += 1) {
+            const ov = overrides[i];
+            const flag = completeByType[String(ov.override_type || "").trim()];
+            if (!flag || !sessionMatchesScheduleOverride(s, dateKey, ov)) continue;
+            const prev = memory[sk] || {
+              feedbackDone: false,
+              incident: false,
+              absent: false,
+              cancelled: false,
+            };
+            memory[sk] = Object.assign({}, prev, { [flag]: true, feedbackDone: false });
+            break;
+          }
+        });
+      }
+    }
+
     async function buildReviewMap(supabase, userId, sessionsModel, dates) {
       const memory = parseReviewMap();
       try {
-        const mod = await import("./portal/supabase-client.js?v=20260522-timesheet");
+        const mod = await import("./portal/supabase-client.js?v=20260622-timesheet-sync");
         if (!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return memory;
+        const feedbackMergeRules = (() => {
+          try {
+            const src = window.STAFF_DASHBOARD_SOURCE;
+            return src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+          } catch (_) {
+            return [];
+          }
+        })();
         const rosterKeys = collectRosterSessionKeysForPeriod(sessionsModel, dates);
-        const keys = await mod.portalFetchSubmittedReviewSessionKeys(supabase, userId, { rosterSessionKeys: rosterKeys });
-        mod.portalMergeReviewKeysIntoMemoryMap(memory, keys, { rosterSessionKeys: rosterKeys });
+        const keys = await mod.portalFetchSubmittedReviewSessionKeys(supabase, userId, {
+          rosterSessionKeys: rosterKeys,
+          feedbackMergeRules,
+          staffId: String(state.staffRosterKey || "").trim().toLowerCase(),
+        });
+        mod.portalMergeReviewKeysIntoMemoryMap(memory, keys, {
+          rosterSessionKeys: rosterKeys,
+          feedbackMergeRules,
+        });
+        const overrides = await fetchScheduleOverridesForPeriod(
+          supabase,
+          state.periodStart,
+          state.periodEnd
+        );
+        applyScheduleOverridesToReviewMap(memory, sessionsModel, dates, overrides);
       } catch (e) {
         console.warn("[timesheet] server review merge skipped", e);
       }

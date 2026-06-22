@@ -885,13 +885,10 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   if (rTime && sTime && sTime !== rTime) return false;
   /* date||client must not absorb a timed submission from another slot the same day. */
   if (sTime && !rTime && rParts[1] === "" && rParts[2] && !rParts[3]) return false;
-  /* Untimed submission must not mark another instructor's timed MA / climbing slot green. */
-  if (
-    portalSubmittedKeyIsDateClientOnly(s) &&
-    rTime &&
-    !portalRosterKeyIsSharedFeedbackUnit(r)
-  ) {
-    return false;
+  /* date||client feedback marks the timed roster row for the same participant (e.g. fitness). */
+  if (portalSubmittedKeyIsDateClientOnly(s) && rTime && !portalRosterKeyIsSharedFeedbackUnit(r)) {
+    if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
+    return portalSessionKeyClientSlugsMatch(s, r);
   }
   if (rTime && !sTime && !portalRosterKeyIsSharedFeedbackUnit(r)) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
@@ -1016,6 +1013,23 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     perStaffOwnFeedbackOnlyKeys: [...perStaffOwnOnly],
     ownFeedbackKeys: [...ownOnly],
   });
+  if (rosterKeys.length && (packs.absentKeys || []).length) {
+    if (
+      portalFanOutFeedbackKeysOntoRosterMemory(
+        memory,
+        packs.absentKeys,
+        rosterKeys,
+        Object.assign({ markAbsent: true }, fanOutOpts)
+      )
+    ) {
+      changed = true;
+    }
+  }
+  if (rosterKeys.length && (packs.quickFeedbackDoneKeys || []).length) {
+    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, packs.quickFeedbackDoneKeys, rosterKeys, fanOutOpts)) {
+      changed = true;
+    }
+  }
   if (rosterKeys.length && absentFb.length) {
     if (portalFanOutFeedbackKeysOntoRosterMemory(memory, absentFb, rosterKeys, Object.assign({ markAbsent: true }, fanOutOpts))) {
       changed = true;
