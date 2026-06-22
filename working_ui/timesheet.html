@@ -8,8 +8,6 @@
   <script>
     (function () {
       try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {}
-      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
-      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
     })();
   </script>
   <style id="portal-hide-wp-chrome">
@@ -114,7 +112,7 @@
     td,th{min-width:0;overflow-wrap:break-word;word-break:normal}
     .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
     .actions .btn{min-height:44px;touch-action:manipulation}
-    @media (max-width:560px){
+    @media (max-width:900px){
       html:not(.portal-force-landscape) .page{padding:8px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px))}
       html:not(.portal-force-landscape) .head{padding:10px 12px}
       html:not(.portal-force-landscape) .head h1{font-size:18px}
@@ -149,7 +147,7 @@
       html:not(.portal-force-landscape) .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
       html:not(.portal-force-landscape) .actions .btn{width:100%}
     }
-    /* Mobile timesheet: always use horizontal/table layout (native lock or CSS rotate). */
+    /* Roberto extra-hours / manual entry only: lock landscape on mobile. */
     @media (max-width:900px) and (orientation:portrait){
       html.portal-force-landscape{
         overflow:hidden;
@@ -215,40 +213,6 @@
       html.portal-force-landscape body.portal-timesheet-page .actions{flex-direction:row;padding:0 10px max(8px,env(safe-area-inset-bottom,0px));gap:8px}
       html.portal-force-landscape body.portal-timesheet-page .actions .btn{width:auto;flex:1 1 0;min-height:40px;padding:8px 10px;font-size:13px}
     }
-    @media (max-width:900px) and (orientation:landscape){
-      body.portal-timesheet-page{padding:0}
-      body.portal-timesheet-page .page{
-        max-width:none;
-        width:100%;
-        padding:max(6px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
-      }
-      body.portal-timesheet-page .card{border-radius:10px;box-shadow:0 4px 16px rgba(17,24,39,.05)}
-      body.portal-timesheet-page .head{padding:6px 10px}
-      body.portal-timesheet-page .head h1{font-size:17px}
-      body.portal-timesheet-page .sub{font-size:11px;margin-top:3px}
-      body.portal-timesheet-page .identity{
-        display:grid;
-        grid-template-columns:repeat(4,minmax(0,1fr));
-        gap:4px 10px;
-        padding:6px 10px 0;
-        font-size:11px;
-        line-height:1.35;
-      }
-      body.portal-timesheet-page .deadline-banner{margin:6px 10px 0;padding:8px 10px;font-size:11px;line-height:1.35}
-      body.portal-timesheet-page .legend{flex-direction:row;flex-wrap:wrap;padding:0 10px 4px;font-size:10px;gap:6px 12px}
-      body.portal-timesheet-page .status-note{padding:0 10px 4px;font-size:11px}
-      body.portal-timesheet-page .manual-entry{padding:4px 10px 8px}
-      body.portal-timesheet-page .manual-entry__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-      body.portal-timesheet-page .table-wrap{padding:4px 6px 6px}
-      body.portal-timesheet-page th,body.portal-timesheet-page td{padding:4px 6px;font-size:11px}
-      body.portal-timesheet-page thead th{padding:5px 4px;font-size:11px}
-      body.portal-timesheet-page .th-desk{display:inline}
-      body.portal-timesheet-page .th-mob{display:none}
-      body.portal-timesheet-page .sum-row td{font-size:10px;padding:4px 6px}
-      body.portal-timesheet-page .sum-label{text-align:center}
-      body.portal-timesheet-page .actions{flex-direction:row;padding:0 10px max(8px,env(safe-area-inset-bottom,0px));gap:8px}
-      body.portal-timesheet-page .actions .btn{width:auto;flex:1 1 0;min-height:40px;padding:8px 10px;font-size:13px}
-    }
     html.portal-force-landscape,body.portal-force-landscape{min-height:100dvh}
   </style>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
@@ -258,6 +222,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260510-portal-admin"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260510-portal-admin"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
 <body class="portal-timesheet-page">
   <main class="page">
@@ -738,17 +703,57 @@
       return list.filter((s) => String(s.day || "").trim() === dayName);
     }
 
+    function timesheetSlugAreaKey(area) {
+      return String(area || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    /** Same portal_session_key shape as staff dashboard (aquatic, day centre, bespoke, …). */
+    function timesheetSessionReviewKey(s, dateObj) {
+      const dateKey = isoDate(dateObj);
+      const dayWord = WEEKDAY[dateObj.getDay()];
+      const cid = String(s.clientId || "").trim().toLowerCase();
+      if (!dateKey || !cid) return "";
+      const act = String(s.activity || s.rosterService || s.service || "").trim().toLowerCase();
+      if (/day\s*centre/.test(act)) return `${dateKey}|${cid}|day_centre`;
+      if (/bespoke/.test(act) && /hub/.test(String(s.area || "").trim().toLowerCase())) {
+        return `${dateKey}|${cid}|bespoke_shared`;
+      }
+      if (
+        typeof window.portalStaffLeadIsAquaticActivity === "function" &&
+        window.portalStaffLeadIsAquaticActivity(act)
+      ) {
+        if (typeof window.portalStaffLeadAquaticSessionReviewKey === "function") {
+          return window.portalStaffLeadAquaticSessionReviewKey(dateKey, cid, s, dayWord);
+        }
+        return `${dateKey}|${cid}|aquatic`;
+      }
+      let suffix = "";
+      if (/multi[-\s]?activity/.test(act) || act === "bespoke" || act.indexOf("climbing") >= 0) {
+        const ak = timesheetSlugAreaKey(s.area || s.venue || "");
+        if (ak) suffix = `|${ak}`;
+      }
+      return `${dateKey}|${String(s.start || "").trim()}|${cid}${suffix}`;
+    }
+
+    function sessionReviewRecord(reviewMap, s, dateObj) {
+      const sk = timesheetSessionReviewKey(s, dateObj);
+      if (sk && reviewMap[sk]) return reviewMap[sk];
+      return null;
+    }
+
     function collectRosterSessionKeysForPeriod(sessionsModel, dates) {
       const keys = new Set();
       for (const dateObj of dates || []) {
-        const dateKey = isoDate(dateObj);
         const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
           const st = String(s.status || "").toLowerCase();
           return st !== "closed" && st !== "available";
         });
         rows.forEach((s) => {
-          const start = String(s.start || "").trim();
-          const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
+          const sk = timesheetSessionReviewKey(s, dateObj);
           if (sk.length > 12) keys.add(sk);
         });
       }
@@ -807,7 +812,8 @@
           return st !== "closed" && st !== "available";
         });
         rows.forEach((s) => {
-          const sk = `${dateKey}|${String(s.start || "").trim()}|${String(s.clientId || "").trim()}`;
+          const sk = timesheetSessionReviewKey(s, dateObj);
+          if (!sk) return;
           for (let i = 0; i < (overrides || []).length; i += 1) {
             const ov = overrides[i];
             const flag = completeByType[String(ov.override_type || "").trim()];
@@ -828,7 +834,7 @@
     async function buildReviewMap(supabase, userId, sessionsModel, dates) {
       const memory = parseReviewMap();
       try {
-        const mod = await import("./portal/supabase-client.js?v=20260622-timesheet-sync");
+        const mod = await import("./portal/supabase-client.js?v=20260622-timesheet-sync2");
         if (!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return memory;
         const feedbackMergeRules = (() => {
           try {
@@ -988,8 +994,8 @@
         } else if (!dominantService) {
           dominantService = svc;
         }
-        const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
-        if (!sessionIsCompleted(reviewMap[sk])) completedAll = false;
+        const rec = sessionReviewRecord(reviewMap, s, dateObj);
+        if (!sessionIsCompleted(rec)) completedAll = false;
       });
       const mins = Math.max(0, maxEnd - minStart);
       return {
@@ -1218,6 +1224,9 @@
 
     function setupManualMode() {
       state.manual = true;
+      try { document.body.classList.add("portal-timesheet-manual"); } catch (_) {}
+      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
+      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
       const autoWrap = document.getElementById("autoWrap");
       const legend = document.querySelector(".legend");
       const manualForm = document.getElementById("manualForm");
