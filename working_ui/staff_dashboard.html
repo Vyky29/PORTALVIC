@@ -10041,6 +10041,94 @@
       });
     }
 
+    function portalRosterSpreadsheetSessionDedupeKey(s){
+      if(!s) return '';
+      const sid = String(s.staffId || '').trim().toLowerCase();
+      const iso = normaliseIsoDate(s.session_date || s.sessionDate);
+      const cid = String(s.clientId || '').trim().toLowerCase();
+      const start = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.start)
+        : String(s.start || '').trim();
+      const end = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.end)
+        : String(s.end || '').trim();
+      const venue = portalNormKeyStr(s.venue);
+      const ts = String(s.timeSlotLabel || '').trim();
+      return [sid, iso, cid, start || ts, end, venue].join('|');
+    }
+    function portalDedupeRosterSpreadsheetSessions(rows){
+      if(!Array.isArray(rows) || !rows.length) return rows || [];
+      const out = [];
+      const seen = Object.create(null);
+      rows.forEach(function(s){
+        const k = portalRosterSpreadsheetSessionDedupeKey(s);
+        if(k && seen[k]) return;
+        if(k) seen[k] = true;
+        out.push(s);
+      });
+      return out;
+    }
+    function portalScheduleOverrideInstructorCoverSlotKey(ov){
+      if(!ov) return '';
+      return [
+        normaliseIsoDate(ov.session_date),
+        portalNormKeyStr(ov.anchor_staff_id),
+        String(ov.anchor_client_id || '').trim().toLowerCase(),
+        portalHmFromDbTime(ov.anchor_start) || '',
+        portalHmFromDbTime(ov.anchor_end) || '',
+        portalNormKeyStr(ov.anchor_venue)
+      ].join('|');
+    }
+    function portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey){
+      const sid = portalNormKeyStr(staffId);
+      const iso = normaliseIsoDate(sessionDateKey);
+      const bySlot = Object.create(null);
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(normaliseIsoDate(ov.session_date) !== iso) return;
+        if(String(ov.status || 'active') !== 'active') return;
+        if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
+        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        if(!cov || cov !== sid) return;
+        const slotKey = portalScheduleOverrideInstructorCoverSlotKey(ov);
+        if(!slotKey) return;
+        const prev = bySlot[slotKey];
+        if(!prev || new Date(ov.created_at || 0) > new Date(prev.created_at || 0)) bySlot[slotKey] = ov;
+      });
+      return Object.keys(bySlot).map(function(k){ return bySlot[k]; });
+    }
+    function portalTodayScheduleViewCardDedupeKey(it){
+      if(!it) return '';
+      if(it.kind === 'client' || it.kind === 'available'){
+        const base = it.__portalBaseSession ? it.__portalBaseSession : (it || {});
+        const skParts = String(it.sessionKey || '').split('|');
+        const cid = String(it.clientId || base.clientId || '').trim().toLowerCase();
+        if(!cid || cid === 'available' || cid === 'closed' || cid === 'meeting' || cid === 'training' || cid === 'shadowing') return '';
+        const start = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.start || skParts[1] || '')
+          : String(base.start || skParts[1] || '').trim();
+        const end = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.end || '')
+          : String(base.end || '').trim();
+        const venue = portalNormKeyStr(it.sessionVenue != null ? it.sessionVenue : base.venue);
+        return [cid, start, end, venue].join('|');
+      }
+      return String(it.sessionKey || '').trim();
+    }
+    function portalDedupeTodayScheduleViewCards(items){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      const seen = Object.create(null);
+      const out = [];
+      items.forEach(function(it){
+        const k = portalTodayScheduleViewCardDedupeKey(it);
+        if(k){
+          if(seen[k]) return;
+          seen[k] = true;
+        }
+        out.push(it);
+      });
+      return out;
+    }
+
     /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. Optional `calendarIsoOverride` (YYYY-MM-DD) pins an exact day (next-session preview). */
     function buildSelectedDayViewFromLauraModel(modelOverride, calendarIsoOverride){
       const viewDay = String(DEMO_VIEW_DAY).trim();
@@ -10125,9 +10213,10 @@
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord);
       });
+      const todaySessionsAfterDedupe = portalDedupeRosterSpreadsheetSessions(todaySessionsAfterFilter);
       const primary = portalUpgradeTodayItemsWithAbsentOverrides(
         portalInjectAbsentCardsAlongsideMakeup(
-        todaySessionsAfterFilter
+        todaySessionsAfterDedupe
         .sort((a, b) => Number(normalizeTimeForSort(a.start)) - Number(normalizeTimeForSort(b.start)))
         .map(s => {
           const ov = portalTodayScheduleOverrideForSession(s, sessionDateKey);
@@ -10530,13 +10619,8 @@
         sessionDateKey
       );
       const extra = [];
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
-        if(String(ov.status || 'active') !== 'active') return;
-        if(String(ov.override_type || '').trim() === 'override_void') return;
-        if(ov.override_type !== 'instructor_reassign') return;
-        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
-        if(!cov || cov !== portalNormKeyStr(staffId)) return;
+      portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
+        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id) || portalNormKeyStr(staffId);
         const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
@@ -10845,7 +10929,9 @@
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
-        portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra))),
+        portalDedupeTodayScheduleViewCards(
+          portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra)))
+        ),
         sessionDateKey,
         anchorDayWord,
         anchor,
