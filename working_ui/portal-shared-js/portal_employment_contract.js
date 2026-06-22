@@ -1,5 +1,5 @@
 /**
- * Staff employment contract signing ó uses Portal auth + documents bucket.
+ * Staff employment contract signing ù uses Portal auth + documents bucket.
  */
 const PORTAL_CONTRACT_LOGO = "portal/portal_crest.svg";
 
@@ -13,6 +13,20 @@ function portalContractParseBody(body) {
   } catch (_) {
     return { contract_id: "", reference: "" };
   }
+}
+
+function portalContractNamesMatch(typed, expected) {
+  const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const t = norm(typed);
+  const e = norm(expected);
+  if (!t || !e) return false;
+  if (t === e) return true;
+  const tParts = t.split(" ");
+  const eParts = e.split(" ");
+  if (tParts.length <= eParts.length) {
+    return tParts.every((part, i) => eParts[i] === part);
+  }
+  return false;
 }
 
 async function portalContractLoadModule() {
@@ -86,7 +100,7 @@ export async function portalCompleteEmploymentContract(opts) {
     .single();
   if (fetchErr || !row) throw new Error("Contract not found");
   if (row.status === "completed") throw new Error("Already signed");
-  if (employeeTypedName.trim().toLowerCase() !== String(row.employee_name).trim().toLowerCase()) {
+  if (!portalContractNamesMatch(employeeTypedName, row.employee_name)) {
     throw new Error("Typed name must match your full name on the contract.");
   }
 
@@ -137,7 +151,7 @@ export async function portalCompleteEmploymentContract(opts) {
         blob,
         document_type: "employment_contract",
         category: "HR",
-        title: "Employment contract ó " + (row.contract_reference || row.role || "Signed"),
+        title: "Employment contract ù " + (row.contract_reference || row.role || "Signed"),
         source_page: "contract_sign",
         related_date: row.contract_date,
         reuseAuth: { supabase, user }

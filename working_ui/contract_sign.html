@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260622-addr"></script>
+  <script src="portal/contract-core.js?v=20260622-sign"></script>
+  <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign">
   <style>
     :root { --navy:#0f2744; --gold:#c9a227; --grey-100:#f7f9fb; --grey-200:#e2e8f0; --grey-500:#64748b; --radius:8px; }
     *{box-sizing:border-box}
@@ -17,21 +18,20 @@
     @media(min-width:900px){.grid{grid-template-columns:1fr 1.2fr}}
     .panel{background:#fff;border-radius:var(--radius);padding:1.25rem;box-shadow:0 2px 8px rgba(15,39,68,.08)}
     .panel h2{margin:0 0 1rem;font-size:1.1rem;color:var(--navy);border-bottom:2px solid #e8f0f6;padding-bottom:.5rem}
-    canvas{width:100%;display:block;border:2px dashed var(--grey-200);border-radius:var(--radius);background:#f7f9fb}
+    canvas{width:100%;display:block;border:2px dashed var(--grey-200);border-radius:var(--radius);background:#f7f9fb;touch-action:none;cursor:crosshair}
     .btn{padding:.65rem 1.2rem;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:1rem}
     .btn-gold{background:var(--gold);color:var(--navy);width:100%}
-    .btn-gold:disabled{opacity:.5}
-    .btn-sec{background:var(--grey-200);color:var(--navy);margin-top:.5rem}
-    .preview{max-height:70vh;overflow:auto;border:1px solid var(--grey-200);border-radius:var(--radius);padding:.5rem}
+    .btn-gold:disabled{opacity:.5;cursor:not-allowed}
+    .btn-sec{background:var(--grey-200);color:var(--navy);margin-top:.5rem;width:100%}
+    .preview{padding:0}
     .err{background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:var(--radius);color:#b91c1c}
     .ok{background:#ecfdf5;border:1px solid #86efac;padding:1rem;border-radius:var(--radius);color:#166534}
     .hidden{display:none!important}
     label.ack{display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0;font-size:.95rem}
-    input[type=text]{width:100%;padding:.6rem;border:1px solid var(--grey-200);border-radius:var(--radius)}
-    .contract-document{font-family:Georgia,serif;font-size:.85rem}
-    .contract-letterhead{text-align:center;padding:12px;border-bottom:3px solid var(--gold)}
-    .contract-logo{max-width:220px;height:auto}
-    .contract-section h3{font-size:.75rem;text-transform:uppercase;color:var(--navy);border-bottom:1px solid var(--gold)}
+    input[type=text]{width:100%;padding:.6rem;border:1px solid var(--grey-200);border-radius:var(--radius);margin:.35rem 0 .5rem}
+    .field-hint{margin:0 0 .75rem;font-size:.82rem;color:var(--grey-500);line-height:1.4}
+    .submit-hint{margin:.75rem 0 0;font-size:.85rem;color:var(--grey-500);min-height:1.2em}
+    .submit-hint.ready{color:#166534}
   </style>
 </head>
 <body>
@@ -41,7 +41,7 @@
     <p id="subRef" style="margin:0;font-size:.9rem;color:var(--grey-500)"></p>
   </header>
   <div class="wrap">
-    <div id="loading"><p>Loading?</p></div>
+    <div id="loading"><p>Loading…</p></div>
     <div id="errorBox" class="err hidden"></div>
     <div id="doneBox" class="ok hidden">
       <strong>Contract signed.</strong>
@@ -50,16 +50,18 @@
     <div id="signGrid" class="grid hidden">
       <div class="panel">
         <h2>Your signature</h2>
-        <label>Typed full name (must match contract)</label>
+        <label for="typedName">Typed full name</label>
         <input type="text" id="typedName" autocomplete="name">
+        <p class="field-hint" id="nameHint">Type your name as shown on the contract (first name is enough if it matches).</p>
         <label class="ack"><input type="checkbox" id="ack"> <span>I have read and agree to this employment contract.</span></label>
         <canvas id="sigCanvas" height="150" aria-label="Signature"></canvas>
         <button type="button" class="btn-sec" id="clearSig">Clear signature</button>
-        <button type="button" class="btn btn-gold" id="submitBtn" disabled style="margin-top:1rem">Sign and save to My Documents</button>
+        <p class="submit-hint" id="submitHint" aria-live="polite"></p>
+        <button type="button" class="btn btn-gold" id="submitBtn" disabled style="margin-top:.5rem">Sign and save to My Documents</button>
       </div>
       <div class="panel">
         <h2>Contract</h2>
-        <div class="preview" id="preview"></div>
+        <div class="preview contract-preview-shell" id="preview"></div>
       </div>
     </div>
   </div>
@@ -67,7 +69,7 @@
     import {
       portalFetchMyContract,
       portalCompleteEmploymentContract
-    } from "./portal/portal_employment_contract.js?v=20260521-1";
+    } from "./portal/portal_employment_contract.js?v=20260622-sign";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);
@@ -77,6 +79,8 @@
     let sigUrl = "";
     let padApi = null;
     let contractRow = null;
+    let filledText = "";
+    let contractKind = "zero_hours";
 
     function show(id) {
       ["loading", "errorBox", "doneBox", "signGrid"].forEach((x) => {
@@ -84,13 +88,44 @@
       });
     }
 
+    function contractNamesMatch(typed, expected) {
+      const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const t = norm(typed);
+      const e = norm(expected);
+      if (!t || !e) return false;
+      if (t === e) return true;
+      const tParts = t.split(" ");
+      const eParts = e.split(" ");
+      if (tParts.length <= eParts.length) {
+        return tParts.every((part, i) => eParts[i] === part);
+      }
+      return false;
+    }
+
+    function renderPreview(employeeSig) {
+      if (!filledText) return;
+      $("preview").innerHTML = C.renderContractHtml(filledText, false, {
+        directorSignatureDataUrl: contractRow.director_signature,
+        employeeSignatureDataUrl: employeeSig || ""
+      }, contractKind);
+    }
+
     function updateSubmit() {
-      const ok =
-        contractRow &&
-        sigUrl &&
-        $("ack").checked &&
-        $("typedName").value.trim().toLowerCase() ===
-          String(contractRow.employee_name).trim().toLowerCase();
+      const missing = [];
+      const typed = $("typedName").value.trim();
+      const expected = contractRow ? contractRow.employee_name : "";
+      if (!typed) missing.push("type your name");
+      else if (!contractNamesMatch(typed, expected)) {
+        missing.push('name must match "' + expected + '" (first name is OK)');
+      }
+      if (!sigUrl) missing.push("draw your signature");
+      if (!$("ack").checked) missing.push("tick the agreement box");
+      const hint = $("submitHint");
+      const ok = contractRow && sigUrl && $("ack").checked && contractNamesMatch(typed, expected);
+      if (hint) {
+        hint.textContent = ok ? "Ready to sign." : "Still needed: " + missing.join("; ") + ".";
+        hint.classList.toggle("ready", ok);
+      }
       $("submitBtn").disabled = !ok;
     }
 
@@ -113,20 +148,25 @@
         contractRow = res.contract;
         $("subRef").textContent = "Reference: " + (contractRow.contract_reference || "");
         const td = contractRow.template_data || {};
-        const filled = C.fillTemplate(td);
-        $("preview").innerHTML = C.renderContractHtml(filled, false, {
-          directorSignatureDataUrl: contractRow.director_signature
-        });
+        contractKind =
+          td.CONTRACT_KIND ||
+          (contractRow.form_payload && contractRow.form_payload.contractKind) ||
+          "zero_hours";
+        filledText = C.fillTemplate(td, contractKind);
+        renderPreview("");
         $("typedName").placeholder = contractRow.employee_name;
-        padApi = C.setupSignaturePad($("sigCanvas"), { drawing: false }, (url) => {
-          sigUrl = url;
-          $("preview").innerHTML = C.renderContractHtml(filled, false, {
-            directorSignatureDataUrl: contractRow.director_signature,
-            employeeSignatureDataUrl: sigUrl
+        $("nameHint").textContent =
+          'Type your name as on the contract: "' + contractRow.employee_name + '". First name alone is fine.';
+        show("signGrid");
+        requestAnimationFrame(() => {
+          padApi = C.setupSignaturePad($("sigCanvas"), { drawing: false }, (url) => {
+            sigUrl = url;
+            renderPreview(sigUrl);
+            updateSubmit();
           });
+          if (padApi && padApi.resize) padApi.resize();
           updateSubmit();
         });
-        show("signGrid");
       } catch (e) {
         $("errorBox").textContent = e.message || String(e);
         show("errorBox");
@@ -136,8 +176,9 @@
     $("typedName").addEventListener("input", updateSubmit);
     $("ack").addEventListener("change", updateSubmit);
     $("clearSig").addEventListener("click", () => {
-      padApi.clear();
+      if (padApi) padApi.clear();
       sigUrl = "";
+      renderPreview("");
       updateSubmit();
     });
     $("submitBtn").addEventListener("click", async () => {
@@ -163,7 +204,7 @@
         show("doneBox");
       } catch (e) {
         alert(e.message || e);
-        $("submitBtn").disabled = false;
+        updateSubmit();
       }
     });
 

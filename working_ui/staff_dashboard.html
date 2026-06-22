@@ -19,6 +19,7 @@
   <script defer src="/portal/portal_ensure_web_push.js?v=20260619-inflight-fix"></script>
 <script defer src="/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix"></script>
   <script defer src="/portal/portal_announcement_ack.js?v=20260622-ceo-ann-inbox"></script>
+  <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260622-sandra-visual-vic"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>
@@ -12512,6 +12513,44 @@
       }
       return { line1: raw, line2: '' };
     }
+    async function portalLoadContractAnnouncementPreview(contractId){
+      const host = document.getElementById('contractAnnPreview');
+      if(!host || !contractId) return;
+      host.innerHTML = '<p class="alerts-sheet-placeholder" style="margin:0;padding:1rem;">Loading contract…</p>';
+      try{
+        if(!window.ContractCore){
+          await new Promise(function(resolve, reject){
+            var s = document.createElement('script');
+            s.src = 'portal/contract-core.js?v=20260622-sign';
+            s.onload = resolve;
+            s.onerror = reject;
+            document.head.appendChild(s);
+          });
+        }
+        const C = window.ContractCore;
+        const box = window.__PORTAL_SUPABASE__;
+        if(!C || !box || !box.client) throw new Error('Not signed in');
+        const { data, error } = await box.client
+          .from('employment_contracts')
+          .select('template_data,director_signature,form_payload,status')
+          .eq('id', String(contractId))
+          .eq('user_id', box.session.user.id)
+          .maybeSingle();
+        if(error || !data) throw new Error('Could not load contract');
+        if(C.loadLogo && !C.logoDataUrl){
+          const logo = await C.loadLogo();
+          if(logo) C.logoDataUrl = logo;
+        }
+        const td = data.template_data || {};
+        const kind = td.CONTRACT_KIND || (data.form_payload && data.form_payload.contractKind) || 'zero_hours';
+        const filled = C.fillTemplate(td, kind);
+        host.innerHTML = C.renderContractHtml(filled, false, {
+          directorSignatureDataUrl: data.director_signature
+        }, kind);
+      }catch(_e){
+        host.innerHTML = '<p class="alerts-sheet-placeholder" style="margin:0;padding:1rem;">Open the button below to review the full contract.</p>';
+      }
+    }
     function portalEnsureAnnouncementDemoSeed(){
       if(PORTAL_STAFF_ANNOUNCEMENT_DEMO_RESET_EVERY_LOAD) return;
       try{
@@ -12558,11 +12597,13 @@
           hostPending.innerHTML =
             '<article class="announcement-lock-card">' +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
-              '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+              '<p class="announcement-message-p">Review your employment contract below, then sign to save a PDF in My Documents.</p>' +
+              '<div id="contractAnnPreview" class="contract-preview-shell" style="margin:0.75rem 0;"></div>' +
               '<div class="announcement-lock-actions">' +
-                '<a href="' + signHref + '" class="announcement-sign-btn" style="display:inline-block;text-align:center;text-decoration:none;line-height:1.2;padding:12px 16px;">Open contract to sign</a>' +
+                '<a href="' + signHref + '" class="announcement-sign-btn" style="display:inline-block;text-align:center;text-decoration:none;line-height:1.2;padding:12px 16px;">Sign contract</a>' +
               '</div>' +
             '</article>';
+          portalLoadContractAnnouncementPreview(String(pending.portalContractId));
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +
