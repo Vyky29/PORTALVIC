@@ -14,13 +14,14 @@
   let directorPadApi = null;
   let directorPadReady = false;
   const venueHoursStore = {};
+  const roleScaleStore = {};
+  const SCALE_OPTIONS = C.SCALE_OPTIONS || ["Scale 1", "Scale 2", "Scale 3"];
 
   function syncContractTypeFields() {
     const fixed = contractKind === "fixed_term";
     document.querySelectorAll(".zero-hours-field").forEach((el) => el.classList.toggle("hidden", fixed));
     document.querySelectorAll(".fixed-term-field").forEach((el) => el.classList.toggle("hidden", !fixed));
-    if ($("scale")) {
-      $("scale").required = !fixed;
+    if ($("roleScalesContainer")) {
       syncScaleFromRoles();
     }
     ["termEndDate", "annualSalary", "weeklyHours"].forEach((id) => {
@@ -37,7 +38,7 @@
       card.setAttribute("aria-pressed", active ? "true" : "false");
     });
     if (contractKind === "fixed_term") {
-      $("scale").value = "";
+      Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
     }
     syncContractTypeFields();
     contractReference = C.generateReference($("employeeName").value, contractKind);
@@ -92,21 +93,89 @@
     return roles.length ? roles.join(" & ") : "";
   }
 
-  function syncScaleFromRoles() {
-    if (!$("scale")) return;
+  function syncRoleScaleStoreFromInputs() {
+    document.querySelectorAll("[data-role-scale]").forEach((sel) => {
+      roleScaleStore[sel.dataset.roleKey] = sel.value;
+    });
+  }
+
+  function renderRoleScaleInputs() {
+    const container = $("roleScalesContainer");
+    if (!container) return;
+    syncRoleScaleStoreFromInputs();
     const roles = getSelectedRoles();
-    $("scale").disabled = contractKind === "fixed_term" || !roles.length;
-    if (contractKind === "fixed_term" || !roles.length) $("scale").value = "";
+    if (contractKind === "fixed_term" || !roles.length) {
+      container.innerHTML = "";
+      container.closest(".form-group")?.classList.add("hidden");
+      return;
+    }
+    container.closest(".form-group")?.classList.remove("hidden");
+    Object.keys(roleScaleStore).forEach((role) => {
+      if (roles.indexOf(role) < 0) delete roleScaleStore[role];
+    });
+    const esc = (s) =>
+      String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    let html = '<p class="role-scale-intro">Select the pay scale for each role</p>';
+    roles.forEach((role, i) => {
+      const id = "role_scale_" + i;
+      const current = roleScaleStore[role] || "";
+      roleScaleStore[role] = current;
+      html +=
+        '<div class="role-scale-row">' +
+        '<label for="' + id + '">' + esc(role) + "</label>" +
+        '<select id="' + id + '" data-role-key="' + esc(role) + '" data-role-scale required>' +
+        '<option value="">Select scale</option>' +
+        SCALE_OPTIONS.map(
+          (scale) =>
+            '<option value="' + esc(scale) + '"' + (scale === current ? " selected" : "") + ">" + esc(scale) + "</option>"
+        ).join("") +
+        "</select></div>";
+    });
+    container.innerHTML = html;
+    container.querySelectorAll("[data-role-scale]").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        roleScaleStore[sel.dataset.roleKey] = sel.value;
+        updatePreview();
+      });
+    });
+  }
+
+  function syncScaleFromRoles() {
+    renderRoleScaleInputs();
+  }
+
+  function getRoleScales() {
+    syncRoleScaleStoreFromInputs();
+    const out = {};
+    getSelectedRoles().forEach((role) => {
+      if (roleScaleStore[role]) out[role] = roleScaleStore[role];
+    });
+    return out;
+  }
+
+  function formatRoleScaleLabel() {
+    const roles = getSelectedRoles();
+    const scales = getRoleScales();
+    return roles
+      .map((role) => (scales[role] ? role + " (" + scales[role] + ")" : role))
+      .join("; ");
+  }
+
+  function allRoleScalesSelected() {
+    const roles = getSelectedRoles();
+    if (!roles.length) return false;
+    const scales = getRoleScales();
+    return roles.every((role) => !!scales[role]);
   }
 
   function buildRateSummary() {
     const roles = getSelectedRoles();
-    const scale = $("scale").value;
-    if (!roles.length || !scale) return null;
+    const scales = getRoleScales();
+    if (!roles.length || !allRoleScalesSelected()) return null;
     const parts = roles
       .map((role) => {
-        const rate = C.getDeliveryRate(role, scale);
-        return rate != null ? C.GBP + rate + "/h - " + role : null;
+        const rate = C.getDeliveryRate(role, scales[role]);
+        return rate != null ? C.GBP + rate + "/h - " + role + " (" + scales[role] + ")" : null;
       })
       .filter(Boolean);
     if (!parts.length) return null;
@@ -173,7 +242,8 @@
       weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
       roles: getSelectedRoles(),
       role: formatRoleLabel(getSelectedRoles()),
-      scale: contractKind === "fixed_term" ? "" : $("scale").value,
+      roleScales: getRoleScales(),
+      scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
       places: getPlaces(),
       normalHours: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -196,7 +266,8 @@
       weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
       roles: getSelectedRoles(),
       role: formatRoleLabel(getSelectedRoles()),
-      scale: contractKind === "fixed_term" ? "" : $("scale").value,
+      roleScales: getRoleScales(),
+      scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
       placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
       normalHoursOfWork: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -229,7 +300,7 @@
         $("rateDisplay").textContent = rateMsg;
         $("reviewSummary").textContent = rateMsg;
       } else {
-        $("rateDisplay").textContent = "Select at least one role and scale to view hourly rate.";
+        $("rateDisplay").textContent = "Select at least one role and a scale for each role.";
         $("reviewSummary").textContent = "";
       }
     }
@@ -263,7 +334,8 @@
         show("fgAnnualSalary", $("annualSalary") && !!$("annualSalary").value && Number($("annualSalary").value) > 0);
         show("fgWeeklyHours", $("weeklyHours") && !!$("weeklyHours").value && Number($("weeklyHours").value) > 0);
       } else {
-        show("fgScale", !!$("scale").value);
+        $("fgScale").classList.toggle("invalid", !allRoleScalesSelected());
+        if (!allRoleScalesSelected()) valid = false;
       }
       const places = getPlaces();
       $("fgPlace").classList.toggle("invalid", places.length === 0);
@@ -305,7 +377,7 @@
         (contractKind === "fixed_term" ? "Fixed term" : "Zero hours") +
         " — " +
         formatRoleLabel(getSelectedRoles()) +
-        (contractKind === "fixed_term" ? "" : ", " + $("scale").value);
+        (contractKind === "fixed_term" ? "" : " — " + formatRoleScaleLabel());
       $("sendContractBtn").disabled = !canSendContract();
     }
   }
@@ -368,8 +440,9 @@
         employeeName: $("employeeName").value.trim(),
         employeeEmail: $("employeeEmail").value.trim(),
         roles: getSelectedRoles(),
-      role: formatRoleLabel(getSelectedRoles()),
-        scale: $("scale").value,
+        role: formatRoleLabel(getSelectedRoles()),
+        roleScales: getRoleScales(),
+        scale: formatRoleScaleLabel(),
         generatedTimestamp: C.formatDateTime(),
         signedStatus: "Awaiting employee",
         signingUrl: result.portalSignUrl
@@ -465,7 +538,6 @@
         updatePreview();
       });
     });
-    $("scale").addEventListener("change", updatePreview);
     ["employeeName", "employeeAddress", "employeeEmail", "contractDate", "commencementDate", "directorName", "termEndDate", "annualSalary", "weeklyHours"].forEach(
       (id) => {
         const el = $(id);
@@ -517,6 +589,7 @@
     directorPadReady = false;
     directorPadApi = null;
     Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
+    Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
     const form = $("contractForm");
     if (form) form.reset();
     selectContractType("zero_hours");

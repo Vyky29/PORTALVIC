@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  const CONTRACT_VERSION = '1.2';
+  const CONTRACT_VERSION = '1.3';
   const ADMIN_RATE = '13';
   const GBP = '\u00A3';
   const EM = '\u2014';
@@ -19,6 +19,7 @@
     'Fitness Instructor': { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
     'Swimming Instructor': { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
   };
+  const SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
   const PARTY_BLOCKS = ['EMPLOYEE DETAILS:', 'EMPLOYER DETAILS:'];
   const SIGNATURE_BLOCKS = ['EMPLOYEE SIGNATURE', 'DIRECTOR SIGNATURE'];
   const SECTION_HEADERS = new Set([
@@ -140,7 +141,7 @@
     'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
     'Job Title: {{JOB_TITLE}}',
     'Start Date: {{COMMENCEMENT_DATE}} (zero-hours; no fixed end date)',
-    'Pay: Hourly rates as set out in Employee Remuneration (by role and scale).',
+    'Pay: Hourly rates as set out in Employee Remuneration (scale selected per role).',
     'Hours: Variable according to business need; no minimum guaranteed hours.',
     'Place of Work: {{PLACE_OF_WORK}}',
     'Holiday: Pro-rated statutory entitlement (see Holiday Entitlement).',
@@ -373,11 +374,48 @@
     return roles.join(' & ');
   }
 
-  function buildDeliveryRemuneration(roles, scale) {
+  function normalizeRoleScales(o, roles) {
+    const src = o || {};
+    const roleList = roles || normalizeRoles(src);
+    const out = {};
+    if (src.roleScales && typeof src.roleScales === 'object' && !Array.isArray(src.roleScales)) {
+      roleList.forEach((role) => {
+        const scale = src.roleScales[role];
+        if (scale) out[role] = String(scale);
+      });
+      return out;
+    }
+    if (Array.isArray(src.roleScales)) {
+      src.roleScales.forEach((entry) => {
+        if (entry && entry.role && entry.scale) out[String(entry.role)] = String(entry.scale);
+      });
+      return out;
+    }
+    if (src.scale) {
+      roleList.forEach((role) => { out[role] = String(src.scale); });
+    }
+    return out;
+  }
+
+  function formatRoleScaleSummary(roleScales, roles) {
+    return (roles || [])
+      .map((role) => {
+        const scale = roleScales && roleScales[role];
+        return scale ? role + ' (' + scale + ')' : role;
+      })
+      .filter(Boolean)
+      .join('; ');
+  }
+
+  function buildDeliveryRemuneration(roles, scales) {
     const lines = [];
+    const scaleMap = typeof scales === 'string'
+      ? Object.fromEntries((roles || []).map((role) => [role, scales]))
+      : (scales || {});
     (roles || []).forEach((role) => {
+      const scale = scaleMap[role];
       const rate = getDeliveryRate(role, scale);
-      if (rate != null) {
+      if (rate != null && scale) {
         lines.push(GBP + rate + '/h Delivery Service (' + scale + ' ' + EM + ' ' + role + ')');
       }
     });
@@ -408,6 +446,8 @@
     const o = opts || {};
     const kind = normalizeContractKind(o.contractKind);
     const roles = normalizeRoles(o);
+    const roleScales = normalizeRoleScales(o, roles);
+    const roleScaleSummary = formatRoleScaleSummary(roleScales, roles);
     const jobTitle = formatJobTitles(roles) || (o.role ? String(o.role).trim() : '') || EM;
     const today = new Date().toISOString().slice(0, 10);
     const directorSig = o.directorSignatureDataUrl ? '[Signed electronically]' : (o.directorName || EM);
@@ -449,12 +489,14 @@
       });
     }
 
-    const firstRate = roles.length ? getDeliveryRate(roles[0], o.scale) : null;
+    const firstRole = roles.length ? roles[0] : '';
+    const firstScale = firstRole ? roleScales[firstRole] : '';
+    const firstRate = firstRole ? getDeliveryRate(firstRole, firstScale) : null;
     return Object.assign(shared, {
       CONTRACT_TYPE: 'Zero Hours Contract ' + EM + ' hours worked will vary according to business requirements and mutual agreement.',
-      ROLE_SCALE: o.scale || EM,
+      ROLE_SCALE: roleScaleSummary || o.scale || EM,
       DELIVERY_RATE: firstRate != null ? String(firstRate) : EM,
-      DELIVERY_REMUNERATION: buildDeliveryRemuneration(roles, o.scale),
+      DELIVERY_REMUNERATION: buildDeliveryRemuneration(roles, roleScales),
       ADMIN_RATE,
       TERM_END_DATE: EM,
       ANNUAL_SALARY: EM,
@@ -632,10 +674,10 @@
   }
 
   global.ContractCore = {
-    CONTRACT_VERSION, ADMIN_RATE, GBP, EM, RATE_TABLE, LOGO_PATH, LOGO_DISPLAY,
+    CONTRACT_VERSION, ADMIN_RATE, GBP, EM, RATE_TABLE, SCALE_OPTIONS, LOGO_PATH, LOGO_DISPLAY,
     COMPANY_LEGAL_NAME, COMPANY_NUMBER, COMPANY_REGISTERED_ADDRESS, COMPANY_FOOTER_ADDRESS, HR_CONTACT_EMAIL,
     formatUKDate, formatShortUKDate, formatDateTime, formatSalary, generateReference, getDeliveryRate,
-    normalizeRoles, formatJobTitles, buildDeliveryRemuneration,
+    normalizeRoles, normalizeRoleScales, formatRoleScaleSummary, formatJobTitles, buildDeliveryRemuneration,
     fillTemplate, buildTemplateData, renderContractHtml, buildPdfHtml, pdfFilename,
     loadLogo, setupSignaturePad, getSigningTokenFromUrl, getOrigin,
     get logoDataUrl() { return logoDataUrl; },
