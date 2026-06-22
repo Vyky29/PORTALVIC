@@ -92,13 +92,25 @@
   .legend { display:flex; flex-wrap:wrap; gap:.25rem .4rem; margin-top:.4rem; font-size:.68rem; }
   .legend i { display:inline-block; width:.85rem; height:.85rem; border:1px solid #000; vertical-align:middle; margin-right:.15rem; }
   .empty { padding:2rem; text-align:center; color:#555; }
-  @media print { .top { position:static; } button { display:none; } }
+  .madre-tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin:.5rem 0 0; }
+  .madre-tabs button { font-size:.78rem; padding:.28rem .55rem; }
+  .madre-tabs button.active { background:#1565c0; color:#fff; border-color:#0a3d7a; }
+  #staffShiftsPanel { display:none; padding:.5rem 0; }
+  #staffShiftsPanel table { width:100%; border-collapse:collapse; font-size:.72rem; }
+  #staffShiftsPanel th, #staffShiftsPanel td { border:1px solid var(--line); padding:.25rem .35rem; }
+  #staffShiftsPanel th { background:#eee; position:sticky; top:0; }
+  #staffShiftsPanel input { width:100%; border:1px solid #999; font:inherit; padding:.15rem; min-width:0; }
+  .staff-scroll { max-height:70vh; overflow:auto; border:2px solid var(--line); background:#fff; }
 </style>
 </head>
 <body>
 <header class="top">
-  <h1>Roster MADRE — todos los trabajadores · grid editable</h1>
-  <p class="sub">Como la hoja del club: día → columnas por instructor + venue + servicio. Edita hora, participante y nota (Big Pool, Lane (DE), Hub Room…). <strong>Cada fila = 30 min</strong>. Tras exportar MADRE: <code>node portal/build_portal_summer2_roster_feedback.js</code></p>
+  <h1>Roster MADRE — participantes + turnos staff</h1>
+  <p class="sub">Un solo documento (<code>roster_term_master.json</code>): pestaña <strong>Participantes</strong> (slots por instructor) y <strong>Turnos staff</strong> (pool / day centre). Overrides admin se encolan para plegar en MADRE. Tras exportar: <code>sync_roster_madre_to_portal.py</code></p>
+  <div class="madre-tabs" role="tablist">
+    <button type="button" id="tabParticipants" class="active" aria-selected="true">Participantes</button>
+    <button type="button" id="tabStaffShifts" aria-selected="false">Turnos staff</button>
+  </div>
   <div class="stats" id="statsLine">—</div>
   <div class="legend">
     <span><i style="background:#1565c0"></i>Aquatic</span>
@@ -133,6 +145,20 @@
 </header>
 <datalist id="dl-pools"></datalist>
 <main id="app"><div class="empty">Cargando seed…</div></main>
+<section id="staffShiftsPanel" aria-label="Turnos staff">
+  <div class="toolbar" style="margin-bottom:.4rem">
+    <input id="filterStaffShifts" type="search" placeholder="Filtrar fecha, staff, venue…" style="min-width:160px;padding:.3rem .45rem"/>
+    <button type="button" id="btnAddStaffShift" class="ghost">+ Fila turno</button>
+  </div>
+  <div class="staff-scroll">
+    <table id="staffShiftsTable">
+      <thead><tr>
+        <th>Fecha</th><th>Día</th><th>Staff</th><th>Venue</th><th>Horario</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
 
 <script src="portal/roster_term_master_seed.boot.js"></script>
 <script>
@@ -188,6 +214,9 @@
         (st.days||[]).forEach(function(day){ (day.slots||[]).forEach(normalizeSlot); });
       });
     });
+    if(!d.staffShifts) d.staffShifts = { termFrom:'2026-06-01', termTo:'2026-07-17', rows:[] };
+    if(!d.staffShifts.rows) d.staffShifts.rows = [];
+    if(d.meta) d.meta.schemaVersion = d.meta.schemaVersion || 2;
     return d;
   }
   function timeKey(t){
@@ -484,7 +513,67 @@
   weekSelect.onchange = function(){ weekIdx=+weekSelect.value||0; render(); };
   viewMode.onchange = function(){ fillWeekSelect(); render(); };
   staffPick.onchange = render;
-  filterEl.oninput = render;
+  filterEl.oninput = function(){ render(); if(tabStaffShifts.classList.contains('active')) renderStaffShifts(); };
+
+  var tabParticipants = document.getElementById('tabParticipants');
+  var tabStaffShifts = document.getElementById('tabStaffShifts');
+  var staffPanel = document.getElementById('staffShiftsPanel');
+  var staffTbody = document.querySelector('#staffShiftsTable tbody');
+  var filterStaffShifts = document.getElementById('filterStaffShifts');
+
+  function showMadreTab(which){
+    var part = which === 'participants';
+    tabParticipants.classList.toggle('active', part);
+    tabStaffShifts.classList.toggle('active', !part);
+    tabParticipants.setAttribute('aria-selected', part ? 'true' : 'false');
+    tabStaffShifts.setAttribute('aria-selected', part ? 'false' : 'true');
+    app.style.display = part ? '' : 'none';
+    staffPanel.style.display = part ? 'none' : 'block';
+    if(!part) renderStaffShifts();
+  }
+  tabParticipants.onclick = function(){ showMadreTab('participants'); };
+  tabStaffShifts.onclick = function(){ showMadreTab('staff'); };
+
+  function renderStaffShifts(){
+    if(!state || !staffTbody) return;
+    var q = String(filterStaffShifts && filterStaffShifts.value || '').trim().toLowerCase();
+    var rows = (state.staffShifts && state.staffShifts.rows) ? state.staffShifts.rows : [];
+    staffTbody.innerHTML = '';
+    rows.forEach(function(r, idx){
+      var blob = [r.session_date,r.day,r.staff_name,r.venue,r.time_range].join(' ').toLowerCase();
+      if(q && blob.indexOf(q)<0) return;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><input data-k="session_date" data-i="'+idx+'" value="'+esc(r.session_date||'')+'"/></td>'+
+        '<td><input data-k="day" data-i="'+idx+'" value="'+esc(r.day||'')+'"/></td>'+
+        '<td><input data-k="staff_name" data-i="'+idx+'" value="'+esc(r.staff_name||'')+'"/></td>'+
+        '<td><input data-k="venue" data-i="'+idx+'" value="'+esc(r.venue||'')+'"/></td>'+
+        '<td><input data-k="time_range" data-i="'+idx+'" value="'+esc(r.time_range||'')+'"/></td>'+
+        '<td><button type="button" class="danger" data-del="'+idx+'">×</button></td>';
+      staffTbody.appendChild(tr);
+    });
+    staffTbody.querySelectorAll('input[data-k]').forEach(function(inp){
+      inp.onchange = function(){
+        var i = +inp.getAttribute('data-i'); var k = inp.getAttribute('data-k');
+        if(!state.staffShifts.rows[i]) return;
+        state.staffShifts.rows[i][k] = inp.value;
+        markDirty();
+      };
+    });
+    staffTbody.querySelectorAll('button[data-del]').forEach(function(btn){
+      btn.onclick = function(){
+        var i = +btn.getAttribute('data-del');
+        state.staffShifts.rows.splice(i,1);
+        markDirty(); renderStaffShifts();
+      };
+    });
+  }
+  if(filterStaffShifts) filterStaffShifts.oninput = renderStaffShifts;
+  document.getElementById('btnAddStaffShift').onclick = function(){
+    if(!state) return;
+    state.staffShifts.rows.push({ session_date:'2026-06-01', day:'Monday', staff_name:'', venue:'SwimFarm', time_range:'4-6', raw_assignment:'' });
+    markDirty(); renderStaffShifts();
+  };
 
   loadSeed();
 })();

@@ -8445,6 +8445,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       closeSchedDrawer();
       sched.lastMsg = 'Override saved.';
+      if(global.PortalMadreFold && typeof global.PortalMadreFold.queueScheduleOverrideChange === 'function'){
+        global.PortalMadreFold.queueScheduleOverrideChange(client, {
+          row: row,
+          before: beforeSnap,
+          override_id: ins0.id,
+          session_date: slot.sessionDate,
+          source_module: 'schedule_overrides'
+        });
+      }
       await refreshSchedulingModule();
     }
     /** Map roster spreadsheet ids to admin drawer keys (MOCK.clientsById / MOCK.staff). */

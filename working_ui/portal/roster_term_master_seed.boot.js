@@ -115,7 +115,10 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
     },
     "lastEditedAt": "2026-06-14T00:59:25.169Z",
     "exportedAt": "2026-06-14T01:01:59.989Z",
-    "approved": false
+    "approved": false,
+    "schemaVersion": 2,
+    "staffShiftsSource": "staff_timetable_machine.json",
+    "staffShiftsNote": "Turnos pool/day centre por fecha. Editar en pesta\u00f1a Staff del editor MADRE o plegar overrides desde portal_madre_fold_queue."
   },
   "weeks": [
     {
@@ -15032,5 +15035,3881 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         }
       ]
     }
-  ]
+  ],
+  "staffShifts": {
+    "termFrom": "2026-06-01",
+    "termTo": "2026-07-17",
+    "rows": [
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-01",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-02",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-06-03",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Dan 4-6.30"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-04",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-05",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-06",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "alex",
+        "staff_name": "Alex",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Alex 10-3"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Bismark 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "carlos",
+        "staff_name": "Carlos",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Carlos 10-3"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Dan 9-3"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Giuseppe 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javier 9-3"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "John 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-07",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-08",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-09",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-06-10",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Aurora 4-6.30"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-11",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-12",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-13",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "alex",
+        "staff_name": "Alex",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Alex 10-3"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Berta 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Bismark 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "carlos",
+        "staff_name": "Carlos",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Carlos 10-3"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Dan 9-3"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Godsway 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javier 9-3"
+      },
+      {
+        "session_date": "2026-06-14",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-15",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-16",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-06-17",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Aurora 4-6.30"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-18",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-19",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-20",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Bismark 10-3"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Dan 9-3"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Giuseppe 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Godsway 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "javi",
+        "staff_name": "Javi",
+        "venue": "Westway",
+        "time_range": "10-2",
+        "raw_assignment": "Javi 10-2"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javier 9-3"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "John 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-21",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-22",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-23",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Raul 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-06-24",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Dan 4-6.30"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-25",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-26",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-27",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "alex",
+        "staff_name": "Alex",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Alex 10-3"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Bismark 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "carlos",
+        "staff_name": "Carlos",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Carlos 10-3"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Giuseppe 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "javi",
+        "staff_name": "Javi",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javi 9-3"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "John 9.15-2.15"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-06-28",
+        "day": "Sunday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Youssef 9-3"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-29",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-06-30",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-07-01",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Aurora 4-6.30"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-07-02",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-03",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-04",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "alex",
+        "staff_name": "Alex",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Alex 10-3"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Aurora 9-3"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Bismark 10-3"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Giuseppe 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Godsway 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javier 9-3"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "John 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-05",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-06",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-07",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-07-08",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Aurora 4-6.30"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-07-09",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-10",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-11",
+        "day": "Saturday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "10.30-12.30",
+        "raw_assignment": "Youssef 10.30-12.30"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "alex",
+        "staff_name": "Alex",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Alex 10-3"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Aurora 9-3"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Berta 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Bismark 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "carlos",
+        "staff_name": "Carlos",
+        "venue": "Westway",
+        "time_range": "10-3",
+        "raw_assignment": "Carlos 10-3"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "9.15-2.15",
+        "raw_assignment": "Giuseppe 9.15-2.15"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Javier 9-3"
+      },
+      {
+        "session_date": "2026-07-12",
+        "day": "Sunday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "9-3",
+        "raw_assignment": "Roberto 9-3"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Angel 4-6.30"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "sandra",
+        "staff_name": "Sandra",
+        "venue": "Westway",
+        "time_range": "4-6",
+        "raw_assignment": "Sandra 4-6"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-13",
+        "day": "Monday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "angel",
+        "staff_name": "Angel",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Angel 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Aurora 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-14",
+        "day": "Tuesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Youssef 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "berta",
+        "staff_name": "Berta",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Berta 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "dan",
+        "staff_name": "Dan",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Dan 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "Acton",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "godsway",
+        "staff_name": "Godsway",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Godsway 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Northolt",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Roberto 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Youssef 4-6.30"
+      },
+      {
+        "session_date": "2026-07-15",
+        "day": "Wednesday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "aurora",
+        "staff_name": "Aurora",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Aurora 4-6.30"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "javier",
+        "staff_name": "Javier",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Javier 4-6.30"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Raul 12.30-3"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "12.30-3",
+        "raw_assignment": "Roberto 12.30-3"
+      },
+      {
+        "session_date": "2026-07-16",
+        "day": "Thursday",
+        "staff_key": "simon",
+        "staff_name": "Simon",
+        "venue": "Acton",
+        "time_range": "4.30-6.30",
+        "raw_assignment": "Simon 4.30-6.30"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "bismark",
+        "staff_name": "Bismark",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Bismark 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "giuseppe",
+        "staff_name": "Giuseppe",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "Giuseppe 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "john",
+        "staff_name": "John",
+        "venue": "SwimFarm",
+        "time_range": "4.15-6.15",
+        "raw_assignment": "John 4.15-6.15"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "luliya",
+        "staff_name": "Luliya",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Luliya 11-4"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Michelle 11-4"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Raul 11-4"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "Acton",
+        "time_range": "4-6.30",
+        "raw_assignment": "Roberto 4-6.30"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Roberto 11-3"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "victor",
+        "staff_name": "Victor",
+        "venue": "SwimFarm",
+        "time_range": "11-4",
+        "raw_assignment": "Victor 11-4"
+      },
+      {
+        "session_date": "2026-07-17",
+        "day": "Friday",
+        "staff_key": "youssef",
+        "staff_name": "Youssef",
+        "venue": "SwimFarm",
+        "time_range": "11-3",
+        "raw_assignment": "Youssef 11-3"
+      }
+    ]
+  }
 };

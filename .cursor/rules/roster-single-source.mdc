@@ -1,10 +1,13 @@
 # Roster: single source of truth
 
+**See also:** `madre-single-source.mdc` — one MADRE document (participants + staff shifts).
+
 ## Runtime (admin + staff dashboards)
 
-1. **Base:** `working_ui/portal/staff_dashboard_spreadsheet_bundle.js` only (shipped path). Do not duplicate edits into `database/`, `portal-shared-js/`, or root `working_ui/` copies — regenerate or sync via build scripts if those exist.
+1. **Base (MADRE):** `roster_term_master.json` → `sync_roster_madre_to_portal.py` → `working_ui/portal/staff_dashboard_spreadsheet_bundle.js`
 2. **Overlay:** Supabase `portal_roster_rows` merged by `portal-roster-rows-merge.js`.
-3. **Resolver:** `portal_roster_canonical.js` → `staff_dashboard_portal_roster_source.js` → `STAFF_DASHBOARD_SOURCE.rows`.
+3. **Resolver:** `portal_madre_canonical.js` → `portal_roster_canonical.js` → `staff_dashboard_portal_roster_source.js`
+4. **Fold queue:** Admin saves → `portal_madre_fold_queue` → `fold_overrides_into_madre.py` updates MADRE
 
 ## Day-of exceptions (not a second roster)
 

@@ -1,0 +1,1 @@
+-- Apply on Portal Supabase: portal_madre_fold_queue (see supabase/migrations/20260622140000_portal_madre_fold_queue.sql)

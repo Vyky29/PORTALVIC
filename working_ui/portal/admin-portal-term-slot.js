@@ -1292,12 +1292,15 @@
           return rowRef;
         });
       })
-      .then(function () {
+      .then(function (rowRef) {
         if (global.PortalRosterRowsMerge && typeof global.PortalRosterRowsMerge.loadAndCache === "function") {
-          return global.PortalRosterRowsMerge.loadAndCache(client);
+          return global.PortalRosterRowsMerge.loadAndCache(client).then(function () {
+            return rowRef;
+          });
         }
+        return rowRef;
       })
-      .then(function () {
+      .then(function (rowRef) {
         if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
           global.portalRefreshStaffDashboardSourceFromPortal();
         }
@@ -1305,6 +1308,17 @@
           global.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
         }
         deps.toast(toastMsg || "Term slot saved.");
+        if (global.PortalMadreFold && typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
+          global.PortalMadreFold.queueParticipantSlotChange(client, {
+            after: afterSnap,
+            before: before,
+            session_date: p.anchorDate,
+            scope: p.scope,
+            term_action: p.action,
+            roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
+            source_module: "term_roster_edit",
+          });
+        }
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {
           var logAction = eventAction === "cancel" ? "cancel" : before ? "update" : "create";
           global.PortalChangeLog.record({

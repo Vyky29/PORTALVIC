@@ -31,9 +31,9 @@ GRID MADRE (recomendado — como la hoja del club)
   Tras exportar MADRE, copia el JSON a working_ui/portal/roster_term_master.json
   y en terminal:
 
-    python database/roster_review/sync_roster_madre_to_portal.py
+    python database/roster_review/apply_madre_after_manual_edit.py
 
-  Eso sincroniza seed, bundle, merges de feedback y roster_master_dashboard_rows.js.
+  (Incluye sync bundle, seed, boot y staff-shifts.csv desde MADRE.)
   Luego commit + push → Vercel.
 
   Si cambias roster_term_master_seed.json, regenera el boot (para file://):
