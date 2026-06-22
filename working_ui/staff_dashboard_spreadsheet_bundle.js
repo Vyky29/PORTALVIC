@@ -18,13 +18,7 @@
       }
     },
     "2026-06-21": {
-      "leadOnDuty": "John",
-      "replaceInstructor": {
-        "JOHN, BERTA": "JOHN",
-        "ALEX": "BISMARK",
-        "CARLOS": "JAVI",
-        "BISMARK": "JAVI"
-      }
+      "leadOnDuty": "John"
     },
     "2026-06-28": {
       "leadOnDuty": "John",
