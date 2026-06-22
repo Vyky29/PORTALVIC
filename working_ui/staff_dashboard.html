@@ -1664,15 +1664,6 @@
                 return portalReviewFlagsForResolvedSession(iso, sid, s);
               }
             }
-            let ownedPending = false;
-            src.rows.forEach(function(st){
-              if(String(st.date || '').trim().substring(0, 10) !== iso) return;
-              if(!portalStaffOwnsFeedbackStatusRow(sid, st)) return;
-              if(bridge.statusRowMatchesRosterSession && !bridge.statusRowMatchesRosterSession(st, s, notes)) return;
-              if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, st, sid)) return;
-              if(!portalStatusRowIsDoneForCalendar(st)) ownedPending = true;
-            });
-            if(ownedPending) return { feedbackDone: false, incident: false, absent: false, cancelled: false };
           }
           const floorIso = portalMachineRosterFeedbackFloorIso();
           if(iso >= floorIso){
@@ -1688,7 +1679,7 @@
               });
             }
             if(!staffStatusOnDay) return null;
-            return { feedbackDone: false, incident: false, absent: false, cancelled: false };
+            return null;
           }
           return null;
         }
@@ -1837,7 +1828,29 @@
       else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
     }
     function portalStaffFeedbackReviewUiReady(iso){
+      try{
+        const key = String(iso || '').trim().slice(0, 10);
+        const today = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+        if(key && today && /^\d{4}-\d{2}-\d{2}$/.test(key) && key < today){
+          return true;
+        }
+      }catch(_){}
       return portalStaffFeedbackPipelineReady();
+    }
+    function portalApplyGrandfatheredSessionReviewComplete(rec, iso, staffId){
+      const out = rec && typeof rec === 'object'
+        ? rec
+        : { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      if(out.feedbackDone || out.absent || out.cancelled) return out;
+      const key = String(iso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!key || !sid) return out;
+      if(typeof portalTermFeedbackAssumeComplete === 'function'
+        && portalTermFeedbackAssumeComplete(key, sid)
+        && !portalIsServerTruthFeedbackDay(key)){
+        out.feedbackDone = true;
+      }
+      return out;
     }
     /** All plausible session review keys for one Today row (aliases for server lookup). */
     function portalCollectItemSessionReviewKeyAliases(item, iso, dayWord){
@@ -3218,24 +3231,35 @@
             return portalServerTruthReviewRecordForItem(item, iso);
           }
           const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
-          return {
+          return portalApplyGrandfatheredSessionReviewComplete({
             feedbackDone: serverSynced ? !!mem.feedbackDone : false,
             incident: !!mem.incident,
             absent: !!mem.absent,
             cancelled: !!mem.cancelled
-          };
+          }, iso, staffId);
         }
-        return mem;
+        return portalApplyGrandfatheredSessionReviewComplete(mem, iso, staffId);
       }
       const ghost = portalStaffInGhostView();
-      return {
-        feedbackDone: bundle.feedbackDone === false
-          ? !!mem.feedbackDone
-          : !!(bundle.feedbackDone || (!ghost && mem.feedbackDone)),
+      let feedbackDone = bundle.feedbackDone === false
+        ? !!mem.feedbackDone
+        : !!(bundle.feedbackDone || (!ghost && mem.feedbackDone));
+      if(!feedbackDone && baseS){
+        try{
+          const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+          const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+          if(bridge && typeof bridge.sessionComplete === 'function'
+            && bridge.sessionComplete(iso, staffId, baseS, notes, mem)){
+            feedbackDone = true;
+          }
+        }catch(_){}
+      }
+      return portalApplyGrandfatheredSessionReviewComplete({
+        feedbackDone: feedbackDone,
         incident: !!(bundle.incident || mem.incident),
         absent: !!(bundle.absent || mem.absent),
         cancelled: !!(bundle.cancelled || mem.cancelled)
-      };
+      }, iso, staffId);
     }
     function portalSessionDateIsoFromItemSessionKey(item){
       if(!item || !item.sessionKey) return null;
@@ -5192,6 +5216,8 @@
       if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
       if(r.incident) return 'session-card--review-incident';
+      const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
+      if(ended && !r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';
       if(isSessionStartedForItem(item)){
         if(!r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';
         return '';
