@@ -753,31 +753,46 @@
       return null;
     }
 
+    var VISUAL_VIC_WINDOW_NAME = "portalVisualVicPlanner";
+    var VISUAL_VIC_WINDOW_FEATURES = "noopener,noreferrer";
+
+    function openVisualVicPlannerUrl(url) {
+      var u = String(url || "").trim();
+      if (!u) return false;
+      try {
+        var w = window.open(u, VISUAL_VIC_WINDOW_NAME, VISUAL_VIC_WINDOW_FEATURES);
+        if (w) {
+          try {
+            w.focus();
+          } catch (_) {}
+        }
+        return !!w;
+      } catch (_) {
+        return false;
+      }
+    }
+
     window.portalOpenRoutinesPlanner = async function portalOpenRoutinesPlanner() {
       var handoff = handoffUrl;
       var login = loginUrl;
       if (!handoff || !login) return false;
       var authClient = resolveRoutinesAuthClient();
       if (!authClient) {
-        window.open(login, "_blank", "noopener,noreferrer");
-        return true;
+        return openVisualVicPlannerUrl(login);
       }
       try {
         var result = await authClient.auth.getSession();
         var session = result && result.data && result.data.session;
         if (!session || !session.access_token || !session.refresh_token) {
-          window.open(login, "_blank", "noopener,noreferrer");
-          return true;
+          return openVisualVicPlannerUrl(login);
         }
         var hash = new URLSearchParams({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         }).toString();
-        window.open(handoff + "#" + hash, "_blank", "noopener,noreferrer");
-        return true;
+        return openVisualVicPlannerUrl(handoff + "#" + hash);
       } catch (_) {
-        window.open(login, "_blank", "noopener,noreferrer");
-        return true;
+        return openVisualVicPlannerUrl(login);
       }
     };
 

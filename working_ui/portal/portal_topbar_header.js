@@ -398,8 +398,8 @@
     var u = String(url || "").trim();
     if (!u) return false;
     try {
-      global.location.href = u;
-      return true;
+      var w = global.open(u, "_blank", "noopener,noreferrer");
+      return !!w;
     } catch (_) {
       return false;
     }

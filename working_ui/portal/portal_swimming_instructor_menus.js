@@ -189,7 +189,7 @@
       leadReview: false,
       venue: false,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     sevitha: {
