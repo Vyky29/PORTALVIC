@@ -1276,6 +1276,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markResolved(submittedFb);
   markResolved(absentAll);
   markResolved(cancelledKeys);
+  markResolved(packs.ownFeedbackPortalKeys || []);
   for (const fk of submittedFb) {
     const exact = String(fk || "").trim();
     if (exact && rosterKeys.includes(exact)) resolved.add(exact);
