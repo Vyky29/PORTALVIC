@@ -243,7 +243,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const rawRoster = opts && Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
   const rosterSessionKeys = portalExpandRosterKeysForSharedFeedbackLookup(
     [...new Set(rawRoster.map((k) => String(k || "").trim()).filter(Boolean))]
-  ).slice(0, 400);
+  ).slice(0, 800);
   const catchUpDates = (
     opts && Array.isArray(opts.catchUpSessionDates) ? opts.catchUpSessionDates : []
   )
@@ -1029,6 +1029,16 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
       changed = true;
     }
   }
+  for (const k of packs.ownFeedbackPortalKeys || []) {
+    const pk = String(k || "").trim();
+    if (!pk) continue;
+    const prev = memory[pk] || base();
+    if (prev.absent) continue;
+    if (!prev.feedbackDone) {
+      memory[pk] = { ...prev, feedbackDone: true };
+      changed = true;
+    }
+  }
   for (const k of packs.incidentKeys || []) {
     const prev = memory[k] || base();
     if (!prev.incident) {
@@ -1205,6 +1215,15 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
   fanOut(packs?.ownFeedbackPortalKeys || [], feedback);
+  function addExactKeys(keys, target) {
+    for (const fk of keys || []) {
+      const exact = String(fk || "").trim();
+      if (exact) target.add(exact);
+    }
+  }
+  addExactKeys(submittedFb, feedback);
+  addExactKeys(packs?.ownFeedbackPortalKeys || [], feedback);
+  addExactKeys(absentAll, absent);
   for (const fk of absentAll) {
     const exact = String(fk || "").trim();
     if (exact && (rosterKeys || []).includes(exact)) absent.add(exact);
@@ -1277,6 +1296,16 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markResolved(absentAll);
   markResolved(cancelledKeys);
   markResolved(packs.ownFeedbackPortalKeys || []);
+  function markPortalKeysExactResolved(keys) {
+    for (const fk of keys || []) {
+      const exact = String(fk || "").trim();
+      if (exact) resolved.add(exact);
+    }
+  }
+  markPortalKeysExactResolved(submittedFb);
+  markPortalKeysExactResolved(packs.ownFeedbackPortalKeys || []);
+  markPortalKeysExactResolved(absentAll);
+  markPortalKeysExactResolved(cancelledKeys);
   for (const fk of submittedFb) {
     const exact = String(fk || "").trim();
     if (exact && rosterKeys.includes(exact)) resolved.add(exact);

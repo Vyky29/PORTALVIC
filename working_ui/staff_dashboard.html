@@ -1166,7 +1166,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260622-feedback-key-sync3';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260622-feedback-key-sync4';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1235,6 +1235,22 @@
       }catch(e){}
     }
     /** Roster review keys for Supabase sync (today list + full term window for this staff). */
+    function portalPrioritizeRosterReviewKeysForSync(keyList){
+      const today = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+      const uniq = [...new Set((keyList || []).map(function(k){
+        return String(k || '').trim();
+      }).filter(Boolean))];
+      uniq.sort(function(a, b){
+        const da = String(a.split('|')[0] || '');
+        const db = String(b.split('|')[0] || '');
+        if(today){
+          if(da === today && db !== today) return -1;
+          if(db === today && da !== today) return 1;
+        }
+        return db.localeCompare(da);
+      });
+      return uniq.slice(0, 800);
+    }
     function portalCollectRosterSessionKeysForReviewSync(){
       const keys = new Set();
       try{
@@ -1247,7 +1263,7 @@
           if(sk) keys.add(sk);
         }
         const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(!staffId || !Array.isArray(sessionsModel)) return [...keys].slice(0, 400);
+        if(!staffId || !Array.isArray(sessionsModel)) return portalPrioritizeRosterReviewKeysForSync([...keys]);
         const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
         const isReal = function(s, iso){
           if(baseReal) return baseReal(s, iso);
@@ -1328,7 +1344,7 @@
           }
         }
       }catch(_){}
-      return [...keys].slice(0, 400);
+      return portalPrioritizeRosterReviewKeysForSync([...keys]);
     }
     function portalSessionIsSundayInstructorCover(s){
       return !!(s && s.__portalSundayInstructorCover);
@@ -1993,6 +2009,35 @@
       return false;
     }
     function portalReviewFeedbackFromServerForAliases(aliases, needsOwnOnly){
+      /** @type {string[]} */
+      const portalKeysToScan = [];
+      const seenPortal = Object.create(null);
+      const pushPortalKey = function(pk){
+        pk = String(pk || '').trim();
+        if(!pk || seenPortal[pk]) return;
+        seenPortal[pk] = true;
+        portalKeysToScan.push(pk);
+      };
+      const ownPortal = dashboardData && dashboardData.portalServerOwnFeedbackPortalKeys;
+      const submittedPortal = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
+      if(ownPortal && ownPortal.size) ownPortal.forEach(pushPortalKey);
+      if(submittedPortal && submittedPortal.size) submittedPortal.forEach(pushPortalKey);
+      const matcher = typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === 'function'
+        ? window.__PORTAL_REVIEW_KEY_MATCHER__
+        : null;
+      for(let p = 0; p < portalKeysToScan.length; p++){
+        const fk = portalKeysToScan[p];
+        for(let i = 0; i < aliases.length; i++){
+          const alias = aliases[i];
+          if(alias && fk === alias) return true;
+          if(matcher){
+            try{
+              if(matcher(fk, alias)) return true;
+            }catch(_m){}
+          }
+          if(portalReviewStoredAbsentMatchesSessionKey(fk, alias)) return true;
+        }
+      }
       const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
       if(srv && srv.feedback){
         for(let i = 0; i < aliases.length; i++){
@@ -2007,34 +2052,6 @@
           }
         }
       }
-      /** @type {string[]} */
-      const portalKeysToScan = [];
-      const seenPortal = Object.create(null);
-      const pushPortalKey = function(pk){
-        pk = String(pk || '').trim();
-        if(!pk || seenPortal[pk]) return;
-        seenPortal[pk] = true;
-        portalKeysToScan.push(pk);
-      };
-      const ownPortal = dashboardData && dashboardData.portalServerOwnFeedbackPortalKeys;
-      const submittedPortal = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
-      if(ownPortal && ownPortal.size) ownPortal.forEach(pushPortalKey);
-      if(!needsOwnOnly && submittedPortal && submittedPortal.size) submittedPortal.forEach(pushPortalKey);
-      const matcher = typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === 'function'
-        ? window.__PORTAL_REVIEW_KEY_MATCHER__
-        : null;
-      for(let p = 0; p < portalKeysToScan.length; p++){
-        const fk = portalKeysToScan[p];
-        for(let i = 0; i < aliases.length; i++){
-          const alias = aliases[i];
-          if(matcher){
-            try{
-              if(matcher(fk, alias)) return true;
-            }catch(_m){}
-          }
-          if(portalReviewStoredAbsentMatchesSessionKey(fk, alias)) return true;
-        }
-      }
       return false;
     }
     function portalReviewFeedbackResolvedForItem(item, iso){
@@ -2046,8 +2063,8 @@
         : [String(item.sessionKey || '').trim()].filter(Boolean);
       const needsOwn = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
         && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
-      if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
       if(portalReviewFeedbackInMemoryForAliases(aliases)) return true;
+      if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
       const direct = getSessionReviewRecord(item);
       return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
     }
@@ -2474,6 +2491,9 @@
         if(typeof portalMarkFeedbackReconciledAfterServerSync === 'function'){
           portalMarkFeedbackReconciledAfterServerSync();
         }
+        if(typeof portalStaffRefreshFeedbackDependentUi === 'function'){
+          portalStaffRefreshFeedbackDependentUi();
+        }
         try{
           if(typeof buildSelectedDayViewFromLauraModel === 'function' && dashboardData){
             dashboardData.today = buildSelectedDayViewFromLauraModel();
@@ -2482,7 +2502,6 @@
         }catch(_rt){}
         if(seeded || merged || reconciled){
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
           if(typeof renderClientsSheetList === 'function'){
             const newBtn = document.getElementById('clientsTabNew');
             const myBtn = document.getElementById('clientsTabMy');
