@@ -1747,8 +1747,16 @@
       return '';
     }
     function portalIsServerTruthFeedbackDay(iso){
-      const floor = portalMachineRosterFeedbackFloorIso();
-      return !!(iso && floor && iso >= floor);
+      const today = portalLondonTodayIso();
+      return !!(iso && today && iso >= today);
+    }
+    /** Feedback chips stay neutral until export bundle + (for today+) Supabase sync — avoids Pending→green flips. */
+    function portalStaffFeedbackReviewUiReady(iso){
+      if(typeof window === 'undefined' || !window.__PORTAL_STAFF_FEEDBACK_DATA_READY__) return false;
+      if(iso && portalIsServerTruthFeedbackDay(iso)){
+        return !!(dashboardData && dashboardData.portalFeedbackServerSynced);
+      }
+      return true;
     }
     /** All plausible session review keys for one Today row (aliases for server lookup). */
     function portalCollectItemSessionReviewKeyAliases(item, iso, dayWord){
@@ -1837,19 +1845,6 @@
       }
       if(absent || cancelled) feedbackDone = false;
       const mem = getSessionReviewRecord(item) || {};
-      /* After Supabase sync, today+ must not re-green from stale localStorage (cross-instructor export keys). */
-      const isCoverSlot = typeof portalTodayItemIsSundayInstructorCover === 'function'
-        && portalTodayItemIsSundayInstructorCover(item);
-      if(!feedbackDone && !absent && !cancelled && baseS && staffIdSrv && !serverSynced && !isCoverSlot){
-        try{
-          const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
-          const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
-          if(bridge && typeof bridge.sessionComplete === 'function'
-            && bridge.sessionComplete(iso, staffIdSrv, baseS, notes, mem)){
-            feedbackDone = true;
-          }
-        }catch(_){}
-      }
       return {
         feedbackDone: feedbackDone,
         incident: !!mem.incident,
@@ -2061,11 +2056,13 @@
       return changed;
     }
     /** Seed static export rows into review map (historical days). Does not mark server sync complete. */
-    function portalMarkFeedbackReconciledFromExports(){
+    function portalMarkFeedbackReconciledFromExports(force){
       try{
+        if(!force && window.__PORTAL_EXPORT_REVIEW_SEEDED__) return;
         if(typeof portalSeedAllReviewDoneFromPortalExports === 'function'){
           portalSeedAllReviewDoneFromPortalExports();
         }
+        window.__PORTAL_EXPORT_REVIEW_SEEDED__ = true;
       }catch(_){}
     }
     function portalMarkFeedbackReconciledAfterServerSync(){
@@ -2080,7 +2077,9 @@
       }catch(_){}
     }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
-    async function portalMergeServerReviewStateForDashboard(){
+    async function portalMergeServerReviewStateForDashboard(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
+      const skipRender = !!opts.skipRender;
       try{
         const box = window.__PORTAL_SUPABASE__;
         const uid = box && box.session && box.session.user && box.session.user.id ? String(box.session.user.id).trim() : '';
@@ -2149,7 +2148,7 @@
           if(typeof buildSelectedDayViewFromLauraModel === 'function' && dashboardData){
             dashboardData.today = buildSelectedDayViewFromLauraModel();
           }
-          if(typeof renderToday === 'function') renderToday();
+          if(!skipRender && typeof renderToday === 'function') renderToday();
         }catch(_rt){}
         if(seeded || merged || reconciled){
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
@@ -5069,6 +5068,10 @@
       if(!item || item.kind !== 'client' || !item.sessionKey) return '';
       if(item.noSessionFeedbackRequired) return '';
       if(item.portalOverrideSuppressReviewOrange) return '';
+      const isoGate = portalSessionDateIsoFromItemSessionKey(item);
+      if(isoGate && typeof portalStaffFeedbackReviewUiReady === 'function' && !portalStaffFeedbackReviewUiReady(isoGate)){
+        return '';
+      }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
       if(r.cancelled) return 'session-card--review-done';
@@ -16645,9 +16648,6 @@
     })();
 
     hydrateSessionReviewMapFromStorage();
-    if(typeof portalMarkFeedbackReconciledFromExports === 'function'){
-      portalMarkFeedbackReconciledFromExports();
-    }
     var _portalDeferRosterUntilAuth = !STAFF_DASHBOARD_ID && !portalStaffDashIsEditorPreviewMode();
     if(_portalDeferRosterUntilAuth && typeof portalTryOptimisticRosterFromPersistedAuth === 'function'){
       if(portalTryOptimisticRosterFromPersistedAuth()) _portalDeferRosterUntilAuth = false;
@@ -17452,9 +17452,6 @@
           dashboardData.dateTopbar = weekdayTop + "\n" + pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear();
         }
         if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage(staffId);
-        if(typeof portalMarkFeedbackReconciledFromExports === "function"){
-          portalMarkFeedbackReconciledFromExports();
-        }
         if(typeof portalSeedTeflonGuideDemoReviewState === "function") portalSeedTeflonGuideDemoReviewState();
         if(typeof portalEnrichClientNotesFromPortalFeedback === "function"){
           portalEnrichClientNotesFromPortalFeedback();
@@ -17521,9 +17518,6 @@
         }catch(_){}
 
         function _finishStaffRehydrateUiNow(){
-          if(typeof portalMarkFeedbackReconciledFromExports === "function"){
-            portalMarkFeedbackReconciledFromExports();
-          }
           portalStaffMarkInitialTodayScheduleSettled();
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
@@ -17660,6 +17654,20 @@
             void window.portalStaffDmSyncUnreadChrome();
           }
         }
+        try{
+          if(typeof window.portalEnsureStaffFeedbackData === "function"){
+            await Promise.race([
+              window.portalEnsureStaffFeedbackData(),
+              new Promise(function(r){ setTimeout(r, 4500); })
+            ]);
+          }
+          if(typeof portalMarkFeedbackReconciledFromExports === "function"){
+            portalMarkFeedbackReconciledFromExports(true);
+          }
+          if(typeof portalMergeServerReviewStateForDashboard === "function"){
+            await portalMergeServerReviewStateForDashboard({ skipRender: true });
+          }
+        }catch(_preUiMerge){}
         _finishStaffRehydrateUi();
         function portalStaffRunBackgroundRosterRefresh(){
           void (async function portalStaffBackgroundRosterRefresh(){
@@ -17708,16 +17716,24 @@
         }
       });
       window.addEventListener("portal:staff-dashboard-source-updated", portalRebootstrapSessionsForPinnedStaff);
+      var _portalFeedbackReadyMergeT = 0;
       window.addEventListener("portal:feedback-data-ready", function(){
         try{
-          if(typeof portalMergeServerReviewStateForDashboard === "function"){
-            void portalMergeServerReviewStateForDashboard().then(function(){
-              if(typeof renderToday === "function") renderToday();
-              if(typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
-            });
-          }else{
-            if(typeof renderToday === "function") renderToday();
-          }
+          if(_portalFeedbackReadyMergeT) clearTimeout(_portalFeedbackReadyMergeT);
+          _portalFeedbackReadyMergeT = setTimeout(function(){
+            _portalFeedbackReadyMergeT = 0;
+            if(typeof portalMarkFeedbackReconciledFromExports === "function"){
+              portalMarkFeedbackReconciledFromExports(true);
+            }
+            if(typeof portalMergeServerReviewStateForDashboard === "function"){
+              void portalMergeServerReviewStateForDashboard().then(function(){
+                if(typeof renderToday === "function") renderToday();
+                if(typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
+              });
+            }else if(typeof renderToday === "function"){
+              renderToday();
+            }
+          }, 64);
         }catch(_fbReady){}
       });
       setTimeout(function () {
