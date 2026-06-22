@@ -1,11 +1,12 @@
-/* Shared contract logic ù clubSENsational HR Contract Portal */
+/* Shared contract logic ? clubSENsational HR Contract Portal */
 (function (global) {
   'use strict';
 
-  const CONTRACT_VERSION = '1.0';
+  const CONTRACT_VERSION = '1.2';
   const ADMIN_RATE = '13';
   const GBP = '\u00A3';
   const EM = '\u2014';
+  const HR_CONTACT_EMAIL = 'hr@clubsensational.co.uk';
   const COMPANY_LEGAL_NAME = 'clubSENsational LTD';
   const COMPANY_NUMBER = '13755417';
   const COMPANY_REGISTERED_ADDRESS = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London, United Kingdom';
@@ -30,6 +31,7 @@
     'PLACE OF WORK',
     'TIME OF WORK',
     'PROBATION PERIOD',
+    'FIXED-TERM EMPLOYEE TREATMENT',
     'SICKNESS AND DISABILITY',
     'HOLIDAY ENTITLEMENT',
     'DISCIPLINARY PROCEDURE',
@@ -49,7 +51,7 @@
     const t = (line || '').trim();
     if (!t) return false;
     if (SECTION_HEADERS.has(t)) return true;
-    return t.indexOf('WRITTEN PARTICULARS') === 0;
+    return t.indexOf('WRITTEN PARTICULARS') === 0 || t.indexOf('ANNEX A') === 0;
   }
   const ZERO_HOURS_MASTER_TEMPLATE = [
     'ZERO HOURS EMPLOYMENT CONTRACT', '',
@@ -85,15 +87,14 @@
     'The Employee warrants that they are legally allowed to work in England.', '',
     'EMPLOYEE REMUNERATION',
     'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of:', '',
-    GBP + '{{DELIVERY_RATE}}/h Delivery Service ({{ROLE_SCALE}} ' + EM + ' {{JOB_TITLE}})', '',
-    GBP + '{{ADMIN_RATE}}/h (Reviewed annually in line with Minimum Wage) ' + EM + ' Administrative Tasks, Inductions and Training.',
+    '{{DELIVERY_REMUNERATION}}',
     "If the Employer cancels a scheduled shift with at least 24 hours' notice, the Employee shall not be entitled to remuneration for that shift.",
     'If the cancellation occurs less than 24 hours before the scheduled start time, the Employee shall be entitled to full remuneration for the shift as originally scheduled.',
     'This remuneration will be payable once per month while this Agreement is in force.',
     "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
     "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time.", '',
     'PENSION',
-    'When required, the Employer will comply with its responsibility to operate a qualifying contributory pension scheme into which the Employee will be auto enrolled, subject to the conditions of the scheme.', '',
+    "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. Where required by law, eligible employees will be automatically enrolled into the Employer's qualifying workplace pension scheme (or a scheme nominated by the Employer). Eligibility is assessed on earnings paid by this Employer only. Further details will be provided separately and are available on request.", '',
     'PLACE OF WORK',
     "The Employee's place of work will be:",
     '{{PLACE_OF_WORK}}', '',
@@ -103,10 +104,11 @@
     "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's normal hours of work as deemed necessary by the Employer to meet business needs, as permitted by law.", '',
     'SICKNESS AND DISABILITY',
     'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than the night before, or not later than 7:00 am on the day of the absence.',
-    'If the Employee satisfies the qualifying conditions laid down by law, they will be entitled to receive statutory sick pay for any period of sickness or injury during agreed hours, but will not receive any other payments from the business during that time.', '',
+    'If the Employee satisfies the qualifying conditions for Statutory Sick Pay (SSP) under UK law, they will be entitled to receive SSP for any period of sickness or injury during agreed hours. No contractual sick pay is payable unless stated in a separate policy.', '',
     'HOLIDAY ENTITLEMENT',
     "The Employee's holiday entitlement will depend on the number of hours actually worked and will be pro rated based on a full time entitlement of 28 days' holiday during each full holiday year, including the usual eight public holidays in England and Wales.",
-    "The Business' holiday year runs between 1 January and 31 December.", '',
+    "The Business' holiday year runs between 1 January and 31 December.",
+    'Holiday pay accrues in proportion to hours worked and will be calculated and paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice (including, where permitted for irregular-hours workers, rolled-up holiday pay at not less than 12.07% of qualifying pay in the relevant pay period, itemised separately on payslips where applicable).', '',
     'DISCIPLINARY PROCEDURE',
     "The Employer's disciplinary procedure, as amended from time to time, applies to the Employee.",
     'The disciplinary procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.', '',
@@ -124,8 +126,8 @@
     'CONTRACT BINDING AUTHORITY',
     'The Employee does not have authority to enter into contracts or commitments on behalf of the Employer without prior written consent.', '',
     'TERMINATION OF EMPLOYMENT',
-    "Where there is just cause for termination, the Employer may terminate the Employee's employment with two weeks' notice, as permitted by law.",
-    'If the Employee wishes to terminate their employment, they must provide two weeks\' notice.',
+    "The Employer may terminate the Employee's employment by giving not less than two weeks' written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+    'If the Employee wishes to terminate their employment, they must provide not less than two weeks\' written notice, or such longer period of notice as required by statute.',
     'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.', '',
     'GOVERNING LAW',
     'This Agreement will be construed in accordance with and governed by the laws of England.', '',
@@ -133,8 +135,20 @@
     'This Agreement constitutes the entire agreement between the parties.',
     'Any amendment or modification to this Agreement will only be binding if evidenced in writing and signed by both parties or their authorised representatives.',
     'This Agreement supersedes any previous employment agreement between the Employer and the Employee.', '',
+    'WRITTEN PARTICULARS (ERA 1996, s.1)',
+    'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+    'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+    'Job Title: {{JOB_TITLE}}',
+    'Start Date: {{COMMENCEMENT_DATE}} (zero-hours; no fixed end date)',
+    'Pay: Hourly rates as set out in Employee Remuneration (by role and scale).',
+    'Hours: Variable according to business need; no minimum guaranteed hours.',
+    'Place of Work: {{PLACE_OF_WORK}}',
+    'Holiday: Pro-rated statutory entitlement (see Holiday Entitlement).',
+    'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+    'Notice: Not less than two weeks, or statutory minimum if greater.',
+    'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).', '',
     'SIGNATURES',
-    'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract.', '',
+    'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract, including the workplace pension information at Annex A.', '',
     'EMPLOYEE SIGNATURE',
     'Name: {{EMPLOYEE_FULL_NAME}}',
     'Date: {{EMPLOYEE_SIGNATURE_DATE}}',
@@ -144,7 +158,32 @@
     'Date: {{DIRECTOR_SIGNATURE_DATE}}',
     'Signature: {{DIRECTOR_SIGNATURE}}', '',
     'ACKNOWLEDGEMENT',
-    'I confirm that I have read, understood and agree to the terms of this employment contract.'
+    'I confirm that I have read, understood and agree to the terms of this employment contract, and that I have received the workplace pension information at Annex A.', '',
+    'ANNEX A ' + EM + ' WORKPLACE PENSION (AUTO-ENROLMENT INFORMATION)',
+    'Date: {{CONTRACT_DATE}}',
+    'To: {{EMPLOYEE_FULL_NAME}} ({{EMPLOYEE_EMAIL}})',
+    'From: ' + COMPANY_LEGAL_NAME + ', ' + COMPANY_REGISTERED_ADDRESS,
+    'Dear {{EMPLOYEE_FULL_NAME}},',
+    'This letter is issued with your zero-hours employment contract to explain how workplace pension automatic enrolment applies to your employment with clubSENsational Ltd. We are required by UK law (the Pensions Act 2008) to operate qualifying workplace pension arrangements and to give you this information within six weeks of starting work with us.',
+    'HOW AUTO-ENROLMENT WORKS',
+    'Automatic enrolment means eligible workers are enrolled into a workplace pension scheme unless they choose to opt out within one month. Your eligibility is assessed using qualifying earnings paid by clubSENsational only. Earnings from any other employer are not counted, even if you have a higher salary elsewhere.',
+    'For the current tax year, the main earnings threshold for automatic enrolment is ' + GBP + '10,000 per year from this Employer (' + GBP + '833 per month or ' + GBP + '192 per week). The lower qualifying earnings threshold is ' + GBP + '6,240 per year (' + GBP + '520 per month or ' + GBP + '120 per week).',
+    'YOUR CURRENT POSITION',
+    'You are employed on a zero-hours contract. You may not be automatically enrolled when you start if your earnings from clubSENsational are below the automatic enrolment threshold. This is common where staff also work for other employers.',
+    'We will assess your earnings from clubSENsational on each payday. If you meet the eligibility criteria in a pay reference period, we will automatically enrol you and write to you, unless a lawful postponement applies.',
+    'YOUR RIGHTS',
+    '1. If you earn more than ' + GBP + '10,000 per year from clubSENsational and are aged at least 22 but under State Pension Age: we must automatically enrol you and pay employer pension contributions (minimum 3% of qualifying earnings, subject to scheme rules).',
+    '2. If you earn between ' + GBP + '6,240 and ' + GBP + '10,000 per year from clubSENsational: you may opt in to our workplace pension scheme. If you opt in, we must pay employer contributions.',
+    '3. If you earn below ' + GBP + '6,240 per year from clubSENsational: you may request to join our pension scheme, but we are not required to pay employer contributions.',
+    '4. If you are automatically enrolled: you may opt out within one month of enrolment and receive a refund of contributions paid in that period, in accordance with scheme rules.',
+    'CONTRIBUTIONS',
+    'Where contributions apply, the minimum total contribution is ordinarily 8% of qualifying earnings between ' + GBP + '6,240 and ' + GBP + '50,270 per year, of which the employer pays at least 3% and the worker pays the remainder (with tax relief where applicable). Actual rates depend on the pension scheme rules.',
+    'CONTACT AND FURTHER INFORMATION',
+    'To opt in, ask questions, or notify us of a change in circumstances, contact HR at ' + HR_CONTACT_EMAIL + '.',
+    'Independent guidance is available from The Pensions Regulator (www.thepensionsregulator.gov.uk) and MoneyHelper (www.moneyhelper.org.uk).',
+    'Yours sincerely,',
+    '{{DIRECTOR_NAME}}',
+    'For and on behalf of clubSENsational Ltd'
   ].join('\n').replace('of of the', 'of the');
 
   const FIXED_TERM_MASTER_TEMPLATE = [
@@ -168,7 +207,8 @@
     'COMMENCEMENT DATE AND TERM',
     'The Employee will commence employment with the Employer on {{COMMENCEMENT_DATE}} (the "Commencement Date").',
     "The Employee's schedule of employment will be as follows:",
-    '{{CONTRACT_TYPE}}', '',
+    '{{CONTRACT_TYPE}}',
+    'This employment is for a fixed term ending on {{TERM_END_DATE}} (the "End Date") unless terminated earlier in accordance with this Agreement or by mutual written agreement. Unless terminated earlier under this Agreement or by law, employment will end automatically on the End Date without the need for further notice.', '',
     'JOB TITLE AND DESCRIPTION',
     'The initial job title of the Employee will be:',
     '{{JOB_TITLE}}',
@@ -182,30 +222,30 @@
     'The Employee warrants that they are legally allowed to work in England.', '',
     'EMPLOYEE REMUNERATION',
     'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
-    '{{ANNUAL_SALARY}} per year (inclusive of statutory holiday pay), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made. This inclusive arrangement simplifies term-time pay and ensures compliance with the Working Time Regulations 1998.',
-    "If the Employer cancels a scheduled shift with at least 24 hours' notice, the Employee shall not be entitled to remuneration for that shift.",
-    'If the cancellation occurs less than 24 hours before the scheduled start time, the Employee shall be entitled to full remuneration for the shift as originally scheduled.',
+    '{{ANNUAL_SALARY}} per year (inclusive of statutory holiday pay for a part-year worker), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made. Holiday pay is calculated and paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice.',
+    'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work and term-time pattern, provided the Employee remains available for work in accordance with this Agreement.',
     'This remuneration will be payable once per month while this Agreement is in force.',
     "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
     "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time.", '',
     'PENSION',
-    'When required, the Employer will comply with its responsibility to operate a qualifying contributory pension scheme into which the Employee will be auto enrolled, subject to the conditions of the scheme.', '',
+    "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. Where required by law, eligible employees will be automatically enrolled into the Employer's qualifying workplace pension scheme (or a scheme nominated by the Employer). Eligibility is assessed on earnings paid by this Employer only. Further details will be provided separately and are available on request.", '',
     'PLACE OF WORK',
     "The Employee's place of work will be at the following locations:",
     '{{PLACE_OF_WORK}}',
     'Travel between sites may be required.', '',
     'TIME OF WORK',
     'The Employee\'s normal hours of work, excluding breaks ("Normal Hours of Work"), are as follows:',
-    '{{WEEKLY_HOURS}} hours per week (term-time); Saturdays included; Sundays optional.',
+    '{{WEEKLY_HOURS}} hours per week (term-time).',
     '{{NORMAL_HOURS_OF_WORK}}',
-    'The schedule will be sent weekly via email and will reflect the hours currently available, and forms the basis of your updated contract with clubSENsational.',
+    'The Employer will issue weekly rota details by email. These set out operational scheduling within the Normal Hours of Work and place(s) of work in this Agreement. They do not amend this Agreement unless agreed in writing by both parties.',
     "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law.",
-    'The employee must deliver 12 hours of sessions during one selected half-term or holiday period (October, February, Easter, or May). These hours are usually scheduled in consecutive morning slots (e.g., 9:00ù13:00) across the chosen week.',
-    'You may also be offered the opportunity to work on Sundays when sessions are available. These are not included in your contracted hours and will be paid separately at the fixed rate of {{SUNDAY_HOURLY_RATE}}/hour. Each Sunday typically consists of a 6-hour shift.', '',
+    'The employee must deliver 12 hours of sessions during one selected half-term or holiday period (October, February, Easter, or May). These hours are usually scheduled in consecutive morning slots (e.g., 9:00-13:00) across the chosen week.', '',
     'PROBATION PERIOD',
-    "The Employee's employment will be subject to a probationary period of six (6) months commencing from the Commencement Date.",
+    "The Employee's employment will be subject to a probationary period of up to six (6) months commencing from the Commencement Date, or such shorter period as is proportionate to the length of this fixed-term contract.",
     "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
-    "The Employer reserves the right to extend the probationary period if additional time is needed to assess the Employee's performance.", '',
+    "The Employer reserves the right to extend the probationary period if additional time is needed to assess the Employee's performance, subject to the overall fixed term.", '',
+    'FIXED-TERM EMPLOYEE TREATMENT',
+    'The Employee is employed on a fixed-term contract. The Employee will not be treated less favourably than a comparable permanent employee solely because of fixed-term status, in accordance with the Fixed-term Employees (Prevention of Less Favourable Treatment) Regulations 2002.', '',
     'SICKNESS AND DISABILITY',
     'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than 7:00 am on the day of the absence.',
     'Subject to compliance with this Agreement and our Sickness Policy, the Employee shall receive sick pay in accordance with our Sickness Policy, which may be amended from time to time. Qualifying days for SSP purposes are Monday to Friday.', '',
@@ -229,9 +269,10 @@
     'CONTRACT BINDING AUTHORITY',
     'The Employee does not have authority to enter into contracts or commitments on behalf of the Employer without prior written consent.', '',
     'TERMINATION OF EMPLOYMENT',
-    "Where there is just cause for termination, the Employer may terminate the Employee's employment with two weeks' notice, as permitted by law.",
-    'If the Employee wishes to terminate their employment, they must provide two weeks\' notice.',
-    'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.', '',
+    "The Employer may terminate the Employee's employment before the End Date by giving not less than two weeks' written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+    'If the Employee wishes to terminate their employment before the End Date, they must provide not less than two weeks\' written notice, or such longer period of notice as required by statute.',
+    'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.',
+    'Unless terminated earlier under this Agreement or by law, employment will end automatically on {{TERM_END_DATE}} without the need for further notice.', '',
     'GOVERNING LAW',
     'This Agreement will be construed in accordance with and governed by the laws of England.', '',
     'GENERAL PROVISIONS',
@@ -242,13 +283,13 @@
     'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
     'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
     'Job Title: {{JOB_TITLE}}',
-    'Start Date: {{COMMENCEMENT_DATE}} ù End Date: {{TERM_END_DATE}} (fixed term)',
-    'Salary: {{ANNUAL_SALARY}} per annum (inclusive of holiday pay)',
-    'Hours: {{WEEKLY_HOURS}} hours/week (term-time); Saturdays included; Sundays optional.',
+    'Start Date: {{COMMENCEMENT_DATE}} ' + EM + ' End Date: {{TERM_END_DATE}} (fixed term; automatic expiry on End Date)',
+    'Salary: {{ANNUAL_SALARY}} per annum (inclusive of statutory holiday pay for a part-year worker)',
+    'Hours: {{WEEKLY_HOURS}} hours/week (term-time).',
     'Place of Work: {{PLACE_OF_WORK}}',
     'Holiday: Statutory entitlement included within total pay; ordinarily taken outside term-time.',
-    'Pension: Auto-enrolment if eligible.',
-    'Probation: Six months.',
+    'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+    'Probation: Up to six months, or shorter if proportionate to contract length.',
     'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection.', '',
     'SIGNATURES',
     'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract.', '',
@@ -313,16 +354,61 @@
     return (role && scale && RATE_TABLE[role]) ? RATE_TABLE[role][scale] : null;
   }
 
+  function normalizeRoles(o) {
+    const src = o || {};
+    if (Array.isArray(src.roles) && src.roles.length) {
+      return src.roles.map((r) => String(r || '').trim()).filter(Boolean);
+    }
+    if (src.role && String(src.role).trim()) {
+      return String(src.role)
+        .split(/\s*&\s*/)
+        .map((r) => r.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  function formatJobTitles(roles) {
+    if (!roles || !roles.length) return '';
+    return roles.join(' & ');
+  }
+
+  function buildDeliveryRemuneration(roles, scale) {
+    const lines = [];
+    (roles || []).forEach((role) => {
+      const rate = getDeliveryRate(role, scale);
+      if (rate != null) {
+        lines.push(GBP + rate + '/h Delivery Service (' + scale + ' ' + EM + ' ' + role + ')');
+      }
+    });
+    lines.push(
+      GBP + ADMIN_RATE + '/h (Reviewed annually in line with Minimum Wage) ' + EM + ' Administrative Tasks, Inductions and Training.'
+    );
+    return lines.join('\n');
+  }
+
+  function sanitizeContractText(text) {
+    return String(text || '')
+      .replace(/\uFFFD/g, '-')
+      .replace(/(\d:\d{2})\?(\d{1,2}:\d{2})/g, '$1-$2')
+      .replace(/ Fixed Term \? from /g, ' Fixed Term ' + EM + ' from ')
+      .replace(/ \? End Date: /g, ' ' + EM + ' End Date: ')
+      .replace(/ANNEX A \? WORKPLACE/g, 'ANNEX A ' + EM + ' WORKPLACE')
+      .replace(/\?(\d)/g, GBP + '$1');
+  }
+
   function fillTemplate(data, kind) {
     const contractKind = normalizeContractKind(kind || (data && data.CONTRACT_KIND));
     let text = getMasterTemplate(contractKind);
     Object.keys(data || {}).forEach((k) => { text = text.split('{{' + k + '}}').join(data[k]); });
-    return text;
+    return sanitizeContractText(text);
   }
 
   function buildTemplateData(opts) {
     const o = opts || {};
     const kind = normalizeContractKind(o.contractKind);
+    const roles = normalizeRoles(o);
+    const jobTitle = formatJobTitles(roles) || (o.role ? String(o.role).trim() : '') || EM;
     const today = new Date().toISOString().slice(0, 10);
     const directorSig = o.directorSignatureDataUrl ? '[Signed electronically]' : (o.directorName || EM);
     const employeeSig = o.employeeSignatureDataUrl ? '[Signed electronically]' : (o.employeePending ? 'Pending employee signature' : EM);
@@ -336,7 +422,7 @@
       EMPLOYEE_ADDRESS: o.employeeAddress || EM,
       EMPLOYEE_EMAIL: o.employeeEmail || EM,
       COMMENCEMENT_DATE: formatUKDate(o.commencementDate),
-      JOB_TITLE: o.role || EM,
+      JOB_TITLE: jobTitle,
       PLACE_OF_WORK: o.placeOfWork || EM,
       NORMAL_HOURS_OF_WORK: o.normalHoursOfWork || (kind === 'fixed_term' ? EM : 'Variable hours'),
       DIRECTOR_NAME: o.directorName || EM,
@@ -349,33 +435,30 @@
     };
 
     if (kind === 'fixed_term') {
-      const sundayRate = o.sundayHourlyRate != null && o.sundayHourlyRate !== ''
-        ? GBP + String(o.sundayHourlyRate).replace(/[^\d.]/g, '')
-        : GBP + '24';
       return Object.assign(shared, {
-        CONTRACT_TYPE: 'Fixed Term ù from ' + formatShortUKDate(o.commencementDate) + ' to ' + formatShortUKDate(o.termEndDate),
+        CONTRACT_TYPE: 'Fixed Term ' + EM + ' from ' + formatShortUKDate(o.commencementDate) + ' to ' + formatShortUKDate(o.termEndDate),
         TERM_END_DATE: formatUKDate(o.termEndDate),
         TERM_START_SHORT: formatShortUKDate(o.commencementDate),
         TERM_END_SHORT: formatShortUKDate(o.termEndDate),
         ANNUAL_SALARY: formatSalary(o.annualSalary),
         WEEKLY_HOURS: o.weeklyHours != null && o.weeklyHours !== '' ? String(o.weeklyHours) : EM,
-        SUNDAY_HOURLY_RATE: sundayRate,
         ROLE_SCALE: EM,
         DELIVERY_RATE: EM,
+        DELIVERY_REMUNERATION: EM,
         ADMIN_RATE: EM
       });
     }
 
-    const rate = getDeliveryRate(o.role, o.scale);
+    const firstRate = roles.length ? getDeliveryRate(roles[0], o.scale) : null;
     return Object.assign(shared, {
       CONTRACT_TYPE: 'Zero Hours Contract ' + EM + ' hours worked will vary according to business requirements and mutual agreement.',
       ROLE_SCALE: o.scale || EM,
-      DELIVERY_RATE: rate != null ? String(rate) : EM,
+      DELIVERY_RATE: firstRate != null ? String(firstRate) : EM,
+      DELIVERY_REMUNERATION: buildDeliveryRemuneration(roles, o.scale),
       ADMIN_RATE,
       TERM_END_DATE: EM,
       ANNUAL_SALARY: EM,
-      WEEKLY_HOURS: EM,
-      SUNDAY_HOURLY_RATE: EM
+      WEEKLY_HOURS: EM
     });
   }
 
@@ -430,7 +513,8 @@
         return;
       }
       if (isSectionHeader(title)) {
-        body += '<div class="contract-section"><h3>' + title + '</h3><p style="white-space:pre-wrap;">' + rest + '</p></div>';
+        const annexClass = title.indexOf('ANNEX A') === 0 ? ' contract-annex' : '';
+        body += '<div class="contract-section' + annexClass + '"><h3>' + title + '</h3><p style="white-space:pre-wrap;">' + rest + '</p></div>';
       } else {
         body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + block + '</p></div>';
       }
@@ -465,6 +549,7 @@
       '.contract-parties{background:#e8f0f6;border:1px solid #b8cfd9;border-left:3px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;}' +
       '.contract-parties strong{display:block;font-family:Arial,sans-serif;font-size:8pt;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
       '.contract-signature-block{border-top:1px dashed #ccc;padding-top:8px;}' +
+      '.contract-annex{page-break-before:always;margin-top:20px;padding-top:14px;border-top:2px solid #c9a227;}' +
       '.contract-footer{font-family:Arial,sans-serif;font-size:7.5pt;color:#64748b;text-align:center;padding:10px 16px;border-top:1px solid #e2e8f0;background:#f7f9fb;}' +
       '</style>';
     return pdfStyles + renderContractHtml(fillTemplate(templateData, kind), true, sigs, kind);
@@ -548,8 +633,9 @@
 
   global.ContractCore = {
     CONTRACT_VERSION, ADMIN_RATE, GBP, EM, RATE_TABLE, LOGO_PATH, LOGO_DISPLAY,
-    COMPANY_LEGAL_NAME, COMPANY_NUMBER, COMPANY_REGISTERED_ADDRESS, COMPANY_FOOTER_ADDRESS,
+    COMPANY_LEGAL_NAME, COMPANY_NUMBER, COMPANY_REGISTERED_ADDRESS, COMPANY_FOOTER_ADDRESS, HR_CONTACT_EMAIL,
     formatUKDate, formatShortUKDate, formatDateTime, formatSalary, generateReference, getDeliveryRate,
+    normalizeRoles, formatJobTitles, buildDeliveryRemuneration,
     fillTemplate, buildTemplateData, renderContractHtml, buildPdfHtml, pdfFilename,
     loadLogo, setupSignaturePad, getSigningTokenFromUrl, getOrigin,
     get logoDataUrl() { return logoDataUrl; },

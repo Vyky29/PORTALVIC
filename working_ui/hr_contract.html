@@ -638,15 +638,16 @@
               <span class="error-msg">Term end date is required.</span>
             </div>
             <div class="form-group" id="fgRole">
-              <label for="role">Role <span aria-hidden="true">*</span></label>
-              <select id="role" name="role" required>
-                <option value="">Select role</option>
-                <option value="Support Worker">Support Worker</option>
-                <option value="Climbing Instructor">Climbing Instructor</option>
-                <option value="Fitness Instructor">Fitness Instructor</option>
-                <option value="Swimming Instructor">Swimming Instructor</option>
-              </select>
-              <span class="error-msg">Role is required.</span>
+              <fieldset>
+                <legend style="font-weight:500;margin-bottom:0.35rem;color:var(--navy);font-size:0.9rem;">Role(s) <span aria-hidden="true">*</span></legend>
+                <div class="checkbox-group" id="roleCheckboxes">
+                  <label class="place-option"><input type="checkbox" name="role" value="Support Worker"><span>Support Worker</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Climbing Instructor"><span>Climbing Instructor</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Fitness Instructor"><span>Fitness Instructor</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Swimming Instructor"><span>Swimming Instructor</span></label>
+                </div>
+                <span class="error-msg">Select at least one role.</span>
+              </fieldset>
             </div>
             <div class="form-group zero-hours-field" id="fgScale">
               <label for="scale">Scale <span aria-hidden="true">*</span></label>
@@ -667,10 +668,6 @@
               <label for="weeklyHours">Contracted hours per week <span aria-hidden="true">*</span></label>
               <input type="number" id="weeklyHours" name="weeklyHours" min="1" step="0.5" placeholder="e.g. 24">
               <span class="error-msg">Weekly hours are required.</span>
-            </div>
-            <div class="form-group fixed-term-field hidden" id="fgSundayRate">
-              <label for="sundayHourlyRate">Sunday optional hourly rate (£)</label>
-              <input type="number" id="sundayHourlyRate" name="sundayHourlyRate" min="1" step="0.01" value="24">
             </div>
             <div class="rate-display" id="rateDisplay" aria-live="polite">Select role and scale to view hourly rate.</div>
             <div class="form-group" id="fgPlace" style="margin-bottom:1rem;">

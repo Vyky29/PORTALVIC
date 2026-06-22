@@ -21,7 +21,7 @@
     document.querySelectorAll(".fixed-term-field").forEach((el) => el.classList.toggle("hidden", !fixed));
     if ($("scale")) {
       $("scale").required = !fixed;
-      $("scale").disabled = fixed || !$("role").value;
+      syncScaleFromRoles();
     }
     ["termEndDate", "annualSalary", "weeklyHours"].forEach((id) => {
       const el = $(id);
@@ -78,6 +78,39 @@
     return getSelectedVenues()
       .filter((v) => !v.key.startsWith("other:") || v.key !== "other:__pending__")
       .map((v) => v.name);
+  }
+
+  function getSelectedRoles() {
+    const roles = [];
+    document.querySelectorAll("#roleCheckboxes input:checked").forEach((cb) => {
+      roles.push(cb.value);
+    });
+    return roles;
+  }
+
+  function formatRoleLabel(roles) {
+    return roles.length ? roles.join(" & ") : "";
+  }
+
+  function syncScaleFromRoles() {
+    if (!$("scale")) return;
+    const roles = getSelectedRoles();
+    $("scale").disabled = contractKind === "fixed_term" || !roles.length;
+    if (contractKind === "fixed_term" || !roles.length) $("scale").value = "";
+  }
+
+  function buildRateSummary() {
+    const roles = getSelectedRoles();
+    const scale = $("scale").value;
+    if (!roles.length || !scale) return null;
+    const parts = roles
+      .map((role) => {
+        const rate = C.getDeliveryRate(role, scale);
+        return rate != null ? C.GBP + rate + "/h - " + role : null;
+      })
+      .filter(Boolean);
+    if (!parts.length) return null;
+    return parts.join("; ") + ". Administrative tasks: " + C.GBP + C.ADMIN_RATE + "/h.";
   }
 
   function syncVenueHoursFromInputs() {
@@ -138,8 +171,8 @@
       termEndDate: $("termEndDate") ? $("termEndDate").value : "",
       annualSalary: $("annualSalary") ? $("annualSalary").value : "",
       weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
-      sundayHourlyRate: $("sundayHourlyRate") ? $("sundayHourlyRate").value : "24",
-      role: $("role").value,
+      roles: getSelectedRoles(),
+      role: formatRoleLabel(getSelectedRoles()),
       scale: contractKind === "fixed_term" ? "" : $("scale").value,
       places: getPlaces(),
       normalHours: getNormalHoursText(),
@@ -161,8 +194,8 @@
       termEndDate: $("termEndDate") ? $("termEndDate").value : "",
       annualSalary: $("annualSalary") ? $("annualSalary").value : "",
       weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
-      sundayHourlyRate: $("sundayHourlyRate") ? $("sundayHourlyRate").value : "24",
-      role: $("role").value,
+      roles: getSelectedRoles(),
+      role: formatRoleLabel(getSelectedRoles()),
       scale: contractKind === "fixed_term" ? "" : $("scale").value,
       placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
       normalHoursOfWork: getNormalHoursText(),
@@ -191,26 +224,12 @@
       $("rateDisplay").textContent = msg;
       $("reviewSummary").textContent = msg;
     } else {
-      const rate = C.getDeliveryRate($("role").value, $("scale").value);
-      if (rate != null) {
-        const msg =
-          "Delivery rate: " +
-          C.GBP +
-          rate +
-          "/h (" +
-          $("scale").value +
-          " " +
-          C.EM +
-          " " +
-          $("role").value +
-          "). Administrative tasks: " +
-          C.GBP +
-          C.ADMIN_RATE +
-          "/h.";
-        $("rateDisplay").textContent = msg;
-        $("reviewSummary").textContent = msg;
+      const rateMsg = buildRateSummary();
+      if (rateMsg) {
+        $("rateDisplay").textContent = rateMsg;
+        $("reviewSummary").textContent = rateMsg;
       } else {
-        $("rateDisplay").textContent = "Select role and scale to view hourly rate.";
+        $("rateDisplay").textContent = "Select at least one role and scale to view hourly rate.";
         $("reviewSummary").textContent = "";
       }
     }
@@ -236,7 +255,9 @@
     if (step === 2) {
       show("fgContractDate", !!$("contractDate").value);
       show("fgCommencement", !!$("commencementDate").value);
-      show("fgRole", !!$("role").value);
+      const roles = getSelectedRoles();
+      $("fgRole").classList.toggle("invalid", !roles.length);
+      if (!roles.length) valid = false;
       if (contractKind === "fixed_term") {
         show("fgTermEnd", $("termEndDate") && !!$("termEndDate").value);
         show("fgAnnualSalary", $("annualSalary") && !!$("annualSalary").value && Number($("annualSalary").value) > 0);
@@ -280,10 +301,10 @@
         $("employeeName").value.trim() +
         " (" +
         $("employeeEmail").value.trim() +
-        ") — " +
+        ") - " +
         (contractKind === "fixed_term" ? "Fixed term" : "Zero hours") +
         " — " +
-        $("role").value +
+        formatRoleLabel(getSelectedRoles()) +
         (contractKind === "fixed_term" ? "" : ", " + $("scale").value);
       $("sendContractBtn").disabled = !canSendContract();
     }
@@ -346,7 +367,8 @@
         contractReference,
         employeeName: $("employeeName").value.trim(),
         employeeEmail: $("employeeEmail").value.trim(),
-        role: $("role").value,
+        roles: getSelectedRoles(),
+      role: formatRoleLabel(getSelectedRoles()),
         scale: $("scale").value,
         generatedTimestamp: C.formatDateTime(),
         signedStatus: "Awaiting employee",
@@ -437,14 +459,14 @@
   function bindEvents() {
     bindContractTypeCards();
     syncContractTypeFields();
-    $("role").addEventListener("change", () => {
-      $("scale").disabled = contractKind === "fixed_term" || !$("role").value;
-      if (contractKind === "fixed_term") $("scale").value = "";
-      else if (!$("role").value) $("scale").value = "";
-      updatePreview();
+    document.querySelectorAll("#roleCheckboxes input").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        syncScaleFromRoles();
+        updatePreview();
+      });
     });
     $("scale").addEventListener("change", updatePreview);
-    ["employeeName", "employeeAddress", "employeeEmail", "contractDate", "commencementDate", "directorName", "termEndDate", "annualSalary", "weeklyHours", "sundayHourlyRate"].forEach(
+    ["employeeName", "employeeAddress", "employeeEmail", "contractDate", "commencementDate", "directorName", "termEndDate", "annualSalary", "weeklyHours"].forEach(
       (id) => {
         const el = $(id);
         if (!el) return;
@@ -497,7 +519,6 @@
     Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
     const form = $("contractForm");
     if (form) form.reset();
-    if ($("sundayHourlyRate")) $("sundayHourlyRate").value = "24";
     selectContractType("zero_hours");
     const sendOk = $("sendSuccess");
     if (sendOk) sendOk.classList.remove("visible");
