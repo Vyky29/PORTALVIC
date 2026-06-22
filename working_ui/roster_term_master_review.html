@@ -605,6 +605,37 @@
     return bits.join(' · ');
   }
 
+  function weekdayLongFromIso(iso){
+    var d = new Date(String(iso||'').slice(0,10) + 'T12:00:00');
+    if(isNaN(d.getTime())) return 'Monday';
+    return d.toLocaleDateString('en-GB', { weekday: 'long' });
+  }
+
+  /** New shift row respects week + staff toolbar filters so it stays visible after add. */
+  function defaultStaffShiftRow(){
+    var sessionDate = '2026-06-01';
+    if(viewMode.value === 'week' && state && state.weeks && state.weeks[weekIdx]){
+      sessionDate = String(state.weeks[weekIdx].start || sessionDate).slice(0, 10);
+    } else if(state && state.staffShifts && state.staffShifts.termFrom){
+      sessionDate = String(state.staffShifts.termFrom).slice(0, 10);
+    }
+    var staffKey = String(staffPick.value || '').trim().toLowerCase();
+    var staffName = '';
+    if(staffKey){
+      var opt = staffPick.options[staffPick.selectedIndex];
+      staffName = opt ? String(opt.textContent || '').trim() : staffKey;
+    }
+    return {
+      session_date: sessionDate,
+      day: weekdayLongFromIso(sessionDate),
+      staff_key: staffKey,
+      staff_name: staffName,
+      venue: 'SwimFarm',
+      time_range: '4-6',
+      raw_assignment: staffName ? (staffName + ' 4-6') : ''
+    };
+  }
+
   function renderStaffShifts(){
     if(!state || !staffTbody) return;
     var rows = (state.staffShifts && state.staffShifts.rows) ? state.staffShifts.rows.slice() : [];
@@ -619,7 +650,11 @@
     staffTbody.innerHTML = '';
     if(!rows.length){
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="6" style="text-align:center;color:#555;padding:1rem">Nada que mostrar — cambia semana, staff o filtro.</td>';
+      var total = (state.staffShifts && state.staffShifts.rows) ? state.staffShifts.rows.length : 0;
+      var msg = total
+        ? 'Nada que mostrar con estos filtros ('+total+' fila'+(total===1?'':'s')+' en total). Cambia semana/staff o pulsa + Fila turno.'
+        : 'Sin turnos — pulsa + Fila turno para añadir.';
+      tr.innerHTML = '<td colspan="6" style="text-align:center;color:#555;padding:1rem">'+esc(msg)+'</td>';
       staffTbody.appendChild(tr);
       return;
     }
@@ -654,7 +689,9 @@
   if(filterStaffShifts) filterStaffShifts.oninput = renderStaffShifts;
   document.getElementById('btnAddStaffShift').onclick = function(){
     if(!state) return;
-    state.staffShifts.rows.push({ session_date:'2026-06-01', day:'Monday', staff_name:'', venue:'SwimFarm', time_range:'4-6', raw_assignment:'' });
+    if(!state.staffShifts) state.staffShifts = { termFrom:'2026-06-01', termTo:'2026-07-17', rows:[] };
+    if(!state.staffShifts.rows) state.staffShifts.rows = [];
+    state.staffShifts.rows.push(defaultStaffShiftRow());
     markDirty(); renderStaffShifts();
   };
 
