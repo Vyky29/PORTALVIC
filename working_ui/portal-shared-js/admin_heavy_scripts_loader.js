@@ -7,7 +7,7 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260609-feedback-real",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-sunday-overrides-db",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-sunday-overrides-restore",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback",
       "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
