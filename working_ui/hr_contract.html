@@ -445,6 +445,19 @@
       border-color: var(--soft-blue);
       box-shadow: 0 0 0 3px rgba(74, 124, 155, 0.25);
     }
+    .field-hint {
+      margin: 0.35rem 0 0;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--grey-500);
+    }
+    .portal-link-status {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .portal-link-status.ok { color: var(--success); }
+    .portal-link-status.warn { color: var(--error); }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     #fgPlace fieldset { border: none; padding: 0; margin: 0; }
     #fgPlace.invalid .error-msg { display: block; }
@@ -634,6 +647,16 @@
         <form id="contractForm" novalidate>
           <div class="step-panel active" data-step="1">
             <h2>Step 1: Employee Details</h2>
+            <div class="form-group" id="fgPortalStaff">
+              <label for="portalStaffSelect">Portal staff member <span aria-hidden="true">*</span></label>
+              <select id="portalStaffSelect" name="portalStaffSelect" required aria-describedby="portalStaffHint">
+                <option value="">Select staff (Portal login name)</option>
+              </select>
+              <input type="hidden" id="portalAuthEmail" name="portalAuthEmail" value="">
+              <p class="field-hint" id="portalStaffHint">Choose from the Portal roster. Their login name (first name) is linked to Supabase Auth automatically.</p>
+              <div id="portalLinkStatus" class="portal-link-status" aria-live="polite"></div>
+              <span class="error-msg">Select a staff member with a linked Portal account.</span>
+            </div>
             <div class="form-group" id="fgName">
               <label for="employeeName">Employee full name <span aria-hidden="true">*</span></label>
               <input type="text" id="employeeName" name="employeeName" required autocomplete="name">
@@ -645,9 +668,10 @@
               <span class="error-msg">Employee address is required.</span>
             </div>
             <div class="form-group" id="fgEmail">
-              <label for="employeeEmail">Employee email <span aria-hidden="true">*</span></label>
+              <label for="employeeEmail">Contact email (on contract) <span aria-hidden="true">*</span></label>
               <input type="email" id="employeeEmail" name="employeeEmail" required autocomplete="email">
-              <span class="error-msg">Valid employee email is required.</span>
+              <p class="field-hint">Email shown on the contract (can be personal Gmail). Does not need to match Portal login.</p>
+              <span class="error-msg">Valid contact email is required.</span>
             </div>
           </div>
 
@@ -676,6 +700,7 @@
                   <label class="place-option"><input type="checkbox" name="role" value="Climbing Instructor"><span>Climbing Instructor</span></label>
                   <label class="place-option"><input type="checkbox" name="role" value="Fitness Instructor"><span>Fitness Instructor</span></label>
                   <label class="place-option"><input type="checkbox" name="role" value="Swimming Instructor"><span>Swimming Instructor</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Business Development"><span>Business Development</span></label>
                 </div>
                 <span class="error-msg">Select at least one role.</span>
               </fieldset>
@@ -823,7 +848,7 @@
         gate.classList.add("hidden");
         root.classList.remove("hidden");
         const s = document.createElement("script");
-        s.src = "portal/hr-contract-app.js?v=20260622-2";
+        s.src = "portal/hr-contract-app.js?v=20260622-staff";
         document.body.appendChild(s);
       } catch (e) {
         gate.innerHTML =

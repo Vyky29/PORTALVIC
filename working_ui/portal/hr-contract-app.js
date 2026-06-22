@@ -16,6 +16,10 @@
   const venueHoursStore = {};
   const roleScaleStore = {};
   const SCALE_OPTIONS = C.SCALE_OPTIONS || ["Scale 1", "Scale 2", "Scale 3"];
+  const STAFF_LINK_MOD = "./hr-contract-staff-link.js?v=20260622-staff";
+  let staffRoster = [];
+  let portalLinkVerified = false;
+  let selectedPortalLogin = "";
 
   function syncContractTypeFields() {
     const fixed = contractKind === "fixed_term";
@@ -60,6 +64,99 @@
   function portalClient() {
     const box = window.__PORTAL_SUPABASE__;
     return box && box.client ? { supabase: box.client, user: box.session && box.session.user } : null;
+  }
+
+  async function loadStaffRosterDropdown() {
+    const sel = $("portalStaffSelect");
+    if (!sel) return;
+    const auth = portalClient();
+    if (!auth) {
+      sel.innerHTML = '<option value="">Sign in to load staff roster</option>';
+      return;
+    }
+    try {
+      const mod = await import(STAFF_LINK_MOD);
+      staffRoster = await mod.loadPortalStaffRoster(auth.supabase);
+      sel.innerHTML = '<option value="">Select staff (Portal login name)</option>';
+      staffRoster.forEach((s, i) => {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        const suffix = s.loginName && s.loginName !== s.displayName ? " — login: " + s.loginName : "";
+        opt.textContent = s.displayName + suffix;
+        opt.dataset.authEmail = s.authEmail;
+        opt.dataset.displayName = s.displayName;
+        opt.dataset.loginName = s.loginName;
+        sel.appendChild(opt);
+      });
+    } catch (err) {
+      console.warn("[hr-contract] staff roster", err);
+      sel.innerHTML = '<option value="">Could not load staff roster</option>';
+    }
+  }
+
+  async function onPortalStaffChange() {
+    const sel = $("portalStaffSelect");
+    const statusEl = $("portalLinkStatus");
+    portalLinkVerified = false;
+    selectedPortalLogin = "";
+    if ($("portalAuthEmail")) $("portalAuthEmail").value = "";
+    if (!sel || sel.value === "") {
+      if (statusEl) {
+        statusEl.textContent = "";
+        statusEl.className = "portal-link-status";
+      }
+      updatePreview();
+      return;
+    }
+    const opt = sel.options[sel.selectedIndex];
+    const authEmail = opt.dataset.authEmail || "";
+    const displayName = opt.dataset.displayName || "";
+    const loginName = opt.dataset.loginName || "";
+    selectedPortalLogin = loginName;
+    if ($("portalAuthEmail")) $("portalAuthEmail").value = authEmail;
+    if (displayName && $("employeeName")) $("employeeName").value = displayName;
+    try {
+      const mod = await import(STAFF_LINK_MOD);
+      if (
+        $("employeeEmail") &&
+        !mod.isPlaceholderPortalEmail(authEmail) &&
+        !$("employeeEmail").value.trim()
+      ) {
+        $("employeeEmail").value = authEmail;
+      }
+      const auth = portalClient();
+      if (statusEl) {
+        statusEl.textContent = "Checking Portal account…";
+        statusEl.className = "portal-link-status";
+      }
+      if (auth && authEmail) {
+        const v = await mod.verifyPortalStaffLink(auth.supabase, authEmail);
+        portalLinkVerified = v.ok;
+        if (statusEl) {
+          statusEl.textContent = v.ok
+            ? "Portal account linked (" + loginName + "). Contract will appear on their dashboard."
+            : v.error || "No Portal account found for this staff member.";
+          statusEl.className = "portal-link-status " + (v.ok ? "ok" : "warn");
+        }
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.textContent = err.message || "Could not verify Portal link.";
+        statusEl.className = "portal-link-status warn";
+      }
+    }
+    if ($("employeeName")) {
+      contractReference = C.generateReference($("employeeName").value, contractKind);
+    }
+    updatePreview();
+  }
+
+  function getPortalStaffLogin() {
+    return selectedPortalLogin || "";
+  }
+
+  function getPortalAuthEmail() {
+    return $("portalAuthEmail") ? $("portalAuthEmail").value.trim().toLowerCase() : "";
   }
 
   function getSelectedVenues() {
@@ -244,6 +341,8 @@
       role: formatRoleLabel(getSelectedRoles()),
       roleScales: getRoleScales(),
       scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
+      portalStaffLogin: getPortalStaffLogin(),
+      portalAuthEmail: getPortalAuthEmail(),
       places: getPlaces(),
       normalHours: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -268,6 +367,8 @@
       role: formatRoleLabel(getSelectedRoles()),
       roleScales: getRoleScales(),
       scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
+      portalStaffLogin: getPortalStaffLogin(),
+      portalAuthEmail: getPortalAuthEmail(),
       placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
       normalHoursOfWork: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -318,6 +419,12 @@
       if (!ok) valid = false;
     };
     if (step === 1) {
+      const staffOk = $("portalStaffSelect") && $("portalStaffSelect").value !== "";
+      $("fgPortalStaff")?.classList.toggle("invalid", !staffOk);
+      if (!staffOk) valid = false;
+      if ($("portalStaffSelect") && $("portalStaffSelect").value && !portalLinkVerified) {
+        valid = false;
+      }
       show("fgName", $("employeeName").value.trim().length > 0);
       show("fgAddress", $("employeeAddress").value.trim().length > 0);
       const email = $("employeeEmail").value.trim();
@@ -369,11 +476,14 @@
       ensureDirectorPad();
     }
     if (step === 4) {
+      const login = getPortalStaffLogin();
       $("sendSummary").textContent =
         $("employeeName").value.trim() +
         " (" +
         $("employeeEmail").value.trim() +
-        ") - " +
+        ")" +
+        (login ? " · Portal: " + login : "") +
+        " — " +
         (contractKind === "fixed_term" ? "Fixed term" : "Zero hours") +
         " — " +
         formatRoleLabel(getSelectedRoles()) +
@@ -420,13 +530,14 @@
     templateData.CONTRACT_REFERENCE = contractReference;
 
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260521-2");
+      const mod = await import("./hr-contract-publish.js?v=20260622-staff");
       const result = await mod.portalPublishEmploymentContract(auth.supabase, auth.user.id, {
         contractReference,
         templateData,
         formPayload: getFormPayload(),
         directorSignature: directorSignatureDataUrl,
         employeeEmail: $("employeeEmail").value.trim(),
+        portalAuthEmail: getPortalAuthEmail(),
         employeeName: $("employeeName").value.trim()
       });
 
@@ -487,7 +598,7 @@
     const auth = portalClient();
     if (!auth) return;
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260521-2");
+      const mod = await import("./hr-contract-publish.js?v=20260622-staff");
       const rows = await mod.portalListEmploymentContracts(auth.supabase);
       const tbody = $("recentBody");
       const noRecent = $("noRecent");
@@ -532,6 +643,9 @@
   function bindEvents() {
     bindContractTypeCards();
     syncContractTypeFields();
+    if ($("portalStaffSelect")) {
+      $("portalStaffSelect").addEventListener("change", onPortalStaffChange);
+    }
     document.querySelectorAll("#roleCheckboxes input").forEach((cb) => {
       cb.addEventListener("change", () => {
         syncScaleFromRoles();
@@ -590,9 +704,17 @@
     directorPadApi = null;
     Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
     Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
+    staffRoster = [];
+    portalLinkVerified = false;
+    selectedPortalLogin = "";
+    if ($("portalLinkStatus")) {
+      $("portalLinkStatus").textContent = "";
+      $("portalLinkStatus").className = "portal-link-status";
+    }
     const form = $("contractForm");
     if (form) form.reset();
     selectContractType("zero_hours");
+    loadStaffRosterDropdown();
     const sendOk = $("sendSuccess");
     if (sendOk) sendOk.classList.remove("visible");
     const sendErr = $("sendError");
@@ -615,6 +737,7 @@
     bindEvents();
     syncContractTypeFields();
     setStep(1);
+    loadStaffRosterDropdown();
     C.loadLogo().then((url) => {
       if (url) C.logoDataUrl = url;
       updatePreview();

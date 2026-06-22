@@ -17,7 +17,8 @@
     'Support Worker': { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
     'Climbing Instructor': { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
     'Fitness Instructor': { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
-    'Swimming Instructor': { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
+    'Swimming Instructor': { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 },
+    'Business Development': { 'Scale 1': 22, 'Scale 2': 26, 'Scale 3': 30 }
   };
   const SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
   const PARTY_BLOCKS = ['EMPLOYEE DETAILS:', 'EMPLOYER DETAILS:'];

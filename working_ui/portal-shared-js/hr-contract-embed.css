@@ -108,7 +108,7 @@
   outline: none;
   border-color: var(--soft-blue);
   box-shadow: 0 0 0 3px rgba(74, 124, 155, 0.25);
-}#hrContractEmbed .form-group .error-msg{ color: var(--error); font-size: 0.85rem; margin-top: 0.25rem; display: none; }#hrContractEmbed .form-group.invalid input, #hrContractEmbed .form-group.invalid select, #hrContractEmbed .form-group.invalid textarea{ border-color: var(--error); }#hrContractEmbed .form-group.invalid .error-msg{ display: block; }#hrContractEmbed .form-group input[type="checkbox"], #hrContractEmbed .form-group input[type="radio"]{
+}#hrContractEmbed .form-group .error-msg{ color: var(--error); font-size: 0.85rem; margin-top: 0.25rem; display: none; }#hrContractEmbed .field-hint{ margin: 0.35rem 0 0; font-size: 0.82rem; line-height: 1.4; color: var(--grey-500); }#hrContractEmbed .portal-link-status{ margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4; }#hrContractEmbed .portal-link-status.ok{ color: var(--success); }#hrContractEmbed .portal-link-status.warn{ color: var(--error); }#hrContractEmbed .form-group.invalid input, #hrContractEmbed .form-group.invalid select, #hrContractEmbed .form-group.invalid textarea{ border-color: var(--error); }#hrContractEmbed .form-group.invalid .error-msg{ display: block; }#hrContractEmbed .form-group input[type="checkbox"], #hrContractEmbed .form-group input[type="radio"]{
   width: 1.125rem;
   height: 1.125rem;
   min-width: 1.125rem;

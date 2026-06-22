@@ -11,22 +11,27 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
   const o = opts || {};
   const templateData = o.templateData || {};
   const formPayload = o.formPayload || {};
-  const employeeEmail = String(o.employeeEmail || "").trim().toLowerCase();
+  const contactEmail = String(o.employeeEmail || "").trim().toLowerCase();
+  const portalAuthEmail = String(o.portalAuthEmail || contactEmail || "").trim().toLowerCase();
   const employeeName = String(o.employeeName || "").trim();
   const contractReference = String(o.contractReference || "").trim();
   const directorSignature = String(o.directorSignature || "").trim();
 
-  if (!contractReference || !directorSignature || !employeeEmail || !employeeName) {
+  if (!contractReference || !directorSignature || !contactEmail || !employeeName || !portalAuthEmail) {
     throw new Error("Missing required contract fields.");
   }
 
   const { data: staffUserId, error: rpcErr } = await supabase.rpc("portal_user_id_for_email", {
-    p_email: employeeEmail
+    p_email: portalAuthEmail
   });
   if (rpcErr) throw new Error(rpcErr.message || "Could not resolve employee Portal account.");
   if (!staffUserId) {
+    const loginHint = formPayload.portalStaffLogin
+      ? " Selected staff: " + formPayload.portalStaffLogin + "."
+      : "";
     throw new Error(
-      "No Portal login found for this email. The employee must use the same email in Supabase Auth."
+      "No Portal login found for this staff member (" + portalAuthEmail + ")." + loginHint +
+        " Ensure they exist in Supabase Auth (staff PIN sync)."
     );
   }
 
@@ -41,7 +46,7 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
     status: "awaiting_employee",
     user_id: staffUserId,
     employee_name: employeeName,
-    employee_email: employeeEmail,
+    employee_email: contactEmail,
     employee_address: templateData.EMPLOYEE_ADDRESS || "",
     contract_date: formPayload.contractDate || null,
     commencement_date: formPayload.commencementDate || null,
@@ -74,7 +79,7 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
     .from("portal_staff_announcements")
     .insert([
       {
-        title: `Sign employment contract${row.role ? " ó " + row.role : ""}`,
+        title: `Sign employment contract${row.role ? " ù " + row.role : ""}`,
         body: annBody,
         message_type: "contract_signing",
         priority: "high",
