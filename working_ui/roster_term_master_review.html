@@ -146,6 +146,7 @@
     <button type="button" id="btnSave" class="ok">Guardar borrador</button>
     <button type="button" id="btnExport">Exportar MADRE</button>
     <button type="button" id="btnReset">Reset</button>
+    <button type="button" id="btnDiscardDraft" class="ghost" title="Borra el borrador del navegador y recarga el seed">Descartar borrador</button>
     <span id="status" class="status"></span>
   </div>
   <input id="fileInput" type="file" accept=".json" hidden/>
@@ -198,6 +199,17 @@
   function normSvc(s){ return String(s||'').trim().toLowerCase(); }
   function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
   function setStatus(m,k){ statusEl.textContent=m; statusEl.className='status'+(k?' '+k:''); }
+  function setAppLoading(msg){
+    app.innerHTML = '<div class="empty">'+esc(msg || 'Cargando…')+'</div>';
+  }
+  function isValidMadreState(data){
+    return !!(data && Array.isArray(data.weeks) && data.weeks.length);
+  }
+  function skipDraftRestore(){
+    try{
+      return /(?:^|[?&])fresh=1(?:&|$)/.test(String(location.search || ''));
+    }catch(_){ return false; }
+  }
   function markDirty(){ dirty=true; setStatus('Sin guardar — pulsa Guardar borrador.', 'warn'); }
   function isClosed(n){ return String(n||'').trim().toUpperCase()==='CLOSED'; }
   function isNoParticipant(n){
@@ -462,23 +474,74 @@
   }
 
   function applyData(data, msg){
+    if(!isValidMadreState(data)){
+      throw new Error('JSON sin semanas (weeks[]) — archivo incompleto o borrador corrupto');
+    }
     state = normalizeState(deepClone(data));
+    weekIdx = Math.min(Math.max(0, weekIdx), Math.max(0, state.weeks.length - 1));
     fillWeekSelect(); fillStaffPick(); updateStats();
-    dirty=false; render();
+    dirty=false;
+    render();
     setStatus(msg||'OK','ok');
   }
 
+  function applyDataAsync(data, msg, done){
+    setAppLoading('Preparando cuadrícula…');
+    setTimeout(function(){
+      try{
+        applyData(data, msg);
+      }catch(err){
+        setStatus('Error: '+String(err.message||err),'warn');
+        app.innerHTML = '<div class="empty"><strong>No se pudo cargar.</strong><br>'+
+          esc(String(err.message||err))+'<br><br>'+
+          'Prueba <strong>Descartar borrador</strong>, <strong>Cargar seed</strong> o <strong>JSON…</strong></div>';
+      }
+      if(typeof done === 'function') done();
+    }, 0);
+  }
+
   function useSeedData(data, msg){
-    seedSnapshot = normalizeState(deepClone(data));
-    try{
-      var d = localStorage.getItem(STORAGE_KEY);
-      if(d && confirm('¿Restaurar borrador guardado?')){ applyData(JSON.parse(d),'Borrador OK'); return; }
-    }catch(_){}
-    applyData(data, msg || 'Seed OK');
+    if(!isValidMadreState(data)){
+      setStatus('Seed inválido','warn');
+      app.innerHTML = '<div class="empty"><strong>Seed sin semanas.</strong> Regenera el boot o carga JSON manualmente.</div>';
+      return;
+    }
+    setAppLoading('Cargando seed…');
+    setTimeout(function(){
+      try{
+        seedSnapshot = normalizeState(deepClone(data));
+      }catch(err){
+        setStatus('Error al preparar seed','warn');
+        app.innerHTML = '<div class="empty">'+esc(String(err.message||err))+'</div>';
+        return;
+      }
+      var draftRaw = null;
+      try{ if(!skipDraftRestore()) draftRaw = localStorage.getItem(STORAGE_KEY); }catch(_){}
+      if(draftRaw){
+        var restore = confirm('¿Restaurar borrador guardado?\n\nCancelar = seed del servidor\nOK = tu borrador local');
+        if(restore){
+          setAppLoading('Restaurando borrador…');
+          setTimeout(function(){
+            try{
+              var parsed = JSON.parse(draftRaw);
+              if(!isValidMadreState(parsed)) throw new Error('borrador sin semanas');
+              applyDataAsync(parsed, 'Borrador OK');
+            }catch(err){
+              try{ localStorage.removeItem(STORAGE_KEY); }catch(_){}
+              applyDataAsync(data, 'Borrador corrupto — seed cargado');
+              setStatus('Borrador descartado ('+String(err.message||err)+')','warn');
+            }
+          }, 0);
+          return;
+        }
+      }
+      applyDataAsync(data, msg || 'Seed OK');
+    }, 0);
   }
 
   function loadSeed(){
     setStatus('Cargando…');
+    setAppLoading('Cargando seed…');
     if(window.PORTAL_ROSTER_TERM_MASTER_SEED){
       useSeedData(window.PORTAL_ROSTER_TERM_MASTER_SEED, 'Seed: 20 staff · 7 semanas · slots 30\' separados');
       return;
@@ -517,7 +580,12 @@
   document.getElementById('btnReset').onclick = function(){
     if(!seedSnapshot||!confirm('¿Reset al seed original?')) return;
     localStorage.removeItem(STORAGE_KEY);
-    applyData(seedSnapshot,'Reset OK');
+    applyDataAsync(seedSnapshot,'Reset OK');
+  };
+  document.getElementById('btnDiscardDraft').onclick = function(){
+    if(!confirm('¿Descartar borrador guardado en este navegador y recargar el seed?')) return;
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(_){}
+    loadSeed();
   };
   fileInput.onchange = function(){
     var f=fileInput.files[0]; if(!f) return;
