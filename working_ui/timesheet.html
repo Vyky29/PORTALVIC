@@ -8,6 +8,37 @@
   <script>
     (function () {
       try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {}
+      function forceTimesheetVertical() {
+        try {
+          document.documentElement.classList.remove("portal-force-landscape");
+          document.documentElement.classList.add("portal-timesheet-vertical");
+          if (document.body) {
+            document.body.classList.remove("portal-force-landscape");
+            document.body.classList.add("portal-timesheet-vertical");
+          }
+        } catch (_) {}
+        if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+        try {
+          if (
+            window.matchMedia &&
+            window.matchMedia("(max-width: 900px)").matches &&
+            window.screen &&
+            window.screen.orientation &&
+            typeof window.screen.orientation.lock === "function"
+          ) {
+            void window.screen.orientation.lock("portrait").catch(function () {});
+          }
+        } catch (_) {}
+      }
+      forceTimesheetVertical();
+      document.addEventListener("DOMContentLoaded", forceTimesheetVertical);
+      window.addEventListener("pageshow", forceTimesheetVertical);
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) return;
+        if (document.body && document.body.classList.contains("portal-timesheet-manual")) return;
+        forceTimesheetVertical();
+      });
+      window.__portalTimesheetForceVertical = forceTimesheetVertical;
     })();
   </script>
   <style id="portal-hide-wp-chrome">
@@ -113,16 +144,16 @@
     .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
     .actions .btn{min-height:44px;touch-action:manipulation}
     @media (max-width:900px){
-      html:not(.portal-force-landscape) .page{padding:8px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px))}
-      html:not(.portal-force-landscape) .head{padding:10px 12px}
-      html:not(.portal-force-landscape) .head h1{font-size:18px}
-      html:not(.portal-force-landscape) .identity{padding:10px 12px 0;font-size:13px}
-      html:not(.portal-force-landscape) .status-note{padding:0 10px 10px;font-size:12px}
-      html:not(.portal-force-landscape) .table-wrap{padding:6px 4px 10px}
-      html:not(.portal-force-landscape) table{width:100%;min-width:0;table-layout:fixed}
-      html:not(.portal-force-landscape) th,
-      html:not(.portal-force-landscape) td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
-      html:not(.portal-force-landscape) thead th{
+      html.portal-timesheet-vertical .page{padding:8px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px))}
+      html.portal-timesheet-vertical .head{padding:10px 12px}
+      html.portal-timesheet-vertical .head h1{font-size:18px}
+      html.portal-timesheet-vertical .identity{padding:10px 12px 0;font-size:13px}
+      html.portal-timesheet-vertical .status-note{padding:0 10px 10px;font-size:12px}
+      html.portal-timesheet-vertical .table-wrap{padding:6px 4px 10px}
+      html.portal-timesheet-vertical table{width:100%;min-width:0;table-layout:fixed}
+      html.portal-timesheet-vertical th,
+      html.portal-timesheet-vertical td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
+      html.portal-timesheet-vertical thead th{
         --th-head-fs:12px;
         font-size:var(--th-head-fs);
         line-height:1.25;
@@ -130,7 +161,7 @@
         vertical-align:middle;
         padding:6px 3px;
       }
-      html:not(.portal-force-landscape) thead th.th-compact{
+      html.portal-timesheet-vertical thead th.th-compact{
         font-size:calc(var(--th-head-fs) - 2px);
         line-height:1.25;
         text-align:center;
@@ -140,12 +171,12 @@
         word-break:normal;
         padding:6px 2px;
       }
-      html:not(.portal-force-landscape) .th-desk{display:none}
-      html:not(.portal-force-landscape) .th-mob{display:inline;white-space:nowrap}
-      html:not(.portal-force-landscape) .sum-row td{font-size:10px;padding:5px 3px;line-height:1.2}
-      html:not(.portal-force-landscape) .sum-label{text-align:left;font-weight:700}
-      html:not(.portal-force-landscape) .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
-      html:not(.portal-force-landscape) .actions .btn{width:100%}
+      html.portal-timesheet-vertical .th-desk{display:none}
+      html.portal-timesheet-vertical .th-mob{display:inline;white-space:nowrap}
+      html.portal-timesheet-vertical .sum-row td{font-size:10px;padding:5px 3px;line-height:1.2}
+      html.portal-timesheet-vertical .sum-label{text-align:left;font-weight:700}
+      html.portal-timesheet-vertical .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
+      html.portal-timesheet-vertical .actions .btn{width:100%}
     }
     /* Roberto extra-hours / manual entry only: lock landscape on mobile. */
     @media (max-width:900px) and (orientation:portrait){
@@ -224,7 +255,7 @@
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260510-portal-admin"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
-<body class="portal-timesheet-page">
+<body class="portal-timesheet-page portal-timesheet-vertical">
   <main class="page">
     <article class="card">
       <header class="head">
@@ -1224,7 +1255,11 @@
 
     function setupManualMode() {
       state.manual = true;
-      try { document.body.classList.add("portal-timesheet-manual"); } catch (_) {}
+      try {
+        document.documentElement.classList.remove("portal-timesheet-vertical");
+        document.body.classList.add("portal-timesheet-manual");
+        document.body.classList.remove("portal-timesheet-vertical");
+      } catch (_) {}
       if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
       if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
       const autoWrap = document.getElementById("autoWrap");
@@ -1308,6 +1343,10 @@
         setupManualMode();
         if (state.ghostReadOnly) applyGhostReadOnlyUi();
         return;
+      }
+
+      if (typeof window.__portalTimesheetForceVertical === "function") {
+        window.__portalTimesheetForceVertical();
       }
 
       const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
