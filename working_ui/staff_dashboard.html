@@ -1166,7 +1166,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260622-aquatic-absent-sync3';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260622-feedback-key-sync1';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1967,6 +1967,69 @@
         return hit;
       }catch(_){ return false; }
     }
+    function portalReviewFeedbackInMemoryForAliases(aliases){
+      if(!Array.isArray(aliases) || !aliases.length) return false;
+      for(let i = 0; i < aliases.length; i++){
+        const rec = sessionReviewMapMemory[aliases[i]];
+        if(rec && rec.feedbackDone && !rec.absent && !rec.cancelled) return true;
+      }
+      const memKeys = Object.keys(sessionReviewMapMemory);
+      for(let k = 0; k < memKeys.length; k++){
+        const mk = memKeys[k];
+        const rec = sessionReviewMapMemory[mk];
+        if(!rec || !rec.feedbackDone || rec.absent || rec.cancelled) continue;
+        for(let i = 0; i < aliases.length; i++){
+          if(portalReviewStoredAbsentMatchesSessionKey(mk, aliases[i])) return true;
+        }
+      }
+      return false;
+    }
+    function portalReviewFeedbackFromServerForAliases(aliases, needsOwnOnly){
+      const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
+      if(srv && srv.feedback){
+        for(let i = 0; i < aliases.length; i++){
+          if(srv.feedback.has(aliases[i])) return true;
+        }
+      }
+      if(needsOwnOnly){
+        const own = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
+        if(own){
+          for(let i = 0; i < aliases.length; i++){
+            if(own.has(aliases[i])) return true;
+          }
+        }
+      }
+      /** @type {string[]} */
+      const portalKeysToScan = [];
+      const ownPortal = dashboardData && dashboardData.portalServerOwnFeedbackPortalKeys;
+      const submittedPortal = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
+      if(ownPortal && ownPortal.size){
+        ownPortal.forEach(function(pk){ portalKeysToScan.push(pk); });
+      }else if(!needsOwnOnly && submittedPortal && submittedPortal.size){
+        submittedPortal.forEach(function(pk){ portalKeysToScan.push(pk); });
+      }
+      for(let p = 0; p < portalKeysToScan.length; p++){
+        const fk = portalKeysToScan[p];
+        for(let i = 0; i < aliases.length; i++){
+          if(portalReviewStoredAbsentMatchesSessionKey(fk, aliases[i])) return true;
+        }
+      }
+      return false;
+    }
+    function portalReviewFeedbackResolvedForItem(item, iso){
+      if(!item || !iso) return false;
+      if(item.noSessionFeedbackRequired) return false;
+      const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      const aliases = typeof portalCollectItemSessionReviewKeyAliases === 'function'
+        ? portalCollectItemSessionReviewKeyAliases(item, iso, dayWord)
+        : [String(item.sessionKey || '').trim()].filter(Boolean);
+      const needsOwn = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
+        && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
+      if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
+      if(portalReviewFeedbackInMemoryForAliases(aliases)) return true;
+      const direct = getSessionReviewRecord(item);
+      return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
+    }
     function portalReviewAbsentResolvedForItem(item, iso){
       if(!item || !iso) return false;
       const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
@@ -2043,10 +2106,13 @@
         }
       }
       if(absent || cancelled) feedbackDone = false;
-      const mem = getSessionReviewRecord(item) || {};
-      if(!feedbackDone && !absent && !cancelled && mem.feedbackDone && !serverSynced){
-        feedbackDone = true;
+      if(!feedbackDone && !absent && !cancelled){
+        const needsOwnFb = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
+          && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
+        if(portalReviewFeedbackFromServerForAliases(aliases, needsOwnFb)) feedbackDone = true;
+        else if(portalReviewFeedbackInMemoryForAliases(aliases)) feedbackDone = true;
       }
+      const mem = getSessionReviewRecord(item) || {};
       return {
         feedbackDone: feedbackDone,
         incident: !!mem.incident,
@@ -2324,7 +2390,9 @@
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, syncOpts);
         if(dashboardData){
           dashboardData.portalServerSubmittedFeedbackKeys = new Set(keys.feedbackKeys || []);
+          dashboardData.portalServerSubmittedFeedbackPortalKeys = new Set(keys.feedbackKeys || []);
           dashboardData.portalServerOwnFeedbackKeys = new Set(keys.ownFeedbackKeys || []);
+          dashboardData.portalServerOwnFeedbackPortalKeys = new Set(keys.ownFeedbackPortalKeys || []);
           dashboardData.portalPerStaffOwnFeedbackOnlyKeys = new Set(perStaffOwnKeys);
         }
         const mergeFanOutOpts = {
@@ -3331,6 +3399,15 @@
           feedbackDone: false,
           incident: !!(getSessionReviewRecord(item) || {}).incident,
           absent: true,
+          cancelled: false
+        };
+      }
+      if(iso && portalReviewFeedbackResolvedForItem(item, iso)){
+        const memFb = getSessionReviewRecord(item) || {};
+        return {
+          feedbackDone: true,
+          incident: !!memFb.incident,
+          absent: false,
           cancelled: false
         };
       }

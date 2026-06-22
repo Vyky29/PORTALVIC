@@ -227,6 +227,8 @@ export function portalExtractDatesFromRosterKeys(rosterSessionKeys) {
 export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, opts = {}) {
   const empty = {
     feedbackKeys: [],
+    ownFeedbackKeys: [],
+    ownFeedbackPortalKeys: [],
     absentFeedbackKeys: [],
     incidentKeys: [],
     cancellationKeys: [],
@@ -522,22 +524,27 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
 
   /** Roster keys green from this user's session_feedback rows only (substitute / per-staff slots). */
   const ownFeedbackKeys = [];
+  const ownFeedbackPortalKeys = [];
+  const seenOwnPk = new Set();
   const seenOwnRk = new Set();
   const ownRows = [
     ...(Array.isArray(fb.data) ? fb.data : []),
     ...(fbCatchUp && !fbCatchUp.error && Array.isArray(fbCatchUp.data) ? fbCatchUp.data : []),
   ];
+  const ownMatchOpts = {
+    feedbackMergeRules:
+      opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
+  };
   for (const r of ownRows) {
     if (!r || typeof r !== "object") continue;
     const pk = String(
       /** @type {{ portal_session_key?: string }} */ (r).portal_session_key || ""
     ).trim();
-    if (!pk) continue;
+    if (!pk || seenOwnPk.has(pk)) continue;
+    seenOwnPk.add(pk);
+    ownFeedbackPortalKeys.push(pk);
     for (const rk of rosterSessionKeys) {
-      if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, {
-        feedbackMergeRules:
-          opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
-      })) {
+      if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, ownMatchOpts)) {
         continue;
       }
       if (!seenOwnRk.has(rk)) {
@@ -551,6 +558,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   return {
     feedbackKeys: feedbackMerged,
     ownFeedbackKeys,
+    ownFeedbackPortalKeys,
     absentFeedbackKeys,
     incidentKeys: dedupeKeys(inc.data),
     cancellationKeys: dedupeKeys(can.data),
@@ -1084,9 +1092,17 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
       changed = true;
     }
   }
+  const expandedOwnOnly = new Set(ownOnly);
+  for (const rk of portalOwnRosterKeysFromPortalFeedbackKeys(
+    packs.ownFeedbackPortalKeys,
+    rosterKeys,
+    fanOutOpts
+  )) {
+    expandedOwnOnly.add(rk);
+  }
   if (perStaffOwnOnly.size) {
     for (const rk of perStaffOwnOnly) {
-      if (ownOnly.has(rk)) continue;
+      if (expandedOwnOnly.has(rk)) continue;
       const prev = memory[rk];
       if (prev && prev.feedbackDone && !prev.absent && !prev.cancelled) {
         memory[rk] = { ...prev, feedbackDone: false };
@@ -1137,6 +1153,23 @@ function portalReviewMemoryBase() {
   return { feedbackDone: false, incident: false, absent: false, cancelled: false };
 }
 
+/** Roster keys this staff owns via their session_feedback portal_session_key rows. */
+function portalOwnRosterKeysFromPortalFeedbackKeys(ownPortalKeys, rosterKeys, opts = {}) {
+  /** @type {Set<string>} */
+  const out = new Set();
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    for (const pk of ownPortalKeys || []) {
+      if (portalFeedbackSubmittedKeyMatchesRosterKey(String(pk || "").trim(), rosterKey, opts)) {
+        out.add(rosterKey);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 /**
  * Roster session keys backed by Supabase for staff tablets (fan-out uses strict slug match).
  * @param {string[]} rosterKeys
@@ -1171,6 +1204,7 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(submittedFb, feedback);
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
+  fanOut(packs?.ownFeedbackPortalKeys || [], feedback);
   for (const fk of absentAll) {
     const exact = String(fk || "").trim();
     if (exact && (rosterKeys || []).includes(exact)) absent.add(exact);
@@ -1185,6 +1219,14 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
       .map((k) => String(k || "").trim())
       .filter(Boolean)
   );
+  for (const rk of portalOwnRosterKeysFromPortalFeedbackKeys(
+    packs?.ownFeedbackPortalKeys,
+    rosterKeys,
+    opts
+  )) {
+    ownOnly.add(rk);
+    feedback.add(rk);
+  }
   if (perStaffOwnOnly.size) {
     for (const rk of perStaffOwnOnly) {
       if (!ownOnly.has(rk)) feedback.delete(rk);
@@ -1248,6 +1290,13 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
       .map((k) => String(k || "").trim())
       .filter(Boolean)
   );
+  for (const rk of portalOwnRosterKeysFromPortalFeedbackKeys(
+    packs.ownFeedbackPortalKeys,
+    rosterKeys,
+    opts
+  )) {
+    ownOnly.add(rk);
+  }
   for (const rk of ownOnly) resolved.add(rk);
   for (const rk of perStaffOwnOnly) {
     if (!ownOnly.has(rk)) resolved.delete(rk);
