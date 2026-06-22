@@ -7869,6 +7869,93 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return schedOverridePickBestForSlot(matches);
     }
+    function schedOverridePayloadMatches(existing, newRow){
+      var t = String(newRow && newRow.override_type || '').trim();
+      if(String(existing && existing.override_type || '').trim() !== t) return false;
+      var ep = (existing && existing.payload) || {};
+      var np = (newRow && newRow.payload) || {};
+      if(t === 'instructor_reassign'){
+        return normalizeSchedAnchorStaffId(ep.covering_staff_id) === normalizeSchedAnchorStaffId(np.covering_staff_id);
+      }
+      if(t === 'client_replace_in_slot'){
+        var eRep = adminCanonicalClientSlug(ep.to_client_id || ep.replacement_client_id || '');
+        var nRep = adminCanonicalClientSlug(np.to_client_id || np.replacement_client_id || '');
+        return !!(eRep && nRep && eRep === nRep);
+      }
+      if(t === 'client_absence_announced' || t === 'slot_clear_client' || t === 'slot_open' || t === 'slot_close'){
+        return true;
+      }
+      try{
+        return JSON.stringify(ep) === JSON.stringify(np);
+      }catch(_){
+        return false;
+      }
+    }
+    function schedFindEquivalentActiveOverride(slot, row){
+      var rows = Array.isArray(sched.overrides) ? sched.overrides : [];
+      for(var i = 0; i < rows.length; i++){
+        var o = rows[i];
+        if(String(o.status || 'active') !== 'active') continue;
+        if(String(o.override_type || '').trim() !== String(row.override_type || '').trim()) continue;
+        if(!schedOverrideMatchesSlot(slot, o)) continue;
+        if(schedOverridePayloadMatches(o, row)) return o;
+      }
+      return null;
+    }
+    async function schedCancelDuplicateActiveOverrides(client, slot, ovType, keepId){
+      if(!client || !slot) return;
+      var keep = String(keepId || '').trim();
+      var ids = [];
+      (sched.overrides || []).forEach(function(o){
+        if(!o || !o.id) return;
+        if(String(o.status || 'active') !== 'active') return;
+        if(keep && String(o.id) === keep) return;
+        if(String(o.override_type || '').trim() !== String(ovType || '').trim()) return;
+        if(!schedOverrideMatchesSlot(slot, o)) return;
+        ids.push(o.id);
+      });
+      if(!ids.length) return;
+      var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', ids);
+      if(up.error) console.warn('[sched] cancel duplicate overrides', up.error);
+    }
+    async function schedAutoCancelDuplicateActiveOverridesOnDate(client, iso){
+      if(!client || !iso) return;
+      var rows = (sched.overrides || []).filter(function(o){
+        return String(o && o.status || 'active') === 'active';
+      });
+      var groups = Object.create(null);
+      rows.forEach(function(o){
+        var k = schedOverrideLogDedupeKey(o);
+        if(!k) return;
+        if(!groups[k]) groups[k] = [];
+        groups[k].push(o);
+      });
+      var cancelIds = [];
+      Object.keys(groups).forEach(function(k){
+        var list = groups[k];
+        if(list.length <= 1) return;
+        list.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+        for(var i = 1; i < list.length; i++) cancelIds.push(list[i].id);
+      });
+      if(!cancelIds.length) return;
+      var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', cancelIds);
+      if(up.error){
+        console.warn('[sched] auto-cancel duplicate overrides', up.error);
+        return;
+      }
+      sched.overrides = (sched.overrides || []).map(function(o){
+        if(cancelIds.indexOf(o.id) >= 0) return Object.assign({}, o, { status: 'cancelled' });
+        return o;
+      });
+    }
+    function schedOverrideLogDedupeKey(o){
+      return [
+        String(o && o.override_type || '').trim(),
+        adminRosterSlugify(String(o && o.anchor_client_id || '').trim()),
+        schedNormTimeSlotKey(o && (o.anchor_time_slot_label || normTimeShort(o.anchor_start))),
+        normalizeSchedAnchorStaffId(o && o.anchor_staff_id)
+      ].join('|');
+    }
     function schedFindSlotByDemoId(demoId){
       var id = String(demoId || '').trim();
       if(!id) return null;
@@ -11025,12 +11112,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--pri" id="schedSaveBtn">Save override</button>';
       $('schedDrawerCancel').onclick = closeSchedDrawer;
       $('schedSaveBtn').onclick = function(){
+        var saveBtn = $('schedSaveBtn');
+        if(saveBtn && saveBtn.disabled) return;
+        if(saveBtn) saveBtn.disabled = true;
         void saveSchedOverrideFromDrawer().catch(function(err){
           var errEl = $('schedFormErr');
           var detail = err && err.message ? String(err.message) : String(err || 'Unknown error');
           if(errEl) errEl.textContent = 'Save failed: ' + detail;
           console.error('[portal] schedule override save', err);
           try{ if(typeof portalAdminToast === 'function') portalAdminToast('Save failed — ' + detail); }catch(_t){}
+        }).finally(function(){
+          if(saveBtn) saveBtn.disabled = false;
         });
       };
       var undoBtn = $('schedUndoOverrideBtn');
@@ -11632,6 +11724,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var beforeSnap = { slot: slot, previous_override: findOverrideForSlot(slot) };
       if(!(await schedConfirmOverrideTermMismatch(slot, ovType, payload))) return;
+      var existingEq = schedFindEquivalentActiveOverride(slot, row);
+      if(existingEq){
+        await schedCancelDuplicateActiveOverrides(client, slot, ovType, existingEq.id);
+        closeSchedDrawer();
+        sched.lastMsg = 'This override is already saved for this slot.';
+        await refreshSchedulingModule();
+        return;
+      }
       var insRes = await client.from('schedule_overrides').insert([row]).select('id,created_at,created_by');
       if(insRes.error){
         if(msgEl) msgEl.textContent = 'Save failed: '+esc(String(insRes.error.message||insRes.error))+(insRes.error.hint?(' — '+esc(insRes.error.hint)):'');
@@ -11642,6 +11742,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(msgEl) msgEl.textContent = 'Save did not return a row (check RLS: admin or CEO profile required).';
         return;
       }
+      await schedCancelDuplicateActiveOverrides(client, slot, ovType, ins0.id);
       var evRow = {
         override_id: ins0.id,
         action: 'create',
@@ -11679,22 +11780,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         }
       }catch(_lg){}
-      closeSchedDrawer();
-      sched.lastMsg = 'Override saved.';
-      if(window.PortalMadreFold && typeof window.PortalMadreFold.queueScheduleOverrideChange === 'function'){
-        window.PortalMadreFold.queueScheduleOverrideChange(client, {
-          row: row,
-          before: beforeSnap,
-          override_id: ins0.id,
-          session_date: slot.sessionDate,
-          source_module: 'schedule_overrides'
-        });
-      }
-      adminInvalidateSessionsHubLiveCaches();
-      await schedRefreshRosterSourcesAfterOverride(client);
-      await refreshSchedulingModule();
-      if(state.view === 'c4k_sessions'){
-        try{ void sessionsHubRefreshActiveTab(); }catch(_hub){}
+      try{
+        closeSchedDrawer();
+        sched.lastMsg = 'Override saved.';
+        if(window.PortalMadreFold && typeof window.PortalMadreFold.queueScheduleOverrideChange === 'function'){
+          window.PortalMadreFold.queueScheduleOverrideChange(client, {
+            row: row,
+            before: beforeSnap,
+            override_id: ins0.id,
+            session_date: slot.sessionDate,
+            source_module: 'schedule_overrides'
+          });
+        }
+        adminInvalidateSessionsHubLiveCaches();
+        await schedRefreshRosterSourcesAfterOverride(client);
+        await refreshSchedulingModule();
+        if(state.view === 'c4k_sessions'){
+          try{ void sessionsHubRefreshActiveTab(); }catch(_hub){}
+        }
+      }catch(postErr){
+        console.warn('[portal] override saved; post-save refresh failed', postErr);
+        sched.lastMsg = 'Override saved. Refresh if the table still looks stale.';
+        try{ await refreshSchedulingModule(); }catch(_rf){}
       }
     }
     /** Map roster spreadsheet ids to admin drawer keys (MOCK.clientsById / MOCK.staff). */
@@ -13324,7 +13431,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dateElL = $('schedDate');
       var logIso = dateElL && dateElL.value ? dateElL.value : isoDateLocal(new Date());
       var merged = [];
-      (sched.overrides||[]).forEach(function(o){
+      var overrideLogSeen = Object.create(null);
+      (sched.overrides||[]).slice().sort(function(a, b){
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      }).forEach(function(o){
+        var logKey = schedOverrideLogDedupeKey(o);
+        if(logKey && overrideLogSeen[logKey]) return;
+        if(logKey) overrideLogSeen[logKey] = true;
         merged.push({
           created_at: o.created_at || '',
           html: (function(){
@@ -13539,6 +13652,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(msg){ msg.textContent = 'Could not load overrides: '+String(res.error.message||res.error); msg.style.color = 'var(--danger)'; }
         }
         sched.overrides = res.error ? [] : (res.data || []);
+        if(!res.error && client){
+          await schedAutoCancelDuplicateActiveOverridesOnDate(client, iso);
+        }
         if(resTerm.error){
           console.warn('[sched] portal_roster_row_events:', resTerm.error);
         }else{
