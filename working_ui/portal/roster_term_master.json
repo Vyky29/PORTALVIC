@@ -112,8 +112,8 @@
         }
       }
     },
-    "lastEditedAt": "2026-06-22T10:37:05.031930+00:00",
-    "exportedAt": "2026-06-22T10:34:10.125Z",
+    "lastEditedAt": "2026-06-22T11:16:48.872Z",
+    "exportedAt": "2026-06-22T11:16:50.471Z",
     "approved": false,
     "schemaVersion": 2,
     "staffShiftsSource": "staff_timetable_machine.json",
@@ -11912,7 +11912,17 @@
                   "participant_info": ""
                 },
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "12.30 to 1,30",
+                  "client_name": "Fadi",
+                  "service": "Day Centre",
+                  "area": "Hub \u00b7 Manager",
+                  "pool_note": "Hub \u00b7 Manager",
+                  "venue": "SwimFarm",
+                  "instructors": "RAUL",
+                  "participant_info": ""
+                },
+                {
+                  "time_slot": "1.30 to 4",
                   "client_name": "Emmanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",

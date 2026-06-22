@@ -66,6 +66,29 @@
     return v;
   }
 
+  /** Apply dated sunday overrides (e.g. BISMARK → JAVI cover on 2026-06-21). */
+  function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source) {
+    var raw = String(instructorsRaw || "").trim();
+    var iso = String(sessionDate || "").trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return raw;
+    var overrides =
+      source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
+    var day = overrides && overrides[iso] ? overrides[iso] : null;
+    var map = day && day.replaceInstructor ? day.replaceInstructor : null;
+    if (!map) return raw;
+    var out = raw;
+    Object.keys(map).forEach(function (fromKey) {
+      var to = String(map[fromKey] || "").trim();
+      if (!fromKey || !to) return;
+      var re = new RegExp(
+        String(fromKey).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "gi"
+      );
+      out = out.replace(re, to);
+    });
+    return out;
+  }
+
   /** Instructor tokens on a row → canonical `staffProfiles` keys (one session row per key). */
   function instructorProfileKeysForRow(instructorsRaw, profiles) {
     const keys = Object.keys(profiles || {});
@@ -182,27 +205,31 @@
    */
   var ROSTER_PARTICIPANT_SPELLING_ALIASES = {
     aadam_ah: "adaam_ah",
+    abodi_p: "abodi_pa",
+    adam_pi: "adam_p",
+    amar_ra: "amar_rai",
+    sammer: "samer",
+    rayan_tapa: "rayan_ta",
+    steven_ces: "steven",
+    steven_c: "steven",
+    steven_ce: "steven",
+    yusuf: "yusuf_ah",
+    yusef: "yusuf_ah",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
-    abodi_p: "abodi_pa",
     abodi: "abodi_pa",
-    yusuf: "yusuf_ah",
-    yusef: "yusuf_ah",
     junaid: "junaid_f",
     khalid_ab: "khalid",
-    amar_ra: "amar_rai",
-    steven_c: "steven_ces",
-    steven_ce: "steven_ces",
     rayyan_fi: "rayyan_f",
     chaitanya_trial_28_06: "chaitanya",
   };
 
   /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
   var CLIENT_INFO_SHEET_ALIASES = {
-    rayan_ta: "rayan_tapa",
+    rayan_tapa: "rayan_ta",
     aadam_ah: "adaam_ah",
   };
 
@@ -480,7 +507,13 @@
         : null;
 
     rows.forEach((row) => {
-      const targets = instructorProfileKeysForRow(row.instructors, profiles);
+      const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
+      const instructorsResolved = resolveInstructorsForSessionDate(
+        row.instructors,
+        sessionDate,
+        source
+      );
+      const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
 
       const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
@@ -496,9 +529,13 @@
       const rosterService = String(row.service || "").trim();
       const rosterArea =
         row.area !== undefined && row.area !== null ? String(row.area).trim() : "";
+      const isHomeSlot =
+        nameLower === "casa" ||
+        nameLower === "home" ||
+        String(rosterArea || "").trim().toUpperCase() === "HOME";
+      const isManagerSlot = nameLower === "manager";
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
-      const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
 
       if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) && nameRaw) {
         const startMap =
@@ -543,6 +580,15 @@
         rosterArea,
         timeSlotLabel,
       };
+      const instructorsRaw = String(row.instructors || "").trim();
+      if (
+        instructorsRaw &&
+        instructorsResolved &&
+        normalizePersonId(instructorsRaw) !== normalizePersonId(instructorsResolved)
+      ) {
+        baseSession.__portalSundayInstructorCover = true;
+        baseSession.__portalRosterInstructorBeforeOverride = instructorsRaw;
+      }
       if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
         baseSession.session_date = sessionDate;
       }
@@ -561,6 +607,27 @@
             status: "closed",
           })
         );
+        return;
+      }
+
+      if (isHomeSlot || isManagerSlot) {
+        const dutyId = isHomeSlot ? "home" : "manager";
+        const dutyName = isHomeSlot ? "HOME" : "MANAGER";
+        const dutyArea = isHomeSlot ? "HOME" : rosterArea || "Hub · Manager";
+        sessionsModel.push(
+          Object.assign({}, baseSession, {
+            clientId: dutyId,
+            activity: rosterService || "Day Centre",
+            status: dutyId,
+            rosterArea: dutyArea,
+          })
+        );
+        if (!clientNotesById[dutyId]) {
+          clientNotesById[dutyId] = Object.assign({}, EMPTY_NOTE, {
+            name: dutyName,
+            generalLead: `${venue} · ${rosterService || "Day Centre"}`.trim(),
+          });
+        }
         return;
       }
 
@@ -607,7 +674,7 @@
 
     if (!clientNotesById.available) {
       clientNotesById.available = Object.assign({}, EMPTY_NOTE, {
-        name: "No participant",
+        name: "NO PARTICIPANT",
         generalLead: "Open roster slot — new clients welcome",
       });
     }

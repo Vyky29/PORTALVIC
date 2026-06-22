@@ -128,7 +128,23 @@ function isDayCentre(service) {
 
 function isNoFeedbackClient(name) {
   const n = String(name || "").trim().toUpperCase();
-  return !n || n === "CLOSED" || n === "NO CLIENT" || n === "NO_CLIENT";
+  return (
+    !n ||
+    n === "CLOSED" ||
+    n === "NO CLIENT" ||
+    n === "NO_CLIENT" ||
+    n === "CASA" ||
+    n === "HOME" ||
+    n === "MANAGER"
+  );
+}
+
+function normalizeMadreDashboardClient(cn, area) {
+  const up = String(cn || "").trim().toUpperCase();
+  const areaUp = String(area || "").trim().toUpperCase();
+  if (up === "CASA" || up === "HOME" || areaUp === "HOME") return "HOME";
+  if (up === "MANAGER") return "MANAGER";
+  return String(cn || "").trim();
 }
 
 function feedbackUnitKey(row) {
@@ -165,15 +181,16 @@ function seedToAdapterRows(seed) {
     w.staff.forEach(function (st) {
       st.days.forEach(function (d) {
         d.slots.forEach(function (s) {
-          const cn = String(s.client_name || "").trim();
+          const area = String(s.pool_note || s.area || "").trim();
+          const cn = normalizeMadreDashboardClient(s.client_name, area);
           if (!cn) return;
-          if (cn.toUpperCase() === "CASA" || cn.toUpperCase() === "MANAGER") return;
+          if (["CLOSED", "NO CLIENT", "NO PARTICIPANT", "NO_CLIENT"].indexOf(cn.toUpperCase()) >= 0) return;
           rows.push({
             client_name: cn,
             day: d.weekday,
             instructors: String(st.staffName || st.staffKey || "").toUpperCase(),
             service: String(s.service || "").trim(),
-            area: String(s.pool_note || s.area || "").trim(),
+            area: cn === "HOME" ? "HOME" : area,
             time_slot: String(s.time_slot || "").trim(),
             venue: String(s.venue || "SwimFarm").trim(),
             session_date: d.sessionDate,

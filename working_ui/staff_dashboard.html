@@ -5305,11 +5305,26 @@
 
     let currentOpenClientItem = null;
 
+    function portalRosterDutySlotLabel(s){
+      if(!s) return '';
+      const cid = String(s.clientId || '').trim().toLowerCase();
+      const statusLow = String(s.status || '').trim().toLowerCase();
+      if(cid === 'home' || statusLow === 'home') return 'HOME';
+      if(cid === 'manager' || statusLow === 'manager') return 'MANAGER';
+      const areaUp = String(s.rosterArea || s.area || '').trim().toUpperCase();
+      if(areaUp === 'HOME') return 'HOME';
+      return '';
+    }
+    function portalSessionIsRosterDutySlot(s){
+      return !!portalRosterDutySlotLabel(s);
+    }
     function sessionModelStatus(s){
       const statusLow = String(s && s.status || '').trim().toLowerCase();
       const clientIdLow = String(s && s.clientId || '').trim().toLowerCase();
       const nameBlob = String((s && (s.clientName || s.client || s.name)) || '').trim().toLowerCase();
       if(statusLow === 'closed' || clientIdLow === 'closed') return 'Closed';
+      if(statusLow === 'home' || clientIdLow === 'home' || nameBlob === 'home' || nameBlob === 'casa') return 'Home';
+      if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager') return 'Manager';
       if(
         statusLow === 'available' || statusLow === 'no client' || statusLow === 'no_client' ||
         clientIdLow === 'available' || clientIdLow === 'no client' || clientIdLow === 'no_client' || clientIdLow === 'noclient' ||
@@ -5407,7 +5422,7 @@
       if(el) el.innerHTML = formatPortalClientInfoProseHtml(raw, emptyLabel);
     }
 
-    const CLIENT_LIST_PSEUDO_IDS = ['closed', 'available'];
+    const CLIENT_LIST_PSEUDO_IDS = ['closed', 'available', 'home', 'manager'];
     function clientGenderDataAttr(c){
       const g = c && String(c.gender || '').trim().toLowerCase();
       if(g === 'm' || g === 'male') return ' data-gender="m"';
@@ -5637,7 +5652,7 @@
       sessionsModel.forEach(s => {
         if(String(s.staffId).toLowerCase() !== sid) return;
         const st = sessionModelStatus(s);
-        if(st === 'Closed' || st === 'Available') return;
+        if(st === 'Closed' || st === 'Available' || st === 'Home' || st === 'Manager') return;
         pushClient(s.clientId);
       });
       function pushDashboardRow(row){
@@ -6816,7 +6831,7 @@
 
     /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
-      if(item.kind === 'closed') return '<span class="session-pool-na" aria-hidden="true">—</span>';
+      if(item.kind === 'closed' || item.kind === 'home' || item.kind === 'manager') return '<span class="session-pool-na" aria-hidden="true">—</span>';
       return todaySessionPoolColumnHtml(item);
     }
     function todaySessionSingleLineNoteText(item){
@@ -9553,6 +9568,7 @@
       const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, sessionDateIso);
       if(st === 'Available') return false;
+      if(st === 'Home' || st === 'Manager') return false;
       if(st === 'Closed' && !openedClosed) return false;
       const cid0 = String(s.clientId || '').trim().toLowerCase();
       if(!cid0 || cid0 === 'available') return false;
@@ -9592,6 +9608,9 @@
         if(typeof portalOpenSlotMakeupOverrideForSession === 'function' && portalOpenSlotMakeupOverrideForSession(s, iso)){
           return null;
         }
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
+      if(st === 'Home' || st === 'Manager'){
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       if(st === 'Closed' && !openedClosed){
@@ -10072,6 +10091,34 @@
           const _rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
           const sessionStartTs = _rowTs.sessionStartTs;
           const sessionEndTs = _rowTs.sessionEndTs;
+          const dutyLabel = portalRosterDutySlotLabel(s);
+          if(dutyLabel){
+            const dutyKind = dutyLabel === 'HOME' ? 'home' : 'manager';
+            const dutyArea = dutyLabel === 'HOME'
+              ? 'HOME'
+              : String(s.rosterArea || s.area || 'Hub · Manager').trim();
+            return Object.assign({
+              time,
+              kind: dutyKind,
+              clientId: String(s.clientId || '').trim().toLowerCase() || dutyKind,
+              name: dutyLabel,
+              activity,
+              areaLabel: dutyArea,
+              poolLocationLabel: null,
+              poolTier: null,
+              showPoolSymbol: false,
+              showSpecialty: false,
+              specialtyLabel: '',
+              general: dutyLabel === 'HOME' ? 'Working from home.' : 'Manager on duty.',
+              specialty: '—',
+              openSheet: false,
+              sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || dutyKind).toLowerCase()}`,
+              sessionStartTs,
+              sessionEndTs,
+              noSessionFeedbackRequired: true,
+              portalOverrideSuppressReviewOrange: true,
+            }, meta);
+          }
           if(portalSessionHasSlotOpenOverride(s, sessionDateKey) && portalSpreadsheetSlotClosedLike(s)){
             const slotOp = typeof portalFindSlotOpenOverrideForSession === 'function' ? portalFindSlotOpenOverrideForSession(s, sessionDateKey) : null;
             const disp = String(s.clientDisplay || s.clientName || '').trim();
@@ -13654,9 +13701,15 @@
         const ovTone = typeof portalTodaySessionOverrideCardClass === 'function' ? portalTodaySessionOverrideCardClass(item) : '';
         const ovTypeCls = typeof portalTodayItemOverrideClass === 'function' ? portalTodayItemOverrideClass(item) : '';
         const adminAdjCls = typeof portalTodayItemUsesAdminShiftCardStyle === 'function' && portalTodayItemUsesAdminShiftCardStyle(item) ? ' session-card--admin-adjusted' : '';
-        if(item.kind === 'closed' || item.kind === 'available' || item.openSheet === false){
+        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.openSheet === false){
           const row = document.createElement('div');
-          const rowKindCls = item.kind === 'closed' ? 'session-card--closed' : (item.kind === 'available' ? 'session-card--available' : '');
+          const rowKindCls = item.kind === 'closed'
+            ? 'session-card--closed'
+            : (item.kind === 'available'
+              ? 'session-card--available'
+              : (item.kind === 'home'
+                ? 'session-card--home'
+                : (item.kind === 'manager' ? 'session-card--manager' : '')));
           row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '');
           row.setAttribute('role', 'listitem');
           row.innerHTML = todaySessionCardInnerHtml(item);

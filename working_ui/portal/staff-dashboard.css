@@ -5351,6 +5351,29 @@
 
     .session-card:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(23,50,71,.08);border-color:rgba(45,132,179,.28)}
     .session-card:active{transform:translateY(0)}
+    .session-card.session-card--home,
+    .section-card--today .session-card.session-card--home{
+      background:#ff8f00;
+      color:#111;
+      border-color:rgba(255,143,0,.72);
+    }
+    .session-card.session-card--home:hover{transform:none;box-shadow:none}
+    .session-card.session-card--home .session-meta-name{
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .session-card.session-card--manager,
+    .section-card--today .session-card.session-card--manager{
+      background:#fff3e0;
+      border-color:rgba(255,152,0,.45);
+    }
+    .session-card.session-card--manager:hover{transform:none;box-shadow:none}
+    .session-card.session-card--manager .session-meta-name{
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
     .session-card.session-card--closed{
       cursor:default;
       pointer-events:none;

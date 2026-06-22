@@ -95,6 +95,16 @@ def clean(v) -> str:
     return str(v or "").strip()
 
 
+def normalize_madre_dashboard_client(cn: str, area: str) -> str:
+    up = clean(cn).upper()
+    area_up = clean(area).upper()
+    if up in ("CASA", "HOME") or area_up == "HOME":
+        return "HOME"
+    if up == "MANAGER":
+        return "MANAGER"
+    return clean(cn)
+
+
 def seed_to_adapter_rows(seed: dict) -> list[dict]:
     rows: list[dict] = []
     for w in seed.get("weeks", []):
@@ -102,8 +112,9 @@ def seed_to_adapter_rows(seed: dict) -> list[dict]:
             staff_name = clean(st.get("staffName") or st.get("staffKey")).upper()
             for d in st.get("days", []):
                 for s in d.get("slots") or []:
-                    cn = clean(s.get("client_name"))
-                    if not cn or cn.upper() in ("CASA", "MANAGER"):
+                    area = clean(s.get("pool_note") or s.get("area"))
+                    cn = normalize_madre_dashboard_client(s.get("client_name"), area)
+                    if not cn or cn.upper() in ("CLOSED", "NO CLIENT", "NO PARTICIPANT", "NO_CLIENT"):
                         continue
                     rows.append(
                         {
@@ -111,7 +122,7 @@ def seed_to_adapter_rows(seed: dict) -> list[dict]:
                             "day": d.get("weekday"),
                             "instructors": staff_name,
                             "service": clean(s.get("service")),
-                            "area": clean(s.get("pool_note") or s.get("area")),
+                            "area": "HOME" if cn == "HOME" else area,
                             "time_slot": clean(s.get("time_slot")),
                             "venue": clean(s.get("venue") or "SwimFarm"),
                             "session_date": d.get("sessionDate"),

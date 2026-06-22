@@ -529,6 +529,11 @@
       const rosterService = String(row.service || "").trim();
       const rosterArea =
         row.area !== undefined && row.area !== null ? String(row.area).trim() : "";
+      const isHomeSlot =
+        nameLower === "casa" ||
+        nameLower === "home" ||
+        String(rosterArea || "").trim().toUpperCase() === "HOME";
+      const isManagerSlot = nameLower === "manager";
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
 
@@ -602,6 +607,27 @@
             status: "closed",
           })
         );
+        return;
+      }
+
+      if (isHomeSlot || isManagerSlot) {
+        const dutyId = isHomeSlot ? "home" : "manager";
+        const dutyName = isHomeSlot ? "HOME" : "MANAGER";
+        const dutyArea = isHomeSlot ? "HOME" : rosterArea || "Hub · Manager";
+        sessionsModel.push(
+          Object.assign({}, baseSession, {
+            clientId: dutyId,
+            activity: rosterService || "Day Centre",
+            status: dutyId,
+            rosterArea: dutyArea,
+          })
+        );
+        if (!clientNotesById[dutyId]) {
+          clientNotesById[dutyId] = Object.assign({}, EMPTY_NOTE, {
+            name: dutyName,
+            generalLead: `${venue} · ${rosterService || "Day Centre"}`.trim(),
+          });
+        }
         return;
       }
 
