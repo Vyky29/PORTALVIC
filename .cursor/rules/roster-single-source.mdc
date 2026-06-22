@@ -9,7 +9,7 @@
 ## Day-of exceptions (not a second roster)
 
 - `schedule_overrides` — cover, cancel, session_add on the day.
-- `sundayDateOverrides` in the bundle — legacy; prefer dated `portal_roster_rows` for new Sunday covers (2026-06-21 Westway migrated).
+- `sundayDateOverrides` in the bundle — **leadOnDuty only**; instructor covers use dated `portal_roster_rows` (Jun–Jul 2026 Sundays migrated).
 
 ## Do not use for roster rows
 

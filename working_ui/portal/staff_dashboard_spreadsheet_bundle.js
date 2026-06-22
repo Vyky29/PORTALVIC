@@ -4,40 +4,12 @@
   "staffPhotosBaseUrl": "portal/staff_photos/",
   "staffPhotoExtension": "png",
   "sundayDateOverrides": {
-    "2026-06-07": {
-      "leadOnDuty": "John",
-      "replaceInstructor": {
-        "JOHN, BERTA": "JOHN"
-      }
-    },
-    "2026-06-14": {
-      "leadOnDuty": "Berta",
-      "replaceInstructor": {
-        "JOHN, BERTA": "BERTA",
-        "GIUSEPPE": "LULIA"
-      }
-    },
-    "2026-06-21": {
-      "leadOnDuty": "John"
-    },
-    "2026-06-28": {
-      "leadOnDuty": "John",
-      "replaceInstructor": {
-        "JOHN, BERTA": "JOHN"
-      }
-    },
-    "2026-07-05": {
-      "leadOnDuty": "John",
-      "replaceInstructor": {
-        "JOHN, BERTA": "JOHN"
-      }
-    },
-    "2026-07-12": {
-      "leadOnDuty": "Berta",
-      "replaceInstructor": {
-        "JOHN, BERTA": "BERTA"
-      }
-    }
+    "2026-06-07": { "leadOnDuty": "John" },
+    "2026-06-14": { "leadOnDuty": "Berta" },
+    "2026-06-21": { "leadOnDuty": "John" },
+    "2026-06-28": { "leadOnDuty": "John" },
+    "2026-07-05": { "leadOnDuty": "John" },
+    "2026-07-12": { "leadOnDuty": "Berta" }
   },
   "staffProfiles": {
     "sandra": {
