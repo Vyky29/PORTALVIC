@@ -852,6 +852,41 @@ function portalSessionKeyTimeToken(key) {
   return "";
 }
 
+function portalSessionKeyPipeTokenLooksLikeTime(p) {
+  const s = String(p || "")
+    .trim()
+    .toLowerCase();
+  if (!s) return false;
+  if (/^\d{1,2}:\d{2}$/.test(s)) return true;
+  if (/^\d{1,2}\.\d{1,2}$/.test(s)) return true;
+  return /\sto\s/.test(s);
+}
+
+/** Lead aquatic quick marks: `YYYY-MM-DD|client|aquatic` or `YYYY-MM-DD|client|HH:mm|aquatic`. */
+function portalSubmittedKeyIsLeadAquaticUnit(submittedKey) {
+  const parts = String(submittedKey || "")
+    .trim()
+    .split("|")
+    .map((p) => String(p || "").trim())
+    .filter(Boolean);
+  if (parts.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return false;
+  const last = portalSlugifyFeedbackName(parts[parts.length - 1]);
+  if (last !== "aquatic") return false;
+  if (parts.length === 3) {
+    return (
+      !portalSessionKeyPipeTokenLooksLikeTime(parts[1]) &&
+      !!portalSlugifyFeedbackName(parts[1])
+    );
+  }
+  if (parts.length === 4 && portalSessionKeyPipeTokenLooksLikeTime(parts[2])) {
+    return (
+      !portalSessionKeyPipeTokenLooksLikeTime(parts[1]) &&
+      !!portalSlugifyFeedbackName(parts[1])
+    );
+  }
+  return false;
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  * @param {string} submittedKey
@@ -888,6 +923,15 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   /* date||client feedback marks the timed roster row for the same participant (e.g. fitness). */
   if (portalSubmittedKeyIsDateClientOnly(s) && rTime && !portalRosterKeyIsSharedFeedbackUnit(r)) {
     if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
+    return portalSessionKeyClientSlugsMatch(s, r);
+  }
+  /* Lead aquatic absent without clock token → timed roster row for same participant. */
+  if (
+    portalSubmittedKeyIsLeadAquaticUnit(s) &&
+    rTime &&
+    !sTime &&
+    !portalRosterKeyIsSharedFeedbackUnit(r)
+  ) {
     return portalSessionKeyClientSlugsMatch(s, r);
   }
   if (rTime && !sTime && !portalRosterKeyIsSharedFeedbackUnit(r)) return false;
