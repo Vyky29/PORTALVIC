@@ -570,8 +570,30 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
+  /** Sunday SwimFarm hub↔pool pairs: each instructor owns their MA / aquatic / climbing slots. */
+  function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
+    if (!s) return false;
+    if (s.__portalSundayInstructorCover) return true;
+    const day =
+      String(s.day || "").trim() ||
+      (iso
+        ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("en-GB", {
+            weekday: "long",
+          })
+        : "");
+    if (day !== "Sunday") return false;
+    if (String(s.venue || "").trim().toLowerCase() !== "swimfarm") return false;
+    const act = String((s.activity || s.rosterService || s.service) || "")
+      .trim()
+      .toLowerCase();
+    if (/multi[-\s]?activity/.test(act)) return true;
+    if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+    if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+    return false;
+  }
+
   /** Submitted row completes a status slot only for the same instructor/unit (not support vs swim). */
-  function submittedCoversStatusRow(iso, st) {
+  function submittedCoversStatusRow(iso, st, staffId) {
     if (!st) return false;
     if (isDayCentreStatusRow(st)) {
       return submittedRowsForDateAll(iso).some(function (r) {
@@ -597,10 +619,14 @@
       });
     }
     if (submittedCoversMergeGroup(iso, st)) return true;
+    const sid = String(staffId || "").trim().toLowerCase();
     return submittedRowsForDateAll(iso).some(function (r) {
       if (!submittedRowMatchesStatusClient(r, st)) return false;
       if (submittedRowMarksAbsent(r)) return false;
       if (!submittedRowMatchesStatusUnit(r, st)) return false;
+      if (sid && statusRowNeedsPerStaffUnitFeedback(st)) {
+        if (!staffOwnsInstructor(sid, r.instructor)) return false;
+      }
       if (staffOwnsInstructor(st.instructor, r.instructor)) return true;
       if (st.matchedFeedbackBy && staffOwnsInstructor(st.matchedFeedbackBy, r.instructor)) {
         return true;
@@ -704,19 +730,19 @@
     );
   }
 
-  function statusSlotResolved(iso, st) {
+  function statusSlotResolved(iso, st, staffId) {
     if (!st) return false;
     if (statusRowTermCancelledOnPortal(iso, st)) return true;
     if (statusOverviewIsAbsent(st)) return true;
     if (String(st.feedbackMergeGroup || "").trim()) {
       if (submittedCoversMergeGroup(iso, st)) return true;
-      return submittedCoversStatusRow(iso, st);
+      return submittedCoversStatusRow(iso, st, staffId);
     }
     if (statusRowNeedsPerStaffUnitFeedback(st)) {
-      return submittedCoversStatusRow(iso, st);
+      return submittedCoversStatusRow(iso, st, staffId);
     }
     if (statusRowDone(st)) return true;
-    return submittedCoversStatusRow(iso, st);
+    return submittedCoversStatusRow(iso, st, staffId);
   }
 
   function rosterFeedbackMergeRules() {
@@ -925,7 +951,7 @@
     });
     if (!ownedInGroup.length) return false;
     return ownedInGroup.some(function (st) {
-      return statusSlotResolved(iso, st);
+      return statusSlotResolved(iso, st, staffId);
     });
   }
 
@@ -935,7 +961,7 @@
     return statusRowsForStaffDate(iso, staffId).some(function (st) {
       return (
         String(st.feedbackUnitKey || "").trim() === u &&
-        statusSlotResolved(iso, st)
+        statusSlotResolved(iso, st, staffId)
       );
     });
   }
@@ -949,7 +975,7 @@
     });
     if (
       hits.some(function (st) {
-        return statusSlotResolved(iso, st);
+        return statusSlotResolved(iso, st, staffId);
       })
     ) {
       return true;
@@ -1024,7 +1050,7 @@
       const mergeDone = Object.create(null);
       let unresolved = 0;
       status.forEach(function (st) {
-        if (statusSlotResolved(iso, st)) return;
+        if (statusSlotResolved(iso, st, staffId)) return;
         const mg = String(st.feedbackMergeGroup || "").trim();
         if (mg) {
           if (mergeDone[mg]) return;
@@ -1071,7 +1097,7 @@
     const mergeDone = Object.create(null);
     for (let i = 0; i < status.length; i++) {
       const st = status[i];
-      if (statusSlotResolved(iso, st)) continue;
+      if (statusSlotResolved(iso, st, staffId)) continue;
       const mg = String(st.feedbackMergeGroup || "").trim();
       if (mg) {
         if (mergeDone[mg]) continue;
@@ -1131,7 +1157,7 @@
     });
     if (
       matchingOwned.some(function (st) {
-        return statusSlotResolved(iso, st);
+        return statusSlotResolved(iso, st, staffId);
       })
     ) {
       return true;
@@ -1235,6 +1261,7 @@
     statusRowsForDateAll: statusRowsForDateAll,
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     submittedRowsForDateAll: submittedRowsForDateAll,
+    rosterSessionNeedsPerStaffOwnFeedbackOnly: rosterSessionNeedsPerStaffOwnFeedbackOnly,
     statusSlotResolved: statusSlotResolved,
     statusRowMatchesRosterSession: statusRowMatchesRosterSession,
     submittedCoversStatusRow: submittedCoversStatusRow,

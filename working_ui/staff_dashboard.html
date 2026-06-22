@@ -1163,7 +1163,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260621-sunday-cover-feedback';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260621-sunday-pairs-own-feedback';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1323,15 +1323,29 @@
     function portalSessionIsSundayInstructorCover(s){
       return !!(s && s.__portalSundayInstructorCover);
     }
-    /** Substitute Sunday slots (e.g. JAVI covers CARLOS) — only this staff's Supabase rows may mark green. */
-    function portalCollectPerStaffOwnFeedbackOnlyKeys(iso){
-      const keys = new Set();
-      const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      if(!staffId || !iso) return [];
+    /** Sunday SwimFarm hub↔pool pairs (Godsway↔Roberto, Giuseppe↔Javier, John↔Dan): each instructor owns their slots. */
+    function portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso){
+      if(!s) return false;
+      const day = String(s.day || '').trim()
+        || (iso ? new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '');
+      if(day !== 'Sunday') return false;
+      if(String(s.venue || '').trim().toLowerCase() !== 'swimfarm') return false;
+      const act = String(s.activity || s.rosterService || s.service || '').trim().toLowerCase();
+      if(/multi[-\s]?activity/.test(act)) return true;
+      if(act.indexOf('climbing') >= 0 || act.indexOf('climb') >= 0) return true;
+      if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
+      return false;
+    }
+    /** Substitute cover or Sunday SwimFarm per-instructor slot — only this staff's Supabase rows may mark green. */
+    function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
+      return portalSessionIsSundayInstructorCover(s) || portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso);
+    }
+    function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){
+      if(!staffId || !iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso).slice(0, 10))) return;
       const dayWord = new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       const rel = typeof portalTermFeedbackSessionsForDate === 'function'
         ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
-            if(!portalSessionIsSundayInstructorCover(s)) return false;
+            if(!portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) return false;
             const st = String(s.status || '').toLowerCase();
             if(st === 'closed' || st === 'available') return false;
             return Boolean(String(s.clientId || '').trim());
@@ -1343,22 +1357,64 @@
           : '';
         if(rk) keys.add(rk);
       });
+    }
+    function portalCollectPerStaffOwnFeedbackOnlyKeys(iso){
+      const keys = new Set();
+      const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(!staffId || !iso) return [];
+      portalAppendPerStaffOwnKeysForDate(keys, String(iso).slice(0, 10), staffId);
       try{
         const dd = typeof window !== 'undefined' && window.dashboardData;
         const today = dd && Array.isArray(dd.today) ? dd.today : [];
+        const wantIso = String(iso).slice(0, 10);
         for(let i = 0; i < today.length; i++){
           const it = today[i];
           const base = it && (it.__portalBaseSession || null);
-          if(!base || !portalSessionIsSundayInstructorCover(base)) continue;
+          const itemIso = String(it.sessionDate || it.iso || wantIso || '').trim().slice(0, 10);
+          if(itemIso && itemIso !== wantIso) continue;
+          if(!base || !portalSessionNeedsPerStaffOwnFeedbackOnly(base, itemIso || wantIso)) continue;
           const sk = String(it.sessionKey || '').trim();
           if(sk) keys.add(sk);
         }
       }catch(_){}
-      return [...keys].slice(0, 120);
+      return [...keys].slice(0, 200);
+    }
+    /** All term dates ≤ today (plus catch-up) — peer fan-out must not paint Sunday pairs green on past Sundays. */
+    function portalCollectAllPerStaffOwnFeedbackOnlyKeys(catchUpDates){
+      const keys = new Set();
+      const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(!staffId) return [];
+      const dates = new Set();
+      const todayIso = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+      if(todayIso) dates.add(todayIso);
+      (catchUpDates || []).forEach(function(d){
+        const iso = String(d || '').trim().slice(0, 10);
+        if(iso) dates.add(iso);
+      });
+      try{
+        const t = window.PORTAL_TERM_FROM_TIMETABLE;
+        if(t && t.firstDate && t.lastDate){
+          const cur = new Date(String(t.firstDate) + 'T12:00:00');
+          const last = new Date(String(t.lastDate) + 'T12:00:00');
+          while(cur.getTime() <= last.getTime()){
+            const dk = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0') + '-' + String(cur.getDate()).padStart(2, '0');
+            if(!todayIso || dk <= todayIso) dates.add(dk);
+            cur.setDate(cur.getDate() + 1);
+          }
+        }
+      }catch(_){}
+      dates.forEach(function(iso){
+        portalCollectPerStaffOwnFeedbackOnlyKeys(iso).forEach(function(k){ keys.add(k); });
+      });
+      return [...keys].slice(0, 600);
     }
     function portalTodayItemIsSundayInstructorCover(item){
       const base = item && (item.__portalBaseSession || portalReviewSessionForItem(item));
       return portalSessionIsSundayInstructorCover(base);
+    }
+    function portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso){
+      const base = item && (item.__portalBaseSession || portalReviewSessionForItem(item));
+      return portalSessionNeedsPerStaffOwnFeedbackOnly(base, iso);
     }
     function portalStaffMatchesStatusInstructor(staffId, instructor){
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
@@ -1602,7 +1658,7 @@
                 if(doneFlags) return doneFlags;
                 continue;
               }
-              if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, stDone)){
+              if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, stDone, sid)){
                 return portalReviewFlagsForResolvedSession(iso, sid, s);
               }
             }
@@ -1611,7 +1667,7 @@
               if(String(st.date || '').trim().substring(0, 10) !== iso) return;
               if(!portalStaffOwnsFeedbackStatusRow(sid, st)) return;
               if(bridge.statusRowMatchesRosterSession && !bridge.statusRowMatchesRosterSession(st, s, notes)) return;
-              if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, st)) return;
+              if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, st, sid)) return;
               if(!portalStatusRowIsDoneForCalendar(st)) ownedPending = true;
             });
             if(ownedPending) return { feedbackDone: false, incident: false, absent: false, cancelled: false };
@@ -1703,7 +1759,7 @@
         if(mg){
           const groupRowDone = function(st){
             if(bridge && typeof bridge.statusSlotResolved === 'function'){
-              return bridge.statusSlotResolved(iso, st);
+              return bridge.statusSlotResolved(iso, st, sid);
             }
             return portalStatusRowIsDoneForCalendar(st);
           };
@@ -1833,8 +1889,8 @@
           ? portalEffectiveClientIdForReview(baseS, iso)
           : String(baseS && baseS.clientId || item && item.clientId || '').trim().toLowerCase();
         const startHm = baseS && baseS.start != null ? baseS.start : '';
-        const isCoverSlot = typeof portalTodayItemIsSundayInstructorCover === 'function'
-          && portalTodayItemIsSundayInstructorCover(item);
+        const needsOwnFeedback = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
+          && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         const ownSrv = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
         for(let i = 0; i < aliases.length; i++){
           const k = aliases[i];
@@ -1842,7 +1898,7 @@
             && !portalStaffLeadFeedbackKeyMatchesAquaticSlot(k, iso, cidForSlot, startHm, dayWord)){
             continue;
           }
-          if(isCoverSlot && ownSrv){
+          if(needsOwnFeedback && ownSrv){
             if(ownSrv.has(k)) feedbackDone = true;
           }else if(srv.feedback && srv.feedback.has(k)){
             feedbackDone = true;
@@ -2112,9 +2168,11 @@
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
         const staffIdSync = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const todayIsoSync = portalLondonTodayIso();
-        const perStaffOwnKeys = typeof portalCollectPerStaffOwnFeedbackOnlyKeys === 'function'
-          ? portalCollectPerStaffOwnFeedbackOnlyKeys(todayIsoSync)
-          : [];
+        const perStaffOwnKeys = typeof portalCollectAllPerStaffOwnFeedbackOnlyKeys === 'function'
+          ? portalCollectAllPerStaffOwnFeedbackOnlyKeys(catchUpDates)
+          : (typeof portalCollectPerStaffOwnFeedbackOnlyKeys === 'function'
+            ? portalCollectPerStaffOwnFeedbackOnlyKeys(todayIsoSync)
+            : []);
         const catchUpDates = typeof portalTermStaffCatchUpFeedbackDates === 'function'
           ? portalTermStaffCatchUpFeedbackDates(staffIdSync)
           : [];
@@ -9506,7 +9564,7 @@
               if(fl) return fl;
               continue;
             }
-            if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, st)){
+            if(bridge.statusSlotResolved && bridge.statusSlotResolved(iso, st, sid)){
               return portalReviewFlagsForResolvedSession(iso, sid, s);
             }
           }
