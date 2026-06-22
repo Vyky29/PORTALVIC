@@ -373,8 +373,8 @@
     }
     if (/row-level security|rls|policy|forbidden|not_authenticated/i.test(msg)) {
       return (
-        "Could not be saved (portal permissions). Sign out and in again as Javi/Palankas. " +
-        "If it still fails, tell ops — achievement video SQL may need updating on Supabase."
+        "Could not be saved (portal permissions). Sign out and sign in again with your club email. " +
+        "If it still fails, tell ops — run migration 20260701170000_portal_achievement_upload_rls_reassert.sql on Supabase Portal."
       );
     }
     if (/media_type|duration_ms|column.*does not exist/i.test(msg)) {
