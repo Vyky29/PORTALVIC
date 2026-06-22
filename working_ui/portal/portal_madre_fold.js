@@ -36,6 +36,14 @@
     return Promise.resolve(h);
   }
 
+  function normalizeMadreDashboardClient(cn, area) {
+    var up = String(cn || "").trim().toUpperCase();
+    var areaUp = String(area || "").trim().toUpperCase();
+    if (up === "CASA" || up === "HOME" || areaUp === "HOME") return "HOME";
+    if (up === "MANAGER") return "MANAGER";
+    return String(cn || "").trim();
+  }
+
   function madreToAdapterRows(madre) {
     var rows = [];
     var weeks = (madre && madre.weeks) || [];
@@ -46,15 +54,24 @@
           .toUpperCase();
         (st.days || []).forEach(function (d) {
           (d.slots || []).forEach(function (s) {
-            var cn = String(s.client_name || "").trim();
+            var area = String(s.pool_note || s.area || "").trim();
+            var cn = normalizeMadreDashboardClient(s.client_name, area);
             var up = cn.toUpperCase();
-            if (!cn || up === "CASA" || up === "MANAGER") return;
+            if (
+              !cn ||
+              up === "CLOSED" ||
+              up === "NO CLIENT" ||
+              up === "NO PARTICIPANT" ||
+              up === "NO_CLIENT"
+            ) {
+              return;
+            }
             rows.push({
               client_name: cn,
               day: d.weekday,
               instructors: staffName,
               service: String(s.service || "").trim(),
-              area: String(s.pool_note || s.area || "").trim(),
+              area: cn === "HOME" ? "HOME" : area,
               time_slot: String(s.time_slot || "").trim(),
               venue: String(s.venue || "SwimFarm").trim(),
               session_date: d.sessionDate,

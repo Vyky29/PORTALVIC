@@ -1003,5 +1003,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-05"
     ]
   },
-  "termFeedbackAssumeCompleteThroughIso": "2026-06-09"
+  "termFeedbackAssumeCompleteThroughIso": "2026-06-21"
 };

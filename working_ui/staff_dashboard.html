@@ -3622,14 +3622,19 @@
       }
       if(stillRunning) return 'pending';
 
-      if(relAll.length || relFb.length) return 'complete';
-      const list = typeof portalTodayListItemsForCalendarDay === 'function'
-        ? portalTodayListItemsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
-        : [];
-      for(let ti = 0; ti < list.length; ti++){
-        const item = list[ti];
-        if(item && item.kind === 'client' && item.sessionKey) return 'complete';
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
+      if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
+        && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
+        return 'complete';
       }
+      const relPick = relFb.length ? relFb : relAll;
+      if(Array.isArray(relPick) && relPick.length
+        && typeof portalTermRosterHasRealClientSessions === 'function'
+        && portalTermRosterHasRealClientSessions(relPick, key)){
+        if(key <= todayKey || catchUpDay) return 'late';
+        return 'pending';
+      }
+      if(Array.isArray(relPick) && relPick.length) return 'complete';
       return 'pending';
     }
     /** Minimal Today-list item for one roster row (fallback when full list not built). */
@@ -9005,8 +9010,33 @@
     }
     try{ window.portalStaffSessionsModelWouldDropToday = portalStaffSessionsModelWouldDropToday; }catch(_){}
     try{ window.portalStaffUpdateSessionsModelGuard = portalStaffUpdateSessionsModelGuard; }catch(_){}
+    function portalTodayRowsCalendarIso(rows){
+      if(!Array.isArray(rows) || !rows.length) return '';
+      for(var i = 0; i < rows.length; i++){
+        var item = rows[i];
+        if(!item || !item.sessionKey) continue;
+        var iso = String(item.sessionKey).split('|')[0].trim().slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+      }
+      return '';
+    }
     function portalStaffRebuildTodayRowsFromCandidates(modelOverride){
       if(typeof buildSelectedDayViewFromLauraModel !== 'function') return [];
+      var selectedIso = '';
+      try{
+        var anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+          ? portalResolveTodaySectionCalendarDate()
+          : null;
+        if(anchor && typeof portalIsoYmdFromDate === 'function'){
+          selectedIso = portalIsoYmdFromDate(anchor);
+        }
+      }catch(_){}
+      if(selectedIso && typeof portalBuildTodayRowsForIso === 'function'){
+        try{
+          var pinnedRows = portalBuildTodayRowsForIso(selectedIso) || [];
+          if(pinnedRows.length) return pinnedRows;
+        }catch(_){}
+      }
       var candidates = [];
       if(Array.isArray(modelOverride) && modelOverride.length) candidates.push(modelOverride);
       try{
@@ -11232,7 +11262,11 @@
           ? portalStaffRebuildTodayRowsFromCandidates(modelOverride)
           : [];
         if(!recoveredRows.length && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
-          recoveredRows = dashboardData.today.slice();
+          var cachedIso = String(dashboardData.__portalTodayCalendarIso || '').trim().slice(0, 10);
+          if(!cachedIso) cachedIso = portalTodayRowsCalendarIso(dashboardData.today);
+          if(cachedIso && selectedIso && cachedIso === selectedIso){
+            recoveredRows = dashboardData.today.slice();
+          }
         }
         if(recoveredRows.length){
           rows = recoveredRows;
@@ -11316,6 +11350,7 @@
         return [];
       }
       dashboardData.today = rows;
+      dashboardData.__portalTodayCalendarIso = selectedIso || (rows.length ? portalTodayRowsCalendarIso(rows) : '');
       if(rows.length && typeof portalStaffUpdateSessionsModelGuard === 'function'){
         portalStaffUpdateSessionsModelGuard(id, Array.isArray(modelOverride) ? modelOverride : sessionsModel);
       }
@@ -14753,6 +14788,47 @@
       return !(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
         && portalTermCalendarDayHasNotEndedClientSession(iso, dw, sid, sessionsOpt, curDateOpt));
     }
+    /** Roster rows that need participant feedback (not HOME/MANAGER/closed/available). */
+    function portalTermRosterHasRealClientSessions(sessions, isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const rel = Array.isArray(sessions) ? sessions : [];
+      const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+      for(let i = 0; i < rel.length; i++){
+        const s = rel[i];
+        if(!s) continue;
+        if(baseReal) { if(baseReal(s, iso)) return true; continue; }
+        const st = String(s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available' || st === 'home' || st === 'manager') continue;
+        const cid = String(s.clientId || '').toLowerCase();
+        if(cid && cid !== 'closed' && cid !== 'available' && cid !== 'home' && cid !== 'manager') return true;
+      }
+      return false;
+    }
+    /** True when every feedback-eligible Today card for this calendar day is done (same rules as session card colours). */
+    function portalTermTodayListClientFeedbackAllResolved(isoYmd, dayWord, opts){
+      opts = opts || {};
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const dw = String(dayWord || '').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return false;
+      if(typeof portalTodayListItemsForCalendarDay !== 'function') return false;
+      const list = portalTodayListItemsForCalendarDay(iso, dw, opts);
+      let accountable = 0;
+      for(let i = 0; i < list.length; i++){
+        const item = list[i];
+        if(!item || !item.sessionKey) continue;
+        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager') continue;
+        if(item.noSessionFeedbackRequired) continue;
+        const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
+        const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
+        if(!started && !ended) continue;
+        accountable++;
+        const r = typeof getEffectiveSessionReviewRecord === 'function'
+          ? (getEffectiveSessionReviewRecord(item) || {})
+          : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
+        if(!r.feedbackDone && !r.absent && !r.cancelled) return false;
+      }
+      return accountable > 0;
+    }
     /** All countable Today-list sessions resolved for this instructor's day. */
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
       const iso = String(isoKey || '').trim().slice(0, 10);
@@ -14767,14 +14843,13 @@
         && portalTermCalendarDayHasNotEndedClientSession(iso, dw, staffId, sessions, curDate)){
         return false;
       }
-      const list = typeof portalTodayListItemsForCalendarDay === 'function'
-        ? portalTodayListItemsForCalendarDay(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
-        : [];
-      for(let i = 0; i < list.length; i++){
-        const item = list[i];
-        if(item && item.kind === 'client' && !item.noSessionFeedbackRequired && item.sessionKey) return true;
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
+      if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
+        && portalTermTodayListClientFeedbackAllResolved(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
+        return true;
       }
       const rel = Array.isArray(sessions) ? sessions : [];
+      if(typeof portalTermRosterHasRealClientSessions === 'function' && portalTermRosterHasRealClientSessions(rel, iso)) return false;
       return rel.length > 0;
     }
     function portalTermResolveDayFeedbackState(dayWord, isoKey, staffId, relPick, curDate, catchUpDay){
