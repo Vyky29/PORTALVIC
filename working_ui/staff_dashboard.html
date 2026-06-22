@@ -2688,6 +2688,7 @@
     try{ window.portalTermSessionJudgementAllowed = portalTermSessionJudgementAllowed; }catch(_){}
     function portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed){
       try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
+      try{ window.__PORTAL_TODAY_SYNC_RETRY__ = false; }catch(_){}
       DEMO_VIEW_DAY = day;
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
@@ -9015,6 +9016,9 @@
         ? modelOverride
         : ((typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : []);
       if(!model.some(function(s){ return String(s.staffId || '').toLowerCase() === sid; })) return false;
+      /* Timetable-only shift hints apply to live calendar today — not week/term review days. */
+      const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(!liveToday) return false;
       if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid, anchor)) return true;
       if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return true;
       return false;
@@ -10994,7 +10998,7 @@
       }catch(_){}
       if(todayRows.length) return 'empty';
       const hydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
-      if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
+      if(live && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
         && portalStaffTodayScheduleCardsStillExpected(sid)){
         return 'sync';
       }
@@ -11297,12 +11301,17 @@
         if(recoveredRows.length){
           rows = recoveredRows;
         }else{
-          dashboardData.portalTodayEmptyPanelMode = 'sync';
-          dashboardData.portalTodayNextSessionPreview = null;
-          dashboardData.today = [];
-          portalApplyTodayVenueMeta();
-          if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
-          return [];
+          var rosterHydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+          if(!liveToday && rosterHydrated){
+            dashboardData.portalTodayEmptyPanelMode = 'empty';
+          }else{
+            dashboardData.portalTodayEmptyPanelMode = 'sync';
+            dashboardData.portalTodayNextSessionPreview = null;
+            dashboardData.today = [];
+            portalApplyTodayVenueMeta();
+            if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
+            return [];
+          }
         }
       }
       if(liveToday && !todayOff && rows.length && typeof collectSessionReviewPendingStats === 'function'){
@@ -14238,6 +14247,7 @@
       const tc = weekRowTotalClients(item);
       const weekGo = tc > 0
         ? ' role="button" tabindex="0" data-action="week-review-day" data-week-day="' + escapeHtml(day) + '"'
+          + (iso ? ' data-week-iso="' + escapeHtml(iso) + '"' : '')
         : '';
       return `<div class="calendar-day calendar-day--week-row calendar-day--week-row--${tone}"${weekGo} aria-label="${aria}"><span class="week-day-icon" aria-hidden="true">${abbr}</span><div class="week-row-detail">${parts.join('')}</div></div>`;
     }
@@ -17035,9 +17045,10 @@
         if(!row) return;
         e.preventDefault();
         const day = row.getAttribute('data-week-day') || '';
+        const iso = row.getAttribute('data-week-iso') || '';
         if(day){
           portalSetReviewFlowOrigin('this_week');
-          portalOpenWeekDayReviewFlow(day);
+          portalOpenWeekDayReviewFlow(day, /^\d{4}-\d{2}-\d{2}$/.test(iso) ? { portalReviewDate: iso } : undefined);
         }
       });
       wl.addEventListener('keydown', function(e){
@@ -17046,9 +17057,10 @@
         if(!row) return;
         e.preventDefault();
         const day = row.getAttribute('data-week-day') || '';
+        const iso = row.getAttribute('data-week-iso') || '';
         if(day){
           portalSetReviewFlowOrigin('this_week');
-          portalOpenWeekDayReviewFlow(day);
+          portalOpenWeekDayReviewFlow(day, /^\d{4}-\d{2}-\d{2}$/.test(iso) ? { portalReviewDate: iso } : undefined);
         }
       });
     })();
