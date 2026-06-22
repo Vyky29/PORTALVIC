@@ -16,16 +16,20 @@
 (function (global) {
   "use strict";
 
-  var SOURCE_ID = "spreadsheet_bundle+portal_roster_rows";
-  var SOURCE_VERSION = 1;
+  var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
+  var SOURCE_VERSION = 2;
 
   function normIso(v) {
     var s = String(v || "").trim().slice(0, 10);
     return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
   }
 
-  /** Base machine rows from the shipped spreadsheet bundle only. */
+  /** Prefer live Supabase MADRE; fallback to shipped bundle. */
   function getBundleBaseRows() {
+    var live = global.PORTAL_MADRE_LIVE;
+    if (live && Array.isArray(live.rows) && live.rows.length) {
+      return live.rows.slice();
+    }
     var src = global.STAFF_DASHBOARD_SOURCE;
     if (!src || !Array.isArray(src.rows) || !src.rows.length) return [];
     return src.rows.slice();
@@ -63,7 +67,9 @@
       rosterSourceId: SOURCE_ID,
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
-        "Canonical: portal/staff_dashboard_spreadsheet_bundle.js + Supabase portal_roster_rows",
+        global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
+          ? "Live MADRE (portal_madre_document) + portal_roster_rows overlay"
+          : "Bundle (MADRE snapshot) + portal_roster_rows overlay",
     });
   }
 

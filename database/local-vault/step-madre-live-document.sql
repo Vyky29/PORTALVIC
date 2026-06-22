@@ -1,0 +1,4 @@
+-- 1) Apply supabase/migrations/20260622150000_portal_madre_document.sql
+--    Replace __PORTAL_MADRE_WEBHOOK_SECRET__ with PORTAL_PUSH_WEBHOOK_SECRET value.
+-- 2) Deploy: supabase functions deploy portal-madre-apply-fold
+-- 3) Seed: python database/roster_review/seed_portal_madre_document.py

@@ -2,87 +2,63 @@
 
 ## Principio
 
-**Un solo documento:** `working_ui/portal/roster_term_master.json` (MADRE).
+**Un solo documento vivo:** Supabase `portal_madre_document` (term_key `summer-2026`).
 
-| Pestaña / sección | Contenido | Alimenta en runtime |
-|-------------------|-----------|---------------------|
-| **`weeks`** (participantes) | Slots por instructor: participante, hora, servicio, pool/area, venue | Admin sessions + staff dashboard (sesiones) |
-| **`staffShifts`** | Turnos pool / day centre / bespoke por fecha y trabajador | My Term, grid horas staff, `term_from_timetable` |
+Copia en git: `working_ui/portal/roster_term_master.json` (bootstrap + backup).
 
-**Overrides (última verdad en vivo):** Supabase `portal_roster_rows` + `schedule_overrides` (+ `portal_staff_timetable_cells` para turnos staff).
+| Sección MADRE | Contenido |
+|---------------|-----------|
+| **`weeks`** | Participantes por instructor / slot |
+| **`staffShifts`** | Turnos pool / day centre por fecha |
 
-**Regla crítica:** cada override **permanente** debe **plegarse en MADRE** (`portal_madre_fold_queue` → `fold_overrides_into_madre.py` → `sync_roster_madre_to_portal.py`) o la MADRE queda obsoleta.
+**Runtime:** live MADRE → filas base; `schedule_overrides` = cambios solo del día.
 
-## Pipeline oficial
+## Automático (sin Cursor)
 
-```
-roster_term_master.json (MADRE)
-  → sync_roster_madre_to_portal.py
-  → staff_dashboard_spreadsheet_bundle.js (+ term_from_timetable / staff hours)
-  → deploy Vercel
+Cuando admin guarda en **Edit term slot** o **Schedule & Covers**:
 
-En runtime (admin + staff):
-  MADRE vía bundle
-  + portal_roster_rows
-  + sundayDateOverrides (domingos acordados en bundle)
-  + schedule_overrides (día)
-  → portal_madre_canonical.js / portal_roster_canonical.js
-```
+1. Cliente llama Edge Function `portal-madre-apply-fold` → parchea `portal_madre_document`
+2. Triggers DB (`portal_roster_rows`, `schedule_overrides`) llaman la misma función (pg_net)
+3. Admin/staff recargan live MADRE al refrescar roster
 
-## Editor
+**No hace falta** venir a Cursor tras cada cambio admin.
 
-- **Grid visual (recomendado):** `working_ui/roster_term_master_review.html` — pestañas Participantes | Turnos staff.
-- **CSV alternativo:** `working_ui/roster_review.html` (legacy; converger hacia MADRE).
+## Edición manual bulk (grid MADRE)
 
-Tras editar MADRE:
-
-```bash
-python database/roster_review/apply_madre_after_manual_edit.py
-# commit + push
-```
-
-Tras overrides admin en producción:
-
-```bash
-# 1. Cola en Supabase (portal_madre_fold_queue) se llena sola al guardar en admin
-# 2. Plegar en MADRE:
-python database/roster_review/fold_overrides_into_madre.py
-python database/roster_review/apply_madre_after_manual_edit.py
-```
-
-## No usar como fuente paralela del término
-
-- `staff_clients_machine.json` / CSVs sueltos (solo build intermedio)
-- `sundayDateOverrides.replaceInstructor` para cambios nuevos (plegar en MADRE + `portal_roster_rows` o solo MADRE)
-- `roster_master_dashboard_rows.js` en runtime
-- `staff-shifts.csv` desacoplado del MADRE (export de revisión únicamente)
-
-## Añadir / quitar slots, participantes o trabajadores
-
-Hacerlo en **MADRE** (editor o fold desde admin). El bundle y Supabase se regeneran/sincronizan desde ahí — no editar el bundle a mano salvo emergencia.
-
-## Agentes Cursor (obligatorio)
-
-Cuando el usuario (o tú) **edite** `working_ui/portal/roster_term_master.json` o exporte MADRE desde `roster_term_master_review.html`:
-
-1. Ejecutar **inmediatamente**:
+1. Editar en `roster_term_master_review.html` → export JSON
+2. Guardar en `working_ui/portal/roster_term_master.json`
+3. Ejecutar:
    ```bash
    python database/roster_review/apply_madre_after_manual_edit.py
    ```
-2. Incluir en el mismo commit los artefactos generados: bundle (`working_ui/portal/staff_dashboard_spreadsheet_bundle.js`), seed, boot, merges de feedback si cambiaron.
-3. **Commit + push** salvo que el usuario diga lo contrario.
+   (sync bundle + seed Supabase si `SUPABASE_SERVICE_ROLE_KEY` está en env)
 
-Cuando haya filas **pending** en `portal_madre_fold_queue` y el usuario pida sincronizar overrides:
+## Agentes Cursor
 
-```bash
-# export pending → database/local-vault/madre_fold_queue_pending.json
-python database/roster_review/fold_overrides_into_madre.py
-python database/roster_review/apply_madre_after_manual_edit.py
-```
-
-Tras editar MADRE manualmente (humano):
+Si el usuario edita `roster_term_master.json` o pide "actualiza MADRE":
 
 ```bash
 python database/roster_review/apply_madre_after_manual_edit.py
-# commit + push
 ```
+
+Commit + push salvo que diga lo contrario.
+
+## Deploy Edge Function (una vez)
+
+```bash
+supabase functions deploy portal-madre-apply-fold --project-ref cklpnwhlqsulpmkipmqb
+```
+
+Migración `20260622150000`: reemplazar `__PORTAL_MADRE_WEBHOOK_SECRET__` por el mismo valor que `PORTAL_PUSH_WEBHOOK_SECRET`.
+
+Seed inicial:
+
+```bash
+python database/roster_review/seed_portal_madre_document.py
+```
+
+## No usar como fuente paralela
+
+- Editar bundle a mano
+- CSVs sueltos como verdad del término
+- Cola manual `portal_madre_fold_queue` (legacy; live fold es automático)

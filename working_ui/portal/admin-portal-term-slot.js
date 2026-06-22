@@ -1317,6 +1317,10 @@
             term_action: p.action,
             roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
             source_module: "term_roster_edit",
+          }).then(function () {
+            if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
+              global.portalRefreshStaffDashboardSourceFromPortal();
+            }
           });
         }
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {

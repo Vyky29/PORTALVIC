@@ -33,20 +33,47 @@
   window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
 
   function refreshPortalRosterRowsFromSupabase(client) {
-    if (
-      typeof window === "undefined" ||
-      !window.PortalRosterRowsMerge ||
-      typeof window.PortalRosterRowsMerge.loadAndCache !== "function"
-    ) {
-      return Promise.resolve([]);
-    }
-    return window.PortalRosterRowsMerge.loadAndCache(client).then(function (rows) {
+    var madreP =
+      global.PortalMadreFold && typeof global.PortalMadreFold.loadLiveMadre === "function"
+        ? global.PortalMadreFold.loadLiveMadre(client, true)
+        : Promise.resolve(null);
+    var rowsP =
+      global.PortalRosterRowsMerge &&
+      typeof global.PortalRosterRowsMerge.loadAndCache === "function"
+        ? global.PortalRosterRowsMerge.loadAndCache(client)
+        : Promise.resolve([]);
+    return Promise.all([madreP, rowsP]).then(function (parts) {
       refreshStaffDashboardSourceFromPortal();
-      return rows;
+      return parts[1];
     });
   }
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
 
   refreshStaffDashboardSourceFromPortal();
+
+  function bootstrapLiveMadreWhenReady() {
+    if (typeof window === "undefined") return;
+    var tries = 0;
+    function tick() {
+      tries += 1;
+      var client =
+        window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client
+          ? window.__PORTAL_SUPABASE__.client
+          : null;
+      if (
+        client &&
+        window.PortalMadreFold &&
+        typeof window.PortalMadreFold.loadLiveMadre === "function"
+      ) {
+        window.PortalMadreFold.loadLiveMadre(client, false).then(function () {
+          refreshStaffDashboardSourceFromPortal();
+        });
+        return;
+      }
+      if (tries < 80) setTimeout(tick, 250);
+    }
+    tick();
+  }
+  bootstrapLiveMadreWhenReady();
 })();

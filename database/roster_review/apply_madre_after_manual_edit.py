@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -70,6 +71,13 @@ def main() -> None:
     print(f"Mirrored MADRE → {SEED.relative_to(ROOT)}")
 
     subprocess.run([PY, str(SYNC)], cwd=str(ROOT), check=True)
+
+    seed_script = ROOT / "database" / "roster_review" / "seed_portal_madre_document.py"
+    if seed_script.is_file() and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
+        print("Pushing live MADRE to Supabase…")
+        subprocess.run([PY, str(seed_script)], cwd=str(ROOT), check=False)
+    elif seed_script.is_file():
+        print("Skip Supabase seed (set SUPABASE_SERVICE_ROLE_KEY to push live MADRE).")
 
     n_staff = export_staff_shifts_csv(madre)
     if n_staff:
