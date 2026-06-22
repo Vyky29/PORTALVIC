@@ -8990,6 +8990,29 @@
     }
     try{ window.portalStaffSessionsModelWouldDropToday = portalStaffSessionsModelWouldDropToday; }catch(_){}
     try{ window.portalStaffUpdateSessionsModelGuard = portalStaffUpdateSessionsModelGuard; }catch(_){}
+    function portalStaffRebuildTodayRowsFromCandidates(modelOverride){
+      if(typeof buildSelectedDayViewFromLauraModel !== 'function') return [];
+      var candidates = [];
+      if(Array.isArray(modelOverride) && modelOverride.length) candidates.push(modelOverride);
+      try{
+        var guard = window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__;
+        if(Array.isArray(guard) && guard.length) candidates.push(guard);
+      }catch(_){}
+      if(typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel) && sessionsModel.length) candidates.push(sessionsModel);
+      var seen = Object.create(null);
+      var i;
+      for(i = 0; i < candidates.length; i++){
+        var key = String(candidates[i].length) + ':' + String(candidates[i][0] && candidates[i][0].staffId || '');
+        if(seen[key]) continue;
+        seen[key] = true;
+        try{
+          var rebuilt = buildSelectedDayViewFromLauraModel(candidates[i]) || [];
+          if(rebuilt.length) return rebuilt;
+        }catch(_){}
+      }
+      return [];
+    }
+    try{ window.portalStaffRebuildTodayRowsFromCandidates = portalStaffRebuildTodayRowsFromCandidates; }catch(_){}
     try{ window.portalStaffTodayScheduleCardsStillExpected = portalStaffTodayScheduleCardsStillExpected; }catch(_){}
     /** Pool shift dates from Staff Timetable (1 Jun+); null when map not loaded. */
     function portalTermStaffShiftDatesFor(staffId){
@@ -10768,6 +10791,10 @@
           portalStaffMarkInitialTodayScheduleSettled();
           return false;
         }
+        /* Keep cards visible while async rehydrate runs after optimistic paint. */
+        if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
+          return false;
+        }
         return true;
       }catch(_){ return true; }
     }
@@ -11107,11 +11134,15 @@
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       if(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
-        dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
-        dashboardData.portalTodayNextSessionPreview = null;
-        dashboardData.today = [];
-        portalApplyTodayVenueMeta();
-        return [];
+        if(dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
+          portalStaffMarkInitialTodayScheduleSettled();
+        }else{
+          dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
+          dashboardData.portalTodayNextSessionPreview = null;
+          dashboardData.today = [];
+          portalApplyTodayVenueMeta();
+          return [];
+        }
       }
       const selectedAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
         ? portalResolveTodaySectionCalendarDate()
@@ -11150,12 +11181,22 @@
       if(!rows.length && id && !todayOff
         && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
         && portalStaffTodayScheduleCardsStillExpected(id)){
-        dashboardData.portalTodayEmptyPanelMode = 'sync';
-        dashboardData.portalTodayNextSessionPreview = null;
-        dashboardData.today = [];
-        portalApplyTodayVenueMeta();
-        if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
-        return [];
+        var recoveredRows = typeof portalStaffRebuildTodayRowsFromCandidates === 'function'
+          ? portalStaffRebuildTodayRowsFromCandidates(modelOverride)
+          : [];
+        if(!recoveredRows.length && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
+          recoveredRows = dashboardData.today.slice();
+        }
+        if(recoveredRows.length){
+          rows = recoveredRows;
+        }else{
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          dashboardData.portalTodayNextSessionPreview = null;
+          dashboardData.today = [];
+          portalApplyTodayVenueMeta();
+          if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
+          return [];
+        }
       }
       if(liveToday && !todayOff && rows.length && typeof collectSessionReviewPendingStats === 'function'){
         const stats = collectSessionReviewPendingStats();
@@ -11250,6 +11291,12 @@
         if(!sid || tries > maxTries){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          if(tries > maxTries){
+            try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
+            portalStaffMarkInitialTodayScheduleSettled();
+            if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+            if(typeof renderToday === 'function') renderToday();
+          }
           return;
         }
         var mode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
@@ -13524,7 +13571,7 @@
         }
       }
       let count = Math.min(9, dashboardData.today.length || 0);
-      if(typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
+      if(!count && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
         count = 0;
       }
       grid.className = 'today-grid';
@@ -17441,7 +17488,10 @@
       }
       async function rehydrateFromProfileOnce(){
         var runId = ++_rehydrateRun;
-        portalStaffMarkInitialTodayScheduleUnsettled();
+        var keepTodayPaint =
+          !!(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length)
+          || !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+        if(!keepTodayPaint) portalStaffMarkInitialTodayScheduleUnsettled();
         try {
         try {
           if (window.__PORTAL_GHOST_VERIFY_PROMISE__) {
