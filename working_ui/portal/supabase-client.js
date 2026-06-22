@@ -1186,6 +1186,10 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markResolved(submittedFb);
   markResolved(absentAll);
   markResolved(cancelledKeys);
+  for (const fk of submittedFb) {
+    const exact = String(fk || "").trim();
+    if (exact && rosterKeys.includes(exact)) resolved.add(exact);
+  }
   const perStaffOwnOnly = new Set(
     (Array.isArray(opts.perStaffOwnFeedbackOnlyKeys) ? opts.perStaffOwnFeedbackOnlyKeys : [])
       .map((k) => String(k || "").trim())
