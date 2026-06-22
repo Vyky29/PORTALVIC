@@ -869,6 +869,26 @@
     );
   }
 
+  /** True when a session-key pipe segment is a time token (not a client slug like "mario"). */
+  function portalSessionKeyTokenLooksLikeTime(p) {
+    var s = clean(p).toLowerCase();
+    if (!s) return false;
+    if (/^\d{1,2}:\d{2}$/.test(s)) return true;
+    if (/^\d{1,2}\.\d{1,2}$/.test(s)) return true;
+    return /\sto\s/.test(s);
+  }
+
+  function portalSessionKeyAreaTypeSlug(sl) {
+    return (
+      sl === "day_centre" ||
+      sl === "bespoke_shared" ||
+      sl === "aquatic" ||
+      sl === "swim" ||
+      sl === "multi" ||
+      sl === "climb"
+    );
+  }
+
   /** portal_session_key ? date, optional HH:MM, client slug (handles 2026-05-18||aadam_ah). */
   function parsePortalSessionKeyFields(pk) {
     var raw = clean(pk);
@@ -882,22 +902,36 @@
     for (var i = 1; i < parts.length; i++) {
       var p = parts[i];
       if (!p) continue;
-      var tk = normTimeKey(p, dayWord);
-      if (tk && /^\d{2}:\d{2}$/.test(tk)) {
-        time = tk;
-        continue;
+      if (portalSessionKeyTokenLooksLikeTime(p)) {
+        var tk = normTimeKey(p, dayWord);
+        if (tk && /^\d{2}:\d{2}$/.test(tk)) {
+          time = tk;
+          continue;
+        }
       }
       var sl = slugify(p);
       if (!sl || areaSlugs[sl]) continue;
+      if (portalSessionKeyAreaTypeSlug(sl)) continue;
       if (!clientSlug) clientSlug = sl;
+    }
+    if (!clientSlug && parts.length >= 3 && date) {
+      var mid = slugify(parts[1]);
+      var third = slugify(parts[2]);
+      if (
+        mid &&
+        !areaSlugs[mid] &&
+        !portalSessionKeyAreaTypeSlug(mid) &&
+        portalSessionKeyAreaTypeSlug(third)
+      ) {
+        clientSlug = canonicalClientSlug(mid);
+      }
     }
     if (!clientSlug) {
       for (var j = 1; j < parts.length; j++) {
         if (!parts[j]) continue;
-        var tk2 = normTimeKey(parts[j], dayWord);
-        if (tk2 && /^\d{2}:\d{2}$/.test(tk2)) continue;
+        if (portalSessionKeyTokenLooksLikeTime(parts[j])) continue;
         var sl2 = slugify(parts[j]);
-        if (!sl2 || areaSlugs[sl2]) continue;
+        if (!sl2 || areaSlugs[sl2] || portalSessionKeyAreaTypeSlug(sl2)) continue;
         clientSlug = sl2;
         break;
       }

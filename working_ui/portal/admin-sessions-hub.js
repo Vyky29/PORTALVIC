@@ -873,6 +873,26 @@
     );
   }
 
+  /** True when a session-key pipe segment is a time token (not a client slug like "mario"). */
+  function portalSessionKeyTokenLooksLikeTime(p) {
+    var s = clean(p).toLowerCase();
+    if (!s) return false;
+    if (/^\d{1,2}:\d{2}$/.test(s)) return true;
+    if (/^\d{1,2}\.\d{1,2}$/.test(s)) return true;
+    return /\sto\s/.test(s);
+  }
+
+  function portalSessionKeyAreaTypeSlug(sl) {
+    return (
+      sl === "day_centre" ||
+      sl === "bespoke_shared" ||
+      sl === "aquatic" ||
+      sl === "swim" ||
+      sl === "multi" ||
+      sl === "climb"
+    );
+  }
+
   /** portal_session_key → date, optional HH:MM, client slug (handles 2026-05-18||aadam_ah and date|time|client|area). */
   function parsePortalSessionKeyFields(pk) {
     var raw = clean(pk);
@@ -895,32 +915,40 @@
     for (var i = 1; i < parts.length; i++) {
       var p = parts[i];
       if (!p) continue;
-      var tk = normTimeKey(p, dayWord);
-      if (tk && /^\d{2}:\d{2}$/.test(tk)) {
-        time = tk;
-        continue;
+      if (portalSessionKeyTokenLooksLikeTime(p)) {
+        var tk = normTimeKey(p, dayWord);
+        if (tk && /^\d{2}:\d{2}$/.test(tk)) {
+          time = tk;
+          continue;
+        }
       }
       var sl = slugify(p);
       if (!sl || areaSlugs[sl]) continue;
-      if (sl === "day_centre" || sl === "bespoke_shared" || sl === "aquatic") continue;
+      if (portalSessionKeyAreaTypeSlug(sl)) continue;
       if (!clientSlug) clientSlug = sl;
     }
     if (!clientSlug && parts.length >= 3 && date) {
       var mid = slugify(parts[1]);
       var third = slugify(parts[2]);
-      if (mid && !areaSlugs[mid] && mid !== "day_centre" && mid !== "bespoke_shared" && mid !== "aquatic") {
-        var tkMid = normTimeKey(parts[1], dayWord);
-        if (!tkMid || !/^\d{2}:\d{2}$/.test(tkMid)) clientSlug = canonicalClientSlug(mid);
+      if (
+        mid &&
+        !areaSlugs[mid] &&
+        !portalSessionKeyAreaTypeSlug(mid) &&
+        portalSessionKeyAreaTypeSlug(third)
+      ) {
+        clientSlug = canonicalClientSlug(mid);
       }
-      if (!clientSlug && third && !areaSlugs[third] && third !== "day_centre" && third !== "bespoke_shared" && third !== "aquatic") {
+      if (!clientSlug && mid && !areaSlugs[mid] && !portalSessionKeyAreaTypeSlug(mid)) {
+        if (!portalSessionKeyTokenLooksLikeTime(parts[1])) clientSlug = canonicalClientSlug(mid);
+      }
+      if (!clientSlug && third && !areaSlugs[third] && !portalSessionKeyAreaTypeSlug(third)) {
         clientSlug = canonicalClientSlug(third);
       }
     }
     if (!clientSlug && parts.length >= 2 && date) {
       var only = slugify(parts[1]);
-      if (only && !areaSlugs[only] && only !== "day_centre" && only !== "bespoke_shared" && only !== "aquatic") {
-        var tkOnly = normTimeKey(parts[1], dayWord);
-        if (!tkOnly || !/^\d{2}:\d{2}$/.test(tkOnly)) clientSlug = canonicalClientSlug(only);
+      if (only && !areaSlugs[only] && !portalSessionKeyAreaTypeSlug(only)) {
+        if (!portalSessionKeyTokenLooksLikeTime(parts[1])) clientSlug = canonicalClientSlug(only);
       }
     }
     if (clientSlug) clientSlug = canonicalClientSlug(clientSlug);
