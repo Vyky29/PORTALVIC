@@ -66,8 +66,10 @@
     display:flex; flex-direction:column; justify-content:center; gap:0;
   }
   .slot-client.cell-closed { background:#d32f2f; }
-  .slot-client.cell-noclient { background:#ffeb3b; }
-  .slot-client.cell-casa { background:#eceff1; }
+  .slot-client.cell-noclient { background:#7e57c2; color:#fff; }
+  .slot-client.cell-noparticipant { background:#26a69a; color:#fff; }
+  .slot-client.cell-casa { background:#ff8f00; color:#111; }
+  .slot-client.cell-home { background:#ff8f00; color:#111; }
   .slot-client.cell-manager { background:#fff3e0; }
   .inp-time, .inp-name, .inp-note {
     width:100%; min-width:0; border:none; background:transparent; font:inherit;
@@ -79,6 +81,9 @@
   .inp:focus { outline:2px solid #1565c0; background:#fff; }
   .cell-closed .inp { color:#fff; }
   .cell-closed .inp:focus { color:#111; }
+  .cell-noclient .inp, .cell-noparticipant .inp, .cell-home .inp { color:#fff; }
+  .cell-noclient .inp:focus, .cell-noparticipant .inp:focus { color:#111; }
+  .cell-casa .inp:focus, .cell-home .inp:focus { color:#111; }
   .row-actions { position:absolute; top:0; right:0; display:flex; gap:1px; }
   .col-foot { border-top:1px dashed #666; padding:.2rem; text-align:center; }
   .col-foot button { width:100%; font-size:.62rem; padding:.2rem; }
@@ -119,6 +124,9 @@
     <span><i style="background:#7b1fa2"></i>Bespoke</span>
     <span><i style="background:#512da8"></i>Climbing</span>
     <span><i style="background:#2e7d32"></i>Physical</span>
+    <span><i style="background:#26a69a"></i>No participant</span>
+    <span><i style="background:#7e57c2"></i>No client</span>
+    <span><i style="background:#ff8f00"></i>Home / Casa</span>
   </div>
   <div class="toolbar">
     <label>Vista
@@ -194,11 +202,14 @@
   function markDirty(){ dirty=true; setStatus('Sin guardar — pulsa Guardar borrador.', 'warn'); }
   function isClosed(n){ return String(n||'').trim().toUpperCase()==='CLOSED'; }
   function isNoClient(n){ var x=String(n||'').trim().toUpperCase(); return !x||x==='NO CLIENT'||x==='NO_CLIENT'; }
+  function isNoParticipant(n){ return String(n||'').trim().toUpperCase()==='NO PARTICIPANT'; }
+  function isHome(n){ var x=String(n||'').trim().toUpperCase(); return x==='CASA'||x==='HOME'; }
   function cellCls(n){
     var x=String(n||'').trim().toUpperCase();
     if(isClosed(n)) return 'cell-closed';
+    if(isNoParticipant(n)) return 'cell-noparticipant';
     if(isNoClient(n)) return 'cell-noclient';
-    if(x==='CASA') return 'cell-casa';
+    if(isHome(n)) return 'cell-home';
     if(x==='MANAGER') return 'cell-manager';
     return '';
   }

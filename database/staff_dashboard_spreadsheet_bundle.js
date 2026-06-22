@@ -7106,12 +7106,42 @@
       "session_date": "2026-06-21"
     },
     {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-22"
+    },
+    {
       "client_name": "ACAT",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-22"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-22"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
     },
@@ -7128,20 +7158,10 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-06-22"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
     },
@@ -7156,12 +7176,22 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Fadi",
+      "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "VICTOR",
+      "instructors": "MICHELLE",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "12.30 to 3",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-22"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
     },
@@ -8786,12 +8816,342 @@
       "session_date": "2026-06-28"
     },
     {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "ACAT",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-29"
     },
@@ -8808,27 +9168,77 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Ikram",
+      "client_name": "Emmanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-06-29"
     },
     {
       "client_name": "Fadi",
       "day": "Monday",
-      "instructors": "RAUL",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -8843,6 +9253,256 @@
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
       "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
       "session_date": "2026-06-29"
     },
     {
@@ -8866,6 +9526,126 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
@@ -8879,6 +9659,126 @@
       "client_name": "NO PARTICIPANT",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
@@ -8906,9 +9806,189 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Tinashe",
       "day": "Monday",
       "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
       "service": "Bespoke Programme",
       "area": "Hub Room",
       "time_slot": "4.30 to 6",
@@ -8936,6 +10016,66 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Gemma",
       "day": "Monday",
       "instructors": "DAN",
@@ -8943,6 +10083,126 @@
       "area": "Teaching Pool",
       "time_slot": "5 to 5.30",
       "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
       "session_date": "2026-06-29"
     },
     {
@@ -8966,6 +10226,66 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Serine",
       "day": "Monday",
       "instructors": "SANDRA",
@@ -8973,6 +10293,126 @@
       "area": "Gym",
       "time_slot": "5 to 6",
       "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
       "session_date": "2026-06-29"
     },
     {
@@ -8996,6 +10436,126 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
@@ -9016,9 +10576,189 @@
       "session_date": "2026-06-29"
     },
     {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-06-29"
+    },
+    {
       "client_name": "Adaam Ah",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-06-29"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
@@ -10466,12 +12206,342 @@
       "session_date": "2026-07-05"
     },
     {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "ACAT",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -10488,20 +12558,70 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Ikram",
+      "client_name": "Emmanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -10518,11 +12638,261 @@
     {
       "client_name": "Fadi",
       "day": "Monday",
-      "instructors": "VICTOR",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
       "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
       "session_date": "2026-07-06"
     },
     {
@@ -10546,6 +12916,126 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
@@ -10559,6 +13049,126 @@
       "client_name": "NO PARTICIPANT",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
@@ -10586,9 +13196,189 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Tinashe",
       "day": "Monday",
       "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
       "service": "Bespoke Programme",
       "area": "Hub Room",
       "time_slot": "4.30 to 6",
@@ -10616,6 +13406,66 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Gemma",
       "day": "Monday",
       "instructors": "DAN",
@@ -10623,6 +13473,126 @@
       "area": "Teaching Pool",
       "time_slot": "5 to 5.30",
       "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
       "session_date": "2026-07-06"
     },
     {
@@ -10646,6 +13616,66 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Serine",
       "day": "Monday",
       "instructors": "SANDRA",
@@ -10653,6 +13683,126 @@
       "area": "Gym",
       "time_slot": "5 to 6",
       "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
       "session_date": "2026-07-06"
     },
     {
@@ -10676,6 +13826,126 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Abodi Pa",
       "day": "Monday",
       "instructors": "YOUSSEF",
@@ -10696,9 +13966,189 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Adaam Ah",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-06"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
@@ -12146,12 +15596,342 @@
       "session_date": "2026-07-12"
     },
     {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "ACAT",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "ACAT",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
@@ -12168,27 +15948,77 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Ikram",
+      "client_name": "Emmanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big pool",
+      "time_slot": "12,30 to 1.20",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
     {
       "client_name": "Fadi",
       "day": "Monday",
-      "instructors": "RAUL",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
@@ -12203,6 +16033,256 @@
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
       "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "RAUL",
+      "service": "Day Centre",
+      "area": "Hub \u00b7 Manager",
+      "time_slot": "12.30 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "CLOSED",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 4.30",
+      "venue": "Acton",
       "session_date": "2026-07-13"
     },
     {
@@ -12226,6 +16306,126 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ayaan",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "4 to 5",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adam P",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "Adam P",
       "day": "Monday",
       "instructors": "ANGEL",
@@ -12239,6 +16439,126 @@
       "client_name": "NO PARTICIPANT",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yunis",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
@@ -12266,9 +16586,189 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Eddie",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "4.30 to 5",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "Tinashe",
       "day": "Monday",
       "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "BISMARK",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "GIUSEPPE",
       "service": "Bespoke Programme",
       "area": "Hub Room",
       "time_slot": "4.30 to 6",
@@ -12296,6 +16796,66 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Tinashe",
+      "day": "Monday",
+      "instructors": "JOHN",
+      "service": "Bespoke Programme",
+      "area": "Hub Room",
+      "time_slot": "4.30 to 6",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "Gemma",
       "day": "Monday",
       "instructors": "DAN",
@@ -12306,13 +16866,193 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Joel",
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Gemma",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "5 to 5.30",
       "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "NO PARTICIPANT",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 5.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Amar Rai",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5 to 6",
+      "venue": "Northolt",
       "session_date": "2026-07-13"
     },
     {
@@ -12336,6 +17076,66 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Serine",
+      "day": "Monday",
+      "instructors": "SANDRA",
+      "service": "Physical Activity",
+      "area": "Gym",
+      "time_slot": "5 to 6",
+      "venue": "Westway",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "Steven",
       "day": "Monday",
       "instructors": "ANGEL",
@@ -12343,6 +17143,126 @@
       "area": "Teaching Pool",
       "time_slot": "5.30 to 6",
       "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Steven",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Zayana",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6",
+      "venue": "Northolt",
       "session_date": "2026-07-13"
     },
     {
@@ -12366,6 +17286,126 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Abodi Pa",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "5.30 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Mario",
+      "day": "Monday",
+      "instructors": "ANGEL",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Acton",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "Mario",
       "day": "Monday",
       "instructors": "ANGEL",
@@ -12379,6 +17419,126 @@
       "client_name": "Adaam Ah",
       "day": "Monday",
       "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Adaam Ah",
+      "day": "Monday",
+      "instructors": "DAN",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Teaching Pool",
+      "time_slot": "6 to 6.30",
+      "venue": "Northolt",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Yamik",
+      "day": "Monday",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
@@ -13235,7 +18395,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-22T10:09:39Z",
+    "rosterMadreSyncedAt": "2026-06-22T10:37:26Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
