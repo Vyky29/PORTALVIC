@@ -138,6 +138,39 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09": [
         "ayman",
         "logan"
+      ],
+      "2026-06-12": [
+        "ikram"
+      ],
+      "2026-06-13": [
+        "emani",
+        "matthias",
+        "saaib"
+      ],
+      "2026-06-15": [
+        "fadi",
+        "ikram",
+        "emmanuel",
+        "eddie",
+        "abodi_pa"
+      ],
+      "2026-06-16": [
+        "ayman",
+        "logan",
+        "rayyan_fi"
+      ],
+      "2026-06-17": [
+        "ikram",
+        "stephanie",
+        "scott"
+      ],
+      "2026-06-19": [
+        "ikram"
+      ],
+      "2026-06-20": [
+        "emani",
+        "matthias",
+        "saaib"
       ]
     },
     "dan": {
@@ -172,6 +205,38 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "gemma",
         "zayana",
         "adaam_ah"
+      ],
+      "2026-06-14": [
+        "erik",
+        "jack_w",
+        "arthur_ma",
+        "cyrus",
+        "aydaan_ah",
+        "zakariya",
+        "faris",
+        "simon",
+        "adam_ab"
+      ],
+      "2026-06-15": [
+        "gemma",
+        "zayana",
+        "adaam_ah"
+      ],
+      "2026-06-17": [
+        "tyson",
+        "ruben",
+        "mia"
+      ],
+      "2026-06-21": [
+        "erik",
+        "jack_w",
+        "arthur_ma",
+        "cyrus",
+        "aydaan_ah",
+        "zakariya",
+        "faris",
+        "simon",
+        "adam_ab"
       ]
     },
     "roberto": {
@@ -242,6 +307,63 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "yassir",
         "yossi",
         "mohammed"
+      ],
+      "2026-06-12": [
+        "fadi",
+        "adam_p",
+        "amaar_ah"
+      ],
+      "2026-06-14": [
+        "adaam_ah",
+        "jack_s",
+        "gabriel",
+        "arthur_mo",
+        "amaar_ah",
+        "rodin",
+        "yoan",
+        "yusuf_ah"
+      ],
+      "2026-06-15": [
+        "acat",
+        "fadi",
+        "yunis",
+        "amar_rai",
+        "yamik"
+      ],
+      "2026-06-16": [
+        "fadi",
+        "jad",
+        "serine",
+        "hazem",
+        "eiji"
+      ],
+      "2026-06-17": [
+        "fadi",
+        "vithura",
+        "amar_rai",
+        "amber"
+      ],
+      "2026-06-18": [
+        "fadi",
+        "tom",
+        "yassir",
+        "yossi",
+        "mohammed"
+      ],
+      "2026-06-19": [
+        "fadi",
+        "adam_p",
+        "amaar_ah"
+      ],
+      "2026-06-21": [
+        "adaam_ah",
+        "jack_s",
+        "gabriel",
+        "arthur_mo",
+        "amaar_ah",
+        "rodin",
+        "yoan",
+        "yusuf_ah"
       ]
     },
     "javier": {
@@ -286,6 +408,49 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "khalid_ab",
         "karo",
         "hazem"
+      ],
+      "2026-06-14": [
+        "haneef",
+        "zaid",
+        "hazem",
+        "eiji",
+        "rayyan_fi",
+        "max",
+        "shaan",
+        "shire",
+        "samer"
+      ],
+      "2026-06-16": [
+        "ayman",
+        "adam_me",
+        "linda",
+        "eiji",
+        "kareena"
+      ],
+      "2026-06-17": [
+        "cyrus",
+        "adam_ab",
+        "kayden"
+      ],
+      "2026-06-18": [
+        "ayman",
+        "khalid_ab",
+        "karo",
+        "hazem"
+      ],
+      "2026-06-21": [
+        "zakariya",
+        "haneef",
+        "hazem",
+        "zaid",
+        "eiji",
+        "serine",
+        "rayyan_fi",
+        "max",
+        "patrick",
+        "shaan",
+        "shire",
+        "samer"
       ]
     }
   },
