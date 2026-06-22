@@ -34,13 +34,13 @@
 
   function refreshPortalRosterRowsFromSupabase(client) {
     var madreP =
-      global.PortalMadreFold && typeof global.PortalMadreFold.loadLiveMadre === "function"
-        ? global.PortalMadreFold.loadLiveMadre(client, true)
+      window.PortalMadreFold && typeof window.PortalMadreFold.loadLiveMadre === "function"
+        ? window.PortalMadreFold.loadLiveMadre(client, true)
         : Promise.resolve(null);
     var rowsP =
-      global.PortalRosterRowsMerge &&
-      typeof global.PortalRosterRowsMerge.loadAndCache === "function"
-        ? global.PortalRosterRowsMerge.loadAndCache(client)
+      window.PortalRosterRowsMerge &&
+      typeof window.PortalRosterRowsMerge.loadAndCache === "function"
+        ? window.PortalRosterRowsMerge.loadAndCache(client)
         : Promise.resolve([]);
     return Promise.all([madreP, rowsP]).then(function (parts) {
       refreshStaffDashboardSourceFromPortal();

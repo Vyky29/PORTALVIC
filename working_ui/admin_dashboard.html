@@ -11681,8 +11681,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_lg){}
       closeSchedDrawer();
       sched.lastMsg = 'Override saved.';
-      if(global.PortalMadreFold && typeof global.PortalMadreFold.queueScheduleOverrideChange === 'function'){
-        global.PortalMadreFold.queueScheduleOverrideChange(client, {
+      if(window.PortalMadreFold && typeof window.PortalMadreFold.queueScheduleOverrideChange === 'function'){
+        window.PortalMadreFold.queueScheduleOverrideChange(client, {
           row: row,
           before: beforeSnap,
           override_id: ins0.id,
