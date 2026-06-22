@@ -8,11 +8,53 @@
   const $ = (id) => document.getElementById(id);
 
   let currentStep = 1;
+  let contractKind = "zero_hours";
   let contractReference = "";
   let directorSignatureDataUrl = "";
   let directorPadApi = null;
   let directorPadReady = false;
   const venueHoursStore = {};
+
+  function syncContractTypeFields() {
+    const fixed = contractKind === "fixed_term";
+    document.querySelectorAll(".zero-hours-field").forEach((el) => el.classList.toggle("hidden", fixed));
+    document.querySelectorAll(".fixed-term-field").forEach((el) => el.classList.toggle("hidden", !fixed));
+    if ($("scale")) {
+      $("scale").required = !fixed;
+      $("scale").disabled = fixed || !$("role").value;
+    }
+    ["termEndDate", "annualSalary", "weeklyHours"].forEach((id) => {
+      const el = $(id);
+      if (el) el.required = fixed;
+    });
+  }
+
+  function selectContractType(kind) {
+    contractKind = kind === "fixed_term" ? "fixed_term" : "zero_hours";
+    document.querySelectorAll("[data-contract-kind]").forEach((card) => {
+      const active = card.dataset.contractKind === contractKind;
+      card.classList.toggle("active", active);
+      card.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    if (contractKind === "fixed_term") {
+      $("scale").value = "";
+    }
+    syncContractTypeFields();
+    contractReference = C.generateReference($("employeeName").value, contractKind);
+    updatePreview();
+  }
+
+  function bindContractTypeCards() {
+    document.querySelectorAll("[data-contract-kind]").forEach((card) => {
+      card.addEventListener("click", () => selectContractType(card.dataset.contractKind));
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectContractType(card.dataset.contractKind);
+        }
+      });
+    });
+  }
 
   function portalClient() {
     const box = window.__PORTAL_SUPABASE__;
@@ -90,10 +132,15 @@
 
   function getFormPayload() {
     return {
+      contractKind,
       contractDate: $("contractDate").value,
       commencementDate: $("commencementDate").value,
+      termEndDate: $("termEndDate") ? $("termEndDate").value : "",
+      annualSalary: $("annualSalary") ? $("annualSalary").value : "",
+      weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
+      sundayHourlyRate: $("sundayHourlyRate") ? $("sundayHourlyRate").value : "24",
       role: $("role").value,
-      scale: $("scale").value,
+      scale: contractKind === "fixed_term" ? "" : $("scale").value,
       places: getPlaces(),
       normalHours: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -104,14 +151,19 @@
   function buildTemplateDataForPreview() {
     const places = getPlaces();
     return C.buildTemplateData({
-      contractReference: contractReference || C.generateReference($("employeeName").value),
+      contractKind,
+      contractReference: contractReference || C.generateReference($("employeeName").value, contractKind),
       employeeName: $("employeeName").value.trim(),
       employeeAddress: $("employeeAddress").value.trim(),
       employeeEmail: $("employeeEmail").value.trim(),
       contractDate: $("contractDate").value,
       commencementDate: $("commencementDate").value,
+      termEndDate: $("termEndDate") ? $("termEndDate").value : "",
+      annualSalary: $("annualSalary") ? $("annualSalary").value : "",
+      weeklyHours: $("weeklyHours") ? $("weeklyHours").value : "",
+      sundayHourlyRate: $("sundayHourlyRate") ? $("sundayHourlyRate").value : "24",
       role: $("role").value,
-      scale: $("scale").value,
+      scale: contractKind === "fixed_term" ? "" : $("scale").value,
       placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
       normalHoursOfWork: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -121,32 +173,46 @@
   }
 
   function updatePreview() {
-    if (!contractReference) contractReference = C.generateReference($("employeeName").value);
+    if (!contractReference) contractReference = C.generateReference($("employeeName").value, contractKind);
     $("badgeReference").textContent = "Contract Reference: " + contractReference;
     $("badgeVersion").textContent = "Contract Version: " + C.CONTRACT_VERSION;
     const data = buildTemplateDataForPreview();
     data.CONTRACT_REFERENCE = contractReference;
-    $("livePreview").innerHTML = C.renderContractHtml(C.fillTemplate(data), false, {
+    const kind = data.CONTRACT_KIND || contractKind;
+    $("livePreview").innerHTML = C.renderContractHtml(C.fillTemplate(data, kind), false, {
       directorSignatureDataUrl: directorSignatureDataUrl
-    });
-    const rate = C.getDeliveryRate($("role").value, $("scale").value);
-    if (rate != null) {
-      const msg =
-        "Delivery rate: " +
-        C.GBP +
-        rate +
-        "/h (" +
-        $("scale").value +
-        " " +
-        C.EM +
-        " " +
-        $("role").value +
-        "). Administrative tasks: " +
-        C.GBP +
-        C.ADMIN_RATE +
-        "/h.";
+    }, kind);
+    if (contractKind === "fixed_term") {
+      const salary = $("annualSalary") ? $("annualSalary").value : "";
+      const hours = $("weeklyHours") ? $("weeklyHours").value : "";
+      const msg = salary
+        ? "Annual salary: " + C.formatSalary(salary) + " (inclusive of holiday pay). Contracted: " + (hours || C.EM) + " hours/week."
+        : "Enter annual salary and weekly hours.";
       $("rateDisplay").textContent = msg;
       $("reviewSummary").textContent = msg;
+    } else {
+      const rate = C.getDeliveryRate($("role").value, $("scale").value);
+      if (rate != null) {
+        const msg =
+          "Delivery rate: " +
+          C.GBP +
+          rate +
+          "/h (" +
+          $("scale").value +
+          " " +
+          C.EM +
+          " " +
+          $("role").value +
+          "). Administrative tasks: " +
+          C.GBP +
+          C.ADMIN_RATE +
+          "/h.";
+        $("rateDisplay").textContent = msg;
+        $("reviewSummary").textContent = msg;
+      } else {
+        $("rateDisplay").textContent = "Select role and scale to view hourly rate.";
+        $("reviewSummary").textContent = "";
+      }
     }
     const canSend = canSendContract();
     $("sendContractBtn").disabled = !canSend;
@@ -171,7 +237,13 @@
       show("fgContractDate", !!$("contractDate").value);
       show("fgCommencement", !!$("commencementDate").value);
       show("fgRole", !!$("role").value);
-      show("fgScale", !!$("scale").value);
+      if (contractKind === "fixed_term") {
+        show("fgTermEnd", $("termEndDate") && !!$("termEndDate").value);
+        show("fgAnnualSalary", $("annualSalary") && !!$("annualSalary").value && Number($("annualSalary").value) > 0);
+        show("fgWeeklyHours", $("weeklyHours") && !!$("weeklyHours").value && Number($("weeklyHours").value) > 0);
+      } else {
+        show("fgScale", !!$("scale").value);
+      }
       const places = getPlaces();
       $("fgPlace").classList.toggle("invalid", places.length === 0);
       if (!places.length) valid = false;
@@ -208,10 +280,11 @@
         $("employeeName").value.trim() +
         " (" +
         $("employeeEmail").value.trim() +
-        ") ? " +
+        ") — " +
+        (contractKind === "fixed_term" ? "Fixed term" : "Zero hours") +
+        " — " +
         $("role").value +
-        ", " +
-        $("scale").value;
+        (contractKind === "fixed_term" ? "" : ", " + $("scale").value);
       $("sendContractBtn").disabled = !canSendContract();
     }
   }
@@ -362,16 +435,21 @@
   }
 
   function bindEvents() {
+    bindContractTypeCards();
+    syncContractTypeFields();
     $("role").addEventListener("change", () => {
-      $("scale").disabled = !$("role").value;
-      $("scale").value = "";
+      $("scale").disabled = contractKind === "fixed_term" || !$("role").value;
+      if (contractKind === "fixed_term") $("scale").value = "";
+      else if (!$("role").value) $("scale").value = "";
       updatePreview();
     });
     $("scale").addEventListener("change", updatePreview);
-    ["employeeName", "employeeAddress", "employeeEmail", "contractDate", "commencementDate", "directorName"].forEach(
+    ["employeeName", "employeeAddress", "employeeEmail", "contractDate", "commencementDate", "directorName", "termEndDate", "annualSalary", "weeklyHours", "sundayHourlyRate"].forEach(
       (id) => {
-        $(id).addEventListener("input", () => {
-          if (id === "employeeName") contractReference = "";
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("input", () => {
+          if (id === "employeeName") contractReference = C.generateReference($("employeeName").value, contractKind);
           updatePreview();
         });
       }
@@ -412,19 +490,22 @@
   }
 
   function reset() {
+    contractKind = "zero_hours";
     directorSignatureDataUrl = "";
     directorPadReady = false;
     directorPadApi = null;
     Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
     const form = $("contractForm");
     if (form) form.reset();
+    if ($("sundayHourlyRate")) $("sundayHourlyRate").value = "24";
+    selectContractType("zero_hours");
     const sendOk = $("sendSuccess");
     if (sendOk) sendOk.classList.remove("visible");
     const sendErr = $("sendError");
     if (sendErr) sendErr.style.display = "none";
     const sendBtn = $("sendContractBtn");
     if (sendBtn) sendBtn.disabled = true;
-    contractReference = C.generateReference("");
+    contractReference = C.generateReference("", contractKind);
     $("badgeReference").textContent = "Contract Reference: " + contractReference;
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     setStep(1);
@@ -434,10 +515,11 @@
 
   function init() {
     if (!$("contractForm")) return;
-    contractReference = C.generateReference("");
+    contractReference = C.generateReference("", contractKind);
     $("badgeReference").textContent = "Contract Reference: " + contractReference;
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     bindEvents();
+    syncContractTypeFields();
     setStep(1);
     C.loadLogo().then((url) => {
       if (url) C.logoDataUrl = url;

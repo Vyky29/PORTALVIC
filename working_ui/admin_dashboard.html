@@ -22,8 +22,8 @@
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260607-ops-hub-kpi-center" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
-  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
-  <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
+  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260622-addr" />
+  <script src="/portal/hr-contract-embed-html.js?v=20260622-addr"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260621-venue-review-merge-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260609-docs-wait"></script>
@@ -18930,7 +18930,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
-        staffhr_contracts:'Zero-hours employment contracts — create, send and track staff signatures.',
+        staffhr_contracts:'Employment contracts (zero-hours and fixed term) — create, send and track staff signatures.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
@@ -19712,7 +19712,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '<div id="hrContractEmbed" class="hr-contract-embed"><p class="muted">Loading contract wizard…</p></div>';
       return (
         '<h1 class="page-title">Employment contracts</h1>'+
-        '<p class="page-intro">Create zero-hours contracts and send them to staff. They sign on their <strong>Portal dashboard</strong> (like an announcement); the signed PDF is saved under <strong>My Documents</strong>.</p>'+
+        '<p class="page-intro">Create zero-hours or fixed-term employment contracts and send them to staff. They sign on their <strong>Portal dashboard</strong> (like an announcement); the signed PDF is saved under <strong>My Documents</strong>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
@@ -19746,8 +19746,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         document.body.appendChild(s);
       }
       window.__HR_CONTRACT_DEFER_INIT__ = true;
-      loadScript('portal/contract-core.js?v=20260521-embed', function(){
-        loadScript('portal/hr-contract-app.js?v=20260521-embed', function(){
+      loadScript('portal/contract-core.js?v=20260622-addr', function(){
+        loadScript('portal/hr-contract-app.js?v=20260622-addr', function(){
           delete window.__HR_CONTRACT_DEFER_INIT__;
           finish();
         });
