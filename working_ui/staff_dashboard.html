@@ -8188,6 +8188,17 @@
       }
       return 'other';
     }
+    function portalShadowingTrainerDisplayName(trainerRaw){
+      const parts = portalSessionAddSplitNames(String(trainerRaw || '').trim());
+      const raw = parts[0] || '';
+      if(!raw) return '';
+      const words = raw.split(/\s+/).filter(Boolean);
+      if(words.length > 1) return words[0];
+      const fromProfile = typeof portalStaffProfileFirstName === 'function'
+        ? portalStaffProfileFirstName(raw)
+        : '';
+      return fromProfile || raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
     function portalSessionAddQuickMenuSub(row){
       const parts = [];
       const slot = typeof portalOverrideQuickMenuTimeSlotLabel === 'function'
@@ -8202,8 +8213,14 @@
       const locLabel = locRaw === 'both' ? 'Room & Pool'
         : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
       if(locLabel) parts.push(locLabel);
-      const venue = String(row && row.anchor_venue || '').trim();
-      if(venue) parts.push(venue);
+      const kind = String(pl && pl.kind || '').trim().toLowerCase();
+      if(kind === 'shadowing'){
+        const host = portalShadowingTrainerDisplayName(pl && pl.trainer);
+        if(host) parts.push(host);
+      } else {
+        const venue = String(row && row.anchor_venue || '').trim();
+        if(venue) parts.push(venue);
+      }
       return parts.join(' · ');
     }
     /** First name (or first token) for quick-menu titles such as "Absent - Mary". */
