@@ -18,6 +18,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative } from "node:path";
+import { patchStaffAppPerf } from "./staff-app-perf-patch.mjs";
 
 const REPO_ROOT = join(import.meta.dirname, "..");
 const SOURCE = join(REPO_ROOT, "working_ui");
@@ -176,3 +177,5 @@ if (existsSync(manifestPath)) {
 }
 
 console.log("[build-clubsensational-staff] Done. Files under", relative(REPO_ROOT, OUT));
+
+patchStaffAppPerf(OUT);
