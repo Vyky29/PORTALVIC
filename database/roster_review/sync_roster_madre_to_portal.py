@@ -57,6 +57,99 @@ def is_multi(s: str) -> bool:
     return "multi" in k and "activity" in k
 
 
+def is_bespoke(s: str) -> bool:
+    k = (s or "").lower()
+    return "bespoke" in k
+
+
+MWF_STAFF_BAND_DAYS = frozenset({"Monday", "Wednesday", "Friday"})
+# M/W/F Bespoke + Multi-Activity staff band only (never Day Centre / Aquatic / etc.).
+MWF_STAFF_BAND_SLOT_MAP = {
+    "4.30 to 6": "4.15 to 6.15",
+    "4.30 to 5.15": "4.15 to 5.15",
+    "5.15 to 6": "5.15 to 6.15",
+}
+# Sunday Multi-Activity support worker band 9.15–14.15 (5h).
+SUNDAY_MA_SLOT_MAP = {
+    "9.30 to 10.15": "9.15 to 10",
+    "10.15 to 11": "10 to 10.45",
+    "11 to 11.45": "10.45 to 11.30",
+    "11.45 to 12.30": "11.30 to 12.15",
+    "12.30 to 1.15": "12.15 to 1",
+    "1.15 to 2": "1 to 2.15",
+    "1 to 2": "1 to 2.15",
+}
+SUNDAY_MA_LEADER_KEYS = frozenset({"bismark", "john"})
+SUNDAY_MA_LEADER_LAST_END = "2.45"
+
+
+def dedupe_adapter_rows(rows: list[dict]) -> list[dict]:
+    """MADRE has 7 week blocks — same dated slot must appear once in the bundle."""
+    seen: set[tuple] = set()
+    out: list[dict] = []
+    for r in rows:
+        key = (
+            clean(r.get("session_date")),
+            clean(r.get("day")),
+            slug(r.get("client_name")),
+            clean(r.get("instructors")).upper(),
+            clean(r.get("time_slot")),
+            slug(r.get("service")),
+            clean(r.get("area")),
+            clean(r.get("venue")),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+    return out
+
+
+def patch_term_session_time_slots(seed: dict) -> int:
+    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support 9.15–2.15 (5h)."""
+    n = 0
+    for w in seed.get("weeks", []):
+        for st in w.get("staff", []):
+            staff_key = slug(st.get("staffKey") or "")
+            for d in st.get("days", []):
+                wd = clean(d.get("weekday"))
+                slots = d.get("slots") or []
+                for s in slots:
+                    svc = clean(s.get("service"))
+                    ts = clean(s.get("time_slot"))
+                    new_ts = None
+                    if wd in MWF_STAFF_BAND_DAYS and (is_bespoke(svc) or is_multi(svc)):
+                        new_ts = MWF_STAFF_BAND_SLOT_MAP.get(ts)
+                    elif wd == "Sunday" and is_multi(svc):
+                        new_ts = SUNDAY_MA_SLOT_MAP.get(ts)
+                    if new_ts and new_ts != ts:
+                        s["time_slot"] = new_ts
+                        n += 1
+                if wd != "Sunday":
+                    continue
+                if staff_key in SUNDAY_MA_LEADER_KEYS:
+                    ma_slots = [
+                        s
+                        for s in slots
+                        if is_multi(s.get("service"))
+                        and clean(s.get("time_slot")).endswith(" to 2.15")
+                    ]
+                    if ma_slots:
+                        last = max(
+                            ma_slots, key=lambda x: parse_start_minutes(x.get("time_slot", ""))
+                        )
+                        ts = clean(last.get("time_slot"))
+                        if ts.endswith(" to 2.15"):
+                            last["time_slot"] = ts[: -len("2.15")] + SUNDAY_MA_LEADER_LAST_END
+                            n += 1
+                if staff_key == "roberto":
+                    for s in slots:
+                        if clean(s.get("time_slot")) == "2.30 to 3":
+                            s["time_slot"] = "2.30 to 3.30"
+                            n += 1
+    return n
+
+
 def fix_long_aquatic_overlapping_multi(seed: dict) -> int:
     """9 to 10.15 Aquatic + 9.30 to 10.15 Multi (same client) → 9 to 9.30 Aquatic."""
     n = 0
@@ -77,7 +170,7 @@ def fix_long_aquatic_overlapping_multi(seed: dict) -> int:
                         if ts != "9 to 10.15" or not is_aquatic(s.get("service")):
                             continue
                         has_multi = any(
-                            clean(o.get("time_slot")) == "9.30 to 10.15"
+                            clean(o.get("time_slot")) in ("9.30 to 10.15", "9.15 to 10")
                             and is_multi(o.get("service"))
                             for o in slist
                         )
@@ -262,13 +355,14 @@ def main() -> None:
         raise SystemExit(f"Missing MADRE file: {MADRE}")
 
     seed = json.loads(MADRE.read_text(encoding="utf-8"))
+    patched = patch_term_session_time_slots(seed)
     fixed = fix_long_aquatic_overlapping_multi(seed)
     merges, omit = derive_feedback_rules(seed)
-    adapter_rows = seed_to_adapter_rows(seed)
+    adapter_rows = dedupe_adapter_rows(seed_to_adapter_rows(seed))
 
     SEED.write_text(json.dumps(seed, indent=2), encoding="utf-8")
     MADRE.write_text(json.dumps(seed, indent=2), encoding="utf-8")
-    print(f"Fixed {fixed} long aquatic slots; wrote MADRE + seed")
+    print(f"Patched {patched} term time slots; fixed {fixed} long aquatic slots; wrote MADRE + seed")
     print(f"Feedback merge groups: {len(merges)}; overview omit rules: {len(omit)}")
     print(f"MADRE adapter rows: {len(adapter_rows)}")
 

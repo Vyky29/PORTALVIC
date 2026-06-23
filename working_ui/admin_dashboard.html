@@ -4297,12 +4297,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var m = mins % 60;
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':00';
     }
+    function schedSlotSkipDuplicateBandSplit(slot){
+      var prog = String((slot && (slot.programme || slot.rosterService)) || '').toLowerCase();
+      if(prog.indexOf('day centre') >= 0 || prog.indexOf('daycentre') >= 0) return true;
+      var cid = String(slot && slot.clientSlug || '').trim().toLowerCase();
+      return cid === 'home' || cid === 'manager';
+    }
     /** Two roster rows with the same band (e.g. Amar Ra twice at "5 to 6") → 5–5.30 and 5.30–6. */
     function schedSplitDuplicateSameBandSessions(slots){
       var passthrough = [];
       var groups = Object.create(null);
       (slots || []).forEach(function(slot){
         var cid = String(slot.clientSlug || '').trim().toLowerCase();
+        if(schedSlotSkipDuplicateBandSplit(slot)){
+          passthrough.push(slot);
+          return;
+        }
         if(!cid || cid === 'closed' || cid === 'available' || cid === 'noclient' || cid === 'no client'){
           passthrough.push(slot);
           return;

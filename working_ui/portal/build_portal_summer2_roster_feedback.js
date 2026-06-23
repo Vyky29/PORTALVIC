@@ -14,7 +14,7 @@ const STATUS_SHARED = path.join(ROOT, "portal-shared-js/session_feedback_status_
 const TERM = path.join(__dirname, "term_from_timetable.js");
 const TERM_SHARED = path.join(ROOT, "portal-shared-js/term_from_timetable.js");
 
-const ASSUME_COMPLETE_THRU = "2026-06-21";
+const ASSUME_COMPLETE_THRU = "2026-06-22";
 const CATCHUP_STAFF = ["youssef", "dan", "roberto", "javier"];
 const JUN10_PENDING_STAFF = ["youssef", "dan", "javier"];
 const JUN10_ROBERTO_AMBER = { date: "2026-06-10", time: "5.30 to 6" };

@@ -171,6 +171,13 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "emani",
         "matthias",
         "saaib"
+      ],
+      "2026-06-22": [
+        "fadi",
+        "ikram",
+        "emmanuel",
+        "eddie",
+        "abodi_pa"
       ]
     },
     "dan": {
@@ -237,6 +244,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "faris",
         "simon",
         "adam_ab"
+      ],
+      "2026-06-22": [
+        "gemma",
+        "zayana",
+        "adaam_ah"
       ]
     },
     "roberto": {
@@ -364,6 +376,13 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "rodin",
         "yoan",
         "yusuf_ah"
+      ],
+      "2026-06-22": [
+        "acat",
+        "fadi",
+        "yunis",
+        "amar_rai",
+        "yamik"
       ]
     },
     "javier": {
@@ -441,8 +460,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-21": [
         "zakariya",
         "haneef",
-        "hazem",
         "zaid",
+        "hazem",
         "eiji",
         "serine",
         "rayyan_fi",
@@ -1168,5 +1187,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-05"
     ]
   },
-  "termFeedbackAssumeCompleteThroughIso": "2026-06-21"
+  "termFeedbackAssumeCompleteThroughIso": "2026-06-22"
 };
