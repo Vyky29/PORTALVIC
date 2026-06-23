@@ -4240,6 +4240,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '');
     }
+    /** All roster keys tied to a slot row (booked + override original/cover) for instructor filter. */
+    function schedStaffFilterKeysForSlot(slot, ov){
+      var keys = [];
+      function push(raw){
+        var k = normalizeSchedAnchorStaffId(raw);
+        if(k && keys.indexOf(k) < 0) keys.push(k);
+      }
+      if(slot){
+        push(slot.staffRosterId);
+        if(slot.allInstructors && slot.allInstructors.length){
+          slot.allInstructors.forEach(function(inst){ push(inst.staffRosterId); });
+        }
+      }
+      if(ov){
+        push(ov.anchor_staff_id);
+        var pl = ov.payload || {};
+        var t = String(ov.override_type || '').trim();
+        if(t === 'instructor_reassign'){
+          push(pl.covering_staff_id);
+        }
+      }
+      return keys;
+    }
     function normTimeShort(v){
       var s = String(v==null?'':v);
       if(s.length>=16) return s.slice(11,16);
@@ -12906,12 +12929,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!k) return;
           staffMap[k] = String(label || s.staffName || k).trim() || k;
         }
-        addStaff(s.staffRosterId, s.staffName);
-        if(s.allInstructors && s.allInstructors.length){
-          s.allInstructors.forEach(function(inst){
-            addStaff(inst.staffRosterId, inst.staffName);
-          });
-        }
+        var ov = findOverrideForSlot(s);
+        schedStaffFilterKeysForSlot(s, ov).forEach(function(k){
+          if(!staffMap[k]) staffMap[k] = schedStaffDisplayName(k, k);
+        });
+      });
+      var schedIso = ($('schedDate') && $('schedDate').value) || isoDateLocal(new Date());
+      (sched.overrides || []).forEach(function(ov){
+        if(adminNormIsoDate(ov.session_date) !== adminNormIsoDate(schedIso)) return;
+        schedStaffFilterKeysForSlot(null, ov).forEach(function(k){
+          if(!staffMap[k]) staffMap[k] = schedStaffDisplayName(k, k);
+        });
       });
       var sKeys = Object.keys(staffMap).sort(function(a, b){
         return String(staffMap[a] || '').localeCompare(String(staffMap[b] || ''), undefined, { sensitivity:'base' });
@@ -13238,15 +13266,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           paxSlug2 = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
-        var staffAllKeys = [];
-        if(slot.allInstructors && slot.allInstructors.length){
-          slot.allInstructors.forEach(function(inst){
-            var k = String(inst.staffRosterId || '').trim().toLowerCase();
-            if(k && staffAllKeys.indexOf(k) < 0) staffAllKeys.push(k);
-          });
-        } else if(staffKey){
-          staffAllKeys.push(staffKey);
-        }
+        var staffAllKeys = schedStaffFilterKeysForSlot(slot, ov);
+        if(!staffAllKeys.length && staffKey) staffAllKeys.push(normalizeSchedAnchorStaffId(staffKey));
         var staffAllAttr = staffAllKeys.length
           ? ' data-staff-all="'+esc(staffAllKeys.join(','))+'"'
           : '';
@@ -13454,6 +13475,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
             var sPlain = String(o.anchor_staff_id || '').trim();
             var sKey = sPlain.toLowerCase();
+            var logStaffKeys = schedStaffFilterKeysForSlot(null, o);
+            var logStaffAllAttr = logStaffKeys.length
+              ? ' data-staff-all="'+esc(logStaffKeys.join(','))+'"'
+              : '';
             var sCell = sKey
               ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
               : '<span class="muted">—</span>';
@@ -13463,7 +13488,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var te = normTimeShort(o.anchor_end);
               timeLab = ts && te && ts !== te ? (ts + '–' + te) : ts;
             }
-            return '<tr><td style="white-space:nowrap" title="'+esc(String(o.anchor_start||'')+'–'+String(o.anchor_end||''))+'">'+esc(timeLab)+'</td>'+
+            return '<tr'+logStaffAllAttr+'><td style="white-space:nowrap" title="'+esc(String(o.anchor_start||'')+'–'+String(o.anchor_end||''))+'">'+esc(timeLab)+'</td>'+
               '<td><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
               '<td style="min-width:0">'+cCell+'</td>'+
               '<td style="min-width:0">'+sCell+'</td>'+
@@ -13538,20 +13563,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function applySchedTableFilters(){
       var v = ($('schedVenueFilter') && $('schedVenueFilter').value) || '';
       var st = ($('schedStaffFilter') && $('schedStaffFilter').value) || '';
+      var stNorm = normalizeSchedAnchorStaffId(st);
       var pax = ($('schedParticipantFilter') && $('schedParticipantFilter').value) || '';
       var only = $('schedOnlyOverride') && $('schedOnlyOverride').checked;
+      function rowMatchesStaff(tr){
+        if(!stNorm) return true;
+        var ps = tr.getAttribute('data-staff') || '';
+        if(normalizeSchedAnchorStaffId(ps) === stNorm) return true;
+        var psAll = tr.getAttribute('data-staff-all') || '';
+        if(psAll){
+          return psAll.split(',').some(function(k){
+            return normalizeSchedAnchorStaffId(k) === stNorm;
+          });
+        }
+        return false;
+      }
       document.querySelectorAll('#schedBaseTable tbody tr').forEach(function(tr){
         var ok = true;
         if(v && tr.getAttribute('data-venue') !== v) ok = false;
-        if(st){
-          var ps = tr.getAttribute('data-staff') || '';
-          var psAll = tr.getAttribute('data-staff-all') || '';
-          var staffHit = st === ps;
-          if(!staffHit && psAll){
-            staffHit = psAll.split(',').some(function(k){ return String(k || '').trim() === st; });
-          }
-          if(!staffHit) ok = false;
-        }
+        if(stNorm && !rowMatchesStaff(tr)) ok = false;
         if(pax){
           var ps = tr.getAttribute('data-pax-slug') || '';
           var ps2 = tr.getAttribute('data-pax-slug2') || '';
@@ -13559,6 +13589,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(only && tr.getAttribute('data-has-ov') !== '1') ok = false;
         tr.style.display = ok ? '' : 'none';
+      });
+      document.querySelectorAll('#schedLogTable tbody tr').forEach(function(tr){
+        if(!stNorm){
+          tr.style.display = '';
+          return;
+        }
+        tr.style.display = rowMatchesStaff(tr) ? '' : 'none';
       });
     }
     async function refreshSchedulingModule(){
