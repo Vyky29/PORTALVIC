@@ -14,7 +14,11 @@
   /** Bookings / Orders catalogue — retired; parent booking moves to a future parent portal. Use CFK Services. */
   var HIDE_BOOKINGS = true;
   var BOOKINGS_VIEW_IDS = ["bookings", "orders_all", "orders_outstanding"];
-  var BOOKINGS_REPLACEMENT_VIEW = "c4k_services";
+  var BOOKINGS_REPLACEMENT_VIEW =
+    (typeof global !== "undefined" &&
+      global.PortalCfkApp &&
+      global.PortalCfkApp.viewId) ||
+    "c4k_services";
 
   function bookingsHidden() {
     return HIDE_BOOKINGS;

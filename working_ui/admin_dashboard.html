@@ -61,6 +61,8 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260620-reply-modal"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
+  <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260614-scheduling"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -12151,6 +12153,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         finish();
       }
     }
+    function portalAdminWireExtractedModules(){
+      if(window.__portalAdminModulesWired) return;
+      window.__portalAdminModulesWired = true;
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.configure === 'function'){
+        window.PortalCfkApp.configure({
+          $: $,
+          esc: esc,
+          isoDateLocal: isoDateLocal,
+          getState: function(){ return state; },
+          renderRosterHtml: viewC4kRosterServicesFromSlotsHtml,
+          spreadsheetAvailable: adminSpreadsheetAdapterAvailable,
+          mergeSessions: adminMergeSpreadsheetSessions,
+          programmeVenueBlocks: adminProgrammeVenueBlocksFromPack,
+          collectVenues: adminCollectVenuesFromPack,
+          collectCoaches: adminCollectCoachesFromPack
+        });
+      }
+      if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.configure === 'function'){
+        window.PortalAdminSchedulingModule.configure({
+          esc: esc,
+          isoDateLocal: isoDateLocal,
+          schedEnsureState: schedEnsureState,
+          schedClampIsoToTerm: schedClampIsoToTerm,
+          schedMondayOfWeekIso: schedMondayOfWeekIso,
+          schedWeekNavHtml: schedWeekNavHtml,
+          schedWeekDayStripHtml: schedWeekDayStripHtml,
+          schedAddSessionFormHtml: schedAddSessionFormHtml,
+          termStart: SCHED_COVER_TERM_START,
+          termEnd: SCHED_COVER_TERM_END,
+          getWeekAnchorIso: function(){ return sched.weekAnchorIso; }
+        });
+      }
+    }
     function portalAdminEnsureScriptsForView(viewId){
       if(!window.portalAdminLoadScriptSet) return;
       var id = String(viewId || '');
@@ -13916,32 +13951,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /** Shared markup: Scheduling &amp; Cover (standalone view and any future embeds). */
     function schedulingModuleInnerHtml(){
-      schedEnsureState();
-      var today = schedClampIsoToTerm(isoDateLocal(new Date()));
-      var anchor = sched.weekAnchorIso || schedMondayOfWeekIso(today);
-      return schedWeekNavHtml(anchor)+
-        '<div id="schedWeekDayStrip">'+schedWeekDayStripHtml(anchor, today)+'</div>'+
-        '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap">'+
-        '<label class="muted" for="schedDate">Date</label> '+
-        '<input type="date" id="schedDate" class="inp" style="max-width:180px" min="'+esc(SCHED_COVER_TERM_START)+'" max="'+esc(SCHED_COVER_TERM_END)+'" value="'+esc(today)+'" />'+
-        '<select class="sel" id="schedVenueFilter" style="max-width:200px" aria-label="Venue filter"><option value="">All venues</option></select>'+
-        '<select class="sel" id="schedStaffFilter" style="max-width:220px" aria-label="Instructor filter"><option value="">All instructors</option></select>'+
-        '<select class="sel" id="schedParticipantFilter" style="max-width:220px" aria-label="Participant filter"><option value="">All participants</option></select>'+
-        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);min-width:0"><input type="checkbox" id="schedOnlyOverride" /> Overrides only</label>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button>'+
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot</button></div>'+
-        '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
-        schedAddSessionFormHtml()+
-        '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>'+
-        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Day overrides and term roster edits for the selected date (Supabase).</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>';
+      if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.moduleInnerHtml === 'function'){
+        return window.PortalAdminSchedulingModule.moduleInnerHtml();
+      }
+      return '<p class="muted">Scheduling module not loaded.</p>';
     }
     function viewScheduling(){
-      return '<h1 class="page-title">Sessions · Schedule &amp; Covers</h1>'+
-        '<p class="page-intro">See who is scheduled, record overrides, and review the change log for one date. '+
-        '<a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English, with diagrams)</a> — which tool to use for term vs one-day changes.</p>'+
-        schedulingModuleInnerHtml();
+      if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.viewHtml === 'function'){
+        return window.PortalAdminSchedulingModule.viewHtml();
+      }
+      return '<p class="muted">Scheduling module not loaded.</p>';
     }
     /** Programme payments: finance sheet mirror only — <code>bindBookingModule</code> / <code>refreshBookingModule</code> wire Refresh, export, and <code>#bookingFinanceSheetTable</code>. Date-scoped roster lives on <strong>Bookings</strong>. */
     function bookingPaymentsCollectionsBlockHtml(todayIso){
@@ -15628,63 +15647,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return true;
     }
     function readC4kServicesFiltersFromDom(){
-      var dayEl = $('c4kSvcFilterDay');
-      var classEl = $('c4kSvcFilterClass');
-      var venueEl = $('c4kSvcFilterVenue');
-      var coachEl = $('c4kSvcFilterInstructor');
-      var spaceEl = $('c4kSvcFilterSpace');
-      var waitEl = $('c4kSvcFilterWait');
-      return {
-        day: dayEl ? String(dayEl.value || '').trim().toLowerCase() : '',
-        class: classEl ? String(classEl.value || '').trim() : '',
-        venue: venueEl ? String(venueEl.value || '').trim() : '',
-        coach: coachEl ? String(coachEl.value || '').trim().toLowerCase() : '',
-        spaceOnly: !!(spaceEl && spaceEl.checked),
-        waitOnly: !!(waitEl && waitEl.checked)
-      };
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.readFiltersFromDom === 'function'){
+        return window.PortalCfkApp.readFiltersFromDom();
+      }
+      return { day:'', class:'', venue:'', coach:'', spaceOnly:false, waitOnly:false };
     }
     function fillC4kServicesFilterSelects(){
-      var classEl = $('c4kSvcFilterClass');
-      var venueEl = $('c4kSvcFilterVenue');
-      var coachEl = $('c4kSvcFilterInstructor');
-      if(!classEl || !venueEl || !coachEl) return;
-      if(!adminSpreadsheetAdapterAvailable()){
-        classEl.innerHTML = '<option value="">Any class</option>';
-        venueEl.innerHTML = '<option value="">Any venue</option>';
-        coachEl.innerHTML = '<option value="">Any instructor</option>';
-        return;
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.fillFilterSelects === 'function'){
+        window.PortalCfkApp.fillFilterSelects();
       }
-      var pack = adminMergeSpreadsheetSessions();
-      var grouped = adminProgrammeVenueBlocksFromPack(pack);
-      var progVals = grouped.map(function(b){ return b.programme; });
-      var venues = adminCollectVenuesFromPack(pack);
-      var coaches = adminCollectCoachesFromPack(pack);
-      var cVal = classEl.value;
-      var vVal = venueEl.value;
-      var coVal = coachEl.value;
-      classEl.innerHTML = '<option value="">Any class</option>'+progVals.map(function(p){
-        return '<option value="'+esc(p)+'">'+esc(p)+'</option>';
-      }).join('');
-      classEl.value = cVal && progVals.indexOf(cVal) >= 0 ? cVal : '';
-      venueEl.innerHTML = '<option value="">Any venue</option>'+venues.map(function(v){
-        return '<option value="'+esc(v)+'">'+esc(v)+'</option>';
-      }).join('');
-      venueEl.value = vVal && venues.indexOf(vVal) >= 0 ? vVal : '';
-      coachEl.innerHTML = '<option value="">Any instructor</option>'+coaches.map(function(c){
-        return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';
-      }).join('');
-      coachEl.value = coVal && coaches.some(function(c){ return c.id === coVal; }) ? coVal : '';
     }
-    /** Delegated: workspace HTML is replaced on each navigation, so filters must not use per-element listeners only. */
     function ensureC4kServicesFiltersDelegated(){
-      if(window.__c4kSvcFiltersDelegated) return;
-      window.__c4kSvcFiltersDelegated = true;
-      var ids = { c4kSvcFilterDay:1, c4kSvcFilterClass:1, c4kSvcFilterVenue:1, c4kSvcFilterInstructor:1, c4kSvcFilterSpace:1, c4kSvcFilterWait:1 };
-      document.addEventListener('change', function(ev){
-        var t = ev.target;
-        if(!t || !t.id || !ids[t.id]) return;
-        if(typeof state !== 'undefined' && state.view === 'c4k_services') refreshC4kServicesPartial();
-      });
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.ensureFiltersDelegated === 'function'){
+        window.PortalCfkApp.ensureFiltersDelegated();
+      }
     }
     /** Canonical programme label for “Physical Activity” cards (`portalDisplayProgrammeFromSheet`). */
     var C4K_PHYSICAL_ACTIVITY_PROGRAMME = 'Physical Activity';
@@ -16320,47 +16296,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return cardsHtml;
     }
     function refreshC4kServicesPartial(){
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.refreshPartial === 'function'){
+        window.PortalCfkApp.refreshPartial();
+        return;
+      }
       var a = isoDateLocal(new Date());
       var root = $('c4kServicesRosterRoot');
       var filt = readC4kServicesFiltersFromDom();
       if(root) root.innerHTML = viewC4kRosterServicesFromSlotsHtml(a, a, filt);
     }
     function viewC4kServices(){
-      var anchorIso = isoDateLocal(new Date());
-      var rosterPart = viewC4kRosterServicesFromSlotsHtml(anchorIso, anchorIso, {});
-      return (
-        '<h1 class="page-title">Services</h1>'+
-        '<p class="page-intro" style="margin-top:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Programmes and time bands for this week — filter, open registers, and spot spare capacity.</p>'+
-        '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">'+
-        '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">'+
-        '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>'+
-        'Go to Services &amp; capacity</button>'+
-        '</div>'+
-        '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>'+
-        '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>'+
-        '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class or instructor</summary>'+
-        '<div class="c4k-svc-filters__body">'+
-        '<div class="c4k-svc-filters__grid">'+
-        '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Day</label>'+
-        '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterDay" aria-label="Filter by weekday">'+
-        '<option value="">Any day</option>'+
-        '<option value="monday">Monday</option><option value="tuesday">Tuesday</option><option value="wednesday">Wednesday</option>'+
-        '<option value="thursday">Thursday</option><option value="friday">Friday</option><option value="saturday">Saturday</option><option value="sunday">Sunday</option>'+
-        '</select></div>'+
-        '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterClass">Class</label>'+
-        '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterClass" aria-label="Filter by programme"><option value="">Any class</option></select></div>'+
-        '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterVenue">Venue</label>'+
-        '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterVenue" aria-label="Filter by venue"><option value="">Any venue</option></select></div>'+
-        '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterInstructor">Instructor</label>'+
-        '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterInstructor" aria-label="Filter by instructor"><option value="">Any instructor</option></select></div>'+
-        '</div>'+
-        '<div class="c4k-svc-filters__row2">'+
-        '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesRefreshBtn">Refresh</button>'+
-        '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>'+
-        '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>'+
-        '</div></div></details>'+
-        '<div id="c4kServicesRosterRoot" style="min-width:0;margin-top:4px">'+rosterPart+'</div>'
-      );
+      if(window.PortalCfkApp && typeof window.PortalCfkApp.viewHtml === 'function'){
+        return window.PortalCfkApp.viewHtml();
+      }
+      return '<p class="muted">CFK Services module not loaded.</p>';
     }
 
     var C4K_SESSIONS_HUB_TABS = [
@@ -19052,7 +19001,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Weekly capacity snapshot, service registers and term booking grids.',
+        c4k_services:'Weekly CFK programme grid — parent portal target; filters, registers and capacity.',
         c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Read-only group session grids and staff hours timetable (spreadsheet layout).',
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
@@ -25150,6 +25099,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var portalAdminBoot = function(){
         window.__PORTAL_ADMIN_BOOT_DONE__ = true;
+        portalAdminWireExtractedModules();
         portalAdminOpenInitialView();
         bindNovoDashboardSchedule();
         portalBindWorkspaceDayopsComposeCapture();
