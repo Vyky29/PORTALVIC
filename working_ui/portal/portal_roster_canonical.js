@@ -24,6 +24,40 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
   }
 
+  function rosterSlug(v) {
+    return String(v || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function dedupeRosterAdapterRows(rows) {
+    var fold = global.PortalMadreFold;
+    if (fold && typeof fold.dedupeRosterAdapterRows === "function") {
+      return fold.dedupeRosterAdapterRows(rows);
+    }
+    var seen = Object.create(null);
+    var out = [];
+    (rows || []).forEach(function (r) {
+      if (!r) return;
+      var key = [
+        String(r.session_date || "").trim().slice(0, 10),
+        String(r.day || "").trim(),
+        rosterSlug(r.client_name),
+        String(r.instructors || "").trim().toUpperCase(),
+        String(r.time_slot || "").trim(),
+        rosterSlug(r.service),
+        String(r.area || "").trim(),
+        String(r.venue || "").trim(),
+      ].join("\0");
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(r);
+    });
+    return out;
+  }
+
   /** Prefer live Supabase MADRE; fallback to shipped bundle. */
   function getBundleBaseRows() {
     var live = global.PORTAL_MADRE_LIVE;
@@ -56,7 +90,7 @@
     opts = opts || {};
     var base = getBundleBaseRows();
     var merged = opts.skipDb ? base.slice() : applyPortalRosterDbRows(base);
-    return merged;
+    return dedupeRosterAdapterRows(merged);
   }
 
   function resolveCanonicalStaffDashboardSource() {

@@ -11,7 +11,8 @@
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback",
       "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
-      "/portal/portal_roster_canonical.js?v=20260622-canonical-roster",
+      "/portal/portal_madre_fold.js?v=20260614-madre-dedupe",
+      "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     ],
     feedback: [

@@ -44,6 +44,37 @@
     return String(cn || "").trim();
   }
 
+  function rosterSlug(v) {
+    return String(v || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  /** MADRE has 7 week blocks — same dated slot must appear once in adapter rows. */
+  function dedupeRosterAdapterRows(rows) {
+    var seen = Object.create(null);
+    var out = [];
+    (rows || []).forEach(function (r) {
+      if (!r) return;
+      var key = [
+        String(r.session_date || "").trim().slice(0, 10),
+        String(r.day || "").trim(),
+        rosterSlug(r.client_name),
+        String(r.instructors || "").trim().toUpperCase(),
+        String(r.time_slot || "").trim(),
+        rosterSlug(r.service),
+        String(r.area || "").trim(),
+        String(r.venue || "").trim(),
+      ].join("\0");
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(r);
+    });
+    return out;
+  }
+
   function madreToAdapterRows(madre) {
     var rows = [];
     var weeks = (madre && madre.weeks) || [];
@@ -80,7 +111,7 @@
         });
       });
     });
-    return rows;
+    return dedupeRosterAdapterRows(rows);
   }
 
   function loadLiveMadre(client, force) {
@@ -226,6 +257,7 @@
     queueParticipantSlotChange: queueParticipantSlotChange,
     queueScheduleOverrideChange: queueScheduleOverrideChange,
     madreToAdapterRows: madreToAdapterRows,
+    dedupeRosterAdapterRows: dedupeRosterAdapterRows,
     TERM_KEY: TERM_KEY,
   };
 })(typeof window !== "undefined" ? window : globalThis);
