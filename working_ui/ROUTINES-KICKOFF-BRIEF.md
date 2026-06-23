@@ -63,11 +63,11 @@ Inactive profiles (`is_active = false`) → no access.
 1. `/planner` — filtered library + build routine
 2. `/planner/login` — Supabase email/password (same Portal project)
 3. Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Optional: `NEXT_PUBLIC_STAFF_PORTAL_URL=https://portalvic.vercel.app`
+4. **Do not** require a staff portal URL in visualVIC for Plan to work. Plan is opened **from** portalvic or clubSENsational Staff **into** visualVIC (one-way handoff). Optional “back to portal” links in visualVIC are a separate product choice.
 
 ## Auth note (cross-domain)
 
-Portal and Routines are different origins. **Plan** uses session handoff: `portalOpenRoutinesPlanner()` in `portal-static-bootstrap.js` reads the active Portal Supabase session and opens `https://visual-vic.vercel.app/planner/auth/handoff#access_token=…&refresh_token=…`. Fallback: `/planner/login` if no session.
+Portal and Routines are different origins. **Plan** uses session handoff: `portalOpenRoutinesPlanner()` in `portal-static-bootstrap.js` reads the active Portal Supabase session and opens `https://visual-vic.vercel.app/planner/auth/handoff#access_token=…&refresh_token=…`. Fallback: `/planner/login` if no session. Works from **portalvic** and **clubsensational-staff** (same Supabase project).
 
 ## Roster
 
@@ -78,12 +78,13 @@ Portal and Routines are different origins. **Plan** uses session handoff: `porta
 - **Routines prod:** https://visual-vic.vercel.app
 - **Planner:** https://visual-vic.vercel.app/planner
 - **Planner login:** https://visual-vic.vercel.app/planner/login
-- **Staff login:** https://portalvic.vercel.app/login.html
+- **Staff login (legacy):** https://portalvic.vercel.app/login.html
+- **Staff app (pilot):** https://clubsensational-staff.vercel.app/login.html
 
 ## Pre-go-live checklist (Sandra / Youssef)
 
 | Item | Owner | Status |
 |------|-------|--------|
-| Vercel visualVIC — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_STAFF_PORTAL_URL` in **Production** | visualVIC | ☐ |
+| Vercel visualVIC — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` in **Production** | visualVIC | ☐ |
 | Supabase — `staff_participant_access` migration + assignment seeds | Portal | ✅ (`npm run apply:staff-participant-access`) |
 | Portal — **Plan** → handoff `/planner/auth/handoff` (no second login) | Portal | ✅ |

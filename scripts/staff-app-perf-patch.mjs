@@ -6,7 +6,15 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260623-staff-perf3";
+const VER = "20260624-staff-perf4";
+
+function stripDeferredFromTierBlock(tierBlock) {
+  return String(tierBlock || "")
+    .replace(/  <link rel="stylesheet" href="\/portal\/portal_ghost_view\.css[^"]*" \/>\n/g, "")
+    .replace(/  <script src="\/portal\/portal-ghost-view\.js[^"]*"><\/script>\n/g, "")
+    .replace(/  <link rel="stylesheet" href="\/portal\/portal_achievements\.css[^"]*" \/>\n/g, "")
+    .replace(/  <script src="\/portal\/portal_wellbeing_review_reminder\.js[^"]*"><\/script>\n/g, "");
+}
 
 function extractScriptAfterMarker(html, marker) {
   const idx = html.indexOf(marker);
@@ -59,7 +67,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     console.warn("[staff-app-perf-patch] tier script block not found — skipping");
     return;
   }
-  const tierBlock = tierMatch[0];
+  const tierBlock = stripDeferredFromTierBlock(tierMatch[0]);
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -102,15 +110,23 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=' +
-          VER +
-          '"></script>'
+        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot"></script>'
       );
     }
 
     html = html.replace(
       '<meta name="apple-mobile-web-app-title" content="CS Portal" />',
       '<meta name="apple-mobile-web-app-title" content="Staff" />'
+    );
+
+    html = html.replace(
+      '<script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>\n',
+      '<script defer src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>\n'
+    );
+    html = html.replace(
+      '<link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" />\n',
+      '<link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" media="print" onload="this.media=\'all\'" />\n' +
+        '  <noscript><link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" /></noscript>\n'
     );
   }
 

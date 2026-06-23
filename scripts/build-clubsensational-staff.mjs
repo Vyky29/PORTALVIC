@@ -127,15 +127,21 @@ function writeStaffAppConfig(destDir) {
 function injectStaffConfigScript(htmlPath) {
   const tag =
     '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  ';
+  const bootTag =
+    '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot"></script>\n  ';
+  const hintTag =
+    '<script src="/portal/staff-app-install-hint.js?v=20260624-staff-install"></script>\n  ';
   let src = readFileSync(htmlPath, "utf8");
   if (src.includes("staff-app-config.js")) return;
+  const isLogin = /login\.html$/i.test(htmlPath);
+  const inject = isLogin ? tag + bootTag + hintTag : tag;
   if (src.includes('portal_auth_page_gate.js')) {
     src = src.replace(
       '<script src="/portal/portal_auth_page_gate.js',
-      tag + '<script src="/portal/portal_auth_page_gate.js',
+      inject + '<script src="/portal/portal_auth_page_gate.js',
     );
   } else {
-    src = src.replace("<head>", "<head>\n  " + tag.trim());
+    src = src.replace("<head>", "<head>\n  " + inject.trim());
   }
   writeFileSync(htmlPath, src, "utf8");
 }

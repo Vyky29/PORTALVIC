@@ -27,23 +27,31 @@ Mismo repo GitHub **PORTALVIC**, dos proyectos Vercel.
 
 6. Deploy.
 
-## Supabase Auth
+## Supabase Auth (checklist)
 
 En [Supabase → Authentication → URL Configuration](https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/auth/url-configuration):
 
-- Añadir **Redirect URL:** `https://clubsensational-staff.vercel.app/**`
+- [ ] **Redirect URL:** `https://clubsensational-staff.vercel.app/**`
+- [ ] (Opcional preview) `https://*.vercel.app/**` si usáis previews del proyecto staff
 
-## visualVIC (Planner handoff)
+**Site URL** puede seguir siendo portalvic; lo importante es que el redirect de la staff app esté permitido.
 
-En el proyecto **visual-vic**, actualizar:
+## Plan → visualVIC (rutinas)
 
-- `NEXT_PUBLIC_STAFF_PORTAL_URL=https://clubsensational-staff.vercel.app`
+- El botón **Plan** en portalvic **y** en clubSENsational Staff abre **visualVIC** (`https://visual-vic.vercel.app/planner`) con la sesión Supabase del usuario (handoff SSO).
+- **No** hace falta configurar en visualVIC ninguna URL del portal staff ni de portalvic para que Plan funcione.
+- Quién ve qué en visualVIC (servicio, participantes, carpetas premium, etc.) se configura **en visualVIC / Supabase**, no en variables de entorno del portal.
+
+Ejemplos de alcance (producto visualVIC):
+
+- Sandra → Physical Activity, Core, Ayaan, Serine
+- Day Centre → Day Centre, Core, Emmanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
 
 ## Comportamiento
 
 - **Staff / lead** → entran y quedan en `staff_dashboard.html`.
 - **Admin / CEO / office** → tras login se redirigen al portal admin (`PORTAL_ADMIN_ORIGIN`).
-- PWA: nombre **clubSENsational Staff**, icono en `/portal/app-icon/`.
+- **PWA:** nombre **clubSENsational Staff**; en iPad/iPhone mostrar aviso “Add to Home Screen” en login.
 
 ## Build local
 
@@ -55,5 +63,6 @@ npm run build:staff-app
 ## Archivos clave
 
 - `scripts/build-clubsensational-staff.mjs` — empaqueta `working_ui/` sin admin/CEO
-- `vercel.staff.json` — config para el segundo proyecto Vercel
+- `working_ui/portal/staff-app-boot.js` — preconnect, preload, assets diferidos
+- `working_ui/portal/staff-app-install-hint.js` — aviso PWA en login
 - `working_ui/clubsensational-staff-*.webmanifest` — PWA branding
