@@ -14,6 +14,74 @@
     return "\n\nThank you,\nClubSENsational";
   }
 
+  /** Public HTTPS URL for a portal static asset (staff dashboard photos). */
+  function absolutePortalAssetUrl(relativeOrAbsolute) {
+    var u = String(relativeOrAbsolute || "").trim();
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u)) return u.replace(/\?.*$/, "");
+    var origin = "";
+    try {
+      if (typeof global.location !== "undefined" && global.location.origin) {
+        origin = String(global.location.origin).replace(/\/$/, "");
+      }
+    } catch (_) {}
+    if (!origin) origin = "https://portalvic.vercel.app";
+    if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
+    return origin + u.replace(/\?.*$/, "");
+  }
+
+  /** Resolve instructor photo from staff dashboard roster (portal/staff_photos/). */
+  function instructorPhotoForNotify(kind, ctx) {
+    ctx = ctx || {};
+    var k = String(kind || "")
+      .trim()
+      .toLowerCase();
+    if (
+      k !== "instructor_change" &&
+      k !== "instructor_reassign" &&
+      k !== "makeup_scheduled"
+    ) {
+      return { url: "", name: "", slug: "" };
+    }
+    var ov = ctx.ov;
+    var pl = (ov && ov.payload) || {};
+    var slug = String(pl.covering_staff_id || "").trim();
+    var name = String(pl.covering_staff_name || pl.to_staff_name || "").trim();
+    if (k === "instructor_change" || k === "instructor_reassign") {
+      if (ctx.newInstructorName) name = String(ctx.newInstructorName).trim();
+    }
+    if (k === "makeup_scheduled") {
+      var slot = ctx.slot || {};
+      if (!slug) slug = String(slot.staffRosterId || "").trim();
+      if (!name) name = String(slot.staffName || "").trim();
+    }
+    if (!slug && !name) return { url: "", name: "", slug: "" };
+    var rel = "";
+    try {
+      if (typeof global.portalStaffPhotoUrl === "function") {
+        rel = global.portalStaffPhotoUrl(slug || name, { username: slug });
+      }
+    } catch (_) {}
+    return {
+      url: absolutePortalAssetUrl(rel),
+      name: name,
+      slug: slug,
+    };
+  }
+
+  function instructorPhotoTextLine(name, photoUrl) {
+    var n = String(name || "").trim();
+    var url = String(photoUrl || "").trim();
+    if (!n || !url) return "";
+    return (
+      "\n\nPhoto of " +
+      n +
+      " (your instructor): " +
+      url +
+      "\n"
+    );
+  }
+
   function participantLabel(slot, ov, effectiveFn) {
     if (typeof effectiveFn === "function") {
       var v = effectiveFn(slot, ov);
@@ -94,6 +162,8 @@
     var whenPart = when ? " " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
     var swapPart = oldI ? " (instead of " + oldI + ")." : ".";
+    var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
+    var photoLine = instructorPhotoTextLine(newI, photoUrl);
     return (
       greet(meta && meta.parentCarerName) +
       "This is ClubSENsational.\n\n" +
@@ -106,12 +176,12 @@
       "There has been a change of instructor. The session will now be with " +
       newI +
       swapPart +
-      "\n\n" +
-      "We will send a separate photo of " +
-      newI +
-      " so you can show " +
-      client +
-      " before the session.\n\n" +
+      photoLine +
+      (photoUrl
+        ? "Please show " +
+          client +
+          " the photo above so they know who to expect.\n\n"
+        : "\n") +
       "If you have any questions, just reply to this message." +
       signOff()
     );
@@ -156,6 +226,17 @@
     var replacement =
       String(payload.to_client_name || payload.replacement_name || "").trim() ||
       client;
+    var instructorName = String(
+      (opts && opts.instructorName) ||
+        (payload.covering_staff_name || payload.to_staff_name) ||
+        (slot && slot.staffName) ||
+        "",
+    ).trim();
+    var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
+    var instructorPart = instructorName
+      ? "\n\nThe session will be with instructor " + instructorName + "."
+      : "";
+    var photoLine = instructorPhotoTextLine(instructorName, photoUrl);
     var whenPart = when ? " (" + when + ")" : "";
     var venuePart = venue ? " at " + venue + "." : ".";
     return (
@@ -165,7 +246,13 @@
       replacement +
       whenPart +
       venuePart +
-      "\n\n" +
+      instructorPart +
+      photoLine +
+      (photoUrl && instructorName
+        ? "Please show " +
+          replacement +
+          " the photo above so they know who to expect.\n\n"
+        : "\n") +
       "Please reply if this time does not work for you, or if you need directions or parking details again." +
       signOff()
     );
@@ -290,13 +377,33 @@
     return "instructor_change";
   }
 
+  function enrichNotifyOpts(kind, ctx, opts) {
+    opts = opts || {};
+    var photo = instructorPhotoForNotify(kind, ctx);
+    if (photo.url) opts.instructorPhotoUrl = photo.url;
+    if (photo.name) {
+      if (
+        String(kind || "")
+          .trim()
+          .toLowerCase() === "makeup_scheduled"
+      ) {
+        opts.instructorName = photo.name;
+      }
+    }
+    return opts;
+  }
+
   function bodyForKind(kind, ctx) {
     ctx = ctx || {};
     var k = String(kind || "").trim().toLowerCase();
     var slot = ctx.slot;
     var ov = ctx.ov;
     var meta = ctx.meta || {};
-    var opts = ctx.opts || {};
+    var opts = enrichNotifyOpts(
+      k,
+      ctx,
+      Object.assign({}, ctx.opts || {}),
+    );
     if (k === "payment_due") {
       return payment(slot, ov, meta, ctx.snap || { outstanding: 0, nextDue: null }, opts);
     }
@@ -323,5 +430,8 @@
     subjectForKind: subjectForKind,
     kindFromOverrideType: kindFromOverrideType,
     bodyForKind: bodyForKind,
+    instructorPhotoForNotify: instructorPhotoForNotify,
+    absolutePortalAssetUrl: absolutePortalAssetUrl,
+    enrichNotifyOpts: enrichNotifyOpts,
   };
 })(typeof window !== "undefined" ? window : globalThis);

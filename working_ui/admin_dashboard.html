@@ -60,7 +60,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260620-reply-modal"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260622-parent-templates-v2"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
@@ -9001,6 +9001,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         isTrialOverride: typeof schedOverrideIsTrial === 'function' ? schedOverrideIsTrial : null
       };
     }
+    function notifyParentInstructorPhotoPack(kind, ctx){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.instructorPhotoForNotify === 'function'){
+        return T.instructorPhotoForNotify(kind, ctx || {});
+      }
+      return { url:'', name:'', slug:'' };
+    }
     function notifyParentMessagePayment(slot, ov, meta, snap){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.payment === 'function'){
@@ -9154,6 +9161,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!pack) return;
       var meta = adminParentNotifyPrefillFromDirectory(pack.meta, slot);
       var subj = notifyParentSubjectForKind(kind, slot.clientDisplay);
+      var notifyPhotoCtx = {
+        slot: slot,
+        ov: pack.ov,
+        newInstructorName: (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : ''
+      };
+      if(!notifyPhotoCtx.newInstructorName && kind === 'instructor_change'){
+        var ciEl = $('schedFormCoverInput');
+        if(ciEl && ciEl.value) notifyPhotoCtx.newInstructorName = String(ciEl.value).trim();
+      }
+      var instructorPhoto = notifyParentInstructorPhotoPack(kind, notifyPhotoCtx);
       var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
       if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
       var hideSaveContact = !!(opts && opts.hideSaveContact);
@@ -9175,7 +9192,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Message for parent</h2></div><div class="modal-b">'+
-        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Google SMTP, WhatsApp via Business API) or open your own mail/WhatsApp app. Attach the instructor photo separately when needed. Every server send is logged for audit.</p>'+
+        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Google SMTP, WhatsApp via Business API) or open your own mail/WhatsApp app. Instructor photos from the staff dashboard are included automatically for change of instructor and make-up. Every server send is logged for audit.</p>'+
+        (instructorPhoto.url
+          ? '<div class="card-pad" style="margin-top:10px;display:flex;align-items:center;gap:12px;min-width:0">'+
+            '<img src="'+esc(instructorPhoto.url)+'" alt="" style="width:72px;height:72px;border-radius:12px;object-fit:cover;flex-shrink:0" />'+
+            '<div style="min-width:0;overflow-wrap:break-word"><strong style="display:block">'+esc(instructorPhoto.name || 'Instructor')+'</strong>'+
+            '<span class="muted" style="font-size:13px">Photo from staff dashboard — included in email and WhatsApp when you send now.</span></div></div>'
+          : '')+
         '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">'+
         '<div><label class="muted" for="pnParentName">Parent / carer name</label><input id="pnParentName" class="inp" style="max-width:100%" value="'+esc(meta.parentCarerName || '')+'" /></div>'+
         '<div><label class="muted" for="pnParentEmail">Email</label><input id="pnParentEmail" class="inp" type="email" style="max-width:100%" value="'+esc(meta.parentEmail || '')+'" autocomplete="off" /></div>'+
@@ -9276,7 +9299,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           clientDisplay: String(slot.clientDisplay || '').trim(),
           sessionDate: dateIso,
           slotId: String(slot.demoId || '').trim(),
-          venue: venue
+          venue: venue,
+          instructorPhotoUrl: instructorPhoto.url || '',
+          instructorPhotoName: instructorPhoto.name || ''
         }).then(function(res){
           if(btn){ btn.disabled = false; btn.textContent = 'Send now'; }
           pnUpdateChannelButtons();

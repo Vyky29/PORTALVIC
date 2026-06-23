@@ -15,7 +15,9 @@
 //   clientDisplay?: string,
 //   sessionDate?: "YYYY-MM-DD",
 //   slotId?: string,
-//   venue?: string
+//   venue?: string,
+//   instructorPhotoUrl?: string,
+//   instructorPhotoName?: string
 // }
 //
 // Env:
@@ -40,6 +42,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
+  normalizePublicPhotoUrl,
 } from "../_shared/portal_parent_messaging.ts";
 
 type NotifyChannel = "email" | "whatsapp" | "both";
@@ -56,6 +59,8 @@ type NotifyBody = {
   sessionDate?: unknown;
   slotId?: unknown;
   venue?: unknown;
+  instructorPhotoUrl?: unknown;
+  instructorPhotoName?: unknown;
 };
 
 function str(v: unknown, max = 8000): string {
@@ -119,6 +124,9 @@ Deno.serve(async (req) => {
 
   const smtpConfig = readParentNotifySmtpConfig();
   const replyTo = str(Deno.env.get("PORTAL_MAIL_REPLY_TO"), 320);
+  const notifyKind = str(payload.kind, 64).toLowerCase();
+  const instructorPhotoUrl = normalizePublicPhotoUrl(str(payload.instructorPhotoUrl, 500));
+  const instructorPhotoName = str(payload.instructorPhotoName, 120);
 
   let emailStatus = channel === "whatsapp" ? "skipped" : "pending";
   let whatsappStatus = channel === "email" ? "skipped" : "pending";
@@ -137,6 +145,8 @@ Deno.serve(async (req) => {
         to: parentEmail,
         subject,
         bodyText,
+        instructorPhotoUrl: instructorPhotoUrl || undefined,
+        instructorPhotoName: instructorPhotoName || undefined,
       });
       if (sent.ok) {
         emailStatus = "sent";
@@ -149,10 +159,13 @@ Deno.serve(async (req) => {
   }
 
   if (channel === "whatsapp" || channel === "both") {
-    const kind = str(payload.kind, 64).toLowerCase();
-    const waOpts = kind === "whatsapp_test"
+    const waOpts = notifyKind === "whatsapp_test"
       ? { templateName: "hello_world", templateLang: "en_US" }
-      : { kind };
+      : {
+        kind: notifyKind,
+        instructorPhotoUrl: instructorPhotoUrl || undefined,
+        instructorPhotoName: instructorPhotoName || undefined,
+      };
     const sent = await sendParentMobileMessage(parentPhone!, bodyText, waOpts);
     if (sent.ok) {
       whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";
@@ -195,6 +208,8 @@ Deno.serve(async (req) => {
       parent_email_masked: parentEmail ? maskEmailForLog(parentEmail) : null,
       parent_phone_masked: parentPhone ? maskPhoneForLog(parentPhone) : null,
       email_provider: "smtp",
+      instructor_photo_url: instructorPhotoUrl || null,
+      instructor_photo_name: instructorPhotoName || null,
     },
   };
 

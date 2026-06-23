@@ -66,6 +66,8 @@ Drafts are built in `working_ui/portal/portal-parent-notify-templates.js` and sh
 
 Staff can edit the text in the modal before **Send now**. Sends are logged in `portal_parent_notify_log`.
 
+**Instructor photo (change of instructor / make-up):** the portal resolves the photo from the staff dashboard roster (`portal/staff_photos/`). **Email** embeds the image in the HTML body. **WhatsApp** includes a public photo URL in the draft (link preview) and, after the template text, tries a follow-up image message. Optional: approve a Meta template with an **IMAGE header** and set `PORTAL_PARENT_NOTIFY_WHATSAPP_PHOTO_HEADER=true` to send the photo in the template header.
+
 ---
 
 ## Optional: separate Meta templates per kind

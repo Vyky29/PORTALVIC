@@ -10,12 +10,42 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   return "+" + digits;
 }
 
-export function plainTextToHtml(text: string): string {
-  const esc = String(text || "")
+export function plainTextToHtml(
+  text: string,
+  opts?: { instructorPhotoUrl?: string; instructorPhotoName?: string },
+): string {
+  const esc = (s: string) => String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const bodyEsc = String(text || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;white-space:pre-wrap">${esc}</div>`;
+  let html =
+    `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;white-space:pre-wrap">${bodyEsc}</div>`;
+  const photo = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
+  if (photo) {
+    const alt = esc(String(opts?.instructorPhotoName || "Instructor").trim() || "Instructor");
+    html +=
+      `<p style="margin:16px 0 0"><img src="${esc(photo)}" alt="${alt}" width="200" style="max-width:200px;height:auto;border-radius:12px;display:block;border:1px solid #e2e8f0" /></p>`;
+  }
+  return html;
+}
+
+export function normalizePublicPhotoUrl(raw: string): string {
+  const u = String(raw || "").trim();
+  if (!u) return "";
+  if (/^https:\/\//i.test(u)) return u.replace(/\?.*$/, "");
+  const origin = (Deno.env.get("PORTAL_PUBLIC_ORIGIN") ?? "").trim().replace(/\/$/, "") ||
+    "https://portalvic.vercel.app";
+  const path = u.charAt(0) === "/" ? u : `/${u.replace(/^\.?\/*/, "")}`;
+  return `${origin}${path.replace(/\?.*$/, "")}`;
+}
+
+export function parentNotifyKindsWithInstructorPhoto(): Set<string> {
+  return new Set(["instructor_change", "instructor_reassign", "makeup_scheduled"]);
 }
 
 export function maskPhoneForLog(phone: string): string {
@@ -211,12 +241,17 @@ export async function sendParentEmailViaSmtp(opts: {
   to: string;
   subject: string;
   bodyText: string;
+  instructorPhotoUrl?: string;
+  instructorPhotoName?: string;
 }): Promise<SendEmailResult> {
   const fromHeader = formatFromHeader(opts.config.from);
   const fromEnvelope = parseMailbox(opts.config.from).address || opts.config.user;
   const messageId = `portal-${crypto.randomUUID()}@${fromEnvelope.split("@")[1] || "clubsensational.org"}`;
   const boundary = `portal_${crypto.randomUUID().replace(/-/g, "")}`;
-  const html = plainTextToHtml(opts.bodyText);
+  const html = plainTextToHtml(opts.bodyText, {
+    instructorPhotoUrl: opts.instructorPhotoUrl,
+    instructorPhotoName: opts.instructorPhotoName,
+  });
   const headers = [
     `From: ${fromHeader}`,
     `To: ${opts.to}`,
@@ -277,6 +312,8 @@ export type WhatsappSendOptions = {
   templateName?: string;
   templateLang?: string;
   kind?: string;
+  instructorPhotoUrl?: string;
+  instructorPhotoName?: string;
 };
 
 /** Resolve Meta template name for parent notify kind (env fallback chain). */
@@ -324,6 +361,58 @@ function whatsappTemplateLangCandidates(preferred: string): string[] {
   return out;
 }
 
+function whatsappPhotoHeaderEnabled(): boolean {
+  return ((Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_PHOTO_HEADER") ?? "").trim()
+    .toLowerCase() === "true");
+}
+
+async function sendWhatsappImageMessage(
+  phoneId: string,
+  token: string,
+  to: string,
+  imageUrl: string,
+  caption?: string,
+): Promise<SendWhatsappResult> {
+  const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
+  const payload: Record<string, unknown> = {
+    messaging_product: "whatsapp",
+    to,
+    type: "image",
+    image: { link: imageUrl },
+  };
+  const cap = String(caption || "").trim();
+  if (cap) {
+    (payload.image as Record<string, string>).caption = cap.slice(0, 1024);
+  }
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      return { ok: false, error: `whatsapp_image_${res.status}: ${text.slice(0, 400)}` };
+    }
+    let parsed: { messages?: Array<{ id?: string }> } = {};
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = {};
+    }
+    const id = String(parsed.messages?.[0]?.id || "");
+    return id ? { ok: true, id, channel: "whatsapp" } : {
+      ok: false,
+      error: "whatsapp_image_missing_message_id",
+    };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 export async function sendParentMessageViaWhatsapp(
   phoneE164: string,
   body: string,
@@ -369,6 +458,20 @@ export async function sendParentMessageViaWhatsapp(
         parsed = {};
       }
       const id = String(parsed.messages?.[0]?.id || "");
+      const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
+      const kind = String(opts?.kind || "").trim().toLowerCase();
+      if (photoUrl && parentNotifyKindsWithInstructorPhoto().has(kind)) {
+        const img = await sendWhatsappImageMessage(
+          phoneId,
+          token,
+          to,
+          photoUrl,
+          String(opts?.instructorPhotoName || "").trim() || undefined,
+        );
+        if (!img.ok) {
+          console.warn("[portal-parent-notify] whatsapp image after text failed", img.error);
+        }
+      }
       return { ok: true, id, channel: "whatsapp" };
     } catch (e) {
       return { ok: false, error: String(e) };
@@ -380,57 +483,81 @@ export async function sendParentMessageViaWhatsapp(
     return { ok: false, error: "whatsapp_empty_template_body" };
   }
 
+  const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
+  const kind = String(opts?.kind || "").trim().toLowerCase();
+  const usePhotoHeader = photoUrl &&
+    parentNotifyKindsWithInstructorPhoto().has(kind) &&
+    whatsappPhotoHeaderEnabled();
+
   let lastErr = "whatsapp_send_failed";
   for (const lang of whatsappTemplateLangCandidates(preferredLang)) {
-    const tpl: Record<string, unknown> = {
-      name: template,
-      language: { code: lang },
-    };
-    if (template !== "hello_world") {
-      tpl.components = [
-        {
+    const headerAttempts = usePhotoHeader ? [true, false] : [false];
+    for (const withHeader of headerAttempts) {
+      const tpl: Record<string, unknown> = {
+        name: template,
+        language: { code: lang },
+      };
+      if (template !== "hello_world") {
+        const components: Array<Record<string, unknown>> = [];
+        if (withHeader && photoUrl) {
+          components.push({
+            type: "header",
+            parameters: [{ type: "image", image: { link: photoUrl } }],
+          });
+        }
+        components.push({
           type: "body",
           parameters: [{ type: "text", text: paramText }],
-        },
-      ];
-    }
-    const payload = {
-      messaging_product: "whatsapp",
-      to,
-      type: "template",
-      template: tpl,
-    };
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        lastErr = `whatsapp_${res.status}: ${text.slice(0, 400)}`;
-        if (String(text).includes("132001") || String(text).includes("does not exist in the translation")) {
-          continue;
-        }
-        return { ok: false, error: lastErr };
+        });
+        tpl.components = components;
       }
-      let parsed: { messages?: Array<{ id?: string }> } = {};
+      const payload = {
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: tpl,
+      };
       try {
-        parsed = JSON.parse(text);
-      } catch {
-        parsed = {};
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          lastErr = `whatsapp_${res.status}: ${text.slice(0, 400)}`;
+          if (withHeader && /1320|header|component/i.test(text)) {
+            continue;
+          }
+          if (String(text).includes("132001") || String(text).includes("does not exist in the translation")) {
+            break;
+          }
+          return { ok: false, error: lastErr };
+        }
+        let parsed: { messages?: Array<{ id?: string }> } = {};
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = {};
+        }
+        const id = String(parsed.messages?.[0]?.id || "");
+        if (!id) {
+          lastErr = `whatsapp_${res.status}: missing_message_id`;
+          break;
+        }
+        if (photoUrl && parentNotifyKindsWithInstructorPhoto().has(kind) && !withHeader) {
+          const img = await sendWhatsappImageMessage(phoneId, token, to, photoUrl);
+          if (!img.ok) {
+            console.warn("[portal-parent-notify] whatsapp image follow-up failed", img.error);
+          }
+        }
+        return { ok: true, id, channel: "whatsapp" };
+      } catch (e) {
+        lastErr = String(e);
       }
-      const id = String(parsed.messages?.[0]?.id || "");
-      if (!id) {
-        lastErr = `whatsapp_${res.status}: missing_message_id`;
-        continue;
-      }
-      return { ok: true, id, channel: "whatsapp" };
-    } catch (e) {
-      lastErr = String(e);
     }
   }
   return { ok: false, error: lastErr };
