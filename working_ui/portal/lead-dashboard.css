@@ -6393,6 +6393,8 @@
     }
     .term-cal-day.term-cal-day--ov-pulse-updated{
       animation:termOvPulseUpdatedCell 1.75s ease-in-out infinite;
+      border-left:4px solid rgba(234,179,8,.92);
+      box-shadow:inset 4px 0 0 rgba(250,204,21,.35),0 0 0 1px rgba(250,204,21,.22);
     }
     .term-cal-day.term-cal-day--ov-pulse-meeting{
       animation:termOvPulseMeetingCell 1.75s ease-in-out infinite;

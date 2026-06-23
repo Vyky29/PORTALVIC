@@ -295,10 +295,10 @@ async function subscribeAndTrack(supabase, payload) {
           resolve(false);
           return;
         }
-        if (typeof globalThis.portalWarnUnlessOffline === "function") {
+        if (typeof globalThis.portalRealtimeLogChannelIssue === "function") {
+          globalThis.portalRealtimeLogChannelIssue("[portal] presence channel", status, err);
+        } else if (typeof globalThis.portalWarnUnlessOffline === "function") {
           globalThis.portalWarnUnlessOffline("[portal] presence channel", status, err);
-        } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
-          console.warn("[portal] presence channel", status, err || "");
         }
         resolve(false);
       }

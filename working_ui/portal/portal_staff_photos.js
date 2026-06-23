@@ -293,7 +293,9 @@
       }
       global.__PORTAL_RT_ERR_LOG__[key] = now;
     } catch (_) {}
-    console.warn(label, status, err || "");
+    try {
+      console.debug(label, status, err || "");
+    } catch (_) {}
   }
 
   function portalRealtimeMarkSubscribed(label) {
@@ -328,9 +330,15 @@
     } catch (_) {}
     global[chKey] = null;
     portalRealtimeLogChannelIssue(label, status, err);
-    if (!portalNetworkIsOffline() && typeof initFn === "function") {
-      setTimeout(initFn, 2500);
-    }
+    if (portalNetworkIsOffline() || typeof initFn !== "function") return;
+    try {
+      if (!global.__PORTAL_RT_RETRY__) global.__PORTAL_RT_RETRY__ = Object.create(null);
+      var rk = String(label || chKey || "rt").trim();
+      var n = Number(global.__PORTAL_RT_RETRY__[rk]) || 0;
+      if (n >= 2) return;
+      global.__PORTAL_RT_RETRY__[rk] = n + 1;
+    } catch (_) {}
+    setTimeout(initFn, 2500);
   }
 
   function bindPortalRealtimeOnlineReconnect() {
