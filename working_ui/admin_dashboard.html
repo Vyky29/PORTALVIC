@@ -61,6 +61,7 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260620-reply-modal"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo"></script>
+  <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
@@ -1894,13 +1895,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
-      if(id === 'novo_orders') id = 'orders_all';
+      if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
+      if(typeof portalAdminRedirectView === 'function') id = portalAdminRedirectView(id);
       try{
         var bdNav = $('modalBackdrop');
         if(bdNav && bdNav.classList.contains('open')) closeModal();
       }catch(_e){}
       try{ closeMenu(); }catch(_e2){}
-      if(id === 'bookings'){
+      if(id === 'bookings' && !portalAdminBookingsHidden()){
         booking.ordersScope = 'all';
         id = 'orders_all';
       }
@@ -1913,11 +1915,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         state.navHubGroup = null;
       }
       state._navHubKeepGroup = false;
-      if(id === 'orders_outstanding'){
-        booking.ordersScope = 'outstanding';
-        id = 'orders_all';
-      }else if(id === 'orders_all'){
-        booking.ordersScope = 'all';
+      if(!portalAdminBookingsHidden()){
+        if(id === 'orders_outstanding'){
+          booking.ordersScope = 'outstanding';
+          id = 'orders_all';
+        }else if(id === 'orders_all'){
+          booking.ordersScope = 'all';
+        }
       }
       var _hadRegisterPeek = !!(id !== 'c4k_services' && state.c4kServicesRegisterOpen);
       if(id !== 'c4k_services'){
@@ -13907,7 +13911,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="bookingRefreshBtn">Refresh</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="bookingExportInvoicesBtn">Export invoices CSV</button>'+
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="bookings">Bookings (by date)</button></div>'+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="'+esc(portalAdminBookingsHidden() ? 'c4k_services' : 'bookings')+'">'+(portalAdminBookingsHidden() ? 'Services (weekly grid)' : 'Bookings (by date)')+'</button></div>'+
         '<p class="muted" style="margin:0 0 12px;max-width:52rem;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">'+
         'Recurring charges run in <strong>GoCardless</strong>; invoice drafts in <strong>Xero</strong>. This page is the <strong>programme-level finance grid</strong> (spreadsheet truth), not a per-day cash collection board. <strong>Export invoices CSV</strong> uses the <strong>same session date</strong> as <strong>Bookings</strong> (last date you loaded there, or today if you open this screen first) — then refresh here.</p>'+
         '<p id="bookingConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
@@ -14923,7 +14927,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card-pad" style="overflow:auto;padding:0;border-top:1px solid var(--line)">'+
         '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Same logic as <strong>Orders</strong>, scoped to the <strong>current programme term</strong> (summer register window). Open <strong>Orders</strong> for day/week/month filters.</p>'+
         '<table class="tbl tbl--center" id="paxWorkspacePortalOrdersTable" style="min-width:1320px"><thead><tr><th>Date</th><th>Parent name</th><th>Participant name</th><th>Order summary</th><th>Booked</th><th>Payment method</th><th>Funding / Source</th><th>EHCP</th><th>Cost</th><th>Actions</th></tr></thead><tbody>'+paxOrdersTbody+'</tbody></table></div></div>'+
-        '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="orders_all">Open Orders</button></div>'+
+        (portalAdminBookingsHidden()
+          ? '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="c4k_services">Open Services</button></div>'
+          : '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="orders_all">Open Orders</button></div>')+
         '</div>';
       var paxPayTbody = renderProgrammeFinanceSheetRowsForParticipant(pname);
       var paxPayPanel =
@@ -17884,7 +17890,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '';
       return (
         '<h1 class="page-title">Waiting list</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families waiting for a place — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="bookings">Bookings</button>.</p>'+optHint+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families waiting for a place — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
         '<div class="section"><div class="section-h"><h2>Waiting list (pipeline)</h2><p>Quick snapshot; with the portal export the source is the workbook (not only demo referrals).</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, <code>slotTime</code>, and preferences when present in the sheet.</p></div>'+
@@ -18261,8 +18267,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="grid-2" style="align-items:stretch;gap:14px">'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="comms_ops" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">✉</span><div class="dash-link-meta" style="min-width:0"><strong>Ops comms &amp; log</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Programme email log, internal outbox, and comms history — under Services &amp; Participants in the sidebar.</p></div></div></button>'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>Enquiries &amp; intake</strong><p class="muted" style="margin:0;overflow-wrap:break-word">New families, triage, programme intake capture.</p></div></div></button>'+
-        '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All orders — filter outstanding balances on the page.</p></div></div></button>'+
-        '<button type="button" class="card card-pad dash-link-card" data-view-target="dashboard" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">▤</span><div class="dash-link-meta" style="min-width:0"><strong>Day operations</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Today’s staff and participants on site. Absents and roster: Bookings.</p></div></div></button>'+
+        (portalAdminBookingsHidden()
+          ? '<button type="button" class="card card-pad dash-link-card" data-view-target="c4k_services" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Services</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Weekly programme grid, capacity and registers.</p></div></div></button>'
+          : '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All orders — filter outstanding balances on the page.</p></div></div></button>')+
+        '<button type="button" class="card card-pad dash-link-card" data-view-target="dashboard" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">▤</span><div class="dash-link-meta" style="min-width:0"><strong>Day operations</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Today’s staff and participants on site. Roster and absences in Sessions overview.</p></div></div></button>'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="absents_refunds" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">£</span><div class="dash-link-meta" style="min-width:0"><strong>Absents &amp; credits</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Refund and credit work queue.</p></div></div></button>'+
         '</div>'+
         '<div class="card" style="margin-top:18px"><div class="card-h"><h3>Message templates (quick)</h3><span class="chip chip--info">mock</span></div><div class="card-pad row-lines">'+
@@ -18984,10 +18992,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function hubMenuTilesForGroup(group){
       var tiles = [];
-      (group.children || []).forEach(function(cid){
+      var children = (window.PortalAdminModulePolicy && typeof window.PortalAdminModulePolicy.filterNavGroupChildren === 'function')
+        ? window.PortalAdminModulePolicy.filterNavGroupChildren(group.children)
+        : (group.children || []);
+      children.forEach(function(cid){
         if(String(cid).indexOf('__h:') === 0) return;
         var item = navGetItem(cid);
         if(!item) return;
+        if(typeof portalAdminNavViewAllowed === 'function' && !portalAdminNavViewAllowed(item.id)) return;
         if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return;
         if(item.id === 'portal_nav_staff' && portalAdminExecHideStaffPortalNav()) return;
         if(item.id === 'portal_nav_lead' && portalAdminExecHideLeadPortalNav()) return;
@@ -19074,9 +19086,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         title:'Services & Participants',
         description:'Manage services, session capacity, participants, reviews, report requests and ClassForKids-related operational information.',
         preview:['Services and capacity','Participant profiles','Waiting list','Reviews and reports'],
-        status:'Use this area to review clients, services, bookings and session progress.',
+        status:'Use this area to review clients, services, scheduling and session progress.',
         primary:['c4k_services','clients','c4k_waitlist','c4k_reviews'],
-        secondary:['orders_all','c4k_reports','servicecap','comms_ops']
+        secondary:['scheduling','c4k_reports','servicecap','comms_ops']
       },
       {
         id:'staffhr',
@@ -19211,8 +19223,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function opsHubCardHtml(card){
       if(!card) return '';
-      var primaryHtml = opsHubActionsHtml(card.primary, 'primary');
-      var secondaryHtml = opsHubActionsHtml(card.secondary, 'secondary');
+      var pol = window.PortalAdminModulePolicy;
+      var primary = (pol && typeof pol.filterHubActionIds === 'function') ? pol.filterHubActionIds(card.primary) : card.primary;
+      var secondary = (pol && typeof pol.filterHubActionIds === 'function') ? pol.filterHubActionIds(card.secondary) : card.secondary;
+      var primaryHtml = opsHubActionsHtml(primary, 'primary');
+      var secondaryHtml = opsHubActionsHtml(secondary, 'secondary');
       var moreHtml = secondaryHtml
         ? '<details class="ops-hub-card__more"><summary class="ops-hub-card__more-summary">More tools</summary><div class="ops-hub-card__actions ops-hub-card__actions--secondary">'+secondaryHtml+'</div></details>'
         : '';
@@ -19335,7 +19350,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewOperationsAdmin(){
       var participantsRow =
         portalDashTileHtml('clients', '', 'clients', 'Participants', 'Directory, profiles &amp; feedback', false, 'sessions')+
-        portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
+        (portalAdminBookingsHidden()
+          ? portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Weekly programme grid &amp; capacity', false, 'sessions')
+          : portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings'))+
         portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
         portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments')+
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
@@ -19892,7 +19909,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('') : '<p class="muted" style="margin:0">No roster-linked lines in the mock queue.</p>';
       return '<h1 class="page-title">Staff &amp; shift notices</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Roster-linked notices: announcements, shift changes, and session moves. Parent-facing mail sits under <button type="button" class="btn btn--ghost btn--sm" data-view-target="comms_ops">Ops comms &amp; log</button>.</p>'+
-        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri" data-open-compose>New staff notification</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">New announcement</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="shift">Shift change notice</button> <button type="button" class="btn btn--ghost btn--sm" data-view-target="orders_all">Orders</button></div>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri" data-open-compose>New staff notification</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">New announcement</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="shift">Shift change notice</button>'+(portalAdminBookingsHidden() ? ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>' : ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="orders_all">Orders</button>')+'</div>'+
         '<div class="grid-2" style="align-items:start;min-width:0">'+
         '<div class="stack"><div class="card"><div class="card-h"><h3>Shift &amp; session changes</h3></div><div class="card-pad row-lines">'+shifts+'</div></div></div>'+
         '<div class="stack"><div class="card"><div class="card-h"><h3>Outbox (sessions &amp; slots)</h3></div><div class="card-pad row-lines">'+feed+'</div></div></div></div>';
@@ -23860,13 +23877,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(group.id === 'g_new_chat'){
           return '';
         }
-        var childHtml = (group.children || []).map(function(cid){
+        var navChildren = (window.PortalAdminModulePolicy && typeof window.PortalAdminModulePolicy.filterNavGroupChildren === 'function')
+          ? window.PortalAdminModulePolicy.filterNavGroupChildren(group.children)
+          : (group.children || []);
+        var childHtml = navChildren.map(function(cid){
           var cs = String(cid);
           if(cs.indexOf('__h:') === 0){
             return '<div class="admin-nav-subhead" role="presentation">'+esc(cs.slice(4))+'</div>';
           }
           var item = navGetItem(cid);
           if(!item) return '';
+          if(typeof portalAdminNavViewAllowed === 'function' && !portalAdminNavViewAllowed(item.id)) return '';
           if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return '';
           if(item.id === 'portal_nav_staff' && portalAdminExecHideStaffPortalNav()) return '';
           if(item.id === 'portal_nav_lead' && portalAdminExecHideLeadPortalNav()) return '';
@@ -24885,7 +24906,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var cj = e.target.closest('.js-open-client-d');
         if(cj){ setView('clients'); setTimeout(function(){ try{ openClientDrawer('c1'); }catch(_){ } },0); return; }
       });
-      var GOTO_MAP = { leads:'leads', finance:'invoices', staff:'staffhr', staffhr:'staffhr', bookings:'orders_all', comms:'comms_ops', communications:'comms_ops', inbox:'dashboard', absents:'absents_refunds', recruitment:'recruitment', reports:'reports', operator:'operator', scheduling:'scheduling' };
+      var GOTO_MAP = { leads:'leads', finance:'invoices', staff:'staffhr', staffhr:'staffhr', bookings: portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all', comms:'comms_ops', communications:'comms_ops', inbox:'dashboard', absents:'absents_refunds', recruitment:'recruitment', reports:'reports', operator:'operator', scheduling:'scheduling' };
       document.addEventListener('click', function(e){
         var ma = e.target.closest('.opwf-mock-act');
         if(!ma) return;
@@ -25047,15 +25068,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hash === 'operations') hash = 'dashboard';
       if(qp === 'novo_dashboard') qp = 'dashboard';
       if(qp === 'novo_schedule') qp = 'c4k_services';
-      if(qp === 'novo_orders') qp = 'orders_all';
-      if(qp === 'bookings') qp = 'orders_all';
+      if(qp === 'novo_orders') qp = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
+      if(qp === 'bookings') qp = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(qp === 'communications') qp = 'comms_ops';
       if(qp === 'c4k_home') qp = 'c4k_services';
       if(qp === 'c4k_service_register') qp = 'c4k_services';
       if(hash === 'novo_dashboard') hash = 'dashboard';
       if(hash === 'novo_schedule') hash = 'c4k_services';
-      if(hash === 'novo_orders') hash = 'orders_all';
-      if(hash === 'bookings') hash = 'orders_all';
+      if(hash === 'novo_orders') hash = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
+      if(hash === 'bookings') hash = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(hash === 'communications') hash = 'comms_ops';
       if(hash === 'c4k_home') hash = 'c4k_services';
       if(hash === 'c4k_service_register') hash = 'c4k_services';
