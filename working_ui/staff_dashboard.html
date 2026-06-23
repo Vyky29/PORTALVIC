@@ -15057,23 +15057,16 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
-    /** Day off / time off — not participant cancellation (review or admin cancel). */
+    /** Day off / time off requested by staff (term timetable away list only — not admin overrides). */
     function portalStaffHasRequestedTimeOffOnDate(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
-      if(typeof portalStaffDayOffIsTimeOffRequested === 'function' && portalStaffDayOffIsTimeOffRequested(iso, sid)) return true;
-      if(typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
-        && portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) return true;
-      return false;
+      return portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0;
     }
-    /** Explicit away dates or full-day instructor cover — show “Time Off Requested” copy. */
+    /** Explicit staff away dates — show “Time Off Requested” copy and term pulse border. */
     function portalStaffDayOffIsTimeOffRequested(isoYmd, staffId){
-      const iso = String(isoYmd || '').trim().slice(0, 10);
-      const sid = String(staffId || '').trim().toLowerCase();
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
-      if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0) return true;
-      return typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid);
+      return portalStaffHasRequestedTimeOffOnDate(isoYmd, staffId);
     }
     function portalTermCalendarToIso(){
       const ptd = window.PortalTermCalendarDashboard;
@@ -15197,12 +15190,14 @@
         for(let day = firstDom; day <= lastDay; day++){
           const iso = termCalendarDateKey(y, monthIndex, day);
           if(ptd && typeof ptd.staffDateInView === 'function' && !ptd.staffDateInView(iso, sid)) continue;
-          if(portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.baselineRemoved = true;
+          if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0){
+            const hadBaseline = ptd && typeof ptd.staffHadBaselineShiftOnDate === 'function'
+              && ptd.staffHadBaselineShiftOnDate(iso, sid);
+            if(hadBaseline) out.baselineRemoved = true;
+            else out.dayOff = true;
+          }
           const fb = getTermFeedbackStateForDay(y, monthIndex, day);
           if(fb === 'late' && iso <= todayKey) out.outstanding = true;
-          const isRed = typeof portalTermCalendarDayIsRed === 'function'
-            && portalTermCalendarDayIsRed(y, monthIndex, day, sid, halfWeeks);
-          if(isRed && !portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid)) out.dayOff = true;
         }
       });
       return out;
@@ -15898,18 +15893,15 @@
           let cls = 'term-cal-day';
           let label;
           const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay;
-          const baselineShiftRemoved = termStaffId
-            && typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
-            && portalTermStaffRemovedFromBaselineShiftOnDate(isoKey, termStaffId);
-          const timeOffRequested = termStaffId && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
-            && portalStaffHasRequestedTimeOffOnDate(isoKey, termStaffId);
+          const staffRequestedAway = termStaffId
+            && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
           const hadBaselineShift = termStaffId && typeof window.PortalTermCalendarDashboard !== 'undefined'
             && window.PortalTermCalendarDashboard
             && typeof window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate === 'function'
             && window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate(isoKey, termStaffId);
-          if(timeOffRequested && worked.includes(w)){
+          if(staffRequestedAway && worked.includes(w)){
             cls += ' half-term';
-            if(baselineShiftRemoved || (hadBaselineShift && staffAway)){
+            if(hadBaselineShift){
               cls += ' term-cal-day--ov-pulse-shift-removed';
               label = `${day}, shift removed (time off requested)`;
             }else{
@@ -15921,11 +15913,6 @@
           }
           if(halfBlocksNav){
             cls += ' half-term';
-            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
-            else if(staffAway || (termStaffId && typeof portalStaffDayOffIsTimeOffRequested === 'function'
-              && portalStaffDayOffIsTimeOffRequested(isoKey, termStaffId))){
-              cls += ' term-cal-day--ov-pulse-day-off';
-            }
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = afterTermEnd
@@ -15972,7 +15959,6 @@
             }
           } else {
             cls += ' half-term';
-            if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
             label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
