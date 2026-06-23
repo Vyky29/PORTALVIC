@@ -1,13 +1,13 @@
 {
   "name": "clubSENsational Staff",
   "short_name": "Staff",
-  "id": "clubsensational-staff-dashboard",
-  "start_url": "./staff_dashboard.html",
+  "id": "clubsensational-staff-login",
+  "start_url": "./login.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f8fb",
-  "theme_color": "#edf4fb",
-  "description": "Staff schedule, participants, and quick menu.",
+  "theme_color": "#f4f8fb",
+  "description": "Sign in to clubSENsational Staff.",
   "icons": [
     {
       "src": "/portal/app-icon/icon-192.png",

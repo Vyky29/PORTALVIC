@@ -1,0 +1,48 @@
+{
+  "buildCommand": "node scripts/inject-portal-bridge-secret.mjs && node scripts/build-clubsensational-staff.mjs",
+  "outputDirectory": "dist/clubsensational-staff",
+  "rewrites": [
+    { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
+    { "source": "/lead-dashboard.webmanifest", "destination": "/clubsensational-staff-dashboard.webmanifest" },
+    { "source": "/staff-dashboard.webmanifest", "destination": "/clubsensational-staff-dashboard.webmanifest" },
+    { "source": "/login.webmanifest", "destination": "/clubsensational-staff-login.webmanifest" },
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/session_feedback.html", "destination": "/portal-session-feedback.html" },
+    { "source": "/incident_report.html", "destination": "/portal-incident.html" },
+    { "source": "/cancellation_report.html", "destination": "/cancellation.html" },
+    { "source": "/expenses.html", "destination": "/portal-expenses.html" },
+    { "source": "/pickup.html", "destination": "/portal-pickup.html" },
+    { "source": "/venue_review.html", "destination": "/portal-venue-review.html" },
+    { "source": "/lead_feedback_report.html", "destination": "/portal-lead-feedback.html" },
+    { "source": "/contract-sign", "destination": "/contract_sign.html" },
+    { "source": "/contract-sign/:id", "destination": "/contract_sign.html?contract_id=:id" },
+    { "source": "/hr-contract", "destination": "/hr_contract.html" },
+    { "source": "/portal-guide", "destination": "/portal_guide.html" },
+    { "source": "/guide", "destination": "/portal_guide.html" },
+    { "source": "/policies", "destination": "/policies_portal.html" },
+    { "source": "/timesheet", "destination": "/timesheet.html" },
+    { "source": "/general-induction", "destination": "/general-induction/index.html" },
+    { "source": "/induction", "destination": "/general-induction/index.html" },
+    { "source": "/sw-term-review", "destination": "/swtermreview.html" },
+    { "source": "/staff-wellbeing-review", "destination": "/staff_wellbeing_review.html" },
+    { "source": "/wellbeing-review", "destination": "/staff_wellbeing_review.html" },
+    { "source": "/staff_profile_update.html", "destination": "/staff_profile_update.html" }
+  ],
+  "redirects": [
+    { "source": "/admin_dashboard.html", "destination": "https://portalvic.vercel.app/admin_dashboard.html", "permanent": false },
+    { "source": "/ceo_dashboard.html", "destination": "https://portalvic.vercel.app/ceo_dashboard.html", "permanent": false },
+    { "source": "/office_portal.html", "destination": "https://portalvic.vercel.app/office_portal.html", "permanent": false },
+    { "source": "/portal_choose.html", "destination": "https://portalvic.vercel.app/portal_choose.html", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/staff_dashboard.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/login.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    }
+  ]
+}
