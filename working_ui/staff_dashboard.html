@@ -3448,6 +3448,11 @@
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
       const baseEarly = portalReviewSessionForItem(item);
+      if(baseEarly && iso && !portalTodayCardUsesReplaceOverride(item)
+        && typeof portalRosterSessionSupersededByMakeupReplace === 'function'
+        && portalRosterSessionSupersededByMakeupReplace(baseEarly, iso)){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+      }
       if(baseEarly && iso && typeof portalRosterSessionFeedbackResolvedFlags === 'function' && !portalTodayCardUsesReplaceOverride(item)){
         const exEarly = portalRosterSessionFeedbackResolvedFlags(baseEarly, iso, staffId);
         if(exEarly && exEarly.absent){
@@ -8745,6 +8750,26 @@
       }
       return best;
     }
+    /** Active MakeUp replace on this roster anchor (replacement ≠ anchor client). */
+    function portalReplaceMakeupOverrideForSession(s, sessionDateIso){
+      if(!s || !sessionDateIso) return null;
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso) return null;
+      let ov = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, iso, 'client_replace_in_slot')
+        : null;
+      if(!ov && typeof portalReplaceOverrideForSessionAnchor === 'function'){
+        ov = portalReplaceOverrideForSessionAnchor(s, iso);
+      }
+      if(!ov || portalOverrideIsTrial(ov)) return null;
+      const repId = portalOverrideReplacementClientId(ov.payload);
+      const anchorId = String(s.clientId || '').trim().toLowerCase();
+      if(!repId || !anchorId || repId === anchorId) return null;
+      return ov;
+    }
+    function portalRosterSessionSupersededByMakeupReplace(s, sessionDateIso){
+      return !!portalReplaceMakeupOverrideForSession(s, sessionDateIso);
+    }
     function portalBuildAdminAbsentSessionItem(s, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote){
       if(!s || !absentOv) return null;
       const activity = (s.activity || 'Swimming').trim();
@@ -8934,31 +8959,53 @@
         });
       });
     }
-    function portalSuppressAnchorClientWhenMakeupReplaced(items){
+    function portalSuppressAnchorClientWhenMakeupReplaced(items, sessionDateKey, staffId){
       if(!Array.isArray(items) || !items.length) return items || [];
+      const iso = normaliseIsoDate(sessionDateKey);
+      const sid = portalNormKeyStr(staffId || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : ''));
       function slotKey(it){
         const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
         const skParts = String(it && it.sessionKey || '').split('|');
         const start = portalCanonicalHmToken(base.start || skParts[1] || '');
         const end = portalCanonicalHmToken(base.end || '');
-        const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
+        const staff = portalNormKeyStr(base.staffId || sid);
         const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
         return [start, end, staff, venue].join('|');
       }
       const replacedAnchors = Object.create(null);
-      items.forEach(function(it){
-        if(!it || !it.portalOverrideMakeUpTag || !it.__portalBaseSession) return;
+      function markReplaced(it){
+        if(!it || !it.__portalBaseSession) return;
         const anchorId = String(it.__portalBaseSession.clientId || '').trim().toLowerCase();
         if(!anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return;
         replacedAnchors[slotKey(it) + '|' + anchorId] = true;
+      }
+      items.forEach(function(it){
+        if(it && it.portalOverrideMakeUpTag) markReplaced(it);
       });
+      if(iso && sid){
+        portalScheduleOverrideRowsAll().forEach(function(ov){
+          if(String(ov.status || 'active') !== 'active') return;
+          if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
+          if(normaliseIsoDate(ov.session_date) !== iso) return;
+          if(portalNormKeyStr(ov.anchor_staff_id) !== sid) return;
+          if(portalOverrideIsTrial(ov)) return;
+          const repId = portalOverrideReplacementClientId(ov.payload);
+          const anchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
+          if(!repId || !anchorId || repId === anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return;
+          const start = portalCanonicalHmToken(portalHmFromDbTime(ov.anchor_start));
+          const end = portalCanonicalHmToken(portalHmFromDbTime(ov.anchor_end));
+          const venue = portalNormKeyStr(ov.anchor_venue);
+          replacedAnchors[[start, end, sid, venue].join('|') + '|' + anchorId] = true;
+        });
+      }
       if(!Object.keys(replacedAnchors).length) return items;
       return items.filter(function(it){
         if(!it || it.kind !== 'client') return true;
-        if(it.portalOverrideMakeUpTag || String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return true;
+        if(it.portalOverrideMakeUpTag) return true;
+        if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return true;
         const base = it.__portalBaseSession;
         if(!base) return true;
-        const anchorId = String(base.clientId || '').trim().toLowerCase();
+        const anchorId = String(base.clientId || it.clientId || '').trim().toLowerCase();
         if(!anchorId) return true;
         return !replacedAnchors[slotKey(it) + '|' + anchorId];
       });
@@ -9077,7 +9124,26 @@
         const replaceOv = typeof portalScheduleOverrideForSessionByType === 'function'
           ? portalScheduleOverrideForSessionByType(base, iso, 'client_replace_in_slot')
           : null;
-        if(replaceOv) return it;
+        const replaceOvLoose = replaceOv || (typeof portalReplaceOverrideForSessionAnchor === 'function'
+          ? portalReplaceOverrideForSessionAnchor(base, iso)
+          : null);
+        if(replaceOvLoose && !portalOverrideIsTrial(replaceOvLoose)){
+          const repId = portalOverrideReplacementClientId(replaceOvLoose.payload);
+          const anchorId = String(base.clientId || '').trim().toLowerCase();
+          const curId = String(it.clientId || '').trim().toLowerCase();
+          if(repId && anchorId && curId === anchorId && !it.portalOverrideMakeUpTag){
+            return Object.assign({}, it, {
+              noSessionFeedbackRequired: true,
+              actionsDisabled: true,
+              detailsOpenAllowed: true,
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideCardTone: 'green',
+              portalOverrideAlertPill: 'CANCELLED',
+              __portalScheduleOverride: replaceOvLoose
+            });
+          }
+          return it;
+        }
         const absentOv = typeof portalScheduleOverrideForSessionByType === 'function'
           ? portalScheduleOverrideForSessionByType(base, iso, 'client_absence_announced')
           : null;
@@ -9887,16 +9953,23 @@
         window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
       }finally{
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
-        if(window.__PORTAL_STAFF_ROSTER_HYDRATED__ && typeof portalStaffMarkInitialTodayScheduleSettled === 'function'){
-          portalStaffMarkInitialTodayScheduleSettled();
+        if(typeof portalStaffMarkInitialTodayScheduleUnsettled === 'function'){
+          portalStaffMarkInitialTodayScheduleUnsettled();
         }
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
       try{
         if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
         if(typeof renderLists === 'function') renderLists();
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        if(typeof renderToday === 'function'){
+          const grid = document.getElementById('todayGrid');
+          if(grid) grid.removeAttribute('data-today-cards-sig');
+          renderToday();
+        }
+        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
       }catch(_syncOv){}
     };
@@ -10176,7 +10249,16 @@
           const me = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
           if(cov && orig === me) return false;
         }
+        if(t === 'client_replace_in_slot'){
+          const repId = portalOverrideReplacementClientId(ov.payload);
+          const anchorId = String(s.clientId || '').trim().toLowerCase();
+          if(repId && anchorId && repId !== anchorId && !portalOverrideIsTrial(ov)) return false;
+        }
         if(t === 'slot_clear_client' || t === 'client_absence_announced' || t === 'slot_close') return false;
+      }
+      if(typeof portalReplaceMakeupOverrideForSession === 'function'
+        && portalReplaceMakeupOverrideForSession(s, sessionDateIso)){
+        return false;
       }
       return true;
     }
@@ -10215,6 +10297,12 @@
         : null;
       if(absentOvDedicated){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+      }
+      const replaceMakeupDedicated = typeof portalReplaceMakeupOverrideForSession === 'function'
+        ? portalReplaceMakeupOverrideForSession(s, iso)
+        : null;
+      if(replaceMakeupDedicated){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
       }
       const ov = typeof portalTodayScheduleOverrideForSession === 'function'
         ? portalTodayScheduleOverrideForSession(s, iso)
@@ -10378,7 +10466,13 @@
       if(st === 'Closed' && !openedClosed) return false;
       const ov = portalTodayScheduleOverrideForSession(s, iso);
       if(ov && ov.override_type === 'instructor_reassign' && String(ov.payload && ov.payload.covering_staff_id || '').trim()) return false;
+      if(ov && ov.override_type === 'client_replace_in_slot'){
+        const repId = portalOverrideReplacementClientId(ov.payload);
+        const anchorId = String(s.clientId || '').trim().toLowerCase();
+        if(repId && anchorId && repId !== anchorId && !portalOverrideIsTrial(ov)) return false;
+      }
       if(ov && (ov.override_type === 'slot_clear_client' || ov.override_type === 'client_absence_announced' || ov.override_type === 'slot_close')) return false;
+      if(typeof portalReplaceMakeupOverrideForSession === 'function' && portalReplaceMakeupOverrideForSession(s, iso)) return false;
       return true;
     };
     /** One count per feedback/session unit (not per 30' roster row) — matches Today cards + feedback keys. */
@@ -11514,7 +11608,7 @@
         mergedToday = portalUpgradeTodayMakeupReplacePresentation(mergedToday, sessionDateKey, anchorDayWord, supportHidePoolNote);
       }
       if(typeof portalSuppressAnchorClientWhenMakeupReplaced === 'function'){
-        mergedToday = portalSuppressAnchorClientWhenMakeupReplaced(mergedToday);
+        mergedToday = portalSuppressAnchorClientWhenMakeupReplaced(mergedToday, sessionDateKey, staffId);
       }
       return mergedToday;
     }
@@ -11543,16 +11637,8 @@
       try{
         if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return false;
         if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
-        /* Roster already bootstrapped — do not keep Today stuck on “syncing”. */
-        if(window.__PORTAL_STAFF_ROSTER_HYDRATED__){
-          portalStaffMarkInitialTodayScheduleSettled();
-          return false;
-        }
-        /* Keep cards visible while async rehydrate runs after optimistic paint. */
-        if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
-          return false;
-        }
-        return true;
+        if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
+        return false;
       }catch(_){ return true; }
     }
     function portalStaffMarkInitialTodayScheduleUnsettled(){
@@ -11563,9 +11649,6 @@
     }
     function portalStaffMarkRosterHydrated(){
       try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
-      if(window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
-        portalStaffMarkInitialTodayScheduleSettled();
-      }
     }
     function portalStaffEnsureInitialTodayScheduleSettledSoon(){
       try{
@@ -11899,15 +11982,11 @@
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       if(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
-        if(dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
-          portalStaffMarkInitialTodayScheduleSettled();
-        }else{
-          dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
-          dashboardData.portalTodayNextSessionPreview = null;
-          dashboardData.today = [];
-          portalApplyTodayVenueMeta();
-          return [];
-        }
+        dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
+        dashboardData.portalTodayNextSessionPreview = null;
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        return [];
       }
       const selectedAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
         ? portalResolveTodaySectionCalendarDate()
@@ -11952,7 +12031,8 @@
         if(!recoveredRows.length && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
           var cachedIso = String(dashboardData.__portalTodayCalendarIso || '').trim().slice(0, 10);
           if(!cachedIso) cachedIso = portalTodayRowsCalendarIso(dashboardData.today);
-          if(cachedIso && selectedIso && cachedIso === selectedIso){
+          var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+          if(cachedIso && selectedIso && cachedIso === selectedIso && (!liveToday || overridesReady)){
             recoveredRows = dashboardData.today.slice();
           }
         }
@@ -12044,6 +12124,12 @@
       }
       dashboardData.today = rows;
       dashboardData.__portalTodayCalendarIso = selectedIso || (rows.length ? portalTodayRowsCalendarIso(rows) : '');
+      if(liveToday && typeof window !== 'undefined'
+        && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+        && window.__PORTAL_STAFF_ROSTER_HYDRATED__
+        && typeof portalStaffMarkInitialTodayScheduleSettled === 'function'){
+        portalStaffMarkInitialTodayScheduleSettled();
+      }
       if(rows.length && typeof portalStaffUpdateSessionsModelGuard === 'function'){
         portalStaffUpdateSessionsModelGuard(id, Array.isArray(modelOverride) ? modelOverride : sessionsModel);
       }
