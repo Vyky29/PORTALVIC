@@ -923,6 +923,7 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -7872,6 +7873,17 @@
       return String(pl && (pl.service_booked || pl.service || pl.programme || pl.activity) || '').trim();
     }
     function portalOverrideQuickMenuTimeSlotLabel(row){
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      const ovType = String(row && row.override_type || '').trim();
+      if(ovType === 'slot_update' || (pl && pl._portal_roster_day_group)){
+        if(typeof window.portalStaffOverrideShiftSlotLabel === 'function'){
+          const shiftLab = window.portalStaffOverrideShiftSlotLabel(row);
+          if(shiftLab) return shiftLab;
+        }
+      }
       const lab = String(row && row.anchor_time_slot_label || '').trim();
       const t0 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_start) : String(row && row.anchor_start || '').trim();
       const t1 = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(row && row.anchor_end) : String(row && row.anchor_end || '').trim();
@@ -8294,6 +8306,7 @@
         return {
           id: dismissId || portalScheduleOverrideRowDismissKey(row),
           iso: isoNav,
+          venue: venue,
           title: title,
           sub: sub,
           kind: kind
@@ -8466,12 +8479,14 @@
           rest.push(it);
           continue;
         }
-        const prev = byIso[iso];
+        const venue = String(it.venue || '').trim().toLowerCase();
+        const dayKey = iso + '\0' + venue;
+        const prev = byIso[dayKey];
         if(!prev){
-          byIso[iso] = it;
+          byIso[dayKey] = it;
           continue;
         }
-        if(kind === 'new_shift' && String(prev.kind || '') !== 'new_shift') byIso[iso] = it;
+        if(kind === 'new_shift' && String(prev.kind || '') !== 'new_shift') byIso[dayKey] = it;
       }
       return rest.concat(Object.keys(byIso).sort().map(function(k){ return byIso[k]; }));
     }

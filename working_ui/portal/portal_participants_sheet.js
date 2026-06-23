@@ -263,8 +263,9 @@
     if (!overrideIsRosterDayGroupableSlotUpdate(row) && !overrideIsRosterDayGroupRow(row)) return "";
     const staff = normKey(row && row.anchor_staff_id);
     const iso = normIso(row && row.session_date);
+    const venue = normKey(row && row.anchor_venue);
     if (!staff || !iso) return "";
-    return "roster-day|" + staff + "|" + iso;
+    return "roster-day|" + staff + "|" + iso + "|" + venue;
   }
 
   function overrideNewShiftDayGroupKey(row) {
@@ -351,9 +352,11 @@
             iso: iso,
             count: 1,
             hasNewShift: overrideIsNewShiftDayUpdate(row),
+            rows: [row],
           };
         } else {
           prev.count += 1;
+          prev.rows.push(row);
           if (overrideIsNewShiftDayUpdate(row)) prev.hasNewShift = true;
           if (iso && (!prev.iso || iso < prev.iso)) prev.iso = iso;
         }
@@ -378,6 +381,10 @@
       const pack = rosterDayGroups[gk];
       const src = pack.row;
       const pl = overridePayload(src) || {};
+      var shiftSlotLabel = "";
+      if (typeof global.portalStaffShiftSlotLabelFromRows === "function") {
+        shiftSlotLabel = global.portalStaffShiftSlotLabelFromRows(pack.rows || [src], pack.iso || normIso(src.session_date));
+      }
       keep.push(
         Object.assign({}, src, {
           payload: Object.assign({}, pl, {
@@ -386,6 +393,7 @@
             _portal_roster_day_participant_count: pack.count,
             _portal_new_shift_day_group: !!pack.hasNewShift,
             _portal_new_shift_participant_count: pack.count,
+            _portal_shift_slot_label: shiftSlotLabel || undefined,
           }),
         })
       );

@@ -254,6 +254,7 @@
   <script src="/portal/term_from_timetable.js?v=20260614-giuseppe-timesheet"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260623-sunday-support-5h"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -1144,6 +1145,7 @@
       let dominantRole = "";
       let dominantService = "";
       let bestMin = -1;
+      let applySupportBuffer = false;
       rows.forEach((s) => {
         const start = String(s.start || "").trim();
         const end = String(s.end || "").trim();
@@ -1154,6 +1156,9 @@
         if (b > maxEnd) maxEnd = b;
         const dur = Math.max(0, b - a);
         const svc = String(s.rosterService || s.service || s.activity || "").trim();
+        if (typeof portalStaffSupportShiftBufferApplies === "function" && portalStaffSupportShiftBufferApplies(svc, dayName)) {
+          applySupportBuffer = true;
+        }
         const role = serviceToRole(svc);
         if (role) {
           roleMinutes[role] = (roleMinutes[role] || 0) + dur;
@@ -1164,6 +1169,10 @@
         const rec = sessionReviewRecord(reviewMap, s, dateObj);
         if (!sessionIsCompleted(rec)) completedAll = false;
       });
+      if (applySupportBuffer) {
+        minStart -= typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+        maxEnd += typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+      }
       const mins = Math.max(0, maxEnd - minStart);
       if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
       let hours = Number((mins / 60).toFixed(2));
