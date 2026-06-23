@@ -8316,11 +8316,18 @@
         const dayLabel = isoNav && typeof portalOverrideSessionDateDisplayLabel === 'function'
           ? portalOverrideSessionDateDisplayLabel(isoNav)
           : isoNav;
+        const todayIso = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+        const futureShift = !!(isoNav && todayIso && isoNav > todayIso);
+        const sub = dayLabel
+          ? ('Your shift on ' + dayLabel + (futureShift ? ' will be covered.' : ' was covered.'))
+          : (futureShift
+            ? 'Your shift will be covered by another instructor.'
+            : 'Your shift was covered by another instructor.');
         return {
           id: portalOverrideInstructorReplacedDayDismissKey(row),
           iso: isoNav,
           title: 'Session Cancelled',
-          sub: dayLabel ? ('Your shift on ' + dayLabel + ' was covered.') : 'Your shift was covered by another instructor.',
+          sub: sub,
           kind: kind
         };
       }
@@ -8830,10 +8837,27 @@
       }
       return item.__portalBaseSession || null;
     }
+    function portalOverridePayloadObject(ov){
+      let p = ov && ov.payload;
+      if(typeof p === 'string'){
+        try{ p = JSON.parse(p); }catch(_){ p = {}; }
+      }
+      return p && typeof p === 'object' ? p : {};
+    }
+    /** Summer Term 2+ dated views must not pick undated weekday snapshots from another week. */
+    function portalSpreadsheetSessionMatchesOverrideIso(s, iso){
+      const rowIso = normaliseIsoDate(s && (s.session_date || s.sessionDate));
+      if(!iso) return true;
+      if(rowIso) return rowIso === iso;
+      if(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function' && portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return false;
+      return true;
+    }
     function portalSyntheticSessionFromOverride(ov, viewDay){
       if(!ov) return null;
       const vw = String(viewDay || '').trim();
       const iso = normaliseIsoDate(ov.session_date);
+      const pl = portalOverridePayloadObject(ov);
+      const area = String(pl.area || pl.roster_area || '').trim();
       return {
         staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
         day: vw,
@@ -8843,12 +8867,101 @@
         clientId: portalScheduleOverrideAnchorIsOpenSlot(ov.anchor_client_id)
           ? 'available'
           : String(ov.anchor_client_id || '').trim().toLowerCase(),
-        activity: 'Swimming',
-        rosterService: 'Aquatic Activity',
+        activity: String(pl.service || pl.activity || 'Swimming').trim() || 'Swimming',
+        rosterService: String(pl.service || 'Aquatic Activity').trim(),
+        rosterArea: area,
         status: 'scheduled',
         session_date: iso || '',
         timeSlotLabel: String(ov.anchor_time_slot_label || '').trim()
       };
+    }
+    function portalResolveMakeupOverrideBaseSession(ov, viewDay){
+      if(!ov) return null;
+      const found = portalFindSpreadsheetSessionMatchingOverride(ov, viewDay);
+      if(found) return found;
+      return portalSyntheticSessionFromOverride(ov, viewDay);
+    }
+    /** Ensure MakeUp replace cards stay pink with anchor pool/area even when loose matching missed flags. */
+    function portalUpgradeTodayMakeupReplacePresentation(items, sessionDateKey, viewDay, supportHidePoolNote){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      const iso = normaliseIsoDate(sessionDateKey);
+      if(!iso) return items;
+      return items.map(function(it){
+        if(!it || it.kind !== 'client') return it;
+        let ov = it.__portalScheduleOverride;
+        const base = it.__portalBaseSession;
+        if((!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') && base){
+          ov = (typeof portalReplaceOverrideForSessionAnchor === 'function'
+            ? portalReplaceOverrideForSessionAnchor(base, iso)
+            : null)
+            || (typeof portalScheduleOverrideForSessionByType === 'function'
+              ? portalScheduleOverrideForSessionByType(base, iso, 'client_replace_in_slot')
+              : null)
+            || ov;
+        }
+        if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return it;
+        if(portalOverrideIsTrial(ov)) return it;
+        const repId = portalOverrideReplacementClientId(ov.payload);
+        const repName = portalOverrideReplacementClientName(ov.payload);
+        let anchorBase = base;
+        if(!anchorBase || (!anchorBase.rosterArea && !anchorBase.area)){
+          anchorBase = portalResolveMakeupOverrideBaseSession(ov, viewDay) || anchorBase;
+        }
+        const activity = String((anchorBase && anchorBase.activity) || it.activity || 'Swimming').trim();
+        const anchorNotes = anchorBase
+          ? (portalClientNotesLookup(String(anchorBase.clientId || '').trim().toLowerCase()) || { name: '' })
+          : { name: '' };
+        const repNotes = portalClientNotesLookup(repId) || (repName ? { name: repName } : null);
+        let poolLocationLabel = resolvePoolLocationLabelFromSession(anchorBase || base || {}, activity, anchorNotes, viewDay);
+        if(supportHidePoolNote) poolLocationLabel = null;
+        const areaLabel = rosterAreaLabelForSession(anchorBase || base || {}, activity, supportHidePoolNote);
+        const poolTier = poolTierForAreaNoteRow(anchorBase || base || {}, activity, anchorNotes, viewDay, supportHidePoolNote);
+        return Object.assign({}, it, {
+          clientId: repId || it.clientId,
+          name: portalParticipantDisplayName((repNotes && repNotes.name) || repName || it.name || repId),
+          activity: activity,
+          areaLabel: areaLabel,
+          poolLocationLabel: poolLocationLabel,
+          poolTier: poolTier,
+          showPoolSymbol: !!(poolLocationLabel || areaLabel),
+          portalOverrideMakeUpTag: true,
+          portalOverrideTrialTag: false,
+          portalOverrideCardTone: 'pink',
+          portalOverrideSymbolText: 'Make Up',
+          scheduleAdminAdjusted: true,
+          __portalScheduleOverride: ov,
+          __portalBaseSession: anchorBase || base || it.__portalBaseSession
+        });
+      });
+    }
+    function portalSuppressAnchorClientWhenMakeupReplaced(items){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      function slotKey(it){
+        const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+        const skParts = String(it && it.sessionKey || '').split('|');
+        const start = portalCanonicalHmToken(base.start || skParts[1] || '');
+        const end = portalCanonicalHmToken(base.end || '');
+        const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
+        const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
+        return [start, end, staff, venue].join('|');
+      }
+      const replacedAnchors = Object.create(null);
+      items.forEach(function(it){
+        if(!it || !it.portalOverrideMakeUpTag || !it.__portalBaseSession) return;
+        const anchorId = String(it.__portalBaseSession.clientId || '').trim().toLowerCase();
+        if(!anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return;
+        replacedAnchors[slotKey(it) + '|' + anchorId] = true;
+      });
+      if(!Object.keys(replacedAnchors).length) return items;
+      return items.filter(function(it){
+        if(!it || it.kind !== 'client') return true;
+        if(it.portalOverrideMakeUpTag || String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return true;
+        const base = it.__portalBaseSession;
+        if(!base) return true;
+        const anchorId = String(base.clientId || '').trim().toLowerCase();
+        if(!anchorId) return true;
+        return !replacedAnchors[slotKey(it) + '|' + anchorId];
+      });
     }
     function portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote){
       if(!base || !ov) return null;
@@ -8867,10 +8980,11 @@
           generalInfoSheet: ''
         } : null);
       if(!c) return null;
-      let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, anchorDayWord);
+      const anchorNotes = portalClientNotesLookup(String(base.clientId || '').trim().toLowerCase()) || { name: '' };
+      let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, anchorNotes, anchorDayWord);
       if(supportHidePoolNote) poolLocationLabel = null;
       const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
-      const poolTier = poolTierForAreaNoteRow(s, activity, c, anchorDayWord, supportHidePoolNote);
+      const poolTier = poolTierForAreaNoteRow(s, activity, anchorNotes, anchorDayWord, supportHidePoolNote);
       const showPoolSymbol = !!(poolLocationLabel || areaLabel);
       const showSpec = !isBespokeActivity(activity);
       const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
@@ -8938,8 +9052,7 @@
         if(ov.id && seenOvIds[String(ov.id)]) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         if(!repId) return;
-        const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord)
-          || portalSyntheticSessionFromOverride(ov, anchorDayWord);
+        const base = portalResolveMakeupOverrideBaseSession(ov, anchorDayWord);
         if(!base) return;
         const startTok = portalCanonicalHmToken(base.start) || portalCanonicalHmToken(ov.anchor_start);
         if(seenRepKeys[repId + '|' + startTok]) return;
@@ -9057,11 +9170,13 @@
       const list = Array.isArray(sessionsModel) ? sessionsModel : [];
       const aid = portalNormKeyStr(ov && ov.anchor_staff_id);
       const vw = String(viewDay || '').trim();
+      const iso = normaliseIsoDate(ov && ov.session_date);
       for(let i = 0; i < list.length; i++){
         const s = list[i];
         if(!s) continue;
         if(portalNormKeyStr(s.staffId) !== aid) continue;
         if(String(s.day || '').trim() !== vw) continue;
+        if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) continue;
         if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
         if(!portalRosterClientIdsMatch(s.clientId, ov.anchor_client_id)) continue;
         if(!portalTimeAnchorsMatch(ov.anchor_start, s.start)) continue;
@@ -9075,6 +9190,7 @@
           if(!s2) continue;
           if(portalNormKeyStr(s2.staffId) !== aid) continue;
           if(String(s2.day || '').trim() !== vw) continue;
+          if(!portalSpreadsheetSessionMatchesOverrideIso(s2, iso)) continue;
           if(portalNormKeyStr(s2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
           if(!portalTimeAnchorsMatch(ov.anchor_start, s2.start)) continue;
           if(!portalTimeAnchorsMatch(ov.anchor_end, s2.end)) continue;
@@ -9082,7 +9198,6 @@
           return s2;
         }
       }
-      const iso = normaliseIsoDate(ov && ov.session_date);
       const srcRows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
       const adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
       for(let j = 0; j < srcRows.length; j++){
@@ -11008,14 +11123,17 @@
           }
           const c = clientNotesById[effClientId] || (nameFromReplace ? { name: nameFromReplace, generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' } : null);
           if(!c) return null;
-          let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
+          const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
+          const poolNotesForRow = hasReplaceOv
+            ? (portalClientNotesLookup(String(s.clientId || '').trim().toLowerCase()) || { name: '' })
+            : c;
+          let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, poolNotesForRow, viewDay);
           if(supportHidePoolNote) poolLocationLabel = null;
           const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
-          const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
+          const poolTier = poolTierForAreaNoteRow(s, activity, poolNotesForRow, viewDay, supportHidePoolNote);
           const showPoolSymbol = !!(poolLocationLabel || areaLabel);
           const showSpec = !isBespokeActivity(activity);
           const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
-          const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
           const isTrialOv = (hasReplaceOv && portalOverrideIsTrial(ov)) || portalRosterParticipantNameLooksTrial(c.name || nameFromReplace);
           const replacedVisual = manualOv === 'REPLACED';
           const isMakeUpCard = !isTrialOv && (hasReplaceOv || replacedVisual);
@@ -11392,6 +11510,12 @@
         staffId,
         String(dashboardData && dashboardData.staffName || '').trim()
       );
+      if(typeof portalUpgradeTodayMakeupReplacePresentation === 'function'){
+        mergedToday = portalUpgradeTodayMakeupReplacePresentation(mergedToday, sessionDateKey, anchorDayWord, supportHidePoolNote);
+      }
+      if(typeof portalSuppressAnchorClientWhenMakeupReplaced === 'function'){
+        mergedToday = portalSuppressAnchorClientWhenMakeupReplaced(mergedToday);
+      }
       return mergedToday;
     }
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
