@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260624-term-offrota-pulse" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260624-term-thu-pulse" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-termrev-rose-team-shift" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -910,10 +910,10 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260614-aurora-makeup-off"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse"></script>
+  <script src="/portal/term_from_timetable.js?v=20260624-youssef-dc-start"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260624-youssef-dc-start"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260624-youssef-dc-start"></script>
   <script src="/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
@@ -923,8 +923,8 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window2"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window3"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260624-payroll-band"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260621-javi-palankas"></script>
@@ -8125,6 +8125,27 @@
     }
     try{ window.portalStaffHasInstructorCoverOnCalendarDate = portalStaffHasInstructorCoverOnCalendarDate; }catch(_){}
     try{ window.portalStaffInstructorCoverCalendarIsoKeys = portalStaffInstructorCoverCalendarIsoKeys; }catch(_){}
+    /** Admin-added shift on a calendar date (new shift slot_update or session_add) — off-rota weekdays. */
+    function portalStaffHasAdminAddedShiftOnCalendarDate(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso) return false;
+      const normStaffKey = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+      const sidNorm = normStaffKey(staffId);
+      if(!sidNorm) return false;
+      const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const P = window.PortalParticipantsSheet;
+      for(let i = 0; i < list.length; i++){
+        const row = list[i];
+        if(!row || String(row.status || 'active') !== 'active') continue;
+        if(normaliseIsoDate(row.session_date) !== iso) continue;
+        if(normStaffKey(row.anchor_staff_id) !== sidNorm) continue;
+        const t = String(row.override_type || '').trim();
+        if(t === 'session_add') return true;
+        if(t === 'slot_update' && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return true;
+      }
+      return false;
+    }
+    try{ window.portalStaffHasAdminAddedShiftOnCalendarDate = portalStaffHasAdminAddedShiftOnCalendarDate; }catch(_){}
     /** Cover instructor cannot take a client session that overlaps their own open / NO PARTICIPANT roster block. */
     function portalStaffRosterOpenSlotOverlapsWindow(staffId, sessionDateKey, anchorDayWord, winStart, winEnd){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -8311,15 +8332,23 @@
       }
       if(kind === 'new_shift' || kind === 'roster_day'){
         const isoNav = normaliseIsoDate(row && row.session_date);
+        const venue = String(row && row.anchor_venue || '').trim();
         const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
           ? portalOverrideCardDateParenLabel(isoNav)
           : '';
         if(kind === 'new_shift'){
-          const venue = String(row && row.anchor_venue || '').trim();
           title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
             ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
             : '';
+          if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
+            const staffForBand = String(row && row.anchor_staff_id || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim();
+            const band = window.portalStaffPayrollShiftBandLabel(staffForBand, isoNav, venue);
+            if(band){
+              const svc = typeof portalOverrideQuickMenuServiceLabel === 'function' ? portalOverrideQuickMenuServiceLabel(row) : '';
+              sub = [svc, band].filter(Boolean).join(' · ');
+            }
+          }
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
@@ -8571,12 +8600,17 @@
       if(!item || !item.iso) return item;
       const iso = String(item.iso || '').trim();
       const staffId = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
-      if(typeof window.portalStaffDayShiftLabelsByVenue !== 'function' || !staffId) return item;
-      const labels = window.portalStaffDayShiftLabelsByVenue(staffId, iso);
-      const venueKey = typeof portalNormKeyStr === 'function'
-        ? portalNormKeyStr(item.venue || '')
-        : String(item.venue || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
-      const slot = labels[venueKey] || labels._ || '';
+      let slot = '';
+      if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
+        slot = window.portalStaffPayrollShiftBandLabel(staffId, iso, item.venue || '') || '';
+      }
+      if(!slot && typeof window.portalStaffDayShiftLabelsByVenue === 'function' && staffId){
+        const labels = window.portalStaffDayShiftLabelsByVenue(staffId, iso);
+        const venueKey = typeof portalNormKeyStr === 'function'
+          ? portalNormKeyStr(item.venue || '')
+          : String(item.venue || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+        slot = labels[venueKey] || labels._ || '';
+      }
       if(!slot) return item;
       const subRaw = String(item.sub || '').trim();
       const parts = subRaw ? subRaw.split(' · ') : [];
@@ -9919,6 +9953,14 @@
       if(first && iso < first) return false;
       return true;
     }
+    function portalStaffSessionServiceActiveOnDate(s, isoYmd, staffId){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.staffSessionServiceActiveOnDate === 'function'){
+        const sid = String(staffId != null ? staffId : (s && s.staffId) || '').trim().toLowerCase();
+        return !!ptd.staffSessionServiceActiveOnDate(sid, s, isoYmd);
+      }
+      return true;
+    }
     /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -9958,6 +10000,7 @@
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
       if(!portalSessionClientActiveOnDate(s, isoYmd)) return false;
+      if(!portalStaffSessionServiceActiveOnDate(s, isoYmd, s.staffId)) return false;
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
       const sid = String(s.staffId || '').trim().toLowerCase();
@@ -14997,6 +15040,74 @@
     /** Pending quick-menu override days (same source as yellow cards) — cached for calendar/week pulse. */
     function portalRefreshPendingOverrideDaysCache(){
       const byIso = Object.create(null);
+      const dismissed = Object.create(null);
+      try{
+        const dk = typeof portalQuickMenuLoadDismissedOverrideKeys === 'function' ? portalQuickMenuLoadDismissedOverrideKeys() : [];
+        for(let d = 0; d < dk.length; d++) dismissed[dk[d]] = true;
+      }catch(_){}
+      function mergePack(into, add){
+        if(!into || !add) return;
+        if(add.hasNewShift) into.hasNewShift = true;
+        if(add.hasUpdated) into.hasUpdated = true;
+        if(add.hasShadowing) into.hasShadowing = true;
+        if(add.hasTraining) into.hasTraining = true;
+        if(add.hasMeeting) into.hasMeeting = true;
+      }
+      function packFromRow(row){
+        const pack = { hasNewShift: false, hasUpdated: false, hasShadowing: false, hasTraining: false, hasMeeting: false };
+        const t = String(row && row.override_type || '').trim();
+        const P = window.PortalParticipantsSheet;
+        if(t === 'session_add'){
+          const kind = String(row.payload && row.payload.kind || '').trim().toLowerCase();
+          if(kind === 'shadowing') pack.hasShadowing = true;
+          else if(kind === 'training') pack.hasTraining = true;
+          else if(kind === 'meeting') pack.hasMeeting = true;
+          else pack.hasUpdated = true;
+        }else if(t === 'slot_update'){
+          if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)){
+            pack.hasNewShift = true;
+            pack.hasUpdated = true;
+          }else{
+            pack.hasUpdated = true;
+          }
+        }else if(t === 'instructor_reassign' && typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+          && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
+          pack.hasNewShift = true;
+          pack.hasUpdated = true;
+        }
+        return pack;
+      }
+      try{
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(today) : '';
+        const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        for(let ri = 0; ri < rows.length; ri++){
+          const row = rows[ri];
+          if(!row || !portalScheduleOverrideRowAppliesToLoggedInStaff(row)) continue;
+          if(String(row.status || 'active') !== 'active') continue;
+          const iso = normaliseIsoDate(row.session_date);
+          if(!iso || (todayStr && iso < todayStr)) continue;
+          const dismissKey = typeof portalScheduleOverrideRowDismissKey === 'function'
+            ? portalScheduleOverrideRowDismissKey(row)
+            : '';
+          if(dismissKey && dismissed[dismissKey]) continue;
+          const P = window.PortalParticipantsSheet;
+          if(P && typeof P.scheduleOverrideAttentionDismissKey === 'function'){
+            const altDismiss = P.scheduleOverrideAttentionDismissKey(row);
+            if(altDismiss && dismissed[altDismiss]) continue;
+          }
+          const pack = byIso[iso] || {
+            hasNewShift: false,
+            hasUpdated: false,
+            hasShadowing: false,
+            hasTraining: false,
+            hasMeeting: false
+          };
+          mergePack(pack, packFromRow(row));
+          byIso[iso] = pack;
+        }
+      }catch(_scan){}
       try{
         const att = typeof portalStaffRosterOverrideAttentionState === 'function'
           ? portalStaffRosterOverrideAttentionState()
@@ -15085,20 +15196,31 @@
       window.portalRefreshScheduleOverrideDayChrome = portalRefreshScheduleOverrideDayChrome;
     }catch(_ex){}
     /** Pulse class for term-calendar days OFF the staff base rota that still have a pending override (shadowing / new shift / change). */
-    function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted){
+    function portalTermOverridePulseClassFromDayFlags(flags){
+      if(!flags) return '';
+      if(flags.hasNewShift) return 'term-cal-day--ov-pulse-admin-shift';
+      if(flags.hasShadowing) return 'term-cal-day--ov-pulse-shadowing';
+      if(flags.hasTraining) return 'term-cal-day--ov-pulse-training';
+      if(flags.hasMeeting) return 'term-cal-day--ov-pulse-meeting';
+      if(flags.hasUpdated) return 'term-cal-day--ov-pulse-updated';
+      return '';
+    }
+    function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWord){
+      let flags = null;
+      try{
+        flags = typeof portalDayOverrideBadgeFlags === 'function'
+          ? portalDayOverrideBadgeFlags(String(dayWord || '').trim(), isoKey)
+          : null;
+      }catch(_){ flags = null; }
+      const fromFlags = portalTermOverridePulseClassFromDayFlags(flags);
+      if(fromFlags) return fromFlags;
       let pend = null;
       try{
         pend = typeof portalPendingOverrideFlagsForDate === 'function'
           ? portalPendingOverrideFlagsForDate(isoKey)
           : null;
       }catch(_){ pend = null; }
-      if(pend){
-        if(pend.hasNewShift) return 'term-cal-day--ov-pulse-admin-shift';
-        if(pend.hasShadowing) return 'term-cal-day--ov-pulse-shadowing';
-        if(pend.hasTraining) return 'term-cal-day--ov-pulse-training';
-        if(pend.hasMeeting) return 'term-cal-day--ov-pulse-meeting';
-        if(pend.hasUpdated) return 'term-cal-day--ov-pulse-updated';
-      }
+      if(pend) return portalTermOverridePulseClassFromDayFlags(pend);
       return adminScheduleAdjusted ? 'term-cal-day--ov-pulse-admin-shift' : '';
     }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
@@ -16479,10 +16601,12 @@
           );
           const instructorCoverDay = termStaffId && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
             && portalStaffHasInstructorCoverOnCalendarDate(isoKey, termStaffId);
-          const isWorked = extraCatchUp || instructorCoverDay || (worked.includes(w) && (rosterApplies || exportWorked));
+          const adminAddedShiftDay = termStaffId && typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+            && portalStaffHasAdminAddedShiftOnCalendarDate(isoKey, termStaffId);
+          const isWorked = extraCatchUp || instructorCoverDay || adminAddedShiftDay || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;
-          const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay;
+          const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay;
           const staffRequestedAway = termStaffId
             && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
           const adminScheduleAdjusted = termStaffId
@@ -16506,7 +16630,7 @@
           }
           if(halfBlocksNav){
             cls += ' half-term';
-            const ovPulseHalf = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted);
+            const ovPulseHalf = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
             if(ovPulseHalf) cls += ' ' + ovPulseHalf;
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
@@ -16557,7 +16681,7 @@
             }
           } else {
             cls += ' half-term';
-            const ovPulseOff = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted);
+            const ovPulseOff = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
             if(ovPulseOff) cls += ' ' + ovPulseOff;
             label = ovPulseOff ? `${day}, schedule change — see quick menu` : `${day}, not on your rota`;
           }

@@ -566,6 +566,21 @@
         String(staffIdForMatch || "").trim().toLowerCase();
       const staffKeyOut = stored || String(selfKey).toLowerCase();
 
+      if (
+        sessionDate &&
+        /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) &&
+        typeof window !== "undefined" &&
+        window.PortalTermCalendarDashboard &&
+        typeof window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate === "function" &&
+        !window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate(
+          staffKeyOut,
+          { rosterService, service: rosterService },
+          sessionDate
+        )
+      ) {
+        return;
+      }
+
       if (!timeSlotLabel && !nameRaw && !rosterService && !rosterArea) return;
 
       const t = parseTimeSlot(row.time_slot, row.day);
@@ -748,5 +763,6 @@
     normalizeWorkerClientName: normalizeWorkerClientName,
     resetWorkerDisplayNameCache: resetWorkerDisplayNameCache,
     isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
+    parseTimeSlot: parseTimeSlot,
   };
 })();

@@ -6,6 +6,8 @@
   "use strict";
 
   var BUFFER_MIN = 15;
+  /** Paid shift band length (2h) — consecutive slots totalling 2h need no extra ±15 padding. */
+  var PAYROLL_BAND_MINUTES = 120;
 
   function hmToMinutes(hm) {
     var p = String(hm || "").split(":");
@@ -138,6 +140,13 @@
     return { start: a, end: b };
   }
 
+  function resolveShiftBandBuffer(opts, spanMin, dayName) {
+    if (opts.applyBuffer === false) return false;
+    if (opts.applyBuffer === true) return true;
+    /* 2h pay band: ±15 only when client-facing time is under 2h (e.g. one 1.5h session). */
+    return spanMin < PAYROLL_BAND_MINUTES && dayName && dayName !== "Sunday";
+  }
+
   function shiftSlotLabelFromRows(rows, iso, opts) {
     opts = opts && typeof opts === "object" ? opts : {};
     var list = Array.isArray(rows) ? rows : [];
@@ -145,40 +154,169 @@
     var dayName = dayNameFromIso(iso);
     var minStart = Infinity;
     var maxEnd = -Infinity;
-    var applyBuffer = !!opts.applyBuffer;
     list.forEach(function (row) {
-      var svc = serviceLabelFromRow(row);
-      if (portalStaffSupportShiftBufferApplies(svc, dayName)) applyBuffer = true;
       var range = rowAnchorHmRange(row);
       if (!range) return;
       if (range.start < minStart) minStart = range.start;
       if (range.end > maxEnd) maxEnd = range.end;
     });
-    if (!applyBuffer && opts.applyBuffer !== false) {
-      var staffKey = normKey(list[0] && list[0].anchor_staff_id);
-      var ovType = String(list[0] && list[0].override_type || "").trim();
-      if (
-        ovType === "slot_update" &&
-        portalStaffIsSupportWorker(staffKey) &&
-        dayName &&
-        dayName !== "Sunday"
-      ) {
-        applyBuffer = true;
-      }
-    }
-    /* NEW SHIFT payroll band: ±15 min before first / after last client slot (Mon–Sat). */
-    if (!applyBuffer && opts.applyBuffer !== false && dayName && dayName !== "Sunday") {
-      var hasSlotUpdate = list.some(function (row) {
-        return String(row && row.override_type || "").trim() === "slot_update";
-      });
-      if (hasSlotUpdate) applyBuffer = true;
-    }
     if (!Number.isFinite(minStart) || !Number.isFinite(maxEnd)) return "";
-    if (applyBuffer) {
+    var spanMin = maxEnd - minStart;
+    if (resolveShiftBandBuffer(opts, spanMin, dayName)) {
       minStart -= BUFFER_MIN;
       maxEnd += BUFFER_MIN;
     }
     return formatBandLabel(minutesToHm(minStart), minutesToHm(maxEnd));
+  }
+
+  function isBookedClientSession(session) {
+    var cid = String((session && session.clientId) || "").trim().toLowerCase();
+    if (!cid || cid === "available" || cid === "closed") return false;
+    var nm = String((session && (session.clientDisplay || session.clientName || session.name)) || "")
+      .trim()
+      .toLowerCase();
+    return !!nm && nm !== "closed" && nm !== "no client" && nm !== "noclient";
+  }
+
+  function sessionAppliesOnIso(session, iso) {
+    var date = normIso(iso);
+    if (!date || !session) return false;
+    var dayName = dayNameFromIso(date) || String(session.day || "").trim();
+    if (typeof global.portalSessionSpreadsheetRowMatchesCalendarDate === "function") {
+      return global.portalSessionSpreadsheetRowMatchesCalendarDate(session, date, dayName);
+    }
+    return normIso(session.session_date || session.sessionDate) === date;
+  }
+
+  function sessionsModelForStaffDay(staffId, iso, venueKey) {
+    var staff = normKey(staffId);
+    var date = normIso(iso);
+    if (!staff || !date) return [];
+    var model = Array.isArray(global.sessionsModel) ? global.sessionsModel : [];
+    if (!model.length && Array.isArray(global.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__)) {
+      model = global.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__;
+    }
+    var dayName = dayNameFromIso(date);
+    var wantVenue = normKey(venueKey);
+    var out = [];
+    model.forEach(function (s) {
+      if (!s || normKey(s.staffId) !== staff) return;
+      if (!sessionAppliesOnIso(s, date)) return;
+      if (
+        typeof global.portalStaffDashboardOmitSpreadsheetSession === "function" &&
+        global.portalStaffDashboardOmitSpreadsheetSession(s, dayName || String(s.day || "").trim())
+      ) {
+        return;
+      }
+      if (!isBookedClientSession(s)) return;
+      var vk = normKey(s.venue) || "_";
+      if (wantVenue && vk !== wantVenue) return;
+      out.push(s);
+    });
+    return out;
+  }
+
+  function sessionToBandRow(session) {
+    return {
+      anchor_start: String(session.start || "").trim(),
+      anchor_end: String(session.end || session.start || "").trim(),
+      activity: String(session.rosterService || session.activity || "").trim(),
+      rosterService: String(session.rosterService || session.activity || "").trim(),
+      anchor_staff_id: session.staffId,
+      anchor_venue: session.venue,
+      anchor_client_id: session.clientId,
+      override_type: "roster_session",
+    };
+  }
+
+  function spreadsheetBandRowsForStaffDay(staffId, iso, venueKey) {
+    var staff = normKey(staffId);
+    var date = normIso(iso);
+    if (!staff || !date) return [];
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var dayName = dayNameFromIso(date);
+    var wantVenue = normKey(venueKey);
+    var adapter = global.StaffDashboardSpreadsheetAdapter;
+    var parseSlot =
+      (adapter && typeof adapter.parseTimeSlot === "function" && adapter.parseTimeSlot.bind(adapter)) ||
+      (typeof global.parseTimeSlot === "function" && global.parseTimeSlot) ||
+      null;
+    var out = [];
+    rows.forEach(function (row) {
+      if (!row) return;
+      if (typeof global.portalStaffMatchesStatusInstructor === "function") {
+        if (!global.portalStaffMatchesStatusInstructor(staff, row.instructors)) return;
+      } else if (typeof global.portalNormKeyStr === "function") {
+        var hit = false;
+        String(row.instructors || "")
+          .split(/[,/&]|\band\b/gi)
+          .forEach(function (part) {
+            if (global.portalNormKeyStr(part) === staff) hit = true;
+          });
+        if (!hit) return;
+      }
+      var rowIso = normIso(row.session_date || row.sessionDate);
+      if (rowIso) {
+        if (rowIso !== date) return;
+      } else if (String(row.day || "").trim() !== dayName) {
+        return;
+      }
+      var vk = normKey(row.venue) || "_";
+      if (wantVenue && vk !== wantVenue) return;
+      var clientName = String(row.client_name || "").trim().toLowerCase();
+      if (!clientName || clientName === "closed" || clientName === "no client") return;
+      if (!parseSlot) return;
+      var bounds = parseSlot(String(row.time_slot || ""), row.day || dayName);
+      if (!bounds || !bounds.start) return;
+      out.push({
+        anchor_start: bounds.start,
+        anchor_end: bounds.end || bounds.start,
+        activity: String(row.service || "").trim(),
+        rosterService: String(row.service || "").trim(),
+        anchor_staff_id: staffId,
+        anchor_venue: row.venue,
+        override_type: "roster_session",
+      });
+    });
+    return out;
+  }
+
+  /** All client slots on a staff day (roster + slot_update) — used for NEW SHIFT pay band. */
+  function portalStaffCollectStaffDayShiftBandRows(staffId, iso, venueKey) {
+    var staff = normKey(staffId);
+    var date = normIso(iso);
+    var wantVenue = normKey(venueKey);
+    if (!staff || !date) return [];
+    var seen = Object.create(null);
+    var out = [];
+
+    function addRow(row) {
+      var range = rowAnchorHmRange(row);
+      if (!range) return;
+      var key = range.start + "|" + range.end + "|" + normKey(row.anchor_client_id);
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(row);
+    }
+
+    var modelSessions = sessionsModelForStaffDay(staffId, date, wantVenue);
+    spreadsheetBandRowsForStaffDay(staffId, date, wantVenue).forEach(addRow);
+    modelSessions.forEach(function (s) {
+      addRow(sessionToBandRow(s));
+    });
+
+    overrideRowsAll().forEach(function (row) {
+      if (String(row && row.status || "active") !== "active") return;
+      if (String(row && row.override_type || "").trim() !== "slot_update") return;
+      if (normIso(row.session_date) !== date) return;
+      if (normKey(row.anchor_staff_id) !== staff) return;
+      var vk = normKey(row.anchor_venue) || "_";
+      if (wantVenue && vk !== wantVenue) return;
+      addRow(row);
+    });
+
+    return out;
   }
 
   function overrideRowsAll() {
@@ -190,20 +328,15 @@
   }
 
   function portalStaffOverrideShiftSlotLabel(row) {
-    var pl = parsePayload(row);
-    if (pl && pl._portal_shift_slot_label) return String(pl._portal_shift_slot_label).trim();
     var iso = normIso(row && row.session_date);
     var staff = normKey(row && row.anchor_staff_id);
     var venue = normKey(row && row.anchor_venue);
     if (!iso || !staff) return "";
-    var peers = overrideRowsAll().filter(function (r) {
-      if (String(r && r.override_type || "").trim() !== "slot_update") return false;
-      if (normIso(r.session_date) !== iso) return false;
-      if (normKey(r.anchor_staff_id) !== staff) return false;
-      if (venue && normKey(r.anchor_venue) !== venue) return false;
-      return true;
-    });
-    return shiftSlotLabelFromRows(peers.length ? peers : [row], iso);
+    var bandRows = portalStaffCollectStaffDayShiftBandRows(staff, iso, venue);
+    if (bandRows.length) return shiftSlotLabelFromRows(bandRows, iso);
+    var pl = parsePayload(row);
+    if (pl && pl._portal_shift_slot_label) return String(pl._portal_shift_slot_label).trim();
+    return shiftSlotLabelFromRows([row], iso);
   }
 
   /** Merged band for session_add (shadowing / training) — shadowing has no ±15 min buffer. */
@@ -233,11 +366,7 @@
     var byVenue = Object.create(null);
     if (!staff || !date) return byVenue;
     var grouped = Object.create(null);
-    overrideRowsAll().forEach(function (row) {
-      if (String(row && row.status || "active") !== "active") return;
-      if (String(row && row.override_type || "").trim() !== "slot_update") return;
-      if (normIso(row.session_date) !== date) return;
-      if (normKey(row.anchor_staff_id) !== staff) return;
+    portalStaffCollectStaffDayShiftBandRows(staffId, date, "").forEach(function (row) {
       var venue = normKey(row.anchor_venue) || "_";
       if (!grouped[venue]) grouped[venue] = [];
       grouped[venue].push(row);
@@ -281,16 +410,24 @@
     var a = hmToMinutes(start);
     var b = hmToMinutes(end);
     if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
-    if (portalStaffSupportShiftBufferApplies(svc, dayName)) {
+    if (portalStaffSupportShiftBufferApplies(svc, dayName) && b - a < PAYROLL_BAND_MINUTES) {
       a -= BUFFER_MIN;
       b += BUFFER_MIN;
     }
     return formatBandLabel(minutesToHm(a), minutesToHm(b));
   }
 
+  function portalStaffPayrollShiftBandLabel(staffId, iso, venue) {
+    var rows = portalStaffCollectStaffDayShiftBandRows(staffId, iso, normKey(venue));
+    if (!rows.length) return "";
+    return shiftSlotLabelFromRows(rows, normIso(iso));
+  }
+
   global.portalStaffSupportShiftBufferApplies = portalStaffSupportShiftBufferApplies;
   global.portalStaffIsSupportWorker = portalStaffIsSupportWorker;
   global.portalStaffShiftSlotLabelFromRows = shiftSlotLabelFromRows;
+  global.portalStaffCollectStaffDayShiftBandRows = portalStaffCollectStaffDayShiftBandRows;
+  global.portalStaffPayrollShiftBandLabel = portalStaffPayrollShiftBandLabel;
   global.portalStaffOverrideShiftSlotLabel = portalStaffOverrideShiftSlotLabel;
   global.portalStaffSessionAddBandLabel = portalStaffSessionAddBandLabel;
   global.portalStaffDayShiftLabelsByVenue = portalStaffDayShiftLabelsByVenue;

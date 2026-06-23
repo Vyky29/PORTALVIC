@@ -382,7 +382,14 @@
       const src = pack.row;
       const pl = overridePayload(src) || {};
       var shiftSlotLabel = "";
-      if (typeof global.portalStaffShiftSlotLabelFromRows === "function") {
+      if (typeof global.portalStaffPayrollShiftBandLabel === "function") {
+        shiftSlotLabel = global.portalStaffPayrollShiftBandLabel(
+          src && src.anchor_staff_id,
+          pack.iso || normIso(src.session_date),
+          src && src.anchor_venue
+        );
+      }
+      if (!shiftSlotLabel && typeof global.portalStaffShiftSlotLabelFromRows === "function") {
         shiftSlotLabel = global.portalStaffShiftSlotLabelFromRows(pack.rows || [src], pack.iso || normIso(src.session_date));
       }
       keep.push(

@@ -730,5 +730,6 @@
     normalizeWorkerClientName: normalizeWorkerClientName,
     resetWorkerDisplayNameCache: resetWorkerDisplayNameCache,
     isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
+    parseTimeSlot: parseTimeSlot,
   };
 })();

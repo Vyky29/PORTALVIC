@@ -58,6 +58,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ]
     }
   },
+  "termStaffServiceStartDatesByProfileKey": {
+    "youssef": {
+      "day_centre": "2026-06-12"
+    }
+  },
   "termStaffFeedbackCompleteDatesByProfileKey": {
     "roberto": [
       "2026-05-17",

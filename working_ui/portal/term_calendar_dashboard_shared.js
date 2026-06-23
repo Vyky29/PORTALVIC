@@ -229,6 +229,36 @@
     return drop.indexOf(wd) >= 0;
   }
 
+  function rosterRowIsDayCentre(row) {
+    if (!row) return false;
+    var blob = String(
+      row.rosterService || row.service || row.activity || row.feedbackUnitKey || ""
+    );
+    return /day\s*centre/i.test(blob) || blob.indexOf("day_centre") >= 0;
+  }
+
+  /** First calendar day a staff member counts for a service (e.g. Day Centre mornings). */
+  function staffServiceStartIso(staffId, serviceKey) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var svc = String(serviceKey || "").trim().toLowerCase();
+    if (!id || !svc) return "";
+    var map = termCfg().termStaffServiceStartDatesByProfileKey;
+    var perStaff = map && map[id];
+    if (!perStaff || typeof perStaff !== "object") return "";
+    return normIso(perStaff[svc]);
+  }
+
+  /** Hide Day Centre (etc.) before staff-specific service start — e.g. Youssef from 12 Jun. */
+  function staffSessionServiceActiveOnDate(staffId, sessionRow, isoYmd) {
+    var iso = normIso(isoYmd);
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!iso || !id || !sessionRow) return true;
+    if (!rosterRowIsDayCentre(sessionRow)) return true;
+    var start = staffServiceStartIso(id, "day_centre");
+    if (start && iso < start) return false;
+    return true;
+  }
+
   /** Red cell: outside view, vacation, or weekday not on this staff's Summer Term rota. */
   function dayIsRed(iso, weekdayIndex, staffId, worked, extraRed) {
     if (!staffDateInView(iso, staffId)) return true;
@@ -259,6 +289,8 @@
     staffHadBaselineShiftOnDate: staffHadBaselineShiftOnDate,
     staffRemovedFromBaselineShiftOnDate: staffRemovedFromBaselineShiftOnDate,
     staffOffWeekdayOnDate: staffOffWeekdayOnDate,
+    staffServiceStartIso: staffServiceStartIso,
+    staffSessionServiceActiveOnDate: staffSessionServiceActiveOnDate,
     dayIsRed: dayIsRed,
   };
 })(typeof window !== "undefined" ? window : this);
