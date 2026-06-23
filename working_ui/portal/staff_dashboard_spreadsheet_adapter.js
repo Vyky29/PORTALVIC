@@ -684,7 +684,25 @@
       return a.start.localeCompare(b.start);
     });
 
-    return { sessionsModel, clientNotesById };
+    const seenSessions = Object.create(null);
+    const dedupedSessions = [];
+    sessionsModel.forEach((sess) => {
+      const sd = String(sess.session_date || "").trim().slice(0, 10);
+      const key = [
+        sd,
+        String(sess.day || "").trim(),
+        String(sess.start || "").trim(),
+        String(sess.end || "").trim(),
+        String(sess.venue || "").trim().toLowerCase(),
+        String(sess.clientId || "").trim().toLowerCase(),
+        String(sess.staffId || "").trim().toLowerCase(),
+      ].join("\0");
+      if (key && seenSessions[key]) return;
+      if (key) seenSessions[key] = true;
+      dedupedSessions.push(sess);
+    });
+
+    return { sessionsModel: dedupedSessions, clientNotesById };
   }
 
   function bootstrap(options) {

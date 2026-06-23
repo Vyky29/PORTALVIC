@@ -910,10 +910,10 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260613-lulia-next-session-cover"></script>
+  <script src="/portal/term_from_timetable.js?v=20260614-aurora-makeup-off"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe"></script>
   <script src="/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
@@ -8719,6 +8719,25 @@
     function portalTodayScheduleOverrideForSession(s, sessionDateIso){
       return portalPickScheduleOverrideForSession(s, sessionDateIso);
     }
+    /** Make-up replace on this roster anchor when loose window match missed the primary resolver. */
+    function portalReplaceOverrideForSessionAnchor(s, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !s) return null;
+      const sid = portalNormKeyStr(s.staffId);
+      const all = portalScheduleOverrideRowsAll();
+      let best = null;
+      for(let i = 0; i < all.length; i++){
+        const r = all[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
+        if(normaliseIsoDate(r.session_date) !== iso) continue;
+        if(portalNormKeyStr(r.anchor_staff_id) !== sid) continue;
+        if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) continue;
+        if(!portalScheduleOverrideMatchesSessionWindow(r, s, iso)) continue;
+        if(!best || new Date(r.created_at || 0) > new Date(best.created_at || 0)) best = r;
+      }
+      return best;
+    }
     function portalBuildAdminAbsentSessionItem(s, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote){
       if(!s || !absentOv) return null;
       const activity = (s.activity || 'Swimming').trim();
@@ -8860,6 +8879,7 @@
       const makeUpPink = !isTrial && !isSessionEndedForFeedback({ sessionEndTs: rowTs.sessionEndTs, sessionKey });
       const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
         && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
+      const isMakeUpCard = !isTrial;
       return {
         time,
         kind: 'client',
@@ -8881,8 +8901,8 @@
         scheduleAdminAdjusted: true,
         portalOverrideMakeUpTag: !isTrial,
         portalOverrideTrialTag: isTrial,
-        portalOverrideCardTone: slotWasUpdated ? 'yellow' : (isTrial ? 'trial' : (makeUpPink ? 'pink' : '')),
-        portalOverrideSymbolText: isTrial ? 'Trial' : (makeUpPink ? 'Make Up' : ''),
+        portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'yellow' : (isTrial ? 'trial' : '')),
+        portalOverrideSymbolText: isTrial ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
         portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,
@@ -10635,7 +10655,12 @@
         todaySessionsAfterDedupe
         .sort((a, b) => Number(normalizeTimeForSort(a.start)) - Number(normalizeTimeForSort(b.start)))
         .map(s => {
-          const ov = portalTodayScheduleOverrideForSession(s, sessionDateKey);
+          let ov = portalTodayScheduleOverrideForSession(s, sessionDateKey);
+          if((!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot')
+            && typeof portalReplaceOverrideForSessionAnchor === 'function'){
+            const anchorReplace = portalReplaceOverrideForSessionAnchor(s, sessionDateKey);
+            if(anchorReplace) ov = anchorReplace;
+          }
           const manualOv = String(s && s.override || '').trim().toUpperCase();
           const replaceNotSameCalendarDay = !!(ov && ov.override_type === 'client_replace_in_slot' && typeof portalCalendarDateIsSelectedDashboardDay === 'function' && !portalCalendarDateIsSelectedDashboardDay(sessionDateKey));
           const sessionVenue = String(s.venue || '').trim() || '—';
@@ -10993,10 +11018,8 @@
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
           const isTrialOv = (hasReplaceOv && portalOverrideIsTrial(ov)) || portalRosterParticipantNameLooksTrial(c.name || nameFromReplace);
           const replacedVisual = manualOv === 'REPLACED';
-          const makeUpPink = !isTrialOv && (hasReplaceOv || replacedVisual) && !isSessionEndedForFeedback({
-            sessionEndTs,
-            sessionKey
-          });
+          const isMakeUpCard = !isTrialOv && (hasReplaceOv || replacedVisual);
+          const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
           return Object.assign({
@@ -11019,8 +11042,8 @@
             sessionEndTs,
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual) && !isTrialOv,
             portalOverrideTrialTag: isTrialOv,
-            portalOverrideCardTone: slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : (makeUpPink ? 'pink' : '')),
-            portalOverrideSymbolText: isTrialOv ? 'Trial' : (makeUpPink ? 'Make Up' : ''),
+            portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : '')),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
             portalRosterTimeUpdated: !!slotWasUpdated
@@ -12940,6 +12963,7 @@
     }
     function portalScheduleHaloMode(scan){
       if(!portalScheduleHaloActive(scan)) return '';
+      if(scan.makeup && !scan.trial && !scan.undo && !scan.training) return 'schedule-makeup';
       const ns = !!(scan.newShift || scan.other);
       if(scan.absent && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.cancelled && !scan.training) return 'schedule-absent';
       if(scan.cancelled && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.training) return 'schedule-cancelled';
@@ -14785,6 +14809,8 @@
       if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(item.day, sid)){
         return 'off';
       }
+      const dayFlags = portalDayOverrideBadgeFlags(item.day, iso);
+      if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(weekRowTotalClients(item) <= 0) return 'off';
       if(!weekListHasPendingFeedbackForDay(item.day)){
         if(rel === 'past') return 'work-done';
@@ -15335,6 +15361,8 @@
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
+        && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       /* Grandfather / forced-complete (Jun 1–7, Javier May catch-up) wins over stale fbMap late. */
       if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermIsCatchUpFeedbackDate(key, staffId)){
