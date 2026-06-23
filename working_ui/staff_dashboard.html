@@ -1652,14 +1652,6 @@
             };
           }
           if(memOnly.feedbackDone){
-            if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)){
-              return {
-                feedbackDone: true,
-                incident: !!memOnly.incident,
-                absent: false,
-                cancelled: false
-              };
-            }
             if(dashboardData && dashboardData.portalFeedbackServerSynced){
               if(!portalIsServerTruthFeedbackDay(iso)){
                 return portalReviewFlagsForResolvedSession(iso, sid, s);
@@ -1691,7 +1683,8 @@
           }
           const floorIso = portalMachineRosterFeedbackFloorIso();
           if(iso >= floorIso){
-            if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)){
+            if(typeof portalTermStaffDayExplicitlyForceComplete === 'function'
+              && portalTermStaffDayExplicitlyForceComplete(iso, sid)){
               return { feedbackDone: true, incident: false, absent: false, cancelled: false };
             }
             let staffStatusOnDay = 0;
@@ -1869,9 +1862,8 @@
       const key = String(iso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!key || !sid) return out;
-      if(typeof portalTermFeedbackAssumeComplete === 'function'
-        && portalTermFeedbackAssumeComplete(key, sid)
-        && !portalIsServerTruthFeedbackDay(key)){
+      if(typeof portalTermStaffDayExplicitlyForceComplete === 'function'
+        && portalTermStaffDayExplicitlyForceComplete(key, sid)){
         out.feedbackDone = true;
       }
       return out;
@@ -3500,9 +3492,8 @@
       if(typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
       const bundle = portalRosterReviewStateFromStatusBundle(portalReviewSessionForItem(item) || item.__portalBaseSession, iso, staffId);
       if(!bundle){
-        if(typeof portalTermFeedbackAssumeComplete === 'function'
-          && portalTermFeedbackAssumeComplete(iso, staffId)
-          && !portalIsServerTruthFeedbackDay(iso)){
+        if(typeof portalTermStaffDayExplicitlyForceComplete === 'function'
+          && portalTermStaffDayExplicitlyForceComplete(iso, staffId)){
           return {
             feedbackDone: true,
             incident: !!mem.incident,
@@ -3703,9 +3694,8 @@
         if(exemptEarly.incident) out.incident = true;
         if(out.absent || out.cancelled || out.feedbackDone) return out;
       }
-      if(typeof portalTermFeedbackAssumeComplete === 'function'
-        && portalTermFeedbackAssumeComplete(sessionDateIso, staffIdEarly)
-        && !portalIsServerTruthFeedbackDay(sessionDateIso)){
+      if(typeof portalTermStaffDayExplicitlyForceComplete === 'function'
+        && portalTermStaffDayExplicitlyForceComplete(sessionDateIso, staffIdEarly)){
         out.feedbackDone = true;
         return out;
       }
@@ -14056,7 +14046,8 @@
           '<p class="today-day-panel__loading">Loading your schedule…</p></div>';
       }
       const hasNext = !!(preview && (Number(preview.sessionCount) || 0));
-      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + '" role="status">';
+      const offRequested = mode === 'off_time_requested';
+      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + '" role="status">';
       html += '<div class="today-day-panel__off">';
       if(mode === 'sync'){
         html += '<div class="today-day-panel__off-copy">';
@@ -15010,10 +15001,13 @@
       if(changed && typeof persistSessionReviewMap === 'function') persistSessionReviewMap();
       return changed;
     }
-    function portalTermDateForcedComplete(isoYmd, staffId){
+    function portalTermStaffDayExplicitlyForceComplete(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
-      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
+    }
+    function portalTermDateForcedComplete(isoYmd, staffId){
+      return portalTermStaffDayExplicitlyForceComplete(isoYmd, staffId);
     }
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -15868,6 +15862,24 @@
           const baselineShiftRemoved = termStaffId
             && typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
             && portalTermStaffRemovedFromBaselineShiftOnDate(isoKey, termStaffId);
+          const timeOffRequested = termStaffId && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
+            && portalStaffHasRequestedTimeOffOnDate(isoKey, termStaffId);
+          const hadBaselineShift = termStaffId && typeof window.PortalTermCalendarDashboard !== 'undefined'
+            && window.PortalTermCalendarDashboard
+            && typeof window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate === 'function'
+            && window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate(isoKey, termStaffId);
+          if(timeOffRequested && worked.includes(w)){
+            cls += ' half-term';
+            if(baselineShiftRemoved || (hadBaselineShift && staffAway)){
+              cls += ' term-cal-day--ov-pulse-shift-removed';
+              label = `${day}, shift removed (time off requested)`;
+            }else{
+              cls += ' term-cal-day--ov-pulse-day-off';
+              label = `${day}, day off (time off requested)`;
+            }
+            parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+            continue;
+          }
           if(halfBlocksNav){
             cls += ' half-term';
             if(baselineShiftRemoved) cls += ' term-cal-day--ov-pulse-shift-removed';
