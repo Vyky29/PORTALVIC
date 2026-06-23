@@ -132,6 +132,29 @@ function injectStaffConfigScript(htmlPath) {
   writeFileSync(htmlPath, src, "utf8");
 }
 
+function writeAdminRedirectStubs(destDir) {
+  var pages = [
+    "admin_dashboard.html",
+    "ceo_dashboard.html",
+    "office_portal.html",
+    "portal_choose.html",
+  ];
+  pages.forEach(function (page) {
+    var target = ADMIN_ORIGIN + "/" + page;
+    writeFileSync(
+      join(destDir, page),
+      "<!DOCTYPE html>\n<html lang=\"en-GB\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta http-equiv=\"refresh\" content=\"0;url=" +
+        target +
+        "\" />\n<title>clubSENsational — Admin portal</title>\n<script>location.replace(" +
+        JSON.stringify(target) +
+        ");</script>\n</head>\n<body><p>Admin tools live on the operations portal. <a href=\"" +
+        target +
+        "\">Continue</a></p></body>\n</html>\n",
+      "utf8",
+    );
+  });
+}
+
 console.log("[build-clubsensational-staff] Source:", SOURCE);
 console.log("[build-clubsensational-staff] Output:", OUT);
 console.log("[build-clubsensational-staff] Staff origin:", STAFF_ORIGIN);
