@@ -141,6 +141,7 @@ if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
 copyTree(SOURCE, OUT);
 
 writeStaffAppConfig(OUT);
+writeAdminRedirectStubs(OUT);
 injectStaffConfigScript(join(OUT, "login.html"));
 injectStaffConfigScript(join(OUT, "staff_dashboard.html"));
 
