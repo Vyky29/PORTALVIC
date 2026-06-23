@@ -865,7 +865,7 @@
     async function buildReviewMap(supabase, userId, sessionsModel, dates) {
       const memory = parseReviewMap();
       try {
-        const mod = await import("./portal/supabase-client.js?v=20260622-timesheet-sync2");
+        const mod = await import("./portal/supabase-client.js?v=20260623-yusuf-own-slot");
         if (!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return memory;
         const feedbackMergeRules = (() => {
           try {

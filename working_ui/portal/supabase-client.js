@@ -714,6 +714,20 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
   return false;
 }
 
+/** Climbing / multi / timed aquatic: date||client must not fan-out across instructors or slots. */
+function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
+  const r = String(rosterKey || "")
+    .trim()
+    .toLowerCase();
+  if (!r) return false;
+  const rTime = portalSessionKeyTimeToken(r);
+  if (!rTime) return false;
+  if (r.indexOf("climb") >= 0) return true;
+  if (/multi[-\s]?activity/.test(r) || r.split("|").indexOf("multi") >= 0) return true;
+  if (/\|aquatic$/i.test(r) || /\|\d{1,2}:\d{2}\|aquatic/i.test(r)) return true;
+  return false;
+}
+
 function portalMergeRuleSlotStartHm(timeSlot, dayWord) {
   const raw = String(timeSlot || "")
     .trim()
@@ -930,6 +944,7 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   if (sTime && !rTime && rParts[1] === "" && rParts[2] && !rParts[3]) return false;
   /* date||client feedback marks the timed roster row for the same participant (e.g. fitness). */
   if (portalSubmittedKeyIsDateClientOnly(s) && rTime && !portalRosterKeyIsSharedFeedbackUnit(r)) {
+    if (portalRosterKeyIsPerSlotServiceUnit(r)) return false;
     if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
     return portalSessionKeyClientSlugsMatch(s, r);
   }

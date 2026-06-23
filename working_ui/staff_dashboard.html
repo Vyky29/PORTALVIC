@@ -1166,7 +1166,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260622-feedback-key-sync4';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260623-yusuf-own-slot';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1362,9 +1362,15 @@
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
       return false;
     }
-    /** Substitute cover or Sunday SwimFarm per-instructor slot — only this staff's Supabase rows may mark green. */
+    /** Substitute cover, SwimFarm Sunday slots, or climbing — only this staff's Supabase rows may mark green. */
     function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
-      return portalSessionIsSundayInstructorCover(s) || portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso);
+      if(portalSessionIsSundayInstructorCover(s)) return true;
+      if(portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso)) return true;
+      const act = String((s && (s.activity || s.rosterService || s.service)) || '').toLowerCase();
+      if(/day\s*centre/.test(act)) return false;
+      if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
+      if(act.indexOf('climbing') >= 0 || act.indexOf('climb') >= 0) return true;
+      return false;
     }
     function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){
       if(!staffId || !iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso).slice(0, 10))) return;
@@ -1654,7 +1660,27 @@
           if(memOnly.feedbackDone){
             if(dashboardData && dashboardData.portalFeedbackServerSynced){
               if(!portalIsServerTruthFeedbackDay(iso)){
-                return portalReviewFlagsForResolvedSession(iso, sid, s);
+                const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+                  ? portalSessionReviewKeyForModelRow(s, dayWord, iso) : '';
+                const pseudo = { sessionKey: sk, __portalBaseSession: s };
+                const aliases = typeof portalCollectItemSessionReviewKeyAliases === 'function'
+                  ? portalCollectItemSessionReviewKeyAliases(pseudo, iso, dayWord)
+                  : (sk ? [sk] : []);
+                const needsOwn = portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso);
+                const serverOk = typeof portalReviewFeedbackFromServerForAliases === 'function'
+                  && portalReviewFeedbackFromServerForAliases(aliases, needsOwn);
+                const bridgeOk = bridge.sessionComplete(iso, sid, s, notes, {
+                  feedbackDone: false, incident: false, absent: false, cancelled: false
+                });
+                if(serverOk || bridgeOk){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
+                return {
+                  feedbackDone: false,
+                  incident: !!memOnly.incident,
+                  absent: false,
+                  cancelled: false
+                };
               }
               /* Today+: Supabase fan-out is authoritative — stale mem must not force green. */
             } else if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
@@ -1983,12 +2009,13 @@
         return hit;
       }catch(_){ return false; }
     }
-    function portalReviewFeedbackInMemoryForAliases(aliases){
+    function portalReviewFeedbackInMemoryForAliases(aliases, needsOwnOnly){
       if(!Array.isArray(aliases) || !aliases.length) return false;
       for(let i = 0; i < aliases.length; i++){
         const rec = sessionReviewMapMemory[aliases[i]];
         if(rec && rec.feedbackDone && !rec.absent && !rec.cancelled) return true;
       }
+      if(needsOwnOnly) return false;
       const memKeys = Object.keys(sessionReviewMapMemory);
       for(let k = 0; k < memKeys.length; k++){
         const mk = memKeys[k];
@@ -2001,6 +2028,23 @@
       return false;
     }
     function portalReviewFeedbackFromServerForAliases(aliases, needsOwnOnly){
+      if(needsOwnOnly){
+        const own = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
+        if(own){
+          for(let i = 0; i < aliases.length; i++){
+            if(own.has(aliases[i])) return true;
+          }
+        }
+        const ownPortal = dashboardData && dashboardData.portalServerOwnFeedbackPortalKeys;
+        if(ownPortal && ownPortal.size){
+          for(const fk of ownPortal){
+            for(let i = 0; i < aliases.length; i++){
+              if(aliases[i] && fk === aliases[i]) return true;
+            }
+          }
+        }
+        return false;
+      }
       /** @type {string[]} */
       const portalKeysToScan = [];
       const seenPortal = Object.create(null);
@@ -2036,14 +2080,6 @@
           if(srv.feedback.has(aliases[i])) return true;
         }
       }
-      if(needsOwnOnly){
-        const own = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
-        if(own){
-          for(let i = 0; i < aliases.length; i++){
-            if(own.has(aliases[i])) return true;
-          }
-        }
-      }
       return false;
     }
     function portalReviewFeedbackResolvedForItem(item, iso){
@@ -2055,9 +2091,12 @@
         : [String(item.sessionKey || '').trim()].filter(Boolean);
       const needsOwn = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
         && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
-      if(portalReviewFeedbackInMemoryForAliases(aliases)) return true;
+      const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
+      const pastOwnSlot = needsOwn && !portalIsServerTruthFeedbackDay(iso) && serverSynced;
+      if(!pastOwnSlot && portalReviewFeedbackInMemoryForAliases(aliases, needsOwn)) return true;
       if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
       const direct = getSessionReviewRecord(item);
+      if(pastOwnSlot) return false;
       return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
     }
     function portalReviewAbsentResolvedForItem(item, iso){
