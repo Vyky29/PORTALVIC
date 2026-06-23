@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * Staff dashboard perf patch: externalize inline JS + phased chunk loader.
- * clubsensational-staff: full patch (boot, branding, defer web push).
- * portalvic: same chunk split without staff-app-only head changes.
+ * Staff dashboard perf patch: externalize inline JS + keep synchronous script order.
+ * Dynamic chunk loader removed — iPad/PWA was blank with async injection.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260623-staff-perf2";
+const VER = "20260623-staff-perf3";
 
 function extractScriptAfterMarker(html, marker) {
   const idx = html.indexOf(marker);
@@ -22,10 +21,28 @@ function extractScriptAfterMarker(html, marker) {
   return { html: htmlNext, extracted };
 }
 
-function stripTrailingStaffBootstrap(html) {
-  return html.replace(
-    /(<script src="\/portal\/staff-app-chunks\.js[^"]*"><\/script>\n)[\s\S]*?(?=<\/body>)/,
-    "$1\n"
+function stripLegacyAuthBootstrap(html) {
+  let next = html;
+  next = next.replace(
+    /  <script>\n    \(function \(\) \{\n      window\.portalResolveLoginHref = function \(\) \{[\s\S]*?\}\)\(\);\n<\/script>\n  <script src="\/portal\/portal-logout-bind\.js"><\/script>\n  <script>\n    \(function \(\) \{\n      var s = document\.createElement\("script"\);[\s\S]*?\}\)\(\);\n  <\/script>\n/g,
+    ""
+  );
+  next = next.replace(
+    /  <script src="\/portal\/staff-app-chunks\.js[^"]*"><\/script>\n/g,
+    ""
+  );
+  return next;
+}
+
+function buildSyncScriptTail(tierBlock) {
+  return (
+    tierBlock +
+    `  <script src="/portal/staff-dashboard-core.js?v=${VER}"></script>\n` +
+    `  <script src="/portal/staff-dashboard-auth-bridge.js?v=${VER}"></script>\n` +
+    `  <script src="/portal/staff-dashboard-rehydrate.js?v=${VER}"></script>\n` +
+    `  <script src="/portal/portal-logout-bind.js"></script>\n` +
+    `  <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=${VER}"></script>\n` +
+    `  <script src="/portal/staff-dashboard-achievements-boot.js?v=${VER}"></script>\n`
   );
 }
 
@@ -37,10 +54,12 @@ export function patchStaffAppPerf(deployDir, options = {}) {
 
   const extBlockRe =
     /  <script src="\/portal\/term_from_timetable\.js[\s\S]*?<script src="\/portal\/portal_sheet_back\.js[^"]*"><\/script>\n/;
-  html = html.replace(
-    extBlockRe,
-    '  <script src="/portal/staff-app-chunks.js?v=' + VER + '"></script>\n'
-  );
+  const tierMatch = html.match(extBlockRe);
+  if (!tierMatch) {
+    console.warn("[staff-app-perf-patch] tier script block not found — skipping");
+    return;
+  }
+  const tierBlock = tierMatch[0];
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -50,13 +69,17 @@ export function patchStaffAppPerf(deployDir, options = {}) {
 
   for (const item of extractions) {
     const r = extractScriptAfterMarker(html, item.marker);
-    if (!r.extracted) continue;
+    if (!r.extracted) {
+      console.warn("[staff-app-perf-patch] missing marker for", item.file);
+      continue;
+    }
     html = r.html;
     writeFileSync(join(portalDir, item.file), r.extracted + "\n", "utf8");
     console.log("[staff-app-perf-patch] wrote", item.file, "(" + r.extracted.length + " bytes)");
   }
 
-  html = stripTrailingStaffBootstrap(html);
+  html = stripLegacyAuthBootstrap(html);
+  html = html.replace(extBlockRe, buildSyncScriptTail(tierBlock));
 
   if (staffApp) {
     html = html.replace(

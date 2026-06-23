@@ -1,6 +1,6 @@
 /**
  * clubSENsational Staff app — boot (staff deploy only).
- * Preconnect, service worker, defer web push until after first paint.
+ * Preconnect + defer web push. Service worker disabled until chunk loader is stable on iOS PWA.
  */
 (function (global) {
   "use strict";
@@ -14,19 +14,14 @@
     (document.head || document.documentElement).appendChild(pre);
   } catch (_) {}
 
-  function registerStaffSw() {
-    if (!("serviceWorker" in global.navigator)) return;
+  if ("serviceWorker" in global.navigator) {
     try {
-      global.navigator.serviceWorker
-        .register("/portal/staff-app-sw.js?v=20260623-staff-perf2", { scope: "/" })
-        .catch(function () {});
+      global.navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) {
+          reg.unregister().catch(function () {});
+        });
+      });
     } catch (_) {}
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", registerStaffSw, { once: true });
-  } else {
-    registerStaffSw();
   }
 
   global.portalStaffDeferWebPush = function portalStaffDeferWebPush() {
@@ -52,4 +47,18 @@
       global.setTimeout(next, 1200);
     }
   };
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+        if (typeof global.portalStaffDeferWebPush === "function") {
+          global.portalStaffDeferWebPush();
+        }
+      },
+      { once: true }
+    );
+  } else if (typeof global.portalStaffDeferWebPush === "function") {
+    global.portalStaffDeferWebPush();
+  }
 })(typeof window !== "undefined" ? window : globalThis);
