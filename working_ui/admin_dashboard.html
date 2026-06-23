@@ -60,7 +60,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260620-reply-modal"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -9005,6 +9005,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         isTrialOverride: typeof schedOverrideIsTrial === 'function' ? schedOverrideIsTrial : null
       };
     }
+    function notifyParentCoverInstructorFromDrawer(){
+      var name = '';
+      var slug = '';
+      var ci = $('schedFormCoverInput');
+      var cs = $('schedFormCoverSlug');
+      if(ci && ci.value) name = String(ci.value).trim();
+      if(cs && cs.value) slug = String(cs.value).trim();
+      if(!slug && name && typeof schedResolveInstructorSlugFromTyped === 'function' && typeof schedBuildInstructorPickList === 'function'){
+        try{
+          slug = schedResolveInstructorSlugFromTyped(schedBuildInstructorPickList(), name) || '';
+        }catch(_sl){}
+      }
+      if(!slug && name && typeof portalStaffPhotoLookupKeys === 'function'){
+        try{
+          var keys = portalStaffPhotoLookupKeys(name);
+          if(keys && keys[0]) slug = keys[0];
+        }catch(_pk){}
+      }
+      return { name: name, slug: slug };
+    }
     function notifyParentInstructorPhotoPack(kind, ctx){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.instructorPhotoForNotify === 'function'){
@@ -9145,16 +9165,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var meta = bookingMetaForSlot(slot, ov);
             var snap = kind === 'payment_due' ? bookingFinanceSnapshot(slot) : null;
             var newName = (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '';
+            var coverStaffId = (opts && opts.coverStaffId) ? String(opts.coverStaffId).trim() : '';
             if(kind === 'instructor_change' && !newName){
-              var ci = $('schedFormCoverInput');
-              if(ci && ci.value) newName = String(ci.value).trim();
+              var coverMeta = notifyParentCoverInstructorFromDrawer();
+              if(coverMeta.name) newName = coverMeta.name;
+              if(coverMeta.slug) coverStaffId = coverMeta.slug;
             }
             var body = notifyParentBodyForKind(kind, {
               slot: slot,
               ov: ov,
               meta: meta,
               snap: snap || { outstanding:0, nextDue:null },
-              newInstructorName: newName
+              newInstructorName: newName,
+              coverStaffId: coverStaffId
             });
             return { ov: ov, meta: meta, snap: snap, body: body };
           });
@@ -9168,13 +9191,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var notifyPhotoCtx = {
         slot: slot,
         ov: pack.ov,
-        newInstructorName: (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : ''
+        newInstructorName: (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '',
+        coverStaffId: ''
       };
-      if(!notifyPhotoCtx.newInstructorName && kind === 'instructor_change'){
-        var ciEl = $('schedFormCoverInput');
-        if(ciEl && ciEl.value) notifyPhotoCtx.newInstructorName = String(ciEl.value).trim();
+      if(kind === 'instructor_change' || kind === 'makeup_scheduled'){
+        var coverMeta = notifyParentCoverInstructorFromDrawer();
+        if(!notifyPhotoCtx.newInstructorName && coverMeta.name) notifyPhotoCtx.newInstructorName = coverMeta.name;
+        if(coverMeta.slug) notifyPhotoCtx.coverStaffId = coverMeta.slug;
       }
       var instructorPhoto = notifyParentInstructorPhotoPack(kind, notifyPhotoCtx);
+      if(instructorPhoto.url && (kind === 'instructor_change' || kind === 'makeup_scheduled')){
+        var freshBody = notifyParentBodyForKind(kind, {
+          slot: slot,
+          ov: pack.ov,
+          meta: meta,
+          snap: pack.snap || { outstanding:0, nextDue:null },
+          newInstructorName: notifyPhotoCtx.newInstructorName,
+          coverStaffId: notifyPhotoCtx.coverStaffId
+        });
+        if(freshBody) pack.body = freshBody;
+      }
       var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
       if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
       var hideSaveContact = !!(opts && opts.hideSaveContact);
@@ -9199,10 +9235,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Google SMTP, WhatsApp via Business API) or open your own mail/WhatsApp app. Instructor photos from the staff dashboard are included automatically for change of instructor and make-up. Every server send is logged for audit.</p>'+
         (instructorPhoto.url
           ? '<div class="card-pad" style="margin-top:10px;display:flex;align-items:center;gap:12px;min-width:0">'+
-            '<img src="'+esc(instructorPhoto.url)+'" alt="" style="width:72px;height:72px;border-radius:12px;object-fit:cover;flex-shrink:0" />'+
+            '<img src="'+esc(instructorPhoto.url)+'" alt="'+esc(instructorPhoto.name || 'Instructor')+'" style="width:72px;height:72px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid var(--line)" onerror="this.style.display=\'none\';var n=this.nextElementSibling;if(n)n.style.display=\'block\'" />'+
+            '<p class="muted" style="margin:0;display:none;font-size:12px;overflow-wrap:break-word">Photo could not load — hard-refresh the page (Shift+Reload) if you still see old text above.</p>'+
             '<div style="min-width:0;overflow-wrap:break-word"><strong style="display:block">'+esc(instructorPhoto.name || 'Instructor')+'</strong>'+
             '<span class="muted" style="font-size:13px">Photo from staff dashboard — included in email and WhatsApp when you send now.</span></div></div>'
-          : '')+
+          : ((kind === 'instructor_change' || kind === 'makeup_scheduled') && notifyPhotoCtx.newInstructorName
+            ? '<p class="muted" style="margin-top:10px;padding:10px 12px;border:1px solid #fecaca;border-radius:10px;background:#fff7ed;overflow-wrap:break-word">No staff photo found for <strong>'+esc(notifyPhotoCtx.newInstructorName)+'</strong>. Hard-refresh (Shift+Reload) if this modal still shows old &quot;separate photo&quot; wording — then check <code>portal/staff_photos/</code>.</p>'
+            : ''))+
         '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">'+
         '<div><label class="muted" for="pnParentName">Parent / carer name</label><input id="pnParentName" class="inp" style="max-width:100%" value="'+esc(meta.parentCarerName || '')+'" /></div>'+
         '<div><label class="muted" for="pnParentEmail">Email</label><input id="pnParentEmail" class="inp" type="email" style="max-width:100%" value="'+esc(meta.parentEmail || '')+'" autocomplete="off" /></div>'+
@@ -11168,7 +11207,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<div class="card card-pad" style="margin-top:12px;border-style:dashed">'+
         '<div class="kpi-l">Parent messaging</div>'+
-        '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Attach the instructor photo separately when needed.</p>'+
+        '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Instructor photos from the staff dashboard are included automatically for instructor change and make-up.</p>'+
         '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence</button>'+

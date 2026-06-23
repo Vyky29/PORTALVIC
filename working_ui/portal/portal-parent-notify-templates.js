@@ -49,6 +49,7 @@
     var name = String(pl.covering_staff_name || pl.to_staff_name || "").trim();
     if (k === "instructor_change" || k === "instructor_reassign") {
       if (ctx.newInstructorName) name = String(ctx.newInstructorName).trim();
+      if (ctx.coverStaffId) slug = String(ctx.coverStaffId).trim();
     }
     if (k === "makeup_scheduled") {
       var slot = ctx.slot || {};
@@ -62,6 +63,27 @@
         rel = global.portalStaffPhotoUrl(slug || name, { username: slug });
       }
     } catch (_) {}
+    if (!rel) {
+      try {
+        if (typeof global.portalResolveStaffPhotoCandidates === "function") {
+          var cands = global.portalResolveStaffPhotoCandidates(slug || name, {
+            username: slug,
+          });
+          if (cands && cands.length) rel = cands[0];
+        }
+      } catch (_) {}
+    }
+    if (!rel) {
+      var stem = slug;
+      if (!stem && name) {
+        stem = String(name).trim().split(/\s+/)[0] || "";
+      }
+      stem = String(stem || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      if (stem) rel = "portal/staff_photos/" + stem + ".png";
+    }
     return {
       url: absolutePortalAssetUrl(rel),
       name: name,
