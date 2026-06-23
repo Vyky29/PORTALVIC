@@ -5553,7 +5553,6 @@
         if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
         if(typeof portalMaybeNotifyReminders === 'function') portalMaybeNotifyReminders(st);
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
-        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome();
       }catch(_){}
     }
 
@@ -10055,7 +10054,7 @@
         }
         if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
-        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome();
+        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: true });
       }catch(_syncOv){}
     };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
@@ -14992,18 +14991,28 @@
         return '';
       }
     }
-    function portalRefreshScheduleOverrideDayChrome(){
+    function portalRefreshScheduleOverrideDayChrome(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
+      if(window.__PORTAL_OVERRIDE_DAY_CHROME_BUSY__) return;
       portalRefreshPendingOverrideDaysCache();
       const sig = portalPendingOverrideDaysSignature();
       const prev = window.__PORTAL_OVERRIDE_DAY_CHROME_SIG__ || '';
-      if(sig === prev) return;
+      if(sig === prev && !opts.force) return;
+      try{ window.__PORTAL_OVERRIDE_DAY_CHROME_BUSY__ = true; }catch(_){}
       try{ window.__PORTAL_OVERRIDE_DAY_CHROME_SIG__ = sig; }catch(_){}
-      const wl = document.getElementById('weekList');
-      if(wl && typeof renderWeekRowHtml === 'function'){
-        wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
+      try{
+        const wl = document.getElementById('weekList');
+        if(wl && typeof renderWeekRowHtml === 'function'){
+          wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
+        }
+        const termOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
+        if(typeof renderTermCalendarGrid === 'function'){
+          renderTermCalendarGrid(termOpen || opts.forceTerm ? { force: true } : {});
+        }
+        if(typeof renderMiniCounts === 'function') renderMiniCounts();
+      }finally{
+        try{ window.__PORTAL_OVERRIDE_DAY_CHROME_BUSY__ = false; }catch(_){}
       }
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
-      if(typeof renderMiniCounts === 'function') renderMiniCounts();
     }
     try{
       window.portalRefreshPendingOverrideDaysCache = portalRefreshPendingOverrideDaysCache;

@@ -6,7 +6,7 @@
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
-  var VER = "20260624-staff-boot2";
+  var VER = "20260624-staff-boot3";
   var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(String(global.navigator && global.navigator.userAgent || ""));
 
   try {
@@ -102,16 +102,6 @@
     scheduleIdle(run, isMobile ? 1200 : 2500);
   }
 
-  function portalStaffMobileWarmDashboard(){
-    if (!isMobile || !/staff_dashboard/i.test(String(global.location.pathname || ""))) return;
-    var run = function () {
-      if (typeof global.portalRefreshScheduleOverrideDayChrome === "function") {
-        global.portalRefreshScheduleOverrideDayChrome();
-      }
-    };
-    global.setTimeout(run, 1800);
-  }
-
   function scheduleIdle(fn, timeoutMs) {
     if (typeof global.requestIdleCallback === "function") {
       global.requestIdleCallback(fn, { timeout: timeoutMs || 3000 });
@@ -125,7 +115,6 @@
       global.portalStaffDeferWebPush();
     }
     portalStaffDeferDashboardExtras();
-    portalStaffMobileWarmDashboard();
   }
 
   if (document.readyState === "loading") {
