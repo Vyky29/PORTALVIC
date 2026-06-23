@@ -923,7 +923,7 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260608-anas-ismail"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window2"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
@@ -7881,6 +7881,15 @@
         pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
       }catch(_){ pl = null; }
       const ovType = String(row && row.override_type || '').trim();
+      if(ovType === 'session_add'){
+        const addKind = String(pl && pl.kind || '').trim().toLowerCase();
+        if(addKind === 'shadowing' || addKind === 'training' || addKind === 'meeting'){
+          if(typeof window.portalStaffSessionAddBandLabel === 'function'){
+            const band = window.portalStaffSessionAddBandLabel(row, { kind: addKind, buffer: addKind !== 'shadowing' });
+            if(band) return band;
+          }
+        }
+      }
       if(ovType === 'slot_update' || (pl && pl._portal_roster_day_group)){
         if(typeof window.portalStaffOverrideShiftSlotLabel === 'function'){
           const shiftLab = window.portalStaffOverrideShiftSlotLabel(row);
@@ -8485,6 +8494,35 @@
       })) return items;
       return items.filter(function(it){ return String(it && it.kind || '') !== 'other'; });
     }
+    function portalRefreshShadowingOverrideCardSub(item, count){
+      if(!item) return item;
+      const iso = String(item.iso || '').trim();
+      const staffId = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
+      let band = '';
+      if(iso && staffId && typeof window.portalStaffSessionAddBandLabel === 'function'){
+        band = window.portalStaffSessionAddBandLabel({
+          session_date: iso,
+          anchor_staff_id: staffId,
+          anchor_venue: item.venue || '',
+          override_type: 'session_add',
+          payload: { kind: 'shadowing' }
+        }, { kind: 'shadowing', buffer: false }) || '';
+      }
+      const subParts = [];
+      if(count > 1) subParts.push(count + ' shifts');
+      if(band) subParts.push(band);
+      const baseSub = String(item.sub || '').trim();
+      if(baseSub){
+        baseSub.split(' · ').forEach(function(part){
+          const p = String(part || '').trim();
+          if(!p) return;
+          if(/^\d+\s+shifts$/i.test(p)) return;
+          if(/\d/.test(p) && /\bto\b/i.test(p)) return;
+          subParts.push(p);
+        });
+      }
+      return Object.assign({}, item, { sub: subParts.filter(Boolean).join(' · ') });
+    }
     /** One shadowing card per day/venue — title shows session count when &gt; 1. */
     function portalCollapseShadowingOverrideQuickMenuItems(items){
       if(!items || !items.length) return items || [];
@@ -8520,14 +8558,39 @@
         if(n > 1) subParts.push(n + ' shifts');
         const baseSub = String(it.sub || '').trim();
         if(baseSub) subParts.push(baseSub);
-        rest.push(Object.assign({}, it, {
+        rest.push(portalRefreshShadowingOverrideCardSub(Object.assign({}, it, {
           title: title,
           sub: subParts.join(' · '),
           _shadowingCount: n,
           _shadowingDismissIds: pack.dismissIds.slice()
-        }));
+        }), n));
       });
       return rest;
+    }
+    function portalRefreshNewShiftOverrideCardSub(item){
+      if(!item || !item.iso) return item;
+      const iso = String(item.iso || '').trim();
+      const staffId = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
+      if(typeof window.portalStaffDayShiftLabelsByVenue !== 'function' || !staffId) return item;
+      const labels = window.portalStaffDayShiftLabelsByVenue(staffId, iso);
+      const venueKey = typeof portalNormKeyStr === 'function'
+        ? portalNormKeyStr(item.venue || '')
+        : String(item.venue || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const slot = labels[venueKey] || labels._ || '';
+      if(!slot) return item;
+      const subRaw = String(item.sub || '').trim();
+      const parts = subRaw ? subRaw.split(' · ') : [];
+      let svc = '';
+      const extras = [];
+      parts.forEach(function(p){
+        const bit = String(p || '').trim();
+        if(!bit) return;
+        if(/\d/.test(bit) && /\bto\b/i.test(bit)) return;
+        if(!svc && !/\d/.test(bit)) svc = bit;
+        else extras.push(bit);
+      });
+      const newSub = [svc, slot].concat(extras).filter(Boolean).join(' · ');
+      return Object.assign({}, item, { sub: newSub || slot });
     }
     /** One New shift card per calendar day (instructor cover / spreadsheet day group). */
     function portalCollapseNewShiftOverrideQuickMenuItems(items){
@@ -8555,7 +8618,9 @@
         }
         if(kind === 'new_shift' && String(prev.kind || '') !== 'new_shift') byIso[dayKey] = it;
       }
-      return rest.concat(Object.keys(byIso).sort().map(function(k){ return byIso[k]; }));
+      return rest.concat(Object.keys(byIso).sort().map(function(k){
+        return portalRefreshNewShiftOverrideCardSub(byIso[k]);
+      }));
     }
     /** One Session Cancelled card per day when the logged-in instructor was replaced by cover. */
     function portalCollapseShiftCancelledOverrideQuickMenuItems(items){
