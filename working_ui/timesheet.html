@@ -1014,19 +1014,61 @@
     /** Build state.roleRates (role -> £/h) + primary, from staff_role_rates rows. */
     function buildRoleRateMap(rows){
       state.roleRates = {};
+      state.roleScales = {};
       state.primaryRole = "";
       state.primaryRate = null;
       (rows || []).forEach((r) => {
         const rt = Number(r.hourly_rate);
         if (!r.role || !Number.isFinite(rt)) return;
         state.roleRates[r.role] = rt;
+        if (r.scale) state.roleScales[r.role] = String(r.scale).trim();
         if (r.is_primary) { state.primaryRole = r.role; state.primaryRate = rt; }
       });
       if (state.primaryRate == null && (rows || []).length) {
         const first = rows[0];
         state.primaryRole = first.role || "";
         state.primaryRate = Number(first.hourly_rate);
+        if (first.scale) state.roleScales[first.role] = String(first.scale).trim();
       }
+    }
+
+    function roleDisplayLabel(role, scale) {
+      const r = String(role || "").trim();
+      if (!r) return "";
+      const s = String(scale || state.roleScales && state.roleScales[r] || "").trim();
+      const m = s.match(/Scale\s*(\d+)/i);
+      return m ? `${r} ${m[1]}` : r;
+    }
+
+    function sortedPayRoles() {
+      const rates = state.roleRates || {};
+      const roles = Object.keys(rates);
+      roles.sort((a, b) => {
+        if (a === state.primaryRole) return -1;
+        if (b === state.primaryRole) return 1;
+        return String(a).localeCompare(String(b));
+      });
+      return roles;
+    }
+
+    function formatRoleHeaderText() {
+      const roles = sortedPayRoles();
+      if (roles.length > 1) {
+        return roles.map((r) => roleDisplayLabel(r, state.roleScales && state.roleScales[r])).join(" · ");
+      }
+      if (state.primaryRole) return roleDisplayLabel(state.primaryRole, state.roleScales && state.roleScales[state.primaryRole]) || state.primaryRole;
+      return state.roleLabel || "-";
+    }
+
+    function formatRateHeaderText() {
+      const rates = state.roleRates || {};
+      const roles = sortedPayRoles();
+      if (roles.length > 1) {
+        return roles.map((r) => `${roleDisplayLabel(r, state.roleScales && state.roleScales[r])} £${money(rates[r])}/h`).join(" · ");
+      }
+      if (roles.length === 1) return `£${money(rates[roles[0]])}/h`;
+      const r = state.effectiveRate != null ? state.effectiveRate : (state.primaryRate != null ? state.primaryRate : state.hourlyRate);
+      return `£${money(r)}/h`;
     }
 
     /** Rate for a given role: its own rate, else the worker's primary, else the single fallback. */
@@ -1138,6 +1180,12 @@
     }
 
     function applyPayRateFromProfile(rateRow, profile, rosterKey) {
+      if (state.primaryRate != null && state.primaryRole) {
+        return {
+          hourly_rate: state.primaryRate,
+          role_label: roleDisplayLabel(state.primaryRole, state.roleScales && state.roleScales[state.primaryRole]) || state.primaryRole
+        };
+      }
       let hourly = Number(rateRow && rateRow.hourly_rate != null ? rateRow.hourly_rate : 0);
       let role = String((rateRow && rateRow.role_label) || "").trim();
       if (hourly > 0 && role) return { hourly_rate: hourly, role_label: role };
@@ -1255,7 +1303,9 @@
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
-      document.getElementById("rateTop").textContent = `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`;
+      state.roleLabel = formatRoleHeaderText();
+      document.getElementById("rateTop").textContent = formatRateHeaderText();
+      document.getElementById("roleLabel").textContent = state.roleLabel;
       document.getElementById("totalCost").textContent = money(state.totalCost);
       document.getElementById("pendingCost").textContent = money(state.pendingCost);
       document.getElementById("potentialCost").textContent = money(state.potentialCost);
@@ -1317,7 +1367,9 @@
       document.getElementById("mTotalHours").textContent = money(state.totalHours);
       document.getElementById("mTotalCost").textContent = money(state.totalCost);
       const rateTop = document.getElementById("rateTop");
-      if (rateTop) rateTop.textContent = `£${money(state.hourlyRate)}/h`;
+      if (rateTop) rateTop.textContent = formatRateHeaderText();
+      const roleEl = document.getElementById("roleLabel");
+      if (roleEl) roleEl.textContent = formatRoleHeaderText();
     }
 
     function addManualEntryFromForm() {
@@ -1432,12 +1484,12 @@
           ? ghostHandoff.displayName
           : resolveEmployeeDisplayName(profile, user, manualKey);
         const mpay = applyPayRateFromProfile(rateRow, profile, manualKey);
-        state.roleLabel = state.primaryRole || mpay.role_label;
+        state.roleLabel = formatRoleHeaderText();
         state.hourlyRate = state.primaryRate != null ? state.primaryRate : Number(mpay.hourly_rate || 0);
         state.effectiveRate = state.hourlyRate;
         document.getElementById("empName").textContent = state.employeeName || "-";
         document.getElementById("roleLabel").textContent = state.roleLabel || "-";
-        document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
+        document.getElementById("rateTop").textContent = formatRateHeaderText();
         setupManualMode();
         if (state.ghostReadOnly) applyGhostReadOnlyUi();
         return;
@@ -1481,7 +1533,7 @@
         : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
 
       document.getElementById("empName").textContent = state.employeeName || "-";
-      document.getElementById("roleLabel").textContent = state.roleLabel || "-";
+      state.roleLabel = formatRoleHeaderText();
       renderTable();
       if (state.ghostReadOnly) applyGhostReadOnlyUi();
     }
