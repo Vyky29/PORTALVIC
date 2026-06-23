@@ -925,7 +925,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260614-roster-day-group"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260621-javi-palankas"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
@@ -1906,6 +1906,9 @@
         keys.push(k);
       };
       add(item && item.sessionKey);
+      if(item && Array.isArray(item.__portalFeedbackMergeMemberKeys)){
+        item.__portalFeedbackMergeMemberKeys.forEach(add);
+      }
       const s = portalReviewSessionForItem(item) || (item && item.__portalBaseSession);
       if(!s || !iso) return keys;
       if(typeof portalSessionReviewKeyForModelRow === 'function'){

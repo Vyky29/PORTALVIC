@@ -296,6 +296,137 @@
     return p.indexOf("multi") >= 0 && p.indexOf("activ") >= 0;
   }
 
+  function isBespokeProgramme(activity) {
+    var p = String(activity || "").toLowerCase();
+    return /\bbespoke\b/.test(p) || /\bfitfun\b/.test(p) || /\bfit fun\b/.test(p);
+  }
+
+  function isConsecutiveHalfHourMergeActivity(activity) {
+    return isMultiActivity(activity) || isBespokeProgramme(activity);
+  }
+
+  function hmToMinutes(hm) {
+    var p = String(hm || "").split(":");
+    var h = Number(p[0]);
+    var m = Number(p[1] || 0);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return NaN;
+    return h * 60 + m;
+  }
+
+  function slotsAreConsecutive(endHm, startHm) {
+    var a = hmToMinutes(canonicalHmToken(endHm));
+    var b = hmToMinutes(canonicalHmToken(startHm));
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+    return a === b;
+  }
+
+  function itemVenueToken(it) {
+    var base = (it && it.__portalBaseSession) || {};
+    return String(it && it.sessionVenue != null ? it.sessionVenue : base.venue || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function itemIsConsecutiveHalfHourMergeCandidate(it) {
+    if (!it || it.kind !== "client" || it.noSessionFeedbackRequired) return false;
+    if (String(it.feedbackMergeGroup || "").trim()) return false;
+    if (it.__portalAquaticMergedCount) return false;
+    return isConsecutiveHalfHourMergeActivity(it.activity);
+  }
+
+  function consecutiveMergeGroupKey(it) {
+    var cid = slugClient(it.clientId || (it.__portalBaseSession && it.__portalBaseSession.clientId));
+    var venue = itemVenueToken(it);
+    var act = String(it.activity || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    return cid + "|" + venue + "|" + act;
+  }
+
+  function memberSessionReviewKeys(chain, iso, dayWord) {
+    var keys = [];
+    var seen = Object.create(null);
+    function add(k) {
+      k = String(k || "").trim();
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      keys.push(k);
+    }
+    for (var i = 0; i < chain.length; i++) {
+      var it = chain[i];
+      add(it.sessionKey);
+      var s = it.__portalBaseSession;
+      if (typeof global.portalSessionReviewKeyForModelRow === "function" && s) {
+        add(global.portalSessionReviewKeyForModelRow(s, dayWord, iso));
+      }
+    }
+    return keys;
+  }
+
+  /** Weekday Multi-Activity / Bespoke: consecutive 30' blocks, same client + venue → one card + one feedback. */
+  function mergeTodayConsecutiveHalfHourClientSlots(items, iso, dayWord) {
+    if (!items || !items.length) return items || [];
+    var passthrough = [];
+    var byKey = Object.create(null);
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (!itemIsConsecutiveHalfHourMergeCandidate(it)) {
+        passthrough.push(it);
+        continue;
+      }
+      var k = consecutiveMergeGroupKey(it);
+      if (!byKey[k]) byKey[k] = [];
+      byKey[k].push(it);
+    }
+    var out = passthrough.slice();
+    Object.keys(byKey).forEach(function (k) {
+      var list = byKey[k];
+      if (!list.length) return;
+      list.sort(function (a, b) {
+        return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
+      });
+      var chains = [];
+      var chain = [list[0]];
+      for (var j = 1; j < list.length; j++) {
+        var prev = chain[chain.length - 1];
+        var cur = list[j];
+        var prevEnd = hmFromBaseSession(prev.__portalBaseSession).end;
+        var curStart = hmFromBaseSession(cur.__portalBaseSession).start;
+        if (slotsAreConsecutive(prevEnd, curStart)) chain.push(cur);
+        else {
+          chains.push(chain);
+          chain = [cur];
+        }
+      }
+      chains.push(chain);
+      chains.forEach(function (ch) {
+        if (!ch.length) return;
+        if (ch.length === 1) {
+          out.push(ch[0]);
+          return;
+        }
+        var rep = ch[0];
+        var last = ch[ch.length - 1];
+        var startHm = hmFromBaseSession(rep.__portalBaseSession).start;
+        var endHm = hmFromBaseSession(last.__portalBaseSession).end;
+        var mg = k + "|" + canonicalHmToken(startHm);
+        var merged = Object.assign({}, rep);
+        merged.sessionEndTs = last.sessionEndTs;
+        merged.time = formatSlotRangeUk(startHm, endHm) || rep.time;
+        merged.feedbackMergeGroup = mg;
+        merged.sessionKey = String(iso || "").slice(0, 10) + "|merge|" + mg;
+        merged.__portalFeedbackMergeCount = ch.length;
+        merged.__portalFeedbackMergeMemberKeys = memberSessionReviewKeys(ch, iso, dayWord);
+        out.push(merged);
+      });
+    });
+    out.sort(function (a, b) {
+      return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
+    });
+    return out;
+  }
+
   function staffMatchesMergeInstructors(ruleInstructors, staffId) {
     var want = String(ruleInstructors || "").trim().toUpperCase();
     var sid = String(staffId || "").trim().toUpperCase();
@@ -347,6 +478,7 @@
   /** Aquatic + Multi-Activity (e.g. Yusuf Sun with Roberto) → one Today card + one feedback. */
   function mergeTodayFeedbackMergeGroups(items, iso, dayWord, staffId) {
     if (!items || !items.length) return items || [];
+    items = mergeTodayConsecutiveHalfHourClientSlots(items, iso, dayWord);
     var rules = sundayFeedbackMergeRules();
     if (!rules.length) return items;
     var sid = String(staffId || "").trim().toLowerCase();
@@ -507,5 +639,6 @@
   global.portalStaffLeadReviewKeyAllowsDateClientOnlyAlias = reviewKeyAllowsDateClientOnlyAlias;
   global.portalMergeStaffLeadTodayAquaticCards = mergeTodayAquaticCards;
   global.portalMergeStaffTodayFeedbackMergeGroups = mergeTodayFeedbackMergeGroups;
+  global.portalMergeStaffTodayConsecutiveHalfHourSlots = mergeTodayConsecutiveHalfHourClientSlots;
   global.portalStaffFeedbackMergeGroupForTodayItem = feedbackMergeGroupForTodayItem;
 })(typeof window !== "undefined" ? window : globalThis);
