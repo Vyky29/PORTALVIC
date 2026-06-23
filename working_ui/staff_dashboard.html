@@ -7185,12 +7185,12 @@
         const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
         if(timeUpdated && !started && !ended){
-          push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>');
+          push(portalSessionUpdatedChipHtml());
         }
       }
 
       if(!chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
-        push('<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>');
+        push(portalSessionUpdatedChipHtml());
       }
       return chips.join('');
     }
@@ -14608,11 +14608,16 @@
             else out.hasMakeUp = true;
           }
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
-          if(t === 'slot_clear_client' && ov && ov.payload && ov.payload.cancelled_by_admin
-            && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
-              && portalStaffHasRequestedTimeOffOnDate(iso, sid))){
-            out.hasCancelled = true;
+          if(t === 'slot_clear_client'){
+            if(ov && ov.payload && ov.payload.cancelled_by_admin
+              && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
+                && portalStaffHasRequestedTimeOffOnDate(iso, sid))){
+              out.hasCancelled = true;
+            }else{
+              out.hasUpdated = true;
+            }
           }
+          if(t === 'slot_close') out.hasUpdated = true;
           if(t === 'slot_update'){
             const P = window.PortalParticipantsSheet;
             if(!P || typeof P.overrideIsTermNewParticipant !== 'function' || !P.overrideIsTermNewParticipant(ov)
@@ -14623,6 +14628,14 @@
           if(typeof portalSessionRosterTimeWasUpdated === 'function' && portalSessionRosterTimeWasUpdated(baseSession, iso)) out.hasUpdated = true;
           if(out.hasMakeUp && out.hasTrial && out.hasAbsentAnnounced && out.hasCancelled && out.hasUpdated) break;
         }
+        (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).forEach(function(ov){
+          if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(iso)) return;
+          if(String(ov.status || 'active') !== 'active') return;
+          if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
+          const t = String(ov.override_type || '').trim();
+          if(t === 'slot_update' || t === 'slot_close') out.hasUpdated = true;
+          if(t === 'slot_clear_client' && !(ov.payload && ov.payload.cancelled_by_admin)) out.hasUpdated = true;
+        });
         const normStaffKeyOv = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
         const sidNormOv = normStaffKeyOv(sid);
         (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).forEach(function(ov){
@@ -15067,6 +15080,21 @@
     /** Explicit staff away dates — show “Time Off Requested” copy and term pulse border. */
     function portalStaffDayOffIsTimeOffRequested(isoYmd, staffId){
       return portalStaffHasRequestedTimeOffOnDate(isoYmd, staffId);
+    }
+    /** Admin schedule change (override / shift removed) — not staff-requested time off. */
+    function portalStaffTermAdminScheduleAdjustedOnDate(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
+      if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0) return false;
+      const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      const flags = portalDayOverrideBadgeFlags(dayWord, iso);
+      if(flags.hasUpdated) return true;
+      return typeof portalTermStaffRemovedFromBaselineShiftOnDate === 'function'
+        && portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid);
+    }
+    function portalSessionUpdatedChipHtml(){
+      return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated"><span>Updated</span></span>';
     }
     function portalTermCalendarToIso(){
       const ptd = window.PortalTermCalendarDashboard;
@@ -15895,6 +15923,9 @@
           const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay;
           const staffRequestedAway = termStaffId
             && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
+          const adminScheduleAdjusted = termStaffId
+            && typeof portalStaffTermAdminScheduleAdjustedOnDate === 'function'
+            && portalStaffTermAdminScheduleAdjustedOnDate(isoKey, termStaffId);
           const hadBaselineShift = termStaffId && typeof window.PortalTermCalendarDashboard !== 'undefined'
             && window.PortalTermCalendarDashboard
             && typeof window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate === 'function'
@@ -15913,6 +15944,7 @@
           }
           if(halfBlocksNav){
             cls += ' half-term';
+            if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-updated';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = afterTermEnd
@@ -15923,19 +15955,19 @@
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
             const dayWordNav = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const termReviewIsoNav = termCalendarDateKey(y, monthIndex, day);
-            if(fb !== 'complete'){
-              const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
-              const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0) + (dayFlags.hasShadowingHost ? 1 : 0);
-              if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
-              else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
-              else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
-              else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
-              else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
-              else if(dayFlags.hasShadowingHost) cls += ' term-cal-day--ov-pulse-admin-shift';
-              else if(dayFlags.hasTraining) cls += ' term-cal-day--ov-pulse-training';
-              else if(dayFlags.hasShadowing) cls += ' term-cal-day--ov-pulse-shadowing';
-              else if(dayFlags.hasMeeting) cls += ' term-cal-day--ov-pulse-meeting';
-            }
+            const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
+            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasUpdated ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0) + (dayFlags.hasShadowingHost ? 1 : 0);
+            if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
+            else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
+            else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
+            else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
+            else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
+            else if(dayFlags.hasUpdated) cls += ' term-cal-day--ov-pulse-updated';
+            else if(dayFlags.hasShadowingHost) cls += ' term-cal-day--ov-pulse-admin-shift';
+            else if(dayFlags.hasTraining) cls += ' term-cal-day--ov-pulse-training';
+            else if(dayFlags.hasShadowing) cls += ' term-cal-day--ov-pulse-shadowing';
+            else if(dayFlags.hasMeeting) cls += ' term-cal-day--ov-pulse-meeting';
+            else if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-updated';
             if(fb === 'complete'){
               cls += ' term-feedback-complete';
               label = `${day}, all feedback complete`;
@@ -15959,6 +15991,7 @@
             }
           } else {
             cls += ' half-term';
+            if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-updated';
             label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
