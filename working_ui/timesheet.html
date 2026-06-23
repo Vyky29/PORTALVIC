@@ -251,8 +251,9 @@
   <script src="portal/portal_return_and_shell.js?v=20260510-portal-admin"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
-  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260510-portal-admin"></script>
-  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260510-portal-admin"></script>
+  <script src="/portal/term_from_timetable.js?v=20260614-giuseppe-timesheet"></script>
+  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified"></script>
+  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -902,6 +903,42 @@
       return !!(r.feedbackDone || r.absent || r.cancelled);
     }
 
+    function timesheetTermCfg() {
+      return window.PORTAL_TERM_FROM_TIMETABLE || {};
+    }
+
+    function timesheetStaffCatchUpDates(staffKey) {
+      const id = String(staffKey || "").trim().toLowerCase();
+      const map = timesheetTermCfg().termStaffCatchUpFeedbackDatesByProfileKey;
+      const raw = map && map[id];
+      if (!Array.isArray(raw)) return [];
+      return raw.map((d) => String(d || "").trim().slice(0, 10)).filter(Boolean);
+    }
+
+    /** Mirror staff dashboard term calendar: legacy catch-up / bulk-complete before today. */
+    function timesheetDayAssumeComplete(dateKey, staffKey) {
+      const key = String(dateKey || "").trim().slice(0, 10);
+      const id = String(staffKey || "").trim().toLowerCase();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !id) return false;
+      const through = String(timesheetTermCfg().termFeedbackAssumeCompleteThroughIso || "").trim().slice(0, 10);
+      if (!through || key > through) return false;
+      if (timesheetStaffCatchUpDates(id).indexOf(key) >= 0) return false;
+      return true;
+    }
+
+    function timesheetDayForcedComplete(dateKey, staffKey) {
+      const key = String(dateKey || "").trim().slice(0, 10);
+      const id = String(staffKey || "").trim().toLowerCase();
+      const map = timesheetTermCfg().termStaffFeedbackCompleteDatesByProfileKey;
+      const raw = map && map[id];
+      if (!Array.isArray(raw)) return false;
+      return raw.some((d) => String(d || "").trim().slice(0, 10) === key);
+    }
+
+    function timesheetDayMarkedComplete(dateKey, staffKey) {
+      return timesheetDayForcedComplete(dateKey, staffKey) || timesheetDayAssumeComplete(dateKey, staffKey);
+    }
+
     function hmToMinutes(hm) {
       const p = String(hm || "").split(":");
       return Number(p[0] || 0) * 60 + Number(p[1] || 0);
@@ -993,9 +1030,10 @@
 
     /** One paid shift per calendar day: span from earliest start to latest end (not per client row).
      *  Also resolves the day's pay role from the service that covers the most minutes. */
-    function dailyHoursFromSessions(sessions, dateObj, reviewMap) {
+    function dailyHoursFromSessions(sessions, dateObj, reviewMap, staffKey) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
+      const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
       const rows = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
         const st = String(s.status || "").toLowerCase();
         return st !== "closed" && st !== "available";
@@ -1029,6 +1067,7 @@
         if (!sessionIsCompleted(rec)) completedAll = false;
       });
       const mins = Math.max(0, maxEnd - minStart);
+      if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
       return {
         date: dateKey,
         day: dayName,
@@ -1360,7 +1399,7 @@
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
       const reviewMap = await buildReviewMap(supabase, state.userId, sessionsModel, dates);
       state.entries = dates
-        .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap))
+        .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap, state.staffRosterKey))
         .filter(Boolean);
       const extraSessions = await fetchTrainingShadowingEntries(supabase, state.staffRosterKey, state.periodStart, state.periodEnd);
       if (extraSessions.length) {
