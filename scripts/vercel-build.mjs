@@ -14,7 +14,10 @@ import { execSync } from "node:child_process";
 const ROOT = join(import.meta.dirname, "..");
 const DEPLOY = join(ROOT, "dist", "deploy");
 const project = String(process.env.VERCEL_PROJECT_NAME || "").toLowerCase();
-const isStaff = project === "clubsensational-staff";
+const isStaff =
+  project === "clubsensational-staff" ||
+  project.includes("clubsensational-staff") ||
+  String(process.env.CLUBSENSATIONAL_STAFF_APP || "").trim() === "1";
 
 console.log("[vercel-build] VERCEL_PROJECT_NAME =", project || "(unset)");
 console.log("[vercel-build] mode =", isStaff ? "clubsensational-staff" : "portal");
@@ -33,6 +36,7 @@ if (isStaff) {
     stdio: "inherit",
   });
   cpSync(join(ROOT, "dist", "clubsensational-staff"), DEPLOY, { recursive: true });
+  cpSync(join(DEPLOY, "login.html"), join(DEPLOY, "index.html"));
 } else {
   cpSync(join(ROOT, "working_ui"), DEPLOY, { recursive: true });
 }
