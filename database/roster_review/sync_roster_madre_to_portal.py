@@ -79,7 +79,7 @@ SUNDAY_MA_SLOT_MAP = {
     "1.15 to 2": "1 to 2.15",
     "1 to 2": "1 to 2.15",
 }
-SUNDAY_MA_LEADER_KEYS = frozenset({"bismark", "john"})
+SUNDAY_MA_LEADER_KEYS = frozenset({"berta", "john"})
 SUNDAY_MA_LEADER_LAST_END = "2.45"
 
 
@@ -106,7 +106,7 @@ def dedupe_adapter_rows(rows: list[dict]) -> list[dict]:
 
 
 def patch_term_session_time_slots(seed: dict) -> int:
-    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support 9.15–2.15 (5h)."""
+    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support 9.15–14.15 (5h); Berta/John lead +15' → 2.45 end."""
     n = 0
     for w in seed.get("weeks", []):
         for st in w.get("staff", []):

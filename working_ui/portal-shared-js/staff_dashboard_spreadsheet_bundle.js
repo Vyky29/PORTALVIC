@@ -18,7 +18,12 @@
       }
     },
     "2026-06-21": {
-      "leadOnDuty": "John"
+      "leadOnDuty": "John",
+      "replaceInstructor": {
+        "JOHN, BERTA": "JOHN",
+        "ALEX": "BISMARK",
+        "CARLOS": "JAVI"
+      }
     },
     "2026-06-28": {
       "leadOnDuty": "John",
@@ -3156,7 +3161,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.45",
+      "time_slot": "1 to 2.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-07"
     },
@@ -4646,7 +4651,7 @@
       "instructors": "BERTA",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.15",
+      "time_slot": "1 to 2.45",
       "venue": "SwimFarm",
       "session_date": "2026-06-14"
     },
@@ -4696,7 +4701,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.45",
+      "time_slot": "1 to 2.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-14"
     },
@@ -8106,7 +8111,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.45",
+      "time_slot": "1 to 2.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
     },
@@ -9756,7 +9761,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.45",
+      "time_slot": "1 to 2.15",
       "venue": "SwimFarm",
       "session_date": "2026-07-05"
     },
@@ -11376,7 +11381,7 @@
       "instructors": "BERTA",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.15",
+      "time_slot": "1 to 2.45",
       "venue": "SwimFarm",
       "session_date": "2026-07-12"
     },
@@ -11416,7 +11421,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "1 to 2.45",
+      "time_slot": "1 to 2.15",
       "venue": "SwimFarm",
       "session_date": "2026-07-12"
     },
@@ -12980,7 +12985,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-06-23T13:29:13Z",
+    "rosterMadreSyncedAt": "2026-06-23T13:29:12Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
