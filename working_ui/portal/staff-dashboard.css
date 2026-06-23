@@ -6916,6 +6916,15 @@
       0%,100%{box-shadow:0 0 0 2px rgba(185,28,28,.52),0 8px 22px rgba(185,28,28,.28);border-color:rgba(185,28,28,.72)}
       50%{box-shadow:0 0 0 3px rgba(220,38,38,.82),0 12px 28px rgba(220,38,38,.42);border-color:rgba(220,38,38,.92)}
     }
+    .term-cal-day.active.term-cal-day--ov-pulse-admin-shift,
+    .term-cal-day.active.term-cal-day--ov-pulse-updated{
+      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 48%,var(--blueSoft) 100%);
+      color:#92400e;
+    }
+    .term-cal-day.term-feedback-complete.term-cal-day--ov-pulse-admin-shift,
+    .term-cal-day.term-feedback-complete.term-cal-day--ov-pulse-updated{
+      background:linear-gradient(180deg,#fffbeb 0%,var(--successSoft) 100%);
+    }
     .term-cal-day.term-cal-day--ov-pulse-makeup{
       animation:termMakeUpPulse 1.6s ease-in-out infinite;
     }

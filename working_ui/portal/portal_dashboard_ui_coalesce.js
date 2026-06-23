@@ -155,6 +155,13 @@
   };
 
   global.portalTermMiniCardPulseClass = function portalTermMiniCardPulseClass(_flags) {
+    try {
+      if (typeof global.portalPendingOverrideDaysSignature === "function") {
+        var sig = global.portalPendingOverrideDaysSignature();
+        if (sig && /(^|;)\d{4}-\d{2}-\d{2}:[^;]*n/.test(sig)) return "mini-card--ov-pulse-admin-shift";
+        if (sig) return "mini-card--ov-pulse-updated";
+      }
+    } catch (_) {}
     return "";
   };
 
@@ -235,6 +242,7 @@
       String(keys.length),
       fbPart,
       String(opts.overrideCount || 0),
+      String(opts.pendingOverrideDays || ""),
     ].join("|");
   };
 

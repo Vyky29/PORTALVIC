@@ -42,8 +42,8 @@
     box.className = "staff-app-install-hint";
     box.setAttribute("role", "status");
     box.innerHTML =
-      "<p><strong>Tip:</strong> On iPad or iPhone, tap <strong>Share</strong> → " +
-      "<strong>Add to Home Screen</strong> and open the app from that icon (not Safari).</p>" +
+      "<p><strong>Tip:</strong> On iPhone or Android, tap <strong>Share</strong> (or menu) → " +
+      "<strong>Add to Home Screen</strong> and always open staff from that icon — not a Safari tab or old portal bookmark.</p>" +
       '<button type="button" id="staffAppInstallHintDismiss">Got it</button>';
     panel.insertBefore(box, panel.firstChild);
     var btn = document.getElementById("staffAppInstallHintDismiss");

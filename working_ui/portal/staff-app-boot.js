@@ -6,7 +6,8 @@
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
-  var VER = "20260624-staff-boot";
+  var VER = "20260624-staff-boot2";
+  var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(String(global.navigator && global.navigator.userAgent || ""));
 
   try {
     var pre = document.createElement("link");
@@ -31,6 +32,10 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
     preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf4");
     preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
+    if (isMobile) {
+      preloadScript("/portal/staff-dashboard-auth-bridge.js?v=20260624-staff-perf4");
+      preloadScript("/portal/staff-dashboard-rehydrate.js?v=20260624-staff-perf4");
+    }
   }
 
   if ("serviceWorker" in global.navigator) {
@@ -94,7 +99,17 @@
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
     };
-    scheduleIdle(run, 2500);
+    scheduleIdle(run, isMobile ? 1200 : 2500);
+  }
+
+  function portalStaffMobileWarmDashboard(){
+    if (!isMobile || !/staff_dashboard/i.test(String(global.location.pathname || ""))) return;
+    var run = function () {
+      if (typeof global.portalRefreshScheduleOverrideDayChrome === "function") {
+        global.portalRefreshScheduleOverrideDayChrome();
+      }
+    };
+    global.setTimeout(run, 1800);
   }
 
   function scheduleIdle(fn, timeoutMs) {
@@ -110,6 +125,7 @@
       global.portalStaffDeferWebPush();
     }
     portalStaffDeferDashboardExtras();
+    portalStaffMobileWarmDashboard();
   }
 
   if (document.readyState === "loading") {
