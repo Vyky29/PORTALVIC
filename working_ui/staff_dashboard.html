@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260624-updated-pulse2" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260624-term-offrota-pulse" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260614-termrev-rose-team-shift" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
@@ -15019,6 +15019,23 @@
       window.portalPendingOverrideDaysSignature = portalPendingOverrideDaysSignature;
       window.portalRefreshScheduleOverrideDayChrome = portalRefreshScheduleOverrideDayChrome;
     }catch(_ex){}
+    /** Pulse class for term-calendar days OFF the staff base rota that still have a pending override (shadowing / new shift / change). */
+    function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted){
+      let pend = null;
+      try{
+        pend = typeof portalPendingOverrideFlagsForDate === 'function'
+          ? portalPendingOverrideFlagsForDate(isoKey)
+          : null;
+      }catch(_){ pend = null; }
+      if(pend){
+        if(pend.hasNewShift) return 'term-cal-day--ov-pulse-admin-shift';
+        if(pend.hasShadowing) return 'term-cal-day--ov-pulse-shadowing';
+        if(pend.hasTraining) return 'term-cal-day--ov-pulse-training';
+        if(pend.hasMeeting) return 'term-cal-day--ov-pulse-meeting';
+        if(pend.hasUpdated) return 'term-cal-day--ov-pulse-updated';
+      }
+      return adminScheduleAdjusted ? 'term-cal-day--ov-pulse-admin-shift' : '';
+    }
     function portalDayOverrideBadgeFlags(dayName, sessionDateIso){
       const out = { hasMakeUp: false, hasTrial: false, hasAbsentAnnounced: false, hasCancelled: false, hasUpdated: false, hasNewShift: false, hasTraining: false, hasShadowing: false, hasMeeting: false, hasShadowingHost: false, shadowingHostLabels: [] };
       try{
@@ -16424,12 +16441,15 @@
           }
           if(halfBlocksNav){
             cls += ' half-term';
-            if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-admin-shift';
+            const ovPulseHalf = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted);
+            if(ovPulseHalf) cls += ' ' + ovPulseHalf;
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
-            label = afterTermEnd
-              ? `${day}, term ended`
-              : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`));
+            label = ovPulseHalf
+              ? `${day}, schedule change — see quick menu`
+              : (afterTermEnd
+                ? `${day}, term ended`
+                : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`)));
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
@@ -16472,8 +16492,9 @@
             }
           } else {
             cls += ' half-term';
-            if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-admin-shift';
-            label = `${day}, not on your rota`;
+            const ovPulseOff = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted);
+            if(ovPulseOff) cls += ' ' + ovPulseOff;
+            label = ovPulseOff ? `${day}, schedule change — see quick menu` : `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
         }

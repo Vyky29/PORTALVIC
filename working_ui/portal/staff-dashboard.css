@@ -6968,6 +6968,28 @@
       color:#991b1b;
       box-shadow:0 0 0 2px rgba(185,28,28,.45),0 6px 16px rgba(185,28,28,.2);
     }
+    /* Off-rota days (half-term styling) that still carry a pending override: show the override colour, not the red "not on rota" look */
+    .term-cal-day.half-term.term-cal-day--ov-pulse-admin-shift,
+    .term-cal-day.half-term.term-cal-day--ov-pulse-updated{
+      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
+      border-color:rgba(202,138,4,.6);
+      color:#92400e;
+    }
+    .term-cal-day.half-term.term-cal-day--ov-pulse-shadowing{
+      background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
+      border-color:rgba(14,165,233,.55);
+      color:#075985;
+    }
+    .term-cal-day.half-term.term-cal-day--ov-pulse-training{
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+      border-color:rgba(37,99,235,.55);
+      color:#1e40af;
+    }
+    .term-cal-day.half-term.term-cal-day--ov-pulse-meeting{
+      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
+      border-color:rgba(132,204,22,.55);
+      color:#3f6212;
+    }
     @media (prefers-reduced-motion:reduce){
       .term-cal-day.term-cal-day--ov-pulse-makeup,
       .term-cal-day.term-cal-day--ov-pulse-trial,
