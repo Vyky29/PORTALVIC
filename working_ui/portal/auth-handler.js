@@ -1024,6 +1024,9 @@ function bindLogin() {
         registeredLogin: portalIsRegisteredPortalLoginEmail(sessionEmail),
       });
       if (!url) return;
+      if (typeof portalStaffAppBlocksPassiveLoginRedirect === "function") {
+        if (portalStaffAppBlocksPassiveLoginRedirect(url)) return;
+      }
       window.location.replace(url);
     } catch (e) {
       clearPortalStaffContext();

@@ -111,6 +111,14 @@ function writeStaffAppConfig(destDir) {
   }
   global.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
   global.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
+  global.portalStaffAppBlocksPassiveLoginRedirect = function (url) {
+    try {
+      var dest = new URL(String(url || ""), global.location.href);
+      return dest.origin !== global.location.origin;
+    } catch (_) {
+      return false;
+    }
+  };
 })(typeof window !== "undefined" ? window : globalThis);
 `;
   writeFileSync(join(destDir, "staff-app-config.js"), js, "utf8");
@@ -178,6 +186,11 @@ patchHtml(join(OUT, "login.html"), [
   [
     '<link rel="manifest" href="/login.webmanifest?v=20260625-manifest-fix" />',
     '<link rel="manifest" href="/clubsensational-staff-login.webmanifest?v=20260614-staff" />',
+  ],
+  ['<h1 class="login-portal-text" id="loginBrandTitle">Portal</h1>', '<h1 class="login-portal-text" id="loginBrandTitle">Staff</h1>'],
+  [
+    '<p id="login-updated-msg" class="login-updated-msg"',
+    '<p id="login-staff-admin-hint" class="login-updated-msg" style="margin-bottom:12px">Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>.</p>\n      <p id="login-updated-msg" class="login-updated-msg"',
   ],
 ]);
 
