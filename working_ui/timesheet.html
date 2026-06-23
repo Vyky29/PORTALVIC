@@ -983,6 +983,34 @@
       return SUNDAY_MA_LEAD_KEYS.has(key) ? 5.5 : 5;
     }
 
+    /** Sunday SwimFarm aquatic band: 6h; Roberto +30' from 2026-06-28 → 6.5h. */
+    const ROBERTO_SUNDAY_EXTENDED_FROM = "2026-06-28";
+
+    function isSundaySwimfarmAquaticBand(dayName, role, service, dayRows) {
+      if (String(dayName || "") !== "Sunday") return false;
+      const r = String(role || "").trim();
+      const svc = String(service || "").toLowerCase();
+      if (r !== "Swimming Instructor" && !/swim|aquatic/.test(svc)) return false;
+      const rows = dayRows || [];
+      if (!rows.length) return /swim|aquatic/.test(svc);
+      return rows.some((s) => {
+        const st = String(s.status || "").toLowerCase();
+        if (st === "closed" || st === "available") return false;
+        const act = String(s.rosterService || s.service || s.activity || "").toLowerCase();
+        if (/climb/.test(act) || /multi|bespoke|support|hub/.test(act)) return false;
+        const venue = String(s.venue || s.area || "").toLowerCase();
+        return venue.indexOf("swimfarm") >= 0 || venue.indexOf("pool") >= 0;
+      });
+    }
+
+    function sundaySwimPayableHours(dayName, rosterKey, role, service, dateKey, computedHours, dayRows) {
+      if (!isSundaySwimfarmAquaticBand(dayName, role, service, dayRows)) return computedHours;
+      const key = String(rosterKey || "").trim().toLowerCase();
+      const iso = String(dateKey || "").trim().slice(0, 10);
+      if (key === "roberto" && iso >= ROBERTO_SUNDAY_EXTENDED_FROM) return 6.5;
+      return 6;
+    }
+
     /** Build state.roleRates (role -> £/h) + primary, from staff_role_rates rows. */
     function buildRoleRateMap(rows){
       state.roleRates = {};
@@ -1098,6 +1126,7 @@
       if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
       let hours = Number((mins / 60).toFixed(2));
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
+      hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       return {
         date: dateKey,
         day: dayName,

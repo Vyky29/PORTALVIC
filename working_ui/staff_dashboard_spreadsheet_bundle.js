@@ -3551,7 +3551,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big pool",
-      "time_slot": "2.30 to 3.30",
+      "time_slot": "2.30 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-06-07"
     },
@@ -5081,7 +5081,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big pool",
-      "time_slot": "2.30 to 3.30",
+      "time_slot": "2.30 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-06-14"
     },
@@ -6721,7 +6721,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "2.30 to 3.30",
+      "time_slot": "2.30 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-06-21"
     },

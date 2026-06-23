@@ -81,6 +81,9 @@ SUNDAY_MA_SLOT_MAP = {
 }
 SUNDAY_MA_LEADER_KEYS = frozenset({"berta", "john"})
 SUNDAY_MA_LEADER_LAST_END = "2.45"
+# Roberto last aquatic block 2.30–3.30 (6.5h Sunday) from this date; before that 2.30–3 (6h).
+ROBERTO_SUNDAY_EXTENDED_FROM = "2026-06-28"
+ROBERTO_SUNDAY_AQUATIC_LAST_END = "3.30"
 
 
 def dedupe_adapter_rows(rows: list[dict]) -> list[dict]:
