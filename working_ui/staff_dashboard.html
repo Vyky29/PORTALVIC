@@ -15020,15 +15020,12 @@
         return 'off';
       }
       const dayFlags = portalDayOverrideBadgeFlags(item.day, iso);
-      if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(weekRowTotalClients(item) <= 0) return 'off';
-      if(!weekListHasPendingFeedbackForDay(item.day)){
-        if(rel === 'past') return 'work-done';
-        const sessions = weekListClientSessionsForDay(item.day);
-        if(sessions.length && !weekListHasNotEndedClientSession(item.day)) return 'work-done';
-      }
       if(weekListHasPendingFeedbackForDay(item.day)) return 'work-feedback';
+      if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(rel === 'past') return 'work-done';
+      const sessions = weekListClientSessionsForDay(item.day);
+      if(sessions.length && !weekListHasNotEndedClientSession(item.day)) return 'work-done';
       if(weekListClientSessionsForDay(item.day).length === 0) return 'work';
       if(weekListHasNotEndedClientSession(item.day)) return 'work';
       return 'work-done';
