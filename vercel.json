@@ -1,6 +1,6 @@
 {
-  "buildCommand": "node scripts/inject-portal-bridge-secret.mjs",
-  "outputDirectory": "working_ui",
+  "buildCommand": "node scripts/vercel-build.mjs",
+  "outputDirectory": "dist/deploy",
   "rewrites": [
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
     { "source": "/lead-dashboard.webmanifest", "destination": "/staff-dashboard.webmanifest" },
@@ -39,9 +39,23 @@
     { "source": "/climbing-registration", "destination": "/climbing_registration.html" },
     { "source": "/climbing_registration", "destination": "/climbing_registration.html" },
     { "source": "/parent_climbing_registration.html", "destination": "/climbing_registration.html" },
-    { "source": "/registration-form", "destination": "/parent_registration.html" }
+    { "source": "/registration-form", "destination": "/parent_registration.html" },
+    { "source": "/lead-dashboard.webmanifest", "destination": "/clubsensational-staff-dashboard.webmanifest" },
+    { "source": "/login.webmanifest", "destination": "/clubsensational-staff-login.webmanifest" }
+  ],
+  "redirects": [
+    { "source": "/admin_dashboard.html", "destination": "https://portalvic.vercel.app/admin_dashboard.html", "permanent": false },
+    { "source": "/ceo_dashboard.html", "destination": "https://portalvic.vercel.app/ceo_dashboard.html", "permanent": false },
+    { "source": "/office_portal.html", "destination": "https://portalvic.vercel.app/office_portal.html", "permanent": false },
+    { "source": "/portal_choose.html", "destination": "https://portalvic.vercel.app/portal_choose.html", "permanent": false }
   ],
   "headers": [
+    {
+      "source": "/login.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
     {
       "source": "/admin_dashboard.html",
       "headers": [

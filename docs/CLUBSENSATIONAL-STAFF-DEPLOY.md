@@ -16,9 +16,7 @@ Mismo repo GitHub **PORTALVIC**, dos proyectos Vercel.
 1. [Vercel Dashboard](https://vercel.com) → **Add New** → **Project** → importar repo **PORTALVIC**.
 2. **Project Name:** `clubsensational-staff`
 3. **Framework Preset:** Other
-4. En **Build & Development Settings** → **Override** y pegar el contenido de `vercel.staff.json`:
-   - Build Command: `node scripts/inject-portal-bridge-secret.mjs && node scripts/build-clubsensational-staff.mjs`
-   - Output Directory: `dist/clubsensational-staff`
+4. **Build settings** — Vercel los bloquea porque lee `vercel.json` del repo. **No hace falta cambiarlos.** El script `scripts/vercel-build.mjs` detecta el nombre del proyecto (`clubsensational-staff`) y construye la app staff sola.
 5. **Environment variables** (Production + Preview):
 
    | Variable | Valor |
