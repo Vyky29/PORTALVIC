@@ -18,7 +18,7 @@
     if (!("serviceWorker" in global.navigator)) return;
     try {
       global.navigator.serviceWorker
-        .register("/portal/staff-app-sw.js?v=20260623-staff-perf", { scope: "/" })
+        .register("/portal/staff-app-sw.js?v=20260623-staff-perf2", { scope: "/" })
         .catch(function () {});
     } catch (_) {}
   }

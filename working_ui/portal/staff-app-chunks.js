@@ -4,9 +4,9 @@
  */
 (function (global) {
   "use strict";
-  if (!global.PORTAL_STAFF_APP) return;
+  /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260623-staff-perf";
+  var VER = "20260623-staff-perf2";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260614-aurora-makeup-off",
@@ -54,10 +54,10 @@
   var EXTRACTED_BEFORE_AUTH = [
     "/portal/staff-dashboard-core.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
+    "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
 
   var EXTRACTED_AFTER_AUTH = [
-    "/portal/staff-dashboard-rehydrate.js?v=" + VER,
     "/portal/staff-dashboard-achievements-boot.js?v=" + VER,
   ];
 

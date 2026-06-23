@@ -10,6 +10,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
+import { patchStaffAppPerf } from "./staff-app-perf-patch.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const DEPLOY = join(ROOT, "dist", "deploy");
@@ -39,6 +40,7 @@ if (isStaff) {
   cpSync(join(DEPLOY, "login.html"), join(DEPLOY, "index.html"));
 } else {
   cpSync(join(ROOT, "working_ui"), DEPLOY, { recursive: true });
+  patchStaffAppPerf(DEPLOY, { staffApp: false });
 }
 
 console.log("[vercel-build] Ready:", DEPLOY);

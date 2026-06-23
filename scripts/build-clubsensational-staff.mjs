@@ -215,4 +215,4 @@ if (existsSync(manifestPath)) {
 
 console.log("[build-clubsensational-staff] Done. Files under", relative(REPO_ROOT, OUT));
 
-patchStaffAppPerf(OUT);
+patchStaffAppPerf(OUT, { staffApp: true });
