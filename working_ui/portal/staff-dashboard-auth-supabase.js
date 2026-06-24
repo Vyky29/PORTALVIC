@@ -28,6 +28,12 @@ const authEmail = session && session.user ? String(session.user.email || "").tri
 await portalEnforceStaffAppPilotGate({ profile, authEmail });
 portalSyncStaffAppPilotBanner({ profile, authEmail });
 
+if (typeof window.portalStaffResolveIdentityEarlyFromSession === "function") {
+  try {
+    window.portalStaffResolveIdentityEarlyFromSession();
+  } catch (_) {}
+}
+
 if (window.dashboardData) {
   const ghostEarly =
     window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
@@ -45,11 +51,26 @@ if (window.dashboardData) {
 }
 
 if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
-  try {
-    await window.__PORTAL_STAFF_REHYDRATE__();
-  } catch (e2) {
-    console.warn("staff_dashboard: roster rehydrate after auth", e2);
-  }
+  void Promise.race([
+    window.__PORTAL_STAFF_REHYDRATE__(),
+    new Promise(function (r) {
+      setTimeout(r, typeof window !== "undefined" && window.PORTAL_STAFF_APP ? 8000 : 15000);
+    }),
+  ]).finally(function () {
+    try {
+      if (
+        window.dashboardData &&
+        window.dashboardData.portalIdentityResolved === false &&
+        typeof window.portalStaffFinishIdentityUi === "function"
+      ) {
+        window.portalStaffFinishIdentityUi(
+          (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {},
+          window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile,
+          window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
+        );
+      }
+    } catch (_) {}
+  });
 } else if (typeof window.renderHeader === "function") {
   window.renderHeader();
 }
