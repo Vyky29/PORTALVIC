@@ -108,8 +108,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09",
       "2026-06-11",
       "2026-06-16",
-      "2026-06-18",
-      "2026-06-23"
+      "2026-06-18"
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
@@ -1218,6 +1217,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   },
   "termStaffTimesheetFeedbackTrustThroughIsoByProfileKey": {
+    "berta": "2026-06-24",
     "michelle": "2026-06-24",
     "youssef": "2026-06-24",
     "luliya": "2026-06-24",
@@ -1229,6 +1229,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "sandra": "2026-06-24",
     "simon": "2026-06-24",
     "carlos": "2026-06-24"
+  },
+  "termStaffTimesheetFeedbackPendingDatesByProfileKey": {
+    "aurora": [
+      "2026-06-23"
+    ],
+    "alex": [
+      "2026-06-14"
+    ]
   },
   "termFeedbackAssumeCompleteThroughIso": "2026-06-24"
 };
