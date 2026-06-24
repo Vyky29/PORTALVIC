@@ -1294,6 +1294,19 @@
       }
       return String(it.sessionKey || '').trim();
     }
+    function portalTodaySlotOccupancyKey(it){
+      const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+      const skParts = String(it && it.sessionKey || '').split('|');
+      const start = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(base.start || skParts[1] || '')
+        : String(base.start || skParts[1] || '').trim();
+      const end = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(base.end || '')
+        : String(base.end || '').trim();
+      const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
+      const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
+      return [start, end, staff, venue].join('|');
+    }
     function portalDedupeTodayScheduleViewCards(items){
       if(!Array.isArray(items) || !items.length) return items || [];
       const makeupSlotKeys = Object.create(null);
@@ -2123,19 +2136,6 @@
         const sk = String(it.sessionKey || '');
         const p = sk.split('|');
         return p[1] || '00:00';
-      }
-      function portalTodaySlotOccupancyKey(it){
-        const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
-        const skParts = String(it && it.sessionKey || '').split('|');
-        const start = typeof portalCanonicalHmToken === 'function'
-          ? portalCanonicalHmToken(base.start || skParts[1] || '')
-          : String(base.start || skParts[1] || '').trim();
-        const end = typeof portalCanonicalHmToken === 'function'
-          ? portalCanonicalHmToken(base.end || '')
-          : String(base.end || '').trim();
-        const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
-        const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
-        return [start, end, staff, venue].join('|');
       }
       /** Dedupe cover rows injected from instructor_reassign when roster already lists the same client slot. */
       function portalTodayItemClientSlotDedupeKey(it){
