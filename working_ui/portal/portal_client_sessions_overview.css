@@ -382,3 +382,25 @@ body.portal-force-landscape{
   max-width:100%;
 }
 
+@media (min-width:720px){
+  .pp-participant-body .pcso-kpi-grid{
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .pp-participant-body .pcso-kpi-card{
+    padding:12px 12px 14px;
+  }
+  .pp-participant-body .pcso-kpi-card__head h4{
+    font-size:12px;
+  }
+  .pp-participant-body .pcso-table--parent{
+    width:100%;
+  }
+  .pp-participant-body .pcso-table--parent .pcso-tbl__parent-msg{
+    max-width:none;
+  }
+  .pp-ach-view .pp-ach-grid{
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  }
+}
+

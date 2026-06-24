@@ -10,9 +10,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import {
-  normalizeParticipantName,
   resolveParentPortalSession,
-  slugifyParticipantKey,
 } from "../_shared/parent_portal_session.ts";
 import {
   feedbackSourceFingerprint,
@@ -23,6 +21,11 @@ import {
   instructorFirstName,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
+import {
+  participantIdentityMatches,
+  resolveParticipantClientSlugs,
+  resolveParticipantLookupNames,
+} from "../_shared/participant_identity.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -74,21 +77,6 @@ function isoFromAny(raw: unknown): string {
   return "";
 }
 
-function participantMatches(
-  contactId: string,
-  displayName: string,
-  rowName: string,
-  rowId: string,
-): boolean {
-  const wantName = normalizeParticipantName(displayName);
-  const gotName = normalizeParticipantName(rowName);
-  const wantId = slugifyParticipantKey(contactId || displayName);
-  const gotId = slugifyParticipantKey(rowId || rowName);
-  if (wantId && gotId && wantId === gotId) return true;
-  if (wantName && gotName && wantName === gotName) return true;
-  return false;
-}
-
 function independenceLabel(raw: unknown): string {
   if (Array.isArray(raw)) return raw.map((x) => clean(x, 120)).filter(Boolean).join(", ");
   return clean(raw, 400);
@@ -132,7 +120,14 @@ Deno.serve(async (req) => {
 
   const displayName = clean(participant.display_name) ||
     [participant.first_name, participant.last_name].filter(Boolean).join(" ");
-  const slugId = slugifyParticipantKey(contactId);
+  const identityInput = {
+    contactId,
+    displayName,
+    firstName: clean(participant.first_name, 80),
+    lastName: clean(participant.last_name, 80),
+  };
+  const clientSlugs = resolveParticipantClientSlugs(identityInput);
+  const lookupNames = resolveParticipantLookupNames(identityInput);
 
   const { data: contactRow } = await supabase
     .from("portal_parent_contacts")
@@ -156,19 +151,23 @@ Deno.serve(async (req) => {
 
   let generalInfoSheet = clean(genRow?.general_info_sheet, 12000);
   if (!generalInfoSheet) {
-    const { data: docRows } = await supabase
-      .from("portal_participant_documents")
-      .select("payload_json")
-      .ilike("participant_name", displayName)
-      .order("submitted_at", { ascending: false })
-      .limit(3);
-    for (const doc of docRows || []) {
-      const payload = doc?.payload_json as Record<string, unknown> | null;
-      const blob = clean(payload?.general_info || payload?.client_info || payload?.info_sheet, 12000);
-      if (blob) {
-        generalInfoSheet = blob;
-        break;
+    const nameFilters = lookupNames.slice(0, 4);
+    for (const nm of nameFilters) {
+      const { data: docRows } = await supabase
+        .from("portal_participant_documents")
+        .select("payload_json, participant_name")
+        .ilike("participant_name", nm)
+        .order("submitted_at", { ascending: false })
+        .limit(3);
+      for (const doc of docRows || []) {
+        const payload = doc?.payload_json as Record<string, unknown> | null;
+        const blob = clean(payload?.general_info || payload?.client_info || payload?.info_sheet, 12000);
+        if (blob) {
+          generalInfoSheet = blob;
+          break;
+        }
       }
+      if (generalInfoSheet) break;
     }
   }
 
@@ -178,14 +177,11 @@ Deno.serve(async (req) => {
     "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
   const fbQueries = [];
-  if (displayName) {
-    fbQueries.push(supabase.from("session_feedback").select(fbSel).ilike("client_name", displayName));
+  if (clientSlugs.length) {
+    fbQueries.push(supabase.from("session_feedback").select(fbSel).in("client_id", clientSlugs));
   }
-  if (slugId) {
-    fbQueries.push(supabase.from("session_feedback").select(fbSel).eq("client_id", slugId));
-  }
-  if (contactId !== slugId) {
-    fbQueries.push(supabase.from("session_feedback").select(fbSel).eq("client_id", contactId));
+  for (const nm of lookupNames.slice(0, 4)) {
+    fbQueries.push(supabase.from("session_feedback").select(fbSel).ilike("client_name", nm));
   }
 
   const rawFeedback: Record<string, unknown>[] = [];
@@ -197,7 +193,7 @@ Deno.serve(async (req) => {
       continue;
     }
     for (const row of data || []) {
-      if (!row || !participantMatches(contactId, displayName, row.client_name, row.client_id)) continue;
+      if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
       const id = String(row.id || "");
       if (!id || seenIds.has(id)) continue;
       seenIds.add(id);
@@ -299,35 +295,24 @@ Deno.serve(async (req) => {
   }
 
   const achQueries = [];
-  if (slugId) {
+  if (clientSlugs.length) {
     achQueries.push(
       supabase
         .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, attached_at, session_feedback_id")
+        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id")
         .eq("status", "attached")
-        .eq("client_id", slugId)
+        .in("client_id", clientSlugs)
         .order("session_date", { ascending: false })
         .limit(60),
     );
   }
-  if (contactId !== slugId) {
+  for (const nm of lookupNames.slice(0, 4)) {
     achQueries.push(
       supabase
         .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, attached_at, session_feedback_id")
+        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id")
         .eq("status", "attached")
-        .eq("client_id", contactId)
-        .order("session_date", { ascending: false })
-        .limit(60),
-    );
-  }
-  if (displayName) {
-    achQueries.push(
-      supabase
-        .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, attached_at, session_feedback_id")
-        .eq("status", "attached")
-        .ilike("client_name", displayName)
+        .ilike("client_name", nm)
         .order("session_date", { ascending: false })
         .limit(60),
     );
@@ -338,7 +323,7 @@ Deno.serve(async (req) => {
   for (const q of achQueries) {
     const { data } = await q;
     for (const row of data || []) {
-      if (!row || !participantMatches(contactId, displayName, row.client_name, "")) continue;
+      if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
       const aid = String(row.id || "");
       if (!aid || seenAch.has(aid)) continue;
       seenAch.add(aid);
@@ -391,7 +376,7 @@ Deno.serve(async (req) => {
 
       for (const doc of docs || []) {
         if (!doc?.file_url) continue;
-        if (!participantMatches(contactId, displayName, String(doc.related_client || ""), "")) continue;
+        if (!participantIdentityMatches(identityInput, String(doc.related_client || ""), "")) continue;
         const { data: signed, error: signErr } = await supabase.storage
           .from(DOC_BUCKET)
           .createSignedUrl(String(doc.file_url), 3600);

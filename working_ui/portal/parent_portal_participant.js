@@ -67,7 +67,11 @@
       .join("\n");
   }
 
-  function lookupClientsInfoSeed(displayName) {
+  function lookupClientsInfoSeed(displayName, firstName, lastName) {
+    if (global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.lookupClientsInfoSheet === "function") {
+      var hit = global.PortalParticipantIdentity.lookupClientsInfoSheet(displayName, firstName, lastName);
+      if (hit) return hit;
+    }
     try {
       var rows = global.PORTAL_CLIENTS_INFO_ROWS;
       if (!Array.isArray(rows)) return "";
@@ -88,7 +92,8 @@
       fields = parseGeneralInfoSheet(g.general_info_sheet);
     }
     if (!fields.length) {
-      var seed = lookupClientsInfoSeed((data.participant || {}).display_name);
+      var p = data.participant || {};
+      var seed = lookupClientsInfoSeed(p.display_name, p.first_name, p.last_name);
       if (seed) {
         fields = parseGeneralInfoSheet(seed);
         g.general_info_sheet = seed;
@@ -111,7 +116,20 @@
   function participantPhotoHtml(p) {
     p = p || {};
     var name = p.display_name || "Participant";
-    var url = String(p.avatar_url || "").trim();
+    var contactId = p.contact_id || "";
+    if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
+      global.portalRegisterParticipantStorageAvatar(contactId, name, p.avatar_url);
+    }
+    var candidates =
+      typeof global.portalParticipantPhotoPathCandidates === "function"
+        ? global.portalParticipantPhotoPathCandidates(name, p.avatar_url || "", contactId)
+        : [];
+    if (!candidates.length && typeof global.portalParticipantPhotoUrl === "function") {
+      var one = global.portalParticipantPhotoUrl(name, p.avatar_url || "", contactId);
+      if (one) candidates = [one];
+    }
+    var url = candidates.length ? candidates[0] : "";
+    var fallbacks = candidates.slice(1).join("|");
     var initials =
       typeof global.portalParticipantInitials === "function"
         ? global.portalParticipantInitials(name)
@@ -126,7 +144,9 @@
         gCls +
         '"><img src="' +
         esc(url) +
-        '" alt="" width="64" height="64" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-pax-photo--img\');" /><span class="pp-pax-photo__init" aria-hidden="true">' +
+        '" alt="" width="64" height="64" loading="eager" decoding="async" draggable="false"' +
+        (fallbacks ? ' data-photo-fallbacks="' + esc(fallbacks) + '"' : "") +
+        ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();this.parentElement.classList.remove(\'pp-pax-photo--img\');}" /><span class="pp-pax-photo__init" aria-hidden="true">' +
         esc(initials) +
         "</span></div>"
       );
@@ -180,6 +200,11 @@
       '<span class="pp-pax-info-btn-stack">' +
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
       '<span class="pp-pax-info-caption">Sessions Overview</span></span></button></div>' +
+      '<div class="pp-pax-info-row">' +
+      '<button type="button" class="pp-pax-info-btn" data-pp-open="achievements" aria-label="Achievement photos">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>' +
+      '<span class="pp-pax-info-caption">Achievement photos</span></span></button></div>' +
       (hasAquatics
         ? '<div class="pp-pax-info-row">' +
           '<button type="button" class="pp-pax-info-btn" data-pp-open="swim" aria-label="Swimming term review">' +
@@ -245,6 +270,21 @@
     );
   }
 
+  function subviewShell(data, viewName, innerHtml) {
+    return (
+      '<div class="pp-pax-shell" data-pp-view="' +
+      esc(viewName) +
+      '">' +
+      '<div class="pp-pax-sticky-hero">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+      heroHtml(data) +
+      "</div>" +
+      '<div class="pp-pax-subview-body">' +
+      innerHtml +
+      "</div></div>"
+    );
+  }
+
   function renderHub(host, data, opts) {
     ensureGeneralFields(data);
     host.innerHTML =
@@ -260,30 +300,30 @@
     ensureGeneralFields(data);
     var fields = data.general.fields || [];
     var editing = !!(opts && opts.editing);
-    host.innerHTML =
-      '<div class="pp-pax-shell" data-pp-view="general">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+    host.innerHTML = subviewShell(
+      data,
+      "general",
       '<h3 class="pp-pax-subview-title">General Information</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Updates here are shared with instructors and admin.</p>' +
-      '<div id="ppGenNotice" class="pp-notice pp-notice--info" hidden role="status"></div>' +
-      '<div class="pp-card pp-gen-card">' +
-      (editing ? generalEditHtml(fields) : generalReadHtml(fields)) +
-      "</div>" +
-      (editing
-        ? ""
-        : '<button type="button" class="pp-btn pp-btn--primary" id="ppGenEditBtn">Edit information</button>') +
-      "</div>";
+        '<p class="pp-muted pp-pax-subview-note">Updates here are shared with instructors and admin.</p>' +
+        '<div id="ppGenNotice" class="pp-notice pp-notice--info" hidden role="status"></div>' +
+        '<div class="pp-card pp-gen-card">' +
+        (editing ? generalEditHtml(fields) : generalReadHtml(fields)) +
+        "</div>" +
+        (editing
+          ? ""
+          : '<button type="button" class="pp-btn pp-btn--primary" id="ppGenEditBtn">Edit information</button>'),
+    );
     bindGeneral(host, data, opts, editing);
   }
 
   function renderSessions(host, data, opts) {
-    host.innerHTML =
-      '<div class="pp-pax-shell" data-pp-view="sessions">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+    host.innerHTML = subviewShell(
+      data,
+      "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Engagement, emotions, independence and session summaries checked for families.</p>' +
-      '<div id="ppPaxSessionsHost"></div>' +
-      "</div>";
+        '<p class="pp-muted pp-pax-subview-note">Engagement, emotions, independence and session summaries checked for families.</p>' +
+        '<div id="ppPaxSessionsHost"></div>',
+    );
     bindBack(host, data, opts);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
     if (
@@ -293,10 +333,29 @@
     ) {
       global.PortalClientSessionsOverview.renderParent(sessionsHost, {
         sessions: data.sessions || [],
-        achievements: data.achievements || [],
         term_label: data.term_label || (data.general && data.general.term_label) || "",
+        hideAchievements: true,
       });
     }
+  }
+
+  function renderAchievements(host, data, opts) {
+    var achievements = Array.isArray(data.achievements) ? data.achievements : [];
+    var gallery =
+      global.PortalClientSessionsOverview &&
+      typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
+        ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements)
+        : '<p class="pp-muted">No achievement photos shared yet.</p>';
+    host.innerHTML = subviewShell(
+      data,
+      "achievements",
+      '<h3 class="pp-pax-subview-title">Achievement photos</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Photos from sessions — tap any image to view full size.</p>' +
+        '<div class="pp-ach-view">' +
+        gallery +
+        "</div>",
+    );
+    bindBack(host, data, opts);
   }
 
   function renderSwim(host, data, opts) {
@@ -324,12 +383,7 @@
           .join("") +
         "</ul>";
     }
-    host.innerHTML =
-      '<div class="pp-pax-shell" data-pp-view="swim">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
-      '<h3 class="pp-pax-subview-title">Swimming term review</h3>' +
-      body +
-      "</div>";
+    host.innerHTML = subviewShell(data, "swim", '<h3 class="pp-pax-subview-title">Swimming term review</h3>' + body);
     bindBack(host, data, opts);
   }
 
@@ -347,6 +401,7 @@
         var view = btn.getAttribute("data-pp-open");
         if (view === "general") renderGeneral(host, data, opts);
         else if (view === "sessions") renderSessions(host, data, opts);
+        else if (view === "achievements") renderAchievements(host, data, opts);
         else if (view === "swim") renderSwim(host, data, opts);
       });
     });

@@ -721,6 +721,7 @@
     if (!hostEl) return;
     var sessions = (opts && opts.sessions) || [];
     var achievements = (opts && opts.achievements) || [];
+    var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = sessions.map(mapParentSessionRow);
     hostEl.innerHTML =
@@ -730,11 +731,17 @@
       '<p class="pcso-feed-note">Summaries are prepared for families — internal staff notes are not shown.</p></div>' +
       parentFeedbackTableHtml(feedback) +
       "</section>" +
-      '<section class="pcso-feed-section pp-ach-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
-      achievementsGalleryHtml(achievements) +
-      "</section>";
+      (hideAchievements
+        ? ""
+        : '<section class="pcso-feed-section pp-ach-section">' +
+          '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
+          achievementsGalleryHtml(achievements) +
+          "</section>");
   }
 
-  global.PortalClientSessionsOverview = { render: render, renderParent: renderParent };
+  global.PortalClientSessionsOverview = {
+    render: render,
+    renderParent: renderParent,
+    achievementsGalleryHtml: achievementsGalleryHtml,
+  };
 })(typeof window !== "undefined" ? window : globalThis);

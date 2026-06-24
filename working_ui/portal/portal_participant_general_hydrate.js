@@ -30,6 +30,15 @@
     if (id && STORE.byContactId[id]) return STORE.byContactId[id];
     var nk = normName(displayName);
     if (nk && STORE.byName[nk]) return STORE.byName[nk];
+    if (global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.canonicalClientId === "function") {
+      var want = global.PortalParticipantIdentity.canonicalClientId(displayName || clientId);
+      var keys = Object.keys(STORE.byName);
+      for (var i = 0; i < keys.length; i++) {
+        if (global.PortalParticipantIdentity.canonicalClientId(keys[i]) === want) {
+          return STORE.byName[keys[i]];
+        }
+      }
+    }
     return "";
   }
 
