@@ -1089,6 +1089,14 @@
     function portalReminderStateFingerprint(){
       var fbMap = dashboardData && dashboardData.termFeedbackByDate;
       var fbKeys = fbMap && typeof fbMap === 'object' ? Object.keys(fbMap).length : 0;
+      /* Dismissed schedule-override / shadowing keys change which attention cards (and the avatar
+         halo) are active, so they must be part of the cache key or the halo goes stale after dismiss. */
+      var dismissedSig = '0';
+      try{
+        if(typeof portalQuickMenuLoadDismissedOverrideKeys === 'function'){
+          dismissedSig = String(portalQuickMenuLoadDismissedOverrideKeys().length);
+        }
+      }catch(_){}
       return [
         dashboardData && dashboardData.portalIdentityResolved ? '1' : '0',
         dashboardData && dashboardData.portalFeedbackPipelineReady ? '1' : '0',
@@ -1096,6 +1104,7 @@
         String(Array.isArray(sessionsModel) ? sessionsModel.length : 0),
         String(fbKeys),
         String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
+        dismissedSig,
       ].join('|');
     }
     function portalInvalidateReminderStateCache(){

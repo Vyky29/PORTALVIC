@@ -2097,6 +2097,10 @@
         localStorage.setItem(PORTAL_QM_OVERRIDE_DISMISSED_KEY, JSON.stringify(cur));
       }catch(_){}
       if(sid.indexOf('revert:') === 0) portalStaffRevertQueueRemoveByRevertId(sid);
+      /* Dismissing changes the override/shadowing attention set — bust the reminder-state cache
+         so the avatar halo + quick-menu refresh immediately (not only after the next interaction). */
+      if(typeof window.portalInvalidateReminderStateCache === 'function') window.portalInvalidateReminderStateCache();
+      try{ window.__PORTAL_PENDING_OVERRIDE_DAYS__ = null; }catch(_inv){}
     };
     function portalQuickMenuDismissOverrideFromEl(el){
       if(!el) return;

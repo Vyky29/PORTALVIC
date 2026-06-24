@@ -10,7 +10,7 @@ import {
   portalLeadProgrammeWideTodayForStaff,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-john-acton-cover";
+} from "./portal_lead_session_scope.js?v=20260625-shadowing-halo-clear";
 
 const TEAM_SHIFT_CHANGE_TYPES = new Set(["instructor_reassign"]);
 const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
