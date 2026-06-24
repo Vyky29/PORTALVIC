@@ -413,7 +413,12 @@
     };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
     const PAY_RATE_BY_ROSTER_KEY = {
-      youssef: { hourly_rate: 22, role_label: "Swimming Instructor 1" },
+      youssef: {
+        roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
+        primaryRole: "Swimming Instructor",
+        hourly_rate: 22,
+        role_label: "Swimming Instructor"
+      },
       roberto: { hourly_rate: 24, role_label: "Swimming Instructor 2" },
       aurora: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
       angel: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
@@ -842,13 +847,204 @@
       const { data, error } = await supabase
         .from("schedule_overrides")
         .select(
-          "session_date, anchor_start, anchor_end, anchor_staff_id, anchor_client_id, override_type, status"
+          "session_date, anchor_start, anchor_end, anchor_staff_id, anchor_client_id, anchor_venue, override_type, status, payload"
         )
         .eq("status", "active")
         .gte("session_date", startIso)
         .lte("session_date", endIso);
       if (error || !data) return [];
       return data;
+    }
+
+    function timesheetNormStaffKey(v) {
+      const k = normTimesheetStaffKey(v);
+      if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+      if (k === "yousef" || k === "yusef") return "youssef";
+      return k;
+    }
+
+    function timesheetHmMatch(a, b) {
+      const x = hmFromDbTime(a) || String(a || "").trim().slice(0, 5);
+      const y = hmFromDbTime(b) || String(b || "").trim().slice(0, 5);
+      return x && y && x === y;
+    }
+
+    function timesheetBootstrapStaffSessions(staffId) {
+      if (typeof window.StaffDashboardSpreadsheetAdapter === "undefined" || !window.STAFF_DASHBOARD_SOURCE) {
+        return [];
+      }
+      const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
+        source: window.STAFF_DASHBOARD_SOURCE,
+        staffId: timesheetNormStaffKey(staffId)
+      });
+      return boot && Array.isArray(boot.sessionsModel) ? boot.sessionsModel : [];
+    }
+
+    function timesheetFindSourceRowForOverride(ov, dayName) {
+      const srcRows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+      const iso = String(ov.session_date || "").trim().slice(0, 10);
+      const anchor = timesheetNormStaffKey(ov.anchor_staff_id);
+      const adapter =
+        typeof window.StaffDashboardSpreadsheetAdapter !== "undefined"
+          ? window.StaffDashboardSpreadsheetAdapter
+          : null;
+      for (let i = 0; i < srcRows.length; i++) {
+        const row = srcRows[i];
+        if (!row) continue;
+        if (String(row.day || "").trim() !== String(dayName || "").trim()) continue;
+        const rowIso = String(row.session_date || row.sessionDate || "").trim().slice(0, 10);
+        if (iso && rowIso && rowIso !== iso) continue;
+        const inst = String(row.instructors || "").toLowerCase();
+        if (anchor && !inst.includes(anchor)) continue;
+        const clientId =
+          adapter && typeof adapter.canonicalParticipantClientId === "function"
+            ? adapter.canonicalParticipantClientId(row.client_name)
+            : String(row.client_name || "")
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, "_")
+                .replace(/^_+|_+$/g, "");
+        const ovClient = String(ov.anchor_client_id || "")
+          .trim()
+          .toLowerCase();
+        if (ovClient && clientId && ovClient !== clientId) continue;
+        const ovVenue = normTimesheetStaffKey(ov.anchor_venue);
+        const rowVenue = normTimesheetStaffKey(row.venue);
+        if (ovVenue && rowVenue && ovVenue !== rowVenue) continue;
+        return row;
+      }
+      return null;
+    }
+
+    function timesheetFindAnchorSessionForOverride(ov, anchorSessions, dayName, dateIso) {
+      const anchor = timesheetNormStaffKey(ov.anchor_staff_id);
+      for (let i = 0; i < (anchorSessions || []).length; i++) {
+        const s = anchorSessions[i];
+        if (!s) continue;
+        if (timesheetNormStaffKey(s.staffId) !== anchor) continue;
+        const sIso = String(s.session_date || s.sessionDate || "").trim().slice(0, 10);
+        if (dateIso && sIso && sIso !== dateIso) continue;
+        if (String(s.day || "").trim() !== String(dayName || "").trim()) continue;
+        if (
+          ov.anchor_client_id &&
+          String(s.clientId || "").trim().toLowerCase() !== String(ov.anchor_client_id).trim().toLowerCase()
+        ) {
+          continue;
+        }
+        if (ov.anchor_venue && normTimesheetStaffKey(s.venue) !== normTimesheetStaffKey(ov.anchor_venue)) {
+          continue;
+        }
+        if (ov.anchor_start && !timesheetHmMatch(ov.anchor_start, s.start)) continue;
+        return s;
+      }
+      return null;
+    }
+
+    function timesheetSyntheticCoverSession(ov, dayName, rosterKey) {
+      const row = timesheetFindSourceRowForOverride(ov, dayName);
+      const adapter =
+        typeof window.StaffDashboardSpreadsheetAdapter !== "undefined"
+          ? window.StaffDashboardSpreadsheetAdapter
+          : null;
+      const start = hmFromDbTime(ov.anchor_start) || "09:00";
+      const end = hmFromDbTime(ov.anchor_end) || hmFromDbTime(ov.anchor_start) || "10:00";
+      const clientId = row
+        ? adapter && typeof adapter.canonicalParticipantClientId === "function"
+          ? adapter.canonicalParticipantClientId(row.client_name)
+          : String(row.client_name || "").trim().toLowerCase()
+        : String(ov.anchor_client_id || "").trim().toLowerCase();
+      const service = String((row && row.service) || "Aquatic Activity").trim();
+      return {
+        staffId: timesheetNormStaffKey(rosterKey),
+        day: dayName,
+        start,
+        end,
+        venue: String((row && row.venue) || ov.anchor_venue || "").trim(),
+        clientId,
+        activity: service,
+        rosterService: service,
+        rosterArea: row && row.area != null ? String(row.area).trim() : "",
+        session_date: String(ov.session_date || "").trim().slice(0, 10),
+        status: "scheduled",
+        __portalTimesheetCover: true
+      };
+    }
+
+    /** Inject instructor_reassign cover shifts (e.g. Luliya covering Javier at Acton). */
+    function mergeInstructorCoverSessions(sessionsModel, overrides, rosterKey) {
+      const out = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
+      const me = timesheetNormStaffKey(rosterKey);
+      if (!me) return out;
+      const seen = new Set();
+      out.forEach((s) => {
+        const dk = [
+          String(s.session_date || "").slice(0, 10),
+          String(s.day || "").trim(),
+          String(s.start || "").trim(),
+          String(s.clientId || "").trim().toLowerCase(),
+          String(s.venue || "").trim().toLowerCase()
+        ].join("|");
+        seen.add(dk);
+      });
+      const anchorCache = Object.create(null);
+      (overrides || []).forEach((ov) => {
+        if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
+        const cov = timesheetNormStaffKey(ov.payload && ov.payload.covering_staff_id);
+        if (!cov || cov !== me) return;
+        const dateIso = String(ov.session_date || "").trim().slice(0, 10);
+        const dObj = parseIsoDate(dateIso);
+        const dayName = dObj ? WEEKDAY[dObj.getDay()] : "";
+        const anchor = timesheetNormStaffKey(ov.anchor_staff_id);
+        if (!anchorCache[anchor]) anchorCache[anchor] = timesheetBootstrapStaffSessions(anchor);
+        const base =
+          timesheetFindAnchorSessionForOverride(ov, anchorCache[anchor], dayName, dateIso) ||
+          timesheetSyntheticCoverSession(ov, dayName, me);
+        const synth = Object.assign({}, base, {
+          staffId: me,
+          session_date: dateIso,
+          day: dayName,
+          __portalTimesheetCover: true
+        });
+        const dk = [
+          dateIso,
+          dayName,
+          String(synth.start || "").trim(),
+          String(synth.clientId || "").trim().toLowerCase(),
+          String(synth.venue || "").trim().toLowerCase()
+        ].join("|");
+        if (seen.has(dk)) return;
+        seen.add(dk);
+        out.push(synth);
+      });
+      return out;
+    }
+
+    function timesheetCoverSessionDedupeKey(s, dateObj) {
+      const dateKey = isoDate(dateObj);
+      return [
+        dateKey,
+        String(s.start || "").trim(),
+        String(s.clientId || "").trim().toLowerCase(),
+        String(s.venue || "").trim().toLowerCase()
+      ].join("|");
+    }
+
+    function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
+      const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
+        const st = String(s.status || "").toLowerCase();
+        return st !== "closed" && st !== "available";
+      });
+      const me = timesheetNormStaffKey(rosterKey);
+      const seen = new Set();
+      const rows = [];
+      rosterSessions.forEach((s) => {
+        if (timesheetNormStaffKey(s.staffId) !== me) return;
+        const k = timesheetCoverSessionDedupeKey(s, dateObj);
+        if (seen.has(k)) return;
+        seen.add(k);
+        rows.push(s);
+      });
+      return rows;
     }
 
     /** Mirror dashboard: admin absence / slot close counts as done for timesheet pay. */
@@ -971,6 +1167,10 @@
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
       if (/day\s*centre/.test(svc)) return "Support Worker";
+      /* Acton/Northolt pool lanes — swimming rate even when roster label is Multi-Activity (cover shifts). */
+      if (/big pool|small pool|teaching pool|\blane\b/.test(area)) {
+        return "Swimming Instructor";
+      }
       if (/aquatic/.test(svc) && /big pool|small pool|teaching pool|\blane\b/.test(area)) {
         return "Swimming Instructor";
       }
@@ -1176,27 +1376,16 @@
         .filter((e) => e.hours > 0);
     }
 
-    /** One paid shift per calendar day: span from earliest start to latest end (not per client row).
-     *  Also resolves the day's pay role from the service that covers the most minutes. */
-    function dailyHoursFromSessions(sessions, dateObj, reviewMap, staffKey) {
+    /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
+    function dailyHoursSingleRoleFromSessions(rows, dateObj, reviewMap, staffKey, dominantRole, dominantService) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
       const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
-      const rows = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
-        const st = String(s.status || "").toLowerCase();
-        return st !== "closed" && st !== "available";
-      });
       if (!rows.length) return null;
       let minStart = Infinity;
       let maxEnd = -Infinity;
       let completedAll = true;
-      const roleMinutes = {};
-      let dominantRole = "";
-      let dominantService = "";
-      let bestMin = -1;
       let applySupportBuffer = false;
-      let payWeighted = 0;
-      const rolesSeen = Object.create(null);
       rows.forEach((s) => {
         const start = String(s.start || "").trim();
         const end = String(s.end || "").trim();
@@ -1205,19 +1394,9 @@
         if (b < a) b += 24 * 60;
         if (a < minStart) minStart = a;
         if (b > maxEnd) maxEnd = b;
-        const dur = Math.max(0, b - a);
         const svc = String(s.rosterService || s.service || s.activity || "").trim();
         if (typeof portalStaffSupportShiftBufferApplies === "function" && portalStaffSupportShiftBufferApplies(svc, dayName)) {
           applySupportBuffer = true;
-        }
-        const role = sessionPayRole(s);
-        if (role) {
-          roleMinutes[role] = (roleMinutes[role] || 0) + dur;
-          rolesSeen[role] = true;
-          if (roleMinutes[role] > bestMin) { bestMin = roleMinutes[role]; dominantRole = role; dominantService = svc; }
-          payWeighted += (dur / 60) * rateForRole(role);
-        } else if (!dominantService) {
-          dominantService = svc;
         }
         const rec = sessionReviewRecord(reviewMap, s, dateObj);
         if (!sessionIsCompleted(rec)) completedAll = false;
@@ -1231,16 +1410,131 @@
       let hours = Number((mins / 60).toFixed(2));
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
-      const roleCount = Object.keys(rolesSeen).length;
-      const blendedRate = hours > 0 && payWeighted > 0 ? Number((payWeighted / hours).toFixed(2)) : null;
+      const role = dominantRole || "";
+      const rate = rateForRole(role);
       return {
         date: dateKey,
         day: dayName,
         hours,
         completed: completedAll,
         service: dominantService,
-        role: roleCount > 1 ? "Mixed shift" : (dominantRole || ""),
-        blendedRate
+        role,
+        rate,
+        blendedRate: null
+      };
+    }
+
+    /** Split AM support / PM swim (etc.): one row per role with hours from session durations. */
+    function dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices) {
+      const dayName = WEEKDAY[dateObj.getDay()];
+      const dateKey = isoDate(dateObj);
+      const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
+      const roles = Object.keys(roleMinutes);
+      const entries = [];
+      roles.forEach((role) => {
+        let completedAll = true;
+        const roleRows = rows.filter((s) => sessionPayRole(s) === role);
+        roleRows.forEach((s) => {
+          const rec = sessionReviewRecord(reviewMap, s, dateObj);
+          if (!sessionIsCompleted(rec)) completedAll = false;
+        });
+        if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
+        let mins = Number(roleMinutes[role] || 0);
+        const svc = roleServices[role] || "";
+        let applySupportBuffer =
+          role === "Support Worker" &&
+          typeof portalStaffSupportShiftBufferApplies === "function" &&
+          portalStaffSupportShiftBufferApplies(svc, dayName);
+        if (applySupportBuffer) {
+          mins += 2 * (typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15);
+        }
+        let hours = Number((mins / 60).toFixed(2));
+        hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, roleRows);
+        hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, roleRows);
+        if (!(hours > 0)) return;
+        entries.push({
+          date: dateKey,
+          day: dayName,
+          hours,
+          completed: completedAll,
+          service: svc,
+          role,
+          rate: rateForRole(role),
+          blendedRate: null
+        });
+      });
+      entries.sort((a, b) => {
+        const ra = rateForRole(a.role);
+        const rb = rateForRole(b.role);
+        if (ra !== rb) return ra - rb;
+        return String(a.role).localeCompare(String(b.role));
+      });
+      return entries;
+    }
+
+    /** Build 1+ paid rows per calendar day (multi-role days split by rate). */
+    function dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey) {
+      const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
+      const rows = timesheetDayRowsForPay(sessions, dateObj, rosterKey);
+      if (!rows.length) return [];
+      const roleMinutes = {};
+      const roleServices = {};
+      const rolesSeen = Object.create(null);
+      rows.forEach((s) => {
+        const start = String(s.start || "").trim();
+        const end = String(s.end || "").trim();
+        const a = hmToMinutes(start);
+        let b = hmToMinutes(end);
+        if (b < a) b += 24 * 60;
+        const dur = Math.max(0, b - a);
+        const svc = String(s.rosterService || s.service || s.activity || "").trim();
+        const role = sessionPayRole(s);
+        if (!role) return;
+        roleMinutes[role] = (roleMinutes[role] || 0) + dur;
+        if (!roleServices[role]) roleServices[role] = svc;
+        rolesSeen[role] = true;
+      });
+      const roleCount = Object.keys(rolesSeen).length;
+      if (roleCount <= 1) {
+        let dominantRole = "";
+        let dominantService = "";
+        let bestMin = -1;
+        Object.keys(roleMinutes).forEach((role) => {
+          if (roleMinutes[role] > bestMin) {
+            bestMin = roleMinutes[role];
+            dominantRole = role;
+            dominantService = roleServices[role] || "";
+          }
+        });
+        const single = dailyHoursSingleRoleFromSessions(
+          rows,
+          dateObj,
+          reviewMap,
+          staffKey,
+          dominantRole,
+          dominantService
+        );
+        return single ? [single] : [];
+      }
+      return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+    }
+
+    /** @deprecated use dailyEntriesFromSessions — kept for callers expecting one object. */
+    function dailyHoursFromSessions(sessions, dateObj, reviewMap, staffKey) {
+      const entries = dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey);
+      if (!entries.length) return null;
+      if (entries.length === 1) return entries[0];
+      const hours = Number(entries.reduce((a, e) => a + e.hours, 0).toFixed(2));
+      const payWeighted = entries.reduce((a, e) => a + e.hours * Number(e.rate || 0), 0);
+      const completedAll = entries.every((e) => e.completed);
+      return {
+        date: entries[0].date,
+        day: entries[0].day,
+        hours,
+        completed: completedAll,
+        service: entries.map((e) => e.service).filter(Boolean).join(" · "),
+        role: entries.map((e) => e.role).join(" + "),
+        blendedRate: hours > 0 ? Number((payWeighted / hours).toFixed(2)) : null
       };
     }
 
@@ -1567,7 +1861,17 @@
 
       const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
       applyRosterPayRateFallback(state.staffRosterKey);
-      if (!sessionsModel.length) {
+      const scheduleOverrides = await fetchScheduleOverridesForPeriod(
+        supabase,
+        state.periodStart,
+        state.periodEnd
+      );
+      const sessionsWithCover = mergeInstructorCoverSessions(
+        sessionsModel,
+        scheduleOverrides,
+        state.staffRosterKey
+      );
+      if (!sessionsWithCover.length) {
         const note = document.getElementById("statusNote");
         if (note) {
           note.textContent = state.staffRosterKey
@@ -1583,9 +1887,9 @@
       state.hourlyRate = Number(pay.hourly_rate || 0);
 
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
-      const reviewMap = await buildReviewMap(supabase, state.userId, sessionsModel, dates);
+      const reviewMap = await buildReviewMap(supabase, state.userId, sessionsWithCover, dates);
       state.entries = dates
-        .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap, state.staffRosterKey))
+        .flatMap((d) => dailyEntriesFromSessions(sessionsWithCover, d, reviewMap, state.staffRosterKey))
         .filter(Boolean);
       const extraSessions = await fetchTrainingShadowingEntries(supabase, state.staffRosterKey, state.periodStart, state.periodEnd);
       if (extraSessions.length) {
@@ -1593,7 +1897,9 @@
       }
       state.entries.forEach((e) => {
         const flat = serviceFlatRate(e.service || e.role);
-        e.rate = e.blendedRate != null ? e.blendedRate : (flat != null ? flat : rateForRole(e.role));
+        if (e.rate == null) {
+          e.rate = flat != null ? flat : rateForRole(e.role);
+        }
       });
       state.payableEntries = state.entries.filter((e) => e.completed);
       state.pendingEntries = state.entries.filter((e) => !e.completed);

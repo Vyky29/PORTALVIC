@@ -14293,27 +14293,7 @@
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }
       portalQuickMenuEntryMode = 'logo-lite';
-      if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
-      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: true });
-      var deferSync = function(){
-        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-          portalSyncAnnouncementsAndRemindersUi();
-        }else{
-          if(typeof renderNotices === 'function') renderNotices();
-          if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-        }
-        if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function'){
-          syncPortalQuickMenuNotificationsGroupVisibility();
-        }
-        if(typeof syncPortalHeaderAlertChrome === 'function'){
-          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
-        }
-      };
-      if(typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(function(){ requestAnimationFrame(deferSync); });
-      }else{
-        setTimeout(deferSync, 0);
-      }
+      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: false });
     }
     function handleHeaderLogoAlertsClick(){
       if(window.__PORTAL_HALO_MENU_OPENING__) return;
@@ -14346,7 +14326,8 @@
       wrap.hidden = true;
     }
 
-    function portalApplyQuickMenuEntryMode(){
+    function portalApplyQuickMenuEntryMode(opts){
+      opts = opts || {};
       const menu = document.getElementById('menuSheet');
       if(!menu) return;
       const mode = portalQuickMenuEntryMode === 'logo-lite' ? 'logo-lite' : 'full';
@@ -14354,6 +14335,18 @@
       menu.classList.toggle('menu-sheet--full', mode === 'full');
       const titleEl = document.getElementById('portalMenuSheetTitle');
       if(titleEl) titleEl.textContent = mode === 'logo-lite' ? 'Alerts/Notifications' : 'Quick menu';
+      if(opts.shellOnly){
+        if(mode === 'full'){
+          const grp = document.getElementById('portalQuickMenuNotificationsGroup');
+          if(grp) grp.hidden = true;
+          const profGrp = document.getElementById('portalAnnualProfileQuickGroup');
+          if(profGrp){
+            profGrp.hidden = true;
+            profGrp.setAttribute('aria-hidden', 'true');
+          }
+        }
+        return;
+      }
       if(mode === 'logo-lite'){
         const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
         if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(st);
@@ -14369,6 +14362,32 @@
         const stFull = typeof portalReminderState === 'function' ? portalReminderState() : null;
         if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(stFull);
         if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
+      }
+    }
+    function portalDeferQuickMenuHeavySync(opts){
+      opts = opts || {};
+      var run = function(){
+        if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
+        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
+          void portalHydrateAnnouncementsFromSupabase();
+        }
+        if(!opts.skipReminderSync){
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+          if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function'){
+            syncPortalQuickMenuNotificationsGroupVisibility();
+          }
+          if(typeof syncPortalHeaderAlertChrome === 'function'){
+            syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+          }
+          if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
+        }
+      };
+      if(typeof requestAnimationFrame === 'function'){
+        requestAnimationFrame(function(){ requestAnimationFrame(run); });
+      }else{
+        setTimeout(run, 0);
       }
     }
     function syncPortalQuickMenuNotificationsGroupVisibility(){
@@ -17119,11 +17138,7 @@
         renderSafeguardingFeedbackPolicySheet();
       }
       if(id === 'menuSheet'){
-        if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
-        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
-        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
-          void portalHydrateAnnouncementsFromSupabase();
-        }
+        if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode({ shellOnly: true });
       }
       if(id === 'setupReminderSheet' && backdropEl){
         backdropEl.classList.add('sheet-backdrop--focus');
@@ -17157,17 +17172,8 @@
         if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
         setClientsSheetTab('my');
       }
-      if(id === 'menuSheet' && !opts.skipReminderSync && typeof syncPortalReminderChrome === 'function'){
-        var runMenuSync = function(){
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          else syncPortalReminderChrome();
-          if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
-        };
-        if(typeof requestAnimationFrame === 'function'){
-          requestAnimationFrame(runMenuSync);
-        }else{
-          setTimeout(runMenuSync, 0);
-        }
+      if(id === 'menuSheet'){
+        portalDeferQuickMenuHeavySync({ skipReminderSync: !!opts.skipReminderSync });
       }
       if(id === 'alertsNotificationsSheet'){
         if(typeof window.portalOnAlertsSheetOpened === 'function'){
