@@ -52,7 +52,16 @@
     } catch (_) {}
   }
 
-  async function runLogout() {
+  async function runLogout(triggerBtn) {
+    if (triggerBtn && !triggerBtn.disabled) {
+      try {
+        triggerBtn.disabled = true;
+        triggerBtn.setAttribute("aria-busy", "true");
+        var label = String(triggerBtn.textContent || "").trim();
+        if (label) triggerBtn.setAttribute("data-portal-logout-label", label);
+        triggerBtn.textContent = "Signing out…";
+      } catch (_) {}
+    }
     try {
       if (typeof window.portalEndVisitSession === "function") {
         await window.portalEndVisitSession();
@@ -100,7 +109,7 @@
         function (e) {
           e.preventDefault();
           e.stopPropagation();
-          void runLogout();
+          void runLogout(btn);
         },
         true
       );
@@ -116,7 +125,7 @@
         function (e) {
           e.preventDefault();
           e.stopPropagation();
-          void runLogout();
+          void runLogout(topbarBtn);
         },
         true
       );
@@ -129,4 +138,5 @@
     wireLogout();
   }
   window.addEventListener("portal:supabase-ready", wireLogout);
+  window.addEventListener("portal:staff-identity-resolved", wireLogout);
 })();

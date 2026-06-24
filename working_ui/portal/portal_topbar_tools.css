@@ -110,6 +110,24 @@ header.topbar .topbar{
   gap:0;
   overflow:hidden;
 }
+.topbar-profile-card:has(#topbarStaffSignOut:not([hidden])){
+  grid-template-rows:minmax(0,1fr) var(--topbar-name-band-h) auto;
+}
+.topbar-profile-card .topbar-sign-out-btn{
+  grid-row:3;
+  justify-self:center;
+  align-self:center;
+  margin:0 0 4px;
+  min-height:22px;
+  padding:2px 10px 3px;
+  z-index:2;
+  position:relative;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.topbar-profile-card #topbarStaffSignOut[hidden]{
+  display:none !important;
+}
 .topbar-profile-card[data-gender="m"]{
   border-color:var(--topbar-profile-male-border);
   background:var(--topbar-profile-male-bg);
