@@ -326,6 +326,11 @@
             window.portalInductionSyncQuickMenu();
           }
         }
+        if(typeof window.portalStaffKickScheduleOverridesHydrate === "function"){
+          void window.portalStaffKickScheduleOverridesHydrate();
+        }else{
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+        }
       }
       async function rehydrateFromProfile(){
         if (_staffRehydratePromise) return _staffRehydratePromise;
@@ -814,8 +819,8 @@
                 window.portalHandleScheduleOverrideUndoFromRealtimePayload(payload);
               }
             }catch(_undo){}
-            if(typeof portalRefreshScheduleOverridesCache === "function"){
-              await portalRefreshScheduleOverridesCache();
+            if(typeof window.portalRefreshScheduleOverridesCache === "function"){
+              await window.portalRefreshScheduleOverridesCache();
             }
             _portalStaffRebuildAfterOverridesFetch(staffId);
             try{
@@ -914,9 +919,9 @@
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
             }
             if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
-            if(typeof portalRefreshScheduleOverridesCache === 'function'){
+            if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
-                portalRefreshScheduleOverridesCache({ termCalendar: false }),
+                window.portalRefreshScheduleOverridesCache({ termCalendar: false }),
                 new Promise(function(r){ setTimeout(r, 4000); })
               ]);
               if(runId !== _rehydrateRun) return;
@@ -954,9 +959,9 @@
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
             }
             if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
-            if(typeof portalRefreshScheduleOverridesCache === 'function'){
+            if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
-                portalRefreshScheduleOverridesCache({ termCalendar: false }),
+                window.portalRefreshScheduleOverridesCache({ termCalendar: false }),
                 new Promise(function(r){ setTimeout(r, 4000); })
               ]);
               if(runId !== _rehydrateRun) return;
@@ -973,8 +978,8 @@
           void (async function portalStaffBackgroundRosterRefresh(){
           try{
             if (runId !== _rehydrateRun) return;
-            if(typeof portalRefreshScheduleOverridesCache === "function"){
-              await portalRefreshScheduleOverridesCache({ termCalendar: false });
+            if(typeof window.portalRefreshScheduleOverridesCache === "function"){
+              await window.portalRefreshScheduleOverridesCache({ termCalendar: false });
               if (runId !== _rehydrateRun) return;
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }
@@ -983,8 +988,8 @@
             }
             if (runId !== _rehydrateRun) return;
             _finishStaffRehydrateUi();
-            if(typeof portalRefreshScheduleOverridesCache === "function"){
-              await portalRefreshScheduleOverridesCache({ termCalendar: true });
+            if(typeof window.portalRefreshScheduleOverridesCache === "function"){
+              await window.portalRefreshScheduleOverridesCache({ termCalendar: true });
               if (runId !== _rehydrateRun) return;
               _portalStaffRebuildAfterOverridesFetch(staffId);
               _finishStaffRehydrateUi();

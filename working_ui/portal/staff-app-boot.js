@@ -33,7 +33,7 @@
     return isHandheld;
   };
 
-  var VER = "20260625-core-split";
+  var VER = "20260625-john-acton-today";
 
   try {
     var pre = document.createElement("link");
@@ -56,9 +56,9 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-core-split");
-    preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-core-split");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-core-split");
+    preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-john-acton-today");
+    preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-john-acton-today");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-john-acton-today");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }

@@ -706,4 +706,5 @@ if (typeof window !== "undefined") {
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;
   window.portalLeadCollectProgrammeWideSessionsModel = portalLeadCollectProgrammeWideSessionsModel;
+  try{ window.dispatchEvent(new CustomEvent('portal:lead-programme-wide-ready')); }catch(_){}
 }

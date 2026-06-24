@@ -62,7 +62,7 @@
     }else{
       portalStartTopbarLiveClock();
     }
-    let DEMO_VIEW_DAY = portalWeekdayLongEnGB(new Date());
+    var DEMO_VIEW_DAY = portalWeekdayLongEnGB(new Date());
     /** Optional local preview only: `?portalPreview=teflon` (not used on Vercel production). */
     function portalStaffDashIsEditorPreviewMode(){
       try{
@@ -73,10 +73,10 @@
     }
     /** Live: no rota id until `rehydrateFromProfile` maps Supabase `staff_profile`. Preview: sample `teflon` rota only. */
     window.portalParticipantsSheetStaffOnly = true;
-    let STAFF_DASHBOARD_ID = '';
-    let __spreadsheetBoot = null;
-    let sessionsModel = [];
-    let clientNotesById = {};
+    var STAFF_DASHBOARD_ID = '';
+    var __spreadsheetBoot = null;
+    var sessionsModel = [];
+    var clientNotesById = {};
     if(portalStaffDashIsEditorPreviewMode()){
       STAFF_DASHBOARD_ID = 'teflon';
       var _staffDashSource = typeof window.portalResolveStaffDashboardSource === 'function'
