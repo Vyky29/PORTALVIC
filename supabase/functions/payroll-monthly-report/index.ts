@@ -35,13 +35,22 @@
 //   SUPABASE_URL                 (auto)
 //   SUPABASE_SERVICE_ROLE_KEY    (auto)
 //   PAYROLL_CRON_SECRET          shared secret required on every request
-//   RESEND_API_KEY               Resend API key (https://resend.com)
-//   PAYROLL_REPORT_FROM          verified sender, e.g. "ClubSENsational Payroll <payroll@clubsensational.org>"
-//   PAYROLL_REPORT_TO            comma-separated recipients (accountant, admin)
+//   PAYROLL_REPORT_TO            comma/semicolon list of recipients (accountant, admin).
+//                                Falls back to PORTAL_ADMIN_FORMS_EMAILS, then the SMTP sender.
+//
+// Email transport (first one available wins):
+//   1) SMTP  — SMTP_HOST/SMTP_PORT/SMTP_SECURE/SMTP_USER/SMTP_PASS/SMTP_FROM
+//              (the same Google Workspace SMTP used for parent emails). Preferred.
+//   2) Resend — RESEND_API_KEY + PAYROLL_REPORT_FROM (fallback only).
+//   From header: PAYROLL_REPORT_FROM → SMTP_FROM → PORTAL_MAIL_FROM.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { PAYROLL_LOGO_BASE64 } from "./logo_base64.ts";
+import {
+  readParentNotifySmtpConfig,
+  sendEmailWithAttachmentViaSmtp,
+} from "../_shared/portal_parent_messaging.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -766,16 +775,38 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Recipients: PAYROLL_REPORT_TO → admin forms emails → the SMTP sender (self).
+  const splitEmails = (raw: string): string[] =>
+    Array.from(
+      new Set(
+        String(raw || "")
+          .split(/[,;]/)
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    );
+
+  const smtpConfig = readParentNotifySmtpConfig();
   const apiKey = env("RESEND_API_KEY");
-  const from = env("PAYROLL_REPORT_FROM");
-  const toList = env("PAYROLL_REPORT_TO")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!apiKey || !from || !toList.length) {
+  const from =
+    env("PAYROLL_REPORT_FROM") ||
+    env("SMTP_FROM") ||
+    env("PORTAL_MAIL_FROM") ||
+    (smtpConfig ? smtpConfig.from : "");
+  let toList = splitEmails(env("PAYROLL_REPORT_TO"));
+  if (!toList.length) toList = splitEmails(env("PORTAL_ADMIN_FORMS_EMAILS"));
+  if (!toList.length && smtpConfig) {
+    const selfAddr = smtpConfig.from || smtpConfig.user;
+    if (selfAddr) toList = splitEmails(selfAddr);
+  }
+
+  const canSmtp = !!smtpConfig && toList.length > 0;
+  const canResend = !!apiKey && !!from && toList.length > 0;
+  if (!canSmtp && !canResend) {
     return json(500, {
       ok: false,
-      error: "Email not configured (RESEND_API_KEY / PAYROLL_REPORT_FROM / PAYROLL_REPORT_TO)",
+      error:
+        "Email not configured. Set SMTP_* (preferred) or RESEND_API_KEY, plus PAYROLL_REPORT_TO recipients.",
       summary,
     });
   }
@@ -793,17 +824,52 @@ Deno.serve(async (req: Request) => {
       : "") +
     `<p>Net = Gross minus any late penalty. Please apply tax/NI per each worker's HMRC code.</p>`;
 
+  const subject = `Payroll report — ${label}`;
+  const filename = `payroll-${targetMonthIso.slice(0, 7)}.pdf`;
+  const pdfBase64 = toBase64(pdfBytes);
+
+  // Prefer the portal's own Google Workspace SMTP (same secrets used for parent
+  // emails); fall back to Resend only if SMTP is not configured or fails.
+  if (canSmtp && smtpConfig) {
+    const replyTo = env("PORTAL_MAIL_REPLY_TO") || undefined;
+    const smtpRes = await sendEmailWithAttachmentViaSmtp({
+      config: smtpConfig,
+      to: toList,
+      subject,
+      html,
+      replyTo,
+      fromOverride: from || undefined,
+      attachment: { filename, contentBase64: pdfBase64, mimeType: "application/pdf" },
+    });
+    if (smtpRes.ok) {
+      return json(200, {
+        ok: true,
+        sent: true,
+        via: "smtp",
+        authVia,
+        to: toList,
+        summary,
+        penaltiesRecorded,
+        providerResponse: smtpRes.id,
+      });
+    }
+    if (!canResend) {
+      return json(502, { ok: false, error: `Email send failed (smtp): ${smtpRes.error}`, summary });
+    }
+    // else: fall through to Resend
+  }
+
   try {
     const result = await sendEmail({
       apiKey,
       from,
       to: toList,
-      subject: `Payroll report — ${label}`,
+      subject,
       html,
-      filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
-      pdfBase64: toBase64(pdfBytes),
+      filename,
+      pdfBase64,
     });
-    return json(200, { ok: true, sent: true, authVia, to: toList, summary, penaltiesRecorded, providerResponse: result });
+    return json(200, { ok: true, sent: true, via: "resend", authVia, to: toList, summary, penaltiesRecorded, providerResponse: result });
   } catch (e) {
     return json(502, { ok: false, error: `Email send failed: ${e?.message || e}`, summary });
   }

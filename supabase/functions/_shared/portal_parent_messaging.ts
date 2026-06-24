@@ -304,6 +304,113 @@ export async function sendParentEmailViaSmtp(opts: {
   }
 }
 
+/** RFC 2045 — base64 attachment bodies must be wrapped to <=76 chars per line. */
+function wrapBase64(b64: string): string {
+  const clean = String(b64 || "").replace(/\s+/g, "");
+  const lines: string[] = [];
+  for (let i = 0; i < clean.length; i += 76) lines.push(clean.slice(i, i + 76));
+  return lines.join("\r\n");
+}
+
+/**
+ * Send an HTML email (optionally with a single base64 attachment, e.g. a PDF)
+ * through the same Google Workspace SMTP used for parent notifications. Reuses
+ * the SMTP_* secrets already configured for the portal — no Resend needed.
+ */
+export async function sendEmailWithAttachmentViaSmtp(opts: {
+  config: ParentNotifySmtpConfig;
+  to: string[];
+  subject: string;
+  html: string;
+  replyTo?: string;
+  fromOverride?: string;
+  attachment?: { filename: string; contentBase64: string; mimeType?: string };
+}): Promise<SendEmailResult> {
+  const recipients = (opts.to || []).map((r) => String(r || "").trim()).filter(Boolean);
+  if (!recipients.length) return { ok: false, error: "smtp_no_recipients" };
+
+  const fromRaw = String(opts.fromOverride || "").trim() || opts.config.from;
+  const fromHeader = formatFromHeader(fromRaw);
+  const fromEnvelope = parseMailbox(opts.config.from).address || opts.config.user;
+  const messageId = `portal-${crypto.randomUUID()}@${fromEnvelope.split("@")[1] || "clubsensational.org"}`;
+  const mixedBoundary = `portal_mix_${crypto.randomUUID().replace(/-/g, "")}`;
+  const altBoundary = `portal_alt_${crypto.randomUUID().replace(/-/g, "")}`;
+
+  const headers = [
+    `From: ${fromHeader}`,
+    `To: ${recipients.join(", ")}`,
+    `Subject: ${encodeSubject(opts.subject)}`,
+    `Message-ID: <${messageId}>`,
+    "MIME-Version: 1.0",
+  ];
+  if (opts.replyTo) headers.push(`Reply-To: ${opts.replyTo}`);
+
+  const altPart = [
+    `--${altBoundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    opts.html,
+    `--${altBoundary}--`,
+    "",
+  ].join("\r\n");
+
+  let body: string;
+  if (opts.attachment && opts.attachment.contentBase64) {
+    const mime = opts.attachment.mimeType || "application/pdf";
+    const fname = opts.attachment.filename || "attachment.pdf";
+    headers.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`);
+    body = [
+      `--${mixedBoundary}`,
+      `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+      "",
+      altPart,
+      `--${mixedBoundary}`,
+      `Content-Type: ${mime}; name="${fname}"`,
+      "Content-Transfer-Encoding: base64",
+      `Content-Disposition: attachment; filename="${fname}"`,
+      "",
+      wrapBase64(opts.attachment.contentBase64),
+      `--${mixedBoundary}--`,
+      "",
+    ].join("\r\n");
+  } else {
+    headers.push(`Content-Type: multipart/alternative; boundary="${altBoundary}"`);
+    body = altPart;
+  }
+
+  let conn: SmtpConn | null = null;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let carry: { value: string } | null = null;
+  try {
+    const session = await smtpConnect(opts.config);
+    conn = session.conn;
+    reader = session.reader;
+    carry = session.carry;
+
+    await smtpCommand(conn, reader, carry, `MAIL FROM:<${fromEnvelope}>`);
+    for (const rcpt of recipients) {
+      const addr = parseMailbox(rcpt).address || rcpt;
+      await smtpCommand(conn, reader, carry, `RCPT TO:<${addr}>`);
+    }
+    await smtpCommand(conn, reader, carry, "DATA", 354, 354);
+    await conn.write(
+      new TextEncoder().encode(dotStuff(`${headers.join("\r\n")}\r\n\r\n${body}`) + "\r\n.\r\n"),
+    );
+    const sent = await smtpReadResponse(reader, carry);
+    if (sent.code < 200 || sent.code > 299) {
+      return { ok: false, error: `smtp_${sent.code}:${sent.text.slice(0, 400)}` };
+    }
+    return { ok: true, id: messageId };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  } finally {
+    if (conn && reader && carry) {
+      await smtpClose(conn, reader, carry);
+    }
+  }
+}
+
 export type SendWhatsappResult =
   | { ok: true; id: string; channel: "whatsapp" | "sms" }
   | { ok: false; error: string };
