@@ -365,6 +365,7 @@
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
   window.portalBootstrapFromMachineFallback = portalBootstrapFromMachineFallback;
   window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
+  window.portalProfileRosterKey = portalProfileRosterKey;
   window.portalStaffIsExecOrAdminProfile = portalStaffIsExecOrAdminProfile;
   window.portalStaffShouldIgnoreTeflonPreview = portalStaffShouldIgnoreTeflonPreview;
   window.portalStaffClearTeflonPreviewFromUrl = portalStaffClearTeflonPreviewFromUrl;
