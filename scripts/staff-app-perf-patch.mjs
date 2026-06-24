@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260625-slot-occupy-fix";
+const VER = "20260625-reassign-wide-fix";
 
 const STAFF_DASHBOARD_CORE_SCRIPTS = [
   "staff-dashboard-topbar.js",

@@ -2482,19 +2482,6 @@
       var iso = String(isoYmd || '').trim().slice(0, 10);
       var sid = String(staffId || '').trim().toLowerCase();
       if(!sid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
-      if(typeof window.portalLeadCollectProgrammeWideSessionsModel === 'function'){
-        try{
-          var profFn = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-          var emFn = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
-            && window.__PORTAL_SUPABASE__.session.user
-            ? window.__PORTAL_SUPABASE__.session.user.email
-            : '';
-          var delegated = window.portalLeadCollectProgrammeWideSessionsModel(iso, profFn, emFn, sid);
-          if(delegated && Array.isArray(delegated.sessionsModel) && delegated.sessionsModel.length){
-            return delegated;
-          }
-        }catch(_del){}
-      }
       if(!portalStaffProgrammeLeadWideDayFallback(sid, iso)) return null;
       var scopes = portalStaffLeadScopesForStaffId(sid);
       var src = typeof window.portalResolveStaffDashboardSource === 'function'
@@ -2528,17 +2515,33 @@
           var rowIso = String(s.session_date || s.sessionDate || '').trim().slice(0, 10);
           if(rowIso !== iso) return;
           if(!portalStaffLeadSessionRowInScope(s, iso, scopes)) return;
+          var effectiveSession = s;
+          try{
+            var reassign = typeof portalTodayScheduleOverrideForSession === 'function'
+              ? portalTodayScheduleOverrideForSession(s, iso)
+              : null;
+            if(reassign && String(reassign.override_type || '').trim() === 'instructor_reassign'){
+              var coverKey = portalStaffNormLeadScopeKey(reassign.payload && reassign.payload.covering_staff_id);
+              if(coverKey){
+                effectiveSession = Object.assign({}, s, {
+                  staffId: coverKey,
+                  __portalRosterInstructorBeforeOverride: s.staffId,
+                  __portalInstructorReassignOverride: reassign
+                });
+              }
+            }
+          }catch(_reassign){}
           var dk = [
             rowIso,
-            String(s.start || '').trim(),
-            String(s.end || '').trim(),
-            String(s.venue || '').trim().toLowerCase(),
-            String(s.clientId || '').trim().toLowerCase(),
-            String(s.staffId || '').trim().toLowerCase()
+            String(effectiveSession.start || '').trim(),
+            String(effectiveSession.end || '').trim(),
+            String(effectiveSession.venue || '').trim().toLowerCase(),
+            String(effectiveSession.clientId || '').trim().toLowerCase(),
+            String(effectiveSession.staffId || '').trim().toLowerCase()
           ].join('\0');
           if(seen[dk]) return;
           seen[dk] = true;
-          merged.push(s);
+          merged.push(effectiveSession);
         });
       });
       merged.sort(function(a, b){ return String(a.start || '').localeCompare(String(b.start || '')); });
