@@ -129,6 +129,10 @@ async function storeInboundMessages(
 
   const metaPhoneId = str(value.metadata?.phone_number_id, 64);
   if (phoneNumberIdFilter && metaPhoneId && metaPhoneId !== phoneNumberIdFilter) {
+    console.warn(
+      "[portal-whatsapp-webhook] skipped inbound — phone_number_id mismatch",
+      { expected: phoneNumberIdFilter, got: metaPhoneId },
+    );
     return 0;
   }
 
@@ -204,9 +208,13 @@ Deno.serve(async (req) => {
 
   if (appSecret) {
     const sig = req.headers.get("X-Hub-Signature-256") || "";
+    if (!sig) {
+      console.warn("[portal-whatsapp-webhook] missing X-Hub-Signature-256 header");
+      return new Response("missing_signature", { status: 401 });
+    }
     const ok = await verifyMetaSignature(rawBody, sig, appSecret);
     if (!ok) {
-      console.warn("[portal-whatsapp-webhook] invalid signature");
+      console.warn("[portal-whatsapp-webhook] invalid signature — check META_WHATSAPP_APP_SECRET");
       return new Response("invalid_signature", { status: 401 });
     }
   }

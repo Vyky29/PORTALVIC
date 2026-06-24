@@ -31,6 +31,8 @@
     query: "",
     channel: "all",
     outcome: "all",
+    pollTimer: null,
+    realtimeChannel: null,
   };
 
   var KIND_LABELS = {
@@ -398,6 +400,7 @@
         clientDisplay: ctx.clientDisplay || null,
         sessionDate: ctx.sessionDate || null,
         venue: ctx.venue || null,
+        contextWaId: String(inRow.context_wa_id || "").trim() || null,
       }).then(function (res) {
         if (btn) {
           btn.disabled = false;
@@ -791,7 +794,7 @@
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<h1 class="page-title">Family messages</h1>' +
-      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus inbound <strong>WhatsApp replies</strong>. Use <strong>Reply</strong> on any family message to respond in the same thread.</p>' +
+      '<p class="page-intro">Outbound <strong>Send now</strong> from Scheduling, Bookings, or Ops — plus inbound <strong>WhatsApp replies</strong>. Use <strong>Reply</strong> on any family message to respond in the same thread. Refreshes automatically every 15s.</p>' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search participant, phone, text…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogChannel" class="sel portal-pnlog-toolbar__sel" aria-label="Channel filter">' +
@@ -815,11 +818,56 @@
     );
   }
 
+  function stopInboundLiveRefresh() {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+    if (state.realtimeChannel) {
+      try {
+        var client = cfg.getClient();
+        if (client && typeof client.removeChannel === "function") {
+          void client.removeChannel(state.realtimeChannel);
+        }
+      } catch (_rt) {}
+      state.realtimeChannel = null;
+    }
+  }
+
+  function startInboundLiveRefresh() {
+    stopInboundLiveRefresh();
+    state.pollTimer = setInterval(function () {
+      if (document.visibilityState !== "visible") return;
+      void loadRows(true);
+    }, 15000);
+    var client = cfg.getClient();
+    if (!client || typeof client.channel !== "function") return;
+    try {
+      state.realtimeChannel = client
+        .channel("portal_parent_whatsapp_inbound_admin")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "portal_parent_whatsapp_inbound" },
+          function () {
+            void loadRows(true);
+          }
+        )
+        .subscribe();
+    } catch (_sub) {}
+    if (!document.__portalParentNotifyLogVisBound) {
+      document.__portalParentNotifyLogVisBound = true;
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") void loadRows(true);
+      });
+    }
+  }
+
   function bindModule() {
     var root = document.getElementById("portalParentNotifyLogRoot");
     if (!root || root.getAttribute("data-bound") === "1") return;
     root.setAttribute("data-bound", "1");
     bindFilters();
+    startInboundLiveRefresh();
     void loadRows(false);
   }
 
@@ -830,5 +878,6 @@
     refresh: function () {
       return loadRows(true);
     },
+    stopLiveRefresh: stopInboundLiveRefresh,
   };
 })(typeof window !== "undefined" ? window : globalThis);

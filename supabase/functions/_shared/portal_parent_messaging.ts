@@ -314,11 +314,15 @@ export type WhatsappSendOptions = {
   kind?: string;
   instructorPhotoUrl?: string;
   instructorPhotoName?: string;
+  /** Reply in-thread when parent messaged within the 24h session window. */
+  contextWaId?: string;
 };
 
 /** Resolve Meta template name for parent notify kind (env fallback chain). */
 export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   const k = String(kind || "").trim().toLowerCase();
+  // Session text (not template) — required for replies in an open WhatsApp conversation.
+  if (k === "custom" || k === "reply" || k === "whatsapp_reply") return "";
   const byKind: Record<string, string> = {
     payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
     instructor_change: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",
@@ -432,12 +436,16 @@ export async function sendParentMessageViaWhatsapp(
     "en").trim() || "en";
 
   if (!template) {
-    const payload = {
+    const contextId = String(opts?.contextWaId || "").trim();
+    const payload: Record<string, unknown> = {
       messaging_product: "whatsapp",
       to,
       type: "text",
       text: { body: body.slice(0, 4096) },
     };
+    if (contextId) {
+      payload.context = { message_id: contextId };
+    }
     try {
       const res = await fetch(url, {
         method: "POST",

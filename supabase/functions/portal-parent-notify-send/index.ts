@@ -61,6 +61,7 @@ type NotifyBody = {
   venue?: unknown;
   instructorPhotoUrl?: unknown;
   instructorPhotoName?: unknown;
+  contextWaId?: unknown;
 };
 
 function str(v: unknown, max = 8000): string {
@@ -159,12 +160,14 @@ Deno.serve(async (req) => {
   }
 
   if (channel === "whatsapp" || channel === "both") {
+    const contextWaId = str(payload.contextWaId, 200);
     const waOpts = notifyKind === "whatsapp_test"
       ? { templateName: "hello_world", templateLang: "en_US" }
       : {
         kind: notifyKind,
         instructorPhotoUrl: instructorPhotoUrl || undefined,
         instructorPhotoName: instructorPhotoName || undefined,
+        contextWaId: contextWaId || undefined,
       };
     const sent = await sendParentMobileMessage(parentPhone!, bodyText, waOpts);
     if (sent.ok) {
