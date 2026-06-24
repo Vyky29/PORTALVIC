@@ -305,6 +305,12 @@
   function portalMachineRowsSnapshot() {
     if (typeof window === "undefined") return [];
     if (
+      Array.isArray(window.__STAFF_DASHBOARD_BUNDLE_ROWS__) &&
+      window.__STAFF_DASHBOARD_BUNDLE_ROWS__.length
+    ) {
+      return window.__STAFF_DASHBOARD_BUNDLE_ROWS__;
+    }
+    if (
       Array.isArray(window.__STAFF_DASHBOARD_MACHINE_ROWS__) &&
       window.__STAFF_DASHBOARD_MACHINE_ROWS__.length
     ) {

@@ -12989,4 +12989,9 @@
     "rosterMadreSource": "roster_term_master.json"
   }
 };
+  if (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) {
+    window.__STAFF_DASHBOARD_BUNDLE_ROWS__ = Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+      ? window.STAFF_DASHBOARD_SOURCE.rows.slice()
+      : [];
+  }
 })();

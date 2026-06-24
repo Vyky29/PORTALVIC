@@ -9868,6 +9868,45 @@
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
       });
     }
+    /** Timetable shift today but merged Supabase roster dropped dated rows — restore from shipped bundle once. */
+    function portalStaffMergeMachineSessionsIfShiftWithoutTodayCards(staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return false;
+      const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(!liveToday) return false;
+      const anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+        ? portalResolveTodaySectionCalendarDate()
+        : null;
+      if(!anchor || isNaN(anchor.getTime())) return false;
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+      const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+      if(!iso || !dayWord) return false;
+      if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+        && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return false;
+      if(typeof portalStaffLiveTodayHasScheduledShift !== 'function' || !portalStaffLiveTodayHasScheduledShift(sid, anchor)) return false;
+      try{
+        if(!window.__PORTAL_STAFF_MACHINE_TODAY_MERGE_TRIED__) window.__PORTAL_STAFF_MACHINE_TODAY_MERGE_TRIED__ = Object.create(null);
+        const mergeKey = sid + '|' + iso;
+        if(window.__PORTAL_STAFF_MACHINE_TODAY_MERGE_TRIED__[mergeKey]) return false;
+        window.__PORTAL_STAFF_MACHINE_TODAY_MERGE_TRIED__[mergeKey] = true;
+      }catch(_){ return false; }
+      if(typeof window.portalBootstrapFromMachineFallback !== 'function') return false;
+      const fb = window.portalBootstrapFromMachineFallback(sid);
+      if(!fb || !fb.boot || !Array.isArray(fb.boot.sessionsModel) || !fb.boot.sessionsModel.length) return false;
+      const onIso = fb.boot.sessionsModel.some(function(s){
+        return String(s.staffId || '').toLowerCase() === sid
+          && normaliseIsoDate(s.session_date || s.sessionDate) === iso;
+      });
+      if(!onIso) return false;
+      sessionsModel = fb.boot.sessionsModel;
+      if(fb.boot.clientNotesById){
+        clientNotesById = Object.assign({}, clientNotesById || {}, fb.boot.clientNotesById);
+      }
+      if(typeof portalApplyClientsInfoToNotes === 'function') portalApplyClientsInfoToNotes();
+      if(typeof portalStaffUpdateSessionsModelGuard === 'function') portalStaffUpdateSessionsModelGuard(sid, sessionsModel);
+      return true;
+    }
+    try{ window.portalStaffMergeMachineSessionsIfShiftWithoutTodayCards = portalStaffMergeMachineSessionsIfShiftWithoutTodayCards; }catch(_){}
     /** Any worker: model/timetable says today should have cards but the Today list is still empty (rehydrate race). */
     function portalStaffTodayScheduleCardsStillExpected(staffId, modelOverride){
       const sid = String(staffId || (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '') || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim().toLowerCase();
@@ -9904,7 +9943,19 @@
       var rosterReady = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
       var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
       var settled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
-      if(rosterReady && overridesReady && settled) return false;
+      if(rosterReady && overridesReady && settled){
+        if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+          && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid, modelOverride)){
+          return false;
+        }
+        if(typeof portalStaffMergeMachineSessionsIfShiftWithoutTodayCards === 'function'){
+          portalStaffMergeMachineSessionsIfShiftWithoutTodayCards(sid);
+          if(portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid, modelOverride)){
+            return false;
+          }
+        }
+        return false;
+      }
       if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid, anchor)) return true;
       if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return true;
       return false;
@@ -11096,6 +11147,11 @@
     function buildSelectedDayViewFromLauraModel(modelOverride, calendarIsoOverride){
       const viewDay = String(DEMO_VIEW_DAY).trim();
       const staffId = portalAuthStaffRosterId();
+      if(staffId && !calendarIsoOverride && typeof portalIsViewingLiveCalendarToday === 'function'
+        && portalIsViewingLiveCalendarToday()
+        && typeof portalStaffMergeMachineSessionsIfShiftWithoutTodayCards === 'function'){
+        try{ portalStaffMergeMachineSessionsIfShiftWithoutTodayCards(staffId); }catch(_){}
+      }
       const _rtPool = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
       const supportHidePoolNote = _rtPool === 'support' || _rtPool === 'supportlead';
       const isoPin = String(calendarIsoOverride || '').trim().slice(0, 10);
@@ -12142,7 +12198,17 @@
           && portalStaffTodayLeadShiftPanelMeta(sid)){
           return 'shift';
         }
-        if(!hydrated) return 'sync';
+        if(hydrated && settled && typeof portalStaffMergeMachineSessionsIfShiftWithoutTodayCards === 'function'){
+          try{
+            if(portalStaffMergeMachineSessionsIfShiftWithoutTodayCards(sid)){
+              todayRows = typeof buildSelectedDayViewFromLauraModel === 'function'
+                ? (buildSelectedDayViewFromLauraModel(null) || [])
+                : todayRows;
+              if(todayRows.length) return 'empty';
+            }
+          }catch(_){}
+        }
+        if(!hydrated || !settled) return 'sync';
         return 'empty';
       }
       return live ? 'empty' : 'empty';
