@@ -11991,13 +11991,19 @@
           && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
       }catch(_){ return false; }
     }
+    function portalNextSessionPreviewIsTomorrow(preview){
+      if(!preview) return false;
+      const iso = String(preview.iso || '').trim().slice(0, 10);
+      if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function') return false;
+      return portalCalendarIsoIsTomorrow(iso);
+    }
     function portalStabilizeNextSessionPreview(nextPreview, prevPreview, staffId){
       var sid = String(staffId || portalAuthStaffRosterId() || '').trim().toLowerCase();
       if(dashboardData && dashboardData.__portalStableNextSessionStaffId !== sid){
         dashboardData.__portalStableNextSessionPreview = null;
         prevPreview = null;
       }
-      if(portalNextSessionPreviewHasParticipants(nextPreview)){
+      if(portalNextSessionPreviewHasParticipants(nextPreview) && portalNextSessionPreviewIsTomorrow(nextPreview)){
         if(dashboardData){
           dashboardData.__portalStableNextSessionPreview = nextPreview;
           dashboardData.__portalStableNextSessionStaffId = sid;
@@ -12005,13 +12011,17 @@
         return nextPreview;
       }
       if(!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)){
-        return nextPreview || null;
+        return portalNextSessionPreviewIsTomorrow(nextPreview) ? nextPreview : null;
       }
       if(prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
-        && portalNextSessionPreviewHasParticipants(prevPreview)){
+        && portalNextSessionPreviewHasParticipants(prevPreview)
+        && portalNextSessionPreviewIsTomorrow(prevPreview)){
         return prevPreview;
       }
-      return nextPreview || prevPreview || null;
+      if(dashboardData){
+        dashboardData.__portalStableNextSessionPreview = null;
+      }
+      return null;
     }
     function portalRefreshNextSessionPreview(staffId){
       const id = String(staffId || portalAuthStaffRosterId() || '').trim().toLowerCase();

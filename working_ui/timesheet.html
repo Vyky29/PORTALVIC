@@ -406,7 +406,8 @@
       "b.traperocasado@gmail.com": "berta",
       "johnnyosti37@gmail.com": "john",
       "stf012@staff.import.pending": "berta",
-      "stf006@staff.import.pending": "john"
+      "stf006@staff.import.pending": "john",
+      "stf021@staff.import.pending": "lulia"
     };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
     const PAY_RATE_BY_ROSTER_KEY = {
@@ -1185,6 +1186,8 @@
       let dominantService = "";
       let bestMin = -1;
       let applySupportBuffer = false;
+      let payWeighted = 0;
+      const rolesSeen = Object.create(null);
       rows.forEach((s) => {
         const start = String(s.start || "").trim();
         const end = String(s.end || "").trim();
@@ -1201,7 +1204,9 @@
         const role = sessionPayRole(s);
         if (role) {
           roleMinutes[role] = (roleMinutes[role] || 0) + dur;
+          rolesSeen[role] = true;
           if (roleMinutes[role] > bestMin) { bestMin = roleMinutes[role]; dominantRole = role; dominantService = svc; }
+          payWeighted += (dur / 60) * rateForRole(role);
         } else if (!dominantService) {
           dominantService = svc;
         }
@@ -1217,13 +1222,16 @@
       let hours = Number((mins / 60).toFixed(2));
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
+      const roleCount = Object.keys(rolesSeen).length;
+      const blendedRate = hours > 0 && payWeighted > 0 ? Number((payWeighted / hours).toFixed(2)) : null;
       return {
         date: dateKey,
         day: dayName,
         hours,
         completed: completedAll,
         service: dominantService,
-        role: dominantRole || ""
+        role: roleCount > 1 ? "Mixed shift" : (dominantRole || ""),
+        blendedRate
       };
     }
 
@@ -1550,6 +1558,14 @@
 
       const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
       applyRosterPayRateFallback(state.staffRosterKey);
+      if (!sessionsModel.length) {
+        const note = document.getElementById("statusNote");
+        if (note) {
+          note.textContent = state.staffRosterKey
+            ? `No roster shifts found for ${state.staffRosterKey} in this pay period. Check your profile username matches the rota.`
+            : "Could not match your login to a roster profile (e.g. luliya → lulia). Contact the office.";
+        }
+      }
       state.employeeName = ghostHandoff && ghostHandoff.displayName
         ? ghostHandoff.displayName
         : resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
@@ -1568,7 +1584,7 @@
       }
       state.entries.forEach((e) => {
         const flat = serviceFlatRate(e.service || e.role);
-        e.rate = flat != null ? flat : rateForRole(e.role);
+        e.rate = e.blendedRate != null ? e.blendedRate : (flat != null ? flat : rateForRole(e.role));
       });
       state.payableEntries = state.entries.filter((e) => e.completed);
       state.pendingEntries = state.entries.filter((e) => !e.completed);
