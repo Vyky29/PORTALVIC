@@ -93,14 +93,30 @@ function londonParts(): { y: number; m: number; d: number } {
   return { y: get("year"), m: get("month"), d: get("day") };
 }
 
-/** True once the 25th (00:00 London) of the target month has arrived/passed. */
+/** One-off extensions: pay month YYYY-MM → first calendar day when cut-off has passed (London). */
+const PAYROLL_DEADLINE_DAY_EXCEPTIONS: Record<string, number> = {
+  "2026-06": 26, // June 2026: on-time through the 25th; accountant run on the 26th at 09:00.
+};
+
+function deadlineDayForMonth(targetMonthIso: string): number {
+  const ym = targetMonthIso.slice(0, 7);
+  return PAYROLL_DEADLINE_DAY_EXCEPTIONS[ym] ?? 25;
+}
+
+/** True once the payroll cut-off day (00:00 London) of the target month has arrived/passed. */
 function deadlinePassedForMonth(targetMonthIso: string): boolean {
   const tY = Number(targetMonthIso.slice(0, 4));
   const tM = Number(targetMonthIso.slice(5, 7));
   const now = londonParts();
   if (now.y !== tY) return now.y > tY;
   if (now.m !== tM) return now.m > tM;
-  return now.d >= 25;
+  return now.d >= deadlineDayForMonth(targetMonthIso);
+}
+
+function deadlineLabelForMonth(targetMonthIso: string): string {
+  const d = deadlineDayForMonth(targetMonthIso);
+  const suffix = d === 1 || d === 21 || d === 31 ? "st" : d === 2 || d === 22 ? "nd" : d === 3 || d === 23 ? "rd" : "th";
+  return `${d}${suffix}`;
 }
 
 function resolveTargetMonthIso(raw: string): string {
@@ -494,7 +510,7 @@ async function buildPdf(
   drawText("Not submitted — do NOT process this month", margin, y - 6, 12, bold, warn);
   y -= 16;
   drawText(
-    "Missed the deadline (25th, 00:00). A £5 late penalty applies to their next timesheet (paid next month).",
+    "Missed the deadline (" + deadlineLabelForMonth(targetMonthIso) + ", 00:00 London). A £5 late penalty applies to their next timesheet (paid next month).",
     margin,
     y - 4,
     8.5,
@@ -770,7 +786,7 @@ Deno.serve(async (req: Request) => {
     `<p><strong>${data.workers.length}</strong> timesheet(s) submitted · Gross £${money(data.totals.gross)} · ` +
     `Penalties £${money(data.totals.penalty)} · Net £${money(data.totals.net)}.</p>` +
     (data.notSubmitted.length
-      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (25th, 00:00) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
+      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (${deadlineLabelForMonth(targetMonthIso)}, 00:00 London) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
       : `<p>All workers with a pay rate have submitted.</p>`) +
     (data.contracts && data.contracts.length
       ? `<p><strong>${data.contracts.length}</strong> contract/invoice payment(s) listed separately (subtotal £${money(data.contractTotal || 0)}) — not part of the timesheet total.</p>`

@@ -402,6 +402,10 @@
      * rolls to next month's pay and a fixed penalty is deducted (HMRC late-reporting).
      */
     const ONTIME_DEADLINE_DAY = 24;
+    /** One-off extensions: closing month YYYY-MM → last on-time calendar day (inclusive). */
+    const PAYROLL_DEADLINE_EXCEPTIONS = {
+      "2026-06": 25
+    };
     const LATE_PENALTY_GBP = 5;
     /** Personal / placeholder Auth emails → spreadsheet roster id (berta, john, …). */
     const AUTH_EMAIL_TO_ROSTER_KEY = {
@@ -678,11 +682,17 @@
       const n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       return n.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     }
-    /** Late from the 25th in the closing month (deadline is the 24th, last day of the cycle). */
+    function onTimeDeadlineDayForPeriodEnd(periodEndIso) {
+      const end = parseIsoDate(periodEndIso);
+      if (!end) return ONTIME_DEADLINE_DAY;
+      const key = end.getFullYear() + "-" + String(end.getMonth() + 1).padStart(2, "0");
+      return PAYROLL_DEADLINE_EXCEPTIONS[key] || ONTIME_DEADLINE_DAY;
+    }
+    /** Late from the day after the on-time deadline in the closing month. */
     function submissionLateStatus() {
       const today = new Date();
       const end = parseIsoDate(state.periodEnd);
-      const deadlineDay = end ? end.getDate() : ONTIME_DEADLINE_DAY;
+      const deadlineDay = onTimeDeadlineDayForPeriodEnd(state.periodEnd);
       const sameClosingMonth = !!(
         end &&
         today.getFullYear() === end.getFullYear() &&
@@ -706,12 +716,16 @@
       const s = submissionLateStatus();
       const deadlineLabel = dayOrdinal(s.deadlineDay || ONTIME_DEADLINE_DAY);
       const lateFromLabel = dayOrdinal((s.deadlineDay || ONTIME_DEADLINE_DAY) + 1);
+      const juneExt = (s.deadlineDay || ONTIME_DEADLINE_DAY) > ONTIME_DEADLINE_DAY;
       el.hidden = false;
       el.classList.toggle("deadline-banner--late", s.isLate);
       el.classList.toggle("deadline-banner--ok", !s.isLate);
       if (s.isLate) {
         el.innerHTML =
           `<strong>Late.</strong> The deadline was the ${deadlineLabel}. If you submit now, these hours move to <strong>${esc(s.lateMonth)}</strong>'s pay (not this month) and a <strong>£${money(LATE_PENALTY_GBP)} late penalty</strong> is deducted, because worked hours must be reported to HMRC on time.`;
+      } else if (juneExt) {
+        el.innerHTML =
+          `<strong>On time.</strong> <strong>June only:</strong> submit by the <strong>${deadlineLabel}</strong> (extended deadline). This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the ${lateFromLabel} or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
       } else {
         el.innerHTML =
           `<strong>On time.</strong> Submit by the <strong>${deadlineLabel}</strong>. This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the ${lateFromLabel} or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
