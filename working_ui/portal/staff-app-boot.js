@@ -33,7 +33,7 @@
     return isHandheld;
   };
 
-  var VER = "20260625-lead-team-override-halo";
+  var VER = "20260625-lead-day-cards-nav";
 
   try {
     var pre = document.createElement("link");
@@ -56,9 +56,9 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-team-override-halo");
-    preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-team-override-halo");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-lead-team-override-halo");
+    preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
+    preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-lead-day-cards-nav");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }

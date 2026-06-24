@@ -10,7 +10,7 @@ import {
   portalLeadProgrammeWideTodayForStaff,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-lead-team-override-halo";
+} from "./portal_lead_session_scope.js?v=20260625-lead-day-cards-nav";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -610,11 +610,16 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
     if (!overrideMatchesLeadScopedRoster(ov, iso, ctx.scopes, src)) return;
+    // The lead's OWN cover / personal changes already appear (navigable) in the
+    // standard "Schedule changes" quick-menu section; keep this team list to the
+    // peers they lead so the same change is not shown twice.
+    const pl = parseOverridePayload(ov);
+    const anchorKey = canonicalStaffKey(ov.anchor_staff_id);
+    const coverKey = canonicalStaffKey(pl.covering_staff_id);
+    if (anchorKey === ctx.leadKey || coverKey === ctx.leadKey) return;
     if (ovId) seenOverrideIds.add(ovId);
     const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
     if (created && created < minCreated) return;
-
-    const pl = parseOverridePayload(ov);
     const programmeLabel = activeScopeLabelForDay(ctx.scopes, iso);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;
@@ -682,17 +687,54 @@ function renderTodayStrip(team) {
   );
 }
 
+function dayCardDateLabel(iso) {
+  try {
+    const d = new Date(iso + "T12:00:00");
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+    }
+  } catch (_) {}
+  return weekdayFromIso(iso) || iso;
+}
+
+/**
+ * One card per DAY (not per change): says which day has team changes and, when
+ * tapped, navigates to that day's detail card via the shared override handler.
+ */
 function renderQuickMenuChanges(changes) {
   if (!changes.length) return "";
   const calIcon =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
-  const btns = changes
-    .slice(0, 8)
-    .map(function (ch) {
-      const title = escHtml(ch.title || "Team shift change");
-      const sub = ch.sub ? '<span class="menu-btn-sub">' + escHtml(ch.sub) + "</span>" : "";
+
+  const byIso = {};
+  const order = [];
+  changes.forEach(function (ch) {
+    const iso = String(ch.iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    if (!byIso[iso]) {
+      byIso[iso] = { iso: iso, count: 0, programme: "" };
+      order.push(iso);
+    }
+    byIso[iso].count += 1;
+    if (!byIso[iso].programme) {
+      byIso[iso].programme = String(ch.sub || "").split(" · ")[0] || "";
+    }
+  });
+  order.sort();
+
+  const btns = order
+    .slice(0, 14)
+    .map(function (iso) {
+      const day = byIso[iso];
+      const title = escHtml(dayCardDateLabel(iso));
+      const countLabel = day.count > 1 ? day.count + " changes" : "1 change";
+      const subText = [day.programme, countLabel + " · tap to view"].filter(Boolean).join(" · ");
+      const sub = '<span class="menu-btn-sub">' + escHtml(subText) + "</span>";
       return (
-        '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--portal-pulse" aria-label="' +
+        '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--portal-pulse"' +
+        ' data-action="open-roster-override-attention" data-portal-override-nav-iso="' +
+        escHtml(iso) +
+        '" aria-label="Team changes on ' +
         title +
         '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' +
@@ -700,7 +742,7 @@ function renderQuickMenuChanges(changes) {
         "</div>" +
         '<div class="menu-btn-copy"><strong>' +
         title +
-        "</strong>" +
+        " — schedule changes</strong>" +
         sub +
         "</div>" +
         '<span class="menu-btn-chev" aria-hidden="true">›</span></button>'

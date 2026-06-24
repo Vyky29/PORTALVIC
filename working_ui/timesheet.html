@@ -738,6 +738,17 @@
       const day = anchor.getDate();
       let start; let end;
       if (day >= 25) {
+        // The new cycle normally starts on the 25th. But if the cycle that just
+        // closed (ending the 24th of THIS month) has an EXTENDED deadline that
+        // still includes today (e.g. June 2026 → 25th), keep showing the closing
+        // cycle so the worker can still submit that month's timesheet on time.
+        const closingEnd = new Date(y, m, 24);
+        const extDay = onTimeDeadlineDayForPeriodEnd(isoDate(closingEnd));
+        if (extDay > ONTIME_DEADLINE_DAY && day <= extDay) {
+          start = new Date(y, m - 1, 25);
+          end = closingEnd;
+          return { start, end };
+        }
         start = new Date(y, m, 25);
         end = new Date(y, m + 1, 24);
       } else {
