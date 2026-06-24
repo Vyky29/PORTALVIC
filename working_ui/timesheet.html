@@ -1030,15 +1030,31 @@
     }
 
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
+      const dateKey = isoDate(dateObj);
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
         const st = String(s.status || "").toLowerCase();
         return st !== "closed" && st !== "available";
       });
       const me = timesheetNormStaffKey(rosterKey);
+      /* One-off instructor_reassign overrides hand the worker's own shift to a cover instructor.
+         The dashboard hides those reassigned-away cards; mirror that here or the timesheet keeps
+         expecting feedback for shifts the worker no longer runs (e.g. Giuseppe's Acton sessions
+         moved to Luliya on 24 Jun), leaving that day stuck on "pending feedback" forever. Cover
+         sessions added for this worker carry __portalTimesheetCover and are never dropped. */
+      const reassigns = (state.scheduleOverrides || []).filter(
+        (ov) => String(ov.override_type || "").trim() === "instructor_reassign"
+      );
       const seen = new Set();
       const rows = [];
       rosterSessions.forEach((s) => {
         if (timesheetNormStaffKey(s.staffId) !== me) return;
+        if (!s.__portalTimesheetCover && reassigns.length) {
+          const reassignedAway = reassigns.some((ov) => {
+            const cov = timesheetNormStaffKey(ov.payload && ov.payload.covering_staff_id);
+            return cov && cov !== me && sessionMatchesScheduleOverride(s, dateKey, ov);
+          });
+          if (reassignedAway) return;
+        }
         const k = timesheetCoverSessionDedupeKey(s, dateObj);
         if (seen.has(k)) return;
         seen.add(k);
@@ -1893,6 +1909,7 @@
         state.periodStart,
         state.periodEnd
       );
+      state.scheduleOverrides = Array.isArray(scheduleOverrides) ? scheduleOverrides : [];
       const sessionsWithCover = mergeInstructorCoverSessions(
         sessionsModel,
         scheduleOverrides,
