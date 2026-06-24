@@ -320,7 +320,25 @@
     if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
 
     if (global.ParentPortalParticipant && typeof global.ParentPortalParticipant.render === "function") {
-      global.ParentPortalParticipant.render(host, body, { defaultTab: "sessions" });
+      global.ParentPortalParticipant.render(host, body, {
+        saveGeneralInfo: function (fields) {
+          return fetch(fn("parent-portal-general-info-save"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: anonKey(),
+              Authorization: "Bearer " + anonKey(),
+              "x-parent-portal-session": state.session.token,
+            },
+            body: JSON.stringify({ contact_id: contactId, fields: fields }),
+          }).then(function (res) {
+            return res.json().then(function (j) {
+              if (!res.ok || !j.ok) throw new Error("save_failed");
+              return j;
+            });
+          });
+        },
+      });
       if (body.pending_review_count > 0) {
         showNotice(
           $("ppParticipantNotice"),

@@ -1,5 +1,5 @@
 /**
- * Parent portal — participant detail card (General info · Sessions · Swimming term review).
+ * Parent portal — participant hub (staff-style General Info + Sessions Overview buttons).
  */
 (function (global) {
   "use strict";
@@ -22,6 +22,90 @@
     } catch (_e) {
       return String(iso);
     }
+  }
+
+  function normName(v) {
+    return String(v || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseGeneralInfoSheet(raw) {
+    var t = String(raw || "").trim();
+    if (!t) return [];
+    var chunks = [];
+    if (/\n\s*\d+\.\s+/.test(t)) {
+      chunks = t.split(/\n(?=\s*\d+\.\s+)/).map(function (s) {
+        return s.trim();
+      }).filter(Boolean);
+    }
+    if (chunks.length < 2) {
+      chunks = t.split(/\s(?=\d+\.\s+)/).map(function (s) {
+        return s.trim();
+      }).filter(Boolean);
+    }
+    var rowRe = /^(\d+)\.\s*([^:]+):\s*(.*)$/s;
+    var out = [];
+    chunks.forEach(function (chunk) {
+      var m = chunk.match(rowRe);
+      if (!m) return;
+      out.push({ num: m[1], label: m[2].trim(), value: m[3].trim() });
+    });
+    return out;
+  }
+
+  function rebuildGeneralInfoSheet(fields) {
+    return (fields || [])
+      .filter(function (f) {
+        return f && String(f.label || "").trim();
+      })
+      .map(function (f, i) {
+        var num = String(f.num || i + 1).trim();
+        return num + ". " + String(f.label).trim() + ": " + String(f.value == null ? "" : f.value).trim();
+      })
+      .join("\n");
+  }
+
+  function lookupClientsInfoSeed(displayName) {
+    try {
+      var rows = global.PORTAL_CLIENTS_INFO_ROWS;
+      if (!Array.isArray(rows)) return "";
+      var want = normName(displayName);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (!r) continue;
+        if (normName(r.client_name) === want) return String(r.client_info || "").trim();
+      }
+    } catch (_e) {}
+    return "";
+  }
+
+  function ensureGeneralFields(data) {
+    var g = data.general || {};
+    var fields = Array.isArray(g.fields) ? g.fields.slice() : [];
+    if (!fields.length && g.general_info_sheet) {
+      fields = parseGeneralInfoSheet(g.general_info_sheet);
+    }
+    if (!fields.length) {
+      var seed = lookupClientsInfoSeed((data.participant || {}).display_name);
+      if (seed) {
+        fields = parseGeneralInfoSheet(seed);
+        g.general_info_sheet = seed;
+      }
+    }
+    if (!fields.length) {
+      fields = [
+        { num: "1", label: "Medical / allergies", value: "" },
+        { num: "2", label: "Communication", value: "" },
+        { num: "3", label: "Likes / motivators", value: "" },
+        { num: "4", label: "Triggers / support strategies", value: "" },
+        { num: "5", label: "Emergency contact", value: "" },
+      ];
+    }
+    g.fields = fields;
+    data.general = g;
+    return fields;
   }
 
   function participantPhotoHtml(p) {
@@ -63,125 +147,9 @@
     return chips.join("");
   }
 
-  function generalPanelHtml(data) {
+  function heroHtml(data) {
     var p = data.participant || {};
-    var g = data.general || {};
-    var services = Array.isArray(g.services) ? g.services : [];
-    var loc = [p.city, p.postcode].filter(function (x) {
-      x = String(x || "").trim();
-      return x && x !== "—";
-    });
     return (
-      '<section class="pp-pax-panel" data-pp-panel="general">' +
-      '<div class="pp-pax-info-grid">' +
-      '<div class="pp-pax-info-row"><span class="pp-pax-info-k">Name</span><span class="pp-pax-info-v">' +
-      esc(p.display_name || "—") +
-      "</span></div>" +
-      '<div class="pp-pax-info-row"><span class="pp-pax-info-k">Date of birth</span><span class="pp-pax-info-v">' +
-      esc(p.dob_display || formatDate(p.dob_iso) || "—") +
-      "</span></div>" +
-      (loc.length
-        ? '<div class="pp-pax-info-row"><span class="pp-pax-info-k">Area</span><span class="pp-pax-info-v">' +
-          esc(loc.join(", ")) +
-          "</span></div>"
-        : "") +
-      '<div class="pp-pax-info-row"><span class="pp-pax-info-k">Term</span><span class="pp-pax-info-v">' +
-      esc(g.term_label || data.term_label || "—") +
-      "</span></div>" +
-      "</div>" +
-      '<h4 class="pp-pax-subtitle">Programmes</h4>' +
-      (services.length
-        ? '<ul class="pp-pax-service-list">' +
-          services
-            .map(function (s) {
-              return "<li>" + esc(s) + "</li>";
-            })
-            .join("") +
-          "</ul>"
-        : '<p class="pp-muted">Programme details will appear once sessions are recorded.</p>') +
-      "</section>"
-    );
-  }
-
-  function sessionsPanelHtml(data) {
-    return (
-      '<section class="pp-pax-panel" data-pp-panel="sessions" hidden>' +
-      '<div id="ppPaxSessionsHost"></div>' +
-      "</section>"
-    );
-  }
-
-  function swimPanelHtml(data) {
-    var g = data.general || {};
-    if (!g.has_aquatics) return "";
-    var reviews = Array.isArray(data.swim_term_reviews) ? data.swim_term_reviews : [];
-    var body;
-    if (!reviews.length) {
-      body =
-        '<p class="pp-muted">Your swimming term review will appear here once your instructor has completed it and the club has published it for families.</p>';
-    } else {
-      body =
-        '<ul class="pp-pax-swim-list">' +
-        reviews
-          .map(function (r) {
-            var when = formatDate(r.related_date || r.ready_at);
-            return (
-              '<li class="pp-pax-swim-item">' +
-              '<div class="pp-pax-swim-copy">' +
-              '<strong class="pp-pax-swim-title">' +
-              esc(r.title || "Swimming term review") +
-              "</strong>" +
-              '<span class="pp-muted pp-pax-swim-when">' +
-              esc(when) +
-              "</span></div>" +
-              '<a class="pp-btn pp-btn--primary pp-pax-swim-dl" href="' +
-              esc(r.download_url || "#") +
-              '" target="_blank" rel="noopener noreferrer">View PDF</a></li>"
-            );
-          })
-          .join("") +
-        "</ul>";
-    }
-    return (
-      '<section class="pp-pax-panel" data-pp-panel="swim" hidden>' +
-      '<p class="pp-muted pp-pax-swim-intro">Term review from your swimming instructor — progress, stage, and next steps.</p>' +
-      body +
-      "</section>"
-    );
-  }
-
-  function bindTabs(root, defaultTab) {
-    if (!root) return;
-    var tabs = root.querySelectorAll("[data-pp-tab]");
-    var panels = root.querySelectorAll("[data-pp-panel]");
-    function activate(id) {
-      tabs.forEach(function (btn) {
-        var on = btn.getAttribute("data-pp-tab") === id;
-        btn.classList.toggle("is-on", on);
-        btn.setAttribute("aria-selected", on ? "true" : "false");
-      });
-      panels.forEach(function (panel) {
-        panel.hidden = panel.getAttribute("data-pp-panel") !== id;
-      });
-    }
-    tabs.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        activate(btn.getAttribute("data-pp-tab") || "general");
-      });
-    });
-    activate(defaultTab || "sessions");
-  }
-
-  function render(hostEl, data, opts) {
-    if (!hostEl || !data) return;
-    opts = opts || {};
-    var p = data.participant || {};
-    var g = data.general || {};
-    var hasAquatics = !!g.has_aquatics;
-    var defaultTab = opts.defaultTab || "sessions";
-
-    hostEl.innerHTML =
-      '<div class="pp-pax-shell">' +
       '<header class="pp-pax-hero">' +
       participantPhotoHtml(p) +
       '<div class="pp-pax-hero-copy">' +
@@ -193,22 +161,131 @@
         : "") +
       '<div class="pp-chip-row">' +
       statusChips(p) +
-      "</div></div></header>" +
-      '<nav class="pp-pax-tabs" role="tablist" aria-label="Participant sections">' +
-      '<button type="button" class="pp-pax-tab" role="tab" data-pp-tab="general" aria-selected="false">General info</button>' +
-      '<button type="button" class="pp-pax-tab" role="tab" data-pp-tab="sessions" aria-selected="false">Sessions overview</button>' +
+      "</div></div></header>"
+    );
+  }
+
+  function infoButtonsHtml(data) {
+    var g = data.general || {};
+    var hasAquatics = !!g.has_aquatics;
+    return (
+      '<div class="pp-pax-info-buttons">' +
+      '<div class="pp-pax-info-row">' +
+      '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>' +
+      '<span class="pp-pax-info-caption">General Information</span></span></button></div>' +
+      '<div class="pp-pax-info-row">' +
+      '<button type="button" class="pp-pax-info-btn" data-pp-open="sessions" aria-label="Sessions Overview">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
+      '<span class="pp-pax-info-caption">Sessions Overview</span></span></button></div>' +
       (hasAquatics
-        ? '<button type="button" class="pp-pax-tab" role="tab" data-pp-tab="swim" aria-selected="false">Swimming term review</button>'
+        ? '<div class="pp-pax-info-row">' +
+          '<button type="button" class="pp-pax-info-btn" data-pp-open="swim" aria-label="Swimming term review">' +
+          '<span class="pp-pax-info-btn-stack">' +
+          '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>' +
+          '<span class="pp-pax-info-caption">Swimming term review</span></span></button></div>'
         : "") +
-      "</nav>" +
-      generalPanelHtml(data) +
-      sessionsPanelHtml(data) +
-      swimPanelHtml(data) +
+      "</div>"
+    );
+  }
+
+  function generalReadHtml(fields) {
+    if (!fields.length) {
+      return '<p class="pp-muted">No general information on file yet. Tap Edit to add details your instructors should know.</p>';
+    }
+    return (
+      '<div class="pp-gen-list" role="list">' +
+      fields
+        .map(function (f) {
+          return (
+            '<div class="pp-gen-row" role="listitem">' +
+            '<div class="pp-gen-row__label">' +
+            esc(f.label) +
+            "</div>" +
+            '<div class="pp-gen-row__value">' +
+            esc(f.value || "—") +
+            "</div></div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function generalEditHtml(fields) {
+    return (
+      '<form class="pp-gen-form" id="ppGenForm">' +
+      fields
+        .map(function (f, idx) {
+          return (
+            '<div class="pp-field pp-gen-field">' +
+            '<label for="ppGenField' +
+            idx +
+            '">' +
+            esc(f.label) +
+            "</label>" +
+            '<textarea id="ppGenField' +
+            idx +
+            '" name="field_' +
+            idx +
+            '" rows="3" data-gen-label="' +
+            esc(f.label) +
+            '" data-gen-num="' +
+            esc(f.num || String(idx + 1)) +
+            '">' +
+            esc(f.value || "") +
+            "</textarea></div>"
+          );
+        })
+        .join("") +
+      '<button type="submit" class="pp-btn pp-btn--primary" id="ppGenSaveBtn">Save changes</button>' +
+      '<button type="button" class="pp-btn pp-btn--ghost" id="ppGenCancelBtn">Cancel</button></form>'
+    );
+  }
+
+  function renderHub(host, data, opts) {
+    ensureGeneralFields(data);
+    host.innerHTML =
+      '<div class="pp-pax-shell" data-pp-view="hub">' +
+      heroHtml(data) +
+      infoButtonsHtml(data) +
+      '<p class="pp-muted pp-pax-hub-note">Choose a section — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
+    bindHub(host, data, opts);
+  }
 
-    bindTabs(hostEl, defaultTab);
+  function renderGeneral(host, data, opts) {
+    ensureGeneralFields(data);
+    var fields = data.general.fields || [];
+    var editing = !!(opts && opts.editing);
+    host.innerHTML =
+      '<div class="pp-pax-shell" data-pp-view="general">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+      '<h3 class="pp-pax-subview-title">General Information</h3>' +
+      '<p class="pp-muted pp-pax-subview-note">Updates here are shared with instructors and admin.</p>' +
+      '<div id="ppGenNotice" class="pp-notice pp-notice--info" hidden role="status"></div>' +
+      '<div class="pp-card pp-gen-card">' +
+      (editing ? generalEditHtml(fields) : generalReadHtml(fields)) +
+      "</div>" +
+      (editing
+        ? ""
+        : '<button type="button" class="pp-btn pp-btn--primary" id="ppGenEditBtn">Edit information</button>') +
+      "</div>";
+    bindGeneral(host, data, opts, editing);
+  }
 
-    var sessionsHost = hostEl.querySelector("#ppPaxSessionsHost");
+  function renderSessions(host, data, opts) {
+    host.innerHTML =
+      '<div class="pp-pax-shell" data-pp-view="sessions">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+      '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+      '<p class="pp-muted pp-pax-subview-note">Engagement, emotions, independence and session summaries checked for families.</p>' +
+      '<div id="ppPaxSessionsHost"></div>' +
+      "</div>";
+    bindBack(host, data, opts);
+    var sessionsHost = host.querySelector("#ppPaxSessionsHost");
     if (
       sessionsHost &&
       global.PortalClientSessionsOverview &&
@@ -217,11 +294,133 @@
       global.PortalClientSessionsOverview.renderParent(sessionsHost, {
         sessions: data.sessions || [],
         achievements: data.achievements || [],
-        term_label: data.term_label || g.term_label || "",
+        term_label: data.term_label || (data.general && data.general.term_label) || "",
       });
-    } else if (sessionsHost) {
-      sessionsHost.innerHTML = '<p class="pp-muted">Sessions overview is unavailable.</p>';
     }
+  }
+
+  function renderSwim(host, data, opts) {
+    var reviews = Array.isArray(data.swim_term_reviews) ? data.swim_term_reviews : [];
+    var body;
+    if (!reviews.length) {
+      body =
+        '<p class="pp-muted">Your swimming term review will appear here once your instructor has completed it and the club has published it for families.</p>';
+    } else {
+      body =
+        '<ul class="pp-pax-swim-list">' +
+        reviews
+          .map(function (r) {
+            return (
+              '<li class="pp-pax-swim-item">' +
+              '<div class="pp-pax-swim-copy"><strong class="pp-pax-swim-title">' +
+              esc(r.title || "Swimming term review") +
+              '</strong><span class="pp-muted pp-pax-swim-when">' +
+              esc(formatDate(r.related_date || r.ready_at)) +
+              '</span></div><a class="pp-btn pp-btn--primary pp-pax-swim-dl" href="' +
+              esc(r.download_url || "#") +
+              '" target="_blank" rel="noopener noreferrer">View PDF</a></li>'
+            );
+          })
+          .join("") +
+        "</ul>";
+    }
+    host.innerHTML =
+      '<div class="pp-pax-shell" data-pp-view="swim">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+      '<h3 class="pp-pax-subview-title">Swimming term review</h3>' +
+      body +
+      "</div>";
+    bindBack(host, data, opts);
+  }
+
+  function bindBack(host, data, opts) {
+    host.querySelectorAll("[data-pp-back]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        renderHub(host, data, opts);
+      });
+    });
+  }
+
+  function bindHub(host, data, opts) {
+    host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var view = btn.getAttribute("data-pp-open");
+        if (view === "general") renderGeneral(host, data, opts);
+        else if (view === "sessions") renderSessions(host, data, opts);
+        else if (view === "swim") renderSwim(host, data, opts);
+      });
+    });
+  }
+
+  function bindGeneral(host, data, opts, editing) {
+    bindBack(host, data, opts);
+    var notice = host.querySelector("#ppGenNotice");
+    var editBtn = host.querySelector("#ppGenEditBtn");
+    if (editBtn) {
+      editBtn.addEventListener("click", function () {
+        renderGeneral(host, data, Object.assign({}, opts, { editing: true }));
+      });
+    }
+    var cancelBtn = host.querySelector("#ppGenCancelBtn");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        renderGeneral(host, data, Object.assign({}, opts, { editing: false }));
+      });
+    }
+    var form = host.querySelector("#ppGenForm");
+    if (form && typeof opts.saveGeneralInfo === "function") {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var fields = [];
+        form.querySelectorAll("textarea[data-gen-label]").forEach(function (ta) {
+          fields.push({
+            num: ta.getAttribute("data-gen-num") || "",
+            label: ta.getAttribute("data-gen-label") || "",
+            value: ta.value,
+          });
+        });
+        var saveBtn = host.querySelector("#ppGenSaveBtn");
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.setAttribute("aria-busy", "true");
+        }
+        void opts
+          .saveGeneralInfo(fields)
+          .then(function (updated) {
+            if (updated && updated.general) {
+              data.general = updated.general;
+            } else {
+              data.general.fields = fields;
+              data.general.general_info_sheet = rebuildGeneralInfoSheet(fields);
+            }
+            if (notice) {
+              notice.hidden = false;
+              notice.className = "pp-notice pp-notice--info";
+              notice.textContent = "Your updates were saved. Instructors will see the new information.";
+            }
+            renderGeneral(host, data, Object.assign({}, opts, { editing: false }));
+          })
+          .catch(function () {
+            if (notice) {
+              notice.hidden = false;
+              notice.className = "pp-notice pp-notice--error";
+              notice.textContent = "Could not save — please try again.";
+            }
+          })
+          .finally(function () {
+            if (saveBtn) {
+              saveBtn.disabled = false;
+              saveBtn.removeAttribute("aria-busy");
+            }
+          });
+      });
+    }
+  }
+
+  function render(hostEl, data, opts) {
+    if (!hostEl || !data) return;
+    opts = opts || {};
+    renderHub(hostEl, data, opts);
   }
 
   global.ParentPortalParticipant = { render: render };

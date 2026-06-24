@@ -935,6 +935,7 @@
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260624-next-session-tomorrow"></script>
   <script src="/portal/portal_participant_photos.js?v=20260702-avatar-shared"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared"></script>
+  <script src="/portal/portal_participant_general_hydrate.js?v=20260703-general-info"></script>
   <script src="/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic"></script>
@@ -7400,6 +7401,10 @@
       const cid = item && item.clientId ? String(item.clientId).trim() : '';
       const c = cid && typeof clientNotesById !== 'undefined' ? clientNotesById[cid] : null;
       const name = (item && item.name) || (c && c.name) || cid;
+      if(typeof portalParticipantGeneralInfoText === 'function'){
+        const live = portalParticipantGeneralInfoText(cid, name);
+        if(live) return String(live).trim();
+      }
       if(c && c.generalInfoSheet) return String(c.generalInfoSheet).trim();
       try{
         const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
@@ -7417,6 +7422,9 @@
         const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
         if(Adapter && typeof Adapter.applyClientsInfoMerge === 'function' && clientNotesById){
           Adapter.applyClientsInfoMerge(clientNotesById);
+        }
+        if(typeof portalApplyParticipantGeneralInfoToNotes === 'function' && clientNotesById){
+          portalApplyParticipantGeneralInfoToNotes(clientNotesById);
         }
       }catch(_){}
     }

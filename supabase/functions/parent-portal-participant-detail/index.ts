@@ -19,6 +19,10 @@ import {
   sanitizeFeedbackForParents,
 } from "../_shared/parent_feedback_sanitize.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
+import {
+  instructorFirstName,
+  parseGeneralInfoSheet,
+} from "../_shared/participant_general_info.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -144,6 +148,32 @@ Deno.serve(async (req) => {
     avatar_storage_path: participant.avatar_storage_path,
   });
 
+  const { data: genRow } = await supabase
+    .from("portal_participant_general_info")
+    .select("general_info_sheet, updated_at")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  let generalInfoSheet = clean(genRow?.general_info_sheet, 12000);
+  if (!generalInfoSheet) {
+    const { data: docRows } = await supabase
+      .from("portal_participant_documents")
+      .select("payload_json")
+      .ilike("participant_name", displayName)
+      .order("submitted_at", { ascending: false })
+      .limit(3);
+    for (const doc of docRows || []) {
+      const payload = doc?.payload_json as Record<string, unknown> | null;
+      const blob = clean(payload?.general_info || payload?.client_info || payload?.info_sheet, 12000);
+      if (blob) {
+        generalInfoSheet = blob;
+        break;
+      }
+    }
+  }
+
+  const generalFields = parseGeneralInfoSheet(generalInfoSheet);
+
   const fbSel =
     "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -258,7 +288,7 @@ Deno.serve(async (req) => {
       session_date: isoFromAny(row.session_date),
       service: clean(row.service, 200),
       session_time: clean(row.session_time, 80),
-      instructor: clean(row.completed_by_name, 120),
+      instructor: instructorFirstName(row.completed_by_name),
       attendance: clean(row.attendance, 40),
       engagement_rating: row.engagement_rating,
       client_emotions: clean(row.client_emotions, 200),
@@ -402,6 +432,10 @@ Deno.serve(async (req) => {
         services,
         has_aquatics: hasAquatics,
         term_label: TERM_LABEL,
+        general_info_sheet: generalInfoSheet,
+        fields: generalFields,
+        updated_at: genRow?.updated_at || null,
+        editable: true,
       },
       sessions: sessionsOut,
       achievements,
