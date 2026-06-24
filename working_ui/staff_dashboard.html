@@ -9901,6 +9901,10 @@
       /* Timetable-only shift hints apply to live calendar today — not week/term review days. */
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       if(!liveToday) return false;
+      var rosterReady = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+      var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+      var settled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
+      if(rosterReady && overridesReady && settled) return false;
       if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid, anchor)) return true;
       if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return true;
       return false;
@@ -12061,8 +12065,11 @@
       }catch(_){}
       if(todayRows.length) return 'empty';
       const hydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+      const overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+      const settled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
       if(live && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
         && portalStaffTodayScheduleCardsStillExpected(sid)){
+        if(hydrated && overridesReady && settled) return 'empty';
         return 'sync';
       }
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
@@ -12352,7 +12359,8 @@
       }else if(!rosterReady){
         dashboardData.portalTodayNextSessionPreview = null;
         if(liveToday && id && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(id)){
-          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          var todaySettledEarly = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
+          if(!todaySettledEarly) dashboardData.portalTodayEmptyPanelMode = 'sync';
         }
       }else if(!portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
         if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
@@ -12380,7 +12388,9 @@
           rows = recoveredRows;
         }else{
           var rosterHydrated = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
-          if(!liveToday && rosterHydrated){
+          var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+          var todaySettled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
+          if((!liveToday && rosterHydrated) || (liveToday && rosterHydrated && overridesReady && todaySettled)){
             dashboardData.portalTodayEmptyPanelMode = 'empty';
           }else{
             dashboardData.portalTodayEmptyPanelMode = 'sync';
@@ -12451,10 +12461,13 @@
       if(showLiveEmptyPanel){
         if(!rosterReady){
           dashboardData.portalTodayNextSessionPreview = null;
-          dashboardData.portalTodayEmptyPanelMode = 'sync';
-          dashboardData.today = [];
-          portalApplyTodayVenueMeta();
-          return [];
+          var todaySettledPanel = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
+          if(!todaySettledPanel){
+            dashboardData.portalTodayEmptyPanelMode = 'sync';
+            dashboardData.today = [];
+            portalApplyTodayVenueMeta();
+            return [];
+          }
         }
         const preview = portalRefreshNextSessionPreview(id);
         dashboardData.portalTodayNextSessionPreview = preview;
@@ -12495,6 +12508,7 @@
           if(tries > maxTries){
             try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
             portalStaffMarkInitialTodayScheduleSettled();
+            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
             if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
             if(typeof renderToday === 'function') renderToday();
           }
