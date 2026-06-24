@@ -52,7 +52,13 @@
   ];
 
   var EXTRACTED_BEFORE_AUTH = [
-    "/portal/staff-dashboard-core.js?v=" + VER,
+    "/portal/staff-dashboard-topbar.js?v=" + VER,
+    "/portal/staff-dashboard-feedback.js?v=" + VER,
+    "/portal/staff-dashboard-calendar.js?v=" + VER,
+    "/portal/staff-dashboard-term.js?v=" + VER,
+    "/portal/staff-dashboard-participants.js?v=" + VER,
+    "/portal/staff-dashboard-today.js?v=" + VER,
+    "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

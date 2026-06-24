@@ -6,7 +6,17 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260625-source-extract";
+const VER = "20260625-core-split";
+
+const STAFF_DASHBOARD_CORE_SCRIPTS = [
+  "staff-dashboard-topbar.js",
+  "staff-dashboard-feedback.js",
+  "staff-dashboard-calendar.js",
+  "staff-dashboard-term.js",
+  "staff-dashboard-participants.js",
+  "staff-dashboard-today.js",
+  "staff-dashboard-ui.js",
+];
 
 /** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
 const STAFF_DEFERRED_TIER_PATTERNS = [
@@ -61,10 +71,13 @@ function stripLegacyAuthBootstrap(html) {
 }
 
 function buildSyncScriptTail(tierBlock) {
+  const coreTags = STAFF_DASHBOARD_CORE_SCRIPTS.map(
+    (f) => `  <script src="/portal/${f}?v=${VER}"></script>\n`,
+  ).join("");
   return (
     tierBlock +
     `  <script src="/portal/staff-dashboard-dock-boot.js?v=${VER}"></script>\n` +
-    `  <script src="/portal/staff-dashboard-core.js?v=${VER}"></script>\n` +
+    coreTags +
     `  <script src="/portal/staff-dashboard-auth-bridge.js?v=${VER}"></script>\n` +
     `  <script src="/portal/staff-dashboard-rehydrate.js?v=${VER}"></script>\n` +
     `  <script src="/portal/portal-logout-bind.js"></script>\n` +
@@ -89,7 +102,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     return;
   }
   const tierBlock = stripDeferredFromTierBlock(tierMatch[0], deferHeavyScripts);
-  const alreadyExtracted = html.includes("staff-dashboard-core.js");
+  const alreadyExtracted = html.includes("staff-dashboard-topbar.js");
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -117,7 +130,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     html = html.replace(extBlockRe, buildSyncScriptTail(tierBlock));
   } else {
     html = html.replace(extBlockRe, tierBlock);
-    console.log("[staff-app-perf-patch] staff-dashboard-core.js already external — skip inline extraction");
+    console.log("[staff-app-perf-patch] staff dashboard modules already external — skip inline extraction");
   }
 
   if (staffApp) {

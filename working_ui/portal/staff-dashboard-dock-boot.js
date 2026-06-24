@@ -1,6 +1,6 @@
 /**
  * Staff dashboard dock — early Quick menu binding + sign-out chrome.
- * Loads right after portal_sheet_back.js (before staff-dashboard-core.js on staff app).
+ * Loads right after portal_sheet_back.js (before staff-dashboard-topbar.js on staff app).
  */
 (function (global) {
   "use strict";
