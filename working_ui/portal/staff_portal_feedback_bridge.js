@@ -253,10 +253,10 @@
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
-    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) {
-      const uk = String(st.feedbackUnitKey || "");
-      return /^\d{4}-\d{2}-\d{2}\|[^|]+\|\d{1,2}:\d{2}\|aquatic/i.test(uk);
-    }
+    /* Aquatic / teaching-pool feedback is owned per worker (whether the unit key is per-slot or
+       day-level): an instructor's slot must not be validated by a support worker's submission on
+       the same client. Day Centre and Bespoke shared are the only shared units (handled above). */
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
     const uk = String(st.feedbackUnitKey || "");
     if (/multi[-\s]?activity|climbing|climb/.test(uk)) return true;
     if (uk.split("|").length >= 5 && uk.indexOf("bespoke") < 0 && uk.indexOf("day_centre") < 0) {
@@ -570,25 +570,20 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
-  /** Sunday SwimFarm hub↔pool pairs: each instructor owns their MA / aquatic / climbing slots. */
+  /** Each worker owns their MA / aquatic (teaching pool) / climbing slots — a co-worker's
+      submission only validates Day Centre and Bespoke shared sessions. */
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
-    const day =
-      String(s.day || "").trim() ||
-      (iso
-        ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("en-GB", {
-            weekday: "long",
-          })
-        : "");
-    if (day !== "Sunday") return false;
-    if (String(s.venue || "").trim().toLowerCase() !== "swimfarm") return false;
     const act = String((s.activity || s.rosterService || s.service) || "")
       .trim()
       .toLowerCase();
+    if (/day\s*centre/.test(act)) return false;
+    if (isBespokeSharedRosterSession(s)) return false;
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+    void iso;
     return false;
   }
 

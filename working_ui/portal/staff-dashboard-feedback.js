@@ -208,7 +208,9 @@
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
       return false;
     }
-    /** Substitute cover, SwimFarm Sunday slots, or climbing — only this staff's Supabase rows may mark green. */
+    /** Substitute cover, SwimFarm Sunday slots, climbing, Multi-Activity or Aquatic/teaching-pool
+        — only this staff's own Supabase rows may mark green. Day Centre and Bespoke shared remain
+        the only sessions a co-worker's submission validates. */
     function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
       if(portalSessionIsSundayInstructorCover(s)) return true;
       if(portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso)) return true;
@@ -216,6 +218,12 @@
       if(/day\s*centre/.test(act)) return false;
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
       if(act.indexOf('climbing') >= 0 || act.indexOf('climb') >= 0) return true;
+      /* A support worker's Multi-Activity submission must not paint the instructor's teaching-pool
+         (Aquatic) slot green, and vice-versa — each worker owns their own feedback for these. Only
+         Day Centre (anyone with the client during the 11am-4pm window) and Bespoke shared sessions
+         are validated by a co-worker's submission. */
+      if(/multi[-\s]?activity/.test(act)) return true;
+      if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
       return false;
     }
     function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){

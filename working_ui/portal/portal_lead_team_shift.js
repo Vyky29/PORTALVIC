@@ -10,7 +10,7 @@ import {
   portalLeadProgrammeWideTodayForStaff,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-today-override-flicker";
+} from "./portal_lead_session_scope.js?v=20260625-aquatic-own-feedback";
 
 const TEAM_SHIFT_CHANGE_TYPES = new Set(["instructor_reassign"]);
 const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
