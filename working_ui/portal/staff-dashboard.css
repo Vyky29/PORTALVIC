@@ -404,6 +404,11 @@
       .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar,
       .avatar-wrap.avatar-wrap--portal-alert-both .avatar{animation:none}
     }
+    html.portal-staff-app .avatar-wrap:not(.avatar-wrap--portal-orbit-idle) .avatar-orbit-layer--cw,
+    html.portal-staff-app .avatar-wrap:not(.avatar-wrap--portal-orbit-idle) .avatar-orbit-layer--ccw{
+      animation-play-state:running;
+      will-change:transform;
+    }
     @keyframes avatar-orbit-cw{
       from{transform:rotate(0deg)}
       to{transform:rotate(360deg)}

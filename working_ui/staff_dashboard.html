@@ -1862,6 +1862,7 @@
         if(typeof document !== 'undefined' && document.body){
           document.body.classList.remove('staff-dashboard-feedback-syncing');
         }
+        if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
       }catch(_){}
     }
     function portalStaffRefreshFeedbackDependentUi(){
@@ -4803,8 +4804,37 @@
       const st = fbMap && fbMap[String(iso || '').trim().slice(0, 10)];
       return st === 'pending' || st === 'late';
     }
+    var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
+    var _portalReminderStateCache = null;
+    var _portalReminderStateCacheKey = '';
+    function portalReminderStateFingerprint(){
+      var fbMap = dashboardData && dashboardData.termFeedbackByDate;
+      var fbKeys = fbMap && typeof fbMap === 'object' ? Object.keys(fbMap).length : 0;
+      return [
+        dashboardData && dashboardData.portalIdentityResolved ? '1' : '0',
+        dashboardData && dashboardData.portalFeedbackPipelineReady ? '1' : '0',
+        String(STAFF_DASHBOARD_ID || ''),
+        String(Array.isArray(sessionsModel) ? sessionsModel.length : 0),
+        String(fbKeys),
+        String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
+      ].join('|');
+    }
+    function portalInvalidateReminderStateCache(){
+      _portalReminderStateCache = null;
+      _portalReminderStateCacheKey = '';
+      _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
+    }
+    window.portalInvalidateReminderStateCache = portalInvalidateReminderStateCache;
     function portalOutstandingSessionFeedbackCountAcrossTerm(){
       try{
+        var fp = typeof portalReminderStateFingerprint === 'function' ? portalReminderStateFingerprint() : '';
+        var now = Date.now();
+        if(
+          _portalOutstandingFbCountCache.key === fp
+          && now - _portalOutstandingFbCountCache.at < 20000
+        ){
+          return _portalOutstandingFbCountCache.n;
+        }
         if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
           rebuildTermShiftAndFeedbackFromSessionModel();
@@ -4926,10 +4956,22 @@
             count += dayCount;
           });
         })();
-        return Math.max(0, count);
+        var result = Math.max(0, count);
+        _portalOutstandingFbCountCache = { key: fp, n: result, at: Date.now() };
+        return result;
       }catch(_){ return 0; }
     }
     function portalReminderState(){
+      var fp = typeof portalReminderStateFingerprint === 'function' ? portalReminderStateFingerprint() : '';
+      if(_portalReminderStateCache && _portalReminderStateCacheKey === fp){
+        return _portalReminderStateCache;
+      }
+      var st = portalReminderStateUncached();
+      _portalReminderStateCache = st;
+      _portalReminderStateCacheKey = fp;
+      return st;
+    }
+    function portalReminderStateUncached(){
       if(!dashboardData || !dashboardData.portalIdentityResolved){
         return {
           setupPending: false,
@@ -14252,21 +14294,31 @@
       }
       portalQuickMenuEntryMode = 'logo-lite';
       if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
-      if(typeof openSheet === 'function') openSheet('menuSheet');
-      if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-        portalSyncAnnouncementsAndRemindersUi();
+      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: true });
+      var deferSync = function(){
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+          portalSyncAnnouncementsAndRemindersUi();
+        }else{
+          if(typeof renderNotices === 'function') renderNotices();
+          if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        }
+        if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function'){
+          syncPortalQuickMenuNotificationsGroupVisibility();
+        }
+        if(typeof syncPortalHeaderAlertChrome === 'function'){
+          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        }
+      };
+      if(typeof requestAnimationFrame === 'function'){
+        requestAnimationFrame(function(){ requestAnimationFrame(deferSync); });
       }else{
-        if(typeof renderNotices === 'function') renderNotices();
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-      }
-      if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function'){
-        syncPortalQuickMenuNotificationsGroupVisibility();
-      }
-      if(typeof syncPortalHeaderAlertChrome === 'function'){
-        syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        setTimeout(deferSync, 0);
       }
     }
     function handleHeaderLogoAlertsClick(){
+      if(window.__PORTAL_HALO_MENU_OPENING__) return;
+      window.__PORTAL_HALO_MENU_OPENING__ = true;
+      try{
       if(document.getElementById('internalChatSheet')?.classList.contains('open')){
         if(typeof portalCloseInternalChatReturnToAlertsMenu === 'function'){
           portalCloseInternalChatReturnToAlertsMenu();
@@ -14281,6 +14333,9 @@
         return;
       }
       portalOpenLogoLiteQuickMenuFromIosAlertPreview();
+      }finally{
+        setTimeout(function(){ window.__PORTAL_HALO_MENU_OPENING__ = false; }, 500);
+      }
     }
     /** In-app blue “pill” preview removed — roster/announcements use OS notifications (white tile) only. */
     function syncPortalIosAlertPreviewStack(){
@@ -17102,10 +17157,17 @@
         if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
         setClientsSheetTab('my');
       }
-      if(id === 'menuSheet' && typeof syncPortalReminderChrome === 'function'){
-        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-        else syncPortalReminderChrome();
-        if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
+      if(id === 'menuSheet' && !opts.skipReminderSync && typeof syncPortalReminderChrome === 'function'){
+        var runMenuSync = function(){
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          else syncPortalReminderChrome();
+          if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
+        };
+        if(typeof requestAnimationFrame === 'function'){
+          requestAnimationFrame(runMenuSync);
+        }else{
+          setTimeout(runMenuSync, 0);
+        }
       }
       if(id === 'alertsNotificationsSheet'){
         if(typeof window.portalOnAlertsSheetOpened === 'function'){
@@ -18745,11 +18807,7 @@
     (function () {
       var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       function portalStaffFastBootEnabled(){
-        try{
-          if(!(typeof window !== 'undefined' && window.PORTAL_STAFF_APP)) return false;
-          if(/iPhone|iPod|Android.+Mobile|Windows Phone/i.test(String((window.navigator && window.navigator.userAgent) || ''))) return false;
-          return true;
-        }catch(_){ return false; }
+        try{ return !!(typeof window !== 'undefined' && window.PORTAL_STAFF_APP); }catch(_){ return false; }
       }
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }
@@ -19284,6 +19342,14 @@
         if(typeof portalSeedTeflonGuideDemoReviewState === "function") portalSeedTeflonGuideDemoReviewState();
         if(typeof portalEnrichClientNotesFromPortalFeedback === "function"){
           portalEnrichClientNotesFromPortalFeedback();
+        }
+        if(
+          typeof window !== "undefined" && window.PORTAL_STAFF_APP
+          && typeof portalStaffFinishFeedbackPipelineReady === "function"
+          && typeof portalStaffFeedbackPipelineReady === "function"
+          && !portalStaffFeedbackPipelineReady()
+        ){
+          portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
         }
         portalSyncTodaySectionDisplay(sessionsModel);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();

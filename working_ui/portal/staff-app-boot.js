@@ -6,7 +6,11 @@
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
-  var VER = "20260624-staff-boot6";
+  try {
+    document.documentElement.classList.add("portal-staff-app");
+  } catch (_) {}
+
+  var VER = "20260624-staff-boot7";
   var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(
     String((global.navigator && global.navigator.userAgent) || "")
   );
@@ -33,7 +37,7 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf7");
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf8");
     if (!isMobile) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
