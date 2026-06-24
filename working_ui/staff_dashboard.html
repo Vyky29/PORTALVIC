@@ -7802,11 +7802,12 @@
       }
       return anchor === me;
     }
-    /** Active schedule_overrides on this calendar ISO for this staff (anchor or instructor cover). */
-    function portalStaffHasAdminScheduleOverrideOnDate(staffId, iso){
+    /** Overrides that mean the shipped bundle/timetable is stale for this staff+day (not per-client absences). */
+    function portalStaffMachineBundleBlockedByScheduleOverrideOnDate(staffId, iso){
       const sid = portalNormKeyStr(staffId);
       const dateIso = normaliseIsoDate(iso);
       if(!sid || !dateIso) return false;
+      const P = window.PortalParticipantsSheet;
       const all = portalScheduleOverrideRowsAll();
       for(let i = 0; i < all.length; i++){
         const r = all[i];
@@ -7822,20 +7823,38 @@
           }
           if(!pl || typeof pl !== 'object') pl = {};
           const cover = portalNormKeyStr(pl.covering_staff_id);
-          if(anchor === sid || cover === sid) return true;
+          if(anchor === sid && cover && cover !== sid) return true;
           continue;
         }
         if(anchor !== sid) continue;
-        return true;
+        if(t === 'session_add') return true;
+        if(t === 'slot_update'){
+          if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(r)) return true;
+          let pl = r.payload;
+          if(typeof pl === 'string'){
+            try{ pl = JSON.parse(pl); }catch(_){ pl = null; }
+          }
+          if(pl && typeof pl === 'object'){
+            const movedVenue = portalNormKeyStr(pl.moved_to_venue || pl.to_venue || pl.new_venue);
+            const anchorVenue = portalNormKeyStr(r.anchor_venue);
+            if(movedVenue && anchorVenue && movedVenue !== anchorVenue) return true;
+          }
+          continue;
+        }
       }
       return false;
     }
+    /** @deprecated use portalStaffMachineBundleBlockedByScheduleOverrideOnDate */
+    function portalStaffHasAdminScheduleOverrideOnDate(staffId, iso){
+      return portalStaffMachineBundleBlockedByScheduleOverrideOnDate(staffId, iso);
+    }
     /** Shipped bundle/timetable must not replace Supabase roster when admin overrides apply. */
     function portalStaffMachineBundleFallbackAllowed(staffId, iso){
-      if(typeof portalStaffHasAdminScheduleOverrideOnDate === 'function'
-        && portalStaffHasAdminScheduleOverrideOnDate(staffId, iso)) return false;
+      if(typeof portalStaffMachineBundleBlockedByScheduleOverrideOnDate === 'function'
+        && portalStaffMachineBundleBlockedByScheduleOverrideOnDate(staffId, iso)) return false;
       return true;
     }
+    try{ window.portalStaffMachineBundleBlockedByScheduleOverrideOnDate = portalStaffMachineBundleBlockedByScheduleOverrideOnDate; }catch(_){}
     try{ window.portalStaffHasAdminScheduleOverrideOnDate = portalStaffHasAdminScheduleOverrideOnDate; }catch(_){}
     try{ window.portalStaffMachineBundleFallbackAllowed = portalStaffMachineBundleFallbackAllowed; }catch(_){}
     /** Ephemeral “admin undid this override” rows for quick menu / dashboard (sessionStorage). */
