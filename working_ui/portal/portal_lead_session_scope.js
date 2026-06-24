@@ -81,7 +81,8 @@ const JOHN_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
-    programmeWideRoster: true,
+    // John teaches his own client per 45' slot on Sunday — he does not run the whole pool, so keep
+    // him on his own sessions (no programme-wide fan-out of every instructor's client per slot).
   },
 ];
 
