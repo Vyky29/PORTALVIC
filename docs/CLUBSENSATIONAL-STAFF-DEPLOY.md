@@ -58,6 +58,26 @@ Ejemplos de alcance (producto visualVIC):
 - Sandra → Physical Activity, Core, Ayaan, Serine
 - Day Centre → Day Centre, Core, Emmanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
 
+## Pilot rollout (Mar 2026)
+
+**New app URL:** `https://clubsensational-staff.vercel.app/login.html`
+
+**Pilot roster** (only these users should use clubsensational-staff for now):
+
+| Name | Notes |
+|------|--------|
+| Michelle | Day Centre lead |
+| Raul | CEO — staff app on mobile; admin still on portalvic |
+| Javi | CEO |
+| Javier | Staff (stf010) |
+| Roberto | Staff |
+| Luliya | Dual role support / swim |
+| Youssef | Dual role — **new app from now** |
+
+Everyone else: keep using `https://portalvic.vercel.app` staff dashboard.
+
+Logic: `working_ui/portal/portal_staff_app_pilot.js` — non-pilot users who sign in on clubsensational-staff are signed out and sent to portalvic login. Pilot users on portalvic see a banner to open the new app.
+
 ## Comportamiento
 
 - **Staff / lead** → entran y quedan en `staff_dashboard.html`.

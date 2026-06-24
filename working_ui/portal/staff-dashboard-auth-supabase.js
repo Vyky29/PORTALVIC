@@ -1,5 +1,9 @@
 import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260620-javi-roster-key";
 import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
+import {
+  portalEnforceStaffAppPilotGate,
+  portalSyncStaffAppPilotBanner,
+} from "/portal/portal_staff_app_pilot.js?v=20260624-staff-pilot";
 
 window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;
@@ -19,6 +23,10 @@ portalSyncExecWorkspaceSwitchSlot("staff");
 
 const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
 const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+const authEmail = session && session.user ? String(session.user.email || "").trim() : "";
+
+await portalEnforceStaffAppPilotGate({ profile, authEmail });
+portalSyncStaffAppPilotBanner({ profile, authEmail });
 
 if (window.dashboardData) {
   const ghostEarly =

@@ -111,6 +111,7 @@ function writeStaffAppConfig(destDir) {
   }
   global.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
   global.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
+  global.CLUBSENSATIONAL_STAFF_ORIGIN = "${STAFF_ORIGIN}";
   global.portalStaffAppBlocksPassiveLoginRedirect = function (url) {
     try {
       var dest = new URL(String(url || ""), global.location.href);
