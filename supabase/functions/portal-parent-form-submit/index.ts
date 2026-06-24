@@ -2,6 +2,7 @@
 // POST multipart/form-data: form_type, participant_name, pdf (required), photo (optional), payload (JSON string), parent_* fields.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -131,10 +132,11 @@ Deno.serve(async (req) => {
   }
 
   let photoPath: string | null = null;
+  let photoBytes: Uint8Array | null = null;
   if (photoBlob) {
     const ext = String(photoBlob.type || "").includes("png") ? "png" : "jpg";
     photoPath = `${prefix}/photo.${ext}`;
-    const photoBytes = new Uint8Array(await photoBlob.arrayBuffer());
+    photoBytes = new Uint8Array(await photoBlob.arrayBuffer());
     const { error: photoUpErr } = await admin.storage.from(BUCKET).upload(photoPath, photoBytes, {
       contentType: photoBlob.type || (ext === "png" ? "image/png" : "image/jpeg"),
       upsert: false,
@@ -169,6 +171,20 @@ Deno.serve(async (req) => {
     if (photoPath) removePaths.push(photoPath);
     await admin.storage.from(BUCKET).remove(removePaths);
     return json(500, { ok: false, error: "save_failed" });
+  }
+
+  if (photoBytes && photoBytes.length) {
+    try {
+      await syncParentFormPhotoToParticipantAvatar(
+        admin,
+        participantName,
+        participantDob,
+        photoBytes,
+        photoBlob?.type || "image/jpeg",
+      );
+    } catch (syncErr) {
+      console.warn("[portal-parent-form-submit] avatar sync", syncErr);
+    }
   }
 
   return json(200, {

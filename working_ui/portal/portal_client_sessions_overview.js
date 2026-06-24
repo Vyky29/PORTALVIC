@@ -462,16 +462,17 @@
     );
   }
 
-  function kpiSlabHtml(feedback) {
+  function kpiSlabHtml(feedback, termLabel) {
+    var term = clean(termLabel || TERM_LABEL);
     return (
       '<div class="pcso-kpi-grid" role="region" aria-label="Session summary">' +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(TERM_LABEL) + ")</p></header>" +
+      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
       engagementGaugeHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(TERM_LABEL) + ")</p></header>" +
+      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(term) + ")</p></header>" +
       emotionKpiHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(TERM_LABEL) + ")</p></header>" +
+      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(term) + ")</p></header>" +
       independenceKpiHtml(feedback) +
       "</article></div>"
     );
@@ -620,5 +621,120 @@
       incidentsSectionHtml(incidents);
   }
 
-  global.PortalClientSessionsOverview = { render: render };
+  function parentFeedbackTableRow(row) {
+    const inst = clean(row.completed_by_name) || "—";
+    const dateLine = formatDateLong(row.session_date);
+    const svc = displayProgrammeName(row.service);
+    const timeLine = formatServiceTime(row.session_time);
+    const eng =
+      row.engagement_rating != null && row.engagement_rating !== ""
+        ? esc(String(row.engagement_rating))
+        : '<span class="muted">—</span>';
+    var msg = clean(row.parent_message || row.positive_feedback);
+    var msgCell;
+    if (row.message_pending) {
+      msgCell = '<span class="pcso-pending" title="Review in progress">Preparing summary…</span>';
+    } else if (msg) {
+      msgCell = '<p class="pcso-parent-msg">' + esc(msg) + "</p>";
+    } else {
+      msgCell = '<span class="muted">—</span>';
+    }
+    return (
+      "<tr>" +
+      '<td class="pcso-tbl__inst">' +
+      '<div class="pcso-tbl__inst-name">' + esc(inst) + "</div>" +
+      '<div class="pcso-tbl__inst-date">' + esc(dateLine) + "</div></td>" +
+      '<td class="pcso-tbl__svc">' +
+      '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
+      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
+      "</td>" +
+      '<td class="pcso-tbl__eng">' + eng + "</td>" +
+      '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
+      '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
+      '<td class="pcso-tbl__parent-msg">' + msgCell + "</td>" +
+      "</tr>"
+    );
+  }
+
+  function parentFeedbackTableHtml(feedback) {
+    if (!feedback.length) {
+      return '<p class="pcso-empty" role="status">No session feedback recorded for this participant yet.</p>';
+    }
+    return (
+      '<div class="pcso-table-wrap">' +
+      '<table class="pcso-table pcso-table--parent">' +
+      "<thead><tr>" +
+      '<th scope="col" class="pcso-tbl__inst">Instructor</th>' +
+      '<th scope="col" class="pcso-tbl__svc">Service</th>' +
+      '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
+      '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
+      '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
+      '<th scope="col" class="pcso-tbl__parent-msg">Session summary</th>' +
+      "</tr></thead><tbody>" +
+      feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
+      "</tbody></table></div>"
+    );
+  }
+
+  function achievementsGalleryHtml(items) {
+    var list = Array.isArray(items) ? items : [];
+    if (!list.length) {
+      return '<p class="pcso-empty">No achievement photos shared yet.</p>';
+    }
+    return (
+      '<div class="pp-ach-grid" role="list">' +
+      list
+        .map(function (a) {
+          var when = formatDateLong(a.session_date);
+          return (
+            '<figure class="pp-ach-item" role="listitem">' +
+            '<a href="' + esc(a.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
+            '<img src="' + esc(a.url || "") + '" alt="Achievement photo, ' + esc(when) + '" loading="lazy" width="160" height="160" />' +
+            "</a>" +
+            '<figcaption class="pp-ach-cap">' + esc(when) + "</figcaption></figure>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function mapParentSessionRow(r) {
+    return {
+      kind: "feedback",
+      session_date: isoFromAny(r.session_date),
+      client_name: "",
+      service: clean(r.service),
+      session_time: clean(r.session_time),
+      completed_by_name: clean(r.instructor),
+      engagement_rating: r.engagement_rating,
+      client_emotions: clean(r.client_emotions),
+      engagement_patterns: clean(r.independence),
+      parent_message: clean(r.parent_message),
+      message_pending: !!r.message_pending,
+      positive_feedback: "",
+      relevant_information: "",
+    };
+  }
+
+  function renderParent(hostEl, opts) {
+    if (!hostEl) return;
+    var sessions = (opts && opts.sessions) || [];
+    var achievements = (opts && opts.achievements) || [];
+    var term = clean((opts && opts.term_label) || TERM_LABEL);
+    var feedback = sessions.map(mapParentSessionRow);
+    hostEl.innerHTML =
+      kpiSlabHtml(feedback, term) +
+      '<section class="pcso-feed-section">' +
+      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4>' +
+      '<p class="pcso-feed-note">Summaries are prepared for families — internal staff notes are not shown.</p></div>' +
+      parentFeedbackTableHtml(feedback) +
+      "</section>" +
+      '<section class="pcso-feed-section pp-ach-section">' +
+      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
+      achievementsGalleryHtml(achievements) +
+      "</section>";
+  }
+
+  global.PortalClientSessionsOverview = { render: render, renderParent: renderParent };
 })(typeof window !== "undefined" ? window : globalThis);

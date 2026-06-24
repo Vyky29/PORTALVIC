@@ -23,6 +23,9 @@
     "ayden walker": "portal/participants/ayden-w.png",
     "adaam ah": "portal/participants/adaam-ah.png",
     "aadam ah": "portal/participants/adaam-ah.png",
+    "aadam ahmed": "portal/participants/adaam-ah.png",
+    "amaar ahmed": "portal/participants/amaar-ah.png",
+    "aydaan ahmed": "portal/participants/aydaan-ah.png",
     amir: "portal/participants/amir.png",
     anas: "portal/participants/anas.png",
     "anas ismail": "portal/participants/anas.png",
@@ -92,6 +95,37 @@
     "/portal/participants/zaid.png": true,
   };
 
+  /** Supabase Storage / remote URLs keyed by contact_id and normalized display name. */
+  var PARTICIPANT_STORAGE_AVATARS = { byId: {}, byName: {} };
+
+  function storageAvatarKey(name) {
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function portalRegisterParticipantStorageAvatar(contactId, displayName, url) {
+    url = normalizePhotoUrl(String(url || "").trim());
+    if (!url || !/^https?:\/\//i.test(url)) return;
+    var id = String(contactId || "").trim();
+    if (id) PARTICIPANT_STORAGE_AVATARS.byId[id] = url;
+    var nk = storageAvatarKey(displayName);
+    if (nk) PARTICIPANT_STORAGE_AVATARS.byName[nk] = url;
+  }
+
+  function portalParticipantStorageAvatarUrl(contactId, displayName) {
+    var id = String(contactId || "").trim();
+    if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
+    var nk = storageAvatarKey(displayName);
+    if (nk && PARTICIPANT_STORAGE_AVATARS.byName[nk]) return PARTICIPANT_STORAGE_AVATARS.byName[nk];
+    return "";
+  }
+
   function photoKey(name) {
     return String(name || "")
       .trim()
@@ -154,25 +188,43 @@
     return p && PARTICIPANT_PHOTO_FILES_ON_DISK[p] ? p : "";
   }
 
-  function participantPhotoPathCandidates(name, avatarOverride) {
+  function participantPhotoPathCandidates(name, avatarOverride, contactId) {
     var key = photoKey(name);
     var out = [];
     function add(raw) {
       var p = normalizePhotoUrl(String(raw || "").trim());
       if (p && out.indexOf(p) === -1) out.push(p);
     }
+    function addRemote(raw) {
+      var u = normalizePhotoUrl(String(raw || "").trim());
+      if (/^https?:\/\//i.test(u) && out.indexOf(u) === -1) out.unshift(u);
+    }
     function addIfOnDisk(raw) {
       var p = participantPhotoPathOnDisk(raw);
       if (p) add(p);
     }
-    if (
-      avatarOverride &&
-      typeof global.portalSanitizeRemoteAvatarUrl === "function" &&
-      !global.portalSanitizeRemoteAvatarUrl(avatarOverride)
-    ) {
-      avatarOverride = "";
+
+    var storageUrl = portalParticipantStorageAvatarUrl(contactId, name);
+    if (storageUrl) addRemote(storageUrl);
+
+    if (avatarOverride) {
+      var remote = String(avatarOverride || "").trim();
+      if (/^https?:\/\//i.test(remote)) {
+        if (
+          typeof global.portalSanitizeRemoteAvatarUrl !== "function" ||
+          global.portalSanitizeRemoteAvatarUrl(remote)
+        ) {
+          addRemote(remote);
+        }
+      } else if (
+        !(
+          typeof global.portalSanitizeRemoteAvatarUrl === "function" &&
+          !global.portalSanitizeRemoteAvatarUrl(avatarOverride)
+        )
+      ) {
+        addIfOnDisk(avatarOverride);
+      }
     }
-    addIfOnDisk(avatarOverride);
     var mapped = Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key)
       ? PARTICIPANT_PHOTOS[key]
       : "";
@@ -197,8 +249,8 @@
     return out;
   }
 
-  function portalParticipantPhotoUrl(name, avatarOverride) {
-    var candidates = participantPhotoPathCandidates(name, avatarOverride);
+  function portalParticipantPhotoUrl(name, avatarOverride, contactId) {
+    var candidates = participantPhotoPathCandidates(name, avatarOverride, contactId);
     return candidates.length ? candidates[0] : "";
   }
 
@@ -256,7 +308,7 @@
   function portalParticipantAvatarInnerHtml(name, clientId, opts) {
     opts = opts || {};
     var esc = typeof opts.esc === "function" ? opts.esc : defaultEsc;
-    var candidates = participantPhotoPathCandidates(name, opts.avatarFile);
+    var candidates = participantPhotoPathCandidates(name, opts.avatarFile, clientId);
     var url = candidates.length ? candidates[0] : "";
     var photoFallbacks = candidates.slice(1).join("|");
     var initials = esc(portalParticipantInitials(name));
@@ -295,7 +347,7 @@
   function portalParticipantCalendarAvatarHtml(name, photoUrl, esc, clientId) {
     esc = typeof esc === "function" ? esc : defaultEsc;
     name = String(name || "").trim();
-    var candidates = participantPhotoPathCandidates(name, photoUrl);
+    var candidates = participantPhotoPathCandidates(name, photoUrl, clientId);
     photoUrl = candidates.length ? candidates[0] : "";
     var photoFallbacks = candidates.slice(1).join("|");
     var nameAttr = ' data-participant-name="' + esc(name) + '"';
@@ -413,6 +465,9 @@
 
   global.PARTICIPANT_PHOTOS = PARTICIPANT_PHOTOS;
   global.PARTICIPANT_PHOTO_FILES_ON_DISK = PARTICIPANT_PHOTO_FILES_ON_DISK;
+  global.PARTICIPANT_STORAGE_AVATARS = PARTICIPANT_STORAGE_AVATARS;
+  global.portalRegisterParticipantStorageAvatar = portalRegisterParticipantStorageAvatar;
+  global.portalParticipantStorageAvatarUrl = portalParticipantStorageAvatarUrl;
   global.portalParticipantPhotoUrl = portalParticipantPhotoUrl;
   global.portalParticipantPhotoPathCandidates = participantPhotoPathCandidates;
   global.portalParticipantPhotoTryFallback = portalParticipantPhotoTryFallback;

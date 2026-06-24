@@ -12,7 +12,7 @@
     "supabase:functions:list": "supabase functions list",
     "deploy:ghost": "supabase functions deploy portal-admin-ghost-start --no-verify-jwt && supabase functions deploy portal-admin-ghost-verify --no-verify-jwt",
     "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
-    "deploy:parent-portal": "supabase functions deploy parent-portal-sign-in --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy parent-portal-home-load --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+    "deploy:parent-portal": "supabase functions deploy parent-portal-sign-in --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy parent-portal-home-load --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy parent-portal-participant-detail --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-parent-form-submit --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "deploy:staff-profile-otp": "supabase functions deploy staff-profile-otp-request --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "apply:whatsapp": "node database/local-vault/apply-whatsapp.mjs",
     "apply:whatsapp:secrets": "node database/local-vault/apply-whatsapp.mjs --secrets-only",

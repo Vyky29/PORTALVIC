@@ -12,6 +12,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
+import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 
 function normalizePhoneDigits(raw: string): string {
   const d = String(raw || "").replace(/\D/g, "");
@@ -126,6 +127,31 @@ Deno.serve(async (req) => {
     messages = messages.slice(0, 20);
   }
 
+  const childrenOut = [];
+  for (const c of contacts || []) {
+    const displayName = c.display_name || c.child_display;
+    const avatar = await resolveParticipantAvatarUrls(supabase, url, {
+      contact_id: String(c.contact_id || ""),
+      display_name: String(displayName || ""),
+      dob_iso: c.dob_iso,
+      avatar_storage_path: c.avatar_storage_path,
+    });
+    childrenOut.push({
+      contact_id: c.contact_id,
+      display_name: displayName,
+      first_name: c.first_name || c.child_first_name,
+      last_name: c.last_name || c.child_last_name,
+      dob_iso: c.dob_iso,
+      in_class: c.in_class,
+      on_waiting_list: c.on_waiting_list,
+      city: c.city || null,
+      postcode: c.postcode || null,
+      avatar_url: avatar.avatar_url,
+      avatar_source: avatar.avatar_source,
+      has_avatar: !!(avatar.avatar_url || c.avatar_storage_path),
+    });
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -142,18 +168,7 @@ Deno.serve(async (req) => {
           postcode: parentMeta?.postcode ?? null,
         },
       },
-      children: (contacts || []).map((c) => ({
-        contact_id: c.contact_id,
-        display_name: c.display_name || c.child_display,
-        first_name: c.first_name || c.child_first_name,
-        last_name: c.last_name || c.child_last_name,
-        dob_iso: c.dob_iso,
-        in_class: c.in_class,
-        on_waiting_list: c.on_waiting_list,
-        city: c.city || null,
-        postcode: c.postcode || null,
-        has_avatar: !!c.avatar_storage_path,
-      })),
+      children: childrenOut,
       messages,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },

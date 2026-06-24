@@ -55,6 +55,7 @@
     state.step = step;
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
+    if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
   }
 
   function saveSession() {
@@ -134,6 +135,42 @@
     return map[String(kind || "").trim()] || "Club message";
   }
 
+  function childAvatarHtml(c) {
+    var name = c.display_name || "Participant";
+    var url = String(c.avatar_url || "").trim();
+    if (!url && typeof global.portalParticipantPhotoUrl === "function") {
+      url = global.portalParticipantPhotoUrl(name, "", c.contact_id) || "";
+    }
+    var initials =
+      typeof global.portalParticipantInitials === "function"
+        ? global.portalParticipantInitials(name)
+        : name.slice(0, 2).toUpperCase();
+    var gCls =
+      typeof global.portalParticipantGenderClass === "function"
+        ? global.portalParticipantGenderClass(name, "pp-child-photo--")
+        : "";
+    if (url) {
+      return (
+        '<div class="pp-child-photo pp-child-photo--has-img' +
+        gCls +
+        '">' +
+        '<img src="' +
+        esc(url) +
+        '" alt="" width="52" height="52" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');" />' +
+        '<span class="pp-child-photo__init" aria-hidden="true">' +
+        esc(initials) +
+        "</span></div>"
+      );
+    }
+    return (
+      '<div class="pp-child-photo pp-child-photo--init' +
+      gCls +
+      '" aria-hidden="true">' +
+      esc(initials) +
+      "</div>"
+    );
+  }
+
   function renderHome(data) {
     state.home = data;
     var parent = (data && data.parent) || {};
@@ -152,6 +189,9 @@
       } else {
         childList.innerHTML = children
           .map(function (c) {
+            if (c.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
+              global.portalRegisterParticipantStorageAvatar(c.contact_id, c.display_name, c.avatar_url);
+            }
             var chips = [];
             if (c.in_class) chips.push('<span class="pp-chip pp-chip--ok">In class</span>');
             if (c.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
@@ -159,14 +199,24 @@
             if (c.dob_iso) meta.push("DOB " + esc(formatDob(c.dob_iso)));
             if (c.city && c.city !== "—") meta.push(esc(c.city));
             return (
-              '<article class="pp-card pp-child-card">' +
-              '<div class="pp-child-head">' +
+              '<article class="pp-card pp-child-card pp-child-card--link" role="button" tabindex="0" data-contact-id="' +
+              esc(String(c.contact_id || "")) +
+              '" aria-label="View sessions for ' +
+              esc(c.display_name || "Participant") +
+              '">' +
+              '<div class="pp-child-row">' +
+              '<div class="pp-child-main">' +
               '<h3 class="pp-child-name">' +
               esc(c.display_name || "Participant") +
               "</h3>" +
-              (chips.length ? '<div class="pp-chip-row">' + chips.join("") + "</div>" : "") +
-              "</div>" +
               (meta.length ? '<p class="pp-muted pp-child-meta">' + meta.join(" · ") + "</p>" : "") +
+              "</div>" +
+              childAvatarHtml(c) +
+              '<div class="pp-chip-row pp-child-status">' +
+              chips.join("") +
+              "</div>" +
+              "</div>" +
+              '<p class="pp-child-card__cta">Sessions &amp; achievements →</p>' +
               "</article>"
             );
           })
@@ -230,6 +280,96 @@
         ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
         : "") +
       '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
+  }
+
+  async function loadParticipantDetail(contactId) {
+    var host = $("ppParticipantDetail");
+    var title = $("ppParticipantTitle");
+    if (!host || !contactId) return;
+    host.innerHTML = '<p class="pcso-loading" role="status">Loading sessions…</p>';
+    setStep("participant");
+
+    var res = await fetch(fn("parent-portal-participant-detail"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.session.token,
+      },
+      body: JSON.stringify({ contact_id: contactId }),
+    });
+    var body = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !body.ok) {
+      if (res.status === 401 || res.status === 403) {
+        clearSession();
+        setStep("identify");
+        showNotice($("ppNotice"), "error", "Your session expired. Please sign in again.");
+        return;
+      }
+      host.innerHTML =
+        '<p class="pp-muted">We could not load this participant right now. Try again in a moment.</p>';
+      return;
+    }
+
+    var p = body.participant || {};
+    if (title) title.textContent = p.display_name || "Participant";
+    var refreshBtn = $("ppParticipantRefresh");
+    if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
+
+    if (global.ParentPortalParticipant && typeof global.ParentPortalParticipant.render === "function") {
+      global.ParentPortalParticipant.render(host, body, { defaultTab: "sessions" });
+      if (body.pending_review_count > 0) {
+        showNotice(
+          $("ppParticipantNotice"),
+          "info",
+          "Some session summaries are still being prepared. Refresh in a minute to see them.",
+        );
+      } else {
+        hideNotice($("ppParticipantNotice"));
+      }
+    } else if (
+      global.PortalClientSessionsOverview &&
+      typeof global.PortalClientSessionsOverview.renderParent === "function"
+    ) {
+      global.PortalClientSessionsOverview.renderParent(host, {
+        sessions: body.sessions || [],
+        achievements: body.achievements || [],
+        term_label: body.term_label || "",
+      });
+      if (body.pending_review_count > 0) {
+        showNotice(
+          $("ppParticipantNotice"),
+          "info",
+          "Some session summaries are still being prepared. Refresh in a minute to see them.",
+        );
+      } else {
+        hideNotice($("ppParticipantNotice"));
+      }
+    } else {
+      host.innerHTML = '<p class="pp-muted">Participant view is unavailable in this browser.</p>';
+    }
+  }
+
+  function bindChildCards() {
+    var list = $("ppChildList");
+    if (!list) return;
+    list.addEventListener("click", function (e) {
+      var card = e.target && e.target.closest ? e.target.closest("[data-contact-id]") : null;
+      if (!card) return;
+      var id = card.getAttribute("data-contact-id");
+      if (id) void loadParticipantDetail(id);
+    });
+    list.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var card = e.target && e.target.closest ? e.target.closest("[data-contact-id]") : null;
+      if (!card) return;
+      e.preventDefault();
+      var id = card.getAttribute("data-contact-id");
+      if (id) void loadParticipantDetail(id);
+    });
   }
 
   async function loadHome() {
@@ -343,6 +483,22 @@
     $("ppRefresh").addEventListener("click", function () {
       void loadHome();
     });
+
+    var back = $("ppBackToHome");
+    if (back) {
+      back.addEventListener("click", function () {
+        hideNotice($("ppParticipantNotice"));
+        setStep("home");
+      });
+    }
+
+    var partRefresh = $("ppParticipantRefresh");
+    if (partRefresh) {
+      partRefresh.addEventListener("click", function () {
+        var id = partRefresh.getAttribute("data-contact-id");
+        if (id) void loadParticipantDetail(id);
+      });
+    }
   }
 
   function initBrand() {
@@ -355,6 +511,7 @@
   async function bootstrap() {
     initBrand();
     bindEvents();
+    bindChildCards();
     setStep("identify");
     if (loadStoredSession()) {
       var ok = await loadHome();

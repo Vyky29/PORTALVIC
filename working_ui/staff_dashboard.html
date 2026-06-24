@@ -933,7 +933,8 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260614-ios-camera-fix" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260624-next-session-tomorrow"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260614-photo-repair"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260702-avatar-shared"></script>
+  <script src="/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared"></script>
   <script src="/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic"></script>
@@ -5878,12 +5879,15 @@
       const c = clientId && clientNotesById[clientId];
       const fromNote = c && c.avatarFile ? String(c.avatarFile).trim() : '';
       let url = '';
-      if(typeof portalParticipantPhotoPathCandidates === 'function'){
-        const candidates = portalParticipantPhotoPathCandidates(name, fromNote);
+      if(typeof portalParticipantStorageAvatarUrl === 'function'){
+        url = portalParticipantStorageAvatarUrl(clientId, name) || '';
+      }
+      if(!url && typeof portalParticipantPhotoPathCandidates === 'function'){
+        const candidates = portalParticipantPhotoPathCandidates(name, fromNote, clientId);
         url = candidates.length ? candidates[0] : '';
-      }else if(fromNote){
+      }else if(!url && fromNote){
         url = fromNote;
-      }else{
+      }else if(!url){
         url = clientPhotoUrl(name);
       }
       if(typeof portalNormalizeParticipantPhotoUrl === 'function') return portalNormalizeParticipantPhotoUrl(url) || '';

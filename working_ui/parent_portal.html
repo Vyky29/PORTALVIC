@@ -12,6 +12,7 @@
   <script src="/portal-static-bootstrap.js"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260702-parent-detail" />
   <style>
     :root {
       --blue: #2d84b3;
@@ -191,6 +192,47 @@
       cursor: pointer;
     }
     .pp-child-card { padding: 14px; }
+    .pp-child-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 52px auto;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+    .pp-child-main { min-width: 0; }
+    .pp-child-photo {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      border: 2px solid rgba(45, 132, 179, .18);
+      position: relative;
+    }
+    .pp-child-photo--init {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .pp-child-photo--m { background: #dbeafe; color: #1e3a8a; }
+    .pp-child-photo--f { background: #fce7f3; color: #9d174d; }
+    .pp-child-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .pp-child-photo--has-img .pp-child-photo__init { display: none; }
+    .pp-child-status {
+      justify-content: flex-end;
+      align-self: start;
+      padding-top: 2px;
+    }
     .pp-child-head {
       display: flex;
       align-items: flex-start;
@@ -263,6 +305,129 @@
       overflow-wrap: break-word;
     }
     .pp-legal a { color: var(--blue); }
+
+    /* Participant detail card */
+    .pp-participant-body { padding: 0; overflow: hidden; }
+    .pp-participant-body .pp-pax-shell { padding: 14px 14px 16px; min-width: 0; }
+    .pp-pax-hero {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .pp-pax-photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      border: 2px solid rgba(45, 132, 179, .18);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .pp-pax-photo--init { font-size: 18px; font-weight: 800; color: var(--ink); }
+    .pp-pax-photo--m { background: #dbeafe; color: #1e3a8a; }
+    .pp-pax-photo--f { background: #fce7f3; color: #9d174d; }
+    .pp-pax-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+    }
+    .pp-pax-photo--img .pp-pax-photo__init { display: none; }
+    .pp-pax-hero-copy { min-width: 0; }
+    .pp-pax-name {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-pax-dob { margin: 4px 0 8px; font-size: 12px; }
+    .pp-pax-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 0 12px;
+      padding-bottom: 2px;
+      min-width: 0;
+    }
+    .pp-pax-tab {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-tab.is-on {
+      background: linear-gradient(135deg, var(--blue), #1f6587);
+      color: #fff;
+      border-color: transparent;
+    }
+    .pp-pax-panel { min-width: 0; }
+    .pp-pax-info-grid { display: grid; gap: 8px; margin-bottom: 14px; }
+    .pp-pax-info-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr);
+      gap: 8px;
+      font-size: 13px;
+      min-width: 0;
+    }
+    .pp-pax-info-k { color: var(--muted); font-weight: 700; }
+    .pp-pax-info-v { color: var(--text); overflow-wrap: break-word; }
+    .pp-pax-subtitle {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .pp-pax-service-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-swim-intro { margin: 0 0 10px; font-size: 12px; }
+    .pp-pax-swim-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .pp-pax-swim-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .pp-pax-swim-copy { min-width: 0; flex: 1; }
+    .pp-pax-swim-title {
+      display: block;
+      font-size: 13px;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-swim-when { display: block; margin-top: 4px; font-size: 11px; }
+    .pp-pax-swim-dl {
+      width: auto;
+      min-height: 40px;
+      padding: 8px 12px;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .pp-participant-body .pcso-kpi-grid { margin-top: 0; }
+    .pp-participant-body .pcso-table-wrap { max-width: 100%; overflow-x: auto; }
   </style>
 </head>
 <body>
@@ -318,13 +483,30 @@
       <div class="pp-card" id="ppContactBlock"></div>
     </section>
 
+    <section id="ppStepParticipant" hidden>
+      <div class="pp-participant-head">
+        <div style="min-width:0">
+          <button id="ppBackToHome" class="pp-btn pp-btn--ghost" type="button" style="margin:0;padding-left:0">← Back</button>
+          <h2 id="ppParticipantTitle">Participant</h2>
+        </div>
+        <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
+      </div>
+      <div id="ppParticipantNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
+      <div class="pp-card pp-participant-body">
+        <div id="ppParticipantDetail"></div>
+      </div>
+    </section>
+
     <p class="pp-legal">
       Staff and instructors use a separate app.
       <a href="https://portalvic.vercel.app/parent/registration">New client registration</a>
     </p>
   </main>
 
-  <script src="/portal/parent_portal_app.js?v=20260702-parent-sibling-dob"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260702-avatar-shared"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260702-parent-detail"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260702-pax-card"></script>
+  <script src="/portal/parent_portal_app.js?v=20260702-pax-card"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
       void window.ParentPortalApp.bootstrap();
