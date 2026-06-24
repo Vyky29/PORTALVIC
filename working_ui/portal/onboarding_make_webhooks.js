@@ -9,13 +9,13 @@
     typeof global.PORTAL_ONBOARDING_JOB_MAKE_WEBHOOK_URL !== "string" ||
     !String(global.PORTAL_ONBOARDING_JOB_MAKE_WEBHOOK_URL).trim()
   ) {
-    global.PORTAL_ONBOARDING_JOB_MAKE_WEBHOOK_URL = "%%ONBOARDING_JOB_MAKE_URL%%";
+    global.PORTAL_ONBOARDING_JOB_MAKE_WEBHOOK_URL = "";
   }
   if (
     typeof global.PORTAL_ONBOARDING_HEALTH_MAKE_WEBHOOK_URL !== "string" ||
     !String(global.PORTAL_ONBOARDING_HEALTH_MAKE_WEBHOOK_URL).trim()
   ) {
-    global.PORTAL_ONBOARDING_HEALTH_MAKE_WEBHOOK_URL = "%%ONBOARDING_HEALTH_MAKE_URL%%";
+    global.PORTAL_ONBOARDING_HEALTH_MAKE_WEBHOOK_URL = "";
   }
 
   function cleanUrl(value) {
