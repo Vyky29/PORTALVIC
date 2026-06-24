@@ -69,7 +69,7 @@ insert into public.staff_role_rates (user_id, role, scale, hourly_rate, is_prima
 select sp.id, v.role, v.scale, v.hourly_rate, v.is_primary
 from public.staff_profiles sp
 cross join (values
-  ('Swimming Instructor', 'Scale 1', 20.00::numeric, true),
+  ('Swimming Instructor', 'Scale 1', 22.00::numeric, true),
   ('Support Worker',      'Scale 1', 20.00::numeric, false)
 ) as v(role, scale, hourly_rate, is_primary)
 where lower(coalesce(sp.username, '')) in ('youssef', 'yousef', 'yusef')
@@ -93,7 +93,7 @@ where srr.user_id = sp.id
   );
 
 update public.staff_pay_rates spr
-set hourly_rate = 20.00,
+set hourly_rate = 22.00,
     role_label = 'Swimming Instructor 1',
     updated_at = now()
 from public.staff_profiles sp

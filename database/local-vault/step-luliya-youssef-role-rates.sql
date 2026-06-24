@@ -1,9 +1,9 @@
--- Luliya (lulia) + Youssef: dual Support Worker / Swimming Instructor pay rates for timesheets.
--- Clear is_primary before upsert to avoid staff_role_rates_one_primary_per_user violation.
+-- Youssef: £22/h swimming (primary), £20/h support. Luliya unchanged: £18 support, £22 swim.
+-- Safe to re-run (clears is_primary before upsert).
 
 begin;
 
--- ========== LULIYA ==========
+-- ========== LULIYA (confirm £18 / £22) ==========
 update public.staff_role_rates srr
 set is_primary = false,
     updated_at = now()
@@ -53,7 +53,7 @@ where spr.user_id = sp.id
     or lower(split_part(coalesce(sp.full_name, ''), ' ', 1)) in ('luliya', 'lulia', 'aida')
   );
 
--- ========== YOUSSEF ==========
+-- ========== YOUSSEF (£22 swim primary, £20 support) ==========
 update public.staff_role_rates srr
 set is_primary = false,
     updated_at = now()
