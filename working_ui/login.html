@@ -259,6 +259,21 @@
       max-height:6rem;
       padding:10px 12px;
     }
+    .login-active-session{
+      margin:0 0 14px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff8e6;
+      border:1px solid #f4b740;
+      font-size:13px;
+      line-height:1.45;
+      color:var(--ink);
+    }
+    .login-active-session a{
+      color:var(--blue);
+      font-weight:700;
+      text-decoration:underline;
+    }
 
     @media (min-width: 900px) {
       body{
@@ -413,6 +428,7 @@
 
       <div class="login-panel">
       <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
+      <p id="loginActiveSessionBar" class="login-active-session" hidden role="status" aria-live="polite"></p>
 
       <form id="login-form" novalidate method="post" action="">
         <input type="hidden" id="portalLoginApp" name="portal_login_app" value="" />

@@ -321,7 +321,10 @@
       clearStack();
     }
     if (typeof global.openSheet === "function") {
-      var openOpts = Object.assign({ skipNavRecord: true }, opts.openOpts || {});
+      var openOpts = Object.assign(
+        { skipNavRecord: true, bypassAnnouncementLock: true },
+        opts.openOpts || {},
+      );
       global.openSheet("menuSheet", openOpts);
       portalSyncQuickMenuDockChrome();
       portalSyncParticipantsDockChrome();

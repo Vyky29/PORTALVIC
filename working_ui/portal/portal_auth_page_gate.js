@@ -62,7 +62,9 @@
       "}" +
     "html.portal-page-dashboard-gated:not(.portal-auth-ready) .admin-shell," +
     "html.portal-page-dashboard-gated:not(.portal-auth-ready) .lead-dashboard," +
-    "html.portal-page-dashboard-gated:not(.portal-auth-ready) #page{" +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) #page," +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) .app > .app-body-scroll," +
+    "html.portal-page-dashboard-gated:not(.portal-auth-ready) .app > main.app-body-scroll{" +
       "opacity:0!important;pointer-events:none!important;" +
       "}" +
     "#" +

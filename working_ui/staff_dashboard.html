@@ -230,6 +230,7 @@
               <span class="topbar-name__given" id="staffNameGiven">…</span>
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
             </h1>
+            <button type="button" class="topbar-sign-out-btn" id="topbarStaffSignOut" hidden aria-label="Sign out of the portal">Sign out</button>
           </div>
         </div>
         <div class="topbar-center">
@@ -14357,7 +14358,7 @@
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }
       portalQuickMenuEntryMode = 'logo-lite';
-      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: false });
+      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: false, bypassAnnouncementLock: true });
     }
     function handleHeaderLogoAlertsClick(){
       if(window.__PORTAL_HALO_MENU_OPENING__) return;
@@ -17176,6 +17177,7 @@
     function openSheet(id, opts){
       if(id === 'internalChatSheet') return; /* chat removed — see archive/chat-full-removal-20260609 */
       opts = opts || {};
+      if(id === 'menuSheet' && !opts.bypassAnnouncementLock) opts.bypassAnnouncementLock = true;
       if(typeof portalRecordSheetNavigation === 'function' && !opts.skipNavRecord){
         portalRecordSheetNavigation(id);
       }
@@ -17989,9 +17991,10 @@
         portalToggleQuickMenuFromDock();
         return;
       }
-      openSheet('menuSheet', { skipNavRecord: true });
+      openSheet('menuSheet', { skipNavRecord: true, bypassAnnouncementLock: true });
     }
     window.openSheet = openSheet;
+    window.handleQuickMenuDockClick = handleQuickMenuDockClick;
     window.closeSheet = closeSheet;
     window.closeClientGeneralSheet = closeClientGeneralSheet;
     window.closeClientSessionsOverviewSheet = closeClientSessionsOverviewSheet;

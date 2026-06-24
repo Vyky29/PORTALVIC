@@ -1018,6 +1018,17 @@ function bindLogin() {
     } = await supabase.auth.getSession();
     if (!session?.user?.id) return;
     try {
+      if (window.PORTAL_STAFF_APP === true) {
+        const bar = document.getElementById("loginActiveSessionBar");
+        if (bar) {
+          const email = String(session.user.email || "").trim();
+          bar.hidden = false;
+          bar.innerHTML =
+            'Already signed in' +
+            (email ? " as <strong>" + email.replace(/</g, "&lt;") + "</strong>" : "") +
+            '. <a href="login.html?portal_logout=1">Sign out</a> to use another account.';
+        }
+      }
       const sessionEmail = String(session.user.email || "").trim();
       const url = await redirectUrlForUser(supabase, session.user.id, {
         email: sessionEmail,
@@ -1586,7 +1597,10 @@ export async function bootstrapDashboardSupabase(_opts) {
     });
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
-    if (typeof window !== "undefined" && portalDashboardRequiresStrictGate(page)) {
+    if (
+      typeof window !== "undefined" &&
+      (portalDashboardRequiresStrictGate(page) || page === "staff")
+    ) {
       try {
         const supabase = getSupabaseClient();
         const {
@@ -1611,6 +1625,9 @@ export async function bootstrapDashboardSupabase(_opts) {
             session,
             staff_profile: profile,
           };
+          if (typeof document !== "undefined" && document.documentElement) {
+            document.documentElement.classList.add("portal-auth-ready");
+          }
           window.dispatchEvent(
             new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
           );
