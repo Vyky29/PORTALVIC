@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260625-john-sunday-own";
+const VER = "20260625-john-sunday-team-banner";
 
 const STAFF_DASHBOARD_CORE_SCRIPTS = [
   "staff-dashboard-topbar.js",

@@ -81,8 +81,8 @@ const JOHN_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
-    // John teaches his own client per 45' slot on Sunday — he does not run the whole pool, so keep
-    // him on his own sessions (no programme-wide fan-out of every instructor's client per slot).
+    /* Team banner lists everyone on shift; Today cards stay lead-instructor only (one client per 45'). */
+    leadTeamBanner: true,
   },
 ];
 
@@ -403,6 +403,11 @@ export function portalLeadDayUsesProgrammeWideRoster(scopes, iso) {
     active.length > 0 &&
     active.every((sc) => sc.programmeWideRoster === true)
   );
+}
+
+/** Programme lead team banner (who is on shift) — independent of programme-wide Today cards. */
+export function portalLeadScopeShowsTeamBanner(sc) {
+  return !!(sc && (sc.leadTeamBanner === true || sc.programmeWideRoster === true));
 }
 
 function portalLeadSlotInScopeForDay(slot, scopes, leadProfileKey, iso) {

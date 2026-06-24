@@ -2407,10 +2407,9 @@
           /* John covers individually-reassigned Acton sessions on Wednesday (e.g. Scott, Cyrus),
              he does not run the whole programme roster — keep him on the standard cover path. */
           { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'] },
-          /* Sunday SwimFarm Multi-Activity: John teaches his own client per 45' slot (Adam Ab,
-             Cyrus, Arthur Ma…), he does not run the whole pool — show only his own sessions, not
-             every instructor's client in each slot. */
-          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'] }
+          /* Sunday SwimFarm Multi-Activity: John teaches his own client per 45' slot; lead report at
+             end covers the wider programme. Team banner (leadTeamBanner) lists who is on shift. */
+          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
         ];
       }
       if(sid === 'berta'){

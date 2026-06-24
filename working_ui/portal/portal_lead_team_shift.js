@@ -10,7 +10,7 @@ import {
   portalLeadProgrammeWideTodayForStaff,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-john-sunday-own";
+} from "./portal_lead_session_scope.js?v=20260625-john-sunday-team-banner";
 
 const TEAM_SHIFT_CHANGE_TYPES = new Set(["instructor_reassign"]);
 const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -126,11 +126,11 @@ function portalLeadTeamDayKind(ctx, iso) {
     const acton = venues.some(function (v) {
       return normKey(v).indexOf("acton") >= 0;
     });
-    if (wd === "Sunday" && sc.programmeWideRoster && isMulti && swimfarm) return "sunday_ma_swimfarm";
+    if (wd === "Sunday" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && swimfarm) return "sunday_ma_swimfarm";
     if (wd === "Wednesday" && leadKey === "berta" && sc.programmeWideRoster && isMulti && acton) {
       return "berta_wed_acton_ma";
     }
-    if (wd === "Wednesday" && leadKey === "john" && sc.programmeWideRoster && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {
+    if (wd === "Wednesday" && leadKey === "john" && (sc.leadTeamBanner || sc.programmeWideRoster) && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {
       return "john_wed_acton_ma";
     }
     if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Friday")) {
