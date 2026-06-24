@@ -394,16 +394,6 @@ function todayIsoYmd() {
   return d.getFullYear() + "-" + String(m).padStart(2, "0") + "-" + String(day).padStart(2, "0");
 }
 
-function activeProgrammeWideScopeLabel(scopes, iso) {
-  const wd = weekdayFromIso(iso);
-  for (let i = 0; i < scopes.length; i++) {
-    const sc = scopes[i];
-    if (!sc.programmeWideRoster) continue;
-    if (sc.weekdays && sc.weekdays.indexOf(wd) >= 0) return String(sc.label || sc.id || "Your programme");
-  }
-  return "";
-}
-
 export function portalLeadTeamShiftContext() {
   const { profile, email } = portalAuthContext();
   const leadKey = portalLeadProgrammeKey(profile, email);
@@ -439,20 +429,67 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   };
 }
 
-function overrideAnchorOnInScopeRow(ov, scopes, iso) {
-  if (!ov || !scopes.length) return false;
-  if (!portalLeadDayUsesProgrammeWideRoster(scopes, iso)) return false;
-  const anchor = canonicalStaffKey(ov.anchor_staff_id);
-  if (!anchor) return false;
-  const src = rosterSource();
+function normVenue(v) {
+  return normKey(v).replace(/[^a-z]/g, "");
+}
+
+function openSlotClientSlug(slug) {
+  const s = normKey(slug);
+  return !s || s === "available" || s === "closed" || s === "noclient" || s === "no_client";
+}
+
+function rosterClientIdsMatch(a, b) {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalRosterClientIdsMatch === "function") {
+      return window.portalRosterClientIdsMatch(a, b);
+    }
+  } catch (_) {}
+  return normKey(a) === normKey(b);
+}
+
+/** True when the programme lead is on the roster that day within their service scope. */
+function leadIsOnRosterForDay(leadKey, iso, scopes, source) {
+  const lk = normKey(leadKey);
+  if (!lk) return false;
+  const src = source || rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
   return rows.some(function (row) {
-    return staffOnInScopeRosterRow(anchor, row, iso, scopes, src);
+    if (!rosterRowMatchesIso(row, iso)) return false;
+    const slot = rosterRowToSlot(row, iso);
+    if (!portalLeadSlotInScope(slot, scopes)) return false;
+    const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
+    return keys.indexOf(lk) >= 0;
   });
 }
 
-function overrideTouchesProgrammeScope(ov, scopes, iso) {
-  return overrideAnchorOnInScopeRow(ov, scopes, iso);
+/** Override anchor must match a roster row in the lead's programme (service/venue/day), not another service. */
+function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
+  const anchor = canonicalStaffKey(ov.anchor_staff_id);
+  if (!anchor || !scopes.length) return false;
+  const wantVenue = normVenue(ov.anchor_venue);
+  const wantClient = String(ov.anchor_client_id || "").trim();
+  const openClient = openSlotClientSlug(wantClient);
+  const src = source || rosterSource();
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  return rows.some(function (row) {
+    if (!rosterRowMatchesIso(row, iso)) return false;
+    const slot = rosterRowToSlot(row, iso);
+    if (!portalLeadSlotInScope(slot, scopes)) return false;
+    const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
+    if (keys.indexOf(anchor) < 0) return false;
+    if (wantVenue && normVenue(row.venue) !== wantVenue) return false;
+    if (!openClient && wantClient && !rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function overrideAnchorOnInScopeRow(ov, scopes, iso) {
+  if (!ov || !scopes.length) return false;
+  if (!portalLeadDayUsesProgrammeWideRoster(scopes, iso)) return false;
+  const src = rosterSource();
+  return overrideMatchesLeadScopedRoster(ov, iso, scopes, src);
 }
 
 export function portalLeadTeamShiftChanges(ctx, opts) {
@@ -463,14 +500,20 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   const minCreated = now - (opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS);
   const out = [];
 
+  const src = rosterSource();
+  const seenOverrideIds = new Set();
+
   scheduleOverrideRows().forEach(function (ov) {
     const t = String(ov.override_type || "").trim();
     if (!TEAM_SHIFT_CHANGE_TYPES.has(t)) return;
     if (String(ov.status || "active") !== "active") return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
-    if (!portalLeadDayUsesProgrammeWideRoster(ctx.scopes, iso)) return;
-    if (!overrideTouchesProgrammeScope(ov, ctx.scopes, iso)) return;
+    const ovId = String(ov.id || "").trim();
+    if (ovId && seenOverrideIds.has(ovId)) return;
+    if (!leadIsOnRosterForDay(ctx.leadKey, iso, ctx.scopes, src)) return;
+    if (!overrideMatchesLeadScopedRoster(ov, iso, ctx.scopes, src)) return;
+    if (ovId) seenOverrideIds.add(ovId);
     const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
     if (created && created < minCreated) return;
 
@@ -481,7 +524,7 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     const coverName =
       String(pl.covering_staff_name || pl.to_staff_name || "").trim() ||
       staffDisplayName(pl.covering_staff_id);
-    const programmeLabel = activeProgrammeWideScopeLabel(ctx.scopes, iso);
+    const programmeLabel = activeScopeLabelForDay(ctx.scopes, iso);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;
     try {

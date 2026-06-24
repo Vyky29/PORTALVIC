@@ -43,7 +43,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260621-team-subordinates-only",
+    "/portal/portal_lead_team_shift.js?v=20260624-lead-shift-scope",
   ];
 
   var TIER_IDLE = [
