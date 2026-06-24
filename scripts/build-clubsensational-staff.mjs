@@ -128,7 +128,7 @@ function injectStaffConfigScript(htmlPath) {
   const tag =
     '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  ';
   const bootTag =
-    '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot4"></script>\n  ';
+    '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot5"></script>\n  ';
   const hintTag =
     '<script src="/portal/staff-app-install-hint.js?v=20260624-staff-install"></script>\n  ';
   let src = readFileSync(htmlPath, "utf8");

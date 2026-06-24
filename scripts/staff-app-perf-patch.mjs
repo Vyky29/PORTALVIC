@@ -6,18 +6,22 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260624-staff-perf5";
+const VER = "20260624-staff-perf6";
 
 /** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
 const STAFF_DEFERRED_TIER_PATTERNS = [
   /  <script src="\/portal\/clients_info_embed\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/clients_gender_embed\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_staff_feedback_data_loader\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_staff_lead_aquatic_slots\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_participants_sheet\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_participant_identity\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_participant_general_hydrate\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_participant_avatars_hydrate\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_staff_gender_embed\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_swimming_instructor_menus\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_staff_photos\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_area_note_icons\.js[^"]*"><\/script>\n/g,
 ];
 
 function stripDeferredFromTierBlock(tierBlock, staffApp) {
@@ -128,7 +132,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot4"></script>'
+        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot5"></script>'
       );
     }
 

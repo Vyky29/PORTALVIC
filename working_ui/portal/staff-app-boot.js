@@ -6,7 +6,7 @@
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
-  var VER = "20260624-staff-boot4";
+  var VER = "20260624-staff-boot5";
   var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(
     String((global.navigator && global.navigator.userAgent) || "")
   );
@@ -33,12 +33,12 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf5");
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf6");
     preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
     if (isMobile) {
-      preloadScript("/portal/staff-dashboard-auth-bridge.js?v=20260624-staff-perf5");
-      preloadScript("/portal/staff-dashboard-rehydrate.js?v=20260624-staff-perf5");
+      preloadScript("/portal/staff-dashboard-auth-bridge.js?v=20260624-staff-perf6");
+      preloadScript("/portal/staff-dashboard-rehydrate.js?v=20260624-staff-perf6");
     }
   }
 
@@ -114,13 +114,17 @@
 
     var clientsInfo = "/portal/clients_info_embed.js?v=20260608-anas-ismail";
     var rest = [
+      "/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf",
       "/portal/clients_gender_embed.js?v=20260605-gender3",
+      "/portal/portal_participants_sheet.js?v=20260624-payroll-band",
       "/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge",
       "/portal/portal_participant_identity.js?v=20260703-desktop",
       "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
+      "/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared",
       "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
       "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
       "/portal/portal_staff_photos.js?v=20260624-rt-debug",
+      "/portal/portal_area_note_icons.js?v=20260610-area-note-img",
     ];
 
     void loadScript(clientsInfo, false)
