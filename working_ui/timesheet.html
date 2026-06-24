@@ -256,7 +256,7 @@
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260624-youssef-dc-start"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260623-sunday-support-5h"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260624-youssef-dc-start"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260624-shift-window"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260624-payroll-band"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -1401,9 +1401,18 @@
         const rec = sessionReviewRecord(reviewMap, s, dateObj);
         if (!sessionIsCompleted(rec)) completedAll = false;
       });
-      if (applySupportBuffer) {
-        minStart -= typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
-        maxEnd += typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+      const spanMin = Math.max(0, maxEnd - minStart);
+      const bufferMin = typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+      if (
+        applySupportBuffer &&
+        (typeof portalStaffShouldApplyPayrollBandBuffer === "function"
+          ? portalStaffShouldApplyPayrollBandBuffer(spanMin, dayName)
+          : spanMin < (typeof PORTAL_STAFF_PAYROLL_BAND_MINUTES === "number" ? PORTAL_STAFF_PAYROLL_BAND_MINUTES : 120) &&
+            dayName &&
+            dayName !== "Sunday")
+      ) {
+        minStart -= bufferMin;
+        maxEnd += bufferMin;
       }
       const mins = Math.max(0, maxEnd - minStart);
       if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
@@ -1445,8 +1454,26 @@
           role === "Support Worker" &&
           typeof portalStaffSupportShiftBufferApplies === "function" &&
           portalStaffSupportShiftBufferApplies(svc, dayName);
-        if (applySupportBuffer) {
-          mins += 2 * (typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15);
+        if (applySupportBuffer && roleRows.length) {
+          let roleMin = Infinity;
+          let roleMax = -Infinity;
+          roleRows.forEach((s) => {
+            const a = hmToMinutes(String(s.start || "").trim());
+            let b = hmToMinutes(String(s.end || s.start || "").trim());
+            if (b < a) b += 24 * 60;
+            if (a < roleMin) roleMin = a;
+            if (b > roleMax) roleMax = b;
+          });
+          const roleSpan = Number.isFinite(roleMin) && Number.isFinite(roleMax) ? Math.max(0, roleMax - roleMin) : mins;
+          const bufferMin = typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+          const shouldBuffer =
+            typeof portalStaffShouldApplyPayrollBandBuffer === "function"
+              ? portalStaffShouldApplyPayrollBandBuffer(roleSpan, dayName)
+              : roleSpan <
+                  (typeof PORTAL_STAFF_PAYROLL_BAND_MINUTES === "number" ? PORTAL_STAFF_PAYROLL_BAND_MINUTES : 120) &&
+                dayName &&
+                dayName !== "Sunday";
+          if (shouldBuffer) mins += 2 * bufferMin;
         }
         let hours = Number((mins / 60).toFixed(2));
         hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, roleRows);

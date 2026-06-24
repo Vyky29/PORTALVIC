@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260624-staff-perf13";
+const VER = "20260625-source-extract";
 
 /** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
 const STAFF_DEFERRED_TIER_PATTERNS = [
@@ -89,6 +89,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     return;
   }
   const tierBlock = stripDeferredFromTierBlock(tierMatch[0], deferHeavyScripts);
+  const alreadyExtracted = html.includes("staff-dashboard-core.js");
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -96,23 +97,28 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     { file: "staff-dashboard-achievements-boot.js", marker: "(function portalAchievementsBootstrap()" },
   ];
 
-  for (const item of extractions) {
-    const r = extractScriptAfterMarker(html, item.marker);
-    if (!r.extracted) {
-      console.warn("[staff-app-perf-patch] missing marker for", item.file);
-      continue;
+  if (!alreadyExtracted) {
+    for (const item of extractions) {
+      const r = extractScriptAfterMarker(html, item.marker);
+      if (!r.extracted) {
+        console.warn("[staff-app-perf-patch] missing marker for", item.file);
+        continue;
+      }
+      html = r.html;
+      writeFileSync(join(portalDir, item.file), r.extracted + "\n", "utf8");
+      console.log("[staff-app-perf-patch] wrote", item.file, "(" + r.extracted.length + " bytes)");
     }
-    html = r.html;
-    writeFileSync(join(portalDir, item.file), r.extracted + "\n", "utf8");
-    console.log("[staff-app-perf-patch] wrote", item.file, "(" + r.extracted.length + " bytes)");
-  }
 
-  html = stripLegacyAuthBootstrap(html);
-  html = html.replace(
-    /<script src="\/portal\/staff-dashboard-dock-boot\.js[^"]*"><\/script>\n/g,
-    "",
-  );
-  html = html.replace(extBlockRe, buildSyncScriptTail(tierBlock));
+    html = stripLegacyAuthBootstrap(html);
+    html = html.replace(
+      /<script src="\/portal\/staff-dashboard-dock-boot\.js[^"]*"><\/script>\n/g,
+      "",
+    );
+    html = html.replace(extBlockRe, buildSyncScriptTail(tierBlock));
+  } else {
+    html = html.replace(extBlockRe, tierBlock);
+    console.log("[staff-app-perf-patch] staff-dashboard-core.js already external — skip inline extraction");
+  }
 
   if (staffApp) {
     html = html.replace(
@@ -135,7 +141,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot9"></script>'
+        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-perf14"></script>'
       );
     }
 
@@ -163,7 +169,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
   if (injectStaffBoot && !staffApp && !html.includes("staff-app-boot.js")) {
     html = html.replace(
       '<script src="/portal/portal_auth_page_gate.js',
-      '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot9"></script>\n  <script src="/portal/portal_auth_page_gate.js'
+      '<script src="/portal/staff-app-boot.js?v=20260624-staff-perf14"></script>\n  <script src="/portal/portal_auth_page_gate.js'
     );
     if (deferHeavyScripts) {
       html = html.replace(

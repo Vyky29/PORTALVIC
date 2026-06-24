@@ -434,4 +434,6 @@
   global.portalApplyStaffDayShiftWindowToTodayItems = portalApplyStaffDayShiftWindowToTodayItems;
   global.portalStaffSessionShiftSlotLabel = portalStaffSessionShiftSlotLabel;
   global.PORTAL_STAFF_SHIFT_BUFFER_MIN = BUFFER_MIN;
+  global.PORTAL_STAFF_PAYROLL_BAND_MINUTES = PAYROLL_BAND_MINUTES;
+  global.portalStaffShouldApplyPayrollBandBuffer = resolveShiftBandBuffer;
 })(typeof window !== "undefined" ? window : globalThis);
