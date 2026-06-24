@@ -10,9 +10,18 @@ import {
   portalLeadProgrammeWideTodayForStaff,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-john-sunday-team-banner";
+} from "./portal_lead_session_scope.js?v=20260625-lead-team-override-halo";
 
-const TEAM_SHIFT_CHANGE_TYPES = new Set(["instructor_reassign"]);
+const LEAD_SERVICE_CHANGE_TYPES = new Set([
+  "instructor_reassign",
+  "client_replace_in_slot",
+  "client_absence_announced",
+  "slot_close",
+  "slot_open",
+  "slot_clear_client",
+  "session_add",
+  "slot_update",
+]);
 const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function normKey(v) {
@@ -284,7 +293,7 @@ function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
     if (String(ov.session_date || "").slice(0, 10) !== iso) return;
     if (String(ov.status || "active") !== "active") return;
     if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
-    if (!overrideAnchorOnInScopeRow(ov, scopes, iso)) return;
+    if (!overrideMatchesLeadScopedRoster(ov, iso, scopes, source)) return;
     const pl = parseOverridePayload(ov);
     const anchor = canonicalStaffKey(ov.anchor_staff_id);
     const cover = canonicalStaffKey(pl.covering_staff_id);
@@ -514,9 +523,71 @@ function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
 
 function overrideAnchorOnInScopeRow(ov, scopes, iso) {
   if (!ov || !scopes.length) return false;
-  if (!portalLeadDayUsesProgrammeWideRoster(scopes, iso)) return false;
   const src = rosterSource();
   return overrideMatchesLeadScopedRoster(ov, iso, scopes, src);
+}
+
+function leadOverrideChangeTitle(ov, pl) {
+  const t = String(ov.override_type || "").trim();
+  pl = pl || parseOverridePayload(ov);
+  const client =
+    String(pl.client_name || pl.client_display_name || pl.participant_name || "").trim() ||
+    String(ov.anchor_client_id || "").trim();
+  if (t === "instructor_reassign") {
+    const anchorName =
+      String(pl.from_staff_name || pl.original_staff_name || "").trim() ||
+      staffDisplayName(ov.anchor_staff_id);
+    const coverName =
+      String(pl.covering_staff_name || pl.to_staff_name || "").trim() ||
+      staffDisplayName(pl.covering_staff_id);
+    if (anchorName && coverName) return anchorName + " off · " + coverName + " covering";
+    return "Team shift change";
+  }
+  if (t === "client_absence_announced") {
+    return client ? client + " absent" : "Participant absent";
+  }
+  if (t === "client_replace_in_slot") {
+    return client ? client + " session change" : "Make-up / session change";
+  }
+  if (t === "slot_close") return client ? client + " session cancelled" : "Session cancelled";
+  if (t === "slot_open") return "Slot reopened";
+  if (t === "slot_clear_client") return client ? client + " cleared from slot" : "Client cleared from slot";
+  if (t === "session_add") {
+    const kind = String(pl.kind || "").trim().toLowerCase();
+    if (kind === "shadowing") return "Shadowing added";
+    if (kind === "training") return "Training added";
+    if (kind === "meeting") return "Meeting added";
+    return "New session added";
+  }
+  if (t === "slot_update") return "Schedule update";
+  return "Programme schedule change";
+}
+
+/** Programme lead: override in a service/day they lead (not only their own anchor row). */
+export function portalLeadOverrideRowAppliesToLeadScope(row, ctx) {
+  ctx = ctx || portalLeadTeamShiftContext();
+  if (!ctx || !row) return false;
+  const t = String(row.override_type || "").trim();
+  if (!t || t === "override_void") return false;
+  if (!LEAD_SERVICE_CHANGE_TYPES.has(t)) return false;
+  if (String(row.status || "active") !== "active") return false;
+  const iso = String(row.session_date || "").slice(0, 10);
+  if (!iso) return false;
+  const wd = weekdayFromIso(iso);
+  const hasScopeDay = ctx.scopes.some(function (sc) {
+    return sc.weekdays && sc.weekdays.indexOf(wd) >= 0;
+  });
+  if (!hasScopeDay) return false;
+  const me = ctx.leadKey;
+  const anchor = canonicalStaffKey(row.anchor_staff_id);
+  if (t === "instructor_reassign") {
+    const pl = parseOverridePayload(row);
+    const cover = canonicalStaffKey(pl.covering_staff_id);
+    if (anchor === me || cover === me) return false;
+  } else if (anchor === me) {
+    return false;
+  }
+  return overrideMatchesLeadScopedRoster(row, iso, ctx.scopes, rosterSource());
 }
 
 export function portalLeadTeamShiftChanges(ctx, opts) {
@@ -532,25 +603,18 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
 
   scheduleOverrideRows().forEach(function (ov) {
     const t = String(ov.override_type || "").trim();
-    if (!TEAM_SHIFT_CHANGE_TYPES.has(t)) return;
+    if (!LEAD_SERVICE_CHANGE_TYPES.has(t)) return;
     if (String(ov.status || "active") !== "active") return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
-    if (!leadIsOnRosterForDay(ctx.leadKey, iso, ctx.scopes, src)) return;
     if (!overrideMatchesLeadScopedRoster(ov, iso, ctx.scopes, src)) return;
     if (ovId) seenOverrideIds.add(ovId);
     const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
     if (created && created < minCreated) return;
 
     const pl = parseOverridePayload(ov);
-    const anchorName =
-      String(pl.from_staff_name || pl.original_staff_name || "").trim() ||
-      staffDisplayName(ov.anchor_staff_id);
-    const coverName =
-      String(pl.covering_staff_name || pl.to_staff_name || "").trim() ||
-      staffDisplayName(pl.covering_staff_id);
     const programmeLabel = activeScopeLabelForDay(ctx.scopes, iso);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;
@@ -565,10 +629,8 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
       id: String(ov.id || iso + "|" + t + "|" + ov.anchor_staff_id),
       iso: iso,
       type: t,
-      title: anchorName && coverName ? anchorName + " off · " + coverName + " covering" : "Team shift change",
+      title: leadOverrideChangeTitle(ov, pl),
       sub: [programmeLabel, dateLabel].filter(Boolean).join(" · "),
-      anchorName: anchorName,
-      coverName: coverName,
       createdAt: ov.created_at || "",
     });
   });
@@ -673,7 +735,7 @@ export function portalSyncLeadTeamShiftUi() {
 
     const iso = todayIsoYmd();
     const team = portalLeadTeamOnShiftForIso(iso, ctx);
-    const showToday = !!(team && team.members.length);
+    const showToday = !!team;
 
     if (todayHost) {
       if (showToday) {
@@ -692,6 +754,12 @@ export function portalSyncLeadTeamShiftUi() {
       qmHost.hidden = !qmHtml;
     }
     if (qmHeading) qmHeading.hidden = !qmHtml;
+    if (typeof window.portalRefreshPendingOverrideDaysCache === "function") {
+      window.portalRefreshPendingOverrideDaysCache();
+    }
+    if (typeof window.portalRefreshScheduleOverrideDayChrome === "function") {
+      window.portalRefreshScheduleOverrideDayChrome({ force: true });
+    }
   } catch (e) {
     try {
       console.warn("[portal] lead team shift sync", e);
@@ -703,6 +771,7 @@ if (typeof window !== "undefined") {
   window.portalSyncLeadTeamShiftUi = portalSyncLeadTeamShiftUi;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
+  window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;
   window.portalLeadCollectProgrammeWideSessionsModel = portalLeadCollectProgrammeWideSessionsModel;

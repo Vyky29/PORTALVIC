@@ -2403,10 +2403,8 @@
       var sid = String(staffId || '').trim().toLowerCase();
       if(sid === 'john'){
         return [
-          { weekdays: ['Monday', 'Friday'], serviceKeys: ['bespoke'], venues: ['swimfarm'] },
-          /* John covers individually-reassigned Acton sessions on Wednesday (e.g. Scott, Cyrus),
-             he does not run the whole programme roster — keep him on the standard cover path. */
-          { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'] },
+          { weekdays: ['Monday', 'Friday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true },
+          { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'], leadTeamBanner: true },
           /* Sunday SwimFarm Multi-Activity: John teaches his own client per 45' slot; lead report at
              end covers the wider programme. Team banner (leadTeamBanner) lists who is on shift. */
           { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }

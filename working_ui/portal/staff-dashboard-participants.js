@@ -1699,9 +1699,13 @@
         }
         if(!payload || typeof payload !== 'object') payload = {};
         const cover = portalNormKeyStr(payload.covering_staff_id);
-        return anchor === me || (!!cover && cover === me);
+        if(anchor === me || (!!cover && cover === me)) return true;
+      }else if(anchor === me){
+        return true;
       }
-      return anchor === me;
+      if(typeof window.portalLeadOverrideRowAppliesToLeadScope === 'function'
+        && window.portalLeadOverrideRowAppliesToLeadScope(row)) return true;
+      return false;
     }
     /** Same as applies-to-staff but ignores row status (for undo payloads where status is already cancelled). */
     function portalScheduleOverrideRowConcernedStaffIgnoringStatus(row){

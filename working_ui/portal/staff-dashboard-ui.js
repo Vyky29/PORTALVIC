@@ -1022,9 +1022,14 @@
           }else{
             pack.hasUpdated = true;
           }
-        }else if(t === 'instructor_reassign' && typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
-          && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
-          pack.hasNewShift = true;
+        }else if(t === 'instructor_reassign'){
+          if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+            && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
+            pack.hasNewShift = true;
+          }
+          pack.hasUpdated = true;
+        }else if(t === 'client_replace_in_slot' || t === 'client_absence_announced'
+          || t === 'slot_close' || t === 'slot_open' || t === 'slot_clear_client'){
           pack.hasUpdated = true;
         }
         return pack;

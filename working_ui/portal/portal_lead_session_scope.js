@@ -65,6 +65,7 @@ const JOHN_SCOPES = [
     weekdays: ["Monday", "Friday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
+    leadTeamBanner: true,
   },
   {
     id: "wednesday-ma-acton",
@@ -72,8 +73,8 @@ const JOHN_SCOPES = [
     weekdays: ["Wednesday"],
     serviceKeys: ["multi", "aquatic"],
     venues: ["acton"],
-    // John covers individually-reassigned Acton sessions on Wednesday (e.g. Scott, Cyrus);
-    // he does not run the whole programme roster, so keep him on the standard cover path.
+    /* Team banner lists who is on shift; Today cards stay lead-instructor / cover only. */
+    leadTeamBanner: true,
   },
   {
     id: "sunday-ma-swimfarm",
