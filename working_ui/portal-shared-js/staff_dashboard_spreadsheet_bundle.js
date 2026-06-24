@@ -4531,7 +4531,37 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-12"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big Pool",
+      "time_slot": "12.30 to 1.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-12"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-12"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-12"
     },
@@ -5721,7 +5751,27 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-17"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big Pool",
+      "time_slot": "12.30 to 1.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-17"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-06-17"
     },
@@ -6161,7 +6211,37 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 4",
+      "time_slot": "11 to 12.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-19"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Big Pool",
+      "time_slot": "12.30 to 1.30",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-19"
+    },
+    {
+      "client_name": "Fadi",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-06-19"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-19"
     },
@@ -6900,8 +6980,8 @@
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
-      "area": "Big pool",
-      "time_slot": "12,30 to 1.20",
+      "area": "Big Pool",
+      "time_slot": "12.30 to 1.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
     },
@@ -12989,4 +13069,9 @@
     "rosterMadreSource": "roster_term_master.json"
   }
 };
+  if (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) {
+    window.__STAFF_DASHBOARD_BUNDLE_ROWS__ = Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+      ? window.STAFF_DASHBOARD_SOURCE.rows.slice()
+      : [];
+  }
 })();

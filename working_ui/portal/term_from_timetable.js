@@ -1217,5 +1217,15 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-05"
     ]
   },
-  "termFeedbackAssumeCompleteThroughIso": "2026-06-22"
+  "termStaffTimesheetFeedbackTrustThroughIsoByProfileKey": {
+    "michelle": "2026-06-24",
+    "youssef": "2026-06-24",
+    "luliya": "2026-06-24",
+    "lulia": "2026-06-24",
+    "bismark": "2026-06-24",
+    "john": "2026-06-24",
+    "godsway": "2026-06-24",
+    "giuseppe": "2026-06-24"
+  },
+  "termFeedbackAssumeCompleteThroughIso": "2026-06-24"
 };
