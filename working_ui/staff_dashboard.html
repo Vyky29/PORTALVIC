@@ -10017,7 +10017,9 @@
         return false;
       }
       if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid, anchor)) return true;
-      if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return true;
+      if(typeof portalStaffHasShiftOnCalendarDate === 'function' && portalStaffHasShiftOnCalendarDate(iso, sid) === true){
+        if(!portalStaffSummerShiftDateWithoutRosterRow(iso, sid)) return true;
+      }
       return false;
     }
     function portalStaffSessionsModelWouldDropToday(staffId, priorModel, nextModel){
@@ -12160,6 +12162,21 @@
     try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
     try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
     try{ portalStaffEnsureInitialTodayScheduleSettledSoon(); }catch(_){}
+    /** Summer Term 2: shift-date list can include weekdays without a roster row — not a worked day. */
+    function portalStaffSummerShiftDateWithoutRosterRow(isoYmd, staffId){
+      try{
+        const iso = normaliseIsoDate(isoYmd);
+        const sid = String(staffId || '').trim().toLowerCase();
+        if(!iso || !sid) return false;
+        if(typeof portalCalendarIsoUsesSummerDatedRosterOnly !== 'function'
+          || !portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return false;
+        if(typeof portalStaffHasShiftOnCalendarDate !== 'function'
+          || portalStaffHasShiftOnCalendarDate(iso, sid) !== true) return false;
+        if(typeof portalStaffHasDatedRowsForIso === 'function'
+          && portalStaffHasDatedRowsForIso(iso, sid)) return false;
+        return true;
+      }catch(_){ return false; }
+    }
     /** Live Today: staff has a dated shift on the anchor calendar day (Summer Term 2 timetable). */
     function portalStaffLiveTodayHasScheduledShift(staffId, anchorDate){
       try{
@@ -12173,7 +12190,9 @@
         if(!iso) return false;
         if(typeof portalStaffHasShiftOnCalendarDate === 'function'){
           const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
-          if(onShift === true) return true;
+          if(onShift === true){
+            if(!portalStaffSummerShiftDateWithoutRosterRow(iso, sid)) return true;
+          }
         }
         if(typeof portalStaffClientSessionsOnCalendarDate === 'function'){
           const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
@@ -12204,6 +12223,12 @@
         if(iso && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
           && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
           return false;
+        }
+        if(iso && portalStaffSummerShiftDateWithoutRosterRow(iso, sid)){
+          const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+          if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+            && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return false;
+          return true;
         }
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
         if(typeof portalTermCalendarDayIsRed === 'function'
@@ -12245,6 +12270,17 @@
       if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && !portalStaffLiveTodayHasScheduledShift(sid, anchor)) return null;
       var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
       if(!iso) return null;
+      var dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+      if(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function'
+        && portalCalendarIsoUsesSummerDatedRosterOnly(iso)
+        && typeof portalStaffHasDatedRowsForIso === 'function'
+        && !portalStaffHasDatedRowsForIso(iso, sid)){
+        if(typeof portalStaffClientSessionsOnCalendarDate !== 'function'
+          || !portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)){
+          if(typeof portalStaffHasInstructorCoverOnCalendarDate !== 'function'
+            || !portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return null;
+        }
+      }
       var venueLabel = '';
       var timeLabel = '';
       var programmeLabel = '';
