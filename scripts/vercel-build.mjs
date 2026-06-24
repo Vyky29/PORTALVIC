@@ -40,7 +40,11 @@ if (isStaff) {
   cpSync(join(DEPLOY, "login.html"), join(DEPLOY, "index.html"));
 } else {
   cpSync(join(ROOT, "working_ui"), DEPLOY, { recursive: true });
-  patchStaffAppPerf(DEPLOY, { staffApp: false });
+  patchStaffAppPerf(DEPLOY, {
+    staffApp: false,
+    deferStaffHeavyScripts: true,
+    injectStaffBoot: true,
+  });
 }
 
 console.log("[vercel-build] Ready:", DEPLOY);

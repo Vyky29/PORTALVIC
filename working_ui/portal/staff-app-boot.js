@@ -1,15 +1,9 @@
 /**
- * clubSENsational Staff app — boot (clubsensational-staff deploy only).
- *
- * Device targets:
- * - Handheld (phone + iPad): sequential heavy scripts, delayed idle extras, fast rehydrate.
- * - Desktop (staff at home on clubsensational-staff): parallel deferred load, full layout.
- *
- * portalvic staff_dashboard.html (no PORTAL_STAFF_APP) keeps the standard desktop bundle unchanged.
+ * Staff dashboard boot — clubsensational-staff (PORTAL_STAFF_APP) and portalvic staff_dashboard
+ * (legacy URL until workers migrate). Handheld gets sequential load + fast rehydrate; desktop parallel.
  */
 (function (global) {
   "use strict";
-  if (!global.PORTAL_STAFF_APP) return;
 
   function detectHandheldStaff() {
     try {
@@ -23,10 +17,15 @@
 
   var isHandheld = detectHandheldStaff();
   var isStaffDashboard = /staff_dashboard/i.test(String(global.location.pathname || ""));
+  var isStaffApp = !!global.PORTAL_STAFF_APP;
+  var isPortalvicStaff = !isStaffApp && isStaffDashboard;
+
+  if (!isStaffApp && !isPortalvicStaff) return;
 
   try {
     var root = document.documentElement;
-    root.classList.add("portal-staff-app");
+    if (isStaffApp) root.classList.add("portal-staff-app");
+    if (isPortalvicStaff) root.classList.add("portal-vic-staff");
     root.classList.add(isHandheld ? "portal-staff-handheld" : "portal-staff-desktop");
   } catch (_) {}
 
@@ -34,7 +33,7 @@
     return isHandheld;
   };
 
-  var VER = "20260624-staff-boot8";
+  var VER = "20260624-staff-boot9";
 
   try {
     var pre = document.createElement("link");
@@ -57,7 +56,7 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf9");
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf10");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
@@ -260,7 +259,7 @@
   function onDomReady() {
     if (!isHandheld) portalStaffStartDeferredDashboardScripts();
     portalStaffDeferHeadExtras();
-    if (typeof global.portalStaffDeferWebPush === "function") {
+    if (isStaffApp && typeof global.portalStaffDeferWebPush === "function") {
       global.portalStaffDeferWebPush();
     }
     portalStaffDeferDashboardExtras();

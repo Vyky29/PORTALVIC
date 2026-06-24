@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260624-staff-perf9";
+const VER = "20260624-staff-perf10";
 
 /** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
 const STAFF_DEFERRED_TIER_PATTERNS = [
@@ -73,7 +73,9 @@ function buildSyncScriptTail(tierBlock) {
 }
 
 export function patchStaffAppPerf(deployDir, options = {}) {
-  const staffApp = options.staffApp !== false;
+  const staffApp = options.staffApp === true;
+  const deferHeavyScripts = staffApp || options.deferStaffHeavyScripts === true;
+  const injectStaffBoot = staffApp || options.injectStaffBoot === true;
   const htmlPath = join(deployDir, "staff_dashboard.html");
   const portalDir = join(deployDir, "portal");
   let html = readFileSync(htmlPath, "utf8");
@@ -85,7 +87,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     console.warn("[staff-app-perf-patch] tier script block not found — skipping");
     return;
   }
-  const tierBlock = stripDeferredFromTierBlock(tierMatch[0], staffApp);
+  const tierBlock = stripDeferredFromTierBlock(tierMatch[0], deferHeavyScripts);
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -128,7 +130,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot8"></script>'
+        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot9"></script>'
       );
     }
 
@@ -151,6 +153,19 @@ export function patchStaffAppPerf(deployDir, options = {}) {
       '<link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" media="print" onload="this.media=\'all\'" />\n' +
         '  <noscript><link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" /></noscript>\n'
     );
+  }
+
+  if (injectStaffBoot && !staffApp && !html.includes("staff-app-boot.js")) {
+    html = html.replace(
+      '<script src="/portal/portal_auth_page_gate.js',
+      '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot9"></script>\n  <script src="/portal/portal_auth_page_gate.js'
+    );
+    if (deferHeavyScripts) {
+      html = html.replace(
+        /  <script src="\/portal\/portal_orientation_lock\.js[^"]*"><\/script>\n  <script src="\/portal\/portal_venue_report_schedule\.js[^"]*"><\/script>\n/g,
+        ""
+      );
+    }
   }
 
   writeFileSync(htmlPath, html, "utf8");
