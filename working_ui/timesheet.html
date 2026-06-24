@@ -386,7 +386,8 @@
       stf017: "javi",
       stf018: "raul",
       stf019: "sevitha",
-      stf020: "teflon"
+      stf020: "teflon",
+      stf021: "lulia"
     };
     /**
      * Part-time / manual-entry staff: no roster-driven timesheet. They log extra
@@ -423,6 +424,12 @@
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
       john: { hourly_rate: 30, role_label: "Service Lead" },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
+      lulia: {
+        roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
+        primaryRole: "Support Worker",
+        hourly_rate: 18,
+        role_label: "Support Worker"
+      },
       demo: { hourly_rate: 30, role_label: "Demo Instructor" }
     };
     const state = {
@@ -576,12 +583,14 @@
       });
     }
     function profileKey(v) {
-      return String(v || "")
+      const k = String(v || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "")
         .trim();
+      if (k === "luliya" || k === "aida") return "lulia";
+      return k;
     }
     function rosterKeyFromAuthEmail(email) {
       const em = String(email || "").trim().toLowerCase();
@@ -946,6 +955,17 @@
     }
 
     /** Map a roster service string to the pay role (mirror of public.portal_service_to_role). */
+    function sessionPayRole(session){
+      const svc = String(
+        (session && (session.rosterService || session.service || session.activity)) || ""
+      ).toLowerCase();
+      const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+      if (/day\s*centre/.test(svc)) return "Support Worker";
+      if (/aquatic/.test(svc) && /big pool|small pool|teaching pool|\blane\b/.test(area)) {
+        return "Swimming Instructor";
+      }
+      return serviceToRole(svc);
+    }
     function serviceToRole(service){
       const s = String(service || "").toLowerCase();
       if (!s) return "";
@@ -1010,6 +1030,25 @@
       const iso = String(dateKey || "").trim().slice(0, 10);
       if (key === "roberto" && iso >= ROBERTO_SUNDAY_EXTENDED_FROM) return 6.5;
       return 6;
+    }
+
+    function applyRosterPayRateFallback(rosterKey) {
+      const key = String(rosterKey || "").trim().toLowerCase();
+      const fb = PAY_RATE_BY_ROSTER_KEY[key];
+      if (!fb) return;
+      if (fb.roleRates && typeof fb.roleRates === "object") {
+        Object.keys(fb.roleRates).forEach((role) => {
+          if (state.roleRates[role] == null) state.roleRates[role] = Number(fb.roleRates[role]);
+        });
+        if (!state.primaryRole && fb.primaryRole) state.primaryRole = fb.primaryRole;
+        if (state.primaryRate == null && fb.primaryRole && fb.roleRates[fb.primaryRole] != null) {
+          state.primaryRate = Number(fb.roleRates[fb.primaryRole]);
+        }
+      }
+      if (state.primaryRate == null && fb.hourly_rate != null) {
+        state.primaryRate = Number(fb.hourly_rate);
+        if (!state.primaryRole && fb.role_label) state.primaryRole = serviceToRole(fb.role_label) || fb.role_label;
+      }
     }
 
     /** Build state.roleRates (role -> £/h) + primary, from staff_role_rates rows. */
@@ -1159,7 +1198,7 @@
         if (typeof portalStaffSupportShiftBufferApplies === "function" && portalStaffSupportShiftBufferApplies(svc, dayName)) {
           applySupportBuffer = true;
         }
-        const role = serviceToRole(svc);
+        const role = sessionPayRole(s);
         if (role) {
           roleMinutes[role] = (roleMinutes[role] || 0) + dur;
           if (roleMinutes[role] > bestMin) { bestMin = roleMinutes[role]; dominantRole = role; dominantService = svc; }
@@ -1487,6 +1526,7 @@
 
       const manualKey = manualRosterKeyForUser(profile, user, ghostRosterKey);
       if (manualKey) {
+        applyRosterPayRateFallback(manualKey);
         state.manual = true;
         state.staffRosterKey = manualKey;
         state.employeeName = ghostHandoff && ghostHandoff.displayName
@@ -1509,6 +1549,7 @@
       }
 
       const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
+      applyRosterPayRateFallback(state.staffRosterKey);
       state.employeeName = ghostHandoff && ghostHandoff.displayName
         ? ghostHandoff.displayName
         : resolveEmployeeDisplayName(profile, user, state.staffRosterKey);

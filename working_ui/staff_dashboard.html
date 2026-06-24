@@ -932,7 +932,7 @@
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260614-ios-camera-fix" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260624-override-day-pulse"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260624-next-session-tomorrow"></script>
   <script src="/portal/portal_participant_photos.js?v=20260614-photo-repair"></script>
   <script src="/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
@@ -12064,6 +12064,7 @@
         : null;
       if(!info || !info.date) return null;
       const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
+      if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function' || !portalCalendarIsoIsTomorrow(iso)) return null;
       let rows = [];
       try{
         rows = iso ? portalBuildTodayRowsForIso(iso) : [];
@@ -12102,6 +12103,7 @@
             return {
               weekday: weekday,
               dateLabel: dateLabel,
+              iso: iso,
               sessionCount: participants.length,
               venueLabel: String(nsRows[0] && nsRows[0].venue || '').trim(),
               participants: participants
@@ -12156,6 +12158,7 @@
       return {
         weekday: weekday,
         dateLabel: dateLabel,
+        iso: iso,
         sessionCount: participants.length,
         venueLabel: venueKeys[0] || '',
         participants: participants
@@ -13679,7 +13682,7 @@
               || '2026-07-17'
           ).trim().slice(0, 10);
         }catch(_){}
-        for(var i = 1; i <= 45; i++){
+        for(var i = 1; i <= 1; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
@@ -15198,11 +15201,19 @@
     /** Pulse class for term-calendar days OFF the staff base rota that still have a pending override (shadowing / new shift / change). */
     function portalTermOverridePulseClassFromDayFlags(flags){
       if(!flags) return '';
-      if(flags.hasNewShift) return 'term-cal-day--ov-pulse-admin-shift';
-      if(flags.hasShadowing) return 'term-cal-day--ov-pulse-shadowing';
       if(flags.hasTraining) return 'term-cal-day--ov-pulse-training';
-      if(flags.hasMeeting) return 'term-cal-day--ov-pulse-meeting';
-      if(flags.hasUpdated) return 'term-cal-day--ov-pulse-updated';
+      if(flags.hasShadowing) return 'term-cal-day--ov-pulse-shadowing';
+      if(flags.hasNewShift || flags.hasUpdated || flags.hasMakeUp || flags.hasTrial
+        || flags.hasAbsentAnnounced || flags.hasCancelled || flags.hasMeeting
+        || flags.hasShadowingHost){
+        return 'term-cal-day--ov-pulse-admin-shift';
+      }
+      return '';
+    }
+    function portalTermWorkedDayOverridePulseClass(dayFlags, adminScheduleAdjusted){
+      const fromFlags = portalTermOverridePulseClassFromDayFlags(dayFlags);
+      if(fromFlags) return fromFlags;
+      if(adminScheduleAdjusted) return 'term-cal-day--ov-pulse-admin-shift';
       return '';
     }
     function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWord){
@@ -15542,6 +15553,19 @@
       return `<div class="calendar-day calendar-day--week-row calendar-day--week-row--${tone}${updatedPulseCls}"${weekGo} aria-label="${aria}"><span class="week-day-icon" aria-hidden="true">${abbr}</span><div class="week-row-detail">${parts.join('')}</div></div>`;
     }
 
+    function portalNextSessionMiniCardPulseIso(rows){
+      try{
+        const preview = typeof dashboardData !== 'undefined' ? dashboardData && dashboardData.portalTodayNextSessionPreview : null;
+        if(preview && preview.iso) return String(preview.iso).trim().slice(0, 10);
+        const ns = typeof dashboardData !== 'undefined' ? dashboardData && dashboardData.nextSessionCalendarDate : null;
+        if(ns && typeof portalIsoYmdFromDate === 'function'){
+          const fromDate = ns instanceof Date ? ns : null;
+          if(fromDate && !isNaN(fromDate.getTime())) return portalIsoYmdFromDate(fromDate);
+        }
+      }catch(_){}
+      return '';
+    }
+    try{ window.portalNextSessionMiniCardPulseIso = portalNextSessionMiniCardPulseIso; }catch(_){}
     function renderMiniCounts(){
       const tomorrowCard = document.querySelector('.section-card--overview .mini-card[data-open="tomorrowSheet"]');
       const weekCard = document.querySelector('.section-card--overview .mini-card[data-open="weekSheet"]');
@@ -16645,19 +16669,8 @@
             const dayWordNav = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const termReviewIsoNav = termCalendarDateKey(y, monthIndex, day);
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
-            const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasTrial ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0) + (dayFlags.hasUpdated ? 1 : 0) + (dayFlags.hasNewShift ? 1 : 0) + (dayFlags.hasTraining ? 1 : 0) + (dayFlags.hasShadowing ? 1 : 0) + (dayFlags.hasMeeting ? 1 : 0) + (dayFlags.hasShadowingHost ? 1 : 0);
-            if(flagCount >= 2) cls += ' term-cal-day--ov-pulse-both';
-            else if(dayFlags.hasTrial) cls += ' term-cal-day--ov-pulse-trial';
-            else if(dayFlags.hasMakeUp) cls += ' term-cal-day--ov-pulse-makeup';
-            else if(dayFlags.hasAbsentAnnounced) cls += ' term-cal-day--ov-pulse-absent';
-            else if(dayFlags.hasCancelled) cls += ' term-cal-day--ov-pulse-cancelled';
-            else if(dayFlags.hasNewShift) cls += ' term-cal-day--ov-pulse-admin-shift';
-            else if(dayFlags.hasUpdated) cls += ' term-cal-day--ov-pulse-updated';
-            else if(dayFlags.hasShadowingHost) cls += ' term-cal-day--ov-pulse-admin-shift';
-            else if(dayFlags.hasTraining) cls += ' term-cal-day--ov-pulse-training';
-            else if(dayFlags.hasShadowing) cls += ' term-cal-day--ov-pulse-shadowing';
-            else if(dayFlags.hasMeeting) cls += ' term-cal-day--ov-pulse-meeting';
-            else if(adminScheduleAdjusted) cls += ' term-cal-day--ov-pulse-updated';
+            const ovPulseWorked = portalTermWorkedDayOverridePulseClass(dayFlags, adminScheduleAdjusted);
+            if(ovPulseWorked) cls += ' ' + ovPulseWorked;
             if(fb === 'complete'){
               cls += ' term-feedback-complete';
               label = `${day}, all feedback complete`;
