@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- clubSENsational Parent Portal v1 — mobile-first, OTP login -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Family" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <title>clubSENsational — Family portal</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --sen-gold: #f9bf2e;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
+      --white: #ffffff;
+      --bg: #f4f8fb;
+      --shadow: 0 18px 50px rgba(23, 50, 71, .08);
+      --radius: 22px;
+      --danger: #d9534f;
+      --dangerSoft: #fff1f1;
+      --success: #157347;
+      --successSoft: #e8f7ef;
+      --max: 460px;
+      --tap: 48px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+    }
+    .pp-page {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .pp-brand {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .pp-brand-logo {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+      border-radius: 18px;
+    }
+    .pp-brand h1 {
+      margin: 10px 0 4px;
+      font-size: 20px;
+      color: var(--ink);
+      font-weight: 800;
+      overflow-wrap: break-word;
+    }
+    .pp-brand p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .pp-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 16px;
+      min-width: 0;
+    }
+    .pp-card + .pp-card { margin-top: 12px; }
+    .pp-section-title {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-field { margin-bottom: 14px; min-width: 0; }
+    .pp-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-field input {
+      width: 100%;
+      min-height: var(--tap);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: var(--text);
+      background: var(--white);
+      min-width: 0;
+    }
+    .pp-field input:focus {
+      outline: 2px solid rgba(45, 132, 179, .35);
+      border-color: var(--blue);
+    }
+    .pp-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--tap);
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-btn--primary {
+      background: linear-gradient(135deg, var(--blue), #1f6587);
+      color: var(--white);
+    }
+    .pp-btn--ghost {
+      background: transparent;
+      color: var(--blue);
+      width: auto;
+      min-height: 40px;
+      padding: 8px 0;
+      margin-top: 8px;
+    }
+    .pp-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .pp-muted {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .pp-notice {
+      margin: 0 0 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .pp-notice--error { background: var(--dangerSoft); color: #8a2725; }
+    .pp-notice--info { background: var(--blueSoft); color: var(--ink); }
+    .pp-home-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      min-width: 0;
+    }
+    .pp-home-head h2 {
+      margin: 0;
+      font-size: 22px;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-home-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .pp-icon-btn {
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--blue);
+      border-radius: 12px;
+      min-height: 40px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .pp-child-card { padding: 14px; }
+    .pp-child-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-child-name {
+      margin: 0;
+      font-size: 16px;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .pp-chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--blueSoft);
+      color: var(--ink);
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .pp-chip--ok { background: var(--successSoft); color: var(--success); }
+    .pp-chip--wait { background: #fff4e2; color: #b8741b; }
+    .pp-child-meta { margin: 8px 0 0; }
+    .pp-msg-card { padding: 14px; }
+    .pp-msg-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      min-width: 0;
+    }
+    .pp-msg-when {
+      font-size: 11px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .pp-msg-client { margin: 0 0 6px; font-size: 14px; min-width: 0; overflow-wrap: break-word; }
+    .pp-msg-body {
+      margin: 0 0 6px;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
+    .pp-msg-channel { margin: 0; font-size: 12px; }
+    .pp-contact-line {
+      margin: 4px 0;
+      font-size: 14px;
+      overflow-wrap: break-word;
+    }
+    .pp-contact-note { margin-top: 10px; }
+    .pp-legal {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .pp-legal a { color: var(--blue); }
+  </style>
+</head>
+<body>
+  <main class="pp-page">
+    <header class="pp-brand">
+      <img id="ppBrandLogo" class="pp-brand-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="88" height="88" />
+      <h1>Family portal</h1>
+      <p>View your linked participants and recent club messages.</p>
+    </header>
+
+    <div id="ppNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
+
+    <section id="ppStepIdentify" class="pp-card">
+      <h2 class="pp-section-title">Sign in</h2>
+      <p class="pp-muted" style="margin-bottom:14px">Use the parent or carer name and mobile number we have on file.</p>
+      <form id="ppIdentifyForm">
+        <div class="pp-field">
+          <label for="ppFullName">Full name</label>
+          <input id="ppFullName" name="full_name" type="text" autocomplete="name" required placeholder="e.g. Leila Ahmed" />
+        </div>
+        <div class="pp-field">
+          <label for="ppPhone">Mobile on file</label>
+          <input id="ppPhone" name="phone" type="tel" autocomplete="tel" required placeholder="e.g. 07913 121655" />
+        </div>
+        <button id="ppIdentifyBtn" class="pp-btn pp-btn--primary" type="submit">Send verification code</button>
+      </form>
+    </section>
+
+    <section id="ppStepOtp" class="pp-card" hidden>
+      <h2 class="pp-section-title">Enter code</h2>
+      <p id="ppOtpHint" class="pp-muted" style="margin-bottom:14px">Check WhatsApp or SMS for your code.</p>
+      <form id="ppOtpForm">
+        <div class="pp-field">
+          <label for="ppOtpInput">Verification code</label>
+          <input id="ppOtpInput" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required placeholder="6 digits" />
+        </div>
+        <button id="ppOtpBtn" class="pp-btn pp-btn--primary" type="submit">Continue</button>
+        <button id="ppBackToIdentify" class="pp-btn pp-btn--ghost" type="button">← Use different details</button>
+      </form>
+    </section>
+
+    <section id="ppStepHome" hidden>
+      <div class="pp-home-head">
+        <h2 id="ppHomeGreeting">Hello</h2>
+        <div class="pp-home-actions">
+          <button id="ppRefresh" class="pp-icon-btn" type="button">Refresh</button>
+          <button id="ppSignOut" class="pp-icon-btn" type="button">Sign out</button>
+        </div>
+      </div>
+
+      <div class="pp-card">
+        <h3 class="pp-section-title">Your participants</h3>
+        <div id="ppChildList"></div>
+      </div>
+
+      <div class="pp-card">
+        <h3 class="pp-section-title">Recent messages</h3>
+        <div id="ppMessageList"></div>
+      </div>
+
+      <div class="pp-card" id="ppContactBlock"></div>
+    </section>
+
+    <p class="pp-legal">
+      Staff and instructors use a separate app.
+      <a href="https://portalvic.vercel.app/parent/registration">New client registration</a>
+    </p>
+  </main>
+
+  <script src="/portal/parent_portal_app.js?v=20260624-parent-v1"></script>
+  <script>
+    if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
+      void window.ParentPortalApp.bootstrap();
+    }
+  </script>
+</body>
+</html>

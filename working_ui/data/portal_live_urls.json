@@ -32,6 +32,7 @@
     "termreview.html": "/termreview.html",
     "performance.html": "/performance.html",
     "announcements.html": "/announcements.html",
-    "staff_profile_update.html": "/staff_profile_update.html"
+    "staff_profile_update.html": "/staff_profile_update.html",
+    "parent_portal.html": "/parent_portal.html"
   }
 }

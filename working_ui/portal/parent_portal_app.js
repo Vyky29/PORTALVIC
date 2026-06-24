@@ -1,0 +1,402 @@
+/**
+ * Parent portal v1 — OTP login + home (children + messages).
+ */
+(function (global) {
+  "use strict";
+
+  var SESSION_KEY = "clubsens_parent_portal_session_v1";
+
+  var state = {
+    step: "identify",
+    fullName: "",
+    phone: "",
+    session: { token: "", expiresAt: 0 },
+    home: null,
+  };
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function supabaseUrl() {
+    return String(global.SUPABASE_URL || "").replace(/\/$/, "");
+  }
+
+  function anonKey() {
+    return String(global.SUPABASE_ANON_KEY || "");
+  }
+
+  function fn(name) {
+    return supabaseUrl() + "/functions/v1/" + name;
+  }
+
+  function showNotice(el, type, msg) {
+    if (!el) return;
+    el.hidden = false;
+    el.className = "pp-notice pp-notice--" + (type || "info");
+    el.textContent = msg || "";
+  }
+
+  function hideNotice(el) {
+    if (!el) el = $("ppNotice");
+    if (el) {
+      el.hidden = true;
+      el.textContent = "";
+    }
+  }
+
+  function setStep(step) {
+    state.step = step;
+    if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
+    if ($("ppStepOtp")) $("ppStepOtp").hidden = step !== "otp";
+    if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
+  }
+
+  function saveSession() {
+    try {
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          token: state.session.token,
+          expiresAt: state.session.expiresAt,
+          fullName: state.fullName,
+          phone: state.phone,
+        }),
+      );
+    } catch (_e) {}
+  }
+
+  function loadStoredSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return false;
+      var j = JSON.parse(raw);
+      if (!j || !j.token || !j.expiresAt) return false;
+      if (Number(j.expiresAt) <= Date.now()) {
+        localStorage.removeItem(SESSION_KEY);
+        return false;
+      }
+      state.session.token = String(j.token);
+      state.session.expiresAt = Number(j.expiresAt);
+      state.fullName = String(j.fullName || "");
+      state.phone = String(j.phone || "");
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function clearSession() {
+    state.session.token = "";
+    state.session.expiresAt = 0;
+    state.home = null;
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (_e) {}
+  }
+
+  function formatWhen(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function formatDob(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso + "T12:00:00");
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function kindLabel(kind) {
+    var map = {
+      instructor_change: "Instructor update",
+      payment_due: "Payment",
+      makeup_scheduled: "Make-up session",
+      absence: "Absence",
+      booking: "Booking",
+      general: "Message",
+    };
+    return map[String(kind || "").trim()] || "Club message";
+  }
+
+  function renderHome(data) {
+    state.home = data;
+    var parent = (data && data.parent) || {};
+    var children = (data && data.children) || [];
+    var messages = (data && data.messages) || [];
+
+    $("ppHomeGreeting").textContent = parent.display_name
+      ? "Hello, " + parent.display_name.split(" ")[0]
+      : "Hello";
+
+    var childList = $("ppChildList");
+    if (childList) {
+      if (!children.length) {
+        childList.innerHTML =
+          '<p class="pp-muted">No linked participants found. Contact the office if this looks wrong.</p>';
+      } else {
+        childList.innerHTML = children
+          .map(function (c) {
+            var chips = [];
+            if (c.in_class) chips.push('<span class="pp-chip pp-chip--ok">In class</span>');
+            if (c.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
+            var meta = [];
+            if (c.dob_iso) meta.push("DOB " + esc(formatDob(c.dob_iso)));
+            if (c.city && c.city !== "—") meta.push(esc(c.city));
+            return (
+              '<article class="pp-card pp-child-card">' +
+              '<div class="pp-child-head">' +
+              '<h3 class="pp-child-name">' +
+              esc(c.display_name || "Participant") +
+              "</h3>" +
+              (chips.length ? '<div class="pp-chip-row">' + chips.join("") + "</div>" : "") +
+              "</div>" +
+              (meta.length ? '<p class="pp-muted pp-child-meta">' + meta.join(" · ") + "</p>" : "") +
+              "</article>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    var msgList = $("ppMessageList");
+    if (msgList) {
+      if (!messages.length) {
+        msgList.innerHTML =
+          '<p class="pp-muted">No recent messages yet. When the club contacts you by email or WhatsApp, copies may appear here.</p>';
+      } else {
+        msgList.innerHTML = messages
+          .map(function (m) {
+            var sent =
+              m.whatsapp_status === "sent" || m.whatsapp_status === "sent_sms"
+                ? "WhatsApp"
+                : m.email_status === "sent"
+                  ? "Email"
+                  : "Sent";
+            var preview = String(m.body_text || m.subject || "").trim();
+            if (preview.length > 220) preview = preview.slice(0, 217) + "…";
+            return (
+              '<article class="pp-card pp-msg-card">' +
+              '<div class="pp-msg-head">' +
+              '<span class="pp-chip">' +
+              esc(kindLabel(m.kind)) +
+              "</span>" +
+              '<span class="pp-msg-when">' +
+              esc(formatWhen(m.created_at)) +
+              "</span>" +
+              "</div>" +
+              (m.client_display
+                ? '<p class="pp-msg-client"><strong>' + esc(m.client_display) + "</strong></p>"
+                : "") +
+              (preview ? '<p class="pp-msg-body">' + esc(preview) + "</p>" : "") +
+              '<p class="pp-muted pp-msg-channel">' +
+              esc(sent) +
+              (m.venue ? " · " + esc(m.venue) : "") +
+              "</p>" +
+              "</article>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    var addr = parent.address || {};
+    var addrParts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(function (p) {
+      p = String(p || "").trim();
+      return p && p !== "—";
+    });
+    $("ppContactBlock").innerHTML =
+      '<p class="pp-muted">Contact on file</p>' +
+      (parent.email ? '<p class="pp-contact-line">' + esc(parent.email) + "</p>" : "") +
+      (parent.mobile && parent.mobile !== "—"
+        ? '<p class="pp-contact-line">' + esc(parent.mobile) + "</p>"
+        : "") +
+      (addrParts.length
+        ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
+        : "") +
+      '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
+  }
+
+  async function loadHome() {
+    var res = await fetch(fn("parent-portal-home-load"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.session.token,
+      },
+      body: "{}",
+    });
+    var body = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !body.ok) {
+      clearSession();
+      setStep("identify");
+      showNotice($("ppNotice"), "error", "Your session expired. Please sign in again.");
+      return false;
+    }
+    if (body.session && body.session.expires_at) {
+      state.session.expiresAt = new Date(body.session.expires_at).getTime();
+      saveSession();
+    }
+    renderHome(body);
+    setStep("home");
+    hideNotice($("ppNotice"));
+    return true;
+  }
+
+  async function requestOtp() {
+    hideNotice($("ppNotice"));
+    var btn = $("ppIdentifyBtn");
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    try {
+      var res = await fetch(fn("parent-portal-otp-request"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+        },
+        body: JSON.stringify({
+          full_name: state.fullName,
+          phone_number: state.phone,
+        }),
+      });
+      await res.json().catch(function () {
+        return {};
+      });
+      $("ppOtpHint").textContent =
+        "If your name and mobile match our records, a code was sent by WhatsApp or SMS.";
+      setStep("otp");
+      $("ppOtpInput").value = "";
+      $("ppOtpInput").focus();
+    } catch (_e) {
+      showNotice($("ppNotice"), "error", "Network error — please try again.");
+    } finally {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+    }
+  }
+
+  async function verifyOtp() {
+    hideNotice($("ppNotice"));
+    var code = String($("ppOtpInput").value || "").trim();
+    if (!/^\d{4,8}$/.test(code)) {
+      showNotice($("ppNotice"), "error", "Enter the verification code from your phone.");
+      return;
+    }
+    var btn = $("ppOtpBtn");
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    try {
+      var res = await fetch(fn("parent-portal-otp-verify"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+        },
+        body: JSON.stringify({
+          full_name: state.fullName,
+          phone_number: state.phone,
+          code: code,
+        }),
+      });
+      var body = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !body.ok || !body.session_token) {
+        showNotice($("ppNotice"), "error", "That code did not work. Check and try again.");
+        return;
+      }
+      state.session.token = String(body.session_token);
+      state.session.expiresAt = body.expires_at
+        ? new Date(body.expires_at).getTime()
+        : Date.now() + 45 * 60 * 1000;
+      saveSession();
+      await loadHome();
+    } catch (_e) {
+      showNotice($("ppNotice"), "error", "Network error — please try again.");
+    } finally {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+    }
+  }
+
+  function bindEvents() {
+    $("ppIdentifyForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      state.fullName = String($("ppFullName").value || "").trim();
+      state.phone = String($("ppPhone").value || "").trim();
+      if (!state.fullName || !state.phone) {
+        showNotice($("ppNotice"), "error", "Enter your full name and mobile number on file.");
+        return;
+      }
+      void requestOtp();
+    });
+
+    $("ppOtpForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      void verifyOtp();
+    });
+
+    $("ppBackToIdentify").addEventListener("click", function () {
+      hideNotice($("ppNotice"));
+      setStep("identify");
+    });
+
+    $("ppSignOut").addEventListener("click", function () {
+      clearSession();
+      setStep("identify");
+      hideNotice($("ppNotice"));
+    });
+
+    $("ppRefresh").addEventListener("click", function () {
+      void loadHome();
+    });
+  }
+
+  function initBrand() {
+    var img = $("ppBrandLogo");
+    if (img && typeof global.portalBrandApplyLogoImg === "function") {
+      global.portalBrandApplyLogoImg(img);
+    }
+  }
+
+  async function bootstrap() {
+    initBrand();
+    bindEvents();
+    setStep("identify");
+    if (loadStoredSession()) {
+      var ok = await loadHome();
+      if (!ok) setStep("identify");
+    }
+  }
+
+  global.ParentPortalApp = { bootstrap: bootstrap };
+})(typeof window !== "undefined" ? window : globalThis);
