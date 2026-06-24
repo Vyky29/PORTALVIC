@@ -1434,13 +1434,19 @@
           if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
           if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
             && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord)) return false;
-          return typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'
-            && window.portalLeadSpreadsheetSessionInScopeForLead(
+          /* ES-module scope check is not ready while classic scripts render — fall back to the inline check. */
+          if(typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'){
+            return window.portalLeadSpreadsheetSessionInScopeForLead(
               s,
               sessionDateKey,
               programmeWidePack.leadKey,
               programmeWidePack.scopes
             );
+          }
+          if(typeof portalStaffLeadSessionRowInScope === 'function'){
+            return portalStaffLeadSessionRowInScope(s, sessionDateKey, programmeWidePack.scopes);
+          }
+          return true;
         }
         if(String(s.staffId || '').toLowerCase() !== staffId) return false;
         if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
