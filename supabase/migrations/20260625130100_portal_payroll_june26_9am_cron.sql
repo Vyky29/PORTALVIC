@@ -35,15 +35,23 @@ begin
     'portal-payroll-june-2026-26th-9am',
     '0 8 26 6 *',
     $job$
-    select net.http_post(
-      url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/payroll-monthly-report',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'x-payroll-cron-secret', '__PAYROLL_CRON_SECRET__'
-      ),
-      body := '{"mode":"send","month":"2026-06"}'::jsonb,
-      timeout_milliseconds := 120000
-    ) as request_id;
+    do $payroll_june_2026$
+    begin
+      -- pg_cron has no year field; keep this genuinely one-off.
+      if current_date = date '2026-06-26' then
+        perform net.http_post(
+          url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/payroll-monthly-report',
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'x-payroll-cron-secret', '__PAYROLL_CRON_SECRET__'
+          ),
+          body := '{"mode":"send","month":"2026-06"}'::jsonb,
+          timeout_milliseconds := 120000
+        );
+        perform cron.unschedule('portal-payroll-june-2026-26th-9am');
+      end if;
+    end
+    $payroll_june_2026$;
     $job$
   );
 end
