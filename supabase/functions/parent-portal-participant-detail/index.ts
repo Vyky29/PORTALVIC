@@ -19,6 +19,7 @@ import {
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
   instructorFirstName,
+  lookupClientsInfoSheetForParticipant,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
 import {
@@ -212,6 +213,10 @@ Deno.serve(async (req) => {
         }
         if (generalInfoSheet) break;
       }
+    }
+
+    if (!generalInfoSheet) {
+      generalInfoSheet = lookupClientsInfoSheetForParticipant(identityInput);
     }
   }
 

@@ -105,13 +105,30 @@
     return "";
   }
 
-  function ensureGeneralFields(data) {
+  function fieldsHaveContent(fields) {
+    return (fields || []).some(function (f) {
+      return String((f && f.value) || "").trim().length > 0;
+    });
+  }
+
+  function defaultEmptyGeneralFields() {
+    return [
+      { num: "1", label: "Medical / allergies", value: "" },
+      { num: "2", label: "Communication", value: "" },
+      { num: "3", label: "Likes / motivators", value: "" },
+      { num: "4", label: "Triggers / support strategies", value: "" },
+      { num: "5", label: "Emergency contact", value: "" },
+    ];
+  }
+
+  function ensureGeneralFields(data, opts) {
+    opts = opts || {};
     var g = data.general || {};
     var fields = Array.isArray(g.fields) ? g.fields.slice() : [];
     if (!fields.length && g.general_info_sheet) {
       fields = parseGeneralInfoSheet(g.general_info_sheet);
     }
-    if (!fields.length) {
+    if (!fields.length && !opts.skipClientSeed) {
       var p = data.participant || {};
       var seed = lookupClientsInfoSeed(p.display_name, p.first_name, p.last_name);
       if (seed) {
@@ -119,14 +136,8 @@
         g.general_info_sheet = seed;
       }
     }
-    if (!fields.length) {
-      fields = [
-        { num: "1", label: "Medical / allergies", value: "" },
-        { num: "2", label: "Communication", value: "" },
-        { num: "3", label: "Likes / motivators", value: "" },
-        { num: "4", label: "Triggers / support strategies", value: "" },
-        { num: "5", label: "Emergency contact", value: "" },
-      ];
+    if (!fields.length && opts.allowPlaceholders) {
+      fields = defaultEmptyGeneralFields();
     }
     g.fields = fields;
     data.general = g;
@@ -136,11 +147,20 @@
   function ensureGeneralFieldsAsync(data) {
     var g = data.general || {};
     var fields = Array.isArray(g.fields) ? g.fields.slice() : [];
-    if (fields.length || g.general_info_sheet) {
-      return Promise.resolve(ensureGeneralFields(data));
+    if (g.general_info_sheet && !fields.length) {
+      fields = parseGeneralInfoSheet(g.general_info_sheet);
+      g.fields = fields;
+      data.general = g;
+    }
+    if (fieldsHaveContent(fields)) {
+      return Promise.resolve(ensureGeneralFields(data, { allowPlaceholders: true }));
+    }
+    if (fields.length && !fieldsHaveContent(fields) && !g.general_info_sheet) {
+      g.fields = [];
+      data.general = g;
     }
     return ensureClientsInfoEmbedLoaded().then(function () {
-      return ensureGeneralFields(data);
+      return ensureGeneralFields(data, { allowPlaceholders: true });
     });
   }
 
@@ -317,7 +337,8 @@
   }
 
   function renderHub(host, data, opts) {
-    ensureGeneralFields(data);
+    ensureGeneralFields(data, { allowPlaceholders: false });
+    void ensureClientsInfoEmbedLoaded();
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       heroHtml(data) +
@@ -328,8 +349,7 @@
   }
 
   function renderGeneral(host, data, opts) {
-    ensureGeneralFields(data);
-    var fields = data.general.fields || [];
+    var fields = data.general && data.general.fields ? data.general.fields : [];
     var editing = !!(opts && opts.editing);
     host.innerHTML = subviewShell(
       data,

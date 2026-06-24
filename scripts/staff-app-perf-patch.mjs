@@ -6,14 +6,32 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260624-staff-perf4";
+const VER = "20260624-staff-perf5";
 
-function stripDeferredFromTierBlock(tierBlock) {
-  return String(tierBlock || "")
+/** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
+const STAFF_DEFERRED_TIER_PATTERNS = [
+  /  <script src="\/portal\/clients_info_embed\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/clients_gender_embed\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_staff_lead_aquatic_slots\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_participant_identity\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_participant_general_hydrate\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_staff_gender_embed\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_swimming_instructor_menus\.js[^"]*"><\/script>\n/g,
+  /  <script src="\/portal\/portal_staff_photos\.js[^"]*"><\/script>\n/g,
+];
+
+function stripDeferredFromTierBlock(tierBlock, staffApp) {
+  let block = String(tierBlock || "")
     .replace(/  <link rel="stylesheet" href="\/portal\/portal_ghost_view\.css[^"]*" \/>\n/g, "")
     .replace(/  <script src="\/portal\/portal-ghost-view\.js[^"]*"><\/script>\n/g, "")
     .replace(/  <link rel="stylesheet" href="\/portal\/portal_achievements\.css[^"]*" \/>\n/g, "")
     .replace(/  <script src="\/portal\/portal_wellbeing_review_reminder\.js[^"]*"><\/script>\n/g, "");
+  if (staffApp) {
+    for (const re of STAFF_DEFERRED_TIER_PATTERNS) {
+      block = block.replace(re, "");
+    }
+  }
+  return block;
 }
 
 function extractScriptAfterMarker(html, marker) {
@@ -67,7 +85,7 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     console.warn("[staff-app-perf-patch] tier script block not found — skipping");
     return;
   }
-  const tierBlock = stripDeferredFromTierBlock(tierMatch[0]);
+  const tierBlock = stripDeferredFromTierBlock(tierMatch[0], staffApp);
 
   const extractions = [
     { file: "staff-dashboard-core.js", marker: "/** Real calendar weekday for “Today”" },
@@ -110,9 +128,14 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot3"></script>'
+        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-boot4"></script>'
       );
     }
+
+    html = html.replace(
+      /  <script src="\/portal\/portal_orientation_lock\.js[^"]*"><\/script>\n  <script src="\/portal\/portal_venue_report_schedule\.js[^"]*"><\/script>\n/g,
+      ""
+    );
 
     html = html.replace(
       '<meta name="apple-mobile-web-app-title" content="CS Portal" />',

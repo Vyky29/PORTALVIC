@@ -1,8 +1,41 @@
+import clientsInfoRows from "./clients_info_rows.json" with { type: "json" };
+import {
+  canonicalParticipantClientId,
+  type ParticipantIdentityInput,
+  resolveParticipantLookupNames,
+} from "./participant_identity.ts";
+
 export type GeneralInfoField = {
   num: string;
   label: string;
   value: string;
 };
+
+type ClientsInfoRow = {
+  client_name: string;
+  client_info: string;
+};
+
+/** Seed from Clients Info workbook export (same catalogue as staff dashboard embed). */
+export function lookupClientsInfoSheetForParticipant(input: ParticipantIdentityInput): string {
+  const rows = clientsInfoRows as ClientsInfoRow[];
+  if (!rows.length) return "";
+
+  const wantSlugs = new Set<string>();
+  for (const name of resolveParticipantLookupNames(input)) {
+    const slug = canonicalParticipantClientId(name);
+    if (slug) wantSlugs.add(slug);
+  }
+  if (!wantSlugs.size) return "";
+
+  for (const row of rows) {
+    if (!row?.client_name) continue;
+    if (wantSlugs.has(canonicalParticipantClientId(row.client_name))) {
+      return cleanText(row.client_info, 12000);
+    }
+  }
+  return "";
+}
 
 export function cleanText(v: unknown, max = 4000): string {
   return String(v ?? "")
