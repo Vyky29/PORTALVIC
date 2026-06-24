@@ -1225,7 +1225,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "bismark": "2026-06-24",
     "john": "2026-06-24",
     "godsway": "2026-06-24",
-    "giuseppe": "2026-06-24"
+    "giuseppe": "2026-06-24",
+    "sandra": "2026-06-24",
+    "simon": "2026-06-24",
+    "carlos": "2026-06-24"
   },
   "termFeedbackAssumeCompleteThroughIso": "2026-06-24"
 };
