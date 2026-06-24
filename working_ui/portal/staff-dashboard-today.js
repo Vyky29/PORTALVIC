@@ -2402,7 +2402,9 @@
       if(sid === 'john'){
         return [
           { weekdays: ['Monday', 'Friday'], serviceKeys: ['bespoke'], venues: ['swimfarm'] },
-          { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'], programmeWideRoster: true },
+          /* John covers individually-reassigned Acton sessions on Wednesday (e.g. Scott, Cyrus),
+             he does not run the whole programme roster — keep him on the standard cover path. */
+          { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'] },
           { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], programmeWideRoster: true }
         ];
       }

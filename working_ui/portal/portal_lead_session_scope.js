@@ -72,7 +72,8 @@ const JOHN_SCOPES = [
     weekdays: ["Wednesday"],
     serviceKeys: ["multi", "aquatic"],
     venues: ["acton"],
-    programmeWideRoster: true,
+    // John covers individually-reassigned Acton sessions on Wednesday (e.g. Scott, Cyrus);
+    // he does not run the whole programme roster, so keep him on the standard cover path.
   },
   {
     id: "sunday-ma-swimfarm",
