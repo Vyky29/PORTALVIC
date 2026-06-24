@@ -133,7 +133,17 @@ function dotStuff(data: string): string {
 type SmtpConn = Deno.Conn | Deno.TlsConn;
 
 async function smtpWrite(conn: SmtpConn, line: string): Promise<void> {
-  await conn.write(new TextEncoder().encode(`${line}\r\n`));
+  await smtpWriteAll(conn, new TextEncoder().encode(`${line}\r\n`));
+}
+
+/** conn.write may write fewer bytes than requested; loop until the buffer is fully sent. */
+async function smtpWriteAll(conn: SmtpConn, bytes: Uint8Array): Promise<void> {
+  let offset = 0;
+  while (offset < bytes.length) {
+    const n = await conn.write(bytes.subarray(offset));
+    if (!Number.isFinite(n) || n <= 0) throw new Error("smtp_write_failed");
+    offset += n;
+  }
 }
 
 async function smtpReadResponse(
@@ -289,7 +299,10 @@ export async function sendParentEmailViaSmtp(opts: {
     await smtpCommand(conn, reader, carry, `MAIL FROM:<${fromEnvelope}>`);
     await smtpCommand(conn, reader, carry, `RCPT TO:<${opts.to}>`);
     await smtpCommand(conn, reader, carry, "DATA", 354, 354);
-    await conn.write(new TextEncoder().encode(dotStuff(`${headers.join("\r\n")}\r\n\r\n${body}`) + "\r\n.\r\n"));
+    await smtpWriteAll(
+      conn,
+      new TextEncoder().encode(dotStuff(`${headers.join("\r\n")}\r\n\r\n${body}`) + "\r\n.\r\n"),
+    );
     const sent = await smtpReadResponse(reader, carry);
     if (sent.code < 200 || sent.code > 299) {
       return { ok: false, error: `smtp_${sent.code}:${sent.text.slice(0, 400)}` };
@@ -394,7 +407,8 @@ export async function sendEmailWithAttachmentViaSmtp(opts: {
       await smtpCommand(conn, reader, carry, `RCPT TO:<${addr}>`);
     }
     await smtpCommand(conn, reader, carry, "DATA", 354, 354);
-    await conn.write(
+    await smtpWriteAll(
+      conn,
       new TextEncoder().encode(dotStuff(`${headers.join("\r\n")}\r\n\r\n${body}`) + "\r\n.\r\n"),
     );
     const sent = await smtpReadResponse(reader, carry);
