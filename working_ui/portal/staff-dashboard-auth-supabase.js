@@ -42,9 +42,6 @@ if (window.dashboardData) {
           : "";
     if (displayName) window.dashboardData.staffName = displayName;
   }
-  if (!String(window.STAFF_DASHBOARD_ID || "").trim()) {
-    window.dashboardData.portalIdentityResolved = false;
-  }
 }
 
 if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
