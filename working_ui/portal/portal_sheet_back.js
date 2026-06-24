@@ -330,7 +330,99 @@
       portalSyncParticipantsDockChrome();
       return "opened";
     }
+    if (portalQuickMenuMinimalToggle()) {
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
+      return "opened";
+    }
     return "noop";
+  }
+
+  /** Opens/closes menuSheet via DOM when core.js (openSheet) has not loaded yet. */
+  function portalQuickMenuMinimalToggle() {
+    if (!global.document) return false;
+    var menu = global.document.getElementById("menuSheet");
+    if (!menu) return false;
+    if (menu.classList.contains("open")) {
+      menu.classList.remove("open");
+      var bd = global.document.getElementById("backdrop");
+      if (bd) bd.classList.remove("open");
+      global.document.body.style.overflow = "";
+      global.document.body.classList.remove("dock-context-menu");
+      return true;
+    }
+    Array.prototype.forEach.call(global.document.querySelectorAll(".sheet.open"), function (s) {
+      s.classList.remove("open");
+    });
+    menu.classList.add("open");
+    var backdrop = global.document.getElementById("backdrop");
+    if (backdrop) backdrop.classList.add("open");
+    global.document.body.style.overflow = "hidden";
+    global.document.body.classList.add("dock-context-menu");
+    try {
+      if (typeof global.portalQuickMenuEntryMode !== "undefined") {
+        global.portalQuickMenuEntryMode = "full";
+      }
+    } catch (_mode) {}
+    if (typeof global.portalApplyQuickMenuEntryMode === "function") {
+      try {
+        global.portalApplyQuickMenuEntryMode({ shellOnly: true });
+      } catch (_apply) {}
+    }
+    if (typeof global.portalDeferQuickMenuHeavySync === "function") {
+      try {
+        global.portalDeferQuickMenuHeavySync();
+      } catch (_sync) {}
+    } else {
+      global.setTimeout(function () {
+        if (typeof global.portalDeferQuickMenuHeavySync === "function") {
+          try {
+            global.portalDeferQuickMenuHeavySync();
+          } catch (_sync2) {}
+        }
+      }, 400);
+    }
+    return true;
+  }
+
+  function portalHandleDockQuickMenuTap() {
+    try {
+      if (typeof global.handleQuickMenuDockClick === "function") {
+        global.handleQuickMenuDockClick();
+        return;
+      }
+    } catch (_handler) {}
+    try {
+      if (typeof global.portalToggleQuickMenuFromDock === "function") {
+        global.portalToggleQuickMenuFromDock();
+        return;
+      }
+    } catch (_toggle) {}
+    try {
+      if (typeof global.openSheet === "function") {
+        global.openSheet("menuSheet", { skipNavRecord: true, bypassAnnouncementLock: true });
+        return;
+      }
+    } catch (_open) {}
+    portalQuickMenuMinimalToggle();
+    portalSyncQuickMenuDockChrome();
+  }
+
+  function portalBindDockQuickMenuEarly() {
+    if (!global.document || global.__PORTAL_DOCK_QM_EARLY_BOUND__) return;
+    global.__PORTAL_DOCK_QM_EARLY_BOUND__ = true;
+    global.document.addEventListener(
+      "click",
+      function (ev) {
+        var btn =
+          ev.target && ev.target.closest ? ev.target.closest("#dockQuickMenuTile") : null;
+        if (!btn) return;
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        portalHandleDockQuickMenuTap();
+      },
+      true,
+    );
   }
 
   function handleTargetIsSheetBack(el) {
@@ -408,33 +500,12 @@
     });
   }
 
-  function onDockQuickMenuClick(ev) {
-    var btn =
-      ev.target && ev.target.closest ? ev.target.closest("#dockQuickMenuTile") : null;
-    if (!btn) return;
-    try {
-      if (typeof global.handleQuickMenuDockClick === "function") {
-        ev.preventDefault();
-        ev.stopImmediatePropagation();
-        global.handleQuickMenuDockClick();
-        return;
-      }
-    } catch (_dockQmHandler) {}
-    try {
-      if (typeof global.portalToggleQuickMenuFromDock === "function") {
-        ev.preventDefault();
-        ev.stopImmediatePropagation();
-        global.portalToggleQuickMenuFromDock();
-      }
-    } catch (_dockQmToggle) {}
-  }
-
   function portalInitSheetBackNavigation() {
+    portalBindDockQuickMenuEarly();
     decorateSheetHandles();
     if (global.__PORTAL_SHEET_BACK_BOUND__) return;
     global.__PORTAL_SHEET_BACK_BOUND__ = true;
 
-    global.document.addEventListener("click", onDockQuickMenuClick, true);
     global.document.addEventListener("click", onHandleClick, true);
     global.document.addEventListener("pointerdown", onHandlePointerDown, true);
     global.document.addEventListener("pointermove", onHandlePointerMove, true);
@@ -473,4 +544,17 @@
   global.portalGetSheetBackTarget = portalGetSheetBackTarget;
   global.portalInitSheetBackNavigation = portalInitSheetBackNavigation;
   global.portalClearSheetNavigation = clearStack;
+  global.portalHandleDockQuickMenuTap = portalHandleDockQuickMenuTap;
+  global.portalQuickMenuMinimalToggle = portalQuickMenuMinimalToggle;
+  global.portalBindDockQuickMenuEarly = portalBindDockQuickMenuEarly;
+
+  if (global.document) {
+    if (global.document.readyState === "loading") {
+      global.document.addEventListener("DOMContentLoaded", portalBindDockQuickMenuEarly, {
+        once: true,
+      });
+    } else {
+      portalBindDockQuickMenuEarly();
+    }
+  }
 })(typeof window !== "undefined" ? window : globalThis);

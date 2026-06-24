@@ -56,7 +56,8 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf10");
+    preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260624-staff-perf13");
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf13");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
