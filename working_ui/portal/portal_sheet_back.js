@@ -408,11 +408,31 @@
     });
   }
 
+  function onDockQuickMenuClick(ev) {
+    var btn =
+      ev.target && ev.target.closest ? ev.target.closest("#dockQuickMenuTile") : null;
+    if (!btn) return;
+    try {
+      if (typeof global.handleQuickMenuDockClick === "function") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        global.handleQuickMenuDockClick();
+        return;
+      }
+      if (typeof global.portalToggleQuickMenuFromDock === "function") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        global.portalToggleQuickMenuFromDock();
+      }
+    } catch (_dockQm) {}
+  }
+
   function portalInitSheetBackNavigation() {
     decorateSheetHandles();
     if (global.__PORTAL_SHEET_BACK_BOUND__) return;
     global.__PORTAL_SHEET_BACK_BOUND__ = true;
 
+    global.document.addEventListener("click", onDockQuickMenuClick, true);
     global.document.addEventListener("click", onHandleClick, true);
     global.document.addEventListener("pointerdown", onHandlePointerDown, true);
     global.document.addEventListener("pointermove", onHandlePointerMove, true);

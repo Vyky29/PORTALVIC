@@ -38,7 +38,7 @@
     "/portal/portal_area_note_icons.js?v=20260610-area-note-img",
     "/portal/portal_today_next_chips.js?v=20260609-photo-fallback",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
-    "/portal/portal_sheet_back.js?v=20260614-dock-nav-v2",
+    "/portal/portal_sheet_back.js?v=20260624-dock-qm-fix",
   ];
 
   var TIER_UI_MODULES = [

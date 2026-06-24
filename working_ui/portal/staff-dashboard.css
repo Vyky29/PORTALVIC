@@ -7080,10 +7080,15 @@
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:100;
     }
-    /* Pending announcement / safeguarding sign: above dock; dock hidden via body.dock-context-announcement-lock. */
+    /* Pending announcement / safeguarding: mandatory sheets above dashboard; dock stays tappable for Quick menu / sign out. */
     #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
     #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
+    }
+    body.dock-context-announcement-lock .dock-bar,
+    body:has(#announcementsSheet.sheet.open) .dock-bar,
+    body:has(#safeguardingFeedbackPolicySheet.sheet.open) .dock-bar{
+      z-index:136;
     }
 
     /* Tomorrow / week / term: fullscreen, centred in the viewport */
