@@ -419,12 +419,14 @@
         global.handleQuickMenuDockClick();
         return;
       }
+    } catch (_dockQmHandler) {}
+    try {
       if (typeof global.portalToggleQuickMenuFromDock === "function") {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         global.portalToggleQuickMenuFromDock();
       }
-    } catch (_dockQm) {}
+    } catch (_dockQmToggle) {}
   }
 
   function portalInitSheetBackNavigation() {

@@ -64,31 +64,39 @@ if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
   window.__PORTAL_LOGOUT_FN__ = portalLogout;
 }
 
-function portalEnsureStaffDashboardDockBindings() {
-  if (window.__PORTAL_STAFF_DOCK_REBOUND__) return;
-  window.__PORTAL_STAFF_DOCK_REBOUND__ = true;
-  const qm = document.getElementById("dockQuickMenuTile");
-  if (qm && qm.getAttribute("data-portal-dock-qm-bound") !== "1") {
-    qm.setAttribute("data-portal-dock-qm-bound", "1");
-    qm.addEventListener("click", function () {
-      if (typeof window.handleQuickMenuDockClick === "function") {
-        window.handleQuickMenuDockClick();
-        return;
-      }
-      if (typeof window.portalToggleQuickMenuFromDock === "function") {
-        window.portalToggleQuickMenuFromDock();
-        return;
-      }
-      if (typeof window.openSheet === "function") {
-        window.openSheet("menuSheet", { skipNavRecord: true, bypassAnnouncementLock: true });
-      }
-    });
+if (typeof window.portalEnsureStaffDashboardDockBindings === "function") {
+  window.portalEnsureStaffDashboardDockBindings();
+} else {
+  function portalEnsureStaffDashboardDockBindingsFallback() {
+    const qm = document.getElementById("dockQuickMenuTile");
+    if (qm && qm.getAttribute("data-portal-dock-qm-bound") !== "1") {
+      qm.setAttribute("data-portal-dock-qm-bound", "1");
+      qm.addEventListener("click", function () {
+        try {
+          if (typeof window.handleQuickMenuDockClick === "function") {
+            window.handleQuickMenuDockClick();
+            return;
+          }
+        } catch (_) {}
+        if (typeof window.portalToggleQuickMenuFromDock === "function") {
+          window.portalToggleQuickMenuFromDock();
+          return;
+        }
+        if (typeof window.openSheet === "function") {
+          window.openSheet("menuSheet", { skipNavRecord: true, bypassAnnouncementLock: true });
+        }
+      });
+    }
+    const topbarOut = document.getElementById("topbarStaffSignOut");
+    if (topbarOut && window.PORTAL_STAFF_APP === true) {
+      topbarOut.hidden = false;
+    }
   }
-  const topbarOut = document.getElementById("topbarStaffSignOut");
-  if (topbarOut && window.PORTAL_STAFF_APP === true) {
-    topbarOut.hidden = false;
-  }
+  portalEnsureStaffDashboardDockBindingsFallback();
+  window.addEventListener("portal:supabase-ready", portalEnsureStaffDashboardDockBindingsFallback);
 }
-
-portalEnsureStaffDashboardDockBindings();
-window.addEventListener("portal:supabase-ready", portalEnsureStaffDashboardDockBindings);
+window.addEventListener("portal:staff-identity-resolved", function () {
+  if (typeof window.portalEnsureStaffDashboardDockBindings === "function") {
+    window.portalEnsureStaffDashboardDockBindings();
+  }
+});

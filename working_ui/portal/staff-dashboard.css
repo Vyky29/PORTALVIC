@@ -7090,6 +7090,12 @@
     body:has(#safeguardingFeedbackPolicySheet.sheet.open) .dock-bar{
       z-index:136;
     }
+    /* Quick menu opened from dock while a mandatory sheet was showing — menu must sit above it. */
+    body.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
+    body.dock-context-announcement-lock.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
+    body:has(#announcementsSheet.sheet.open).dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      z-index:137;
+    }
 
     /* Tomorrow / week / term: fullscreen, centred in the viewport */
     .sheet.sheet--fullscreen{

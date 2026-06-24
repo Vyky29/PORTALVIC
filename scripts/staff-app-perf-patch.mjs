@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260624-staff-perf10";
+const VER = "20260624-staff-perf11";
 
 /** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
 const STAFF_DEFERRED_TIER_PATTERNS = [
@@ -64,6 +64,7 @@ function buildSyncScriptTail(tierBlock) {
   return (
     tierBlock +
     `  <script src="/portal/staff-dashboard-core.js?v=${VER}"></script>\n` +
+    `  <script src="/portal/staff-dashboard-dock-boot.js?v=${VER}"></script>\n` +
     `  <script src="/portal/staff-dashboard-auth-bridge.js?v=${VER}"></script>\n` +
     `  <script src="/portal/staff-dashboard-rehydrate.js?v=${VER}"></script>\n` +
     `  <script src="/portal/portal-logout-bind.js"></script>\n` +
