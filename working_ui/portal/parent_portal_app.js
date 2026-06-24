@@ -268,13 +268,14 @@
 
   async function signIn() {
     hideNotice($("ppNotice"));
-    var parentName = String($("ppParentName").value || "").trim();
+    var parentFirstName = String($("ppParentFirstName").value || "").trim();
+    var parentLastName = String($("ppParentLastName").value || "").trim();
     var dobRaw = normalizeDobInput($("ppParticipantDob").value);
-    if (!parentName || dobRaw.length !== 8) {
+    if (!parentFirstName || !parentLastName || dobRaw.length !== 8) {
       showNotice(
         $("ppNotice"),
         "error",
-        "Enter your name as parent/carer and the participant date of birth as 8 digits (DDMMYYYY).",
+        "Enter your first name, last name, and oldest participant date of birth as 8 digits (DDMMYYYY).",
       );
       return;
     }
@@ -291,8 +292,9 @@
           Authorization: "Bearer " + anonKey(),
         },
         body: JSON.stringify({
-          parent_name: parentName,
-          participant_dob: dobRaw,
+          parent_first_name: parentFirstName,
+          parent_last_name: parentLastName,
+          login_dob: dobRaw,
         }),
       });
       var body = await res.json().catch(function () {
@@ -302,7 +304,7 @@
         showNotice(
           $("ppNotice"),
           "error",
-          "We could not sign you in. Check the parent name and participant date of birth, then try again.",
+          "We could not sign you in. Check your name and the oldest child&apos;s date of birth, then try again.",
         );
         return;
       }

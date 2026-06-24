@@ -277,16 +277,20 @@
 
     <section id="ppStepIdentify" class="pp-card">
       <h2 class="pp-section-title">Sign in</h2>
-      <p class="pp-muted" style="margin-bottom:14px">Use your name as parent or carer, and one linked participant&apos;s date of birth.</p>
+      <p class="pp-muted" style="margin-bottom:14px">Use your first and last name as parent or carer, and the date of birth of your <strong>oldest</strong> linked participant (for families with more than one child).</p>
       <form id="ppIdentifyForm">
         <div class="pp-field">
-          <label for="ppParentName">Parent or carer name</label>
-          <input id="ppParentName" name="parent_name" type="text" autocomplete="name" required placeholder="e.g. Leila Ahmed" />
+          <label for="ppParentFirstName">First name</label>
+          <input id="ppParentFirstName" name="parent_first_name" type="text" autocomplete="given-name" required placeholder="e.g. Leila" />
         </div>
         <div class="pp-field">
-          <label for="ppParticipantDob">Participant date of birth</label>
-          <input id="ppParticipantDob" name="participant_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY e.g. 13082012" />
-          <p class="pp-muted" style="margin-top:6px;font-size:12px">8 digits, day then month then year — no spaces or slashes.</p>
+          <label for="ppParentLastName">Last name</label>
+          <input id="ppParentLastName" name="parent_last_name" type="text" autocomplete="family-name" required placeholder="e.g. Ahmed" />
+        </div>
+        <div class="pp-field">
+          <label for="ppParticipantDob">Oldest participant date of birth</label>
+          <input id="ppParticipantDob" name="login_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY e.g. 13082012" />
+          <p class="pp-muted" style="margin-top:6px;font-size:12px">8 digits: day, month, year — no spaces or slashes.</p>
         </div>
         <button id="ppSignInBtn" class="pp-btn pp-btn--primary" type="submit">Sign in</button>
       </form>
@@ -320,7 +324,7 @@
     </p>
   </main>
 
-  <script src="/portal/parent_portal_app.js?v=20260624-parent-dob"></script>
+  <script src="/portal/parent_portal_app.js?v=20260702-parent-sibling-dob"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
       void window.ParentPortalApp.bootstrap();

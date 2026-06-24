@@ -52,13 +52,28 @@ Deno.serve(async (req) => {
 
   const parentPersonId = String(sess.parent_person_id || "");
 
-  const { data: contacts, error: contactsErr } = await supabase
-    .from("portal_parent_contacts")
+  const participantTable = "portal_participants";
+  let contactsQuery = supabase
+    .from(participantTable)
     .select(
-      "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode",
+      "contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path",
     )
     .eq("parent_person_id", parentPersonId)
-    .order("child_display", { ascending: true });
+    .order("display_name", { ascending: true });
+
+  let { data: contacts, error: contactsErr } = await contactsQuery;
+
+  if (contactsErr) {
+    const fallback = await supabase
+      .from("portal_parent_contacts")
+      .select(
+        "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode",
+      )
+      .eq("parent_person_id", parentPersonId)
+      .order("child_display", { ascending: true });
+    contacts = fallback.data;
+    contactsErr = fallback.error;
+  }
 
   if (contactsErr) {
     console.error("[parent-portal-home-load] contacts error", contactsErr);
@@ -129,14 +144,15 @@ Deno.serve(async (req) => {
       },
       children: (contacts || []).map((c) => ({
         contact_id: c.contact_id,
-        display_name: c.child_display,
-        first_name: c.child_first_name,
-        last_name: c.child_last_name,
+        display_name: c.display_name || c.child_display,
+        first_name: c.first_name || c.child_first_name,
+        last_name: c.last_name || c.child_last_name,
         dob_iso: c.dob_iso,
         in_class: c.in_class,
         on_waiting_list: c.on_waiting_list,
-        city: c.city,
-        postcode: c.postcode,
+        city: c.city || null,
+        postcode: c.postcode || null,
+        has_avatar: !!c.avatar_storage_path,
       })),
       messages,
     }),

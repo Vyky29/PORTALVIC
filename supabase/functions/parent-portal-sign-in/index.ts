@@ -26,16 +26,17 @@ Deno.serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: parentPortalCorsHeaders });
   }
 
-  let body: { parent_name?: unknown; participant_dob?: unknown };
+  let body: { parent_first_name?: unknown; parent_last_name?: unknown; login_dob?: unknown; parent_name?: unknown; participant_dob?: unknown };
   try {
     body = await req.json();
   } catch {
     return parentPortalJsonInvalid(400);
   }
 
-  const parentName = String(body.parent_name || "").trim();
-  const dobDigits = normalizeDobInput(String(body.participant_dob || ""));
-  if (!parentName || dobDigits.length !== 8) return parentPortalJsonInvalid(400);
+  const parentFirstName = String(body.parent_first_name || body.parent_name || "").trim();
+  const parentLastName = String(body.parent_last_name || "").trim();
+  const dobDigits = normalizeDobInput(String(body.login_dob || body.participant_dob || ""));
+  if (!parentFirstName || !parentLastName || dobDigits.length !== 8) return parentPortalJsonInvalid(400);
 
   const url = Deno.env.get("SUPABASE_URL") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -50,7 +51,11 @@ Deno.serve(async (req) => {
 
   const { data: matchedParentId, error: matchErr } = await supabase.rpc(
     "portal_parent_match_identity_dob",
-    { p_parent_name: parentName, p_participant_dob: dobDigits },
+    {
+      p_parent_first_name: parentFirstName,
+      p_parent_last_name: parentLastName,
+      p_login_dob: dobDigits,
+    },
   );
   if (matchErr) {
     console.error("[parent-portal-sign-in] match rpc error", matchErr);
