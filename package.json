@@ -24,6 +24,8 @@
     "apply:sevitha-office-portal": "node database/local-vault/apply-sevitha-office-portal.mjs",
     "apply:staff-participant-access": "node database/local-vault/apply-staff-participant-access.mjs",
     "apply:cancellation-repair": "node database/local-vault/apply-cancellation-repair.mjs",
+    "apply:payroll-june-cron": "node database/local-vault/apply-payroll-june-cron.mjs && supabase db query --linked -f database/local-vault/step-payroll-june-cron.local.sql",
+    "apply:payroll-secrets": "node database/local-vault/apply-payroll-secrets.mjs",
     "apply:achievement-shared-pool": "node database/local-vault/apply-achievement-shared-pool.mjs",
     "verify:sevitha-office-portal": "node database/local-vault/verify-sevitha-office-portal.mjs",
     "build:staff-app": "node scripts/build-clubsensational-staff.mjs",
