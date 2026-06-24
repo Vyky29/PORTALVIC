@@ -67,6 +67,26 @@
       .join("\n");
   }
 
+  var clientsInfoEmbedPromise = null;
+
+  function ensureClientsInfoEmbedLoaded() {
+    if (global.PORTAL_CLIENTS_INFO_ROWS) return Promise.resolve();
+    if (clientsInfoEmbedPromise) return clientsInfoEmbedPromise;
+    clientsInfoEmbedPromise = new Promise(function (resolve) {
+      var s = document.createElement("script");
+      s.src = "/portal/clients_info_embed.js?v=20260608-anas-ismail";
+      s.async = true;
+      s.onload = function () {
+        resolve();
+      };
+      s.onerror = function () {
+        resolve();
+      };
+      document.head.appendChild(s);
+    });
+    return clientsInfoEmbedPromise;
+  }
+
   function lookupClientsInfoSeed(displayName, firstName, lastName) {
     if (global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.lookupClientsInfoSheet === "function") {
       var hit = global.PortalParticipantIdentity.lookupClientsInfoSheet(displayName, firstName, lastName);
@@ -111,6 +131,17 @@
     g.fields = fields;
     data.general = g;
     return fields;
+  }
+
+  function ensureGeneralFieldsAsync(data) {
+    var g = data.general || {};
+    var fields = Array.isArray(g.fields) ? g.fields.slice() : [];
+    if (fields.length || g.general_info_sheet) {
+      return Promise.resolve(ensureGeneralFields(data));
+    }
+    return ensureClientsInfoEmbedLoaded().then(function () {
+      return ensureGeneralFields(data);
+    });
   }
 
   function participantPhotoHtml(p) {
@@ -322,7 +353,7 @@
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Engagement, emotions, independence and session summaries checked for families.</p>' +
-        '<div id="ppPaxSessionsHost"></div>',
+        '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
@@ -395,14 +426,50 @@
     });
   }
 
+  function openSubview(host, data, opts, view) {
+    if (view === "general") {
+      void ensureGeneralFieldsAsync(data).then(function () {
+        renderGeneral(host, data, opts);
+      });
+    } else if (view === "sessions") renderSessions(host, data, opts);
+    else if (view === "achievements") renderAchievements(host, data, opts);
+    else if (view === "swim") renderSwim(host, data, opts);
+  }
+
   function bindHub(host, data, opts) {
+    var sectionByView = {
+      sessions: "sessions",
+      achievements: "achievements",
+      swim: "swim",
+    };
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var view = btn.getAttribute("data-pp-open");
-        if (view === "general") renderGeneral(host, data, opts);
-        else if (view === "sessions") renderSessions(host, data, opts);
-        else if (view === "achievements") renderAchievements(host, data, opts);
-        else if (view === "swim") renderSwim(host, data, opts);
+        var section = sectionByView[view];
+        if (
+          section &&
+          opts &&
+          typeof opts.loadSection === "function" &&
+          typeof opts.isSectionLoaded === "function" &&
+          !opts.isSectionLoaded(section)
+        ) {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void opts
+            .loadSection(section)
+            .then(function () {
+              openSubview(host, data, opts, view);
+            })
+            .catch(function () {
+              if (typeof opts.onSectionError === "function") opts.onSectionError(section);
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            });
+          return;
+        }
+        openSubview(host, data, opts, view);
       });
     });
   }

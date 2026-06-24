@@ -10,7 +10,112 @@
     step: "identify",
     session: { token: "", expiresAt: 0 },
     home: null,
+    participant: { contactId: "", data: null, loaded: {} },
   };
+
+  function mergeParticipantBody(base, patch) {
+    if (!patch) return base;
+    if (!base) return patch;
+    if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
+    if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
+    if (Array.isArray(patch.swim_term_reviews)) base.swim_term_reviews = patch.swim_term_reviews;
+    if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
+    if (patch.general && base.general) {
+      Object.assign(base.general, patch.general);
+    }
+    if (patch.participant && base.participant) {
+      Object.assign(base.participant, patch.participant);
+    }
+    return base;
+  }
+
+  async function fetchParticipantSections(contactId, sections) {
+    var res = await fetch(fn("parent-portal-participant-detail"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.session.token,
+      },
+      body: JSON.stringify({ contact_id: contactId, sections: sections }),
+    });
+    var body = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !body.ok) {
+      var err = new Error("participant_load_failed");
+      err.status = res.status;
+      throw err;
+    }
+    return body;
+  }
+
+  function participantRenderOpts(contactId) {
+    return {
+      saveGeneralInfo: function (fields) {
+        return fetch(fn("parent-portal-general-info-save"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, fields: fields }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("save_failed");
+            return j;
+          });
+        });
+      },
+      isSectionLoaded: function (section) {
+        return !!state.participant.loaded[section];
+      },
+      loadSection: function (section) {
+        if (state.participant.loaded[section]) {
+          return Promise.resolve(state.participant.data);
+        }
+        return fetchParticipantSections(contactId, [section]).then(function (patch) {
+          state.participant.data = mergeParticipantBody(state.participant.data, patch);
+          state.participant.loaded[section] = true;
+          if (section === "sessions" && patch.pending_review_count > 0) {
+            showNotice(
+              $("ppParticipantNotice"),
+              "info",
+              "Some session summaries are still being prepared. Refresh in a minute to see them.",
+            );
+          }
+          return state.participant.data;
+        });
+      },
+      onSectionError: function () {
+        showNotice(
+          $("ppParticipantNotice"),
+          "error",
+          "Could not load this section — please try again.",
+        );
+      },
+    };
+  }
+
+  function renderParticipantView(host, body, contactId) {
+    if (global.ParentPortalParticipant && typeof global.ParentPortalParticipant.render === "function") {
+      global.ParentPortalParticipant.render(host, body, participantRenderOpts(contactId));
+      if (body.pending_review_count > 0) {
+        showNotice(
+          $("ppParticipantNotice"),
+          "info",
+          "Some session summaries are still being prepared. Refresh in a minute to see them.",
+        );
+      } else {
+        hideNotice($("ppParticipantNotice"));
+      }
+      return;
+    }
+    host.innerHTML = '<p class="pp-muted">Participant view is unavailable in this browser.</p>';
+  }
 
   function $(id) {
     return document.getElementById(id);
@@ -286,24 +391,26 @@
     var host = $("ppParticipantDetail");
     var title = $("ppParticipantTitle");
     if (!host || !contactId) return;
-    host.innerHTML = '<p class="pcso-loading" role="status">Loading sessions…</p>';
+    host.innerHTML = '<p class="pcso-loading" role="status">Loading…</p>';
     setStep("participant");
+    state.participant = { contactId: contactId, data: null, loaded: {} };
 
-    var res = await fetch(fn("parent-portal-participant-detail"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: anonKey(),
-        Authorization: "Bearer " + anonKey(),
-        "x-parent-portal-session": state.session.token,
-      },
-      body: JSON.stringify({ contact_id: contactId }),
-    });
-    var body = await res.json().catch(function () {
-      return {};
-    });
-    if (!res.ok || !body.ok) {
-      if (res.status === 401 || res.status === 403) {
+    try {
+      var body = await fetchParticipantSections(contactId, ["general"]);
+      state.participant.data = body;
+      state.participant.loaded.general = true;
+
+      var p = body.participant || {};
+      if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
+        global.portalRegisterParticipantStorageAvatar(p.contact_id, p.display_name, p.avatar_url);
+      }
+      if (title) title.textContent = p.display_name || "Participant";
+      var refreshBtn = $("ppParticipantRefresh");
+      if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
+
+      renderParticipantView(host, body, contactId);
+    } catch (err) {
+      if (err && (err.status === 401 || err.status === 403)) {
         clearSession();
         setStep("identify");
         showNotice($("ppNotice"), "error", "Your session expired. Please sign in again.");
@@ -311,66 +418,6 @@
       }
       host.innerHTML =
         '<p class="pp-muted">We could not load this participant right now. Try again in a moment.</p>';
-      return;
-    }
-
-    var p = body.participant || {};
-    if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
-      global.portalRegisterParticipantStorageAvatar(p.contact_id, p.display_name, p.avatar_url);
-    }
-    if (title) title.textContent = p.display_name || "Participant";
-    var refreshBtn = $("ppParticipantRefresh");
-    if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
-
-    if (global.ParentPortalParticipant && typeof global.ParentPortalParticipant.render === "function") {
-      global.ParentPortalParticipant.render(host, body, {
-        saveGeneralInfo: function (fields) {
-          return fetch(fn("parent-portal-general-info-save"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: anonKey(),
-              Authorization: "Bearer " + anonKey(),
-              "x-parent-portal-session": state.session.token,
-            },
-            body: JSON.stringify({ contact_id: contactId, fields: fields }),
-          }).then(function (res) {
-            return res.json().then(function (j) {
-              if (!res.ok || !j.ok) throw new Error("save_failed");
-              return j;
-            });
-          });
-        },
-      });
-      if (body.pending_review_count > 0) {
-        showNotice(
-          $("ppParticipantNotice"),
-          "info",
-          "Some session summaries are still being prepared. Refresh in a minute to see them.",
-        );
-      } else {
-        hideNotice($("ppParticipantNotice"));
-      }
-    } else if (
-      global.PortalClientSessionsOverview &&
-      typeof global.PortalClientSessionsOverview.renderParent === "function"
-    ) {
-      global.PortalClientSessionsOverview.renderParent(host, {
-        sessions: body.sessions || [],
-        achievements: body.achievements || [],
-        term_label: body.term_label || "",
-      });
-      if (body.pending_review_count > 0) {
-        showNotice(
-          $("ppParticipantNotice"),
-          "info",
-          "Some session summaries are still being prepared. Refresh in a minute to see them.",
-        );
-      } else {
-        hideNotice($("ppParticipantNotice"));
-      }
-    } else {
-      host.innerHTML = '<p class="pp-muted">Participant view is unavailable in this browser.</p>';
     }
   }
 

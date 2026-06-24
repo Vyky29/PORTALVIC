@@ -127,30 +127,31 @@ Deno.serve(async (req) => {
     messages = messages.slice(0, 20);
   }
 
-  const childrenOut = [];
-  for (const c of contacts || []) {
-    const displayName = c.display_name || c.child_display;
-    const avatar = await resolveParticipantAvatarUrls(supabase, url, {
-      contact_id: String(c.contact_id || ""),
-      display_name: String(displayName || ""),
-      dob_iso: c.dob_iso,
-      avatar_storage_path: c.avatar_storage_path,
-    });
-    childrenOut.push({
-      contact_id: c.contact_id,
-      display_name: displayName,
-      first_name: c.first_name || c.child_first_name,
-      last_name: c.last_name || c.child_last_name,
-      dob_iso: c.dob_iso,
-      in_class: c.in_class,
-      on_waiting_list: c.on_waiting_list,
-      city: c.city || null,
-      postcode: c.postcode || null,
-      avatar_url: avatar.avatar_url,
-      avatar_source: avatar.avatar_source,
-      has_avatar: !!(avatar.avatar_url || c.avatar_storage_path),
-    });
-  }
+  const childrenOut = await Promise.all(
+    (contacts || []).map(async (c) => {
+      const displayName = c.display_name || c.child_display;
+      const avatar = await resolveParticipantAvatarUrls(supabase, url, {
+        contact_id: String(c.contact_id || ""),
+        display_name: String(displayName || ""),
+        dob_iso: c.dob_iso,
+        avatar_storage_path: c.avatar_storage_path,
+      });
+      return {
+        contact_id: c.contact_id,
+        display_name: displayName,
+        first_name: c.first_name || c.child_first_name,
+        last_name: c.last_name || c.child_last_name,
+        dob_iso: c.dob_iso,
+        in_class: c.in_class,
+        on_waiting_list: c.on_waiting_list,
+        city: c.city || null,
+        postcode: c.postcode || null,
+        avatar_url: avatar.avatar_url,
+        avatar_source: avatar.avatar_source,
+        has_avatar: !!(avatar.avatar_url || c.avatar_storage_path),
+      };
+    }),
+  );
 
   return new Response(
     JSON.stringify({

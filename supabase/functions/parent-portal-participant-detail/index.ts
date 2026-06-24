@@ -5,7 +5,7 @@
 // Sessions overview + parent-safe feedback + achievement photos for one linked child.
 //
 // Headers: x-parent-portal-session
-// Body: { contact_id: string }
+// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim")[] }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -29,8 +29,39 @@ import {
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
-const SANITIZE_BATCH = 12;
+/** Read path: never block parents on live OpenAI — use cache or mark pending. */
+const SANITIZE_BATCH = 0;
+const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
+
+type DetailSection = "general" | "sessions" | "achievements" | "swim";
+
+function parseSections(raw: unknown): Set<DetailSection> {
+  const all = new Set<DetailSection>(["general", "sessions", "achievements", "swim"]);
+  if (!Array.isArray(raw) || !raw.length) return all;
+  const out = new Set<DetailSection>();
+  for (const item of raw) {
+    const t = clean(item, 40).toLowerCase();
+    if (t === "general" || t === "sessions" || t === "achievements" || t === "swim") {
+      out.add(t as DetailSection);
+    }
+  }
+  return out.size ? out : all;
+}
+
+async function detectHasAquatics(
+  supabase: ReturnType<typeof createClient>,
+  clientSlugs: string[],
+): Promise<boolean> {
+  if (!clientSlugs.length) return false;
+  const { data } = await supabase
+    .from("session_feedback")
+    .select("service")
+    .in("client_id", clientSlugs)
+    .order("session_date", { ascending: false })
+    .limit(12);
+  return (data || []).some((row) => isAquaticService(row.service));
+}
 
 function isAquaticService(raw: unknown): boolean {
   const p = clean(raw, 200).toLowerCase();
@@ -99,7 +130,7 @@ Deno.serve(async (req) => {
   const session = await resolveParentPortalSession(req, supabase);
   if (!session) return parentPortalJsonInvalid();
 
-  let body: { contact_id?: string } = {};
+  let body: { contact_id?: string; sections?: string[] } = {};
   try {
     body = await req.json();
   } catch (_) {
@@ -108,6 +139,12 @@ Deno.serve(async (req) => {
 
   const contactId = clean(body.contact_id, 120);
   if (!contactId) return parentPortalJsonInvalid(400);
+
+  const sections = parseSections(body.sections);
+  const wantGeneral = sections.has("general");
+  const wantSessions = sections.has("sessions");
+  const wantAchievements = sections.has("achievements");
+  const wantSwim = sections.has("swim");
 
   const { data: participant, error: partErr } = await supabase
     .from("portal_participants")
@@ -143,213 +180,230 @@ Deno.serve(async (req) => {
     avatar_storage_path: participant.avatar_storage_path,
   });
 
-  const { data: genRow } = await supabase
-    .from("portal_participant_general_info")
-    .select("general_info_sheet, updated_at")
-    .eq("contact_id", contactId)
-    .maybeSingle();
+  let generalInfoSheet = "";
+  let generalUpdatedAt: string | null = null;
 
-  let generalInfoSheet = clean(genRow?.general_info_sheet, 12000);
-  if (!generalInfoSheet) {
-    const nameFilters = lookupNames.slice(0, 4);
-    for (const nm of nameFilters) {
-      const { data: docRows } = await supabase
-        .from("portal_participant_documents")
-        .select("payload_json, participant_name")
-        .ilike("participant_name", nm)
-        .order("submitted_at", { ascending: false })
-        .limit(3);
-      for (const doc of docRows || []) {
-        const payload = doc?.payload_json as Record<string, unknown> | null;
-        const blob = clean(payload?.general_info || payload?.client_info || payload?.info_sheet, 12000);
-        if (blob) {
-          generalInfoSheet = blob;
-          break;
+  if (wantGeneral) {
+    const { data: genRow } = await supabase
+      .from("portal_participant_general_info")
+      .select("general_info_sheet, updated_at")
+      .eq("contact_id", contactId)
+      .maybeSingle();
+
+    generalInfoSheet = clean(genRow?.general_info_sheet, 12000);
+    generalUpdatedAt = genRow?.updated_at ? String(genRow.updated_at) : null;
+
+    if (!generalInfoSheet) {
+      const nameFilters = lookupNames.slice(0, 4);
+      for (const nm of nameFilters) {
+        const { data: docRows } = await supabase
+          .from("portal_participant_documents")
+          .select("payload_json, participant_name")
+          .ilike("participant_name", nm)
+          .order("submitted_at", { ascending: false })
+          .limit(3);
+        for (const doc of docRows || []) {
+          const payload = doc?.payload_json as Record<string, unknown> | null;
+          const blob = clean(payload?.general_info || payload?.client_info || payload?.info_sheet, 12000);
+          if (blob) {
+            generalInfoSheet = blob;
+            break;
+          }
         }
+        if (generalInfoSheet) break;
       }
-      if (generalInfoSheet) break;
     }
   }
 
-  const generalFields = parseGeneralInfoSheet(generalInfoSheet);
+  const generalFields = wantGeneral ? parseGeneralInfoSheet(generalInfoSheet) : [];
 
-  const fbSel =
-    "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
+  let rawFeedback: Record<string, unknown>[] = [];
+  let sessionsOut: Record<string, unknown>[] = [];
 
-  const fbQueries = [];
-  if (clientSlugs.length) {
-    fbQueries.push(supabase.from("session_feedback").select(fbSel).in("client_id", clientSlugs));
-  }
-  for (const nm of lookupNames.slice(0, 4)) {
-    fbQueries.push(supabase.from("session_feedback").select(fbSel).ilike("client_name", nm));
-  }
+  if (wantSessions) {
+    const fbSel =
+      "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
-  const rawFeedback: Record<string, unknown>[] = [];
-  const seenIds = new Set<string>();
-  for (const q of fbQueries) {
-    const { data, error } = await q.order("session_date", { ascending: false }).limit(120);
-    if (error) {
-      console.error("[parent-portal-participant-detail] feedback error", error);
-      continue;
+    const fbQueries = [];
+    if (clientSlugs.length) {
+      fbQueries.push(supabase.from("session_feedback").select(fbSel).in("client_id", clientSlugs));
     }
-    for (const row of data || []) {
-      if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
-      const id = String(row.id || "");
-      if (!id || seenIds.has(id)) continue;
-      seenIds.add(id);
-      rawFeedback.push(row);
+    for (const nm of lookupNames.slice(0, 4)) {
+      fbQueries.push(supabase.from("session_feedback").select(fbSel).ilike("client_name", nm));
     }
-  }
 
-  rawFeedback.sort((a, b) => {
-    const da = isoFromAny(a.session_date);
-    const db = isoFromAny(b.session_date);
-    if (da !== db) return db.localeCompare(da);
-    return clean(b.session_time).localeCompare(clean(a.session_time));
-  });
-
-  const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
-  const cacheById = new Map<string, Record<string, unknown>>();
-
-  if (feedbackIds.length) {
-    const { data: cached } = await supabase
-      .from("portal_parent_feedback_share")
-      .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at")
-      .in("session_feedback_id", feedbackIds);
-    for (const row of cached || []) {
-      cacheById.set(String(row.session_feedback_id), row);
+    const seenIds = new Set<string>();
+    const fbResults = await Promise.all(
+      fbQueries.map((q) => q.order("session_date", { ascending: false }).limit(PARENT_FEEDBACK_LIMIT)),
+    );
+    for (const { data, error } of fbResults) {
+      if (error) {
+        console.error("[parent-portal-participant-detail] feedback error", error);
+        continue;
+      }
+      for (const row of data || []) {
+        if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
+        const id = String(row.id || "");
+        if (!id || seenIds.has(id)) continue;
+        seenIds.add(id);
+        rawFeedback.push(row);
+      }
     }
-  }
 
-  let sanitizeBudget = SANITIZE_BATCH;
-  const sessionsOut: Record<string, unknown>[] = [];
+    rawFeedback.sort((a, b) => {
+      const da = isoFromAny(a.session_date);
+      const db = isoFromAny(b.session_date);
+      if (da !== db) return db.localeCompare(da);
+      return clean(b.session_time).localeCompare(clean(a.session_time));
+    });
 
-  for (const row of rawFeedback) {
-    const id = String(row.id);
-    const patterns = row.engagement_patterns;
-    const sanitizeInput = {
-      clientName: displayName,
-      sessionDate: isoFromAny(row.session_date),
-      service: clean(row.service, 200),
-      positiveFeedback: clean(row.positive_feedback, 2500),
-      relevantInformation: clean(row.relevant_information, 2500),
-      engagementRating:
-        row.engagement_rating != null && row.engagement_rating !== ""
-          ? Number(row.engagement_rating)
-          : null,
-      clientEmotions: clean(row.client_emotions, 200),
-      independenceLabel: independenceLabel(patterns),
-    };
+    const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
+    const cacheById = new Map<string, Record<string, unknown>>();
 
-    const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
-    let cache = cacheById.get(id);
-    let parentMessage: string | null = null;
-    let shareStatus = "hidden";
-    let messagePending = false;
+    if (feedbackIds.length) {
+      const { data: cached } = await supabase
+        .from("portal_parent_feedback_share")
+        .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at")
+        .in("session_feedback_id", feedbackIds);
+      for (const row of cached || []) {
+        cacheById.set(String(row.session_feedback_id), row);
+      }
+    }
 
-    if (cache && cache.source_fingerprint === fingerprint && cache.share_status !== "pending") {
-      shareStatus = String(cache.share_status || "hidden");
-      parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-    } else if (sanitizeBudget > 0) {
-      sanitizeBudget--;
-      const reviewed = await sanitizeFeedbackForParents(sanitizeInput);
-      shareStatus = reviewed.share_status;
-      parentMessage = reviewed.parent_message || null;
+    let sanitizeBudget = SANITIZE_BATCH;
 
-      const upsertRow = {
-        session_feedback_id: id,
-        contact_id: contactId,
-        source_fingerprint: fingerprint,
-        parent_message: parentMessage,
-        share_status: shareStatus,
-        review_model: reviewed.review_model,
-        reviewed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+    for (const row of rawFeedback) {
+      const id = String(row.id);
+      const patterns = row.engagement_patterns;
+      const sanitizeInput = {
+        clientName: displayName,
+        sessionDate: isoFromAny(row.session_date),
+        service: clean(row.service, 200),
+        positiveFeedback: clean(row.positive_feedback, 2500),
+        relevantInformation: clean(row.relevant_information, 2500),
+        engagementRating:
+          row.engagement_rating != null && row.engagement_rating !== ""
+            ? Number(row.engagement_rating)
+            : null,
+        clientEmotions: clean(row.client_emotions, 200),
+        independenceLabel: independenceLabel(patterns),
       };
 
-      const { error: upsertErr } = await supabase
-        .from("portal_parent_feedback_share")
-        .upsert(upsertRow, { onConflict: "session_feedback_id" });
-      if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
-    } else if (cache) {
-      shareStatus = String(cache.share_status || "hidden");
-      parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-    } else {
-      messagePending = true;
-      shareStatus = "pending";
-    }
+      const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
+      let cache = cacheById.get(id);
+      let parentMessage: string | null = null;
+      let shareStatus = "hidden";
+      let messagePending = false;
 
-    sessionsOut.push({
-      id,
-      session_date: isoFromAny(row.session_date),
-      service: clean(row.service, 200),
-      session_time: clean(row.session_time, 80),
-      instructor: instructorFirstName(row.completed_by_name),
-      attendance: clean(row.attendance, 40),
-      engagement_rating: row.engagement_rating,
-      client_emotions: clean(row.client_emotions, 200),
-      independence: independenceLabel(patterns),
-      parent_message: shareStatus === "approved" ? parentMessage : null,
-      message_pending: messagePending,
-    });
-  }
+      if (cache && cache.source_fingerprint === fingerprint && cache.share_status !== "pending") {
+        shareStatus = String(cache.share_status || "hidden");
+        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+      } else if (sanitizeBudget > 0) {
+        sanitizeBudget--;
+        const reviewed = await sanitizeFeedbackForParents(sanitizeInput);
+        shareStatus = reviewed.share_status;
+        parentMessage = reviewed.parent_message || null;
 
-  const PARENT_ACH_STATUSES = ["attached", "draft"] as const;
+        const upsertRow = {
+          session_feedback_id: id,
+          contact_id: contactId,
+          source_fingerprint: fingerprint,
+          parent_message: parentMessage,
+          share_status: shareStatus,
+          review_model: reviewed.review_model,
+          reviewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-  const achQueries = [];
-  if (clientSlugs.length) {
-    achQueries.push(
-      supabase
-        .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
-        .in("status", [...PARENT_ACH_STATUSES])
-        .in("client_id", clientSlugs)
-        .order("session_date", { ascending: false })
-        .limit(60),
-    );
-  }
-  for (const nm of lookupNames.slice(0, 4)) {
-    achQueries.push(
-      supabase
-        .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
-        .in("status", [...PARENT_ACH_STATUSES])
-        .ilike("client_name", nm)
-        .order("session_date", { ascending: false })
-        .limit(60),
-    );
-  }
+        const { error: upsertErr } = await supabase
+          .from("portal_parent_feedback_share")
+          .upsert(upsertRow, { onConflict: "session_feedback_id" });
+        if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
+      } else if (cache) {
+        shareStatus = String(cache.share_status || "hidden");
+        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+      } else {
+        messagePending = true;
+        shareStatus = "pending";
+      }
 
-  const achRows: Record<string, unknown>[] = [];
-  const seenAch = new Set<string>();
-  for (const q of achQueries) {
-    const { data } = await q;
-    for (const row of data || []) {
-      if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
-      const aid = String(row.id || "");
-      if (!aid || seenAch.has(aid)) continue;
-      seenAch.add(aid);
-      achRows.push(row);
+      sessionsOut.push({
+        id,
+        session_date: isoFromAny(row.session_date),
+        service: clean(row.service, 200),
+        session_time: clean(row.session_time, 80),
+        instructor: instructorFirstName(row.completed_by_name),
+        attendance: clean(row.attendance, 40),
+        engagement_rating: row.engagement_rating,
+        client_emotions: clean(row.client_emotions, 200),
+        independence: independenceLabel(patterns),
+        parent_message: shareStatus === "approved" ? parentMessage : null,
+        message_pending: messagePending,
+      });
     }
   }
 
-  achRows.sort((a, b) => String(b.session_date || "").localeCompare(String(a.session_date || "")));
+  let achievements: Record<string, unknown>[] = [];
 
-  const achievements: Record<string, unknown>[] = [];
-  for (const row of achRows.slice(0, 40)) {
-    const path = clean(row.storage_path, 500);
-    if (!path) continue;
-    const { data: signed, error: signErr } = await supabase.storage
-      .from(ACH_BUCKET)
-      .createSignedUrl(path, 3600);
-    if (signErr || !signed?.signedUrl) continue;
-    achievements.push({
-      id: row.id,
-      session_date: row.session_date,
-      session_feedback_id: row.session_feedback_id,
-      status: clean(row.status, 40),
-      url: signed.signedUrl,
-    });
+  if (wantAchievements) {
+    const PARENT_ACH_STATUSES = ["attached", "draft"] as const;
+    const achQueries = [];
+    if (clientSlugs.length) {
+      achQueries.push(
+        supabase
+          .from("portal_participant_achievement_photos")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .in("status", [...PARENT_ACH_STATUSES])
+          .in("client_id", clientSlugs)
+          .order("session_date", { ascending: false })
+          .limit(60),
+      );
+    }
+    for (const nm of lookupNames.slice(0, 4)) {
+      achQueries.push(
+        supabase
+          .from("portal_participant_achievement_photos")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .in("status", [...PARENT_ACH_STATUSES])
+          .ilike("client_name", nm)
+          .order("session_date", { ascending: false })
+          .limit(60),
+      );
+    }
+
+    const achRows: Record<string, unknown>[] = [];
+    const seenAch = new Set<string>();
+    const achResults = await Promise.all(achQueries);
+    for (const { data } of achResults) {
+      for (const row of data || []) {
+        if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
+        const aid = String(row.id || "");
+        if (!aid || seenAch.has(aid)) continue;
+        seenAch.add(aid);
+        achRows.push(row);
+      }
+    }
+
+    achRows.sort((a, b) => String(b.session_date || "").localeCompare(String(a.session_date || "")));
+
+    const signedRows = await Promise.all(
+      achRows.slice(0, 40).map(async (row) => {
+        const path = clean(row.storage_path, 500);
+        if (!path) return null;
+        const { data: signed, error: signErr } = await supabase.storage
+          .from(ACH_BUCKET)
+          .createSignedUrl(path, 3600);
+        if (signErr || !signed?.signedUrl) return null;
+        return {
+          id: row.id,
+          session_date: row.session_date,
+          session_feedback_id: row.session_feedback_id,
+          status: clean(row.status, 40),
+          url: signed.signedUrl,
+        };
+      }),
+    );
+    achievements = signedRows.filter(Boolean) as Record<string, unknown>[];
   }
 
   const serviceSet = new Set<string>();
@@ -358,11 +412,14 @@ Deno.serve(async (req) => {
     if (label) serviceSet.add(label);
   });
   const services = Array.from(serviceSet).sort();
-  const hasAquatics = services.some((s) => isAquaticService(s)) ||
+  let hasAquatics = services.some((s) => isAquaticService(s)) ||
     rawFeedback.some((r) => isAquaticService(r.service));
+  if (!hasAquatics && (wantGeneral || wantSwim) && !wantSessions) {
+    hasAquatics = await detectHasAquatics(supabase, clientSlugs);
+  }
 
   const swimTermReviews: Record<string, unknown>[] = [];
-  if (hasAquatics) {
+  if (wantSwim && hasAquatics) {
     const { data: shares } = await supabase
       .from("portal_parent_swim_term_share")
       .select("document_id, ready_at")
@@ -377,22 +434,25 @@ Deno.serve(async (req) => {
         .in("id", shareIds)
         .eq("document_type", "swim_term_review");
 
-      for (const doc of docs || []) {
-        if (!doc?.file_url) continue;
-        if (!participantIdentityMatches(identityInput, String(doc.related_client || ""), "")) continue;
-        const { data: signed, error: signErr } = await supabase.storage
-          .from(DOC_BUCKET)
-          .createSignedUrl(String(doc.file_url), 3600);
-        if (signErr || !signed?.signedUrl) continue;
-        const shareMeta = (shares || []).find((s) => String(s.document_id) === String(doc.id));
-        swimTermReviews.push({
-          id: doc.id,
-          title: clean(doc.title, 200),
-          related_date: doc.related_date,
-          ready_at: shareMeta?.ready_at || doc.created_at,
-          download_url: signed.signedUrl,
-        });
-      }
+      const swimSigned = await Promise.all(
+        (docs || []).map(async (doc) => {
+          if (!doc?.file_url) return null;
+          if (!participantIdentityMatches(identityInput, String(doc.related_client || ""), "")) return null;
+          const { data: signed, error: signErr } = await supabase.storage
+            .from(DOC_BUCKET)
+            .createSignedUrl(String(doc.file_url), 3600);
+          if (signErr || !signed?.signedUrl) return null;
+          const shareMeta = (shares || []).find((s) => String(s.document_id) === String(doc.id));
+          return {
+            id: doc.id,
+            title: clean(doc.title, 200),
+            related_date: doc.related_date,
+            ready_at: shareMeta?.ready_at || doc.created_at,
+            download_url: signed.signedUrl,
+          };
+        }),
+      );
+      swimTermReviews.push(...(swimSigned.filter(Boolean) as Record<string, unknown>[]));
       swimTermReviews.sort((a, b) =>
         String(b.related_date || b.ready_at || "").localeCompare(String(a.related_date || a.ready_at || ""))
       );
@@ -403,6 +463,7 @@ Deno.serve(async (req) => {
     JSON.stringify({
       ok: true,
       term_label: TERM_LABEL,
+      sections_loaded: Array.from(sections),
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,
@@ -422,7 +483,7 @@ Deno.serve(async (req) => {
         term_label: TERM_LABEL,
         general_info_sheet: generalInfoSheet,
         fields: generalFields,
-        updated_at: genRow?.updated_at || null,
+        updated_at: generalUpdatedAt,
         editable: true,
       },
       sessions: sessionsOut,
