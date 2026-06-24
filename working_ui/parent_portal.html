@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- clubSENsational Parent Portal — mobile-first, name + participant DOB -->
+  <!-- clubSENsational Family portal — phones, tablets, and desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -475,6 +475,15 @@
       .pp-ach-grid {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 14px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .pp-page {
+        padding-left: max(32px, env(safe-area-inset-left));
+        padding-right: max(32px, env(safe-area-inset-right));
+      }
+      .pp-pax-info-buttons {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
   </style>

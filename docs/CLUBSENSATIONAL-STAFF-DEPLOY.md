@@ -11,6 +11,17 @@ App móvil/web para **instructores y leads**. Nombre de producto: **clubSENsatio
 
 Mismo repo GitHub **PORTALVIC**, dos proyectos Vercel.
 
+## Dispositivos (qué optimizar dónde)
+
+| Audiencia | URL / app | Dispositivo principal | Notas |
+|-----------|-----------|------------------------|--------|
+| **Instructores / leads** | `clubsensational-staff.vercel.app` | **Móvil e iPad** | App dedicada (`PORTAL_STAFF_APP`). Carga ligera en handheld; en escritorio (p. ej. en casa) usa el mismo build con scripts en paralelo. |
+| **Admin / CEO / office** | `portalvic.vercel.app` | **Escritorio** (también móvil/iPad) | `admin_dashboard.html`, `ceo_dashboard.html`, etc. |
+| **Staff en casa (opcional)** | `portalvic.vercel.app/staff_dashboard.html` | Escritorio | Mismo HTML que producción histórica, **sin** parches móviles de la app staff. |
+| **Familias** | `portalvic.vercel.app/parent_portal.html` | **Cualquiera** | Teléfono, tablet y ordenador; layout ancho desde 720px. |
+
+La detección handheld en la app staff incluye **iPad** (también cuando Safari reporta “Macintosh” con touch).
+
 ## Crear el proyecto en Vercel
 
 1. [Vercel Dashboard](https://vercel.com) → **Add New** → **Project** → importar repo **PORTALVIC**.

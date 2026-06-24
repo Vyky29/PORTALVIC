@@ -1,20 +1,40 @@
 /**
- * clubSENsational Staff app — boot (staff deploy only).
- * Preconnect, preload critical JS, defer non-essential assets after first paint.
+ * clubSENsational Staff app — boot (clubsensational-staff deploy only).
+ *
+ * Device targets:
+ * - Handheld (phone + iPad): sequential heavy scripts, delayed idle extras, fast rehydrate.
+ * - Desktop (staff at home on clubsensational-staff): parallel deferred load, full layout.
+ *
+ * portalvic staff_dashboard.html (no PORTAL_STAFF_APP) keeps the standard desktop bundle unchanged.
  */
 (function (global) {
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
+  function detectHandheldStaff() {
+    try {
+      var nav = global.navigator || {};
+      var ua = String(nav.userAgent || "");
+      if (/iPhone|iPod|iPad|Android|Windows Phone/i.test(ua)) return true;
+      if (String(nav.platform || "") === "MacIntel" && Number(nav.maxTouchPoints || 0) > 1) return true;
+    } catch (_) {}
+    return false;
+  }
+
+  var isHandheld = detectHandheldStaff();
+  var isStaffDashboard = /staff_dashboard/i.test(String(global.location.pathname || ""));
+
   try {
-    document.documentElement.classList.add("portal-staff-app");
+    var root = document.documentElement;
+    root.classList.add("portal-staff-app");
+    root.classList.add(isHandheld ? "portal-staff-handheld" : "portal-staff-desktop");
   } catch (_) {}
 
-  var VER = "20260624-staff-boot7";
-  var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(
-    String((global.navigator && global.navigator.userAgent) || "")
-  );
-  var isStaffDashboard = /staff_dashboard/i.test(String(global.location.pathname || ""));
+  global.portalStaffIsHandheldDevice = function portalStaffIsHandheldDevice() {
+    return isHandheld;
+  };
+
+  var VER = "20260624-staff-boot8";
 
   try {
     var pre = document.createElement("link");
@@ -37,8 +57,8 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf8");
-    if (!isMobile) {
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf9");
+    if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
     preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
@@ -125,7 +145,6 @@
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
   ];
 
-  /** Heavy embeds only — never load in parallel on mobile (CPU/heat). */
   function portalStaffStartDeferredDashboardScripts() {
     if (!isStaffDashboard) return;
     if (global.__PORTAL_STAFF_DEFERRED_DASHBOARD__) return;
@@ -142,7 +161,7 @@
         .then(afterDeferredDashboardScripts);
     }
 
-    function runMobile() {
+    function runHandheld() {
       void loadSequential(STAFF_DEFERRED_HEAVY, false)
         .then(function () {
           afterClientsInfoReady();
@@ -151,14 +170,13 @@
     }
 
     var start = function () {
-      if (isMobile) runMobile();
+      if (isHandheld) runHandheld();
       else runDesktop();
     };
 
-    if (isMobile) {
-      var delay = 4000;
+    if (isHandheld) {
       var kick = function () {
-        global.setTimeout(start, delay);
+        global.setTimeout(start, 3500);
       };
       if (document.readyState === "complete") kick();
       else global.addEventListener("load", kick, { once: true });
@@ -183,7 +201,7 @@
         resolve();
       };
       global.addEventListener("portal:staff-deferred-dashboard-ready", done);
-      global.setTimeout(resolve, isMobile ? 20000 : 12000);
+      global.setTimeout(resolve, isHandheld ? 20000 : 12000);
     });
   };
 
@@ -200,7 +218,7 @@
       if (i >= urls.length) return;
       loadScript(urls[i++]).then(next);
     }
-    scheduleIdle(next, isMobile ? 8000 : 4000);
+    scheduleIdle(next, isHandheld ? 8000 : 4000);
   };
 
   function portalStaffDeferHeadExtras() {
@@ -215,7 +233,7 @@
         ],
         false
       );
-    }, isMobile ? 5000 : 1500);
+    }, isHandheld ? 5000 : 1500);
   }
 
   function portalStaffDeferDashboardExtras() {
@@ -228,19 +246,19 @@
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
     };
-    scheduleIdle(run, isMobile ? 6000 : 2500);
+    scheduleIdle(run, isHandheld ? 6000 : 2500);
   }
 
   function scheduleIdle(fn, timeoutMs) {
     if (typeof global.requestIdleCallback === "function") {
       global.requestIdleCallback(fn, { timeout: timeoutMs || 3000 });
     } else {
-      global.setTimeout(fn, isMobile ? 1500 : 800);
+      global.setTimeout(fn, isHandheld ? 1500 : 800);
     }
   }
 
   function onDomReady() {
-    if (!isMobile) portalStaffStartDeferredDashboardScripts();
+    if (!isHandheld) portalStaffStartDeferredDashboardScripts();
     portalStaffDeferHeadExtras();
     if (typeof global.portalStaffDeferWebPush === "function") {
       global.portalStaffDeferWebPush();

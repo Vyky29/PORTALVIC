@@ -409,6 +409,9 @@
       animation-play-state:running;
       will-change:transform;
     }
+    html.portal-staff-handheld .avatar-wrap{
+      touch-action:manipulation;
+    }
     @keyframes avatar-orbit-cw{
       from{transform:rotate(0deg)}
       to{transform:rotate(360deg)}
