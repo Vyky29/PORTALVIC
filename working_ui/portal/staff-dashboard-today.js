@@ -2242,12 +2242,14 @@
       if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
       try{
         if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return false;
-        if(window.__PORTAL_STAFF_ROSTER_HYDRATED__
-          && dashboardData && dashboardData.portalIdentityResolved !== false){
-          return false;
-        }
-        if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
+        if(dashboardData && dashboardData.portalIdentityResolved === false) return true;
         if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
+        /* Keep the Today cards on the brief "syncing" panel until schedule overrides have
+           hydrated as well. Releasing on roster-only made staff with an instructor reassignment
+           (e.g. Giuseppe) flash their pre-override sessions before the reassignment applied. The
+           overrides flag is force-set to true on error/no-Supabase and via the settle/hydrate
+           timers, so this can only hold the panel for the brief initial sync window. */
+        if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
         return false;
       }catch(_){ return true; }
     }
