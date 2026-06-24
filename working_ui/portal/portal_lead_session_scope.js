@@ -642,3 +642,152 @@ export function portalLeadPickupRosterNamesForDate(iso, profile, authEmail) {
     return a.localeCompare(b, "en", { sensitivity: "base" });
   });
 }
+
+function rosterRowToLeadSlot(r, iso, wd) {
+  return {
+    iso: iso,
+    session_date: iso,
+    day: String(r.day || wd || "").trim(),
+    client_name: r.client_name,
+    service: r.service,
+    venue: r.venue,
+    instructors: r.instructors,
+    instructor_label: r.instructors,
+  };
+}
+
+function instructorKeysFromRosterRaw(raw) {
+  const out = [];
+  const seen = Object.create(null);
+  String(raw || "")
+    .split(/,|\/|&|\band\b/gi)
+    .forEach(function (part) {
+      const k = normKey(part);
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      out.push(k);
+    });
+  return out;
+}
+
+/** Programme-lead MA / Day Centre days: all in-scope roster rows, not lead-instructor only. */
+export function portalLeadProgrammeWideTodayForStaff(staffId, iso, profile, authEmail) {
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { active: false, scopes: [], leadKey: "" };
+  const leadKey = portalLeadProgrammeKey(profile || {}, authEmail || "");
+  if (!leadKey || normKey(leadKey) !== normKey(staffId)) {
+    return { active: false, scopes: [], leadKey: "" };
+  }
+  const scopes = portalLeadSessionScopesForProfile(profile || {}, authEmail || "");
+  if (!scopes.length || !portalLeadDayUsesProgrammeWideRoster(scopes, day)) {
+    return { active: false, scopes: [], leadKey: "" };
+  }
+  return { active: true, scopes: scopes, leadKey: leadKey };
+}
+
+export function portalLeadSpreadsheetSessionInScopeForLead(s, iso, leadKey, scopes) {
+  if (!s || !iso || !scopes || !scopes.length) return false;
+  const cid = normKey(s.clientId);
+  if (!cid || cid === "closed" || cid === "available" || cid === "home" || cid === "manager") {
+    return false;
+  }
+  const slot = {
+    iso: iso,
+    session_date: iso,
+    day: String(s.day || "").trim(),
+    service: String(s.rosterService || s.activity || "").trim(),
+    venue: String(s.venue || "").trim(),
+    instructors: String(s.staffId || "").trim(),
+    instructor_label: String(s.staffId || "").trim(),
+  };
+  return portalLeadSlotInScopeForLead(slot, scopes, leadKey);
+}
+
+/**
+ * Today cards for programme-wide lead days — merge in-scope instructors' session rows.
+ * @returns {{ active: boolean, leadKey: string, scopes: object[], sessionsModel: object[], clientNotesById: object }}
+ */
+export function portalLeadCollectProgrammeWideSessionsModel(iso, profile, authEmail, staffId) {
+  const wide = portalLeadProgrammeWideTodayForStaff(staffId, iso, profile, authEmail);
+  const empty = {
+    active: false,
+    leadKey: "",
+    scopes: [],
+    sessionsModel: [],
+    clientNotesById: {},
+  };
+  if (!wide.active) return empty;
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  const wd = weekdayFromIso(day);
+  if (!wd) return empty;
+  const src =
+    typeof globalThis !== "undefined" && globalThis.portalResolveStaffDashboardSource
+      ? globalThis.portalResolveStaffDashboardSource()
+      : typeof globalThis !== "undefined"
+        ? globalThis.STAFF_DASHBOARD_SOURCE
+        : null;
+  const Adapter =
+    typeof globalThis !== "undefined" ? globalThis.StaffDashboardSpreadsheetAdapter : null;
+  if (!src || !Adapter || typeof Adapter.bootstrap !== "function") return empty;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const instructorKeys = Object.create(null);
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isPickupRosterClientName(r.client_name)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    const slot = rosterRowToLeadSlot(r, day, wd);
+    if (!portalLeadSlotInScopeForDay(slot, wide.scopes, wide.leadKey, day)) continue;
+    instructorKeysFromRosterRaw(r.instructors).forEach(function (k) {
+      instructorKeys[k] = true;
+    });
+  }
+  const merged = [];
+  const seen = Object.create(null);
+  const notes = {};
+  Object.keys(instructorKeys).forEach(function (instKey) {
+    let boot = null;
+    try {
+      boot = Adapter.bootstrap({ source: src, staffId: instKey });
+    } catch (_) {
+      boot = null;
+    }
+    if (!boot || !Array.isArray(boot.sessionsModel)) return;
+    if (boot.clientNotesById && typeof boot.clientNotesById === "object") {
+      Object.assign(notes, boot.clientNotesById);
+    }
+    boot.sessionsModel.forEach(function (s) {
+      if (!s) return;
+      const rowIso = String(s.session_date || s.sessionDate || "")
+        .trim()
+        .slice(0, 10);
+      if (rowIso !== day) return;
+      if (!portalLeadSpreadsheetSessionInScopeForLead(s, day, wide.leadKey, wide.scopes)) return;
+      const dk = [
+        rowIso,
+        String(s.day || "").trim(),
+        String(s.start || "").trim(),
+        String(s.end || "").trim(),
+        String(s.venue || "").trim().toLowerCase(),
+        String(s.clientId || "").trim().toLowerCase(),
+        String(s.staffId || "").trim().toLowerCase(),
+      ].join("\0");
+      if (seen[dk]) return;
+      seen[dk] = true;
+      merged.push(s);
+    });
+  });
+  merged.sort(function (a, b) {
+    return String(a.start || "").localeCompare(String(b.start || ""));
+  });
+  return {
+    active: merged.length > 0,
+    leadKey: wide.leadKey,
+    scopes: wide.scopes,
+    sessionsModel: merged,
+    clientNotesById: notes,
+  };
+}

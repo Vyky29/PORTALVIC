@@ -945,7 +945,7 @@
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster"></script>
-  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260624-john-acton-wed"></script>
+  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260624-john-acton-clients"></script>
   <script src="/portal/portal_staff_photos.js?v=20260624-rt-debug"></script>
 <script src="/portal/portal_sheet_back.js?v=20260624-dock-qm-fix"></script>
   <script>
@@ -11224,7 +11224,45 @@
           if(altIso && (!floor || altIso >= floor)) sessionDateKey = altIso;
         }
       }
+      let programmeWidePack = null;
+      if(staffId && typeof window.portalLeadCollectProgrammeWideSessionsModel === 'function'){
+        try{
+          const prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+          const em = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
+            && window.__PORTAL_SUPABASE__.session.user
+            ? window.__PORTAL_SUPABASE__.session.user.email
+            : '';
+          programmeWidePack = window.portalLeadCollectProgrammeWideSessionsModel(
+            useIsoPin ? isoPin : sessionDateKey,
+            prof,
+            em,
+            staffId
+          );
+          if(programmeWidePack && programmeWidePack.active && Array.isArray(programmeWidePack.sessionsModel)
+            && programmeWidePack.sessionsModel.length){
+            baseModel = programmeWidePack.sessionsModel;
+            if(programmeWidePack.clientNotesById){
+              clientNotesById = Object.assign({}, clientNotesById || {}, programmeWidePack.clientNotesById);
+            }
+            if(typeof portalApplyClientsInfoToNotes === 'function') portalApplyClientsInfoToNotes();
+          }else{
+            programmeWidePack = null;
+          }
+        }catch(_pw){ programmeWidePack = null; }
+      }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
+        if(programmeWidePack){
+          if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
+          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+            && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord)) return false;
+          return typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'
+            && window.portalLeadSpreadsheetSessionInScopeForLead(
+              s,
+              sessionDateKey,
+              programmeWidePack.leadKey,
+              programmeWidePack.scopes
+            );
+        }
         if(String(s.staffId || '').toLowerCase() !== staffId) return false;
         if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
         return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
@@ -12115,6 +12153,21 @@
       var k = String(staffId || '').trim().toLowerCase();
       return k === 'john' || k === 'berta' || k === 'michelle';
     }
+    function portalStaffProgrammeLeadWideCardsExpected(staffId, isoYmd){
+      try{
+        const sid = String(staffId || '').trim().toLowerCase();
+        const iso = String(isoYmd || '').trim().slice(0, 10);
+        if(!sid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+        if(typeof window.portalLeadProgrammeWideTodayForStaff !== 'function') return false;
+        const prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+        const em = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
+          && window.__PORTAL_SUPABASE__.session.user
+          ? window.__PORTAL_SUPABASE__.session.user.email
+          : '';
+        return !!(window.portalLeadProgrammeWideTodayForStaff(sid, iso, prof, em).active);
+      }catch(_){ return false; }
+    }
+    try{ window.portalStaffProgrammeLeadWideCardsExpected = portalStaffProgrammeLeadWideCardsExpected; }catch(_){}
     function portalStaffTodayLeadShiftPanelMeta(staffId){
       var sid = String(staffId || '').trim().toLowerCase();
       if(!portalStaffIsProgrammeLeadRosterKey(sid)) return null;
@@ -12169,6 +12222,10 @@
       if(opts.loading) return 'loading';
       const sid = String(staffId || '').trim().toLowerCase();
       const live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      const anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+        ? portalResolveTodaySectionCalendarDate()
+        : null;
+      const iso = anchor && typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
       if(live && sid && typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return 'off';
       let todayRows = [];
       try{
@@ -12184,6 +12241,11 @@
         && portalStaffTodayScheduleCardsStillExpected(sid)){
         if(hydrated && overridesReady && settled){
           if(portalStaffIsProgrammeLeadRosterKey(sid)
+            && typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
+            && portalStaffProgrammeLeadWideCardsExpected(sid, iso)){
+            return 'empty';
+          }
+          if(portalStaffIsProgrammeLeadRosterKey(sid)
             && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
             && portalStaffTodayLeadShiftPanelMeta(sid)){
             return 'shift';
@@ -12193,6 +12255,13 @@
         return 'sync';
       }
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
+        if(hydrated && settled && portalStaffIsProgrammeLeadRosterKey(sid)
+          && typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
+          && portalStaffProgrammeLeadWideCardsExpected(sid, iso)){
+          if(todayRows.length) return 'empty';
+          if(!hydrated || !settled) return 'sync';
+          return 'empty';
+        }
         if(hydrated && settled && portalStaffIsProgrammeLeadRosterKey(sid)
           && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
           && portalStaffTodayLeadShiftPanelMeta(sid)){
@@ -12527,6 +12596,10 @@
           var todaySettled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
           if((!liveToday && rosterHydrated) || (liveToday && rosterHydrated && overridesReady && todaySettled)){
             if(liveToday && id && portalStaffIsProgrammeLeadRosterKey(id)
+              && typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
+              && portalStaffProgrammeLeadWideCardsExpected(id, selectedIso)){
+              dashboardData.portalTodayEmptyPanelMode = 'empty';
+            }else if(liveToday && id && portalStaffIsProgrammeLeadRosterKey(id)
               && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
               && portalStaffTodayLeadShiftPanelMeta(id)){
               dashboardData.portalTodayEmptyPanelMode = 'shift';

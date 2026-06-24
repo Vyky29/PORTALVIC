@@ -7,6 +7,9 @@ import {
   portalLeadSessionScopesForProfile,
   portalLeadSlotInScope,
   portalLeadDayUsesProgrammeWideRoster,
+  portalLeadProgrammeWideTodayForStaff,
+  portalLeadSpreadsheetSessionInScopeForLead,
+  portalLeadCollectProgrammeWideSessionsModel,
 } from "./portal_lead_session_scope.js";
 
 const TEAM_SHIFT_CHANGE_TYPES = new Set(["instructor_reassign"]);
@@ -700,4 +703,7 @@ if (typeof window !== "undefined") {
   window.portalSyncLeadTeamShiftUi = portalSyncLeadTeamShiftUi;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
+  window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
+  window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;
+  window.portalLeadCollectProgrammeWideSessionsModel = portalLeadCollectProgrammeWideSessionsModel;
 }
