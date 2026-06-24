@@ -61,10 +61,18 @@ export function portalLeadProgrammeKey(profile, authEmail) {
 const JOHN_SCOPES = [
   {
     id: "bespoke-mwf",
-    label: "Mon / Wed / Fri — Bespoke Programme (SwimFarm)",
-    weekdays: ["Monday", "Wednesday", "Friday"],
+    label: "Mon / Fri — Bespoke Programme (SwimFarm)",
+    weekdays: ["Monday", "Friday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
+  },
+  {
+    id: "wednesday-ma-acton",
+    label: "Wednesday — Multi-Activity (Acton)",
+    weekdays: ["Wednesday"],
+    serviceKeys: ["multi", "aquatic"],
+    venues: ["acton"],
+    programmeWideRoster: true,
   },
   {
     id: "sunday-ma-swimfarm",

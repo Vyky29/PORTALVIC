@@ -945,7 +945,7 @@
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster"></script>
-  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260624-lead-shift-scope"></script>
+  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260624-john-acton-wed"></script>
   <script src="/portal/portal_staff_photos.js?v=20260624-rt-debug"></script>
 <script src="/portal/portal_sheet_back.js?v=20260624-dock-qm-fix"></script>
   <script>
@@ -11963,6 +11963,10 @@
       if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
       try{
         if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return false;
+        if(window.__PORTAL_STAFF_ROSTER_HYDRATED__
+          && dashboardData && dashboardData.portalIdentityResolved !== false){
+          return false;
+        }
         if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
         if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
         return false;
@@ -12050,6 +12054,59 @@
         return false;
       }catch(_){ return false; }
     }
+    /** Programme lead (John / Berta / Michelle) — support shift days without 1:1 client cards. */
+    function portalStaffIsProgrammeLeadRosterKey(staffId){
+      var k = String(staffId || '').trim().toLowerCase();
+      return k === 'john' || k === 'berta' || k === 'michelle';
+    }
+    function portalStaffTodayLeadShiftPanelMeta(staffId){
+      var sid = String(staffId || '').trim().toLowerCase();
+      if(!portalStaffIsProgrammeLeadRosterKey(sid)) return null;
+      if(typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return null;
+      var anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+        ? portalResolveTodaySectionCalendarDate()
+        : null;
+      if(!anchor || isNaN(anchor.getTime())) return null;
+      if(typeof portalStaffLiveTodayHasScheduledShift === 'function' && !portalStaffLiveTodayHasScheduledShift(sid, anchor)) return null;
+      var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+      if(!iso) return null;
+      var venueLabel = '';
+      var timeLabel = '';
+      var programmeLabel = '';
+      try{
+        if(typeof window.portalLeadTeamOnShiftForIso === 'function'){
+          var team = window.portalLeadTeamOnShiftForIso(iso);
+          if(team && team.programmeLabel){
+            programmeLabel = String(team.programmeLabel || '').trim();
+            if(/acton/i.test(programmeLabel)) venueLabel = 'Acton';
+            else if(/swimfarm/i.test(programmeLabel)) venueLabel = 'SwimFarm';
+          }
+        }
+      }catch(_){}
+      if(typeof window.portalStaffDayShiftLabelsByVenue === 'function'){
+        var labels = window.portalStaffDayShiftLabelsByVenue(sid, iso) || {};
+        var keys = Object.keys(labels);
+        if(!venueLabel && keys.length){
+          venueLabel = keys[0].charAt(0).toUpperCase() + keys[0].slice(1);
+        }
+        if(!timeLabel){
+          timeLabel = labels[venueLabel ? venueLabel.toLowerCase().replace(/[^a-z]/g, '') : ''] || labels[keys[0]] || labels['_'] || '';
+        }
+      }
+      if(!timeLabel && typeof window.portalStaffPayrollShiftBandLabel === 'function'){
+        timeLabel = window.portalStaffPayrollShiftBandLabel(sid, iso, venueLabel) || '';
+      }
+      if(!venueLabel && programmeLabel){
+        if(/acton/i.test(programmeLabel)) venueLabel = 'Acton';
+        else if(/swimfarm/i.test(programmeLabel)) venueLabel = 'SwimFarm';
+      }
+      return {
+        venueLabel: venueLabel || 'On shift',
+        timeLabel: timeLabel || programmeLabel || 'See team roster above',
+        programmeLabel: programmeLabel
+      };
+    }
+    try{ window.portalStaffTodayLeadShiftPanelMeta = portalStaffTodayLeadShiftPanelMeta; }catch(_){}
     /** Panel under Today when there are no session cards: off vs roster still loading. */
     function portalStaffLiveTodayEmptyPanelMode(staffId, opts){
       opts = opts || {};
@@ -12069,10 +12126,22 @@
       const settled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
       if(live && typeof portalStaffTodayScheduleCardsStillExpected === 'function'
         && portalStaffTodayScheduleCardsStillExpected(sid)){
-        if(hydrated && overridesReady && settled) return 'empty';
+        if(hydrated && overridesReady && settled){
+          if(portalStaffIsProgrammeLeadRosterKey(sid)
+            && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+            && portalStaffTodayLeadShiftPanelMeta(sid)){
+            return 'shift';
+          }
+          return 'empty';
+        }
         return 'sync';
       }
       if(live && sid && typeof portalStaffLiveTodayHasScheduledShift === 'function' && portalStaffLiveTodayHasScheduledShift(sid)){
+        if(hydrated && settled && portalStaffIsProgrammeLeadRosterKey(sid)
+          && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+          && portalStaffTodayLeadShiftPanelMeta(sid)){
+          return 'shift';
+        }
         if(!hydrated) return 'sync';
         return 'empty';
       }
@@ -12391,7 +12460,13 @@
           var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
           var todaySettled = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
           if((!liveToday && rosterHydrated) || (liveToday && rosterHydrated && overridesReady && todaySettled)){
-            dashboardData.portalTodayEmptyPanelMode = 'empty';
+            if(liveToday && id && portalStaffIsProgrammeLeadRosterKey(id)
+              && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+              && portalStaffTodayLeadShiftPanelMeta(id)){
+              dashboardData.portalTodayEmptyPanelMode = 'shift';
+            }else{
+              dashboardData.portalTodayEmptyPanelMode = 'empty';
+            }
           }else{
             dashboardData.portalTodayEmptyPanelMode = 'sync';
             dashboardData.portalTodayNextSessionPreview = null;
@@ -14790,11 +14865,23 @@
         return '<div class="today-day-panel today-day-panel--loading" role="status">' +
           '<p class="today-day-panel__loading">Loading your schedule…</p></div>';
       }
+      const shiftMeta = mode === 'shift' && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+        ? portalStaffTodayLeadShiftPanelMeta(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+        )
+        : null;
       const hasNext = !!(preview && (Number(preview.sessionCount) || 0));
       const offRequested = mode === 'off_time_requested';
-      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + '" role="status">';
+      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + (mode === 'shift' ? ' today-day-panel--shift' : '') + '" role="status">';
       html += '<div class="today-day-panel__off">';
-      if(mode === 'sync'){
+      if(mode === 'shift' && shiftMeta){
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">Your shift</p>';
+        html += '<p class="today-day-panel__off-sub">' + escapeHtml(
+          [shiftMeta.venueLabel, shiftMeta.timeLabel].filter(Boolean).join(' · ')
+        ) + '</p></div></div>';
+      }else if(mode === 'sync'){
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">Loading sessions</p>';
         html += '<p class="today-day-panel__off-sub">Your roster for today is syncing…</p></div></div>';

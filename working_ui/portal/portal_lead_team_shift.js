@@ -127,7 +127,10 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (wd === "Wednesday" && leadKey === "berta" && sc.programmeWideRoster && isMulti && acton) {
       return "berta_wed_acton_ma";
     }
-    if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Wednesday" || wd === "Friday")) {
+    if (wd === "Wednesday" && leadKey === "john" && sc.programmeWideRoster && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {
+      return "john_wed_acton_ma";
+    }
+    if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Friday")) {
       return "john_bespoke_mwf";
     }
     if (leadKey === "michelle" && sc.programmeWideRoster && sc.serviceKeys && sc.serviceKeys.indexOf("daycentre") >= 0) {
@@ -198,6 +201,26 @@ function filterBertaWedTeam(keys) {
   return dedupeKeys(others.slice(0, 3));
 }
 
+/** Wed Acton — Luliya, Javier, Youssef (+ roster hits when present). */
+function filterJohnWedActonTeam(keys) {
+  const leadKey = "john";
+  const prefer = ["lulia", "javier", "youssef"];
+  let pool = excludePeerProgrammeLead(keys, leadKey);
+  const out = [];
+  prefer.forEach(function (w) {
+    if (pool.indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
+  });
+  prefer.forEach(function (w) {
+    if (out.indexOf(w) < 0 && out.length < 3) out.push(w);
+  });
+  pool.forEach(function (k) {
+    if (out.length >= 3) return;
+    if (out.indexOf(k) >= 0 || PROGRAMME_LEAD_KEYS.has(k)) return;
+    if (teamMemberChipRole(k) === "swim-instructor") out.push(k);
+  });
+  return dedupeKeys(out).slice(0, 3);
+}
+
 const TEAM_CHIP_ROLE_SORT = {
   "support-lead": 0,
   "support-worker": 1,
@@ -217,6 +240,7 @@ function sortTeamMemberKeys(keys) {
 function applyTeamDayFilter(keys, dayKind, leadKey) {
   if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
   if (dayKind === "john_bespoke_mwf") return filterJohnBespokeTeam(keys);
+  if (dayKind === "john_wed_acton_ma") return filterJohnWedActonTeam(keys);
   if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
   if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
   return keys.slice();
