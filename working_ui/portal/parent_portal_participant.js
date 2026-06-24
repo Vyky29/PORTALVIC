@@ -345,7 +345,7 @@
       global.PortalClientSessionsOverview &&
       typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
         ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements)
-        : '<p class="pp-muted">No achievement photos shared yet.</p>';
+        : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
     host.innerHTML = subviewShell(
       data,
       "achievements",

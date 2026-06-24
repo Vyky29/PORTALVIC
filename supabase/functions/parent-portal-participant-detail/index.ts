@@ -294,13 +294,15 @@ Deno.serve(async (req) => {
     });
   }
 
+  const PARENT_ACH_STATUSES = ["attached", "draft"] as const;
+
   const achQueries = [];
   if (clientSlugs.length) {
     achQueries.push(
       supabase
         .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id")
-        .eq("status", "attached")
+        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+        .in("status", [...PARENT_ACH_STATUSES])
         .in("client_id", clientSlugs)
         .order("session_date", { ascending: false })
         .limit(60),
@@ -310,8 +312,8 @@ Deno.serve(async (req) => {
     achQueries.push(
       supabase
         .from("portal_participant_achievement_photos")
-        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id")
-        .eq("status", "attached")
+        .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+        .in("status", [...PARENT_ACH_STATUSES])
         .ilike("client_name", nm)
         .order("session_date", { ascending: false })
         .limit(60),
@@ -345,6 +347,7 @@ Deno.serve(async (req) => {
       id: row.id,
       session_date: row.session_date,
       session_feedback_id: row.session_feedback_id,
+      status: clean(row.status, 40),
       url: signed.signedUrl,
     });
   }
