@@ -6,7 +6,7 @@
   "use strict";
   if (!global.PORTAL_STAFF_APP) return;
 
-  var VER = "20260624-staff-boot5";
+  var VER = "20260624-staff-boot6";
   var isMobile = /iPhone|iPod|Android.+Mobile|Windows Phone/i.test(
     String((global.navigator && global.navigator.userAgent) || "")
   );
@@ -33,13 +33,11 @@
 
   if (isStaffDashboard) {
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
-    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf6");
-    preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
-    preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
-    if (isMobile) {
-      preloadScript("/portal/staff-dashboard-auth-bridge.js?v=20260624-staff-perf6");
-      preloadScript("/portal/staff-dashboard-rehydrate.js?v=20260624-staff-perf6");
+    preloadScript("/portal/staff-dashboard-core.js?v=20260624-staff-perf7");
+    if (!isMobile) {
+      preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
+    preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
   }
 
   if ("serviceWorker" in global.navigator) {
@@ -54,21 +52,27 @@
 
   function loadScript(src, asModule) {
     return new Promise(function (resolve) {
+      if (document.querySelector('script[src="' + src + '"]')) {
+        resolve();
+        return;
+      }
       var s = document.createElement("script");
       s.src = src;
       if (asModule) s.type = "module";
-      s.async = true;
+      s.async = false;
       s.onload = s.onerror = resolve;
       (document.head || document.documentElement).appendChild(s);
     });
   }
 
-  function loadParallel(urls, asModule) {
-    return Promise.all(
-      (urls || []).map(function (u) {
+  function loadSequential(urls, asModule) {
+    var chain = Promise.resolve();
+    (urls || []).forEach(function (u) {
+      chain = chain.then(function () {
         return loadScript(u, asModule);
-      })
-    );
+      });
+    });
+    return chain;
   }
 
   function loadCss(href) {
@@ -106,33 +110,62 @@
     } catch (_) {}
   }
 
-  /** ~240KB off the sync footer chain — download starts here while body still parses. */
+  var STAFF_DEFERRED_HEAVY = [
+    "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+    "/portal/clients_gender_embed.js?v=20260605-gender3",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge",
+    "/portal/portal_participant_identity.js?v=20260703-desktop",
+    "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
+    "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
+    "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
+    "/portal/portal_staff_photos.js?v=20260624-rt-debug",
+  ];
+
+  /** Heavy embeds only — never load in parallel on mobile (CPU/heat). */
   function portalStaffStartDeferredDashboardScripts() {
     if (!isStaffDashboard) return;
     if (global.__PORTAL_STAFF_DEFERRED_DASHBOARD__) return;
     global.__PORTAL_STAFF_DEFERRED_DASHBOARD__ = true;
 
-    var clientsInfo = "/portal/clients_info_embed.js?v=20260608-anas-ismail";
-    var rest = [
-      "/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf",
-      "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_participants_sheet.js?v=20260624-payroll-band",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge",
-      "/portal/portal_participant_identity.js?v=20260703-desktop",
-      "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
-      "/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared",
-      "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-      "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
-      "/portal/portal_staff_photos.js?v=20260624-rt-debug",
-      "/portal/portal_area_note_icons.js?v=20260610-area-note-img",
-    ];
+    function runDesktop() {
+      var clientsInfo = STAFF_DEFERRED_HEAVY[0];
+      var rest = STAFF_DEFERRED_HEAVY.slice(1);
+      void loadScript(clientsInfo, false)
+        .then(function () {
+          afterClientsInfoReady();
+          return Promise.all(rest.map(function (u) { return loadScript(u, false); }));
+        })
+        .then(afterDeferredDashboardScripts);
+    }
 
-    void loadScript(clientsInfo, false)
-      .then(function () {
-        afterClientsInfoReady();
-        return loadParallel(rest, false);
-      })
-      .then(afterDeferredDashboardScripts);
+    function runMobile() {
+      void loadSequential(STAFF_DEFERRED_HEAVY, false)
+        .then(function () {
+          afterClientsInfoReady();
+          afterDeferredDashboardScripts();
+        });
+    }
+
+    var start = function () {
+      if (isMobile) runMobile();
+      else runDesktop();
+    };
+
+    if (isMobile) {
+      var delay = 4000;
+      var kick = function () {
+        global.setTimeout(start, delay);
+      };
+      if (document.readyState === "complete") kick();
+      else global.addEventListener("load", kick, { once: true });
+      return;
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start, { once: true });
+    } else {
+      start();
+    }
   }
 
   global.portalStaffEnsureDeferredDashboardScripts = function portalStaffEnsureDeferredDashboardScripts() {
@@ -146,7 +179,7 @@
         resolve();
       };
       global.addEventListener("portal:staff-deferred-dashboard-ready", done);
-      global.setTimeout(resolve, 12000);
+      global.setTimeout(resolve, isMobile ? 20000 : 12000);
     });
   };
 
@@ -163,20 +196,22 @@
       if (i >= urls.length) return;
       loadScript(urls[i++]).then(next);
     }
-    scheduleIdle(next, 4000);
+    scheduleIdle(next, isMobile ? 8000 : 4000);
   };
 
   function portalStaffDeferHeadExtras() {
     if (global.__PORTAL_STAFF_HEAD_EXTRAS__) return;
     global.__PORTAL_STAFF_HEAD_EXTRAS__ = true;
     if (!isStaffDashboard) return;
-    void loadParallel(
-      [
-        "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
-        "/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix",
-      ],
-      false
-    );
+    scheduleIdle(function () {
+      void loadSequential(
+        [
+          "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
+          "/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix",
+        ],
+        false
+      );
+    }, isMobile ? 5000 : 1500);
   }
 
   function portalStaffDeferDashboardExtras() {
@@ -189,27 +224,25 @@
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
     };
-    scheduleIdle(run, isMobile ? 1200 : 2500);
+    scheduleIdle(run, isMobile ? 6000 : 2500);
   }
 
   function scheduleIdle(fn, timeoutMs) {
     if (typeof global.requestIdleCallback === "function") {
       global.requestIdleCallback(fn, { timeout: timeoutMs || 3000 });
     } else {
-      global.setTimeout(fn, 800);
+      global.setTimeout(fn, isMobile ? 1500 : 800);
     }
   }
 
   function onDomReady() {
-    portalStaffStartDeferredDashboardScripts();
+    if (!isMobile) portalStaffStartDeferredDashboardScripts();
     portalStaffDeferHeadExtras();
     if (typeof global.portalStaffDeferWebPush === "function") {
       global.portalStaffDeferWebPush();
     }
     portalStaffDeferDashboardExtras();
   }
-
-  portalStaffStartDeferredDashboardScripts();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", onDomReady, { once: true });

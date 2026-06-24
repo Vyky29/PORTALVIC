@@ -18745,7 +18745,11 @@
     (function () {
       var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       function portalStaffFastBootEnabled(){
-        try{ return !!(typeof window !== 'undefined' && window.PORTAL_STAFF_APP); }catch(_){ return false; }
+        try{
+          if(!(typeof window !== 'undefined' && window.PORTAL_STAFF_APP)) return false;
+          if(/iPhone|iPod|Android.+Mobile|Windows Phone/i.test(String((window.navigator && window.navigator.userAgent) || ''))) return false;
+          return true;
+        }catch(_){ return false; }
       }
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }
@@ -19393,8 +19397,9 @@
           }catch(_incomingPoll){}
         }
         function _finishStaffRehydrateUi(){
+          var delay = portalStaffFastBootEnabled() ? 220 : 48;
           if(typeof portalScheduleDashboardUiFinish === "function"){
-            portalScheduleDashboardUiFinish(_finishStaffRehydrateUiNow, 48);
+            portalScheduleDashboardUiFinish(_finishStaffRehydrateUiNow, delay);
             return;
           }
           _finishStaffRehydrateUiNow();
@@ -19551,7 +19556,6 @@
           if (runId === _rehydrateRun) _finishStaffRehydrateUi();
         }
         if(portalStaffFastBootEnabled()){
-          _finishStaffRehydrateUi();
           void portalStaffRunHeavyRehydrateNetworkTasks();
         }else{
           try{
@@ -19615,7 +19619,9 @@
           }
           })();
         }
-        void portalStaffRunBackgroundRosterRefresh();
+        if(!portalStaffFastBootEnabled()){
+          void portalStaffRunBackgroundRosterRefresh();
+        }
         } catch (reErr) {
           console.warn("staff_dashboard: rehydrateFromProfile", reErr);
           try {
