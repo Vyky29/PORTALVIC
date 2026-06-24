@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- clubSENsational Parent Portal v1 — mobile-first, OTP login -->
+  <!-- clubSENsational Parent Portal — mobile-first, name + participant DOB -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -277,30 +277,18 @@
 
     <section id="ppStepIdentify" class="pp-card">
       <h2 class="pp-section-title">Sign in</h2>
-      <p class="pp-muted" style="margin-bottom:14px">Use the parent or carer name and mobile number we have on file.</p>
+      <p class="pp-muted" style="margin-bottom:14px">Use your name as parent or carer, and one linked participant&apos;s date of birth.</p>
       <form id="ppIdentifyForm">
         <div class="pp-field">
-          <label for="ppFullName">Full name</label>
-          <input id="ppFullName" name="full_name" type="text" autocomplete="name" required placeholder="e.g. Leila Ahmed" />
+          <label for="ppParentName">Parent or carer name</label>
+          <input id="ppParentName" name="parent_name" type="text" autocomplete="name" required placeholder="e.g. Leila Ahmed" />
         </div>
         <div class="pp-field">
-          <label for="ppPhone">Mobile on file</label>
-          <input id="ppPhone" name="phone" type="tel" autocomplete="tel" required placeholder="e.g. 07913 121655" />
+          <label for="ppParticipantDob">Participant date of birth</label>
+          <input id="ppParticipantDob" name="participant_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY e.g. 13082012" />
+          <p class="pp-muted" style="margin-top:6px;font-size:12px">8 digits, day then month then year — no spaces or slashes.</p>
         </div>
-        <button id="ppIdentifyBtn" class="pp-btn pp-btn--primary" type="submit">Send verification code</button>
-      </form>
-    </section>
-
-    <section id="ppStepOtp" class="pp-card" hidden>
-      <h2 class="pp-section-title">Enter code</h2>
-      <p id="ppOtpHint" class="pp-muted" style="margin-bottom:14px">Check WhatsApp or SMS for your code.</p>
-      <form id="ppOtpForm">
-        <div class="pp-field">
-          <label for="ppOtpInput">Verification code</label>
-          <input id="ppOtpInput" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required placeholder="6 digits" />
-        </div>
-        <button id="ppOtpBtn" class="pp-btn pp-btn--primary" type="submit">Continue</button>
-        <button id="ppBackToIdentify" class="pp-btn pp-btn--ghost" type="button">← Use different details</button>
+        <button id="ppSignInBtn" class="pp-btn pp-btn--primary" type="submit">Sign in</button>
       </form>
     </section>
 
@@ -332,7 +320,7 @@
     </p>
   </main>
 
-  <script src="/portal/parent_portal_app.js?v=20260624-parent-v1"></script>
+  <script src="/portal/parent_portal_app.js?v=20260624-parent-dob"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
       void window.ParentPortalApp.bootstrap();

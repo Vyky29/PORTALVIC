@@ -1,5 +1,5 @@
 /**
- * Parent portal v1 — OTP login + home (children + messages).
+ * Parent portal — sign in with parent name + participant DOB (DDMMYYYY).
  */
 (function (global) {
   "use strict";
@@ -8,8 +8,6 @@
 
   var state = {
     step: "identify",
-    fullName: "",
-    phone: "",
     session: { token: "", expiresAt: 0 },
     home: null,
   };
@@ -56,7 +54,6 @@
   function setStep(step) {
     state.step = step;
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
-    if ($("ppStepOtp")) $("ppStepOtp").hidden = step !== "otp";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
   }
 
@@ -67,8 +64,6 @@
         JSON.stringify({
           token: state.session.token,
           expiresAt: state.session.expiresAt,
-          fullName: state.fullName,
-          phone: state.phone,
         }),
       );
     } catch (_e) {}
@@ -86,8 +81,6 @@
       }
       state.session.token = String(j.token);
       state.session.expiresAt = Number(j.expiresAt);
-      state.fullName = String(j.fullName || "");
-      state.phone = String(j.phone || "");
       return true;
     } catch (_e) {
       return false;
@@ -269,52 +262,28 @@
     return true;
   }
 
-  async function requestOtp() {
-    hideNotice($("ppNotice"));
-    var btn = $("ppIdentifyBtn");
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-    try {
-      var res = await fetch(fn("parent-portal-otp-request"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: anonKey(),
-          Authorization: "Bearer " + anonKey(),
-        },
-        body: JSON.stringify({
-          full_name: state.fullName,
-          phone_number: state.phone,
-        }),
-      });
-      await res.json().catch(function () {
-        return {};
-      });
-      $("ppOtpHint").textContent =
-        "If your name and mobile match our records, a code was sent by WhatsApp or SMS.";
-      setStep("otp");
-      $("ppOtpInput").value = "";
-      $("ppOtpInput").focus();
-    } catch (_e) {
-      showNotice($("ppNotice"), "error", "Network error — please try again.");
-    } finally {
-      btn.disabled = false;
-      btn.removeAttribute("aria-busy");
-    }
+  function normalizeDobInput(raw) {
+    return String(raw || "").replace(/\D/g, "");
   }
 
-  async function verifyOtp() {
+  async function signIn() {
     hideNotice($("ppNotice"));
-    var code = String($("ppOtpInput").value || "").trim();
-    if (!/^\d{4,8}$/.test(code)) {
-      showNotice($("ppNotice"), "error", "Enter the verification code from your phone.");
+    var parentName = String($("ppParentName").value || "").trim();
+    var dobRaw = normalizeDobInput($("ppParticipantDob").value);
+    if (!parentName || dobRaw.length !== 8) {
+      showNotice(
+        $("ppNotice"),
+        "error",
+        "Enter your name as parent/carer and the participant date of birth as 8 digits (DDMMYYYY).",
+      );
       return;
     }
-    var btn = $("ppOtpBtn");
+
+    var btn = $("ppSignInBtn");
     btn.disabled = true;
     btn.setAttribute("aria-busy", "true");
     try {
-      var res = await fetch(fn("parent-portal-otp-verify"), {
+      var res = await fetch(fn("parent-portal-sign-in"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -322,22 +291,25 @@
           Authorization: "Bearer " + anonKey(),
         },
         body: JSON.stringify({
-          full_name: state.fullName,
-          phone_number: state.phone,
-          code: code,
+          parent_name: parentName,
+          participant_dob: dobRaw,
         }),
       });
       var body = await res.json().catch(function () {
         return {};
       });
       if (!res.ok || !body.ok || !body.session_token) {
-        showNotice($("ppNotice"), "error", "That code did not work. Check and try again.");
+        showNotice(
+          $("ppNotice"),
+          "error",
+          "We could not sign you in. Check the parent name and participant date of birth, then try again.",
+        );
         return;
       }
       state.session.token = String(body.session_token);
       state.session.expiresAt = body.expires_at
         ? new Date(body.expires_at).getTime()
-        : Date.now() + 45 * 60 * 1000;
+        : Date.now() + 24 * 60 * 60 * 1000;
       saveSession();
       await loadHome();
     } catch (_e) {
@@ -351,23 +323,13 @@
   function bindEvents() {
     $("ppIdentifyForm").addEventListener("submit", function (e) {
       e.preventDefault();
-      state.fullName = String($("ppFullName").value || "").trim();
-      state.phone = String($("ppPhone").value || "").trim();
-      if (!state.fullName || !state.phone) {
-        showNotice($("ppNotice"), "error", "Enter your full name and mobile number on file.");
-        return;
-      }
-      void requestOtp();
+      void signIn();
     });
 
-    $("ppOtpForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      void verifyOtp();
-    });
-
-    $("ppBackToIdentify").addEventListener("click", function () {
-      hideNotice($("ppNotice"));
-      setStep("identify");
+    $("ppParticipantDob").addEventListener("input", function (e) {
+      var el = e.target;
+      if (!el) return;
+      el.value = normalizeDobInput(el.value).slice(0, 8);
     });
 
     $("ppSignOut").addEventListener("click", function () {
