@@ -651,6 +651,11 @@
           && typeof portalStaffFinishFeedbackPipelineReady === "function"
           && typeof portalStaffFeedbackPipelineReady === "function"
           && !portalStaffFeedbackPipelineReady()
+          // Only reveal feedback chips early when the export bundle is already loaded
+          // (warm cache). Otherwise stay neutral ("Checking feedback…") and let the
+          // heavy rehydrate task reveal after exports + server sync, so completed
+          // sessions never flash orange (Pending) before turning green.
+          && window.__PORTAL_STAFF_FEEDBACK_DATA_READY__ === true
         ){
           portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
         }

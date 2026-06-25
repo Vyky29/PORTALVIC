@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260625-youssef-ma-own-feedback";
+  var VER = "20260625-feedback-flash-fix";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260614-aurora-makeup-off",
