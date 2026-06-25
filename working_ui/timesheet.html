@@ -1686,6 +1686,16 @@
       return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
     }
 
+    /** Distinct pay groups within one role (e.g. Sunday Aquatic vs Multi-Activity on the same day). */
+    function timesheetDistinctServiceGroupKeys(rows, role, dayName) {
+      const keys = new Set();
+      (rows || []).forEach((s) => {
+        if (sessionPayRole(s) !== role) return;
+        keys.add(timesheetSupportPayGroupKey(s, role, dayName) || role);
+      });
+      return keys;
+    }
+
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
     function dailyHoursSingleRoleFromSessions(rows, dateObj, reviewMap, staffKey, dominantRole, dominantService) {
       const dayName = WEEKDAY[dateObj.getDay()];
@@ -1889,6 +1899,7 @@
         rolesSeen[role] = true;
       });
       const roleCount = Object.keys(rolesSeen).length;
+      const dayName = WEEKDAY[dateObj.getDay()];
       if (roleCount <= 1) {
         let dominantRole = "";
         let dominantService = "";
@@ -1900,6 +1911,9 @@
             dominantService = roleServices[role] || "";
           }
         });
+        if (dominantRole && timesheetDistinctServiceGroupKeys(rows, dominantRole, dayName).size > 1) {
+          return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+        }
         const single = dailyHoursSingleRoleFromSessions(
           rows,
           dateObj,
