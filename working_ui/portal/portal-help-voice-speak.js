@@ -228,41 +228,33 @@
     return { ok: false, error: "speak_failed" };
   }
 
-  function blobToBase64(blob) {
-    return new Promise(function (resolve, reject) {
-      var reader = new FileReader();
-      reader.onloadend = function () {
-        var result = String(reader.result || "");
-        var comma = result.indexOf(",");
-        resolve(comma >= 0 ? result.slice(comma + 1) : result);
-      };
-      reader.onerror = function () {
-        reject(reader.error || new Error("read_failed"));
-      };
-      reader.readAsDataURL(blob);
-    });
+  function extForMime(mime) {
+    var m = String(mime || "").toLowerCase();
+    if (m.indexOf("ogg") >= 0) return "ogg";
+    if (m.indexOf("mp4") >= 0 || m.indexOf("m4a") >= 0 || m.indexOf("aac") >= 0) return "m4a";
+    if (m.indexOf("mpeg") >= 0 || m.indexOf("mp3") >= 0) return "mp3";
+    if (m.indexOf("wav") >= 0) return "wav";
+    return "webm";
   }
 
-  // Send a recorded audio Blob to OpenAI Whisper (server side) and get text.
+  // Send a recorded audio Blob to the existing Whisper Edge Function
+  // (portal-feedback-voice-transcribe, verify_jwt disabled) and get text.
   async function transcribe(blob) {
     if (!blob || !blob.size) return { ok: false, error: "empty_audio" };
     var token = await authToken();
     if (!token) return { ok: false, error: "session_expired" };
-    var b64;
     try {
-      b64 = await blobToBase64(blob);
-    } catch (_b) {
-      return { ok: false, error: "encode_failed" };
-    }
-    try {
-      var res = await fetch(baseUrl() + "/functions/v1/portal-voice-transcribe", {
+      var type = blob.type || "audio/webm";
+      var form = new FormData();
+      form.append("file", blob, "speech." + extForMime(type));
+      form.append("language", "en");
+      var res = await fetch(baseUrl() + "/functions/v1/portal-feedback-voice-transcribe", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: "Bearer " + token,
           apikey: cfg.getAnonKey(),
         },
-        body: JSON.stringify({ audioBase64: b64, mime: blob.type || "audio/webm" }),
+        body: form,
       });
       var j = null;
       try {
@@ -271,7 +263,8 @@
         j = null;
       }
       if (res.ok && j && j.ok) {
-        return { ok: true, text: String(j.text || "").trim() };
+        var text = String((j.english != null ? j.english : j.text) || "").trim();
+        return { ok: true, text: text };
       }
       return { ok: false, error: (j && j.error) || res.statusText || "transcribe_failed" };
     } catch (_f) {
