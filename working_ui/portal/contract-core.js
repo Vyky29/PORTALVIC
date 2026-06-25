@@ -346,10 +346,26 @@
     return GBP + n.toLocaleString('en-GB');
   }
 
-  function generateReference(employeeName, kind) {
-    const name = (employeeName || 'EMP').replace(/\s+/g, '').slice(0, 4).toUpperCase();
-    const prefix = normalizeContractKind(kind) === 'fixed_term' ? 'CS-FT' : 'CS-ZH';
-    return prefix + '-' + name + '-' + Date.now().toString(36).toUpperCase();
+  function generateReference(employeeName, kind, dateIso) {
+    const prefix = normalizeContractKind(kind) === 'fixed_term' ? 'FT' : 'ZH';
+    const raw = String(employeeName || '').trim();
+    const first = raw.split(/\s+/).filter(Boolean)[0] || 'Staff';
+    const namePart = first.replace(/[^a-zA-Z]/g, '');
+    const capName = namePart
+      ? namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase()
+      : 'Staff';
+    let d;
+    const iso = String(dateIso || '').trim().slice(0, 10);
+    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      d = new Date(iso + 'T12:00:00');
+    } else {
+      d = new Date();
+    }
+    if (Number.isNaN(d.getTime())) d = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(d.getDate()).padStart(2, '0');
+    const datePart = day + months[d.getMonth()] + String(d.getFullYear()).slice(-2);
+    return prefix + '-' + capName + '-' + datePart;
   }
 
   function getDeliveryRate(role, scale) {

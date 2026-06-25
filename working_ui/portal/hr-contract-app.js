@@ -21,6 +21,20 @@
   let portalLinkVerified = false;
   let selectedPortalLogin = "";
 
+  function contractRefDateIso() {
+    const el = $("contractDate");
+    return el && el.value ? String(el.value).trim().slice(0, 10) : "";
+  }
+
+  function refreshContractReference() {
+    const nameEl = $("employeeName");
+    contractReference = C.generateReference(
+      nameEl ? nameEl.value : "",
+      contractKind,
+      contractRefDateIso()
+    );
+  }
+
   function syncContractTypeFields() {
     const fixed = contractKind === "fixed_term";
     document.querySelectorAll(".zero-hours-field").forEach((el) => el.classList.toggle("hidden", fixed));
@@ -45,7 +59,7 @@
       Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
     }
     syncContractTypeFields();
-    contractReference = C.generateReference($("employeeName").value, contractKind);
+    refreshContractReference();
     updatePreview();
   }
 
@@ -146,7 +160,7 @@
       }
     }
     if ($("employeeName")) {
-      contractReference = C.generateReference($("employeeName").value, contractKind);
+      refreshContractReference();
     }
     updatePreview();
   }
@@ -352,9 +366,10 @@
 
   function buildTemplateDataForPreview() {
     const places = getPlaces();
+    if (!contractReference) refreshContractReference();
     return C.buildTemplateData({
       contractKind,
-      contractReference: contractReference || C.generateReference($("employeeName").value, contractKind),
+      contractReference: contractReference,
       employeeName: $("employeeName").value.trim(),
       employeeAddress: $("employeeAddress").value.trim(),
       employeeEmail: $("employeeEmail").value.trim(),
@@ -378,9 +393,9 @@
   }
 
   function updatePreview() {
-    if (!contractReference) contractReference = C.generateReference($("employeeName").value, contractKind);
-    $("badgeReference").textContent = "Contract Reference: " + contractReference;
-    $("badgeVersion").textContent = "Contract Version: " + C.CONTRACT_VERSION;
+    if (!contractReference) refreshContractReference();
+    const badgeRef = $("badgeReference");
+    if (badgeRef) badgeRef.textContent = "Reference: " + contractReference;
     const data = buildTemplateDataForPreview();
     data.CONTRACT_REFERENCE = contractReference;
     const kind = data.CONTRACT_KIND || contractKind;
@@ -657,7 +672,7 @@
         const el = $(id);
         if (!el) return;
         el.addEventListener("input", () => {
-          if (id === "employeeName") contractReference = C.generateReference($("employeeName").value, contractKind);
+          if (id === "employeeName" || id === "contractDate") refreshContractReference();
           updatePreview();
         });
       }
@@ -721,8 +736,7 @@
     if (sendErr) sendErr.style.display = "none";
     const sendBtn = $("sendContractBtn");
     if (sendBtn) sendBtn.disabled = true;
-    contractReference = C.generateReference("", contractKind);
-    $("badgeReference").textContent = "Contract Reference: " + contractReference;
+    refreshContractReference();
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     setStep(1);
     updatePreview();
@@ -731,8 +745,7 @@
 
   function init() {
     if (!$("contractForm")) return;
-    contractReference = C.generateReference("", contractKind);
-    $("badgeReference").textContent = "Contract Reference: " + contractReference;
+    refreshContractReference();
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     bindEvents();
     syncContractTypeFields();
