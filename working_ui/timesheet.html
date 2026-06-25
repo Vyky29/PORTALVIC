@@ -2412,30 +2412,10 @@
       const tableW = 184;
       const left = (pageW - tableW) / 2;
       const right = left + tableW;
-      let y = 12;
+      const topY = 12;
+      const bottomMargin = 10;
 
-      function line(text, size = 11, bold = false) {
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        doc.setFontSize(size);
-        doc.text(String(text), left, y);
-        y += size * 0.42 + 2;
-      }
-      function labeledLine(label, value, size = 11) {
-        const labelTxt = `${label}: `;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(size);
-        doc.text(labelTxt, left, y);
-        const x = left + doc.getTextWidth(labelTxt);
-        doc.setFont("helvetica", "normal");
-        doc.text(String(value || "-"), x, y);
-        y += size * 0.42 + 2;
-      }
-      function ensureRoom(h) {
-        if (y + h > pageH - 10) {
-          doc.addPage();
-          y = 12;
-        }
-      }
+      // Logo first so we know whether it consumes vertical space before scaling.
       let logoRaw = await buildHaloLogoDataUrl();
       if (!logoRaw) logoRaw = await readPdfLogoDataUrl();
       let logoData = logoRaw;
@@ -2443,70 +2423,8 @@
         const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 480, 0.85);
         if (compact) logoData = compact;
       }
-      if (logoData) {
-        const logoW = 28;
-        const logoH = 28;
-        const logoX = (pageW - logoW) / 2;
-        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
-        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
-        y += logoH + 5;
-      }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(15);
-      doc.text("TIMESHEET", pageW / 2, y, { align: "center" });
-      y += 8;
-      labeledLine("Employee", state.employeeName || "-", 11);
-      labeledLine("Role", state.roleLabel || "-", 11);
-      labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`, 11);
-      const lpsHead = submissionLateStatus();
-      labeledLine("Submitted on", formatIsoDmy(isoDate(new Date())), 11);
-      labeledLine(
-        "Status",
-        lpsHead.isLate ? `Late - moved to ${lpsHead.lateMonth}` : `On time - ${lpsHead.onTimeMonth}`,
-        11
-      );
-      y += 1;
 
-      const colX = [left, left + 30, left + 58, left + 108, left + 132, left + 156, right];
-      const rowH = 7;
-      doc.setDrawColor(217, 227, 239);
-      doc.setFillColor(248, 251, 255);
-      doc.rect(colX[0], y, colX[6] - colX[0], rowH, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("Date", (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-      doc.text("Service", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-      doc.text("Hours", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
-      doc.text("Status", (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
-      y += rowH;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      for (let i = 0; i < state.entries.length; i++) {
-        ensureRoom(rowH + 1);
-        const e = state.entries[i];
-        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
-        doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
-        const isFlat = serviceFlatRate(e.service || e.role) != null;
-        const midCol = state.manual
-          ? String(e.note || e.day || "").slice(0, 22)
-          : (isFlat ? String(e.role || "Training") : e.day);
-        const serviceCol = state.manual
-          ? "-"
-          : String(timesheetEntryServiceLabel(e) || "-").slice(0, 30);
-        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
-        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-        doc.text(midCol, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-        doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-        doc.text(daily, (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
-        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
-        y += rowH;
-      }
-
-      y += 10;
+      // Summary rows are known up-front; needed for the single-page height budget.
       const summaryRows = state.manual
         ? [
             { label: "Total hours", value: money(state.totalHours), tone: "neutral" },
@@ -2533,14 +2451,118 @@
           tone: "okStrong"
         });
       }
-      const panelPad = 4;
-      const rowHeight = 10;
+
+      // Base (scale 1) vertical metrics. The whole sheet scales by S so it always
+      // fits on a single A4 page; fonts/rows shrink automatically when it is tight.
+      const B = {
+        logoH: 28, afterLogo: 5,
+        afterTitle: 8,
+        labelSize: 11,
+        gapAfterLabels: 1,
+        headerRowH: 7,
+        rowH: 7,
+        gapBeforeSummary: 10,
+        panelPad: 4,
+        summaryRowH: 10
+      };
+      const labelGap = B.labelSize * 0.42 + 2;
+      const neededH =
+        (logoData ? B.logoH + B.afterLogo : 0) +
+        B.afterTitle +
+        5 * labelGap +
+        B.gapAfterLabels +
+        B.headerRowH +
+        B.rowH * state.entries.length +
+        B.gapBeforeSummary +
+        (B.panelPad * 2 + B.summaryRowH * summaryRows.length);
+      const availH = pageH - topY - bottomMargin;
+      const S = Math.max(0.4, Math.min(1, availH / neededH));
+
+      let y = topY;
+
+      function labeledLine(label, value) {
+        const size = B.labelSize * S;
+        const labelTxt = `${label}: `;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(size);
+        doc.text(labelTxt, left, y);
+        const x = left + doc.getTextWidth(labelTxt);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(value || "-"), x, y);
+        y += labelGap * S;
+      }
+
+      if (logoData) {
+        const logoW = B.logoH * S;
+        const logoH = B.logoH * S;
+        const logoX = (pageW - logoW) / 2;
+        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
+        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
+        y += logoH + B.afterLogo * S;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15 * S);
+      doc.text("TIMESHEET", pageW / 2, y, { align: "center" });
+      y += B.afterTitle * S;
+      labeledLine("Employee", state.employeeName || "-");
+      labeledLine("Role", state.roleLabel || "-");
+      labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`);
+      const lpsHead = submissionLateStatus();
+      labeledLine("Submitted on", formatIsoDmy(isoDate(new Date())));
+      labeledLine(
+        "Status",
+        lpsHead.isLate ? `Late - moved to ${lpsHead.lateMonth}` : `On time - ${lpsHead.onTimeMonth}`
+      );
+      y += B.gapAfterLabels * S;
+
+      const colX = [left, left + 30, left + 58, left + 108, left + 132, left + 156, right];
+      const rowH = B.rowH * S;
+      const headerRowH = B.headerRowH * S;
+      const cellBaseline = 4.8 * S;
+      doc.setDrawColor(217, 227, 239);
+      doc.setFillColor(248, 251, 255);
+      doc.rect(colX[0], y, colX[6] - colX[0], headerRowH, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9 * S);
+      doc.text("Date", (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
+      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Service", (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Hours", (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Status", (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+      y += headerRowH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5 * S);
+      for (let i = 0; i < state.entries.length; i++) {
+        const e = state.entries[i];
+        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
+        doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
+        const isFlat = serviceFlatRate(e.service || e.role) != null;
+        const midCol = state.manual
+          ? String(e.note || e.day || "").slice(0, 22)
+          : (isFlat ? String(e.role || "Training") : e.day);
+        const serviceCol = state.manual
+          ? "-"
+          : String(timesheetEntryServiceLabel(e) || "-").slice(0, 30);
+        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
+        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+        y += rowH;
+      }
+
+      y += B.gapBeforeSummary * S;
+      const panelPad = B.panelPad * S;
+      const rowHeight = B.summaryRowH * S;
       const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
-      ensureRoom(panelHeight + 2);
       doc.setDrawColor(217, 227, 239);
       doc.setFillColor(252, 253, 255);
       doc.roundedRect(left, y, right - left, panelHeight, 2, 2, "FD");
-      let sy = y + panelPad + 6.5;
+      let sy = y + panelPad + 6.5 * S;
       for (let i = 0; i < summaryRows.length; i++) {
         const r = summaryRows[i];
         if (r.tone === "okStrong") doc.setTextColor(12, 72, 43);
@@ -2549,7 +2571,7 @@
         else doc.setTextColor(16, 34, 56);
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10.5);
+        doc.setFontSize(10.5 * S);
         doc.text(`${r.label}:`, right - 34, sy, { align: "right" });
         doc.text(r.value, right - 4, sy, { align: "right" });
         doc.setTextColor(16, 34, 56);
