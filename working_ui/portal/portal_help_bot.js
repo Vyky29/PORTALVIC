@@ -14,6 +14,14 @@
   var agentGuidePromise = null;
   var sessionStarted = false;
 
+  var PORTAL_HELP_INTRO_SPEAK =
+    "Hello. I'm the clubSENsational Portal help chatbot. " +
+    "Type or ask me anything — login, the dashboard, feedback, timesheets, announcements, participants and more. I'm here to help.";
+
+  var PORTAL_HELP_INTRO_HTML =
+    "<strong>clubSENsational Portal help</strong><br>" +
+    "I'm your chatbot for using the portal. Type a question below or tap a topic — login, feedback, timesheets, announcements, My participants and more.";
+
   var STOP_WORDS = {
     how: 1,
     do: 1,
@@ -559,14 +567,27 @@
     }
   }
 
+  function portalHelpSpeakIntro() {
+    if (global.PortalHelpVoiceSpeak) {
+      configureAssistOnce();
+      void global.PortalHelpVoiceSpeak.speak(PORTAL_HELP_INTRO_SPEAK);
+      return;
+    }
+    if (!global.speechSynthesis) return;
+    try {
+      global.speechSynthesis.cancel();
+    } catch (_c) {}
+    var utt = new global.SpeechSynthesisUtterance(PORTAL_HELP_INTRO_SPEAK);
+    utt.lang = "en-GB";
+    try {
+      global.speechSynthesis.speak(utt);
+    } catch (_s) {}
+  }
+
   function resetHelpSession(msgsHost, sugHost, data) {
     if (!msgsHost) return;
     msgsHost.innerHTML = "";
-    appendBubble(
-      msgsHost,
-      "bot",
-      "Hi — ask about login, the dashboard, feedback, announcements, My participants, timesheets or installing CS Portal. When FAQ does not match, AI can help if enabled."
-    );
+    appendBubble(msgsHost, "bot", PORTAL_HELP_INTRO_HTML);
     renderSuggestions(sugHost, starterTopics(data), function (topic) {
       appendBubble(msgsHost, "user", escapeHtml(topic.title));
       answerTopic(topic, msgsHost, sugHost);
@@ -581,7 +602,8 @@
     if (!sheet || !msgsHost) return;
 
     var data = await loadHelpSources();
-    if (!sessionStarted || !msgsHost.children.length) {
+    var fresh = !sessionStarted || !msgsHost.children.length;
+    if (fresh) {
       resetHelpSession(msgsHost, sugHost, data.knowledge);
       sessionStarted = true;
     }
@@ -590,6 +612,7 @@
         input.focus();
       } catch (_) {}
     }
+    portalHelpSpeakIntro();
   };
 
   function bindHelpBot() {
