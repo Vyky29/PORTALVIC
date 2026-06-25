@@ -559,6 +559,81 @@
       }
       return "";
     }
+    function loadImageFromDataUrl(dataUrl) {
+      return new Promise((resolve) => {
+        if (!dataUrl) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+      });
+    }
+
+    /**
+     * Halo del PDF: foto fija (bolas quietas) — logo central recortado en círculo
+     * + las órbitas del login.html dibujadas estáticas con los colores de marca.
+     */
+    async function buildHaloLogoDataUrl() {
+      const centerCandidates = [];
+      try {
+        if (typeof location !== "undefined" && location.href) {
+          centerCandidates.push(new URL("portal/F-02-1.png", location.href).href);
+        }
+      } catch (_) {}
+      centerCandidates.push("portal/F-02-1.png");
+      let centerData = "";
+      for (let i = 0; i < centerCandidates.length; i++) {
+        centerData = await readImageUrlAsDataUrl(centerCandidates[i]);
+        if (centerData) break;
+      }
+      const centerImg = await loadImageFromDataUrl(centerData);
+      if (!centerImg) return "";
+      const BLUE = "#2d84b3";
+      const GOLD = "#f4b740";
+      const SEN = "#f9bf2e";
+      const INK = "#173247";
+      /* cx, cy, r, color en el viewBox 200x200 (centrado en 100,100) — mismas posiciones que login.html. */
+      const balls = [
+        [0, -92, 7, BLUE], [79.67, -46, 6, SEN], [79.67, 46, 6, INK],
+        [0, 92, 7, GOLD], [-79.67, 46, 6, BLUE], [-79.67, -46, 6, "#5a9fc4"],
+        [0, -82, 5, SEN], [71.01, -41, 5, BLUE], [71.01, 41, 5, GOLD],
+        [0, 82, 5, INK], [-71.01, 41, 5, "#8ebfe0"], [-71.01, -41, 5, SEN],
+        [37.27, -64, 4, GOLD], [74, -8, 4, BLUE], [37.27, 64, 4, SEN],
+        [-37.27, 64, 4, INK], [-74, -8, 4, BLUE], [-37.27, -64, 4, "#f4d78a"],
+      ];
+      try {
+        const S = 600;
+        const canvas = document.createElement("canvas");
+        canvas.width = S;
+        canvas.height = S;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return "";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, S, S);
+        const scale = S / 200;
+        const cx0 = S / 2;
+        const cy0 = S / 2;
+        const logoR = 70 * scale;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx0, cy0, logoR, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        const d = logoR * 2;
+        ctx.drawImage(centerImg, cx0 - logoR, cy0 - logoR, d, d);
+        ctx.restore();
+        balls.forEach((b) => {
+          ctx.beginPath();
+          ctx.arc(cx0 + b[0] * scale, cy0 + b[1] * scale, b[2] * scale, 0, Math.PI * 2);
+          ctx.fillStyle = b[3];
+          ctx.fill();
+        });
+        return canvas.toDataURL("image/png");
+      } catch (_) {
+        return "";
+      }
+    }
     /** Logo PNG del servidor suele ser muy pesado; JPEG pequeño en el PDF = descarga más rápida en My Documents. */
     async function shrinkDataUrlAsJpegForPdf(dataUrl, maxEdgePx, quality) {
       if (!dataUrl || !String(dataUrl).startsWith("data:")) return "";
@@ -2107,10 +2182,11 @@
           y = 12;
         }
       }
-      const logoRaw = await readPdfLogoDataUrl();
+      let logoRaw = await buildHaloLogoDataUrl();
+      if (!logoRaw) logoRaw = await readPdfLogoDataUrl();
       let logoData = logoRaw;
       if (logoRaw) {
-        const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 380, 0.8);
+        const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 480, 0.85);
         if (compact) logoData = compact;
       }
       if (logoData) {
