@@ -55,7 +55,7 @@
   }
 
   if (isStaffDashboard) {
-    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-unified");
+    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-lead-day-cards-nav");

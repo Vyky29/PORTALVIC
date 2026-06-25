@@ -6358,7 +6358,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "JAVI",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6398,7 +6398,7 @@
     {
       "client_name": "Haneef",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Small Pool",
       "time_slot": "1 to 2.15",
@@ -6458,7 +6458,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Small Pool",
       "time_slot": "10 to 10.45",
@@ -6498,7 +6498,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "JAVI",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6538,7 +6538,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Big Pool",
       "time_slot": "10.45 to 11.30",
@@ -6578,7 +6578,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "JAVI",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6618,7 +6618,7 @@
     {
       "client_name": "Eiji",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Big Pool",
       "time_slot": "11.30 to 12.15",
@@ -6658,7 +6658,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "JAVI",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6698,7 +6698,7 @@
     {
       "client_name": "Rayyan Fi",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Small Pool",
       "time_slot": "12.15 to 1",
@@ -6738,7 +6738,7 @@
     {
       "client_name": "Max",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "2 to 2.30",
@@ -6768,7 +6768,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "JAVI",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -6788,7 +6788,7 @@
     {
       "client_name": "Shaan",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "2.30 to 3",
@@ -6818,7 +6818,7 @@
     {
       "client_name": "Shire",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Aquatic Activity",
       "area": "Small Pool",
       "time_slot": "9 to 9.30",
@@ -6868,7 +6868,7 @@
     {
       "client_name": "Samer",
       "day": "Sunday",
-      "instructors": "JAVIER",
+      "instructors": "AURORA",
       "service": "Multi-Activity",
       "area": "Big Pool",
       "time_slot": "9.15 to 10",
