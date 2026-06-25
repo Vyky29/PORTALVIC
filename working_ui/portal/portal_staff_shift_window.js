@@ -115,13 +115,29 @@
     }
   }
 
-  /** Weekday Multi-Activity + Bespoke Programme: +15 min each end of the work band. */
+  /** Weekday Multi-Activity + Bespoke Programme: paid band 4:15–6:15 (client slots may be shorter). */
   function portalStaffSupportShiftBufferApplies(service, dayName) {
     var s = String(service || "").toLowerCase();
     var d = String(dayName || "").trim();
-    if (/\bbespoke\b/.test(s) || /\bfitfun\b/.test(s)) return true;
+    if (/\bbespoke\b/.test(s) || /\bfitfun\b/.test(s)) return d && d !== "Sunday";
     if (/multi[-\s]?activity/.test(s)) return !!d && d !== "Sunday";
     return false;
+  }
+
+  function isMaOrBespokeServiceLabel(service) {
+    var s = String(service || "").toLowerCase();
+    return /\bbespoke\b/.test(s) || /multi[-\s]?activity/.test(s);
+  }
+
+  function rowsAreWeekdayMaBespokeBand(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (!dayName || dayName === "Sunday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      if (!isMaOrBespokeServiceLabel(serviceLabelFromRow(list[i]))) return false;
+    }
+    return true;
   }
 
   function rowAnchorHmRange(row) {
@@ -151,7 +167,11 @@
     opts = opts && typeof opts === "object" ? opts : {};
     var list = Array.isArray(rows) ? rows : [];
     if (!list.length) return "";
-    var dayName = dayNameFromIso(iso);
+    var isoNorm = normIso(iso);
+    if (rowsAreWeekdayMaBespokeBand(list, isoNorm)) {
+      return formatBandLabel("16:15", "18:15");
+    }
+    var dayName = dayNameFromIso(isoNorm);
     var minStart = Infinity;
     var maxEnd = -Infinity;
     list.forEach(function (row) {
@@ -411,6 +431,9 @@
     var b = hmToMinutes(end);
     if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
     if (portalStaffSupportShiftBufferApplies(svc, dayName) && b - a < PAYROLL_BAND_MINUTES) {
+      if (dayName && dayName !== "Sunday") {
+        return formatBandLabel("16:15", "18:15");
+      }
       a -= BUFFER_MIN;
       b += BUFFER_MIN;
     }

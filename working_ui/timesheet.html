@@ -256,7 +256,7 @@
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260625-payroll-june"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260624-payroll-band"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260625-ma-bespoke-band"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -1362,8 +1362,35 @@
       return "";
     }
 
-    /** Sunday SwimFarm Multi-Activity support band: 5h for staff; Berta/John lead +15' each end → 5.5h. */
+    /** Weekday Multi-Activity / Bespoke: always paid 4:15–6:15 (2h) even when client slots are shorter. */
+    const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
+
+    /** Sunday SwimFarm support: 9:15–2:15 (5h); programme leads 9:00–2:30 (5.5h). */
+    const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
+    const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
     const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john"]);
+
+    function sessionServiceLower(session) {
+      return String((session && (session.rosterService || session.service || session.activity)) || "").toLowerCase();
+    }
+
+    function isMaOrBespokeService(serviceLower) {
+      const s = String(serviceLower || "").toLowerCase();
+      return /\bbespoke\b/.test(s) || /multi[-\s]?activity/.test(s);
+    }
+
+    function isWeekdayMaBespokePayBand(dayName, role, dayRows) {
+      if (!dayName || dayName === "Sunday") return false;
+      if (String(role || "").trim() !== "Support Worker") return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.some((s) => isMaOrBespokeService(sessionServiceLower(s)));
+    }
+
+    function weekdayMaBespokePayableHours(dayName, role, computedHours, dayRows) {
+      if (!isWeekdayMaBespokePayBand(dayName, role, dayRows)) return computedHours;
+      return WEEKDAY_MA_BESPOKE_PAY_HOURS;
+    }
 
     function isSundayMaSupportPayBand(dayName, role, service, dayRows) {
       if (String(dayName || "") !== "Sunday") return false;
@@ -1387,11 +1414,11 @@
     function sundayMaSupportPayableHours(dayName, rosterKey, role, service, computedHours, dayRows) {
       if (!isSundayMaSupportPayBand(dayName, role, service, dayRows)) return computedHours;
       const key = String(rosterKey || "").trim().toLowerCase();
-      return SUNDAY_MA_LEAD_KEYS.has(key) ? 5.5 : 5;
+      return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 
-    /** Sunday SwimFarm aquatic band: 6h; Roberto +30' from 2026-06-28 → 6.5h. */
-    const ROBERTO_SUNDAY_EXTENDED_FROM = "2026-06-28";
+    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: sum 30' aquatic slots. */
+    const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
 
     function isSundaySwimfarmAquaticBand(dayName, role, service, dayRows) {
       if (String(dayName || "") !== "Sunday") return false;
@@ -1413,9 +1440,8 @@
     function sundaySwimPayableHours(dayName, rosterKey, role, service, dateKey, computedHours, dayRows) {
       if (!isSundaySwimfarmAquaticBand(dayName, role, service, dayRows)) return computedHours;
       const key = String(rosterKey || "").trim().toLowerCase();
-      const iso = String(dateKey || "").trim().slice(0, 10);
-      if (key === "roberto" && iso >= ROBERTO_SUNDAY_EXTENDED_FROM) return 6.5;
-      return 6;
+      if (key === "roberto") return SUNDAY_ROBERTO_SWIM_PAY_HOURS;
+      return computedHours;
     }
 
     function applyRosterPayRateFallback(rosterKey) {
@@ -1582,6 +1608,18 @@
       return svc;
     }
 
+    function timesheetSupportPayGroupKey(session, role, dayName) {
+      if (
+        String(role || "").trim() === "Support Worker" &&
+        dayName &&
+        dayName !== "Sunday" &&
+        isMaOrBespokeService(sessionServiceLower(session))
+      ) {
+        return "__weekday_ma_bespoke__";
+      }
+      return timesheetServiceDisplayLabel(session, role) || role;
+    }
+
     function timesheetEntryServiceLabel(entry) {
       return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
     }
@@ -1636,6 +1674,7 @@
       const mins = Math.max(0, maxEnd - minStart);
       if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
       let hours = Number((mins / 60).toFixed(2));
+      hours = weekdayMaBespokePayableHours(dayName, dominantRole, hours, rows);
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       const role = dominantRole || "";
@@ -1668,14 +1707,14 @@
         const roleRows = rows.filter((s) => sessionPayRole(s) === role);
         const groups = Object.create(null);
         roleRows.forEach((s) => {
-          const label = timesheetServiceDisplayLabel(s, role);
+          const label = timesheetSupportPayGroupKey(s, role, dayName);
           const key = label || role;
           if (!groups[key]) {
             groups[key] = {
               rows: [],
               mins: 0,
               service: String(s.rosterService || s.service || s.activity || "").trim(),
-              serviceLabel: label
+              serviceLabel: label === "__weekday_ma_bespoke__" ? "" : label
             };
           }
           const start = String(s.start || "").trim();
@@ -1697,11 +1736,13 @@
           if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
           let mins = Number(group.mins || 0);
           const svc = group.service || roleServices[role] || "";
+          const isWeekdayMaBespokeGroup = key === "__weekday_ma_bespoke__";
           let applySupportBuffer =
-            (role === "Support Worker" &&
+            !isWeekdayMaBespokeGroup &&
+            ((role === "Support Worker" &&
               typeof portalStaffSupportShiftBufferApplies === "function" &&
               portalStaffSupportShiftBufferApplies(svc, dayName)) ||
-            (role === "Swimming Instructor" && !/day\s*centre/i.test(String(svc || "")) && dayName && dayName !== "Sunday");
+              (role === "Swimming Instructor" && !/day\s*centre/i.test(String(svc || "")) && dayName && dayName !== "Sunday"));
           if (applySupportBuffer && groupRows.length) {
             let roleMin = Infinity;
             let roleMax = -Infinity;
@@ -1727,16 +1768,27 @@
             if (shouldBuffer) mins += 2 * bufferMin;
           }
           let hours = Number((mins / 60).toFixed(2));
+          hours = weekdayMaBespokePayableHours(dayName, role, hours, groupRows);
           hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           if (!(hours > 0)) return;
+          const serviceLabel =
+            group.serviceLabel ||
+            (isWeekdayMaBespokeGroup
+              ? groupRows
+                  .map((s) => timesheetServiceDisplayLabel(s, role))
+                  .filter(Boolean)
+                  .filter((v, i, arr) => arr.indexOf(v) === i)
+                  .join(" · ")
+              : "") ||
+            svc;
           entries.push({
             date: dateKey,
             day: dayName,
             hours,
             completed: completedAll,
             service: svc,
-            serviceLabel: group.serviceLabel || svc,
+            serviceLabel,
             role,
             rate: rateForRole(role),
             blendedRate: null
