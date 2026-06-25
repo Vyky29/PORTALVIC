@@ -325,6 +325,23 @@
       .replace(/</g, "&lt;");
   }
 
+  function listenButtonHtml(text, surface) {
+    var t = String(text || "").trim();
+    if (!t) return "";
+    if (!(global.speechSynthesis || global.PortalHelpVoiceSpeak)) return "";
+    var cls = surface === "chat" ? "portal-chat-listen-btn" : "portal-help-listen-btn";
+    var label = surface === "chat" ? "Listen again" : "Listen";
+    return (
+      '<button type="button" class="' +
+      cls +
+      '" data-speak="' +
+      escapeAttr(t) +
+      '">' +
+      label +
+      "</button>"
+    );
+  }
+
   function surfaceUi(surface) {
     if (surface === "chat") {
       return {
@@ -381,11 +398,10 @@
         "Open guide section" +
         "</a></p>";
     }
-    if (surface !== "chat" && res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
-      html +=
-        '<button type="button" class="' + ui.listen + '" data-speak="' +
-        escapeAttr(res.speakText) +
-        '">Listen</button>';
+    if (surface === "chat") {
+      html += listenButtonHtml(res.speakText || res.text || "", surface);
+    } else if (res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
+      html += listenButtonHtml(res.speakText, surface);
     }
     return html;
   }
@@ -480,10 +496,8 @@
     });
   }
 
-  function configureAssistOnce() {
-    if (global.__portalOpenAiAssistConfigured || !global.PortalOpenAiAssist) return;
-    global.__portalOpenAiAssistConfigured = true;
-    var assistCfg = {
+  function assistConfig() {
+    return {
       getClient: function () {
         var box = global.__PORTAL_SUPABASE__;
         return box && box.client ? box.client : null;
@@ -496,10 +510,17 @@
         return typeof global.SUPABASE_ANON_KEY === "string" ? global.SUPABASE_ANON_KEY : "";
       },
     };
-    global.PortalOpenAiAssist.configure(assistCfg);
-    if (global.PortalHelpVoiceSpeak) {
-      global.PortalHelpVoiceSpeak.configure(assistCfg);
+  }
+
+  function configureAssistOnce() {
+    var cfgObj = assistConfig();
+    if (global.PortalHelpVoiceSpeak && !global.__portalVoiceConfigured) {
+      global.__portalVoiceConfigured = true;
+      global.PortalHelpVoiceSpeak.configure(cfgObj);
     }
+    if (global.__portalOpenAiAssistConfigured || !global.PortalOpenAiAssist) return;
+    global.__portalOpenAiAssistConfigured = true;
+    global.PortalOpenAiAssist.configure(cfgObj);
   }
 
   async function tryAssistAnswer(question, match, msgsHost, sugHost, data, guideData, surface) {
@@ -572,11 +593,12 @@
 
   function answerTopic(topic, msgsHost, sugHost, surface) {
     surface = surface || "help";
+    var spoken = formatAnswerHtml(topic.answer);
     var answerHtml =
       (surface === "chat" ? "" : "<strong>" + escapeHtml(topic.title) + "</strong><br>") +
-      formatAnswerHtml(topic.answer) +
+      spoken +
       (surface === "chat"
-        ? ""
+        ? listenButtonHtml(topic.answer, surface)
         : '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>');
     appendBubble(
       msgsHost,
@@ -585,7 +607,7 @@
       surface
     );
     if (surface === "chat") {
-      speakText(plainTextFromHtml(answerHtml));
+      speakText(String(topic.answer || ""));
     }
     renderSuggestions(sugHost, [], function () {}, surface);
   }
@@ -620,9 +642,10 @@
           }
           return;
         }
+        var unsureSpeak = "I'm not sure yet. Please try asking that another way.";
         var unsureHtml =
           surface === "chat"
-            ? "I'm not sure yet. Please try asking that another way."
+            ? escapeHtml(unsureSpeak) + listenButtonHtml(unsureSpeak, surface)
             : "I'm not sure yet — try rephrasing, or open " +
               '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a> for illustrated topics.';
         appendBubble(
@@ -632,7 +655,7 @@
           surface
         );
         if (surface === "chat") {
-          speakText("I'm not sure yet. Please try asking that another way.");
+          speakText(unsureSpeak);
         }
         await logUnanswered(q, match);
         renderSuggestions(
@@ -664,9 +687,10 @@
         return;
       }
 
+      var noMatchSpeak = "I could not find an exact answer yet. Please try asking that another way.";
       var noMatchHtml =
         surface === "chat"
-          ? "I could not find an exact answer yet. Please try asking that another way."
+          ? escapeHtml(noMatchSpeak) + listenButtonHtml(noMatchSpeak, surface)
           : "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
             '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>. ' +
             "Your question was saved so we can improve answers.";
@@ -677,7 +701,7 @@
         surface
       );
       if (surface === "chat") {
-        speakText("I could not find an exact answer yet. Please try asking that another way.");
+        speakText(noMatchSpeak);
       }
       await logUnanswered(q, match);
       renderSuggestions(sugHost, match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data), function (topic) {
@@ -715,13 +739,19 @@
     }
   }
 
+  var activeVoiceStatus = null;
+
+  function setVoiceStatus(text) {
+    if (activeVoiceStatus) activeVoiceStatus.textContent = text;
+  }
+
   function speakIntro(text) {
-    speakText(text);
+    void speakText(text);
   }
 
   function speakText(text) {
     text = String(text || "").trim();
-    if (!text) return;
+    if (!text) return Promise.resolve({ ok: false });
     if (global.PortalHelpVoiceSpeak) {
       configureAssistOnce();
       try {
@@ -729,10 +759,20 @@
           global.PortalHelpVoiceSpeak.unlock();
         }
       } catch (_u) {}
-      void global.PortalHelpVoiceSpeak.speak(text);
-      return;
+      setVoiceStatus("Speaking...");
+      return global.PortalHelpVoiceSpeak.speak(text)
+        .then(function (r) {
+          setVoiceStatus(
+            r && r.ok ? "Tap the microphone to speak again." : "Tap Listen again to hear the answer."
+          );
+          return r;
+        })
+        .catch(function () {
+          setVoiceStatus("Tap Listen again to hear the answer.");
+          return { ok: false };
+        });
     }
-    if (!global.speechSynthesis) return;
+    if (!global.speechSynthesis) return Promise.resolve({ ok: false });
     try {
       global.speechSynthesis.cancel();
     } catch (_c) {}
@@ -740,7 +780,10 @@
     utt.lang = "en-GB";
     try {
       global.speechSynthesis.speak(utt);
-    } catch (_s) {}
+      return Promise.resolve({ ok: true, source: "browser" });
+    } catch (_s) {
+      return Promise.resolve({ ok: false });
+    }
   }
 
   function resetSession(msgsHost, sugHost, data, introHtml, surface) {
@@ -794,6 +837,7 @@
   function bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status) {
     var activeRecognition = null;
     var isListening = false;
+    activeVoiceStatus = status;
 
     function setStatus(text) {
       if (status) status.textContent = text;
