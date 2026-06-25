@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260625-help-guide-v3"></script>
+  <script src="/portal-static-bootstrap.js?v=20260625-help-guide-v4"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -106,6 +106,34 @@
     .d-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .d-tile{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--navy);min-width:0;overflow-wrap:break-word}
     .d-tile--hl{border-color:var(--gold);background:#fff9eb;box-shadow:0 0 0 2px rgba(244,183,64,.3)}
+    .d-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+    .d-tab{padding:5px 9px;border-radius:999px;background:#eaf1f8;color:var(--navy);font-size:12px;font-weight:700}
+    .d-tab--on{background:var(--navy);color:#fff}
+    .d-list{display:grid;gap:8px}
+    .d-person{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:9px 11px;min-width:0}
+    .d-person-name{font-size:14px;font-weight:700;color:var(--navy);min-width:0;overflow-wrap:break-word}
+    .d-person-note{font-size:12px;color:var(--muted);min-width:0;overflow-wrap:break-word}
+    .d-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .d-action{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:700;color:var(--navy)}
+    .d-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;display:grid;gap:8px}
+    .d-panel-title{font-size:14px;font-weight:800;color:var(--navy)}
+    .d-field{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--border);padding-bottom:6px;font-size:13px;min-width:0}
+    .d-field:last-child{border-bottom:0;padding-bottom:0}
+    .d-field span:first-child{color:var(--muted)}
+    .d-field span:last-child{font-weight:700;color:var(--text);text-align:right;overflow-wrap:break-word;min-width:0}
+    .d-form{display:grid;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .d-input{border:1px solid var(--border);border-radius:10px;background:#f8fafc;padding:8px 10px;font-size:13px;color:var(--muted);min-height:34px}
+    .d-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--navy);font-weight:700}
+    .d-switch{width:36px;height:20px;border-radius:999px;background:#2e9e6b;position:relative;flex:none}
+    .d-switch::after{content:"";position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}
+    .d-doc{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+    .d-doc-icon{width:34px;height:42px;border-radius:6px;background:#eaf1f8;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--navy);flex:none}
+    .d-doc-main{min-width:0;flex:1}
+    .d-doc-title{font-size:13px;font-weight:800;color:var(--navy);overflow-wrap:break-word}
+    .d-doc-sub{font-size:12px;color:var(--muted);overflow-wrap:break-word}
+    .d-icons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .d-iconbox{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;color:var(--navy);font-weight:700}
+    .d-iconbox b{display:block;font-size:24px;margin-bottom:3px}
   </style>
 </head>
 <body>
@@ -114,15 +142,15 @@
     <p class="sub" id="guideMeta">Illustrated topics for CS Portal — same content Portal help AI uses. Ask a question on your dashboard if you are stuck.</p>
     <div class="banner">
       <strong>Updated guide.</strong> This replaces the old long <a href="portal_guide.html">Portal guide</a> page.
-      Office updates text and screenshots in one place so help answers stay accurate.
+      Office updates text and visual examples in one place so help answers stay accurate.
     </div>
     <ul class="nav" id="guideNav" hidden></ul>
     <div id="guideRoot"><p class="loading">Loading guide…</p></div>
-    <p class="foot">Tip: on the dashboard, open <strong>Portal help</strong> and type your question — answers can include these screenshots.</p>
+    <p class="foot">Tip: on the dashboard, open <strong>Portal help</strong> and type your question — answers can link to these visual examples.</p>
   </div>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v3";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v4";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -189,6 +217,81 @@
       '<div class="d-tile">Timesheet</div>' +
       '<div class="d-tile">My Documents</div>' +
       '<div class="d-tile">Settings</div>' +
+      "</div>",
+    "participants-list":
+      '<div class="d-tabs"><span class="d-tab d-tab--on">My participants</span><span class="d-tab">All participants</span></div>' +
+      '<div class="d-list">' +
+      '<div class="d-person"><div><div class="d-person-name">Hazem</div><div class="d-person-note">Aquatic · Teaching Pool</div></div><span class="d-chip d-chip--pending">Tonight</span></div>' +
+      '<div class="d-person"><div><div class="d-person-name">Aqsa</div><div class="d-person-note">Read General Info before session</div></div><span class="d-chip d-chip--done">Profile</span></div>' +
+      "</div>",
+    "participant-actions":
+      '<div class="d-actions">' +
+      '<span class="d-action">Feedback</span>' +
+      '<span class="d-action">Absence</span>' +
+      '<span class="d-action">Incident</span>' +
+      '<span class="d-action">Cancellation</span>' +
+      '<span class="d-action">General Info</span>' +
+      "</div>",
+    "announcement-card":
+      '<div class="d-card d-card--red"><div class="d-card-main"><div class="d-card-name">Announcement to sign</div><div class="d-card-sub">Read the message, then tap Sign/confirm</div></div><span class="d-chip d-chip--incident">Sign</span></div>',
+    "document-list":
+      '<div class="d-list">' +
+      '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Payslip — June</div><div class="d-doc-sub">Published by office</div></div></div>' +
+      '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Signed contract</div><div class="d-doc-sub">Saved after electronic signature</div></div></div>' +
+      '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Expense receipt PDF</div><div class="d-doc-sub">Created after submit</div></div></div>' +
+      "</div>",
+    "daily-form":
+      '<div class="d-form">' +
+      '<div class="d-panel-title">Venue review</div>' +
+      '<div class="d-input">Venue: Acton</div>' +
+      '<div class="d-input">Opening checks completed</div>' +
+      '<div class="d-toggle"><span>Any issue to report?</span><span class="d-switch"></span></div>' +
+      '<div class="d-input">Notes...</div>' +
+      "</div>",
+    "pickup-form":
+      '<div class="d-form">' +
+      '<div class="d-panel-title">Pickup / handover</div>' +
+      '<div class="d-input">Search participant or tap New</div>' +
+      '<div class="d-input">Drop Off: who brought the participant?</div>' +
+      '<div class="d-input">Pick Up: who collected?</div>' +
+      "</div>",
+    "expense-form":
+      '<div class="d-form">' +
+      '<div class="d-panel-title">Expense claim</div>' +
+      '<div class="d-input">Description: Pool parking</div>' +
+      '<div class="d-input">Amount: GBP 6.50</div>' +
+      '<div class="d-input">Receipt photo attached</div>' +
+      "</div>",
+    "alerts-settings":
+      '<div class="d-list">' +
+      '<div class="d-toggle"><span>Notifications</span><span class="d-switch"></span></div>' +
+      '<div class="d-toggle"><span>Location during rota shift</span><span class="d-switch"></span></div>' +
+      '<div class="d-toggle"><span>Microphone for voice feedback</span><span class="d-switch"></span></div>' +
+      "</div>",
+    "area-icons":
+      '<div class="d-icons">' +
+      '<div class="d-iconbox"><b>🏊</b>Big Pool</div>' +
+      '<div class="d-iconbox"><b>🏊</b>Small Pool</div>' +
+      '<div class="d-iconbox"><b>🏫</b>Hub Room</div>' +
+      '<div class="d-iconbox"><b>🏁</b>Lane</div>' +
+      '<div class="d-iconbox"><b>🏋</b>Gym</div>' +
+      '<div class="d-iconbox"><b>📍</b>Venue</div>' +
+      "</div>",
+    "lead-tools":
+      '<div class="d-tiles">' +
+      '<div class="d-tile d-tile--hl">LEAD report</div>' +
+      '<div class="d-tile d-tile--hl">STATS</div>' +
+      '<div class="d-tile">Team shift</div>' +
+      '<div class="d-tile">Performance review</div>' +
+      '<div class="d-tile">Session overview</div>' +
+      '<div class="d-tile">Reports</div>' +
+      "</div>",
+    "profile-form":
+      '<div class="d-panel">' +
+      '<div class="d-panel-title">Update my profile</div>' +
+      '<div class="d-field"><span>Personal details</span><span>Confirm</span></div>' +
+      '<div class="d-field"><span>Emergency contact</span><span>Edit if changed</span></div>' +
+      '<div class="d-field"><span>Availability</span><span>Once a year</span></div>' +
       "</div>"
   };
 

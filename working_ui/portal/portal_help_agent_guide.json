@@ -1,12 +1,15 @@
 {
-  "version": "2026-06-help-guide-v3",
-  "description": "Single source of truth for Portal help AI and portal_help_guide.html. Sections may include inline 'demos' (rendered UI mock-ups: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles) so the guide never depends on screenshot files.",
+  "version": "2026-06-help-guide-v4",
+  "description": "Single source of truth for Portal help AI and portal_help_guide.html. Sections may include inline 'demos' (rendered UI mock-ups: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles, participants-list, participant-actions, announcement-card, document-list, daily-form, pickup-form, expense-form, alerts-settings, area-icons, lead-tools, profile-form) so the guide never depends on screenshot files.",
   "sections": [
     {
       "id": "getting-started",
       "title": "Getting started on your phone",
       "keywords": ["start", "first", "daily", "phone", "empezar", "primeros pasos", "resumen"],
       "content": "The portal is designed for your phone — before, during and after sessions.\n\nFirst steps: log in with the link provided; install CS Portal on your home screen; turn on Notifications/Alerts in Quick menu → Settings.\n\nDaily use: check the dashboard before sessions; tap orange session cards for feedback; tap the logo if the halo shows notifications; use My participants for client info; use Quick menu for forms, finance, documents and settings.\n\nYou only need two company apps going forward: CS Portal (operations) and Zoho Cliq (team messaging). You may delete Zoho People — payslips are in My Documents.",
+      "demos": [
+        { "demo": "quick-menu-tiles", "caption": "Daily tools live in Quick menu — Portal help is the chat bot." }
+      ],
       "illustrations": []
     },
     {
@@ -28,6 +31,10 @@
       "title": "Understanding your dashboard",
       "keywords": ["dashboard", "today", "main screen", "home", "panel", "pantalla principal"],
       "content": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today's participants and what still needs doing — orange means feedback is waiting.\n\nThe logo halo shows feedback, announcements or documents needing attention.\n\nTap the logo for the notification centre. Use session cards, My participants, or Quick menu for forms.\n\nUnder the cards: Next session, Week and Term for planning.",
+      "demos": [
+        { "demo": "session-cards", "caption": "Today cards — colours tell staff what needs attention." },
+        { "demo": "halo", "caption": "Logo halo — tap it when dots show." }
+      ],
       "illustrations": []
     },
     {
@@ -68,6 +75,10 @@
       "title": "My participants",
       "keywords": ["participants", "clients", "roster", "my participants", "all participants", "clientes", "general info"],
       "content": "Open My participants from the bottom bar (CLIENTS) or Quick menu.\n\nMy participants — your roster. All participants — search anyone at the club.\n\nTap a name for quick actions: Feedback, Absence, Incident, Cancellation and General Info.\n\nGeneral Info has age, medical notes, triggers, support level and communication preferences — read before community or home sessions.",
+      "demos": [
+        { "demo": "participants-list", "caption": "My participants shows your roster; All participants is searchable." },
+        { "demo": "participant-actions", "caption": "Quick actions on each participant card." }
+      ],
       "illustrations": []
     },
     {
@@ -85,6 +96,10 @@
       "title": "Announcements and documents to sign",
       "keywords": ["announcement", "sign", "confirm", "contract", "document", "anuncio", "firmar", "contrato"],
       "content": "Tap the club logo for the notification centre — reminders, announcements and documents.\n\nWhen the office posts an announcement, the halo may turn red. Read and tap Sign/confirm.\n\nSigned items move to Signed announcements log.\n\nEmployment contracts appear for electronic signature; signed PDFs save to My Documents.\n\nFor quick messages with the office use Zoho Cliq — in-portal messaging is not available yet.",
+      "demos": [
+        { "demo": "announcement-card", "caption": "Red reminder — read, then sign/confirm." },
+        { "demo": "document-list", "caption": "Signed PDFs are saved in My Documents." }
+      ],
       "illustrations": []
     },
     {
@@ -92,6 +107,10 @@
       "title": "Venue review, pickup, incident, cancellation",
       "keywords": ["venue review", "pickup", "handover", "drop off", "incident", "cancellation", "recogida", "incidente"],
       "content": "Venue review (Quick menu or top bar VENUE): opening/closing checks — confirm venue, date, time, report issues yes/no.\n\nPickup/handover (Quick menu or PICKUP): search participant or tap New; complete Drop Off on arrival and Pick Up when collected.\n\nIncident report: Quick menu or participant card — safeguarding/safety; submit ASAP.\n\nCancellation: Quick menu or participant card when a session cannot go ahead.",
+      "demos": [
+        { "demo": "daily-form", "caption": "Venue review — confirm checks and report issues." },
+        { "demo": "pickup-form", "caption": "Pickup/handover — record drop-off and collection." }
+      ],
       "illustrations": []
     },
     {
@@ -100,7 +119,8 @@
       "keywords": ["timesheet", "expenses", "hours", "pay", "24th", "receipt", "gastos", "nomina", "horas"],
       "content": "Both under Quick menu → Finance.\n\nTimesheet: submit by the 24th of the month for that month's pay. Green rows = feedback complete, ready to pay. Orange rows = feedback pending — complete from dashboard session card. Submitting on the 25th+ may move to next month.\n\nExpenses: Description, Amount (GBP), receipt photo per line; + Add row for multiple items. PDF saves to My Documents on submit.",
       "demos": [
-        { "demo": "timesheet-rows", "caption": "Timesheet — green ready to pay, orange waiting on feedback." }
+        { "demo": "timesheet-rows", "caption": "Timesheet — green ready to pay, orange waiting on feedback." },
+        { "demo": "expense-form", "caption": "Expenses — add description, amount and receipt." }
       ],
       "illustrations": []
     },
@@ -109,6 +129,9 @@
       "title": "My Documents",
       "keywords": ["documents", "payslip", "payslips", "pdf", "my documents", "documentos"],
       "content": "Quick menu → My Documents for payslips, signed contracts, signed announcements and expense PDFs.\n\nPayslips appear when published. You may delete Zoho People; keep Zoho Cliq.",
+      "demos": [
+        { "demo": "document-list", "caption": "My Documents — payslips, signed documents and PDFs." }
+      ],
       "illustrations": []
     },
     {
@@ -116,6 +139,9 @@
       "title": "Alerts, location and microphone",
       "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "gps", "alertas"],
       "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nLocation — only Bespoke Programme and Day Centre staff during rota shift (community support live map for leads/admins; buffer before first and after last session).\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nPortal help can answer questions by text or voice when AI is enabled.",
+      "demos": [
+        { "demo": "alerts-settings", "caption": "Settings toggles — notifications, location and microphone." }
+      ],
       "illustrations": []
     },
     {
@@ -123,6 +149,9 @@
       "title": "Pool and room icons on session cards",
       "keywords": ["pool", "room", "hub room", "big pool", "lane", "gym", "area", "piscina", "sala"],
       "content": "On TODAY session cards, the right column shows a pool or room icon (Big Pool, Small Pool, Hub Room, lanes, Gym, etc.). Venue name appears under the time on the left. In Next session, the icon appears beside the area name.",
+      "demos": [
+        { "demo": "area-icons", "caption": "Common pool, room and venue icons." }
+      ],
       "illustrations": []
     },
     {
@@ -130,6 +159,9 @@
       "title": "Lead-only tools",
       "keywords": ["lead", "programme lead", "stats", "lead report", "session overview"],
       "content": "Programme leads see extra items: LEAD feedback report, STATS (sessions overview), performance/term review tools, Lead session report in Quick menu.\n\nLead session report rolls up who was on shift, how the session ran, and issues for the office.\n\nIf you should have lead access but don't see these, contact the office.",
+      "demos": [
+        { "demo": "lead-tools", "caption": "Lead-only tiles appear only for lead/admin roles." }
+      ],
       "illustrations": []
     },
     {
@@ -137,13 +169,16 @@
       "title": "Update my profile",
       "keywords": ["profile", "annual", "personal details", "emergency contact", "perfil"],
       "content": "Quick menu → Update my profile for annual check-in of personal and emergency details. Complete once a year when prompted or any time from Quick menu.",
+      "demos": [
+        { "demo": "profile-form", "caption": "Annual profile check — confirm each section." }
+      ],
       "illustrations": []
     },
     {
       "id": "portal-help",
       "title": "Using Portal help",
       "keywords": ["portal help", "help bot", "ai", "voice", "ask", "ayuda", "pregunta"],
-      "content": "On your dashboard, open Portal help (help sheet) and type a question about login, feedback, timesheets, announcements and more.\n\nWhen AI is enabled, answers can include a screenshot from this guide and a Listen button (browser voice).\n\nFor the full illustrated guide (same content the AI uses), open Staff help guide from the link under each answer, or bookmark portal_help_guide.html.",
+      "content": "On your dashboard, open Portal help (help sheet) and type a question about login, feedback, timesheets, announcements and more.\n\nWhen AI is enabled, answers can link to a visual example from this guide and a Listen button (browser voice).\n\nFor the full illustrated guide (same content the AI uses), open Staff help guide from the link under each answer, or bookmark portal_help_guide.html.",
       "illustrations": []
     }
   ]
