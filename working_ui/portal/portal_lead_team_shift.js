@@ -8,9 +8,10 @@ import {
   portalLeadSlotInScope,
   portalLeadDayUsesProgrammeWideRoster,
   portalLeadProgrammeWideTodayForStaff,
+  portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-lead-day-cards-nav";
+} from "./portal_lead_session_scope.js?v=20260625-michelle-own-clients";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -447,6 +448,8 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   if (!dayKind) return null;
 
   const src = rosterSource();
+  if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
+
   let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);

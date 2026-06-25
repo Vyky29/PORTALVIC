@@ -2417,7 +2417,7 @@
         ];
       }
       if(sid === 'michelle'){
-        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true }];
+        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, ownClientsOnly: true }];
       }
       return [];
     }
@@ -2479,6 +2479,10 @@
       if(!scopes.length || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       var wd = portalStaffWeekdayFromIso(iso);
       if(!wd) return false;
+      if(typeof portalStaffHasShiftOnCalendarDate === 'function'){
+        const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
+        if(onShift === false) return false;
+      }
       var active = scopes.filter(function(sc){ return sc.weekdays.indexOf(wd) >= 0; });
       return active.length > 0 && active.every(function(sc){ return sc.programmeWideRoster === true; });
     }
@@ -2494,16 +2498,21 @@
       var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
       if(!src || !Adapter || typeof Adapter.bootstrap !== 'function') return null;
       var rows = Array.isArray(src.rows) ? src.rows : [];
+      var ownOnly = scopes.some(function(sc){ return sc.ownClientsOnly === true; });
       var instructorKeys = Object.create(null);
-      rows.forEach(function(r){
-        if(!r || !portalStaffLeadSpreadsheetRowInScope(r, iso, scopes)) return;
-        var cn = portalStaffNormLeadScopeKey(r.client_name);
-        if(!cn || cn === 'closed' || cn === 'available' || cn === 'noclient') return;
-        String(r.instructors || '').split(/,|\/|&|\band\b/gi).forEach(function(part){
-          var k = portalStaffNormLeadScopeKey(part);
-          if(k) instructorKeys[k] = true;
+      if(ownOnly){
+        instructorKeys[sid] = true;
+      }else{
+        rows.forEach(function(r){
+          if(!r || !portalStaffLeadSpreadsheetRowInScope(r, iso, scopes)) return;
+          var cn = portalStaffNormLeadScopeKey(r.client_name);
+          if(!cn || cn === 'closed' || cn === 'available' || cn === 'noclient') return;
+          String(r.instructors || '').split(/,|\/|&|\band\b/gi).forEach(function(part){
+            var k = portalStaffNormLeadScopeKey(part);
+            if(k) instructorKeys[k] = true;
+          });
         });
-      });
+      }
       var merged = [];
       var seen = Object.create(null);
       var notes = {};

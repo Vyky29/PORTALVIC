@@ -94,6 +94,8 @@ const MICHELLE_SCOPES = [
     weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
+    /* Today cards: only clients on Michelle's roster rows (not every Day Centre slot). */
+    ownClientsOnly: true,
   },
 ];
 
@@ -604,6 +606,46 @@ function rosterRowAppliesOnIso(rows, r, iso, wd) {
   return true;
 }
 
+/** True when the programme lead is scheduled to work on this calendar day. */
+export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
+  const lk = normKey(leadKey);
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  try {
+    const g = typeof globalThis !== "undefined" ? globalThis : null;
+    if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
+      const on = g.portalStaffHasShiftOnCalendarDate(day, lk);
+      if (on === true) return true;
+      if (on === false) return false;
+    }
+  } catch (_) {}
+  if (!scopes || !scopes.length) return false;
+  const wd = weekdayFromIso(day);
+  if (!wd) return false;
+  const src =
+    typeof globalThis !== "undefined" && globalThis.portalResolveStaffDashboardSource
+      ? globalThis.portalResolveStaffDashboardSource()
+      : typeof globalThis !== "undefined"
+        ? globalThis.STAFF_DASHBOARD_SOURCE
+        : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isPickupRosterClientName(r.client_name)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    const slot = rosterRowToLeadSlot(r, day, wd);
+    if (!portalLeadSlotInScopeForDay(slot, scopes, lk, day)) continue;
+    if (instructorKeysFromRosterRaw(r.instructors).indexOf(lk) >= 0) return true;
+  }
+  return false;
+}
+
+function activeScopeUsesOwnClientsOnly(scopes, iso) {
+  return activeScopesForWeekday(scopes, iso).some((sc) => sc.ownClientsOnly === true);
+}
+
 /**
  * Programme-lead pickup roster: all clients on MA / Day Centre days (not instructor-filtered).
  * @param {string} iso YYYY-MM-DD
@@ -692,6 +734,9 @@ export function portalLeadProgrammeWideTodayForStaff(staffId, iso, profile, auth
   if (!scopes.length || !portalLeadDayUsesProgrammeWideRoster(scopes, day)) {
     return { active: false, scopes: [], leadKey: "" };
   }
+  if (!portalLeadProgrammeLeadWorkingOnIso(leadKey, day, scopes)) {
+    return { active: false, scopes: [], leadKey: "" };
+  }
   return { active: true, scopes: scopes, leadKey: leadKey };
 }
 
@@ -742,16 +787,21 @@ export function portalLeadCollectProgrammeWideSessionsModel(iso, profile, authEm
     typeof globalThis !== "undefined" ? globalThis.StaffDashboardSpreadsheetAdapter : null;
   if (!src || !Adapter || typeof Adapter.bootstrap !== "function") return empty;
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const ownOnly = activeScopeUsesOwnClientsOnly(wide.scopes, day);
   const instructorKeys = Object.create(null);
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r || !isPickupRosterClientName(r.client_name)) continue;
-    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
-    const slot = rosterRowToLeadSlot(r, day, wd);
-    if (!portalLeadSlotInScopeForDay(slot, wide.scopes, wide.leadKey, day)) continue;
-    instructorKeysFromRosterRaw(r.instructors).forEach(function (k) {
-      instructorKeys[k] = true;
-    });
+  if (ownOnly) {
+    instructorKeys[normKey(wide.leadKey)] = true;
+  } else {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !isPickupRosterClientName(r.client_name)) continue;
+      if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+      const slot = rosterRowToLeadSlot(r, day, wd);
+      if (!portalLeadSlotInScopeForDay(slot, wide.scopes, wide.leadKey, day)) continue;
+      instructorKeysFromRosterRaw(r.instructors).forEach(function (k) {
+        instructorKeys[k] = true;
+      });
+    }
   }
   const merged = [];
   const seen = Object.create(null);
