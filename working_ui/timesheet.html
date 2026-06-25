@@ -1695,6 +1695,9 @@
       const venueLower = venue.toLowerCase();
       const r = String(role || "").trim();
       const isPool = /big pool|small pool|teaching pool|\blane\b/.test(areaLower);
+      if (/day\s*centre/.test(svcLower) && venue) {
+        return `Day Centre (${venue})`;
+      }
       if (/day\s*centre/.test(svcLower) && r === "Swimming Instructor" && isPool) {
         return "Day Centre (Aquatic)";
       }
