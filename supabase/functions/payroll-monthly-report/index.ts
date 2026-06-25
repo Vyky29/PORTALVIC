@@ -80,12 +80,14 @@ function money(n: unknown): string {
   return (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
 }
 
-// Fixed monthly part-time salary (GBP) paid on top of any portal-logged extra
-// hours. Keyed by lowercase username / first name. These workers appear as a
-// normal payroll line (extras + salary), NOT in the contract-only section.
+// Fixed monthly part-time salary (GBP) for staff paid by invoice/contract. They
+// appear automatically in the "Contract / invoice — paid separately" section
+// every month (so a missing manual import row never drops their salary). Keyed
+// by lowercase username / first name. A real import row for the month wins.
 const FIXED_MONTHLY_SALARY_BY_KEY: Record<string, number> = {
   roberto: 2166.67,
 };
+const FIXED_SALARY_CONTRACT_TYPE = "Part time";
 function fixedSalaryForNames(...names: string[]): number {
   for (const n of names) {
     const k = String(n || "").trim().toLowerCase();
@@ -239,8 +241,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   const nameById = new Map<string, string>();
   // Test/demo accounts are never part of payroll (kept only for button testing).
   const excludedIds = new Set<string>();
-  // Workers on a fixed monthly part-time salary (id -> GBP). Salary is added on
-  // top of their portal extra-hours and they show as a normal payroll line.
+  // Staff on a fixed monthly salary paid by invoice/contract (id -> GBP).
   const salaryById = new Map<string, number>();
   for (const p of profs || []) {
     const nm = String(p.full_name || p.username || "").trim();
@@ -253,9 +254,9 @@ async function aggregate(supabase: any, targetMonthIso: string) {
       if (sal > 0) salaryById.set(String(p.id), sal);
     }
   }
-  // Salaried part-time staff are paid through the normal payroll line (extras +
-  // salary), so do not treat them as contract-only/excluded.
-  for (const id of salaryById.keys()) contractUserIds.delete(id);
+  // Salaried invoice staff are always paid separately: drop their portal
+  // submissions and never flag them as "not submitted".
+  for (const id of salaryById.keys()) contractUserIds.add(id);
 
   // Contract people are paid by invoice/payslip (extra hours included there), so
   // their portal submissions never appear as a separate timesheet line or penalty.
@@ -314,9 +315,6 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     const role = String(im.role || (uid ? expected.get(uid) || "" : "")).trim();
     const gross = im.gross == null ? null : Number(im.gross);
     if (String(im.pay_type || "timesheet") === "contract") {
-      // Salaried part-time staff are shown on the normal payroll line instead of
-      // the contract-only section (their salary is added below).
-      if (uid && salaryById.has(uid)) continue;
       contracts.push({ name, role, gross, contractType: String(im.contract_type || "").trim() });
       if (uid) contractIds.add(uid);
       continue;
@@ -336,37 +334,18 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (uid) importedTimesheetIds.add(uid);
   }
 
-  // Add fixed monthly part-time salary on top of any extra-hours line. Workers
-  // with a salary but no extras this month still get a salary-only payroll line.
-  // The exact split is shown in a footnote (the Role column is too narrow).
-  const salaried: { name: string; salary: number; extras: number }[] = [];
-  for (const w of workers) {
-    const sal = salaryById.get(String(w.userId || ""));
-    if (!sal) continue;
-    const extras = Number(w.gross || 0);
-    w.gross = extras + sal;
-    w.net = Number(w.net == null ? w.gross : w.net) + sal;
-    salaried.push({ name: w.name, salary: sal, extras });
-  }
-  const workerIds = new Set(workers.map((w) => String(w.userId || "")));
+  // Auto-add fixed-salary invoice staff to the contract section for this month
+  // unless a manual import row already covers them (the manual row wins).
   for (const [id, sal] of salaryById.entries()) {
-    if (workerIds.has(id) || excludedIds.has(id) || !startedByTarget(id)) continue;
-    const nm = nameById.get(id) || id;
-    workers.push({
-      userId: id,
-      name: nm,
+    if (excludedIds.has(id) || contractIds.has(id) || !startedByTarget(id)) continue;
+    contracts.push({
+      name: nameById.get(id) || id,
       role: expected.get(id) || "",
-      hours: null,
-      rate: null,
       gross: sal,
-      penalty: 0,
-      net: sal,
-      isLate: false,
+      contractType: FIXED_SALARY_CONTRACT_TYPE,
     });
-    importedTimesheetIds.add(id);
-    salaried.push({ name: nm, salary: sal, extras: 0 });
+    contractIds.add(id);
   }
-  salaried.sort((a, b) => a.name.localeCompare(b.name));
 
   // On-time submissions first, late ones after, alphabetical within each group.
   workers.sort((a, b) => (a.isLate ? 1 : 0) - (b.isLate ? 1 : 0) || a.name.localeCompare(b.name));
@@ -401,7 +380,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
 
   const contractTotal = contracts.reduce((acc, c) => acc + (c.gross || 0), 0);
 
-  return { workers, notSubmitted, totals, contracts, contractTotal, salaried };
+  return { workers, notSubmitted, totals, contracts, contractTotal };
 }
 
 function embeddedLogoBytes(): Uint8Array | null {
@@ -574,24 +553,6 @@ async function buildPdf(
   drawCell(data.totals.penalty ? `-${money(data.totals.penalty)}` : "0.00", 3, ty, 9, bold, data.totals.penalty ? warn : ink);
   drawCell(money(data.totals.net), 4, ty, 9, bold);
   y -= rowH + 10;
-
-  // Fixed-salary breakdown (gross above already includes salary + extra hours).
-  if (data.salaried && data.salaried.length) {
-    for (const s of data.salaried) {
-      ensureRoom(14);
-      const extrasTxt = s.extras > 0 ? ` + £${money(s.extras)} extra hours` : "";
-      drawText(
-        `Includes fixed monthly salary: ${s.name} — £${money(s.salary)}${extrasTxt}`,
-        margin + 2,
-        y - 4,
-        8.5,
-        font,
-        muted
-      );
-      y -= 13;
-    }
-    y -= 4;
-  }
 
   // Not submitted
   ensureRoom(40);
@@ -778,7 +739,6 @@ Deno.serve(async (req: Request) => {
       workers: data.workers,
       missing: data.notSubmitted,
       contracts: data.contracts,
-      salaried: data.salaried,
     });
   }
 
@@ -829,7 +789,6 @@ Deno.serve(async (req: Request) => {
       workers: data.workers,
       missing: data.notSubmitted,
       contracts: data.contracts,
-      salaried: data.salaried,
       filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
       pdfBase64: toBase64(pdfBytes),
     });
