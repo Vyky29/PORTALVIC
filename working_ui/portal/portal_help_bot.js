@@ -405,6 +405,11 @@
   function renderSuggestions(host, topics, onPick, surface) {
     if (!host) return;
     surface = surface || "help";
+    if (surface === "chat") {
+      host.innerHTML = "";
+      host.hidden = true;
+      return;
+    }
     var ui = surfaceUi(surface);
     host.innerHTML = "";
     if (!topics || !topics.length) {
@@ -845,6 +850,15 @@
       footHelp.addEventListener("click", function () {
         if (typeof global.openSheet === "function") {
           global.openSheet("portalHelpSheet");
+        }
+      });
+    }
+
+    var chatClose = global.document.getElementById("portalChatCloseBtn");
+    if (chatClose) {
+      chatClose.addEventListener("click", function () {
+        if (typeof global.closeSheet === "function") {
+          global.closeSheet();
         }
       });
     }

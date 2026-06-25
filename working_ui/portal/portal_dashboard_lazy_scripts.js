@@ -16,7 +16,7 @@
     "/portal/portal_guide_menu.js?v=20260614-no-menu-guide",
     "/portal/portal-openai-assist.js?v=20260625-voice-agent",
     "/portal/portal-help-voice-speak.js?v=20260625-chatbot",
-    "/portal/portal_help_bot.js?v=20260625-chatbot",
+    "/portal/portal_help_bot.js?v=20260625-chat-immersive",
     "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
     "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
   ];

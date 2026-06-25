@@ -1,4 +1,17 @@
-/* clubSENsational Chat bot — real-time AI chat sheet (staff dashboard) */
+/* clubSENsational Chat bot — immersive AI chat (no dock chrome) */
+
+body:has(#portalChatBotSheet.sheet.open) .dock-bar {
+  display: none !important;
+}
+
+body:has(#portalChatBotSheet.sheet.open) {
+  --fab-reserved-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+}
+
+#portalChatBotSheet.sheet--fullscreen.sheet--mobile-frame {
+  z-index: 140;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+}
 
 #portalChatBotSheet.sheet--fullscreen.sheet--mobile-frame .sheet-body.portal-chat-body {
   display: flex;
@@ -11,6 +24,31 @@
 #portalChatBotSheet .sheet-head {
   border-bottom: 1px solid rgba(10, 61, 98, 0.08);
   background: #fff;
+  position: relative;
+  padding-right: 44px;
+}
+
+#portalChatBotSheet .portal-chat-close {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(10, 61, 98, 0.06);
+  color: #0a3d62;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#portalChatBotSheet .portal-chat-close:focus-visible {
+  outline: 2px solid rgba(45, 132, 179, 0.45);
+  outline-offset: 2px;
 }
 
 #portalChatBotSheet .sheet-head h3 {
