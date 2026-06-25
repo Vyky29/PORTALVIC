@@ -13,6 +13,7 @@
   var agentGuide = null;
   var agentGuidePromise = null;
   var sessionStarted = false;
+  var chatSessionStarted = false;
 
   var PORTAL_HELP_INTRO_SPEAK =
     "Hello. I'm the clubSENsational Portal help chatbot. " +
@@ -21,6 +22,14 @@
   var PORTAL_HELP_INTRO_HTML =
     "<strong>clubSENsational Portal help</strong><br>" +
     "I'm your chatbot for using the portal. Type a question below or tap a topic — login, feedback, timesheets, announcements, My participants and more.";
+
+  var PORTAL_CHAT_INTRO_SPEAK =
+    "Hello. I'm the clubSENsational chat bot. " +
+    "Ask me anything about the portal — login, feedback, timesheets, your dashboard and more. I'm here to help.";
+
+  var PORTAL_CHAT_INTRO_HTML =
+    "<strong>clubSENsational Chat bot</strong><br>" +
+    "I'm your AI assistant for the portal. Type a message below — ask me anything.";
 
   var STOP_WORDS = {
     how: 1,
@@ -309,14 +318,44 @@
       .replace(/</g, "&lt;");
   }
 
-  function buildAssistBubbleHtml(res, guideData) {
+  function surfaceUi(surface) {
+    if (surface === "chat") {
+      return {
+        msg: "portal-chat-msg",
+        bubble: "portal-chat-bubble",
+        sug: "portal-chat-suggestions",
+        sugLabel: "portal-chat-suggestions__label",
+        sugRow: "portal-chat-suggestions__row",
+        chip: "portal-chat-chip",
+        listen: "portal-chat-listen-btn",
+        ill: "portal-help-illustration",
+        guideLink: "portal-help-guide-link",
+      };
+    }
+    return {
+      msg: "portal-help-msg",
+      bubble: "portal-help-bubble",
+      sug: "portal-help-suggestions",
+      sugLabel: "portal-help-suggestions__label",
+      sugRow: "portal-help-suggestions__row",
+      chip: "portal-help-chip",
+      listen: "portal-help-listen-btn",
+      ill: "portal-help-illustration",
+      guideLink: "portal-help-guide-link",
+    };
+  }
+
+  function buildAssistBubbleHtml(res, guideData, surface) {
+    var ui = surfaceUi(surface);
     var html =
-      "<strong>AI assistant</strong><br>" + formatAnswerHtml(res.text || "");
+      surface === "chat"
+        ? formatAnswerHtml(res.text || "")
+        : "<strong>AI assistant</strong><br>" + formatAnswerHtml(res.text || "");
     var ill = String(res.illustration || "").trim();
     if (ill.indexOf("/portal/") === 0) {
       var cap = illustrationCaption(guideData, ill);
       html +=
-        '<figure class="portal-help-illustration"><img src="' +
+        '<figure class="' + ui.ill + '"><img src="' +
         escapeHtml(ill) +
         '" alt="" loading="lazy" decoding="async" />';
       if (cap) {
@@ -328,49 +367,62 @@
       html += "</figure>";
     }
     html +=
-      '<p class="portal-help-guide-link"><a href="' +
+      '<p class="' + ui.guideLink + '"><a href="' +
       escapeHtml(guideUrlForSection(res.sectionId)) +
-      '" target="_blank" rel="noopener">Open guide section</a></p>';
+      '" target="_blank" rel="noopener">' +
+      (surface === "chat" ? "See guide section" : "Open guide section") +
+      "</a></p>";
     if (res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
       html +=
-        '<button type="button" class="portal-help-listen-btn" data-speak="' +
+        '<button type="button" class="' + ui.listen + '" data-speak="' +
         escapeAttr(res.speakText) +
         '">Listen</button>';
     }
     return html;
   }
 
-  function appendBubble(host, role, html) {
+  function appendBubble(host, role, html, surface) {
     if (!host) return;
+    surface = surface || "help";
+    var ui = surfaceUi(surface);
     var row = document.createElement("div");
-    row.className =
-      "portal-help-msg portal-help-msg--" + (role === "user" ? "user" : "bot");
-    row.innerHTML =
-      '<div class="portal-help-bubble">' +
-      html +
-      "</div>";
+    row.className = ui.msg + " " + ui.msg + "--" + (role === "user" ? "user" : "bot");
+    if (surface === "chat" && role === "bot") {
+      var av = document.createElement("span");
+      av.className = "portal-chat-msg__avatar";
+      av.setAttribute("aria-hidden", "true");
+      av.textContent = "CS";
+      row.appendChild(av);
+    }
+    var bubble = document.createElement("div");
+    bubble.className = ui.bubble;
+    bubble.innerHTML = html;
+    row.appendChild(bubble);
     host.appendChild(row);
     host.scrollTop = host.scrollHeight;
   }
 
-  function renderSuggestions(host, topics, onPick) {
+  function renderSuggestions(host, topics, onPick, surface) {
     if (!host) return;
+    surface = surface || "help";
+    var ui = surfaceUi(surface);
     host.innerHTML = "";
     if (!topics || !topics.length) {
       host.hidden = true;
       return;
     }
     host.hidden = false;
+    host.className = ui.sug;
     var label = document.createElement("p");
-    label.className = "portal-help-suggestions__label muted";
-    label.textContent = "Try one of these:";
+    label.className = ui.sugLabel + " muted";
+    label.textContent = surface === "chat" ? "Suggestions:" : "Try one of these:";
     host.appendChild(label);
     var row = document.createElement("div");
-    row.className = "portal-help-suggestions__row";
+    row.className = ui.sugRow;
     topics.forEach(function (topic) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "portal-help-chip";
+      btn.className = ui.chip;
       btn.textContent = topic.title;
       btn.addEventListener("click", function () {
         onPick(topic);
@@ -436,7 +488,7 @@
     }
   }
 
-  async function tryAssistAnswer(question, match, msgsHost, sugHost, data, guideData) {
+  async function tryAssistAnswer(question, match, msgsHost, sugHost, data, guideData, surface) {
     if (!global.PortalOpenAiAssist) return false;
     try {
       configureAssistOnce();
@@ -446,7 +498,8 @@
       appendBubble(
         msgsHost,
         "bot",
-        '<span class="muted">Thinking…</span>'
+        '<span class="muted">Thinking…</span>',
+        surface
       );
       var thinking = msgsHost && msgsHost.lastElementChild;
 
@@ -459,16 +512,17 @@
 
       if (!res || !res.ok || !res.text) return false;
 
-      appendBubble(msgsHost, "bot", buildAssistBubbleHtml(res, guideData));
+      appendBubble(msgsHost, "bot", buildAssistBubbleHtml(res, guideData, surface), surface);
       renderSuggestions(
         sugHost,
         match.suggestions && match.suggestions.length
           ? match.suggestions
           : starterTopics(data),
         function (topic) {
-          appendBubble(msgsHost, "user", escapeHtml(topic.title));
-          answerTopic(topic, msgsHost, sugHost);
-        }
+          appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+          answerTopic(topic, msgsHost, sugHost, surface);
+        },
+        surface
       );
       return true;
     } catch (_err) {
@@ -499,39 +553,79 @@
     } catch (_) {}
   }
 
-  function answerTopic(topic, msgsHost, sugHost) {
+  function answerTopic(topic, msgsHost, sugHost, surface) {
+    surface = surface || "help";
+    var ui = surfaceUi(surface);
     appendBubble(
       msgsHost,
       "bot",
-      "<strong>" +
-        escapeHtml(topic.title) +
-        "</strong><br>" +
+      (surface === "chat" ? "" : "<strong>" + escapeHtml(topic.title) + "</strong><br>") +
         formatAnswerHtml(topic.answer) +
-        '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
+        (surface === "chat"
+          ? '<p class="' + ui.guideLink + '"><a href="portal_help_guide.html" target="_blank" rel="noopener">More in guide</a></p>'
+          : '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'),
+      surface
     );
-    renderSuggestions(sugHost, [], function () {});
+    renderSuggestions(sugHost, [], function () {}, surface);
   }
 
-  async function handleQuestion(raw, msgsHost, sugHost, data, guideData, ui) {
+  async function handleQuestion(raw, msgsHost, sugHost, data, guideData, ui, opts) {
+    opts = opts || {};
+    var surface = opts.surface || "help";
+    var aiFirst = !!opts.aiFirst;
     var q = String(raw || "").trim();
     if (!q) return;
     if (ui && ui.sendBtn) ui.sendBtn.disabled = true;
     if (ui && ui.input) ui.input.disabled = true;
     try {
-      appendBubble(msgsHost, "user", escapeHtml(q));
+      appendBubble(msgsHost, "user", escapeHtml(q), surface);
       var match = portalHelpMatchQuestion(q, data);
+
+      if (aiFirst) {
+        var assistedFirst = await tryAssistAnswer(q, match, msgsHost, sugHost, data, guideData, surface);
+        if (assistedFirst) return;
+        if (match.ok && match.topic) {
+          answerTopic(match.topic, msgsHost, sugHost, surface);
+          if (match.suggestions && match.suggestions.length) {
+            renderSuggestions(sugHost, match.suggestions, function (topic) {
+              appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+              answerTopic(topic, msgsHost, sugHost, surface);
+            }, surface);
+          }
+          return;
+        }
+        appendBubble(
+          msgsHost,
+          "bot",
+          "I'm not sure yet — try rephrasing, or open " +
+            '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a> for illustrated topics.',
+          surface
+        );
+        await logUnanswered(q, match);
+        renderSuggestions(
+          sugHost,
+          match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data),
+          function (topic) {
+            appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+            answerTopic(topic, msgsHost, sugHost, surface);
+          },
+          surface
+        );
+        return;
+      }
+
       if (match.ok && match.topic) {
-        answerTopic(match.topic, msgsHost, sugHost);
+        answerTopic(match.topic, msgsHost, sugHost, surface);
         if (match.suggestions && match.suggestions.length) {
           renderSuggestions(sugHost, match.suggestions, function (topic) {
-            appendBubble(msgsHost, "user", escapeHtml(topic.title));
-            answerTopic(topic, msgsHost, sugHost);
-          });
+            appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+            answerTopic(topic, msgsHost, sugHost, surface);
+          }, surface);
         }
         return;
       }
 
-      var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data, guideData);
+      var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data, guideData, surface);
       if (assisted) {
         await logUnanswered(q, match);
         return;
@@ -542,19 +636,21 @@
         "bot",
         "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
           '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>. ' +
-          "Your question was saved so we can improve answers."
+          "Your question was saved so we can improve answers.",
+        surface
       );
       await logUnanswered(q, match);
       renderSuggestions(sugHost, match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data), function (topic) {
-        appendBubble(msgsHost, "user", escapeHtml(topic.title));
-        answerTopic(topic, msgsHost, sugHost);
-      });
+        appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+        answerTopic(topic, msgsHost, sugHost, surface);
+      }, surface);
     } catch (_err) {
       appendBubble(
         msgsHost,
         "bot",
         "Something went wrong — try again or open the " +
-          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>.'
+          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>.',
+        surface
       );
     } finally {
       if (ui && ui.sendBtn) ui.sendBtn.disabled = false;
@@ -567,7 +663,7 @@
     }
   }
 
-  function portalHelpSpeakIntro() {
+  function speakIntro(text) {
     if (global.PortalHelpVoiceSpeak) {
       configureAssistOnce();
       try {
@@ -575,82 +671,36 @@
           global.PortalHelpVoiceSpeak.unlock();
         }
       } catch (_u) {}
-      void global.PortalHelpVoiceSpeak.speak(PORTAL_HELP_INTRO_SPEAK);
+      void global.PortalHelpVoiceSpeak.speak(text);
       return;
     }
     if (!global.speechSynthesis) return;
     try {
       global.speechSynthesis.cancel();
     } catch (_c) {}
-    var utt = new global.SpeechSynthesisUtterance(PORTAL_HELP_INTRO_SPEAK);
+    var utt = new global.SpeechSynthesisUtterance(text);
     utt.lang = "en-GB";
     try {
       global.speechSynthesis.speak(utt);
     } catch (_s) {}
   }
 
-  function resetHelpSession(msgsHost, sugHost, data) {
+  function resetSession(msgsHost, sugHost, data, introHtml, surface) {
     if (!msgsHost) return;
     msgsHost.innerHTML = "";
-    appendBubble(msgsHost, "bot", PORTAL_HELP_INTRO_HTML);
+    appendBubble(msgsHost, "bot", introHtml, surface);
     renderSuggestions(sugHost, starterTopics(data), function (topic) {
-      appendBubble(msgsHost, "user", escapeHtml(topic.title));
-      answerTopic(topic, msgsHost, sugHost);
-    });
+      appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
+      answerTopic(topic, msgsHost, sugHost, surface);
+    }, surface);
   }
 
-  global.portalHelpBotOnOpen = async function portalHelpBotOnOpen() {
-    var sheet = global.document && global.document.getElementById("portalHelpSheet");
-    var msgsHost = global.document && global.document.getElementById("portalHelpMessages");
-    var sugHost = global.document && global.document.getElementById("portalHelpSuggestions");
-    var input = global.document && global.document.getElementById("portalHelpInput");
-    if (!sheet || !msgsHost) return;
-
-    var data = await loadHelpSources();
-    var fresh = !sessionStarted || !msgsHost.children.length;
-    if (fresh) {
-      resetHelpSession(msgsHost, sugHost, data.knowledge);
-      sessionStarted = true;
-    }
-    if (input) {
-      try {
-        input.focus();
-      } catch (_) {}
-    }
-    portalHelpSpeakIntro();
-  };
-
-  function bindHelpBot() {
-    var sheet = global.document && global.document.getElementById("portalHelpSheet");
-    var sendBtn = global.document && global.document.getElementById("portalHelpSendBtn");
-    var input = global.document && global.document.getElementById("portalHelpInput");
-    var msgsHost = global.document && global.document.getElementById("portalHelpMessages");
-    var sugHost = global.document && global.document.getElementById("portalHelpSuggestions");
-
-    if (!sheet || !sendBtn || !input || !msgsHost) return;
-
-    if (global.MutationObserver) {
-      var obs = new global.MutationObserver(function () {
-        if (sheet.classList.contains("open")) {
-          void global.portalHelpBotOnOpen();
-        }
-      });
-      obs.observe(sheet, { attributes: true, attributeFilter: ["class"] });
-    }
-
-    sendBtn.addEventListener("click", function () {
-      void loadHelpSources().then(function (sources) {
-        var q = input.value;
-        input.value = "";
-        void handleQuestion(q, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
-          sendBtn: sendBtn,
-          input: input,
-        });
-      });
-    });
-
+  function bindListenClicks(msgsHost) {
     msgsHost.addEventListener("click", function (ev) {
-      var btn = ev.target && ev.target.closest ? ev.target.closest(".portal-help-listen-btn") : null;
+      var btn =
+        ev.target && ev.target.closest
+          ? ev.target.closest(".portal-help-listen-btn, .portal-chat-listen-btn")
+          : null;
       if (!btn) return;
       var text = btn.getAttribute("data-speak") || "";
       if (!text) return;
@@ -677,6 +727,59 @@
         done();
       }
     });
+  }
+
+  function bindBotSurface(cfg) {
+    var sheet = global.document && global.document.getElementById(cfg.sheetId);
+    var sendBtn = global.document && global.document.getElementById(cfg.sendBtnId);
+    var input = global.document && global.document.getElementById(cfg.inputId);
+    var msgsHost = global.document && global.document.getElementById(cfg.msgsId);
+    var sugHost = global.document && global.document.getElementById(cfg.sugId);
+    if (!sheet || !sendBtn || !input || !msgsHost) return;
+
+    bindListenClicks(msgsHost);
+
+    async function onOpen() {
+      var data = await loadHelpSources();
+      var fresh =
+        cfg.surface === "chat"
+          ? !chatSessionStarted || !msgsHost.children.length
+          : !sessionStarted || !msgsHost.children.length;
+      if (fresh) {
+        resetSession(msgsHost, sugHost, data.knowledge, cfg.introHtml, cfg.surface);
+        if (cfg.surface === "chat") chatSessionStarted = true;
+        else sessionStarted = true;
+      }
+      if (input) {
+        try {
+          input.focus();
+        } catch (_) {}
+      }
+      if (cfg.speakOnOpen) speakIntro(cfg.introSpeak);
+    }
+
+    if (global.MutationObserver) {
+      var obs = new global.MutationObserver(function () {
+        if (sheet.classList.contains("open")) {
+          void onOpen();
+        }
+      });
+      obs.observe(sheet, { attributes: true, attributeFilter: ["class"] });
+    }
+
+    sendBtn.addEventListener("click", function () {
+      void loadHelpSources().then(function (sources) {
+        var q = input.value;
+        input.value = "";
+        void handleQuestion(q, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
+          sendBtn: sendBtn,
+          input: input,
+        }, {
+          surface: cfg.surface,
+          aiFirst: !!cfg.aiFirst,
+        });
+      });
+    });
 
     input.addEventListener("keydown", function (ev) {
       if (ev.key === "Enter" && !ev.shiftKey) {
@@ -684,6 +787,67 @@
         sendBtn.click();
       }
     });
+
+    if (cfg.onOpenHook) cfg.onOpenHook(onOpen);
+  }
+
+  global.portalOpenChatBot = function portalOpenChatBot() {
+    try {
+      if (global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.unlock) {
+        global.PortalHelpVoiceSpeak.unlock();
+      }
+    } catch (_u) {}
+    if (typeof global.openSheet === "function") {
+      global.openSheet("portalChatBotSheet");
+    }
+  };
+
+  global.portalHelpBotOnOpen = async function portalHelpBotOnOpen() {
+    var sheet = global.document && global.document.getElementById("portalHelpSheet");
+    var msgsHost = global.document && global.document.getElementById("portalHelpMessages");
+    if (!sheet || !msgsHost || !sheet.classList.contains("open")) return;
+    var data = await loadHelpSources();
+    var sugHost = global.document && global.document.getElementById("portalHelpSuggestions");
+    if (!sessionStarted || !msgsHost.children.length) {
+      resetSession(msgsHost, sugHost, data.knowledge, PORTAL_HELP_INTRO_HTML, "help");
+      sessionStarted = true;
+    }
+  };
+
+  function bindHelpBot() {
+    bindBotSurface({
+      sheetId: "portalHelpSheet",
+      msgsId: "portalHelpMessages",
+      sugId: "portalHelpSuggestions",
+      inputId: "portalHelpInput",
+      sendBtnId: "portalHelpSendBtn",
+      surface: "help",
+      aiFirst: false,
+      speakOnOpen: false,
+      introHtml: PORTAL_HELP_INTRO_HTML,
+      introSpeak: PORTAL_HELP_INTRO_SPEAK,
+    });
+    bindBotSurface({
+      sheetId: "portalChatBotSheet",
+      msgsId: "portalChatMessages",
+      sugId: "portalChatSuggestions",
+      inputId: "portalChatInput",
+      sendBtnId: "portalChatSendBtn",
+      surface: "chat",
+      aiFirst: true,
+      speakOnOpen: true,
+      introHtml: PORTAL_CHAT_INTRO_HTML,
+      introSpeak: PORTAL_CHAT_INTRO_SPEAK,
+    });
+
+    var footHelp = global.document.getElementById("portalChatFootHelp");
+    if (footHelp) {
+      footHelp.addEventListener("click", function () {
+        if (typeof global.openSheet === "function") {
+          global.openSheet("portalHelpSheet");
+        }
+      });
+    }
   }
 
   if (global.document) {

@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260622-sandra-visual-vic"></script>
-  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260625-voice-unlock"></script>
+  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260625-chatbot"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
@@ -105,6 +105,7 @@
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260625-voice-agent" />
+  <link rel="stylesheet" href="/portal/portal_chat_bot.css?v=20260625-chatbot" />
 </head>
 <body class="staff-dashboard">
   <script>
@@ -272,7 +273,7 @@
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
             </h1>
             <button type="button" class="portal-help-namebtn" id="portalHelpNameBtn" aria-label="Open the clubSENsational chat bot"
-              onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} if(typeof window.openSheet==='function'){window.openSheet('portalHelpSheet');}else{var b=document.getElementById('quickMenuPortalHelp');if(b)b.click();}})();return false;">
+              onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} if(typeof window.portalOpenChatBot==='function'){window.portalOpenChatBot();}else if(typeof window.openSheet==='function'){window.openSheet('portalChatBotSheet');}})();return false;">
               <span class="portal-help-namebtn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
               <span class="portal-help-namebtn__label">Chat bot</span>
             </button>
@@ -847,6 +848,24 @@
     <div class="sheet-body" id="announcementsSheetBody">
       <div id="announcementPendingHost"></div>
       <div id="announcementHistoryHost"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--portal-chat" id="portalChatBotSheet" aria-labelledby="portalChatBotTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="portalChatBotTitle">Chat bot</h3>
+      <p>Ask me anything about the portal — login, feedback, timesheets, your dashboard and more.</p>
+    </div>
+    <div class="sheet-body portal-chat-body" style="min-width:0">
+      <div id="portalChatMessages" class="portal-chat-msgs" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div id="portalChatSuggestions" class="portal-chat-suggestions" hidden></div>
+      <div class="portal-chat-compose">
+        <label class="topbar-sr-only" for="portalChatInput">Your message</label>
+        <textarea id="portalChatInput" name="portalChatMessage" class="txa" rows="2" maxlength="500" placeholder="Type a message…" enterkeyhint="send"></textarea>
+        <button type="button" class="portal-chat-send" id="portalChatSendBtn">Send</button>
+      </div>
+      <p class="portal-chat-foot muted">Need illustrated topics? <button type="button" class="portal-chat-foot-link" id="portalChatFootHelp">Portal help</button> or <a href="portal_help_guide.html">Staff help guide</a></p>
     </div>
   </section>
 

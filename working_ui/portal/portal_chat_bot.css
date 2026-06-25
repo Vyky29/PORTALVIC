@@ -1,0 +1,224 @@
+/* clubSENsational Chat bot — real-time AI chat sheet (staff dashboard) */
+
+#portalChatBotSheet.sheet--fullscreen.sheet--mobile-frame .sheet-body.portal-chat-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  background: linear-gradient(180deg, #f4f8fc 0%, #eef3f8 100%);
+}
+
+#portalChatBotSheet .sheet-head {
+  border-bottom: 1px solid rgba(10, 61, 98, 0.08);
+  background: #fff;
+}
+
+#portalChatBotSheet .sheet-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#portalChatBotSheet .sheet-head h3::before {
+  content: "CS";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #2d84b3, #0a3d62);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  flex: none;
+}
+
+#portalChatBotSheet .portal-chat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+#portalChatBotSheet .portal-chat-msgs {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 4px 12px;
+}
+
+#portalChatBotSheet .portal-chat-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+#portalChatBotSheet .portal-chat-msg--user {
+  justify-content: flex-end;
+}
+
+#portalChatBotSheet .portal-chat-msg--bot {
+  justify-content: flex-start;
+}
+
+#portalChatBotSheet .portal-chat-msg__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #2d84b3, #0a3d62);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+#portalChatBotSheet .portal-chat-bubble {
+  max-width: min(88%, 400px);
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+#portalChatBotSheet .portal-chat-msg--user .portal-chat-bubble {
+  background: #0a3d62;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+#portalChatBotSheet .portal-chat-msg--bot .portal-chat-bubble {
+  background: #fff;
+  border: 1px solid rgba(10, 61, 98, 0.1);
+  color: #173247;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 4px 14px rgba(10, 61, 98, 0.06);
+}
+
+#portalChatBotSheet .portal-chat-bubble strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+#portalChatBotSheet .portal-chat-listen-btn {
+  margin-top: 8px;
+  border: 1px solid rgba(45, 132, 179, 0.35);
+  background: #eef6fc;
+  color: #0a3d62;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#portalChatBotSheet .portal-chat-suggestions {
+  min-width: 0;
+  padding: 0 2px;
+}
+
+#portalChatBotSheet .portal-chat-suggestions[hidden] {
+  display: none !important;
+}
+
+#portalChatBotSheet .portal-chat-suggestions__label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+#portalChatBotSheet .portal-chat-suggestions__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+#portalChatBotSheet .portal-chat-chip {
+  border: 1px solid rgba(45, 132, 179, 0.28);
+  background: #fff;
+  color: #0a3d62;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  text-align: left;
+}
+
+#portalChatBotSheet .portal-chat-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border-top: 1px solid rgba(10, 61, 98, 0.1);
+  padding: 10px 4px 4px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  min-width: 0;
+}
+
+#portalChatBotSheet .portal-chat-compose .txa {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  max-height: 100px;
+  resize: none;
+  border-radius: 12px;
+}
+
+#portalChatBotSheet .portal-chat-send {
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 800;
+  font-size: 14px;
+  background: linear-gradient(180deg, #2d84b3, #0a3d62);
+  color: #fff;
+  cursor: pointer;
+}
+
+#portalChatBotSheet .portal-chat-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#portalChatBotSheet .portal-chat-foot {
+  margin: 0;
+  padding: 0 4px 4px;
+  font-size: 11px;
+  text-align: center;
+  color: #64748b;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#portalChatBotSheet .portal-chat-foot a,
+#portalChatBotSheet .portal-chat-foot button.portal-chat-foot-link {
+  font-weight: 700;
+  color: #2d84b3;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
