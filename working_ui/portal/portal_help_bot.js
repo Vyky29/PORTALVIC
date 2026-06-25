@@ -806,12 +806,31 @@
       var text = btn.getAttribute("data-speak") || "";
       if (!text) return;
       btn.disabled = true;
+      var isChat = !!btn.closest(".portal-chat-msg");
       var done = function () {
         btn.disabled = false;
       };
       if (global.PortalHelpVoiceSpeak) {
         configureAssistOnce();
-        void global.PortalHelpVoiceSpeak.speak(text).then(done).catch(done);
+        void global.PortalHelpVoiceSpeak.speak(text)
+          .then(function (r) {
+            done();
+            if (activeVoiceStatus) {
+              if (r && r.ok) {
+                activeVoiceStatus.textContent =
+                  r.source === "elevenlabs" ? "Speaking (ElevenLabs)." : "Speaking (device voice).";
+              } else {
+                activeVoiceStatus.textContent =
+                  "Voice failed: " + ((r && r.error) || "unknown") + ".";
+              }
+            }
+          })
+          .catch(function (e) {
+            done();
+            if (activeVoiceStatus) {
+              activeVoiceStatus.textContent = "Voice error: " + String((e && e.message) || e || "unknown");
+            }
+          });
         return;
       }
       if (!global.speechSynthesis) return;
@@ -850,15 +869,22 @@
     return "";
   }
 
+  var MAX_RECORD_MS = 12000;
+
   function bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status) {
     activeVoiceStatus = status;
     var isRecording = false;
     var mediaRecorder = null;
     var chunks = [];
     var mediaStream = null;
+    var autoStopTimer = null;
 
     function setStatus(text) {
       if (status) status.textContent = text;
+    }
+
+    function diag(text) {
+      appendBubble(msgsHost, "bot", escapeHtml(text), "chat");
     }
 
     function setRecording(on) {
@@ -866,6 +892,15 @@
       micBtn.classList.toggle("is-listening", isRecording);
       var label = micBtn.querySelector(".portal-chat-mic__label");
       if (label) label.textContent = isRecording ? "Tap to send" : "Tap to talk";
+    }
+
+    function clearAutoStop() {
+      if (autoStopTimer) {
+        try {
+          global.clearTimeout(autoStopTimer);
+        } catch (_c) {}
+        autoStopTimer = null;
+      }
     }
 
     function stopStream() {
@@ -893,6 +928,7 @@
     }
 
     async function onRecordingStop() {
+      clearAutoStop();
       setRecording(false);
       stopStream();
       var type = (mediaRecorder && mediaRecorder.mimeType) || "audio/webm";
@@ -900,41 +936,53 @@
       chunks = [];
       mediaRecorder = null;
       if (!blob || !blob.size) {
-        setStatus("I did not catch that. Tap the microphone and try again.");
+        diag("I did not record any audio. Make sure the microphone is allowed, then tap and speak.");
+        setStatus("No audio recorded. Tap the microphone and try again.");
         return;
       }
       setStatus("Transcribing...");
       micBtn.disabled = true;
       try {
         configureAssistOnce();
-        var tr =
-          global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.transcribe
-            ? await global.PortalHelpVoiceSpeak.transcribe(blob)
-            : { ok: false, error: "no_transcribe" };
-        if (!tr || !tr.ok || !tr.text) {
+        if (!(global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.transcribe)) {
           micBtn.disabled = false;
-          setStatus("I could not understand the audio. Tap the microphone and try again.");
+          diag("Voice transcription is not loaded yet. Please reload the page and try again.");
+          setStatus("Transcription unavailable.");
+          return;
+        }
+        var tr = await global.PortalHelpVoiceSpeak.transcribe(blob);
+        if (!tr || !tr.ok) {
+          micBtn.disabled = false;
+          diag("I could not transcribe the audio (" + ((tr && tr.error) || "unknown") + "). Tap and try again.");
+          setStatus("Transcription failed. Tap the microphone and try again.");
+          return;
+        }
+        if (!tr.text) {
+          micBtn.disabled = false;
+          diag("I heard silence. Speak a little louder after tapping, then tap again to send.");
+          setStatus("No speech detected. Tap the microphone and try again.");
           return;
         }
         await askWithText(tr.text);
-      } catch (_e) {
+      } catch (err) {
         micBtn.disabled = false;
-        setStatus("Something went wrong. Tap the microphone and try again.");
+        diag("Something went wrong transcribing your voice. Tap and try again.");
+        setStatus("Error: " + String((err && err.message) || err || "unknown"));
       }
     }
 
     async function startRecording() {
       if (!canRecordAudio()) {
-        var msg = "Microphone recording is not available on this browser. Please open the portal in Safari or Chrome and allow microphone access.";
-        appendBubble(msgsHost, "bot", escapeHtml(msg), "chat");
-        speakText(msg);
+        diag("This browser cannot record audio. Open the portal in Safari or Chrome (not inside another app) and allow microphone access.");
         setStatus("Microphone not available on this browser.");
         return;
       }
       try {
         mediaStream = await global.navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (_perm) {
-        setStatus("Microphone permission was blocked. Allow it in your browser settings and try again.");
+      } catch (perm) {
+        var name = (perm && (perm.name || perm.message)) || "blocked";
+        diag("Microphone access was not granted (" + name + "). Allow microphone for this site in your browser settings, then tap again.");
+        setStatus("Microphone blocked (" + name + ").");
         return;
       }
       var mime = pickRecorderMime();
@@ -944,7 +992,8 @@
           : new global.MediaRecorder(mediaStream);
       } catch (_mr) {
         stopStream();
-        setStatus("Recording could not start on this browser.");
+        diag("Recording could not start on this browser.");
+        setStatus("Recording unavailable.");
         return;
       }
       chunks = [];
@@ -957,10 +1006,19 @@
       try {
         mediaRecorder.start();
         setRecording(true);
-        setStatus("Listening... tap again to send.");
+        setStatus("Listening... tap again to send (auto-sends after a few seconds).");
+        clearAutoStop();
+        autoStopTimer = global.setTimeout(function () {
+          if (isRecording && mediaRecorder) {
+            try {
+              mediaRecorder.stop();
+            } catch (_a) {}
+          }
+        }, MAX_RECORD_MS);
       } catch (_start) {
         stopStream();
-        setStatus("Recording could not start. Tap to try again.");
+        diag("Recording could not start. Tap to try again.");
+        setStatus("Recording could not start.");
       }
     }
 
