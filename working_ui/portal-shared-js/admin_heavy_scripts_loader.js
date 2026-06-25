@@ -6,7 +6,7 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260609-feedback-real",
+      "/portal/term_from_timetable.js?v=20260625-youssef-validated",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-live",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback",
