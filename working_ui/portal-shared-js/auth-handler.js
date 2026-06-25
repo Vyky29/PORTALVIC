@@ -611,7 +611,12 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) setPortalStaffContext(profile, session.user.id);
 
-    if (profile) {
+    /* CEO/admin accounts re-login often across portals; exempt them from single-session auto-logout
+       (meant for field workers sharing devices) so their open tabs are not kicked. */
+    const singleSessionExempt =
+      !!profile && ["ceo", "admin"].includes(String(profile.app_role || "").trim().toLowerCase());
+
+    if (profile && !singleSessionExempt) {
       const gen = Number(profile.auth_session_generation) || 0;
       const cached = portalGetCachedAuthSessionGeneration();
       if (cached != null && gen > cached) {
@@ -624,6 +629,8 @@ export async function bootstrapDashboardSupabase(_opts) {
         return;
       }
       portalSetCachedAuthSessionGeneration(gen);
+    } else if (profile) {
+      portalSetCachedAuthSessionGeneration(Number(profile.auth_session_generation) || 0);
     }
 
     if (typeof window !== "undefined" && profile && page === "lead") {
@@ -651,7 +658,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         /* ignore */
       }
     }
-    if (typeof window !== "undefined" && session?.user?.id) {
+    if (typeof window !== "undefined" && session?.user?.id && !singleSessionExempt) {
       window.__PORTAL_AUTH_GEN_DISPOSE__ = bindPortalRemoteLogoutOnStaleAuthGeneration(
         supabase,
         session.user.id,

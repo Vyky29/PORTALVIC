@@ -1517,9 +1517,15 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) setPortalStaffContext(profile, session.user.id);
 
+    /* CEO/admin accounts (Victor, Raul, Javi, Sevitha) hop between admin/staff/ceo portals and
+       re-login often, so their auth_session_generation churns. Single-session auto-logout is meant
+       for field workers who share devices — exempt exec/admin so their open tabs are not kicked. */
+    const singleSessionExempt =
+      !!profile && ["ceo", "admin"].includes(String(profile.app_role || "").trim().toLowerCase());
+
     if (profile) {
       const gen = Number(profile.auth_session_generation) || 0;
-      if (isGhostDashboard || isGodModeAdmin) {
+      if (isGhostDashboard || isGodModeAdmin || singleSessionExempt) {
         // Fresh tab can hold a stale generation cache; sync to server before single-session kick.
         portalClearCachedAuthSessionGeneration();
         portalSetCachedAuthSessionGeneration(gen);
@@ -1566,6 +1572,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       typeof window !== "undefined" &&
       session?.user?.id &&
       !isGhostDashboard &&
+      !singleSessionExempt &&
       page !== "onboarding"
     ) {
       window.__PORTAL_AUTH_GEN_DISPOSE__ = bindPortalRemoteLogoutOnStaleAuthGeneration(
