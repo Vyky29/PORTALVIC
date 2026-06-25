@@ -5,8 +5,8 @@
 (function (global) {
   "use strict";
 
-  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260614-no-menu-guide";
-  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-voice-agent";
+  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260625-help-guide-v2";
+  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v2";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;
@@ -289,7 +289,7 @@
   }
 
   function guideUrlForSection(sectionId) {
-    var base = "portal_guide.html";
+    var base = "portal_help_guide.html";
     var id = String(sectionId || "").trim();
     return id ? base + "#" + encodeURIComponent(id) : base;
   }
@@ -323,7 +323,7 @@
       '<p class="portal-help-guide-link"><a href="' +
       escapeHtml(guideUrlForSection(res.sectionId)) +
       '" target="_blank" rel="noopener">Open guide section</a></p>';
-    if (res.speakText && global.speechSynthesis) {
+    if (res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
       html +=
         '<button type="button" class="portal-help-listen-btn" data-speak="' +
         escapeAttr(res.speakText) +
@@ -409,7 +409,7 @@
   function configureAssistOnce() {
     if (global.__portalOpenAiAssistConfigured || !global.PortalOpenAiAssist) return;
     global.__portalOpenAiAssistConfigured = true;
-    global.PortalOpenAiAssist.configure({
+    var assistCfg = {
       getClient: function () {
         var box = global.__PORTAL_SUPABASE__;
         return box && box.client ? box.client : null;
@@ -421,7 +421,11 @@
       getAnonKey: function () {
         return typeof global.SUPABASE_ANON_KEY === "string" ? global.SUPABASE_ANON_KEY : "";
       },
-    });
+    };
+    global.PortalOpenAiAssist.configure(assistCfg);
+    if (global.PortalHelpVoiceSpeak) {
+      global.PortalHelpVoiceSpeak.configure(assistCfg);
+    }
   }
 
   async function tryAssistAnswer(question, match, msgsHost, sugHost, data, guideData) {
@@ -495,7 +499,7 @@
         escapeHtml(topic.title) +
         "</strong><br>" +
         formatAnswerHtml(topic.answer) +
-        '<p class="portal-help-guide-link"><a href="portal_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
+        '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
     );
     renderSuggestions(sugHost, [], function () {});
   }
@@ -529,7 +533,7 @@
         msgsHost,
         "bot",
         "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
-          '<a href="portal_guide.html" target="_blank" rel="noopener">full Portal guide</a>. ' +
+          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>. ' +
           "Your question was saved so we can improve answers."
       );
       await logUnanswered(q, match);
@@ -542,7 +546,7 @@
         msgsHost,
         "bot",
         "Something went wrong — try again or open the " +
-          '<a href="portal_guide.html" target="_blank" rel="noopener">Portal guide</a>.'
+          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>.'
       );
     } finally {
       if (ui && ui.sendBtn) ui.sendBtn.disabled = false;
@@ -619,17 +623,31 @@
 
     msgsHost.addEventListener("click", function (ev) {
       var btn = ev.target && ev.target.closest ? ev.target.closest(".portal-help-listen-btn") : null;
-      if (!btn || !global.speechSynthesis) return;
+      if (!btn) return;
       var text = btn.getAttribute("data-speak") || "";
       if (!text) return;
+      btn.disabled = true;
+      var done = function () {
+        btn.disabled = false;
+      };
+      if (global.PortalHelpVoiceSpeak) {
+        configureAssistOnce();
+        void global.PortalHelpVoiceSpeak.speak(text).then(done).catch(done);
+        return;
+      }
+      if (!global.speechSynthesis) return;
       try {
         global.speechSynthesis.cancel();
       } catch (_c) {}
       var utt = new global.SpeechSynthesisUtterance(text);
       utt.lang = /[áéíóúñ¿¡]/i.test(text) ? "es-ES" : "en-GB";
+      utt.onend = done;
+      utt.onerror = done;
       try {
         global.speechSynthesis.speak(utt);
-      } catch (_s) {}
+      } catch (_s) {
+        done();
+      }
     });
 
     input.addEventListener("keydown", function (ev) {

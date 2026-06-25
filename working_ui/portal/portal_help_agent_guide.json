@@ -1,6 +1,6 @@
 {
-  "version": "2026-06-voice-agent",
-  "description": "Agent knowledge for Portal help — Q&A only. Staff guide content + screenshots; not a step-by-step tour UI.",
+  "version": "2026-06-help-guide-v2",
+  "description": "Single source of truth for Portal help AI and portal_help_guide.html. Update text and illustrations here when the dashboard changes.",
   "sections": [
     {
       "id": "getting-started",
@@ -58,7 +58,7 @@
       "id": "feedback",
       "title": "Sessions and feedback",
       "keywords": ["feedback", "outstanding", "orange card", "submit", "session card", "voice feedback", "comentarios"],
-      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nComplete engagement, regulation, independence and notes, then submit.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nDay Centre and Bespoke shared sessions: one feedback can cover the whole team when co-instructors share a slot.\n\nMicrophone in Settings is optional for voice feedback or voice typing.",
+      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nComplete engagement, regulation, independence and notes, then submit.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nWho needs their own feedback:\n• Day Centre and shared Bespoke (e.g. Ikram, Emmanuel, Fadi, Timi with co-instructors): if a colleague already submitted for that client during the shared block, your card can show green — you do not need a second report.\n• Multi-Activity, Aquatic/Teaching pool and Climbing: each instructor submits their own feedback for their slot (often 45 minutes). A colleague's submission does not complete yours — e.g. afternoon MA at Acton when you and another staff split the hour.\n• Linked services (e.g. Aquatic then Multi-Activity): each worker who ran their part of the session submits for their time only.\n\nMicrophone in Settings is optional for voice feedback or voice typing.",
       "illustrations": [
         { "src": "/portal/guide-shots/teflon/session-card-to-feedback.png", "caption": "Opening feedback from the session card pre-fills details." }
       ]
@@ -160,7 +160,7 @@
       "id": "portal-help",
       "title": "Using Portal help",
       "keywords": ["portal help", "help bot", "ai", "voice", "ask", "ayuda", "pregunta"],
-      "content": "Portal help answers questions about using the portal — login, feedback, timesheets, announcements and more.\n\nType a question or use the microphone. When AI is enabled, answers can be spoken (tap Listen) and may include a screenshot from the staff guide.\n\nThis is Q&A only — not a guided tour. For the full walkthrough page, open Portal guide from Settings.",
+      "content": "On your dashboard, open Portal help (help sheet) and type a question about login, feedback, timesheets, announcements and more.\n\nWhen AI is enabled, answers can include a screenshot from this guide and a Listen button (browser voice).\n\nFor the full illustrated guide (same content the AI uses), open Staff help guide from the link under each answer, or bookmark portal_help_guide.html.",
       "illustrations": []
     }
   ]

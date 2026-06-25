@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260625-help-guide"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Staff help guide</title>
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <style>
+    :root{
+      --navy:#0a3d62;
+      --blue:#2d84b3;
+      --gold:#f4b740;
+      --border:#d9e4ef;
+      --text:#1d2b3a;
+      --muted:#5f7185;
+      --bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      padding:16px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:720px;margin:0 auto;min-width:0}
+    h1{margin:0 0 6px;font-size:clamp(22px,4vw,30px);color:var(--navy);letter-spacing:-.02em}
+    .sub{margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.5}
+    .nav{
+      display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding:0;list-style:none
+    }
+    .nav a{
+      display:inline-block;padding:8px 12px;border-radius:999px;
+      border:1px solid var(--border);background:#fff;color:var(--navy);
+      font-size:13px;font-weight:600;text-decoration:none;max-width:100%;
+      overflow-wrap:break-word
+    }
+    .card{
+      border:1px solid var(--border);border-radius:18px;background:#fff;
+      padding:16px;margin:0 0 14px;box-shadow:0 12px 32px rgba(10,61,98,.08);
+      min-width:0;scroll-margin-top:12px
+    }
+    .card h2{margin:0 0 10px;font-size:18px;color:var(--navy);overflow-wrap:break-word}
+    .card p,.card li{line-height:1.55;font-size:15px;overflow-wrap:break-word}
+    .card p{color:var(--muted);margin:0 0 10px;white-space:pre-wrap}
+    figure{margin:12px 0 0}
+    figure img{
+      display:block;width:100%;max-width:390px;margin:0 auto;border-radius:14px;
+      border:1px solid var(--border);background:#f8fafc
+    }
+    figcaption{margin-top:6px;font-size:13px;color:var(--muted);text-align:center}
+    .banner{
+      border:1px solid rgba(244,183,64,.55);background:#fff9eb;border-radius:14px;
+      padding:12px 14px;margin:0 0 16px;font-size:14px;line-height:1.5
+    }
+    .banner a{color:var(--blue);font-weight:600}
+    .foot{margin:18px 0 8px;font-size:13px;color:var(--muted);text-align:center}
+    .loading{padding:24px;text-align:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Staff help guide</h1>
+    <p class="sub" id="guideMeta">Illustrated topics for CS Portal — same content Portal help AI uses. Ask a question on your dashboard if you are stuck.</p>
+    <div class="banner">
+      <strong>Updated guide.</strong> This replaces the old long <a href="portal_guide.html">Portal guide</a> page.
+      Office updates text and screenshots in one place so help answers stay accurate.
+    </div>
+    <ul class="nav" id="guideNav" hidden></ul>
+    <div id="guideRoot"><p class="loading">Loading guide…</p></div>
+    <p class="foot">Tip: on the dashboard, open <strong>Portal help</strong> and type your question — answers can include these screenshots.</p>
+  </div>
+  <script>
+(function () {
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v2";
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderIllustrations(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    return list.map(function (ill) {
+      var src = String(ill && ill.src || "").trim();
+      if (!src) return "";
+      var cap = String(ill && ill.caption || "").trim();
+      return (
+        "<figure>" +
+        '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" />' +
+        (cap ? "<figcaption>" + esc(cap) + "</figcaption>" : "") +
+        "</figure>"
+      );
+    }).join("");
+  }
+
+  function renderSection(s) {
+    var id = String(s.id || "").trim();
+    var paras = String(s.content || "").trim();
+    return (
+      '<article class="card" id="' + esc(id) + '">' +
+      "<h2>" + esc(s.title || id) + "</h2>" +
+      "<p>" + esc(paras) + "</p>" +
+      renderIllustrations(s.illustrations) +
+      "</article>"
+    );
+  }
+
+  fetch(GUIDE_URL, { credentials: "same-origin" })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (data) {
+      var sections = Array.isArray(data.sections) ? data.sections : [];
+      var root = document.getElementById("guideRoot");
+      var nav = document.getElementById("guideNav");
+      var meta = document.getElementById("guideMeta");
+      if (meta && data.version) {
+        meta.textContent =
+          "Version " + data.version + ". Illustrated topics for CS Portal — same content Portal help AI uses.";
+      }
+      if (!sections.length) {
+        root.innerHTML = "<p class=\"loading\">Guide is empty. Contact the office.</p>";
+        return;
+      }
+      nav.hidden = false;
+      nav.innerHTML = sections.map(function (s) {
+        var id = String(s.id || "").trim();
+        return id
+          ? '<li><a href="#' + esc(id) + '">' + esc(s.title || id) + "</a></li>"
+          : "";
+      }).join("");
+      root.innerHTML = sections.map(renderSection).join("");
+      if (location.hash) {
+        try {
+          var t = document.querySelector(location.hash);
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (_) {}
+      }
+    })
+    .catch(function () {
+      document.getElementById("guideRoot").innerHTML =
+        "<p class=\"loading\">Could not load the guide. Try again or use Portal help on your dashboard.</p>";
+    });
+})();
+  </script>
+</body>
+</html>

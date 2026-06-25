@@ -203,7 +203,7 @@
       "id": "portal-help",
       "title": "Using Portal help",
       "keywords": ["portal help", "this chat", "help bot", "faq", "question", "ayuda portal", "bot ayuda"],
-      "answer": "Portal help answers common questions from the staff guide — login, feedback, timesheets, announcements and more.\n\nType a short question or tap a suggested topic.\n\nIf there is no match, your question is saved for the office to add to the FAQ. You can always open the full Portal guide from Quick menu → Settings → Guide."
+      "answer": "Portal help on your dashboard answers from the staff help guide — login, feedback, timesheets, announcements and more.\n\nType a short question or tap a suggested topic. When AI is enabled, answers can include screenshots.\n\nOpen Staff help guide (portal_help_guide.html) for the full illustrated list, or ask Portal help if you are stuck."
     }
   ]
 }
