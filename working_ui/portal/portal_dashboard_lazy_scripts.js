@@ -14,8 +14,8 @@
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
     "/portal/portal_guide_menu.js?v=20260614-no-menu-guide",
-    "/portal/portal-openai-assist.js?v=20260607-openai-assist-b",
-    "/portal/portal_help_bot.js?v=20260607-help-ai-b",
+    "/portal/portal-openai-assist.js?v=20260625-voice-agent",
+    "/portal/portal_help_bot.js?v=20260625-voice-agent",
     "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
     "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
   ];

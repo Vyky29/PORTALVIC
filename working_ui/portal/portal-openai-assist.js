@@ -105,14 +105,22 @@
         error: (j && (j.error || j.message)) || res.statusText || "assist_failed",
       };
     }
-    return { ok: true, text: String(j.text || "") };
+    return {
+      ok: true,
+      text: String(j.text || ""),
+      speakText: j.speakText ? String(j.speakText) : "",
+      illustration: j.illustration ? String(j.illustration) : "",
+      sectionId: j.sectionId ? String(j.sectionId) : "",
+      task: j.task ? String(j.task) : "",
+    };
   }
 
-  async function helpAnswer(question, knowledge) {
+  async function helpAnswer(question, knowledge, guideSections) {
     return callAssist({
       task: "help",
       question: question,
       knowledge: knowledge || [],
+      guideSections: guideSections || [],
     });
   }
 

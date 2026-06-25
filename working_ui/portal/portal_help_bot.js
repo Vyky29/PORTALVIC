@@ -6,9 +6,12 @@
   "use strict";
 
   var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260614-no-menu-guide";
+  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-voice-agent";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;
+  var agentGuide = null;
+  var agentGuidePromise = null;
   var sessionStarted = false;
 
   var STOP_WORDS = {
@@ -80,6 +83,31 @@
         return knowledge;
       });
     return knowledgePromise;
+  }
+
+  function loadAgentGuide() {
+    if (agentGuide) return Promise.resolve(agentGuide);
+    if (agentGuidePromise) return agentGuidePromise;
+    agentGuidePromise = fetch(AGENT_GUIDE_URL, { credentials: "same-origin" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("agent guide fetch failed");
+        return res.json();
+      })
+      .then(function (data) {
+        agentGuide = data && Array.isArray(data.sections) ? data : { sections: [] };
+        return agentGuide;
+      })
+      .catch(function () {
+        agentGuide = { sections: [] };
+        return agentGuide;
+      });
+    return agentGuidePromise;
+  }
+
+  function loadHelpSources() {
+    return Promise.all([loadKnowledge(), loadAgentGuide()]).then(function (pair) {
+      return { knowledge: pair[0], agentGuide: pair[1] };
+    });
   }
 
   function scoreTopic(queryNorm, tokens, topic) {
@@ -164,6 +192,144 @@
 
   function formatAnswerHtml(answer) {
     return escapeHtml(answer).replace(/\n/g, "<br>");
+  }
+
+  function scoreGuideSection(queryNorm, tokens, section) {
+    var score = 0;
+    var titleNorm = normalize(section.title);
+    var i;
+    var kw;
+    var nk;
+    var keywords = Array.isArray(section.keywords) ? section.keywords : [];
+
+    for (i = 0; i < keywords.length; i++) {
+      kw = keywords[i];
+      nk = normalize(kw);
+      if (!nk) continue;
+      if (queryNorm.indexOf(nk) !== -1) {
+        score += nk.indexOf(" ") !== -1 ? 10 : 5;
+      }
+    }
+
+    for (i = 0; i < tokens.length; i++) {
+      if (titleNorm.indexOf(tokens[i]) !== -1) score += 3;
+      for (var j = 0; j < keywords.length; j++) {
+        nk = normalize(keywords[j]);
+        if (!nk) continue;
+        if (nk.indexOf(tokens[i]) !== -1 || tokens[i].indexOf(nk) !== -1) score += 4;
+      }
+    }
+
+    if (section.id && queryNorm.indexOf(normalize(String(section.id)).replace(/-/g, " ")) !== -1) {
+      score += 6;
+    }
+    return score;
+  }
+
+  function guideSectionsForAssist(question, guideData, match) {
+    var queryNorm = normalize(question);
+    var tokens = queryNorm
+      .split(" ")
+      .filter(function (t) {
+        return t.length > 1 && !STOP_WORDS[t];
+      });
+    var sections = (guideData && guideData.sections) || [];
+    var ranked = [];
+    var i;
+
+    for (i = 0; i < sections.length; i++) {
+      var sc = scoreGuideSection(queryNorm, tokens, sections[i]);
+      if (sc > 0) ranked.push({ section: sections[i], score: sc });
+    }
+    ranked.sort(function (a, b) {
+      return b.score - a.score;
+    });
+
+    if (!ranked.length && match && match.bestGuess && match.bestGuess.id) {
+      var guessId = String(match.bestGuess.id || "");
+      for (i = 0; i < sections.length; i++) {
+        if (String(sections[i].id || "") === guessId) {
+          ranked.push({ section: sections[i], score: 1 });
+          break;
+        }
+      }
+    }
+
+    if (!ranked.length) {
+      ranked = sections.slice(0, 6).map(function (section) {
+        return { section: section, score: 0 };
+      });
+    }
+
+    return ranked.slice(0, 6).map(function (row) {
+      var s = row.section;
+      return {
+        id: String(s.id || ""),
+        title: String(s.title || ""),
+        content: String(s.content || "").slice(0, 1800),
+        illustrations: Array.isArray(s.illustrations) ? s.illustrations.slice(0, 6) : [],
+      };
+    });
+  }
+
+  function illustrationCaption(guideData, src) {
+    var want = String(src || "").trim();
+    if (!want) return "";
+    var sections = (guideData && guideData.sections) || [];
+    for (var i = 0; i < sections.length; i++) {
+      var ill = sections[i].illustrations;
+      if (!Array.isArray(ill)) continue;
+      for (var j = 0; j < ill.length; j++) {
+        if (String(ill[j].src || "") === want) {
+          return String(ill[j].caption || "").trim();
+        }
+      }
+    }
+    return "";
+  }
+
+  function guideUrlForSection(sectionId) {
+    var base = "portal_guide.html";
+    var id = String(sectionId || "").trim();
+    return id ? base + "#" + encodeURIComponent(id) : base;
+  }
+
+  function escapeAttr(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+
+  function buildAssistBubbleHtml(res, guideData) {
+    var html =
+      "<strong>AI assistant</strong><br>" + formatAnswerHtml(res.text || "");
+    var ill = String(res.illustration || "").trim();
+    if (ill.indexOf("/portal/") === 0) {
+      var cap = illustrationCaption(guideData, ill);
+      html +=
+        '<figure class="portal-help-illustration"><img src="' +
+        escapeHtml(ill) +
+        '" alt="" loading="lazy" decoding="async" />';
+      if (cap) {
+        html +=
+          '<figcaption class="portal-help-illustration__caption muted">' +
+          escapeHtml(cap) +
+          "</figcaption>";
+      }
+      html += "</figure>";
+    }
+    html +=
+      '<p class="portal-help-guide-link"><a href="' +
+      escapeHtml(guideUrlForSection(res.sectionId)) +
+      '" target="_blank" rel="noopener">Open guide section</a></p>';
+    if (res.speakText && global.speechSynthesis) {
+      html +=
+        '<button type="button" class="portal-help-listen-btn" data-speak="' +
+        escapeAttr(res.speakText) +
+        '">Listen</button>';
+    }
+    return html;
   }
 
   function appendBubble(host, role, html) {
@@ -258,7 +424,7 @@
     });
   }
 
-  async function tryAssistAnswer(question, match, msgsHost, sugHost, data) {
+  async function tryAssistAnswer(question, match, msgsHost, sugHost, data, guideData) {
     if (!global.PortalOpenAiAssist) return false;
     try {
       configureAssistOnce();
@@ -274,19 +440,14 @@
 
       var res = await global.PortalOpenAiAssist.helpAnswer(
         question,
-        knowledgeForAssist(data, match)
+        knowledgeForAssist(data, match),
+        guideSectionsForAssist(question, guideData, match)
       );
       if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
 
       if (!res || !res.ok || !res.text) return false;
 
-      appendBubble(
-        msgsHost,
-        "bot",
-        "<strong>AI assistant</strong><br>" +
-          formatAnswerHtml(res.text) +
-          '<p class="portal-help-guide-link"><a href="portal_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
-      );
+      appendBubble(msgsHost, "bot", buildAssistBubbleHtml(res, guideData));
       renderSuggestions(
         sugHost,
         match.suggestions && match.suggestions.length
@@ -339,7 +500,7 @@
     renderSuggestions(sugHost, [], function () {});
   }
 
-  async function handleQuestion(raw, msgsHost, sugHost, data, ui) {
+  async function handleQuestion(raw, msgsHost, sugHost, data, guideData, ui) {
     var q = String(raw || "").trim();
     if (!q) return;
     if (ui && ui.sendBtn) ui.sendBtn.disabled = true;
@@ -358,7 +519,7 @@
         return;
       }
 
-      var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data);
+      var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data, guideData);
       if (assisted) {
         await logUnanswered(q, match);
         return;
@@ -415,9 +576,9 @@
     var input = global.document && global.document.getElementById("portalHelpInput");
     if (!sheet || !msgsHost) return;
 
-    var data = await loadKnowledge();
+    var data = await loadHelpSources();
     if (!sessionStarted || !msgsHost.children.length) {
-      resetHelpSession(msgsHost, sugHost, data);
+      resetHelpSession(msgsHost, sugHost, data.knowledge);
       sessionStarted = true;
     }
     if (input) {
@@ -446,11 +607,29 @@
     }
 
     sendBtn.addEventListener("click", function () {
-      void loadKnowledge().then(function (data) {
+      void loadHelpSources().then(function (sources) {
         var q = input.value;
         input.value = "";
-        void handleQuestion(q, msgsHost, sugHost, data, { sendBtn: sendBtn, input: input });
+        void handleQuestion(q, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
+          sendBtn: sendBtn,
+          input: input,
+        });
       });
+    });
+
+    msgsHost.addEventListener("click", function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest(".portal-help-listen-btn") : null;
+      if (!btn || !global.speechSynthesis) return;
+      var text = btn.getAttribute("data-speak") || "";
+      if (!text) return;
+      try {
+        global.speechSynthesis.cancel();
+      } catch (_c) {}
+      var utt = new global.SpeechSynthesisUtterance(text);
+      utt.lang = /[áéíóúñ¿¡]/i.test(text) ? "es-ES" : "en-GB";
+      try {
+        global.speechSynthesis.speak(utt);
+      } catch (_s) {}
     });
 
     input.addEventListener("keydown", function (ev) {

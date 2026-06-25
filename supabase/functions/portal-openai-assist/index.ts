@@ -1,3 +1,4 @@
+// @ts-nocheck — Edge Function (Deno). Cursor uses Node TypeScript; ignores Deno.* here.
 // portal-openai-assist
 // --------------------
 // OpenAI-backed help answers and report drafting for portal staff/admin.
@@ -333,14 +334,29 @@ Deno.serve(async (req) => {
     }
 
     const knowledge = parseKnowledge(payload.knowledge);
+    const guideSections = parseGuideSections(payload.guideSections);
     const result = await callOpenAiChat(
       apiKey,
-      buildHelpMessages(question, knowledge),
-      450,
+      buildHelpMessages(question, knowledge, guideSections),
+      650,
+      true,
     );
     if (!result.ok) {
       return portalAdminJson(502, { ok: false, error: result.error });
     }
+
+    const parsed = parseHelpAnswerJson(result.text);
+    if (parsed) {
+      return portalAdminJson(200, {
+        ok: true,
+        task,
+        text: parsed.answer,
+        speakText: parsed.speakText,
+        illustration: parsed.illustration,
+        sectionId: parsed.sectionId,
+      });
+    }
+
     return portalAdminJson(200, { ok: true, task, text: result.text });
   }
 
