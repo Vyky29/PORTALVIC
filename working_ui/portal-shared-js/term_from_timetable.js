@@ -50,6 +50,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-05"
     ],
     "aurora": [
+      "2026-06-25",
       "2026-07-02"
     ]
   },
@@ -1236,7 +1237,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   },
   "termStaffTimesheetFeedbackPendingDatesByProfileKey": {
     "aurora": [
-      "2026-06-21",
       "2026-06-23"
     ],
     "john": [

@@ -664,8 +664,14 @@
           }
         }
         if(matches.some(function(st){
-          if(!portalStatusRowIsDoneForCalendar(st)) return false;
-          return portalStatusRowMatchesRosterSession(st, s);
+          if(!portalStatusRowMatchesRosterSession(st, s)) return false;
+          /* Per-slot Aquatic / Climbing / Multi-Activity: each worker owns their own feedback.
+             A co-instructor's submission (stamped on the participant via matchedFeedbackBy) must
+             not complete this worker's slot — defer to the bridge's per-worker resolution. */
+          if(bridge && typeof bridge.statusSlotResolved === 'function'){
+            return bridge.statusSlotResolved(iso, st, sid);
+          }
+          return portalStatusRowIsDoneForCalendar(st);
         })){
           return portalReviewFlagsForResolvedSession(iso, sid, s);
         }
