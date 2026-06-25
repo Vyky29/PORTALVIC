@@ -213,57 +213,47 @@
     </script>
     <main class="app-body-scroll" id="appBodyScroll">
     <style>
-      .portal-help-fab{
-        position:fixed;
-        left:12px;
-        top:calc(env(safe-area-inset-top,0px) + 96px);
-        z-index:60;
+      .portal-help-namebtn{
         display:inline-flex;
         align-items:center;
         gap:7px;
-        max-width:calc(100vw - 24px);
-        padding:8px 13px 8px 10px;
+        margin-top:6px;
+        padding:6px 12px 6px 9px;
         border:none;
         border-radius:999px;
         background:linear-gradient(180deg,#2d84b3,#0a3d62);
         color:#fff;
         font-weight:800;
-        font-size:13px;
+        font-size:12.5px;
         line-height:1;
         letter-spacing:.01em;
         cursor:pointer;
-        box-shadow:0 10px 24px rgba(10,61,98,.34);
-        animation:portalHelpFabPop .45s cubic-bezier(.2,.9,.3,1.2) both;
+        box-shadow:0 6px 16px rgba(10,61,98,.28);
+        max-width:100%;
+        overflow-wrap:break-word;
       }
-      .portal-help-fab__ico{
+      .portal-help-namebtn__ico{
         display:inline-flex;
-        width:20px;height:20px;
+        width:18px;height:18px;
         flex:none;
         align-items:center;
         justify-content:center;
+        position:relative;
       }
-      .portal-help-fab__ico svg{width:18px;height:18px}
-      .portal-help-fab::after{
+      .portal-help-namebtn__ico svg{width:16px;height:16px}
+      .portal-help-namebtn__ico::after{
         content:"";
         position:absolute;
-        right:9px;top:8px;
-        width:8px;height:8px;
+        right:-2px;top:-2px;
+        width:7px;height:7px;
         border-radius:50%;
         background:#f4b740;
         box-shadow:0 0 0 0 rgba(244,183,64,.6);
-        animation:portalHelpFabDot 1.8s ease-out infinite;
+        animation:portalHelpDot 1.8s ease-out infinite;
       }
-      @keyframes portalHelpFabPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
-      @keyframes portalHelpFabDot{0%{box-shadow:0 0 0 0 rgba(244,183,64,.6)}70%{box-shadow:0 0 0 7px rgba(244,183,64,0)}100%{box-shadow:0 0 0 0 rgba(244,183,64,0)}}
-      @media (prefers-reduced-motion: reduce){
-        .portal-help-fab,.portal-help-fab::after{animation:none}
-      }
+      @keyframes portalHelpDot{0%{box-shadow:0 0 0 0 rgba(244,183,64,.6)}70%{box-shadow:0 0 0 6px rgba(244,183,64,0)}100%{box-shadow:0 0 0 0 rgba(244,183,64,0)}}
+      @media (prefers-reduced-motion: reduce){.portal-help-namebtn__ico::after{animation:none}}
     </style>
-    <button type="button" class="portal-help-fab" id="portalHelpFab" aria-label="Open the clubSENsational chat bot"
-      onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} if(typeof window.openSheet==='function'){window.openSheet('portalHelpSheet');}else{var b=document.getElementById('quickMenuPortalHelp');if(b)b.click();}})();return false;">
-      <span class="portal-help-fab__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-      <span class="portal-help-fab__label">Chat bot</span>
-    </button>
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
         <div class="topbar-left topbar-left--name">
@@ -281,6 +271,11 @@
               <span class="topbar-name__given" id="staffNameGiven">…</span>
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
             </h1>
+            <button type="button" class="portal-help-namebtn" id="portalHelpNameBtn" aria-label="Open the clubSENsational chat bot"
+              onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} if(typeof window.openSheet==='function'){window.openSheet('portalHelpSheet');}else{var b=document.getElementById('quickMenuPortalHelp');if(b)b.click();}})();return false;">
+              <span class="portal-help-namebtn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+              <span class="portal-help-namebtn__label">Chat bot</span>
+            </button>
             <button type="button" class="topbar-sign-out-btn" id="topbarStaffSignOut" hidden aria-label="Sign out of the portal">Sign out</button>
           </div>
         </div>
