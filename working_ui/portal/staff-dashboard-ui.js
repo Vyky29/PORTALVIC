@@ -1593,6 +1593,20 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    /** Admin-flagged outstanding days: force orange even when assume-complete-through would green them. */
+    function portalTermStaffForcedPendingDates(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffTimesheetFeedbackPendingDatesByProfileKey;
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map && map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermStaffDayExplicitlyPending(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      return portalTermStaffForcedPendingDates(staffId).indexOf(iso) >= 0;
+    }
     function portalRosterRowAppliesToStaffId(row, staffId){
       const sid = String(staffId || '').trim().toLowerCase();
       if(!sid || !row) return false;
@@ -1948,6 +1962,9 @@
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      /* Admin-flagged outstanding day (e.g. Youssef 24 Jun PM swim slots) stays orange even when
+         the assume-complete-through window or forced-complete map would otherwise green it. */
+      if(staffId && key <= todayKey && portalTermStaffDayExplicitlyPending(key, staffId)) return 'late';
       if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
         && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       /* Grandfather / forced-complete (Jun 1–7, Javier May catch-up) wins over stale fbMap late. */
