@@ -25,11 +25,11 @@
 
   var PORTAL_CHAT_INTRO_SPEAK =
     "Hello. I'm the clubSENsational chat bot. " +
-    "Ask me anything about the portal — login, feedback, timesheets, your dashboard and more. I'm here to help.";
+    "Tap the microphone and ask me anything about the portal. I will answer with voice.";
 
   var PORTAL_CHAT_INTRO_HTML =
     "<strong>clubSENsational Chat bot</strong><br>" +
-    "I'm your AI assistant for the portal. Type a message below — ask me anything.";
+    "Tap the microphone and speak. I will answer with voice.";
 
   var STOP_WORDS = {
     how: 1,
@@ -211,6 +211,13 @@
     return escapeHtml(answer).replace(/\n/g, "<br>");
   }
 
+  function plainTextFromHtml(html) {
+    var div = global.document ? global.document.createElement("div") : null;
+    if (!div) return String(html || "");
+    div.innerHTML = String(html || "");
+    return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
+  }
+
   function scoreGuideSection(queryNorm, tokens, section) {
     var score = 0;
     var titleNorm = normalize(section.title);
@@ -366,13 +373,15 @@
       }
       html += "</figure>";
     }
-    html +=
-      '<p class="' + ui.guideLink + '"><a href="' +
-      escapeHtml(guideUrlForSection(res.sectionId)) +
-      '" target="_blank" rel="noopener">' +
-      (surface === "chat" ? "See guide section" : "Open guide section") +
-      "</a></p>";
-    if (res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
+    if (surface !== "chat") {
+      html +=
+        '<p class="' + ui.guideLink + '"><a href="' +
+        escapeHtml(guideUrlForSection(res.sectionId)) +
+        '" target="_blank" rel="noopener">' +
+        "Open guide section" +
+        "</a></p>";
+    }
+    if (surface !== "chat" && res.speakText && (global.speechSynthesis || global.PortalHelpVoiceSpeak)) {
       html +=
         '<button type="button" class="' + ui.listen + '" data-speak="' +
         escapeAttr(res.speakText) +
@@ -518,6 +527,9 @@
       if (!res || !res.ok || !res.text) return false;
 
       appendBubble(msgsHost, "bot", buildAssistBubbleHtml(res, guideData, surface), surface);
+      if (surface === "chat") {
+        speakText(res.speakText || res.text || "");
+      }
       renderSuggestions(
         sugHost,
         match.suggestions && match.suggestions.length
@@ -560,17 +572,21 @@
 
   function answerTopic(topic, msgsHost, sugHost, surface) {
     surface = surface || "help";
-    var ui = surfaceUi(surface);
+    var answerHtml =
+      (surface === "chat" ? "" : "<strong>" + escapeHtml(topic.title) + "</strong><br>") +
+      formatAnswerHtml(topic.answer) +
+      (surface === "chat"
+        ? ""
+        : '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>');
     appendBubble(
       msgsHost,
       "bot",
-      (surface === "chat" ? "" : "<strong>" + escapeHtml(topic.title) + "</strong><br>") +
-        formatAnswerHtml(topic.answer) +
-        (surface === "chat"
-          ? '<p class="' + ui.guideLink + '"><a href="portal_help_guide.html" target="_blank" rel="noopener">More in guide</a></p>'
-          : '<p class="portal-help-guide-link"><a href="portal_help_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'),
+      answerHtml,
       surface
     );
+    if (surface === "chat") {
+      speakText(plainTextFromHtml(answerHtml));
+    }
     renderSuggestions(sugHost, [], function () {}, surface);
   }
 
@@ -582,6 +598,11 @@
     if (!q) return;
     if (ui && ui.sendBtn) ui.sendBtn.disabled = true;
     if (ui && ui.input) ui.input.disabled = true;
+    if (ui && ui.micBtn) {
+      ui.micBtn.disabled = true;
+      ui.micBtn.classList.add("is-thinking");
+    }
+    if (ui && ui.status) ui.status.textContent = "Thinking...";
     try {
       appendBubble(msgsHost, "user", escapeHtml(q), surface);
       var match = portalHelpMatchQuestion(q, data);
@@ -599,13 +620,20 @@
           }
           return;
         }
+        var unsureHtml =
+          surface === "chat"
+            ? "I'm not sure yet. Please try asking that another way."
+            : "I'm not sure yet — try rephrasing, or open " +
+              '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a> for illustrated topics.';
         appendBubble(
           msgsHost,
           "bot",
-          "I'm not sure yet — try rephrasing, or open " +
-            '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a> for illustrated topics.',
+          unsureHtml,
           surface
         );
+        if (surface === "chat") {
+          speakText("I'm not sure yet. Please try asking that another way.");
+        }
         await logUnanswered(q, match);
         renderSuggestions(
           sugHost,
@@ -636,29 +664,48 @@
         return;
       }
 
+      var noMatchHtml =
+        surface === "chat"
+          ? "I could not find an exact answer yet. Please try asking that another way."
+          : "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
+            '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>. ' +
+            "Your question was saved so we can improve answers.";
       appendBubble(
         msgsHost,
         "bot",
-        "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
-          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>. ' +
-          "Your question was saved so we can improve answers.",
+        noMatchHtml,
         surface
       );
+      if (surface === "chat") {
+        speakText("I could not find an exact answer yet. Please try asking that another way.");
+      }
       await logUnanswered(q, match);
       renderSuggestions(sugHost, match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data), function (topic) {
         appendBubble(msgsHost, "user", escapeHtml(topic.title), surface);
         answerTopic(topic, msgsHost, sugHost, surface);
       }, surface);
     } catch (_err) {
+      var errHtml =
+        surface === "chat"
+          ? "Something went wrong. Please try again."
+          : "Something went wrong — try again or open the " +
+            '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>.';
       appendBubble(
         msgsHost,
         "bot",
-        "Something went wrong — try again or open the " +
-          '<a href="portal_help_guide.html" target="_blank" rel="noopener">Staff help guide</a>.',
+        errHtml,
         surface
       );
+      if (surface === "chat") {
+        speakText("Something went wrong. Please try again.");
+      }
     } finally {
       if (ui && ui.sendBtn) ui.sendBtn.disabled = false;
+      if (ui && ui.micBtn) {
+        ui.micBtn.disabled = false;
+        ui.micBtn.classList.remove("is-thinking");
+      }
+      if (ui && ui.status) ui.status.textContent = "Tap the microphone to speak again.";
       if (ui && ui.input) {
         ui.input.disabled = false;
         try {
@@ -669,6 +716,12 @@
   }
 
   function speakIntro(text) {
+    speakText(text);
+  }
+
+  function speakText(text) {
+    text = String(text || "").trim();
+    if (!text) return;
     if (global.PortalHelpVoiceSpeak) {
       configureAssistOnce();
       try {
@@ -734,13 +787,119 @@
     });
   }
 
+  function speechRecognitionCtor() {
+    return global.SpeechRecognition || global.webkitSpeechRecognition || null;
+  }
+
+  function bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status) {
+    var activeRecognition = null;
+    var isListening = false;
+
+    function setStatus(text) {
+      if (status) status.textContent = text;
+    }
+
+    function setListening(on) {
+      isListening = !!on;
+      micBtn.classList.toggle("is-listening", isListening);
+      var label = micBtn.querySelector(".portal-chat-mic__label");
+      if (label) label.textContent = isListening ? "Listening..." : "Tap to talk";
+    }
+
+    micBtn.addEventListener("click", function () {
+      try {
+        if (global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.unlock) {
+          global.PortalHelpVoiceSpeak.unlock();
+        }
+      } catch (_u) {}
+
+      if (isListening && activeRecognition) {
+        try {
+          activeRecognition.stop();
+        } catch (_s) {}
+        return;
+      }
+
+      var Ctor = speechRecognitionCtor();
+      if (!Ctor) {
+        var unsupported = "Voice input is not supported on this browser. Please use Safari or Chrome with microphone permission.";
+        appendBubble(msgsHost, "bot", escapeHtml(unsupported), "chat");
+        speakText(unsupported);
+        setStatus("Voice input is not supported on this browser.");
+        return;
+      }
+
+      var recognition = new Ctor();
+      activeRecognition = recognition;
+      var submitted = false;
+      recognition.lang = (global.navigator && global.navigator.language) || "en-GB";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = function () {
+        setListening(true);
+        setStatus("Listening...");
+      };
+
+      recognition.onresult = function (ev) {
+        var transcript = "";
+        try {
+          transcript = ev.results && ev.results[0] && ev.results[0][0] ? ev.results[0][0].transcript : "";
+        } catch (_r) {}
+        transcript = String(transcript || "").trim();
+        if (!transcript) return;
+        submitted = true;
+        setListening(false);
+        setStatus("Thinking...");
+        micBtn.disabled = true;
+        void loadHelpSources().then(function (sources) {
+          return handleQuestion(transcript, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
+            micBtn: micBtn,
+            status: status,
+          }, {
+            surface: cfg.surface,
+            aiFirst: !!cfg.aiFirst,
+          });
+        });
+      };
+
+      recognition.onerror = function () {
+        setListening(false);
+        setStatus("I could not hear you. Tap the microphone and try again.");
+      };
+
+      recognition.onend = function () {
+        if (!submitted) {
+          setListening(false);
+          setStatus("Tap the microphone to speak.");
+        }
+        activeRecognition = null;
+      };
+
+      try {
+        recognition.start();
+      } catch (_startErr) {
+        setListening(false);
+        setStatus("Microphone did not start. Tap again and allow permission.");
+      }
+    });
+  }
+
   function bindBotSurface(cfg) {
     var sheet = global.document && global.document.getElementById(cfg.sheetId);
     var sendBtn = global.document && global.document.getElementById(cfg.sendBtnId);
     var input = global.document && global.document.getElementById(cfg.inputId);
+    var micBtn = global.document && global.document.getElementById(cfg.micBtnId);
+    var status = global.document && global.document.getElementById(cfg.statusId);
     var msgsHost = global.document && global.document.getElementById(cfg.msgsId);
     var sugHost = global.document && global.document.getElementById(cfg.sugId);
-    if (!sheet || !sendBtn || !input || !msgsHost) return;
+    if (!sheet || !msgsHost) return;
+    if (cfg.voiceOnly) {
+      if (!micBtn) return;
+    } else if (!sendBtn || !input) {
+      return;
+    }
 
     bindListenClicks(msgsHost);
 
@@ -760,6 +919,11 @@
           input.focus();
         } catch (_) {}
       }
+      if (status && cfg.voiceOnly) {
+        status.textContent = speechRecognitionCtor()
+          ? "Tap the microphone and speak."
+          : "Voice input needs Safari or Chrome microphone support.";
+      }
       if (cfg.speakOnOpen) speakIntro(cfg.introSpeak);
     }
 
@@ -772,26 +936,30 @@
       obs.observe(sheet, { attributes: true, attributeFilter: ["class"] });
     }
 
-    sendBtn.addEventListener("click", function () {
-      void loadHelpSources().then(function (sources) {
-        var q = input.value;
-        input.value = "";
-        void handleQuestion(q, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
-          sendBtn: sendBtn,
-          input: input,
-        }, {
-          surface: cfg.surface,
-          aiFirst: !!cfg.aiFirst,
+    if (cfg.voiceOnly) {
+      bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status);
+    } else {
+      sendBtn.addEventListener("click", function () {
+        void loadHelpSources().then(function (sources) {
+          var q = input.value;
+          input.value = "";
+          void handleQuestion(q, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
+            sendBtn: sendBtn,
+            input: input,
+          }, {
+            surface: cfg.surface,
+            aiFirst: !!cfg.aiFirst,
+          });
         });
       });
-    });
 
-    input.addEventListener("keydown", function (ev) {
-      if (ev.key === "Enter" && !ev.shiftKey) {
-        ev.preventDefault();
-        sendBtn.click();
-      }
-    });
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+          ev.preventDefault();
+          sendBtn.click();
+        }
+      });
+    }
 
     if (cfg.onOpenHook) cfg.onOpenHook(onOpen);
   }
@@ -836,10 +1004,11 @@
       sheetId: "portalChatBotSheet",
       msgsId: "portalChatMessages",
       sugId: "portalChatSuggestions",
-      inputId: "portalChatInput",
-      sendBtnId: "portalChatSendBtn",
+      micBtnId: "portalChatMicBtn",
+      statusId: "portalChatVoiceStatus",
       surface: "chat",
       aiFirst: true,
+      voiceOnly: true,
       speakOnOpen: true,
       introHtml: PORTAL_CHAT_INTRO_HTML,
       introSpeak: PORTAL_CHAT_INTRO_SPEAK,
