@@ -2177,6 +2177,8 @@
         && portalTermCalendarDayHasNotEndedClientSession(iso, dw, staffId, sessions, curDate)){
         return false;
       }
+      if(staffId && typeof portalTermStaffDayExplicitlyPending === 'function'
+        && portalTermStaffDayExplicitlyPending(iso, staffId)) return false;
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
       if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
         && portalTermTodayListClientFeedbackAllResolved(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){

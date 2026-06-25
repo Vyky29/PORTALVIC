@@ -929,10 +929,27 @@
 
   function reviewFlagsForResolvedSession(iso, staffId, s, clientNotesById) {
     const absent = rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById);
+    if (absent) {
+      return {
+        feedbackDone: false,
+        incident: false,
+        absent: true,
+        cancelled: false,
+      };
+    }
+    if (rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) {
+      const done = staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById);
+      return {
+        feedbackDone: done,
+        incident: false,
+        absent: false,
+        cancelled: false,
+      };
+    }
     return {
-      feedbackDone: !absent,
+      feedbackDone: true,
       incident: false,
-      absent: absent,
+      absent: false,
       cancelled: false,
     };
   }
@@ -1124,6 +1141,11 @@
 
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
+    if (rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) {
+      if (rec.absent || rec.cancelled) return true;
+      if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
+      return staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById);
+    }
     if (isServerTruthFeedbackDay(iso)) {
       if (rec.absent || rec.cancelled) return true;
       return !!rec.feedbackDone;

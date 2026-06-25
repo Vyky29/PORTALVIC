@@ -6,14 +6,14 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260624-staff-pilot";
+  var VER = "20260625-youssef-ma-own-feedback";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260614-aurora-makeup-off",
-    "/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse",
+    "/portal/term_calendar_dashboard_shared.js?v=20260625-youssef-ma-own-feedback",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-simon-stf016",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260625-youssef-ma-own-feedback",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",

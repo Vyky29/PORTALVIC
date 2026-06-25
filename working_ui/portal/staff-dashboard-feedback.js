@@ -1043,7 +1043,7 @@
         const needsOwnFb = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
           && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         if(portalReviewFeedbackFromServerForAliases(aliases, needsOwnFb)) feedbackDone = true;
-        else if(portalReviewFeedbackInMemoryForAliases(aliases)) feedbackDone = true;
+        else if(portalReviewFeedbackInMemoryForAliases(aliases, needsOwnFb)) feedbackDone = true;
       }
       const mem = getSessionReviewRecord(item) || {};
       return {
@@ -1234,7 +1234,7 @@
           || ''
         ).trim().toLowerCase();
         const resetV = '20260625-aurora-jun23-catchup';
-        const machineResetV = '20260621-sunday-cover-feedback';
+        const machineResetV = '20260625-youssef-ma-own-feedback';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}

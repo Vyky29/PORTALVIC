@@ -65,12 +65,22 @@
     return raw.map(normIso).filter(Boolean);
   }
 
+  /** Admin-flagged outstanding days stay actionable even inside assume-complete-through. */
+  function staffForcedPendingFeedbackDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var map = termCfg().termStaffTimesheetFeedbackPendingDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
   /** True when session feedback before today is treated complete (legacy Zoho / bulk catch-up). */
   function feedbackAssumeComplete(iso, staffId) {
     var key = normIso(iso);
     var through = feedbackAssumeCompleteThroughIso();
     if (!key || !through || key > through) return false;
     if (staffCatchUpFeedbackDates(staffId).indexOf(key) >= 0) return false;
+    if (staffForcedPendingFeedbackDates(staffId).indexOf(key) >= 0) return false;
     return true;
   }
 
