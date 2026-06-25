@@ -228,6 +228,57 @@
     return { ok: false, error: "speak_failed" };
   }
 
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        var result = String(reader.result || "");
+        var comma = result.indexOf(",");
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = function () {
+        reject(reader.error || new Error("read_failed"));
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Send a recorded audio Blob to OpenAI Whisper (server side) and get text.
+  async function transcribe(blob) {
+    if (!blob || !blob.size) return { ok: false, error: "empty_audio" };
+    var token = await authToken();
+    if (!token) return { ok: false, error: "session_expired" };
+    var b64;
+    try {
+      b64 = await blobToBase64(blob);
+    } catch (_b) {
+      return { ok: false, error: "encode_failed" };
+    }
+    try {
+      var res = await fetch(baseUrl() + "/functions/v1/portal-voice-transcribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: cfg.getAnonKey(),
+        },
+        body: JSON.stringify({ audioBase64: b64, mime: blob.type || "audio/webm" }),
+      });
+      var j = null;
+      try {
+        j = await res.json();
+      } catch (_e) {
+        j = null;
+      }
+      if (res.ok && j && j.ok) {
+        return { ok: true, text: String(j.text || "").trim() };
+      }
+      return { ok: false, error: (j && j.error) || res.statusText || "transcribe_failed" };
+    } catch (_f) {
+      return { ok: false, error: "network_error" };
+    }
+  }
+
   global.PortalHelpVoiceSpeak = {
     configure: configure,
     probe: probe,
@@ -235,5 +286,6 @@
     speak: speak,
     stop: stopPlayback,
     unlock: unlockAudio,
+    transcribe: transcribe,
   };
 })(typeof window !== "undefined" ? window : globalThis);

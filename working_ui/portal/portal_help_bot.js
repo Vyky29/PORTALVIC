@@ -29,7 +29,7 @@
 
   var PORTAL_CHAT_INTRO_HTML =
     "<strong>clubSENsational Chat bot</strong><br>" +
-    "Tap the microphone and speak. I will answer with voice.";
+    "Tap the microphone, speak, then tap again to send. I will answer with voice.";
 
   var STOP_WORDS = {
     how: 1,
@@ -830,24 +830,138 @@
     });
   }
 
-  function speechRecognitionCtor() {
-    return global.SpeechRecognition || global.webkitSpeechRecognition || null;
+  function canRecordAudio() {
+    return !!(
+      global.navigator &&
+      global.navigator.mediaDevices &&
+      typeof global.navigator.mediaDevices.getUserMedia === "function" &&
+      typeof global.MediaRecorder === "function"
+    );
+  }
+
+  function pickRecorderMime() {
+    if (typeof global.MediaRecorder !== "function" || !global.MediaRecorder.isTypeSupported) {
+      return "";
+    }
+    var prefs = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg"];
+    for (var i = 0; i < prefs.length; i++) {
+      if (global.MediaRecorder.isTypeSupported(prefs[i])) return prefs[i];
+    }
+    return "";
   }
 
   function bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status) {
-    var activeRecognition = null;
-    var isListening = false;
     activeVoiceStatus = status;
+    var isRecording = false;
+    var mediaRecorder = null;
+    var chunks = [];
+    var mediaStream = null;
 
     function setStatus(text) {
       if (status) status.textContent = text;
     }
 
-    function setListening(on) {
-      isListening = !!on;
-      micBtn.classList.toggle("is-listening", isListening);
+    function setRecording(on) {
+      isRecording = !!on;
+      micBtn.classList.toggle("is-listening", isRecording);
       var label = micBtn.querySelector(".portal-chat-mic__label");
-      if (label) label.textContent = isListening ? "Listening..." : "Tap to talk";
+      if (label) label.textContent = isRecording ? "Tap to send" : "Tap to talk";
+    }
+
+    function stopStream() {
+      try {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(function (t) {
+            try {
+              t.stop();
+            } catch (_t) {}
+          });
+        }
+      } catch (_s) {}
+      mediaStream = null;
+    }
+
+    async function askWithText(text) {
+      var sources = await loadHelpSources();
+      return handleQuestion(text, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
+        micBtn: micBtn,
+        status: status,
+      }, {
+        surface: cfg.surface,
+        aiFirst: !!cfg.aiFirst,
+      });
+    }
+
+    async function onRecordingStop() {
+      setRecording(false);
+      stopStream();
+      var type = (mediaRecorder && mediaRecorder.mimeType) || "audio/webm";
+      var blob = chunks.length ? new Blob(chunks, { type: type }) : null;
+      chunks = [];
+      mediaRecorder = null;
+      if (!blob || !blob.size) {
+        setStatus("I did not catch that. Tap the microphone and try again.");
+        return;
+      }
+      setStatus("Transcribing...");
+      micBtn.disabled = true;
+      try {
+        configureAssistOnce();
+        var tr =
+          global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.transcribe
+            ? await global.PortalHelpVoiceSpeak.transcribe(blob)
+            : { ok: false, error: "no_transcribe" };
+        if (!tr || !tr.ok || !tr.text) {
+          micBtn.disabled = false;
+          setStatus("I could not understand the audio. Tap the microphone and try again.");
+          return;
+        }
+        await askWithText(tr.text);
+      } catch (_e) {
+        micBtn.disabled = false;
+        setStatus("Something went wrong. Tap the microphone and try again.");
+      }
+    }
+
+    async function startRecording() {
+      if (!canRecordAudio()) {
+        var msg = "Microphone recording is not available on this browser. Please open the portal in Safari or Chrome and allow microphone access.";
+        appendBubble(msgsHost, "bot", escapeHtml(msg), "chat");
+        speakText(msg);
+        setStatus("Microphone not available on this browser.");
+        return;
+      }
+      try {
+        mediaStream = await global.navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (_perm) {
+        setStatus("Microphone permission was blocked. Allow it in your browser settings and try again.");
+        return;
+      }
+      var mime = pickRecorderMime();
+      try {
+        mediaRecorder = mime
+          ? new global.MediaRecorder(mediaStream, { mimeType: mime })
+          : new global.MediaRecorder(mediaStream);
+      } catch (_mr) {
+        stopStream();
+        setStatus("Recording could not start on this browser.");
+        return;
+      }
+      chunks = [];
+      mediaRecorder.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size) chunks.push(ev.data);
+      };
+      mediaRecorder.onstop = function () {
+        void onRecordingStop();
+      };
+      try {
+        mediaRecorder.start();
+        setRecording(true);
+        setStatus("Listening... tap again to send.");
+      } catch (_start) {
+        stopStream();
+        setStatus("Recording could not start. Tap to try again.");
+      }
     }
 
     micBtn.addEventListener("click", function () {
@@ -857,76 +971,13 @@
         }
       } catch (_u) {}
 
-      if (isListening && activeRecognition) {
+      if (isRecording && mediaRecorder) {
         try {
-          activeRecognition.stop();
+          mediaRecorder.stop();
         } catch (_s) {}
         return;
       }
-
-      var Ctor = speechRecognitionCtor();
-      if (!Ctor) {
-        var unsupported = "Voice input is not supported on this browser. Please use Safari or Chrome with microphone permission.";
-        appendBubble(msgsHost, "bot", escapeHtml(unsupported), "chat");
-        speakText(unsupported);
-        setStatus("Voice input is not supported on this browser.");
-        return;
-      }
-
-      var recognition = new Ctor();
-      activeRecognition = recognition;
-      var submitted = false;
-      recognition.lang = (global.navigator && global.navigator.language) || "en-GB";
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = function () {
-        setListening(true);
-        setStatus("Listening...");
-      };
-
-      recognition.onresult = function (ev) {
-        var transcript = "";
-        try {
-          transcript = ev.results && ev.results[0] && ev.results[0][0] ? ev.results[0][0].transcript : "";
-        } catch (_r) {}
-        transcript = String(transcript || "").trim();
-        if (!transcript) return;
-        submitted = true;
-        setListening(false);
-        setStatus("Thinking...");
-        micBtn.disabled = true;
-        void loadHelpSources().then(function (sources) {
-          return handleQuestion(transcript, msgsHost, sugHost, sources.knowledge, sources.agentGuide, {
-            micBtn: micBtn,
-            status: status,
-          }, {
-            surface: cfg.surface,
-            aiFirst: !!cfg.aiFirst,
-          });
-        });
-      };
-
-      recognition.onerror = function () {
-        setListening(false);
-        setStatus("I could not hear you. Tap the microphone and try again.");
-      };
-
-      recognition.onend = function () {
-        if (!submitted) {
-          setListening(false);
-          setStatus("Tap the microphone to speak.");
-        }
-        activeRecognition = null;
-      };
-
-      try {
-        recognition.start();
-      } catch (_startErr) {
-        setListening(false);
-        setStatus("Microphone did not start. Tap again and allow permission.");
-      }
+      void startRecording();
     });
   }
 
@@ -964,9 +1015,9 @@
         } catch (_) {}
       }
       if (status && cfg.voiceOnly) {
-        status.textContent = speechRecognitionCtor()
+        status.textContent = canRecordAudio()
           ? "Tap the microphone and speak."
-          : "Voice input needs Safari or Chrome microphone support.";
+          : "Microphone needs Safari or Chrome with permission.";
       }
       if (cfg.speakOnOpen) speakIntro(cfg.introSpeak);
     }
