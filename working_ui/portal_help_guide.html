@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260625-help-guide"></script>
+  <script src="/portal-static-bootstrap.js?v=20260625-help-guide-v3"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -58,6 +58,54 @@
     .banner a{color:var(--blue);font-weight:600}
     .foot{margin:18px 0 8px;font-size:13px;color:var(--muted);text-align:center}
     .loading{padding:24px;text-align:center;color:var(--muted)}
+
+    /* Inline UI demos (no external screenshots — always render). */
+    .demos{margin:12px 0 0;display:grid;gap:12px}
+    .demo{border:1px solid var(--border);border-radius:14px;background:#f8fafc;padding:12px;min-width:0}
+    .demo-cap{margin:8px 0 0;font-size:13px;color:var(--muted);text-align:center;overflow-wrap:break-word}
+    .d-cards{display:grid;gap:8px}
+    .d-card{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-left-width:6px;border-radius:12px;padding:10px 12px;min-width:0}
+    .d-card-main{min-width:0;flex:1}
+    .d-card-name{font-weight:700;color:var(--navy);font-size:14px;overflow-wrap:break-word}
+    .d-card-sub{font-size:12px;color:var(--muted);overflow-wrap:break-word}
+    .d-card--blue{border-left-color:#2d84b3}
+    .d-card--orange{border-left-color:#ef8b3b}
+    .d-card--green{border-left-color:#2e9e6b}
+    .d-card--red{border-left-color:#d8453b}
+    .d-card--purple{border-left-color:#8a6fd1}
+    .d-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .d-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent;max-width:100%;overflow-wrap:break-word}
+    .d-chip--done{background:#e6f5ee;color:#1c7a4f;border-color:#bfe6d2}
+    .d-chip--pending{background:#fdf0e0;color:#b66416;border-color:#f6d5ac}
+    .d-chip--late{background:#fbe7e6;color:#b13a30;border-color:#f3c2bd}
+    .d-chip--absent{background:#eef2f7;color:#516175;border-color:#d9e4ef}
+    .d-chip--incident{background:#fbe7e6;color:#b13a30;border-color:#f3c2bd}
+    .d-chip--override{background:#efeafa;color:#5b46a8;border-color:#d8cdf3;text-transform:uppercase;letter-spacing:.02em}
+    .d-halo-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .d-halo{position:relative;width:84px;height:84px;flex:none}
+    .d-halo .ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#ef8b3b 0 33%,#d8453b 0 66%,#2e9e6b 0 100%)}
+    .d-halo .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#f8fafc}
+    .d-halo .av{position:absolute;inset:11px;border-radius:50%;background:linear-gradient(180deg,#2d84b3,#0a3d62);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;z-index:1}
+    .d-legend{display:grid;gap:6px;min-width:0;font-size:13px;color:var(--text)}
+    .d-legend span{display:inline-flex;align-items:center;gap:8px}
+    .d-dot{width:11px;height:11px;border-radius:50%;flex:none}
+    .d-term{display:flex;gap:6px;flex-wrap:wrap}
+    .d-day{width:40px;height:46px;border-radius:10px;border:1px solid var(--border);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--navy)}
+    .d-day small{font-size:10px;font-weight:600;color:var(--muted)}
+    .d-day--red{border-color:#e9b4af;background:#fdeceb;color:#b13a30}
+    .d-day--red small{color:#b13a30}
+    .d-day--green{border-color:#bfe6d2;background:#eaf7f0;color:#1c7a4f}
+    .d-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .d-flow .d-card{flex:1;min-width:140px}
+    .d-flow .arrow{font-size:22px;color:var(--muted);flex:none}
+    .d-rows{display:grid;gap:8px}
+    .d-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--border);border-left-width:6px;border-radius:10px;padding:8px 12px;font-size:13px;min-width:0}
+    .d-row--green{border-left-color:#2e9e6b}
+    .d-row--orange{border-left-color:#ef8b3b}
+    .d-row-h{color:var(--navy);font-weight:600;min-width:0;overflow-wrap:break-word}
+    .d-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .d-tile{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--navy);min-width:0;overflow-wrap:break-word}
+    .d-tile--hl{border-color:var(--gold);background:#fff9eb;box-shadow:0 0 0 2px rgba(244,183,64,.3)}
   </style>
 </head>
 <body>
@@ -74,13 +122,86 @@
   </div>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v2";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v3";
 
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/"/g, "&quot;");
+  }
+
+  /* Self-contained UI mock-ups so the guide never depends on screenshot files. */
+  var DEMOS = {
+    "session-cards":
+      '<div class="d-cards">' +
+      '<div class="d-card d-card--blue"><div class="d-card-main"><div class="d-card-name">Aqsa — 4:30</div><div class="d-card-sub">Aquatic · scheduled</div></div><span class="d-chip d-chip--absent">Upcoming</span></div>' +
+      '<div class="d-card d-card--orange"><div class="d-card-main"><div class="d-card-name">Hazem — 6:00</div><div class="d-card-sub">Tap to add feedback</div></div><span class="d-chip d-chip--pending">Pending</span></div>' +
+      '<div class="d-card d-card--green"><div class="d-card-main"><div class="d-card-name">Maiyar — 6:00</div><div class="d-card-sub">Feedback submitted</div></div><span class="d-chip d-chip--done">Done</span></div>' +
+      '<div class="d-card d-card--green"><div class="d-card-main"><div class="d-card-name">Elijah — 4:00</div><div class="d-card-sub">Marked absent</div></div><span class="d-chip d-chip--absent">Absent</span></div>' +
+      '<div class="d-card d-card--purple"><div class="d-card-main"><div class="d-card-name">Cyrus — 11:00</div><div class="d-card-sub">Schedule change by office</div></div><span class="d-chip d-chip--override">Make up</span></div>' +
+      "</div>",
+    "status-pills":
+      '<div class="d-chips">' +
+      '<span class="d-chip d-chip--done">Done</span>' +
+      '<span class="d-chip d-chip--pending">Pending</span>' +
+      '<span class="d-chip d-chip--late">Late</span>' +
+      '<span class="d-chip d-chip--absent">Absent</span>' +
+      '<span class="d-chip d-chip--incident">Incident</span>' +
+      "</div>",
+    "override-chips":
+      '<div class="d-chips">' +
+      '<span class="d-chip d-chip--override">Absent</span>' +
+      '<span class="d-chip d-chip--override">Make up</span>' +
+      '<span class="d-chip d-chip--override">Changed by Admin</span>' +
+      "</div>",
+    "halo":
+      '<div class="d-halo-wrap">' +
+      '<div class="d-halo"><div class="ring"></div><div class="av">CS</div></div>' +
+      '<div class="d-legend">' +
+      '<span><i class="d-dot" style="background:#ef8b3b"></i> Orange — outstanding feedback</span>' +
+      '<span><i class="d-dot" style="background:#d8453b"></i> Red — announcement or document to sign</span>' +
+      '<span><i class="d-dot" style="background:#2e9e6b"></i> Green — all up to date</span>' +
+      "</div></div>",
+    "term-days":
+      '<div class="d-term">' +
+      '<div class="d-day">Mon<small>22</small></div>' +
+      '<div class="d-day d-day--red">Tue<small>23</small></div>' +
+      '<div class="d-day">Wed<small>24</small></div>' +
+      '<div class="d-day d-day--green">Thu<small>25</small></div>' +
+      "</div>",
+    "feedback-flow":
+      '<div class="d-flow">' +
+      '<div class="d-card d-card--orange"><div class="d-card-main"><div class="d-card-name">Hazem — 6:00</div><div class="d-card-sub">Pending</div></div></div>' +
+      '<span class="arrow" aria-hidden="true">&rarr;</span>' +
+      '<div class="d-card d-card--green"><div class="d-card-main"><div class="d-card-name">Hazem — 6:00</div><div class="d-card-sub">Submitted</div></div></div>' +
+      "</div>",
+    "timesheet-rows":
+      '<div class="d-rows">' +
+      '<div class="d-row d-row--green"><span class="d-row-h">Mon 22 · 6:00 Aquatic</span><span class="d-chip d-chip--done">Ready to pay</span></div>' +
+      '<div class="d-row d-row--orange"><span class="d-row-h">Tue 23 · 6:00 Aquatic</span><span class="d-chip d-chip--pending">Feedback pending</span></div>' +
+      "</div>",
+    "quick-menu-tiles":
+      '<div class="d-tiles">' +
+      '<div class="d-tile">Session feedback</div>' +
+      '<div class="d-tile">My participants</div>' +
+      '<div class="d-tile d-tile--hl">Portal help (chat)</div>' +
+      '<div class="d-tile">Timesheet</div>' +
+      '<div class="d-tile">My Documents</div>' +
+      '<div class="d-tile">Settings</div>' +
+      "</div>"
+  };
+
+  function renderDemos(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    var inner = list.map(function (d) {
+      var key = String(d && d.demo || "").trim();
+      var html = DEMOS[key];
+      if (!html) return "";
+      var cap = String(d && d.caption || "").trim();
+      return '<div class="demo">' + html + (cap ? '<p class="demo-cap">' + esc(cap) + "</p>" : "") + "</div>";
+    }).join("");
+    return inner ? '<div class="demos">' + inner + "</div>" : "";
   }
 
   function renderIllustrations(list) {
@@ -91,7 +212,8 @@
       var cap = String(ill && ill.caption || "").trim();
       return (
         "<figure>" +
-        '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" />' +
+        '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" ' +
+        "onerror=\"var f=this.closest('figure'); if(f) f.remove();\" />" +
         (cap ? "<figcaption>" + esc(cap) + "</figcaption>" : "") +
         "</figure>"
       );
@@ -105,6 +227,7 @@
       '<article class="card" id="' + esc(id) + '">' +
       "<h2>" + esc(s.title || id) + "</h2>" +
       "<p>" + esc(paras) + "</p>" +
+      renderDemos(s.demos) +
       renderIllustrations(s.illustrations) +
       "</article>"
     );
