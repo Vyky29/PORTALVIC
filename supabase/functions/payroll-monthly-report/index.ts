@@ -258,9 +258,18 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   // submissions and never flag them as "not submitted".
   for (const id of salaryById.keys()) contractUserIds.add(id);
 
-  // Contract people are paid by invoice/payslip (extra hours included there), so
-  // their portal submissions never appear as a separate timesheet line or penalty.
-  const submitted = dedupeLatest(tsRaw || []).filter(
+  // Contract people are paid by invoice/payslip, so their portal submissions
+  // never appear as a separate timesheet line or penalty. For salaried invoice
+  // staff we still read their submitted extra-hours cost to add to the contract.
+  const latestAll = dedupeLatest(tsRaw || []);
+  const extrasByUser = new Map<string, number>();
+  for (const r of latestAll) {
+    const uid = String(r.submitted_by_user_id || "");
+    if (uid && salaryById.has(uid) && r.total_cost != null) {
+      extrasByUser.set(uid, Number(r.total_cost) || 0);
+    }
+  }
+  const submitted = latestAll.filter(
     (r) =>
       !contractUserIds.has(String(r.submitted_by_user_id || "")) &&
       !excludedIds.has(String(r.submitted_by_user_id || ""))
@@ -338,12 +347,13 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   // unless a manual import row already covers them (the manual row wins).
   for (const [id, sal] of salaryById.entries()) {
     if (excludedIds.has(id) || contractIds.has(id) || !startedByTarget(id)) continue;
-    contracts.push({
-      name: nameById.get(id) || id,
-      role: expected.get(id) || "",
-      gross: sal,
-      contractType: FIXED_SALARY_CONTRACT_TYPE,
-    });
+    const name = nameById.get(id) || id;
+    const role = expected.get(id) || "";
+    contracts.push({ name, role, gross: sal, contractType: FIXED_SALARY_CONTRACT_TYPE });
+    const extras = extrasByUser.get(id) || 0;
+    if (extras > 0) {
+      contracts.push({ name, role, gross: extras, contractType: "Extra hours" });
+    }
     contractIds.add(id);
   }
 
