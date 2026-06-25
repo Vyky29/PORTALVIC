@@ -1119,6 +1119,15 @@
 
   global.portalOpenChatBot = function portalOpenChatBot() {
     try {
+      if (
+        global.document &&
+        global.document.documentElement &&
+        global.document.documentElement.classList.contains("portal-standalone")
+      ) {
+        return;
+      }
+    } catch (_standalone) {}
+    try {
       if (global.PortalHelpVoiceSpeak && global.PortalHelpVoiceSpeak.unlock) {
         global.PortalHelpVoiceSpeak.unlock();
       }
