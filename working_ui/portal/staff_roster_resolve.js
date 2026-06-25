@@ -65,6 +65,7 @@
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
+    "stf016@staff.import.pending": "simon",
     "victor@clubsensational.org": "victor",
     "raul@clubsensational.org": "raul",
     "javier@clubsensational.org": "javi",

@@ -11,7 +11,7 @@
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260614-aurora-makeup-off",
     "/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-simon-stf016",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
@@ -25,7 +25,7 @@
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
     "/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
-    "/portal/staff_roster_resolve.js?v=20260621-javi-palankas",
+    "/portal/staff_roster_resolve.js?v=20260625-simon-stf016",
   ];
 
   var TIER_UI = [
