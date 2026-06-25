@@ -314,18 +314,19 @@
             <tr>
               <th>Date</th>
               <th>Day</th>
+              <th>Service</th>
               <th class="num th-compact">Hours</th>
               <th class="num th-compact" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
             </tr>
           </thead>
           <tbody id="rowsBody">
-            <tr><td colspan="4" class="muted">Loading shifts...</td></tr>
+            <tr><td colspan="5" class="muted">Loading shifts...</td></tr>
           </tbody>
           <tfoot>
-            <tr class="sum-row"><td colspan="2" class="sum-label">Hours ready to pay now (green):</td><td class="num" id="totalHours">0.00</td><td></td></tr>
-            <tr class="sum-row"><td colspan="3" class="sum-label">Ready to pay now (GBP):</td><td class="num" id="totalCost">0.00</td></tr>
-            <tr class="sum-row"><td colspan="3" class="sum-label">Pending until feedback is completed (GBP):</td><td class="num" id="pendingCost">0.00</td></tr>
-            <tr class="sum-row"><td colspan="3" class="sum-label">Total if all feedback is completed (GBP):</td><td class="num" id="potentialCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label">Hours ready to pay now (green):</td><td class="num" id="totalHours">0.00</td><td></td></tr>
+            <tr class="sum-row"><td colspan="4" class="sum-label">Ready to pay now (GBP):</td><td class="num" id="totalCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="4" class="sum-label">Pending until feedback is completed (GBP):</td><td class="num" id="pendingCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="4" class="sum-label">Total if all feedback is completed (GBP):</td><td class="num" id="potentialCost">0.00</td></tr>
           </tfoot>
         </table>
       </div>
@@ -1550,11 +1551,39 @@
             hours: Number(hours.toFixed(2)),
             completed: true,
             service: label,
+            serviceLabel: label,
             role: label,
             rate: 13.5
           };
         })
         .filter((e) => e.hours > 0);
+    }
+
+    function timesheetServiceDisplayLabel(session, role) {
+      const svcRaw = String((session && (session.rosterService || session.service || session.activity)) || "").trim();
+      const svc = svcRaw || "Shift";
+      const svcLower = svc.toLowerCase();
+      const area = String((session && (session.rosterArea || session.area)) || "").trim();
+      const areaLower = area.toLowerCase();
+      const venue = String((session && session.venue) || "").trim();
+      const venueLower = venue.toLowerCase();
+      const r = String(role || "").trim();
+      const isPool = /big pool|small pool|teaching pool|\blane\b/.test(areaLower);
+      if (/day\s*centre/.test(svcLower) && r === "Swimming Instructor" && isPool) {
+        return "Day Centre (Aquatic)";
+      }
+      if (/day\s*centre/.test(svcLower) && r === "Support Worker") {
+        return "Day Centre (Support)";
+      }
+      if (r === "Swimming Instructor" && /multi[-\s]?activity/.test(svcLower) && /acton|northolt/.test(venueLower)) {
+        return `Aquatic Activity (${venue})`;
+      }
+      if (venue && /aquatic|swim|multi[-\s]?activity/.test(svcLower)) return `${svc} (${venue})`;
+      return svc;
+    }
+
+    function timesheetEntryServiceLabel(entry) {
+      return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
     }
 
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
@@ -1587,6 +1616,7 @@
       if (
         !applySupportBuffer &&
         dominantRole === "Swimming Instructor" &&
+        !/day\s*centre/i.test(String(dominantService || "")) &&
         dayName &&
         dayName !== "Sunday"
       ) {
@@ -1616,13 +1646,18 @@
         hours,
         completed: completedAll,
         service: dominantService,
+        serviceLabel: rows
+          .map((s) => timesheetServiceDisplayLabel(s, role))
+          .filter(Boolean)
+          .filter((v, i, arr) => arr.indexOf(v) === i)
+          .join(" · ") || dominantService,
         role,
         rate,
         blendedRate: null
       };
     }
 
-    /** Split AM support / PM swim (etc.): one row per role with hours from session durations. */
+    /** Split AM support / PM swim (etc.): one row per role + service group. */
     function dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
@@ -1630,54 +1665,82 @@
       const roles = Object.keys(roleMinutes);
       const entries = [];
       roles.forEach((role) => {
-        let completedAll = true;
         const roleRows = rows.filter((s) => sessionPayRole(s) === role);
+        const groups = Object.create(null);
         roleRows.forEach((s) => {
-          const rec = sessionReviewRecord(reviewMap, s, dateObj);
-          if (!timesheetSessionMarkedComplete(rec, s, dateObj, rosterKey)) completedAll = false;
+          const label = timesheetServiceDisplayLabel(s, role);
+          const key = label || role;
+          if (!groups[key]) {
+            groups[key] = {
+              rows: [],
+              mins: 0,
+              service: String(s.rosterService || s.service || s.activity || "").trim(),
+              serviceLabel: label
+            };
+          }
+          const start = String(s.start || "").trim();
+          const end = String(s.end || "").trim();
+          const a = hmToMinutes(start);
+          let b = hmToMinutes(end);
+          if (b < a) b += 24 * 60;
+          groups[key].mins += Math.max(0, b - a);
+          groups[key].rows.push(s);
         });
-        if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
-        let mins = Number(roleMinutes[role] || 0);
-        const svc = roleServices[role] || "";
-        let applySupportBuffer =
-          (role === "Support Worker" &&
-            typeof portalStaffSupportShiftBufferApplies === "function" &&
-            portalStaffSupportShiftBufferApplies(svc, dayName)) ||
-          (role === "Swimming Instructor" && dayName && dayName !== "Sunday");
-        if (applySupportBuffer && roleRows.length) {
-          let roleMin = Infinity;
-          let roleMax = -Infinity;
-          roleRows.forEach((s) => {
-            const a = hmToMinutes(String(s.start || "").trim());
-            let b = hmToMinutes(String(s.end || s.start || "").trim());
-            if (b < a) b += 24 * 60;
-            if (a < roleMin) roleMin = a;
-            if (b > roleMax) roleMax = b;
+        Object.keys(groups).forEach((key) => {
+          const group = groups[key];
+          const groupRows = group.rows || [];
+          let completedAll = true;
+          groupRows.forEach((s) => {
+            const rec = sessionReviewRecord(reviewMap, s, dateObj);
+            if (!timesheetSessionMarkedComplete(rec, s, dateObj, rosterKey)) completedAll = false;
           });
-          const roleSpan = Number.isFinite(roleMin) && Number.isFinite(roleMax) ? Math.max(0, roleMax - roleMin) : mins;
-          const bufferMin = typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
-          const shouldBuffer =
-            typeof portalStaffShouldApplyPayrollBandBuffer === "function"
-              ? portalStaffShouldApplyPayrollBandBuffer(roleSpan, dayName)
-              : roleSpan <
-                  (typeof PORTAL_STAFF_PAYROLL_BAND_MINUTES === "number" ? PORTAL_STAFF_PAYROLL_BAND_MINUTES : 120) &&
-                dayName &&
-                dayName !== "Sunday";
-          if (shouldBuffer) mins += 2 * bufferMin;
-        }
-        let hours = Number((mins / 60).toFixed(2));
-        hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, roleRows);
-        hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, roleRows);
-        if (!(hours > 0)) return;
-        entries.push({
-          date: dateKey,
-          day: dayName,
-          hours,
-          completed: completedAll,
-          service: svc,
-          role,
-          rate: rateForRole(role),
-          blendedRate: null
+          if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
+          let mins = Number(group.mins || 0);
+          const svc = group.service || roleServices[role] || "";
+          let applySupportBuffer =
+            (role === "Support Worker" &&
+              typeof portalStaffSupportShiftBufferApplies === "function" &&
+              portalStaffSupportShiftBufferApplies(svc, dayName)) ||
+            (role === "Swimming Instructor" && !/day\s*centre/i.test(String(svc || "")) && dayName && dayName !== "Sunday");
+          if (applySupportBuffer && groupRows.length) {
+            let roleMin = Infinity;
+            let roleMax = -Infinity;
+            groupRows.forEach((s) => {
+              const a = hmToMinutes(String(s.start || "").trim());
+              let b = hmToMinutes(String(s.end || s.start || "").trim());
+              if (b < a) b += 24 * 60;
+              if (a < roleMin) roleMin = a;
+              if (b > roleMax) roleMax = b;
+            });
+            const roleSpan = Number.isFinite(roleMin) && Number.isFinite(roleMax) ? Math.max(0, roleMax - roleMin) : mins;
+            const bufferMin = typeof PORTAL_STAFF_SHIFT_BUFFER_MIN === "number" ? PORTAL_STAFF_SHIFT_BUFFER_MIN : 15;
+            if (role === "Swimming Instructor" && !/day\s*centre/i.test(String(svc || ""))) {
+              mins = Math.max(mins, roleSpan);
+            }
+            const shouldBuffer =
+              typeof portalStaffShouldApplyPayrollBandBuffer === "function"
+                ? portalStaffShouldApplyPayrollBandBuffer(roleSpan, dayName)
+                : roleSpan <
+                    (typeof PORTAL_STAFF_PAYROLL_BAND_MINUTES === "number" ? PORTAL_STAFF_PAYROLL_BAND_MINUTES : 120) &&
+                  dayName &&
+                  dayName !== "Sunday";
+            if (shouldBuffer) mins += 2 * bufferMin;
+          }
+          let hours = Number((mins / 60).toFixed(2));
+          hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
+          hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
+          if (!(hours > 0)) return;
+          entries.push({
+            date: dateKey,
+            day: dayName,
+            hours,
+            completed: completedAll,
+            service: svc,
+            serviceLabel: group.serviceLabel || svc,
+            role,
+            rate: rateForRole(role),
+            blendedRate: null
+          });
         });
       });
       entries.sort((a, b) => {
@@ -1858,16 +1921,18 @@
       const note = document.getElementById("statusNote");
       if (!body) return;
       if (!state.entries.length) {
-        body.innerHTML = `<tr><td colspan="4" class="muted">No shifts found for this period.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="5" class="muted">No shifts found for this period.</td></tr>`;
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
           const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.completed ? "day-row--paid" : "day-row--pending";
           const roleTag = e.role ? ` · ${esc(e.role)}` : "";
+          const serviceLabel = timesheetEntryServiceLabel(e) || "-";
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
             <td>${esc(e.day)}${roleTag}${e.completed ? " - completed" : " - pending feedback"}</td>
+            <td>${esc(serviceLabel)}</td>
             <td class="num">${money(e.hours)}</td>
             <td class="num">${money(daily)}</td>
           </tr>`;
@@ -1905,6 +1970,8 @@
         note: e.note || "",
         start: e.start || "",
         end: e.end || "",
+        service: "",
+        serviceLabel: "",
         role: state.primaryRole || "",
         rate: rate
       }));
@@ -2213,37 +2280,42 @@
       );
       y += 1;
 
-      const colX = [left, left + 34, left + 64, left + 88, left + 122, right];
+      const colX = [left, left + 30, left + 58, left + 108, left + 132, left + 156, right];
       const rowH = 7;
       doc.setDrawColor(217, 227, 239);
       doc.setFillColor(248, 251, 255);
-      doc.rect(colX[0], y, colX[5] - colX[0], rowH, "FD");
+      doc.rect(colX[0], y, colX[6] - colX[0], rowH, "FD");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.text("Date", (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
       doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-      doc.text("Hours", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-      doc.text("Daily Total", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-      doc.text("Status", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+      doc.text("Service", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
+      doc.text("Hours", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
+      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+      doc.text("Status", (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
       y += rowH;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(8.5);
       for (let i = 0; i < state.entries.length; i++) {
         ensureRoom(rowH + 1);
         const e = state.entries[i];
         const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
-        doc.rect(colX[0], y, colX[5] - colX[0], rowH, "S");
+        doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
         const isFlat = serviceFlatRate(e.service || e.role) != null;
         const midCol = state.manual
           ? String(e.note || e.day || "").slice(0, 22)
           : (isFlat ? String(e.role || "Training") : e.day);
+        const serviceCol = state.manual
+          ? "-"
+          : String(timesheetEntryServiceLabel(e) || "-").slice(0, 30);
         const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
         doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
         doc.text(midCol, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-        doc.text(money(e.hours), (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-        doc.text(daily, (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-        doc.text(statusTxt, (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+        doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
+        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
+        doc.text(daily, (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
         y += rowH;
       }
 
@@ -2340,6 +2412,7 @@
           note: e.note || "",
           manual: !!state.manual,
           service: e.service || "",
+          service_label: timesheetEntryServiceLabel(e),
           role: e.role || ""
         }))
       };
