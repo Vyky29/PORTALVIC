@@ -2994,6 +2994,24 @@
       const selectedIso = selectedAnchor && typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(selectedAnchor)
         : '';
+      /* Selected (non-live) day review: hold the cards on the brief "syncing" panel until schedule
+         overrides hydrate, so reassignments/absences apply before the list renders. Without this a
+         refresh on a past day flashes the pre-override roster (e.g. Aurora 23 Jun: Aydaan Ah present
+         and Bediako not yet absent) before settling. Overrides stay hydrated after the first settle,
+         so this only affects the initial load window, and the hydrate/rehydrate timers force it true
+         on error so it can never hang. Day-off days are term-data driven and skip this wait. */
+      if(!liveToday && id && selectedIso
+        && dashboardData.portalIdentityResolved !== false
+        && typeof window !== 'undefined'
+        && window.__PORTAL_STAFF_ROSTER_HYDRATED__
+        && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+        && !(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(selectedIso, id))){
+        dashboardData.portalTodayEmptyPanelMode = 'sync';
+        dashboardData.portalTodayNextSessionPreview = null;
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        return [];
+      }
       const todayOff = id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id);
