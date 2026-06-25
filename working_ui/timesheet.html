@@ -2085,6 +2085,24 @@
       return "";
     }
 
+    /** Colour + bold the pay role label in the timesheet rows. */
+    function timesheetRoleColor(role) {
+      const r = String(role || "").toLowerCase();
+      if (/swim|aquatic/.test(r)) return "#1565c0";
+      if (/climb/.test(r)) return "#b8860b";
+      if (/fitness|physical|gym/.test(r)) return "#1b7f3b";
+      if (/support/.test(r)) return "#000000";
+      return "";
+    }
+
+    function timesheetRoleHtml(role) {
+      const label = esc(String(role || "").trim());
+      if (!label) return "";
+      const color = timesheetRoleColor(role);
+      const style = color ? `font-weight:700;color:${color}` : "font-weight:700";
+      return `<span style="${style}">${label}</span>`;
+    }
+
     function renderTable() {
       const body = document.getElementById("rowsBody");
       const note = document.getElementById("statusNote");
@@ -2096,7 +2114,7 @@
         body.innerHTML = state.entries.map((e) => {
           const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.completed ? "day-row--paid" : "day-row--pending";
-          const roleTag = e.role ? ` · ${esc(e.role)}` : "";
+          const roleTag = e.role ? ` · ${timesheetRoleHtml(e.role)}` : "";
           const serviceLabel = timesheetEntryServiceLabel(e) || "-";
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
