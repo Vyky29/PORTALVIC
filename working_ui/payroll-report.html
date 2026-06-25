@@ -131,6 +131,7 @@
             To process this month (submitted)
           </p>
           <div class="tbl-wrap"><table class="ptbl" id="submittedTable"></table></div>
+          <p id="salariedNote" class="muted hidden" style="margin:8px 0 0;font-size:12px"></p>
           <div id="contractsWrap" class="hidden">
             <p class="sec-title" style="margin-top:16px">
               <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -341,6 +342,22 @@
       } else {
         submittedTable.innerHTML =
           "<tbody><tr><td class='muted'>No timesheets submitted for this month.</td></tr></tbody>";
+      }
+
+      const salaried = Array.isArray(out.salaried) ? out.salaried : [];
+      const salariedNote = document.getElementById("salariedNote");
+      if (salariedNote) {
+        if (salaried.length) {
+          salariedNote.innerHTML = salaried
+            .map((s) => {
+              const extras = Number(s.extras) > 0 ? ` + £${money(s.extras)} extra hours` : "";
+              return `Gross above includes fixed monthly salary — <strong>${esc(s.name)}</strong>: £${money(s.salary)}${extras}.`;
+            })
+            .join("<br>");
+          salariedNote.classList.remove("hidden");
+        } else {
+          salariedNote.classList.add("hidden");
+        }
       }
 
       const contracts = Array.isArray(out.contracts) ? out.contracts : [];
