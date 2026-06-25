@@ -570,6 +570,11 @@
   function portalHelpSpeakIntro() {
     if (global.PortalHelpVoiceSpeak) {
       configureAssistOnce();
+      try {
+        if (typeof global.PortalHelpVoiceSpeak.unlock === "function") {
+          global.PortalHelpVoiceSpeak.unlock();
+        }
+      } catch (_u) {}
       void global.PortalHelpVoiceSpeak.speak(PORTAL_HELP_INTRO_SPEAK);
       return;
     }

@@ -24,6 +24,73 @@
 
   var activeAudio = null;
 
+  // Shared audio element reused for every clip. iOS only lets an element play
+  // after it was started inside a real user gesture, so we "unlock" this one on
+  // the first tap; later async playback (after fetch) then works.
+  var voiceEl = null;
+  var audioUnlocked = false;
+  // 0.05s silent WAV — enough to mark the element as user-activated on iOS.
+  var SILENT_WAV =
+    "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YRAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+  function ensureVoiceEl() {
+    if (!voiceEl && typeof global.Audio === "function") {
+      voiceEl = new global.Audio();
+      try {
+        voiceEl.setAttribute("playsinline", "");
+      } catch (_p) {}
+      voiceEl.preload = "auto";
+    }
+    return voiceEl;
+  }
+
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    var el = ensureVoiceEl();
+    if (!el) return;
+    try {
+      el.src = SILENT_WAV;
+      el.muted = true;
+      var p = el.play();
+      var finish = function () {
+        try {
+          el.pause();
+          el.currentTime = 0;
+          el.muted = false;
+        } catch (_f) {}
+        audioUnlocked = true;
+      };
+      if (p && typeof p.then === "function") {
+        p.then(finish).catch(function () {
+          try {
+            el.muted = false;
+          } catch (_m) {}
+        });
+      } else {
+        finish();
+      }
+    } catch (_e) {}
+  }
+
+  function bindUnlockOnce() {
+    if (!global.document || !global.document.addEventListener) return;
+    var handler = function () {
+      unlockAudio();
+    };
+    var opts = { passive: true };
+    ["pointerdown", "touchend", "click", "keydown"].forEach(function (evt) {
+      global.document.addEventListener(evt, handler, opts);
+    });
+  }
+
+  if (global.document) {
+    if (global.document.readyState === "loading") {
+      global.document.addEventListener("DOMContentLoaded", bindUnlockOnce, { once: true });
+    } else {
+      bindUnlockOnce();
+    }
+  }
+
   function configure(options) {
     if (!options) return;
     if (options.getClient) cfg.getClient = options.getClient;
@@ -47,7 +114,7 @@
     try {
       if (activeAudio) {
         activeAudio.pause();
-        activeAudio.src = "";
+        if (activeAudio !== voiceEl) activeAudio.src = "";
         activeAudio = null;
       }
     } catch (_a) {}
@@ -138,13 +205,20 @@
       }
       if (res.ok && j && j.ok && j.audioBase64) {
         var mime = j.mime ? String(j.mime) : "audio/mpeg";
-        var audio = new Audio("data:" + mime + ";base64," + String(j.audioBase64));
+        var src = "data:" + mime + ";base64," + String(j.audioBase64);
+        var audio = ensureVoiceEl() || new Audio();
+        audio.muted = false;
+        audio.src = src;
         activeAudio = audio;
         audio.onended = function () {
           if (activeAudio === audio) activeAudio = null;
         };
-        await audio.play();
-        return { ok: true, source: "elevenlabs" };
+        try {
+          await audio.play();
+          return { ok: true, source: "elevenlabs" };
+        } catch (_play) {
+          // Autoplay blocked (no gesture yet) — fall back to browser speech.
+        }
       }
     } catch (_fetch) {}
 
@@ -160,5 +234,6 @@
     isAvailable: isAvailable,
     speak: speak,
     stop: stopPlayback,
+    unlock: unlockAudio,
   };
 })(typeof window !== "undefined" ? window : globalThis);
