@@ -1130,6 +1130,39 @@
       ].join("|");
     }
 
+    function timesheetIsLuliaSession(s) {
+      return timesheetNormStaffKey(s && s.staffId) === "lulia";
+    }
+
+    function timesheetIsLuliaIkramMorning(s) {
+      if (!timesheetIsLuliaSession(s)) return false;
+      const client = String((s && (s.clientId || s.client_id || s.client_name || s.name)) || "").toLowerCase();
+      const svc = sessionServiceLower(s);
+      return client.indexOf("ikram") >= 0 && /day\s*centre/.test(svc);
+    }
+
+    function timesheetIsLuliaAfternoonCover(s) {
+      if (!timesheetIsLuliaSession(s)) return false;
+      const svc = sessionServiceLower(s);
+      if (!/aquatic|multi[-\s]?activity/.test(svc)) return false;
+      if (/day\s*centre/.test(svc)) return false;
+      const start = hmToMinutes(String(s && s.start || "").trim());
+      return Number.isFinite(start) && start >= 15 * 60;
+    }
+
+    function timesheetApplyLuliaIkramMorningCutoff(rows) {
+      if (!Array.isArray(rows) || !rows.some(timesheetIsLuliaAfternoonCover)) return rows;
+      return rows.map((s) => {
+        if (!timesheetIsLuliaIkramMorning(s)) return s;
+        const end = hmToMinutes(String(s.end || "").trim());
+        if (!Number.isFinite(end) || end <= 15 * 60) return s;
+        return Object.assign({}, s, {
+          end: "15:00",
+          __portalTimesheetLuliaIkramCutoff: true
+        });
+      });
+    }
+
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
@@ -1161,7 +1194,7 @@
         seen.add(k);
         rows.push(s);
       });
-      return rows;
+      return me === "lulia" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
     }
 
     /** Mirror dashboard: admin absence / slot close counts as done for timesheet pay. */
@@ -1404,6 +1437,11 @@
         (session && (session.rosterService || session.service || session.activity)) || ""
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+      if (timesheetIsLuliaSession(session)) {
+        if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
+        if (/aquatic/.test(svc)) return "Swimming Instructor";
+        if (/multi[-\s]?activity|day\s*centre|bespoke|support|hub/.test(svc)) return "Support Worker";
+      }
       /* Day-centre aquatic hour (e.g. Emmanuel Big Pool) — swim rate before generic day-centre support. */
       if (/big pool|small pool|teaching pool|\blane\b/.test(area)) {
         return "Swimming Instructor";
