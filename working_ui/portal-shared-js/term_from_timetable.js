@@ -468,6 +468,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "eiji",
         "kareena"
       ],
+      "2026-06-10": [
+        "cyrus",
+        "adam_ab",
+        "kayden"
+      ],
       "2026-06-11": [
         "ayman",
         "khalid_ab",
