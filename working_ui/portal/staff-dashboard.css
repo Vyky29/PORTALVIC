@@ -354,8 +354,8 @@
     /* Wrapper: same geometric centre for photo + orbiting dots (no header overflow) */
     .avatar-wrap{
       position:relative;
-      width:110px;
-      height:110px;
+      width:78px;
+      height:78px;
       flex-shrink:0;
       margin:0;
       display:flex;
@@ -375,7 +375,7 @@
     /* Halo / soft “smoke” behind the avatar */
     .avatar-aura{
       position:absolute;
-      inset:-16px;
+      inset:-11px;
       border-radius:50%;
       z-index:0;
       pointer-events:none;
@@ -394,7 +394,7 @@
     }
     .avatar-orbit{
       position:absolute;
-      inset:-22px;
+      inset:-15px;
       transform:none;
       pointer-events:none;
       z-index:2;
@@ -444,8 +444,8 @@
     .avatar{
       position:relative;
       z-index:1;
-      width:97px;
-      height:97px;
+      width:68px;
+      height:68px;
       align-self:center;
       margin-top:0;
       border-radius:50%;
