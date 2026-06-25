@@ -117,10 +117,70 @@ export async function portalListEmploymentContracts(supabase) {
   const { data, error } = await supabase
     .from("employment_contracts")
     .select(
-      "id, contract_reference, employee_name, employee_email, role, scale, status, created_at, sent_at, completed_at, user_id"
+      "id, contract_reference, employee_name, employee_email, role, scale, status, created_at, sent_at, completed_at, user_id, announcement_id, document_id, documents(file_url, title)"
     )
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
   return data || [];
+}
+
+function portalSupabaseUrl() {
+  const u =
+    typeof window !== "undefined" && window.SUPABASE_URL ? String(window.SUPABASE_URL).trim() : "";
+  return u || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+}
+
+async function portalHrAccessToken(supabase) {
+  const box = typeof window !== "undefined" ? window.__PORTAL_SUPABASE__ : null;
+  if (box && box.session && box.session.access_token) return box.session.access_token;
+  const { data } = await supabase.auth.getSession();
+  return data && data.session && data.session.access_token ? data.session.access_token : "";
+}
+
+export async function portalHrContractSignedPdfUrl(supabase, filePath) {
+  const path = String(filePath || "").trim().replace(/^\/+/, "");
+  if (!path) return null;
+  const token = await portalHrAccessToken(supabase);
+  if (!token) return null;
+  const res = await fetch(portalSupabaseUrl() + "/functions/v1/portal-admin-hr-file-signed-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+    body: JSON.stringify({ path, bucket: "documents", source: "portal" })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (body && body.signed_url) return body.signed_url;
+  if (body && body.data && body.data.signed_url) return body.data.signed_url;
+  return null;
+}
+
+export async function portalDownloadEmploymentContractPdf(supabase, filePath, downloadName) {
+  const url = await portalHrContractSignedPdfUrl(supabase, filePath);
+  if (!url) throw new Error("Could not get download link.");
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Download failed.");
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  const safe = String(downloadName || "employment-contract").replace(/[^\w\-]+/g, "_");
+  a.href = URL.createObjectURL(blob);
+  a.download = safe + ".pdf";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+export async function portalAdminDeleteEmploymentContract(supabase, contractId) {
+  const id = String(contractId || "").trim();
+  if (!id) throw new Error("Missing contract id.");
+  const { data, error } = await supabase.rpc("portal_admin_delete_employment_contract", {
+    p_contract_id: id
+  });
+  if (error) throw error;
+  const storagePath = data && data.storage_path ? String(data.storage_path).trim() : "";
+  if (storagePath) {
+    const { error: stErr } = await supabase.storage.from("documents").remove([storagePath]);
+    if (stErr) console.warn("[contract delete] storage file may remain:", stErr.message);
+  }
+  return data;
 }

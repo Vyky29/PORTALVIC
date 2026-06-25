@@ -545,7 +545,7 @@
     templateData.CONTRACT_REFERENCE = contractReference;
 
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260622-staff");
+      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
       const result = await mod.portalPublishEmploymentContract(auth.supabase, auth.user.id, {
         contractReference,
         templateData,
@@ -609,11 +609,104 @@
     return map[status] || status;
   }
 
+  function escHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function contractDocumentPath(row) {
+    const doc =
+      row.documents && !Array.isArray(row.documents)
+        ? row.documents
+        : Array.isArray(row.documents)
+          ? row.documents[0]
+          : null;
+    return doc && doc.file_url ? String(doc.file_url) : "";
+  }
+
+  function recentActionsHtml(row) {
+    const filePath = contractDocumentPath(row);
+    let html = '<div class="recent-actions">';
+    if (row.status === "completed" && filePath) {
+      html +=
+        '<button type="button" class="btn-recent btn-dl" data-recent-action="download" data-contract-id="' +
+        escHtml(row.id) +
+        '" data-file-path="' +
+        escHtml(filePath) +
+        '" data-contract-ref="' +
+        escHtml(row.contract_reference) +
+        '">Download PDF</button>';
+    }
+    if (row.status === "awaiting_employee") {
+      html +=
+        '<a class="recent-link" href="contract_sign.html?contract_id=' +
+        encodeURIComponent(row.id) +
+        '">Staff view</a>';
+    }
+    html +=
+      '<button type="button" class="btn-recent btn-del" data-recent-action="delete" data-contract-id="' +
+      escHtml(row.id) +
+      '" data-contract-ref="' +
+      escHtml(row.contract_reference) +
+      '">Delete</button>';
+    html += "</div>";
+    return html;
+  }
+
+  function bindRecentContractActions() {
+    const tbody = $("recentBody");
+    if (!tbody || tbody.dataset.boundRecentActions) return;
+    tbody.dataset.boundRecentActions = "1";
+    tbody.addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("[data-recent-action]");
+      if (!btn) return;
+      const action = btn.getAttribute("data-recent-action");
+      const id = btn.getAttribute("data-contract-id");
+      const filePath = btn.getAttribute("data-file-path") || "";
+      const ref = btn.getAttribute("data-contract-ref") || "this contract";
+      const auth = portalClient();
+      if (!auth) return;
+      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      if (action === "download") {
+        btn.disabled = true;
+        try {
+          await mod.portalDownloadEmploymentContractPdf(auth.supabase, filePath, ref);
+        } catch (e) {
+          alert((e && e.message) || "Download failed.");
+        } finally {
+          btn.disabled = false;
+        }
+        return;
+      }
+      if (action === "delete") {
+        if (
+          !confirm(
+            "Delete " +
+              ref +
+              "? This removes the contract, dashboard notice and signed PDF. This cannot be undone."
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await mod.portalAdminDeleteEmploymentContract(auth.supabase, id);
+          loadRecentFromSupabase();
+        } catch (e) {
+          alert((e && e.message) || "Could not delete contract.");
+          btn.disabled = false;
+        }
+      }
+    });
+  }
+
   async function loadRecentFromSupabase() {
     const auth = portalClient();
     if (!auth) return;
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260622-staff");
+      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
       const rows = await mod.portalListEmploymentContracts(auth.supabase);
       const tbody = $("recentBody");
       const noRecent = $("noRecent");
@@ -627,24 +720,21 @@
         const tr = document.createElement("tr");
         const date = row.completed_at || row.sent_at || row.created_at;
         const dateStr = date ? new Date(date).toLocaleString("en-GB") : "?";
-        const link =
-          row.status === "awaiting_employee"
-            ? ' <a href="contract_sign.html?contract_id=' + row.id + '">Staff view</a>'
-            : "";
         tr.innerHTML =
           "<td>" +
-          row.contract_reference +
+          escHtml(row.contract_reference) +
           "</td><td>" +
-          row.employee_name +
+          escHtml(row.employee_name) +
           "</td><td>" +
-          row.role +
+          escHtml(row.role) +
           "</td><td>" +
-          row.scale +
+          escHtml(row.scale) +
           "</td><td>" +
           dateStr +
           "</td><td>" +
           statusLabel(row.status) +
-          link +
+          "</td><td>" +
+          recentActionsHtml(row) +
           "</td>";
         tbody.appendChild(tr);
       });
@@ -748,6 +838,7 @@
     refreshContractReference();
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     bindEvents();
+    bindRecentContractActions();
     syncContractTypeFields();
     setStep(1);
     loadStaffRosterDropdown();

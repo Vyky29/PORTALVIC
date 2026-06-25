@@ -371,6 +371,19 @@
     .recent-table th, .recent-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid var(--grey-200); }
     .recent-table th { background: var(--navy); color: var(--white); }
     .recent-table tr:hover { background: var(--soft-blue-light); }
+    .recent-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    .recent-actions .btn-recent {
+      font-size: 0.78rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--grey-300);
+      background: #fff;
+      line-height: 1.2;
+    }
+    .recent-actions .btn-recent.btn-dl { border-color: var(--navy); color: var(--navy); }
+    .recent-actions .btn-recent.btn-del { border-color: #dc2626; color: #dc2626; }
+    .recent-actions .recent-link { font-size: 0.78rem; color: var(--navy); }
     .hr-notes { border-left: 3px solid var(--soft-blue); }
     #pdfSource { position: absolute; left: -9999px; width: 210mm; padding: 20mm; font-size: 11pt; line-height: 1.5; }
     .hidden { display: none !important; }
@@ -816,6 +829,7 @@
               <th>Scale</th>
               <th>Generated date</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="recentBody"></tbody>
@@ -847,7 +861,7 @@
         gate.classList.add("hidden");
         root.classList.remove("hidden");
         const s = document.createElement("script");
-        s.src = "portal/hr-contract-app.js?v=20260623-contract-ref";
+        s.src = "portal/hr-contract-app.js?v=20260625-recent-actions";
         document.body.appendChild(s);
       } catch (e) {
         gate.innerHTML =
