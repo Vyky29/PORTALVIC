@@ -3463,6 +3463,18 @@
         .replace(/\s*-\s*/g, ' to ')
         .replace(/(\d)\.(\d)/g, '$1:$2');
     }
+    function portalParseTimeSlotBounds(timeSlot, day){
+      try{
+        const adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+        if(adapter && typeof adapter.parseTimeSlot === 'function'){
+          return adapter.parseTimeSlot(timeSlot, day);
+        }
+        if(typeof window !== 'undefined' && typeof window.parseTimeSlot === 'function'){
+          return window.parseTimeSlot(timeSlot, day);
+        }
+      }catch(_){}
+      return { start: '09:00', end: '10:00' };
+    }
     /** True when this session time differs from the machine roster (term slot update or slot_update override). */
     function portalSessionRosterTimeWasUpdated(s, sessionDateIso){
       if(!s) return false;
@@ -3501,7 +3513,7 @@
         const mStaff = portalNormKeyStr(String(m.instructors || '').split(/[,/&]|\band\b/i)[0]);
         if(mStaff && mStaff !== sid) continue;
         const mSlot = portalNormTimeSlotLabel(m.time_slot || '');
-        const mStart = portalCanonicalHmToken(parseTimeSlot(String(m.time_slot || ''), m.day || day).start);
+        const mStart = portalCanonicalHmToken(portalParseTimeSlotBounds(String(m.time_slot || ''), m.day || day).start);
         const sameSlot = curSlot && mSlot ? curSlot === mSlot : !!(mStart && curStart && mStart === curStart);
         if(!sameSlot) continue;
         if(mStart && curStart && mStart !== curStart) return true;
@@ -3589,7 +3601,7 @@
           if(portalNormKeyStr(row2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
           const start2 = portalHmFromDbTime(ov.anchor_start) || '09:00';
           const end2 = portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00';
-          const tStart = parseTimeSlot(String(row2.time_slot || ''), row2.day || vw);
+          const tStart = portalParseTimeSlotBounds(String(row2.time_slot || ''), row2.day || vw);
           if(!portalTimeAnchorsMatch(ov.anchor_start, tStart.start || start2)) continue;
           if(!portalTimeAnchorsMatch(ov.anchor_end, tStart.end || end2)) continue;
           const clientId2 = adapter && typeof adapter.canonicalParticipantClientId === 'function'

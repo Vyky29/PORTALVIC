@@ -1196,6 +1196,63 @@
       }
     }
 
+    function timesheetSessionIsBespokeShared(s) {
+      const act = String((s && (s.activity || s.rosterService || s.service)) || "").toLowerCase();
+      if (!/bespoke/.test(act)) return false;
+      return /hub/.test(String(s.area || s.rosterArea || "").trim().toLowerCase());
+    }
+
+    function timesheetSessionIsSundaySwimfarmPerStaff(s, iso) {
+      if (!s) return false;
+      const day =
+        String(s.day || "").trim() ||
+        (iso
+          ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("en-GB", {
+              weekday: "long",
+            })
+          : "");
+      if (day !== "Sunday") return false;
+      if (String(s.venue || "").trim().toLowerCase() !== "swimfarm") return false;
+      const act = String(s.rosterService || s.activity || s.service || "").toLowerCase();
+      if (/multi[-\s]?activity/.test(act)) return true;
+      if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+      if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+      return false;
+    }
+
+    /** Mirror staff dashboard: Multi/Aquatic/climb = own feedback; Day Centre + Bespoke Hub = shared. */
+    function timesheetSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
+      if (s && s.__portalSundayInstructorCover) return true;
+      if (timesheetSessionIsSundaySwimfarmPerStaff(s, iso)) return true;
+      const act = String((s && (s.activity || s.rosterService || s.service)) || "").toLowerCase();
+      if (/day\s*centre/.test(act)) return false;
+      if (timesheetSessionIsBespokeShared(s)) return false;
+      if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+      if (/multi[-\s]?activity/.test(act)) return true;
+      if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+      return false;
+    }
+
+    function timesheetCollectPerStaffOwnFeedbackOnlyKeys(sessionsModel, dates, staffKey) {
+      const keys = new Set();
+      const me = normTimesheetStaffKey(staffKey);
+      if (!me) return [];
+      for (const dateObj of dates || []) {
+        const iso = isoDate(dateObj);
+        const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
+          const st = String(s.status || "").toLowerCase();
+          if (st === "closed" || st === "available") return false;
+          return normTimesheetStaffKey(s.staffId) === me;
+        });
+        rows.forEach((s) => {
+          if (!timesheetSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) return;
+          const sk = timesheetSessionReviewKey(s, dateObj);
+          if (sk) keys.add(sk);
+        });
+      }
+      return [...keys].slice(0, 400);
+    }
+
     async function buildReviewMap(supabase, userId, sessionsModel, dates) {
       const memory = parseReviewMap();
       try {
@@ -1210,14 +1267,19 @@
           }
         })();
         const rosterKeys = collectRosterSessionKeysForPeriod(sessionsModel, dates);
+        const staffKey = String(state.staffRosterKey || "").trim().toLowerCase();
+        const perStaffOwnKeys = timesheetCollectPerStaffOwnFeedbackOnlyKeys(sessionsModel, dates, staffKey);
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(supabase, userId, {
           rosterSessionKeys: rosterKeys,
           feedbackMergeRules,
-          staffId: String(state.staffRosterKey || "").trim().toLowerCase(),
+          staffId: staffKey,
+          perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
         });
         mod.portalMergeReviewKeysIntoMemoryMap(memory, keys, {
           rosterSessionKeys: rosterKeys,
           feedbackMergeRules,
+          perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
+          ownFeedbackKeys: keys.ownFeedbackKeys || [],
         });
         const overrides = await fetchScheduleOverridesForPeriod(
           supabase,
