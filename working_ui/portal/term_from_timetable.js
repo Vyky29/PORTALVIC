@@ -1232,6 +1232,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   },
   "termStaffTimesheetFeedbackPendingDatesByProfileKey": {
     "aurora": [
+      "2026-06-21",
       "2026-06-23"
     ],
     "alex": [
