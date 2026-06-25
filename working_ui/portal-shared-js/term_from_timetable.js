@@ -100,7 +100,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-15",
       "2026-06-17",
       "2026-06-19",
-      "2026-06-21",
       "2026-06-22"
     ],
     "aurora": [
@@ -1237,6 +1236,15 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "alex": [
       "2026-06-14"
+    ],
+    "giuseppe": [
+      "2026-06-21"
+    ],
+    "john": [
+      "2026-06-21"
+    ],
+    "youssef": [
+      "2026-06-24"
     ]
   },
   "termFeedbackAssumeCompleteThroughIso": "2026-06-24"
