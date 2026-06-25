@@ -917,8 +917,8 @@
           try{
             if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+              if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             }
-            if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
                 window.portalRefreshScheduleOverridesCache({ termCalendar: false }),
@@ -957,8 +957,8 @@
           try{
             if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+              if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             }
-            if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
                 window.portalRefreshScheduleOverridesCache({ termCalendar: false }),

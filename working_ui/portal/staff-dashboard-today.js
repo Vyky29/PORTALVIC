@@ -2773,13 +2773,33 @@
       if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function') return false;
       return portalCalendarIsoIsTomorrow(iso);
     }
+    function portalNextSessionPreviewParticipantsComplete(preview){
+      if(!portalNextSessionPreviewHasParticipants(preview)) return false;
+      var list = Array.isArray(preview.participants) ? preview.participants : [];
+      if(!list.length) return false;
+      for(var i = 0; i < list.length; i++){
+        var nm = String((list[i] && list[i].name) || '').trim();
+        if(!nm || nm === '—') return false;
+      }
+      return true;
+    }
     function portalStabilizeNextSessionPreview(nextPreview, prevPreview, staffId){
       var sid = String(staffId || portalAuthStaffRosterId() || '').trim().toLowerCase();
       if(dashboardData && dashboardData.__portalStableNextSessionStaffId !== sid){
         dashboardData.__portalStableNextSessionPreview = null;
         prevPreview = null;
       }
+      var prevUsable = prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
+        && portalNextSessionPreviewHasParticipants(prevPreview)
+        && portalNextSessionPreviewIsTomorrow(prevPreview);
       if(portalNextSessionPreviewHasParticipants(nextPreview) && portalNextSessionPreviewIsTomorrow(nextPreview)){
+        /* Avoid the avatar/name flicker: a transient incomplete rebuild (participant missing its
+           resolved name while the model is still hydrating) must not replace a complete cached
+           next-session preview. */
+        if(prevUsable && portalNextSessionPreviewParticipantsComplete(prevPreview)
+          && !portalNextSessionPreviewParticipantsComplete(nextPreview)){
+          return prevPreview;
+        }
         if(dashboardData){
           dashboardData.__portalStableNextSessionPreview = nextPreview;
           dashboardData.__portalStableNextSessionStaffId = sid;
@@ -2787,11 +2807,10 @@
         return nextPreview;
       }
       if(!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)){
+        if(prevUsable) return prevPreview;
         return portalNextSessionPreviewIsTomorrow(nextPreview) ? nextPreview : null;
       }
-      if(prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
-        && portalNextSessionPreviewHasParticipants(prevPreview)
-        && portalNextSessionPreviewIsTomorrow(prevPreview)){
+      if(prevUsable){
         return prevPreview;
       }
       if(dashboardData){
