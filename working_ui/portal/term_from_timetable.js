@@ -141,9 +141,21 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "roberto": [
       "2026-06-10"
+    ],
+    "aurora": [
+      "2026-06-23"
     ]
   },
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
+    "aurora": {
+      "2026-06-23": [
+        "aydaan_ah",
+        "bediako",
+        "junaid_f",
+        "junaid",
+        "mario"
+      ]
+    },
     "youssef": {
       "2026-06-01": [
         "eddie",
@@ -511,7 +523,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "youssef",
     "dan",
     "roberto",
-    "javier"
+    "javier",
+    "aurora"
   ],
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"

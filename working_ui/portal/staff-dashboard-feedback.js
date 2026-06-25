@@ -1233,7 +1233,7 @@
           || STAFF_DASHBOARD_ID
           || ''
         ).trim().toLowerCase();
-        const resetV = '20260608-bespoke-trio-shared';
+        const resetV = '20260625-aurora-jun23-catchup';
         const machineResetV = '20260621-sunday-cover-feedback';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';

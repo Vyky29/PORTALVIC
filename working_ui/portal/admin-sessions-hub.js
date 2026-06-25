@@ -1333,6 +1333,70 @@
     return out;
   }
 
+  /**
+   * Active client_replace makeup whose ANCHOR is this booked participant — i.e. the original
+   * participant told us they were not coming and admin handed their slot to someone else as a
+   * makeup. The original roster row stays "Booked" in the data, so without this it shows
+   * "Awaiting feedback" forever. We surface the makeup here so the row can render the original
+   * as replaced (red) alongside the makeup participant (green) and resolve via the makeup feedback.
+   */
+  function makeupOverrideDisplacingSlot(hub, slot) {
+    if (!hub || !slot) return null;
+    if (slot.portalOverrideMakeUpTag || slot.portalOverrideTrialTag) return null;
+    if (isOpenRosterSlot(slot.client_name)) return null;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return null;
+    var sCid = canonicalClientSlug(slot.client_name);
+    if (!sCid) return null;
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (overrideIsTrialType(ov)) continue;
+      if (clean(ov.session_date) !== slot.session_date) continue;
+      if (overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+      if (canonicalClientSlug(ov.anchor_client_id) !== sCid) continue;
+      if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) continue;
+      var oStart =
+        normTimeShort(ov.anchor_start) ||
+        normTimeShort(normTimeKey(ov.anchor_time_slot_label, wd));
+      if (oStart && sStart && oStart !== sStart) continue;
+      var p = overridePayloadObj(ov);
+      var repSlug =
+        overrideReplacementClientId(p) ||
+        canonicalClientSlug(overrideReplacementClientName(p));
+      if (!repSlug || canonicalClientSlug(repSlug) === sCid) continue;
+      if (
+        !best ||
+        (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+      ) {
+        best = ov;
+      }
+    }
+    if (!best) return null;
+    return { ov: best, makeupSlot: slotFromMakeupOverride(slot.session_date, wd, best) };
+  }
+
+  /** Synthetic makeup row whose displaced participant still has their own roster row that day —
+      fold it into that row (Original red / MakeUp green) instead of showing a duplicate line. */
+  function makeupSlotAbsorbedByDisplacedRow(hub, slot) {
+    if (!hub || !slot || !slot.portalOverrideMakeUpTag) return false;
+    var ov = slot.__portalScheduleOverride;
+    if (!ov || overrideAnchorIsOpenSlot(ov.anchor_client_id)) return false;
+    var anchorSlug = canonicalClientSlug(ov.anchor_client_id);
+    if (!anchorSlug || anchorSlug === canonicalClientSlug(slot.client_name)) return false;
+    var daySlots = hub.expandSlotsForDate(slot.session_date) || [];
+    for (var i = 0; i < daySlots.length; i++) {
+      var s = daySlots[i];
+      if (s === slot) continue;
+      if (s.portalOverrideMakeUpTag || s.portalOverrideTrialTag) continue;
+      if (canonicalClientSlug(s.client_name) === anchorSlug) return true;
+    }
+    return false;
+  }
+
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsShadowingSessionAdd(ov)) return "Shadowing";
@@ -2143,6 +2207,7 @@
 
   function shouldOmitOverviewSlot(hub, slot) {
     if (!slot) return false;
+    if (makeupSlotAbsorbedByDisplacedRow(hub, slot)) return true;
     var cfg = acatGroupCoverageConfig();
     if (cfg && slotMatchesAcatCoverage(slot, cfg)) {
       if (cfg.always_hide_individual_rows === true) return true;
@@ -4223,6 +4288,13 @@
   };
 
   AdminSessionsHub.prototype.slotFeedbackComplete = function (slot) {
+    if (slot && !slot.portalOverrideMakeUpTag) {
+      var disp = makeupOverrideDisplacingSlot(this, slot);
+      if (disp && disp.makeupSlot) {
+        if (this.slotIsAbsent(disp.makeupSlot)) return true;
+        return this.slotFeedbackComplete(disp.makeupSlot);
+      }
+    }
     if (this.acatGroupCoversSlot(slot)) return true;
     if (sameDayAquaticFeedbackCoversMakeupSlot(this, slot)) return true;
     if (this.findFeedbackForSlot(slot)) return true;
@@ -6228,8 +6300,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
+        var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
         var fbCell;
-        if (isOpenSlot) {
+        if (makeupDisp) {
+          var mkSlotDisp = makeupDisp.makeupSlot;
+          var mkAbsentDisp = mkSlotDisp ? hub.slotIsAbsent(mkSlotDisp) : false;
+          var mkDoneDisp = mkSlotDisp ? hub.slotFeedbackComplete(mkSlotDisp) : false;
+          fbCell = mkAbsentDisp
+            ? '<span class="ash-status ash-status--absent">Submitted (Absent)</span>'
+            : rosterFeedbackStatusHtml(false, mkDoneDisp);
+        } else if (isOpenSlot) {
           fbCell = '<span class="ash-muted">N/A</span>';
         } else if (isTrial) {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
@@ -6240,7 +6320,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
         }
-        var statusCell = isOpenSlot
+        var statusCell = makeupDisp
+          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+          : isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
           : isTrial
             ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
@@ -6269,6 +6351,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var inst = hubInstructorCellHtml(slot, slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
+        var participantCell;
+        if (makeupDisp) {
+          var mkNameDisp =
+            (makeupDisp.makeupSlot && clean(makeupDisp.makeupSlot.client_name)) ||
+            clean(overrideReplacementClientName(overridePayloadObj(makeupDisp.ov))) ||
+            "MakeUp";
+          participantCell =
+            '<span class="ash-pill ash-pill--out" title="Replaced \u2014 told us they were not coming; slot given as a makeup">' +
+            esc(clean(slot.client_name)) +
+            "</span>" +
+            '<span class="ash-pill ash-pill--makeup" title="MakeUp participant in this slot">' +
+            esc(mkNameDisp) +
+            "</span>";
+        } else {
+          participantCell = htmlParticipantPill(slot.client_name, esc, slot);
+        }
         return (
           "<tr>" +
           '<td class="ash-td-center">' +
@@ -6278,7 +6376,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           inst +
           "</td>" +
           '<td class="ash-td-center">' +
-          htmlParticipantPill(slot.client_name, esc, slot) +
+          participantCell +
           "</td>" +
           '<td class="ash-td-center">' +
           esc(venue) +

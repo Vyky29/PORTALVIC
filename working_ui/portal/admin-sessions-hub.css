@@ -1082,6 +1082,7 @@
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-pill--out { background: #fef2f2; color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.22); }
+    .ash-pill--makeup { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
     .ash-instructor-reassign { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; }
     .ash-instructor-reassign-sep { color: #94a3b8; font-weight: 700; font-size: 12px; line-height: 1; }
     .ash-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
