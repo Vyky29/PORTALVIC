@@ -516,6 +516,21 @@
       const yy = d.getFullYear();
       return `${dd}-${mm}-${yy}`;
     }
+    /** e.g. "25th May to 24th June" for document title + stored PDF name. */
+    function timesheetPeriodRangeLabel(startIso, endIso) {
+      const start = parseIsoDate(startIso);
+      const end = parseIsoDate(endIso);
+      if (!start || !end) return "";
+      const fmt = (d) =>
+        `${dayOrdinal(d.getDate())} ${d.toLocaleDateString("en-GB", { month: "long" })}`;
+      return `${fmt(start)} to ${fmt(end)}`;
+    }
+    function timesheetDocumentTitle(employeeName, periodStart, periodEnd) {
+      const name = String(employeeName || "Staff").trim() || "Staff";
+      const possessive = /s$/i.test(name) ? `${name}'` : `${name}'s`;
+      const range = timesheetPeriodRangeLabel(periodStart, periodEnd);
+      return range ? `${possessive} Timesheet (${range})` : `${possessive} Timesheet`;
+    }
     async function readImageUrlAsDataUrl(url) {
       try {
         const res = await fetch(url, { mode: "cors" });
@@ -2646,12 +2661,16 @@
       btn.disabled = true;
       try {
         const [pdfBlob, auth] = await Promise.all([generatePdfBlob(), portalRequireUser()]);
-        const tsMonth = payrollMonthName(state.periodEnd);
+        const docTitle = timesheetDocumentTitle(
+          state.employeeName,
+          state.periodStart,
+          state.periodEnd
+        );
         await portalUploadPdfAndCreateDocument({
           blob: pdfBlob,
           document_type: "timesheet",
           category: "finance",
-          title: `${tsMonth}'s Timesheet`,
+          title: docTitle,
           related_date: state.periodEnd,
           source_page: "timesheet",
           reuseAuth: auth
