@@ -532,8 +532,14 @@ function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
     if (!rosterRowMatchesIso(row, iso)) return false;
     const slot = rosterRowToSlot(row, iso);
     if (!portalLeadSlotInScope(slot, scopes)) return false;
-    const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
-    if (keys.indexOf(anchor) < 0) return false;
+    // Match the override anchor against BOTH the resolved instructor (after any
+    // Sunday replaceInstructor, e.g. Javier→Luliya) AND the original roster
+    // instructor. An absence/make-up is recorded against the originally rostered
+    // instructor (Javier); without the raw label the cover (Luliya) would hide
+    // it from the programme lead.
+    const resolvedKeys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
+    const rawKeys = staffKeysFromInstructorLabel(row && row.instructors);
+    if (resolvedKeys.indexOf(anchor) < 0 && rawKeys.indexOf(anchor) < 0) return false;
     if (wantVenue && normVenue(row.venue) !== wantVenue) return false;
     if (!openClient && wantClient && !rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) {
       return false;
