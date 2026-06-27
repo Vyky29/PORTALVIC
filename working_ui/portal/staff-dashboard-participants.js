@@ -1548,8 +1548,15 @@
         const p = String(rangeParts[i] || '').trim();
         if(!p) continue;
         add(p);
-        const hoursOnly = p.match(/\b\d{1,2}\b/g) || [];
-        for(let j = 0; j < hoursOnly.length; j++) add(hoursOnly[j]);
+        // Only treat a bare number as an hour-only token (e.g. "3" in "3 to 4").
+        // For a full clock value like "15:00:00" / "10:00" the minute/second
+        // groups ("00") must NOT be promoted to hour tokens — that produced a
+        // bogus "00:00" that made every on-the-hour slot match every other one,
+        // so an open-slot trial/makeup leaked onto all of a worker's sessions.
+        if(p.indexOf(':') === -1 && p.indexOf('.') === -1){
+          const hoursOnly = p.match(/\b\d{1,2}\b/g) || [];
+          for(let j = 0; j < hoursOnly.length; j++) add(hoursOnly[j]);
+        }
       }
       return out;
     }
