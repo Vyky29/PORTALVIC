@@ -23,6 +23,16 @@ const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "session_add",
   "slot_update",
 ]);
+/** Team-shift day cards: operational changes the lead must see (not instructor covers — team bar). */
+const LEAD_TEAM_SHIFT_ALERT_TYPES = new Set([
+  "client_replace_in_slot",
+  "client_absence_announced",
+  "slot_close",
+  "slot_open",
+  "slot_clear_client",
+  "session_add",
+  "slot_update",
+]);
 const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function normKey(v) {
@@ -601,6 +611,27 @@ export function portalLeadOverrideRowAppliesToLeadScope(row, ctx) {
   return overrideMatchesLeadScopedRoster(row, iso, ctx.scopes, rosterSource());
 }
 
+export function portalLeadTeamShiftDayDismissKey(iso) {
+  const s = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  return "lead-team-shift-day:" + s;
+}
+
+function leadTeamShiftDismissedKeys() {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalQuickMenuLoadDismissedOverrideKeys === "function") {
+      return window.portalQuickMenuLoadDismissedOverrideKeys();
+    }
+  } catch (_) {}
+  return [];
+}
+
+function isLeadTeamShiftDayDismissed(iso) {
+  const key = portalLeadTeamShiftDayDismissKey(iso);
+  if (!key) return false;
+  return leadTeamShiftDismissedKeys().indexOf(key) >= 0;
+}
+
 export function portalLeadTeamShiftChanges(ctx, opts) {
   ctx = ctx || portalLeadTeamShiftContext();
   if (!ctx) return [];
@@ -609,29 +640,22 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   const minCreated = now - (opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS);
   const out = [];
 
-  const src = rosterSource();
   const seenOverrideIds = new Set();
 
   scheduleOverrideRows().forEach(function (ov) {
     const t = String(ov.override_type || "").trim();
-    if (!LEAD_SERVICE_CHANGE_TYPES.has(t)) return;
+    if (!LEAD_TEAM_SHIFT_ALERT_TYPES.has(t)) return;
     if (String(ov.status || "active") !== "active") return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
+    if (isLeadTeamShiftDayDismissed(iso)) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
-    if (!overrideMatchesLeadScopedRoster(ov, iso, ctx.scopes, src)) return;
-    // The lead's OWN cover / personal changes already appear (navigable) in the
-    // standard "Schedule changes" quick-menu section; keep this team list to the
-    // peers they lead so the same change is not shown twice.
-    const pl = parseOverridePayload(ov);
-    const anchorKey = canonicalStaffKey(ov.anchor_staff_id);
-    const coverKey = canonicalStaffKey(pl.covering_staff_id);
-    if (anchorKey === ctx.leadKey || coverKey === ctx.leadKey) return;
+    if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
     if (ovId) seenOverrideIds.add(ovId);
     const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
     if (created && created < minCreated) return;
-    const programmeLabel = activeScopeLabelForDay(ctx.scopes, iso);
+    const pl = parseOverridePayload(ov);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;
     try {
@@ -646,7 +670,7 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
       iso: iso,
       type: t,
       title: leadOverrideChangeTitle(ov, pl),
-      sub: [programmeLabel, dateLabel].filter(Boolean).join(" · "),
+      sub: dateLabel,
       createdAt: ov.created_at || "",
     });
   });
@@ -717,14 +741,12 @@ function renderQuickMenuChanges(changes) {
   changes.forEach(function (ch) {
     const iso = String(ch.iso || "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    if (isLeadTeamShiftDayDismissed(iso)) return;
     if (!byIso[iso]) {
-      byIso[iso] = { iso: iso, count: 0, programme: "" };
+      byIso[iso] = { iso: iso, count: 0 };
       order.push(iso);
     }
     byIso[iso].count += 1;
-    if (!byIso[iso].programme) {
-      byIso[iso].programme = String(ch.sub || "").split(" · ")[0] || "";
-    }
   });
   order.sort();
 
@@ -734,11 +756,14 @@ function renderQuickMenuChanges(changes) {
       const day = byIso[iso];
       const title = escHtml(dayCardDateLabel(iso));
       const countLabel = day.count > 1 ? day.count + " changes" : "1 change";
-      const subText = [day.programme, countLabel + " · tap to view"].filter(Boolean).join(" · ");
+      const subText = countLabel + " · tap to view";
+      const dismissKey = portalLeadTeamShiftDayDismissKey(iso);
       const sub = '<span class="menu-btn-sub">' + escHtml(subText) + "</span>";
       return (
         '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--portal-pulse"' +
-        ' data-action="open-roster-override-attention" data-portal-override-nav-iso="' +
+        ' data-action="open-roster-override-attention" data-portal-override-id="' +
+        escHtml(dismissKey) +
+        '" data-portal-override-nav-iso="' +
         escHtml(iso) +
         '" aria-label="Team changes on ' +
         title +
@@ -819,6 +844,7 @@ if (typeof window !== "undefined") {
   window.portalSyncLeadTeamShiftUi = portalSyncLeadTeamShiftUi;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
+  window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;
   window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;

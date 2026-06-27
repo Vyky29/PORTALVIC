@@ -238,6 +238,8 @@
       const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
       const adminHost = document.getElementById('portalQuickMenuScheduleOverridesTop');
       const adminTitle = document.getElementById('portalQuickMenuAdminChangesHeading');
+      const leadTeamHost = document.getElementById('portalLeadTeamShiftQuickHost');
+      const leadTeamTitle = document.getElementById('portalLeadTeamShiftHeading');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
         const pendingAnnCount = typeof portalActiveAnnouncementItems === 'function'
@@ -256,8 +258,10 @@
       const hasBanner = hasPolicy || hasOutstanding || hasWellbeing || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasAdminChanges = !!(adminHost && !adminHost.hidden && adminHost.querySelector('.portal-qm-override-stack'));
+      const hasLeadTeamShift = !!(leadTeamHost && !leadTeamHost.hidden && leadTeamHost.querySelector('.portal-lead-team-qm-stack'));
       if(adminTitle) adminTitle.hidden = !hasAdminChanges;
-      grp.hidden = !hasBanner && !hasNotices && !hasAdminChanges;
+      if(leadTeamTitle) leadTeamTitle.hidden = !hasLeadTeamShift;
+      grp.hidden = !hasBanner && !hasNotices && !hasAdminChanges && !hasLeadTeamShift;
     }
 
     function syncDockQuickMenuAttention(){
@@ -4340,6 +4344,7 @@
         }
         if(typeof closeSheet === 'function') closeSheet();
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         return;
       }
       const hit = e.target.closest('[data-action="open-pending-feedback"]');
