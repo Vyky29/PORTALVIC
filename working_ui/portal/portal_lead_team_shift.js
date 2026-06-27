@@ -914,6 +914,7 @@ if (typeof window !== "undefined") {
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
   window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;
+  window.portalLeadTeamShiftDayDismissed = isLeadTeamShiftDayDismissed;
   window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;

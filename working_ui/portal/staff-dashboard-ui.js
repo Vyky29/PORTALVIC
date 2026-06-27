@@ -994,6 +994,27 @@
       return found;
     }
     /** Pending quick-menu override days (same source as yellow cards) — cached for calendar/week pulse. */
+    function portalStaffIsProgrammeLead(){
+      try{
+        return typeof window.portalLeadTeamShiftContext === 'function' && !!window.portalLeadTeamShiftContext();
+      }catch(_){
+        return false;
+      }
+    }
+    function portalLeadTeamShiftDayWasDismissed(iso){
+      try{
+        if(typeof window.portalLeadTeamShiftDayDismissed === 'function'){
+          return !!window.portalLeadTeamShiftDayDismissed(iso);
+        }
+        if(typeof window.portalLeadTeamShiftDayDismissKey !== 'function'
+          || typeof portalQuickMenuLoadDismissedOverrideKeys !== 'function') return false;
+        const key = window.portalLeadTeamShiftDayDismissKey(iso);
+        if(!key) return false;
+        return portalQuickMenuLoadDismissedOverrideKeys().indexOf(key) >= 0;
+      }catch(_){
+        return false;
+      }
+    }
     function portalRefreshPendingOverrideDaysCache(){
       const byIso = Object.create(null);
       const dismissed = Object.create(null);
@@ -1027,11 +1048,18 @@
             pack.hasUpdated = true;
           }
         }else if(t === 'instructor_reassign'){
-          if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
-            && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
-            pack.hasNewShift = true;
+          if(portalStaffIsProgrammeLead()){
+            if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+              && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
+              pack.hasNewShift = true;
+            }
+          }else{
+            if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+              && portalOverrideIsInstructorCoverForLoggedInStaff(row)){
+              pack.hasNewShift = true;
+            }
+            pack.hasUpdated = true;
           }
-          pack.hasUpdated = true;
         }else if(t === 'client_replace_in_slot' || t === 'client_absence_announced'
           || t === 'slot_close' || t === 'slot_open' || t === 'slot_clear_client'){
           pack.hasUpdated = true;
@@ -1104,6 +1132,11 @@
           byIso[iso] = pack;
         }
       }catch(_){}
+      if(portalStaffIsProgrammeLead()){
+        Object.keys(byIso).forEach(function(iso){
+          if(portalLeadTeamShiftDayWasDismissed(iso)) delete byIso[iso];
+        });
+      }
       try{ window.__PORTAL_PENDING_OVERRIDE_DAYS__ = byIso; }catch(_e){}
       return byIso;
     }
@@ -1255,15 +1288,24 @@
           if(String(ov.status || 'active') !== 'active') return;
           if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
           const t = String(ov.override_type || '').trim();
-          if(t === 'slot_update' || t === 'slot_close' || t === 'instructor_reassign') out.hasUpdated = true;
+          if(t === 'slot_update' || t === 'slot_close') out.hasUpdated = true;
+          if(t === 'instructor_reassign'){
+            if(portalStaffIsProgrammeLead()){
+              if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+                && portalOverrideIsInstructorCoverForLoggedInStaff(ov)){
+                out.hasNewShift = true;
+              }
+            }else{
+              out.hasUpdated = true;
+              if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
+                && portalOverrideIsInstructorCoverForLoggedInStaff(ov)){
+                out.hasNewShift = true;
+              }
+            }
+          }
           if(t === 'slot_clear_client' && !(ov.payload && ov.payload.cancelled_by_admin)) out.hasUpdated = true;
           const P = window.PortalParticipantsSheet;
           if(t === 'slot_update' && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov)){
-            out.hasNewShift = true;
-            out.hasUpdated = true;
-          }
-          if(t === 'instructor_reassign' && typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
-            && portalOverrideIsInstructorCoverForLoggedInStaff(ov)){
             out.hasNewShift = true;
             out.hasUpdated = true;
           }
@@ -1298,6 +1340,19 @@
           if(pending.hasShadowing) out.hasShadowing = true;
           if(pending.hasTraining) out.hasTraining = true;
           if(pending.hasMeeting) out.hasMeeting = true;
+        }
+        if(portalStaffIsProgrammeLead() && portalLeadTeamShiftDayWasDismissed(iso)){
+          out.hasMakeUp = false;
+          out.hasTrial = false;
+          out.hasAbsentAnnounced = false;
+          out.hasCancelled = false;
+          out.hasUpdated = false;
+          out.hasNewShift = false;
+          out.hasTraining = false;
+          out.hasShadowing = false;
+          out.hasMeeting = false;
+          out.hasShadowingHost = false;
+          out.shadowingHostLabels = [];
         }
       }catch(_){ }
       return out;
