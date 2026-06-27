@@ -215,6 +215,8 @@
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
+    eddie_mc: "eddie",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */

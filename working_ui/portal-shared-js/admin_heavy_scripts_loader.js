@@ -9,7 +9,7 @@
       "/portal/term_from_timetable.js?v=20260625-youssef-validated",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-live",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260621-sunday-cover-feedback",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
       "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
       "/portal/portal_madre_fold.js?v=20260614-madre-dedupe",
       "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
