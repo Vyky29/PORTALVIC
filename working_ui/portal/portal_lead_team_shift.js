@@ -483,7 +483,49 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     members: memberKeys.map(function (k) {
       return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
     }),
+    absents: collectLeadScopeAbsentsForIso(iso, ctx),
   };
+}
+
+function leadAbsenceClientName(ov, pl) {
+  pl = pl || parseOverridePayload(ov);
+  const named =
+    String(pl.client_name || pl.client_display_name || pl.participant_name || pl.to_client_name || "").trim();
+  if (named) return named;
+  const slug = String(ov.anchor_client_id || "").trim();
+  if (!slug) return "";
+  return slug
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map(function (w) {
+      return w ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+    })
+    .join(" ");
+}
+
+/** Participants marked absent that day within the lead's programme scope (red chips). */
+function collectLeadScopeAbsentsForIso(iso, ctx) {
+  const out = [];
+  const seen = Object.create(null);
+  scheduleOverrideRows().forEach(function (ov) {
+    if (String(ov.override_type || "").trim() !== "client_absence_announced") return;
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+    if (!String(ov.anchor_client_id || "").trim()) return;
+    if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
+    const name = leadAbsenceClientName(ov);
+    if (!name) return;
+    const key = normKey(name);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push({ name: name });
+  });
+  out.sort(function (a, b) {
+    return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+  });
+  return out;
 }
 
 function normVenue(v) {
@@ -712,6 +754,25 @@ function renderTodayStrip(team) {
       );
     })
     .join("");
+  const absents = Array.isArray(team.absents) ? team.absents : [];
+  let absentBlock = "";
+  if (absents.length) {
+    const absentChips = absents
+      .map(function (a) {
+        return (
+          '<span class="portal-lead-team-today__chip portal-lead-team-today__chip--absent">' +
+          escHtml(a.name) +
+          "</span>"
+        );
+      })
+      .join("");
+    absentBlock =
+      '<div class="portal-lead-team-today__absents" aria-label="Participants absent today">' +
+      '<span class="portal-lead-team-today__absents-label">Absent</span>' +
+      '<div class="portal-lead-team-today__absent-chips">' +
+      absentChips +
+      "</div></div>";
+  }
   return (
     '<div class="portal-lead-team-today" role="region" aria-label="Team on shift today">' +
     '<div class="portal-lead-team-today__head">' +
@@ -719,7 +780,9 @@ function renderTodayStrip(team) {
     "</div>" +
     '<div class="portal-lead-team-today__chips">' +
     chips +
-    "</div></div>"
+    "</div>" +
+    absentBlock +
+    "</div>"
   );
 }
 

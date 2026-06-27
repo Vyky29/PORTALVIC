@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260627-lead-absent-raw-anchor";
+  var VER = "20260627-team-absent-chips";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260625-youssef-validated",
@@ -43,7 +43,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260627-lead-absent-raw-anchor",
+    "/portal/portal_lead_team_shift.js?v=20260627-team-absent-chips",
   ];
 
   var TIER_IDLE = [
