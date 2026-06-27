@@ -47,7 +47,7 @@
     yassir: "portal/participants/yassir.png",
     faris: "portal/participants/faris.png",
     eiji: "portal/participants/eiji.png",
-    emmanuel: "portal/participants/emmanuel.png",
+    emmanuel: "portal/participants/emmanuel.png?v=20260628-emmanuel-smile",
     hazem: "portal/participants/hazem.png",
     samer: "portal/participants/samer.png",
     kate: "portal/participants/kate.png",
@@ -187,7 +187,9 @@
   /** File names use hyphens (adam-ab.png), not spaces — see participantPhotoPathCandidates. */
   function participantPhotoPathOnDisk(relative) {
     var p = normalizePhotoUrl(String(relative || "").trim());
-    return p && PARTICIPANT_PHOTO_FILES_ON_DISK[p] ? p : "";
+    var qi = p.indexOf("?");
+    var path = qi >= 0 ? p.slice(0, qi) : p;
+    return p && PARTICIPANT_PHOTO_FILES_ON_DISK[path] ? p : "";
   }
 
   function participantPhotoPathCandidates(name, avatarOverride, contactId) {
