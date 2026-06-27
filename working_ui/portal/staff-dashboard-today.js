@@ -1075,6 +1075,7 @@
         }
         const ov0 = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(s, sessionDateIso) : null;
         if(ov0 && ov0.override_type === 'instructor_reassign' && String(ov0.payload && ov0.payload.covering_staff_id || '').trim()) return;
+        if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateIso)) return;
         const eid = typeof portalEffectiveClientIdForReview === 'function' ? portalEffectiveClientIdForReview(s, sessionDateIso) : String(s.clientId || '').trim().toLowerCase();
         const eff = eid !== String(s.clientId || '').trim().toLowerCase()
           ? Object.assign({}, s, { clientId: eid, __portalBaseSession: s })
@@ -1494,6 +1495,10 @@
             const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
             if(cov) return null;
           }
+          // The slot was reassigned to a cover instructor — drop it even when a
+          // higher-priority override (e.g. a client absence) outranked the reassign
+          // in the picker, so the original worker does not see a slot they're off.
+          if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateKey)) return null;
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
           const activity = (s.activity || 'Swimming').trim();
@@ -2790,9 +2795,8 @@
         prevPreview = null;
       }
       var prevUsable = prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
-        && portalNextSessionPreviewHasParticipants(prevPreview)
-        && portalNextSessionPreviewIsTomorrow(prevPreview);
-      if(portalNextSessionPreviewHasParticipants(nextPreview) && portalNextSessionPreviewIsTomorrow(nextPreview)){
+        && portalNextSessionPreviewHasParticipants(prevPreview);
+      if(portalNextSessionPreviewHasParticipants(nextPreview)){
         /* Avoid the avatar/name flicker: a transient incomplete rebuild (participant missing its
            resolved name while the model is still hydrating) must not replace a complete cached
            next-session preview. */
@@ -2808,7 +2812,7 @@
       }
       if(!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)){
         if(prevUsable) return prevPreview;
-        return portalNextSessionPreviewIsTomorrow(nextPreview) ? nextPreview : null;
+        return portalNextSessionPreviewHasParticipants(nextPreview) ? nextPreview : null;
       }
       if(prevUsable){
         return prevPreview;
@@ -2869,7 +2873,9 @@
         : null;
       if(!info || !info.date) return null;
       const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-      if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function' || !portalCalendarIsoIsTomorrow(iso)) return null;
+      // Show the genuine next session even when it is not literally tomorrow
+      // (e.g. a worker off until Tuesday): the panel says "your next session is below".
+      if(!iso) return null;
       let rows = [];
       try{
         rows = iso ? portalBuildTodayRowsForIso(iso) : [];
@@ -4624,12 +4630,15 @@
               || '2026-07-17'
           ).trim().slice(0, 10);
         }catch(_){}
-        for(var i = 1; i <= 1; i++){
+        // Scan forward to the genuine next working day, not just tomorrow: a worker
+        // whose tomorrow is off (or whose tomorrow was fully reassigned to a cover)
+        // should see the participants of their actual next session (e.g. Tuesday).
+        for(var i = 1; i <= 30; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
           if(viewFrom && iso && iso < viewFrom) continue;
-          if(viewTo && iso && iso > viewTo) continue;
+          if(viewTo && iso && iso > viewTo) break;
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
           try{

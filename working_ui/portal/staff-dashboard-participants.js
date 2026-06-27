@@ -1708,6 +1708,10 @@
         const cover = portalNormKeyStr(payload.covering_staff_id);
         if(anchor === me || (!!cover && cover === me)) return true;
       }else if(anchor === me){
+        // The worker was anchored on this slot but a cover instructor took over the
+        // whole slot (instructor_reassign me -> cover). They are not working it, so
+        // absence/replace/other cards for that slot must not reach them.
+        if(portalLoggedInStaffReassignedOffSlotForRow(row)) return false;
         return true;
       }
       if(typeof window.portalLeadOverrideRowAppliesToLeadScope === 'function'
@@ -2957,6 +2961,51 @@
       rows.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
       return rows;
     }
+    /** True when the staff that owns this roster slot has been reassigned OFF it (a cover took over),
+     *  even if a higher-priority override (e.g. a client absence) also matches the same slot. */
+    function portalSessionStaffReassignedOff(s, sessionDateIso){
+      const who = portalNormKeyStr(s && s.staffId);
+      if(!who) return false;
+      const rows = typeof portalScheduleOverridesMatchingSession === 'function'
+        ? portalScheduleOverridesMatchingSession(s, sessionDateIso, 'instructor_reassign')
+        : [];
+      for(let i = 0; i < rows.length; i++){
+        const pl = portalOverrideCoverPayload(rows[i]);
+        const cover = portalNormKeyStr(pl && pl.covering_staff_id);
+        if(cover && cover !== who) return true;
+      }
+      return false;
+    }
+    try{ window.portalSessionStaffReassignedOff = portalSessionStaffReassignedOff; }catch(_){}
+    /** True when the logged-in worker was reassigned OFF the slot this override row points at —
+     *  so absence/replace/other cards anchored to them must not surface (the cover handles it). */
+    function portalLoggedInStaffReassignedOffSlotForRow(row){
+      const me = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
+      if(!me || !row) return false;
+      if(portalNormKeyStr(row.anchor_staff_id) !== me) return false;
+      const iso = normaliseIsoDate(row.session_date);
+      if(!iso) return false;
+      const startTok = portalCanonicalHmToken(row.anchor_start);
+      const venue = portalNormKeyStr(row.anchor_venue);
+      const all = portalScheduleOverrideRowsAll();
+      for(let i = 0; i < all.length; i++){
+        const r = all[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
+        if(normaliseIsoDate(r.session_date) !== iso) continue;
+        if(portalNormKeyStr(r.anchor_staff_id) !== me) continue;
+        const pl = portalOverrideCoverPayload(r);
+        const cover = portalNormKeyStr(pl && pl.covering_staff_id);
+        if(!cover || cover === me) continue;
+        const rStart = portalCanonicalHmToken(r.anchor_start);
+        if(startTok && rStart && startTok !== rStart) continue;
+        const rVenue = portalNormKeyStr(r.anchor_venue);
+        if(venue && rVenue && venue !== rVenue) continue;
+        return true;
+      }
+      return false;
+    }
+    try{ window.portalLoggedInStaffReassignedOffSlotForRow = portalLoggedInStaffReassignedOffSlotForRow; }catch(_){}
     function portalScheduleOverrideForSessionByType(s, sessionDateIso, overrideType){
       const rows = portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType);
       if(rows.length || overrideType !== 'client_replace_in_slot') return rows[0] || null;
