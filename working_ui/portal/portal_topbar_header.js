@@ -8,10 +8,12 @@
   var PROGRAMME_LEAD_TOPBAR_KEYS = { berta: true, john: true, michelle: true };
 
   var LEAD_TOPBAR_CELL_IDS = [
+    "topbarToolCellLeadTermReview",
     "topbarToolCellLeadReport",
     "topbarToolCellSessionsOverview",
   ];
   var LEAD_TOPBAR_BTN_IDS = [
+    "topbarToolLeadTermReview",
     "topbarToolLeadReport",
     "topbarToolSessionsOverview",
   ];
