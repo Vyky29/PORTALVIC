@@ -1,6 +1,6 @@
 /* Staff / lead topbar — compact mockup profile card + matched action grid */
 :root{
-  --topbar-side-block-w:clamp(122px,16.5vw,132px);
+  --topbar-side-block-w:clamp(100px,13.5vw,112px);
   --topbar-tools-gap-x:4px;
   --topbar-tools-gap-y:3px;
   --topbar-tools-cell-4:clamp(42px,11vw,48px);
@@ -68,8 +68,9 @@ header.topbar .topbar{
 .topbar-lead .topbar-left.topbar-left--name{
   align-self:stretch;
   display:flex;
-  align-items:center;
-  justify-content:center;
+  align-items:stretch;
+  justify-content:flex-start;
+  flex-direction:column;
   height:100%;
   min-height:var(--topbar-row-h);
 }
@@ -91,16 +92,17 @@ header.topbar .topbar{
 }
 .topbar-profile-card{
   display:grid;
-  grid-template-rows:minmax(0,1fr) var(--topbar-name-band-h);
-  align-content:stretch;
+  grid-template-rows:auto var(--topbar-name-band-h);
+  align-content:start;
   align-items:stretch;
   justify-content:stretch;
-  flex:1 1 auto;
+  flex:0 0 auto;
+  align-self:flex-start;
   width:100%;
   max-width:100%;
   min-width:0;
-  height:100%;
-  min-height:100%;
+  height:auto;
+  min-height:0;
   padding:0;
   border-radius:14px;
   border:2px solid var(--topbar-profile-male-border);
@@ -146,7 +148,8 @@ header.topbar .topbar{
 }
 .topbar-staff-photo{
   width:100%;
-  height:100%;
+  height:auto;
+  aspect-ratio:1 / 1.12;
   min-height:0;
   border-radius:0;
   overflow:hidden;
