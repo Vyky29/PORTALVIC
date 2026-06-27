@@ -37,7 +37,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20260616-warn-rate-limit"></script>
-  <script src="/portal/admin-portal-achievements.js?v=20260628-empty-folders-assign"></script>
+  <script src="/portal/admin-portal-achievements.js?v=20260628-roster-folders"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260628-gallery-5col" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
@@ -19608,8 +19608,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__portalAdminAchievementsConfigured = true;
       window.PortalAdminAchievements.configure({
         esc: esc,
-        getClient: getSchedSupabaseClient
+        getClient: getSchedSupabaseClient,
+        getParticipants: adminAchievementsParticipantOptions
       });
+    }
+    /** All roster participants as {key, clientName} so empty folders can receive inbox photos. */
+    function adminAchievementsParticipantOptions(){
+      try{
+        if(!adminSpreadsheetAdapterAvailable()) return [];
+        var pack = adminMergeSpreadsheetSessions();
+        var notes = (pack && pack.notes) || {};
+        var ids = Object.keys(notes);
+        if(typeof window.portalFilterParticipantCatalogIds === 'function'){
+          ids = window.portalFilterParticipantCatalogIds(ids, notes);
+        }
+        if(typeof window.portalDedupeParticipantClientIds === 'function'){
+          ids = window.portalDedupeParticipantClientIds(ids, {
+            clientNotesById: notes,
+            photoUrl: function(name, cid){
+              return (typeof window.portalParticipantPhotoUrl === 'function')
+                ? (window.portalParticipantPhotoUrl(name, null, cid) || '')
+                : '';
+            }
+          });
+        }
+        var out = [];
+        ids.forEach(function(cid){
+          var n = String((notes[cid] && notes[cid].name) || '').trim();
+          if(!n) return;
+          out.push({ key: cid, clientName: n });
+        });
+        return out;
+      }catch(_e){ return []; }
     }
     function viewParticipantAchievements(){
       portalAdminAchievementsConfigureOnce();
@@ -19617,8 +19647,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function bindParticipantAchievementsModule(){
       portalAdminAchievementsConfigureOnce();
-      if(window.PortalAdminAchievements && typeof window.PortalAdminAchievements.bindModule === 'function'){
-        window.PortalAdminAchievements.bindModule();
+      function doBindAchievements(){
+        if(window.PortalAdminAchievements && typeof window.PortalAdminAchievements.bindModule === 'function'){
+          window.PortalAdminAchievements.bindModule();
+        }
+      }
+      if(window.portalAdminLoadHeavyScripts && !adminSpreadsheetAdapterAvailable()){
+        void window.portalAdminLoadHeavyScripts(['roster']).then(doBindAchievements).catch(doBindAchievements);
+      }else{
+        doBindAchievements();
       }
     }
     function portalStaffLiveMapConfigureOnce(){

@@ -23,6 +23,9 @@
     getClient: function () {
       return null;
     },
+    getParticipants: function () {
+      return [];
+    },
   };
 
   var viewerState = { photos: [], index: -1, busy: false };
@@ -38,6 +41,7 @@
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
     if (options.getClient) cfg.getClient = options.getClient;
+    if (typeof options.getParticipants === "function") cfg.getParticipants = options.getParticipants;
   }
 
   function esc(s) {
@@ -406,29 +410,56 @@
   }
 
   /**
-   * Shown in the A–Z directory (and the inbox "Assign selected" dropdown) before
-   * the first achievement photo is uploaded, so empty folders can still receive
-   * inbox photos.
+   * Static fallback so these folders still show even if the roster catalog has
+   * not loaded yet. The live roster (configure({ getParticipants })) is the
+   * authoritative source and contributes everyone else.
    */
-  var EMPTY_DIRECTORY_PARTICIPANTS = [
+  var EMPTY_DIRECTORY_FALLBACK = [
     { key: "emmanuel", clientName: "Emmanuel" },
     { key: "timi", clientName: "Timi" },
   ];
 
+  function normalizeParticipantName(name) {
+    if (typeof global.portalNormalizeParticipantDisplayName === "function") {
+      return global.portalNormalizeParticipantDisplayName(name);
+    }
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  /** Roster participants + fallback, so empty folders appear and can receive inbox photos. */
+  function emptyDirectoryParticipants() {
+    var list = [];
+    try {
+      var fromRoster = cfg.getParticipants();
+      if (Array.isArray(fromRoster)) list = fromRoster;
+    } catch (_e) {
+      list = [];
+    }
+    return EMPTY_DIRECTORY_FALLBACK.concat(list);
+  }
+
+  /** Add empty (photo-less) folders for known participants, deduped by id and name. */
   function mergeEmptyDirectoryParticipants(groups) {
-    var existing = Object.create(null);
+    var byKey = Object.create(null);
+    var byName = Object.create(null);
     (groups || []).forEach(function (g) {
-      existing[normalizeClientId(g.key)] = true;
+      byKey[normalizeClientId(g.key)] = true;
+      var n = normalizeParticipantName(g.clientName);
+      if (n) byName[n] = true;
     });
-    EMPTY_DIRECTORY_PARTICIPANTS.forEach(function (p) {
+    emptyDirectoryParticipants().forEach(function (p) {
+      if (!p) return;
       var key = normalizeClientId(p.key || p.clientName);
-      if (!key || existing[key] || isInboxGroupKey(key)) return;
-      groups.push({
-        key: key,
-        clientName: String(p.clientName || p.key || key).trim() || key,
-        photos: [],
-      });
-      existing[key] = true;
+      if (!key || isInboxGroupKey(key)) return;
+      var name = String(p.clientName || p.key || key).trim();
+      var nameKey = normalizeParticipantName(name);
+      if (byKey[key] || (nameKey && byName[nameKey])) return;
+      groups.push({ key: key, clientName: name || key, photos: [] });
+      byKey[key] = true;
+      if (nameKey) byName[nameKey] = true;
     });
     groups.sort(function (a, b) {
       if (a.key === INBOX_CLIENT_ID) return -1;
