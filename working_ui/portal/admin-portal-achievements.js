@@ -299,7 +299,7 @@
 
   function applyPhotoRows(rows, status, stayOnKey) {
     stayOnKey = normalizeClientId(stayOnKey);
-    var groups = groupByParticipant(rows);
+    var groups = mergeEmptyDirectoryParticipants(groupByParticipant(rows));
     directoryState.groups = groups;
     directoryState.byKey = Object.create(null);
     groups.forEach(function (g) {
@@ -403,6 +403,39 @@
 
   function isInboxGroupKey(key) {
     return normalizeClientId(key) === INBOX_CLIENT_ID;
+  }
+
+  /**
+   * Shown in the A–Z directory (and the inbox "Assign selected" dropdown) before
+   * the first achievement photo is uploaded, so empty folders can still receive
+   * inbox photos.
+   */
+  var EMPTY_DIRECTORY_PARTICIPANTS = [
+    { key: "emmanuel", clientName: "Emmanuel" },
+    { key: "timi", clientName: "Timi" },
+  ];
+
+  function mergeEmptyDirectoryParticipants(groups) {
+    var existing = Object.create(null);
+    (groups || []).forEach(function (g) {
+      existing[normalizeClientId(g.key)] = true;
+    });
+    EMPTY_DIRECTORY_PARTICIPANTS.forEach(function (p) {
+      var key = normalizeClientId(p.key || p.clientName);
+      if (!key || existing[key] || isInboxGroupKey(key)) return;
+      groups.push({
+        key: key,
+        clientName: String(p.clientName || p.key || key).trim() || key,
+        photos: [],
+      });
+      existing[key] = true;
+    });
+    groups.sort(function (a, b) {
+      if (a.key === INBOX_CLIENT_ID) return -1;
+      if (b.key === INBOX_CLIENT_ID) return 1;
+      return a.clientName.localeCompare(b.clientName, "en", { sensitivity: "base" });
+    });
+    return groups;
   }
 
   function groupByParticipant(rows) {

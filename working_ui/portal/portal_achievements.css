@@ -1292,9 +1292,19 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 
 .portal-admin-achievement-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
   min-width: 0;
+}
+@media (max-width: 900px) {
+  .portal-admin-achievement-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .portal-admin-achievement-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .portal-admin-achievement-thumb {
