@@ -116,6 +116,12 @@ function teamMemberChipRole(staffKey) {
   return "default";
 }
 
+function teamMemberChipRoleForDay(staffKey, roleOverrides) {
+  const k = normKey(staffKey);
+  const override = roleOverrides && k ? roleOverrides[k] : "";
+  return override || teamMemberChipRole(k);
+}
+
 function resolvedInstructorsForRow(row, iso, source) {
   return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource());
 }
@@ -253,10 +259,10 @@ const TEAM_CHIP_ROLE_SORT = {
   default: 3,
 };
 
-function sortTeamMemberKeys(keys) {
+function sortTeamMemberKeys(keys, roleOverrides) {
   return keys.slice().sort(function (a, b) {
-    const ra = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(a)] ?? TEAM_CHIP_ROLE_SORT.default;
-    const rb = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(b)] ?? TEAM_CHIP_ROLE_SORT.default;
+    const ra = TEAM_CHIP_ROLE_SORT[teamMemberChipRoleForDay(a, roleOverrides)] ?? TEAM_CHIP_ROLE_SORT.default;
+    const rb = TEAM_CHIP_ROLE_SORT[teamMemberChipRoleForDay(b, roleOverrides)] ?? TEAM_CHIP_ROLE_SORT.default;
     if (ra !== rb) return ra - rb;
     return staffDisplayName(a).localeCompare(staffDisplayName(b), "en", { sensitivity: "base" });
   });
@@ -328,6 +334,45 @@ function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
       return staffOnInScopeRosterRow(k, row, iso, scopes, source);
     });
   });
+}
+
+function rosterRowLooksSwimming(row) {
+  const haystack = [
+    row && row.service,
+    row && row.activity,
+    row && row.rosterService,
+    row && row.service_label,
+    row && row.category,
+    row && row.venue,
+    row && row.rosterArea,
+    row && row.area,
+  ]
+    .map(function (v) {
+      return normKey(v);
+    })
+    .join(" ");
+  return /swim|aquatic|pool/.test(haystack);
+}
+
+function coverChipRoleOverridesForIso(iso, scopes, source) {
+  const out = Object.create(null);
+  scheduleOverrideRows().forEach(function (ov) {
+    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
+    const pl = parseOverridePayload(ov);
+    const cover = canonicalStaffKey(pl.covering_staff_id);
+    if (!cover) return;
+    const anchor = canonicalStaffKey(ov.anchor_staff_id);
+    const matchedRow = matchingLeadScopedRosterRow(ov, iso, scopes, source);
+    // A cover should be styled by the slot they are covering, not by their usual
+    // staff profile track. Luliya covering Javier/Aurora pool clients on Sunday
+    // is therefore a swimming instructor for the team strip.
+    if ((anchor && teamMemberChipRole(anchor) === "swim-instructor") || rosterRowLooksSwimming(matchedRow)) {
+      out[cover] = "swim-instructor";
+    }
+  });
+  return out;
 }
 
 function staffDisplayName(staffKey) {
@@ -470,18 +515,19 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
 
   let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+  const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);
   memberKeys = memberKeys.filter(function (k) {
     return k !== ctx.leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
 
-  memberKeys = sortTeamMemberKeys(memberKeys);
+  memberKeys = sortTeamMemberKeys(memberKeys, roleOverrides);
 
   return {
     iso: iso,
     programmeLabel: teamProgrammeLabelForDay(ctx.scopes, iso),
     members: memberKeys.map(function (k) {
-      return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
+      return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRoleForDay(k, roleOverrides) };
     }),
     absents: collectLeadScopeAbsentsForIso(iso, ctx),
   };
@@ -562,18 +608,19 @@ function leadIsOnRosterForDay(leadKey, iso, scopes, source) {
 }
 
 /** Override anchor must match a roster row in the lead's programme (service/venue/day), not another service. */
-function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
+function matchingLeadScopedRosterRow(ov, iso, scopes, source) {
   const anchor = canonicalStaffKey(ov.anchor_staff_id);
-  if (!anchor || !scopes.length) return false;
+  if (!anchor || !scopes.length) return null;
   const wantVenue = normVenue(ov.anchor_venue);
   const wantClient = String(ov.anchor_client_id || "").trim();
   const openClient = openSlotClientSlug(wantClient);
   const src = source || rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  return rows.some(function (row) {
-    if (!rosterRowMatchesIso(row, iso)) return false;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!rosterRowMatchesIso(row, iso)) continue;
     const slot = rosterRowToSlot(row, iso);
-    if (!portalLeadSlotInScope(slot, scopes)) return false;
+    if (!portalLeadSlotInScope(slot, scopes)) continue;
     // Match the override anchor against BOTH the resolved instructor (after any
     // Sunday replaceInstructor, e.g. Javier→Luliya) AND the original roster
     // instructor. An absence/make-up is recorded against the originally rostered
@@ -581,13 +628,18 @@ function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
     // it from the programme lead.
     const resolvedKeys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
     const rawKeys = staffKeysFromInstructorLabel(row && row.instructors);
-    if (resolvedKeys.indexOf(anchor) < 0 && rawKeys.indexOf(anchor) < 0) return false;
-    if (wantVenue && normVenue(row.venue) !== wantVenue) return false;
+    if (resolvedKeys.indexOf(anchor) < 0 && rawKeys.indexOf(anchor) < 0) continue;
+    if (wantVenue && normVenue(row.venue) !== wantVenue) continue;
     if (!openClient && wantClient && !rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) {
-      return false;
+      continue;
     }
-    return true;
-  });
+    return row;
+  }
+  return null;
+}
+
+function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
+  return !!matchingLeadScopedRosterRow(ov, iso, scopes, source);
 }
 
 function overrideAnchorOnInScopeRow(ov, scopes, iso) {
