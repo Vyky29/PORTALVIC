@@ -33,7 +33,7 @@
     fadi: "portal/participants/fadi.png",
     scott: "portal/participants/scott.png",
     stephanie: "portal/participants/stephanie.png",
-    timi: "portal/participants/timi.png",
+    timi: "portal/participants/timi.png?v=20260628-timi-smile",
     ikram: "portal/participants/ikram.png",
     rodin: "portal/participants/rodin.png",
     zaid: "portal/participants/zaid.png",
