@@ -187,13 +187,15 @@ function filterProgrammeWideTeam(keys, leadKey) {
 
 function filterSundayMaTeam(keys, leadKey) {
   let pool = excludePeerProgrammeLead(keys, leadKey);
-  const supportWorkers = pool.filter(function (k) {
-    return k !== leadKey && teamMemberChipRole(k) === "support-worker";
-  });
-  const swimInstructors = pool.filter(function (k) {
-    return k !== leadKey && teamMemberChipRole(k) === "swim-instructor";
-  });
-  return dedupeKeys(supportWorkers.slice(0, 2).concat(swimInstructors.slice(0, 3)));
+  // Show everyone actually on shift in scope — do NOT force a fixed
+  // 2-support/3-swim shape. Cover instructors can come from any track (e.g. a
+  // support-track worker covering a swim lane), so slicing by role would drop
+  // them and leave the team strip short of the full team for the day.
+  return dedupeKeys(
+    pool.filter(function (k) {
+      return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+    })
+  );
 }
 
 function filterJohnBespokeTeam(keys) {
@@ -290,6 +292,7 @@ function collectInScopeMemberKeys(iso, scopes, source) {
 }
 
 function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
+  const coverKeys = [];
   scheduleOverrideRows().forEach(function (ov) {
     if (String(ov.session_date || "").slice(0, 10) !== iso) return;
     if (String(ov.status || "active") !== "active") return;
@@ -303,8 +306,13 @@ function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
       if (ix >= 0) memberKeys.splice(ix, 1);
     }
     if (cover && memberKeys.indexOf(cover) < 0) memberKeys.push(cover);
+    if (cover && coverKeys.indexOf(cover) < 0) coverKeys.push(cover);
   });
   return memberKeys.filter(function (k) {
+    // A covering instructor added via an override is genuinely on shift even
+    // though they are not in any base roster row's instructor label — keep them
+    // (otherwise the new cover instructors are dropped from the team strip).
+    if (coverKeys.indexOf(k) >= 0) return true;
     const rows = source && Array.isArray(source.rows) ? source.rows : [];
     return rows.some(function (row) {
       return staffOnInScopeRosterRow(k, row, iso, scopes, source);
@@ -657,9 +665,7 @@ function renderTodayStrip(team) {
       '<div class="portal-lead-team-today portal-lead-team-today--empty" role="status">' +
       '<div class="portal-lead-team-today__head">' +
       '<span class="portal-lead-team-today__title">Team on shift today</span>' +
-      '<span class="portal-lead-team-today__programme">' +
-      escHtml(team.programmeLabel || "") +
-      "</span></div>" +
+      "</div>" +
       '<p class="portal-lead-team-today__empty">No roster rows in scope for today.</p></div>'
     );
   }
@@ -680,9 +686,6 @@ function renderTodayStrip(team) {
     '<div class="portal-lead-team-today" role="region" aria-label="Team on shift today">' +
     '<div class="portal-lead-team-today__head">' +
     '<span class="portal-lead-team-today__title">Team on shift today</span>' +
-    (team.programmeLabel
-      ? '<span class="portal-lead-team-today__programme">' + escHtml(team.programmeLabel) + "</span>"
-      : "") +
     "</div>" +
     '<div class="portal-lead-team-today__chips">' +
     chips +

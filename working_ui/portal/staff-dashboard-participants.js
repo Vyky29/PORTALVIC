@@ -1711,7 +1711,17 @@
         return true;
       }
       if(typeof window.portalLeadOverrideRowAppliesToLeadScope === 'function'
-        && window.portalLeadOverrideRowAppliesToLeadScope(row)) return true;
+        && window.portalLeadOverrideRowAppliesToLeadScope(row)){
+        // Programme leads do NOT need a per-session card for every instructor
+        // cover in their programme — the "Team on shift today" bar already shows
+        // who is covering. Suppress instructor_reassign here so a Sunday with a
+        // couple of cover instructors does not flood the lead's Admin changes
+        // list with one "Schedule change - <participant>" card per slot. Other
+        // change types (absences, trials, cancellations, new participants…) in
+        // their scope still surface as before.
+        if(t === 'instructor_reassign') return false;
+        return true;
+      }
       return false;
     }
     /** Same as applies-to-staff but ignores row status (for undo payloads where status is already cancelled). */
