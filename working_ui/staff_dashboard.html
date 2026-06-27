@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
   <script src="/portal-static-bootstrap.js?v=20260622-sandra-visual-vic"></script>
-  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260625-voice-fix"></script>
+  <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260627-chat-greeting-race"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
@@ -276,7 +276,7 @@
               <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
             </h1>
             <button type="button" class="portal-help-namebtn" id="portalHelpNameBtn" aria-label="Open the clubSENsational chat bot"
-              onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} if(typeof window.portalOpenChatBot==='function'){window.portalOpenChatBot();}else if(typeof window.openSheet==='function'){window.openSheet('portalChatBotSheet');}})();return false;">
+              onclick="(function(){try{if(window.PortalHelpVoiceSpeak&&window.PortalHelpVoiceSpeak.unlock)window.PortalHelpVoiceSpeak.unlock();}catch(e){} function go(){ if(typeof window.portalOpenChatBot==='function'){window.portalOpenChatBot();} else if(typeof window.openSheet==='function'){window.openSheet('portalChatBotSheet');} } try{ if(typeof window.portalEnsureDashboardLazyScripts==='function'){ var p=window.portalEnsureDashboardLazyScripts(); if(p&&p.then){p.then(go);} } }catch(e){} go(); })();return false;">
               <span class="portal-help-namebtn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
               <span class="portal-help-namebtn__label">Chat bot</span>
             </button>

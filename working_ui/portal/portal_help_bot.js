@@ -1089,6 +1089,14 @@
       obs.observe(sheet, { attributes: true, attributeFilter: ["class"] });
     }
 
+    // The chat sheet is opened by a button that may fire BEFORE this lazily
+    // loaded script binds. In that race the sheet already carries the "open"
+    // class, so the MutationObserver above (future changes only) never runs and
+    // the intro/greeting is never rendered. Render it now if already open.
+    try {
+      if (sheet.classList.contains("open")) void onOpen();
+    } catch (_alreadyOpen) {}
+
     if (cfg.voiceOnly) {
       bindVoiceChat(cfg, msgsHost, sugHost, micBtn, status);
     } else {
