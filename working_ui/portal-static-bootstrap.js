@@ -700,7 +700,7 @@
       } else {
         var voiceScript = document.createElement("script");
         voiceScript.src =
-          "/portal/portal_feedback_voice_input.js?v=20260610-voice-status-clear";
+          "/portal/portal_feedback_voice_input.js?v=20260628-voice-whisper-first-es-it";
         voiceScript.onload = startPortalVoice;
         voiceScript.onerror = function () {};
         (document.head || document.documentElement).appendChild(voiceScript);

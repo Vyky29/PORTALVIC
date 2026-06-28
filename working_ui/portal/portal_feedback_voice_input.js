@@ -745,6 +745,27 @@
  setScreenshotGuardForRecording(true);
 
  function runCapture() {
+ var translate = !!getLangConfig(getResolvedLang()).translate;
+
+ /* ES/IT: prefer Whisper (OpenAI translations → reliable English). The free
+    WebSpeech + MyMemory path silently leaves Spanish/Italian text in the box
+    once MyMemory hits its daily/IP limit, so only use it when there is no
+    portal JWT (standalone forms without a session). */
+ if (translate && shouldUseWhisperCapture()) {
+ getAuthHeaders().then(function (headers) {
+ if (headers) {
+ startMediaRecorderCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ startMediaRecorderCapture(textarea, btn, statusEl);
+ });
+ return;
+ }
+
  if (shouldPreferWebSpeechFirst()) {
  startWebSpeechCapture(textarea, btn, statusEl);
  return;
@@ -1097,6 +1118,6 @@
  setStaffName: setStaffName,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-status-clear",
+ captureVersion: "voice-whisper-first-es-it",
  };
 })(typeof window !== "undefined" ? window : this);
