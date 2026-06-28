@@ -138,7 +138,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260628-per-instructor-fanout",
     "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",

@@ -64,7 +64,9 @@
         tryKey(String(sessionDateIso) + '|' + cid + '|aquatic');
         if(tCanon) tryKey(String(sessionDateIso) + '|' + cid + '|' + tCanon + '|aquatic');
       }
-      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+      if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+        && portalSessionNeedsPerStaffOwnFeedbackOnly(s, sessionDateIso))
+        && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
         || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, sessionDateIso, dayWord))){
         tryKey(String(sessionDateIso) + '||' + cid);
       }

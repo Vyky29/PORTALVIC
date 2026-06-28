@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260623-yusuf-own-slot';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260628-per-instructor-fanout';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -131,7 +131,9 @@
             const cidAlias = typeof portalEffectiveClientIdForReview === 'function'
               ? portalEffectiveClientIdForReview(s, sessionDateKey)
               : String(s.clientId || '').trim().toLowerCase();
-            if(cidAlias && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+            if(cidAlias && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+              && portalSessionNeedsPerStaffOwnFeedbackOnly(s, sessionDateKey))
+              && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
               || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, sessionDateKey, dayWord))){
               keys.add(`${sessionDateKey}||${cidAlias}`);
             }
@@ -497,7 +499,9 @@
             const tr = String(s && s.start != null ? s.start : '').trim();
             if(cid && tc) tryK(iso + '|' + tc + '|' + cid);
             if(cid && tr && tr !== tc) tryK(iso + '|' + tr + '|' + cid);
-            if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+            if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+              && portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso))
+              && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
               || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
               tryK(iso + '||' + cid);
             }
@@ -791,7 +795,9 @@
         add(iso + '|' + cid + '|aquatic');
         if(tCanon) add(iso + '|' + cid + '|' + tCanon + '|aquatic');
       }
-      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+      if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+        && portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso))
+        && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
         || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
         add(iso + '||' + cid);
       }

@@ -607,6 +607,17 @@
   /** Day-only keys (date||client) are for merged same-instructor aquatic, day centre, bespoke — not per-slot multi-instructor days. */
   function reviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord) {
     if (
+      typeof global.portalRosterSessionNeedsPerStaffOwnFeedbackOnly === "function" &&
+      global.portalRosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)
+    ) {
+      return false;
+    }
+    var act = String((s && (s.activity || s.rosterService || s.service)) || "")
+      .trim()
+      .toLowerCase();
+    if (/multi[-\s]?activity/.test(act)) return false;
+    if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return false;
+    if (
       typeof global.portalRosterSessionIsDayCentre === "function" &&
       global.portalRosterSessionIsDayCentre(s)
     ) {

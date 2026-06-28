@@ -435,7 +435,10 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       );
       for (const rk of rosterSessionKeys) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
-        if (perStaffOwnOnly.has(rk) && !portalStaffOwnsSubmittedFeedbackRow(staffIdForPeer, r)) {
+        if (
+          portalRosterKeyNeedsSubmitterOwnership(rk, perStaffOwnOnly) &&
+          !portalStaffOwnsSubmittedFeedbackRow(staffIdForPeer, r)
+        ) {
           continue;
         }
         if (isAbs) {
@@ -470,8 +473,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   for (const rk of rpcKeys) {
     const rks = String(rk || "").trim();
     if (!rks || peerParts.present.includes(rks) || peerParts.absent.includes(rks)) continue;
-    /* Substitute cover slots: RPC cannot verify submitter — own rows only. */
-    if (perStaffOwnOnly.has(rks)) continue;
+    /* Per-slot / per-instructor roster keys: RPC cannot verify submitter — own rows only. */
+    if (portalRosterKeyNeedsSubmitterOwnership(rks, perStaffOwnOnly)) continue;
     rpcPresent.push(rks);
   }
 
@@ -714,7 +717,21 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
   return false;
 }
 
-/** Climbing / multi / timed aquatic: date||client must not fan-out across instructors or slots. */
+const PORTAL_PER_SLOT_AREA_TOKENS = new Set([
+  "wall",
+  "climbing_wall",
+  "climbing",
+  "big_pool",
+  "small_pool",
+  "teaching_pool",
+  "hub_room",
+  "room_2",
+  "lane_de",
+  "lane_se",
+  "bespoke",
+]);
+
+/** Climbing / multi / timed aquatic / area slots: date||client must not fan-out across instructors. */
 function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   const r = String(rosterKey || "")
     .trim()
@@ -725,7 +742,22 @@ function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   if (r.indexOf("climb") >= 0) return true;
   if (/multi[-\s]?activity/.test(r) || r.split("|").indexOf("multi") >= 0) return true;
   if (/\|aquatic$/i.test(r) || /\|\d{1,2}:\d{2}\|aquatic/i.test(r)) return true;
+  const parts = r.split("|").map((p) => String(p || "").trim().toLowerCase()).filter(Boolean);
+  if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+    const last = parts[parts.length - 1];
+    if (PORTAL_PER_SLOT_AREA_TOKENS.has(last)) return true;
+    if (last.indexOf("pool") >= 0 || last.indexOf("lane") >= 0 || last.indexOf("hub") >= 0) {
+      return true;
+    }
+  }
   return false;
+}
+
+function portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return false;
+  if (perStaffOwnOnly && perStaffOwnOnly.has(rk)) return true;
+  return portalRosterKeyIsPerSlotServiceUnit(rk);
 }
 
 function portalMergeRuleSlotStartHm(timeSlot, dayWord) {
@@ -994,7 +1026,13 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
-    if (!markAbsent && perStaffOwnOnly.has(rosterKey) && !ownOnly.has(rosterKey)) continue;
+    if (
+      !markAbsent &&
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      continue;
+    }
     for (const fk of submittedKeys || []) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
@@ -1261,9 +1299,14 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
     ownOnly.add(rk);
     feedback.add(rk);
   }
-  if (perStaffOwnOnly.size) {
-    for (const rk of perStaffOwnOnly) {
-      if (!ownOnly.has(rk)) feedback.delete(rk);
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    if (
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      feedback.delete(rosterKey);
     }
   }
   for (const fk of submittedFb) {
@@ -1343,8 +1386,15 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
     ownOnly.add(rk);
   }
   for (const rk of ownOnly) resolved.add(rk);
-  for (const rk of perStaffOwnOnly) {
-    if (!ownOnly.has(rk)) resolved.delete(rk);
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    if (
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      resolved.delete(rosterKey);
+    }
   }
 
   let changed = false;
