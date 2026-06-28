@@ -209,11 +209,20 @@
       badge: icon,
       tag: "portal-local-test-" + Date.now(),
       renotify: true,
+      requireInteraction: true,
     };
 
-    if (env.mobile || env.isIOS || env.isAndroid) {
+    // Prefer the service worker on every platform: iOS PWA does not support the
+    // Notification constructor, and showNotification needs an ACTIVE worker, so
+    // wait for serviceWorker.ready before calling it.
+    if ("serviceWorker" in (global.navigator || {})) {
       try {
-        var reg = await portalRegisterPortalServiceWorker();
+        var reg = null;
+        if (typeof portalAwaitServiceWorkerReady === "function") {
+          reg = await portalAwaitServiceWorkerReady(8000);
+        } else {
+          reg = await portalRegisterPortalServiceWorker();
+        }
         if (reg && typeof reg.showNotification === "function") {
           await reg.showNotification(title, notifyOpts);
           if (global.navigator && global.navigator.vibrate) {
@@ -226,17 +235,21 @@
       } catch (_sw) {}
     }
 
-    try {
-      new global.Notification(title, notifyOpts);
-      if (global.navigator && global.navigator.vibrate) {
-        try {
-          global.navigator.vibrate([100, 50, 100]);
-        } catch (_v2) {}
+    // Desktop browsers without a ready SW: constructor is fine (not iOS).
+    if (!env.isIOS) {
+      try {
+        new global.Notification(title, notifyOpts);
+        if (global.navigator && global.navigator.vibrate) {
+          try {
+            global.navigator.vibrate([100, 50, 100]);
+          } catch (_v2) {}
+        }
+        return { ok: true, via: "window", env: env };
+      } catch (e) {
+        return { ok: false, reason: "exception", error: e, env: env };
       }
-      return { ok: true, via: "window", env: env };
-    } catch (e) {
-      return { ok: false, reason: "exception", error: e, env: env };
     }
+    return { ok: false, reason: "no-sw", env: env };
   }
 
   function portalTestNotificationStatusMessage(result) {
