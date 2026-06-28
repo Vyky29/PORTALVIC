@@ -212,7 +212,7 @@
     var urls = [
       "/portal/portal_web_push_support.js?v=20260619-inflight-fix",
       "/portal/portal_ensure_web_push.js?v=20260619-inflight-fix",
-      "/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix",
+      "/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-visible",
     ];
     var i = 0;
     function next() {

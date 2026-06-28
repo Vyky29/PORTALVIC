@@ -50,18 +50,18 @@
       testBtn.hidden = true;
       return;
     }
-    if (permission !== "granted") {
-      testBtn.hidden = true;
-      testBtn.disabled = true;
-      testBtn.setAttribute("aria-disabled", "true");
-      return;
-    }
     testBtn.hidden = false;
     testBtn.disabled = false;
     testBtn.setAttribute("aria-disabled", "false");
-    testBtn.textContent = "Send test (this tab only)";
-    if (opts.highlight) {
-      testBtn.classList.add("portal-alerts-test-btn--ready");
+    if (permission === "granted") {
+      testBtn.textContent = "Send test alert";
+      if (opts.highlight) {
+        testBtn.classList.add("portal-alerts-test-btn--ready");
+      }
+    } else if (permission === "denied") {
+      testBtn.textContent = "Send test alert";
+    } else {
+      testBtn.textContent = "Send test alert";
     }
   }
 
@@ -330,6 +330,19 @@
           refresh();
         });
       });
+      return;
+    }
+    if (Notification.permission === "denied") {
+      if (typeof global.portalShowNotificationDeniedHelp === "function") {
+        global.portalShowNotificationDeniedHelp({ scroll: true });
+      } else {
+        syncDeniedHelp(true);
+      }
+      if (statusEl) {
+        statusEl.textContent =
+          "Notifications blocked — follow the steps above, then tap Send test alert again." +
+          notifyContextHint("denied");
+      }
       return;
     }
   }
