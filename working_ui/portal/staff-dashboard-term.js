@@ -970,7 +970,19 @@
       return 'portalVenue_' + kind + '_' + dateKey + '_' + slug;
     }
     function portalVenueFlagIsDone(kind){
-      try{ return localStorage.getItem(portalVenueLocalKey(kind)) === '1'; }catch(e){ return false; }
+      try{
+        if(localStorage.getItem(portalVenueLocalKey(kind)) === '1') return true;
+        /* Submitting the actual venue report (venue_review_app) clears the reminder too,
+           not just the in-sheet "Done" tap. Markers are date + kind (and date + venue + kind). */
+        const dateKey = portalViewCalendarDateKey();
+        if(localStorage.getItem('portalVenueSubmitted_' + dateKey + '_' + kind) === '1') return true;
+        const w = portalVenueTimeWindowsForUser();
+        const vslug = w && w.venue
+          ? String(w.venue).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+          : '';
+        if(vslug && localStorage.getItem('portalVenueSubmitted_' + dateKey + '_' + vslug + '_' + kind) === '1') return true;
+        return false;
+      }catch(e){ return false; }
     }
     function portalSetVenueFlag(kind){
       try{ localStorage.setItem(portalVenueLocalKey(kind), '1'); }catch(e){}

@@ -1566,6 +1566,21 @@
           dateIso = String(typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '').trim();
         }catch(_){}
         if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) u.searchParams.set('date', dateIso);
+        try{
+          let vkind = '';
+          if(typeof portalVenueTimeWindowsForUser === 'function'){
+            const vw = portalVenueTimeWindowsForUser();
+            if(vw){
+              const openDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('open');
+              const closeDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('close');
+              if(vw.opening && !openDoneV) vkind = 'open';
+              else if(vw.closing && !closeDoneV) vkind = 'close';
+              else if(vw.closing) vkind = 'close';
+              else if(vw.opening) vkind = 'open';
+            }
+          }
+          if(vkind) u.searchParams.set('kind', vkind);
+        }catch(_){}
         let venue = '';
         try{
           venue = typeof formatTodayVenueOnlyLabel === 'function' ? String(formatTodayVenueOnlyLabel() || '').trim() : '';

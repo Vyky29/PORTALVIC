@@ -59,6 +59,51 @@ function parseReviewDate(ctxDate) {
   return localIsoDateToday();
 }
 
+function venueSlugForMarker(v) {
+  return String(v || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/**
+ * Mirror the staff dashboard "venue report done" flag so the reminder clears
+ * after the report is submitted (until the next day's reminder). When the kind
+ * is unknown (no opening/closing hint) we clear both so nothing lingers.
+ */
+function markVenueReportDoneLocal(row) {
+  try {
+    const oc = String((row && row.opening_or_closing) || "").toLowerCase();
+    const kinds =
+      oc.indexOf("clos") >= 0
+        ? ["close"]
+        : oc.indexOf("open") >= 0
+          ? ["open"]
+          : ["open", "close"];
+    const dates = [];
+    const rd = String((row && row.review_date) || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rd)) dates.push(rd);
+    const today = localIsoDateToday();
+    if (dates.indexOf(today) < 0) dates.push(today);
+    const vslug = venueSlugForMarker(row && row.venue);
+    for (let d = 0; d < dates.length; d++) {
+      for (let k = 0; k < kinds.length; k++) {
+        try {
+          localStorage.setItem("portalVenueSubmitted_" + dates[d] + "_" + kinds[k], "1");
+        } catch (_) {}
+        if (vslug) {
+          try {
+            localStorage.setItem(
+              "portalVenueSubmitted_" + dates[d] + "_" + vslug + "_" + kinds[k],
+              "1"
+            );
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+}
+
 function toUkDisplayDate(isoLike) {
   const s = clean(isoLike);
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
@@ -437,6 +482,7 @@ function initVenueReviewPage() {
     try {
       await submitVenueReviewToSupabase(submission.supabase, row);
       successSubmitted = true;
+      markVenueReportDoneLocal(row);
       showVenueReviewSuccessLocked();
       lockVenueReviewForm(form, submitBtn);
       showCompletionPopupAndReturnDashboard();

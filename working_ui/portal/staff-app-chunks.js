@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260628-physical-activity-per-instructor";
+  var VER = "20260628-venue-report-clear";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260625-youssef-validated",
