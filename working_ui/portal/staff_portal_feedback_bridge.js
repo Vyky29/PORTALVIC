@@ -239,8 +239,17 @@
     );
   }
 
+  function statusRowServiceNeedsPerStaffUnitFeedback(st) {
+    const svc = String((st && st.service) || "").toLowerCase();
+    if (/multi[-\s]?activity/.test(svc)) return true;
+    if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
+    return false;
+  }
+
   function isDayCentreStatusRow(st) {
     if (!st) return false;
+    if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return false;
     const u = String(st.feedbackUnitKey || "");
     if (u.indexOf("day_centre") >= 0) return true;
     return isDayCentreServiceLabel(st.service);
@@ -248,7 +257,9 @@
 
   /** Climbing / MA / per-slot Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / merge groups. */
   function statusRowNeedsPerStaffUnitFeedback(st) {
-    if (!st || isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
+    if (!st) return false;
+    if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return true;
+    if (isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
     if (String(st.feedbackMergeGroup || "").trim()) return false;
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
