@@ -986,6 +986,15 @@
     }
     function portalSetVenueFlag(kind){
       try{ localStorage.setItem(portalVenueLocalKey(kind), '1'); }catch(e){}
+      try{
+        const dateKey = portalViewCalendarDateKey();
+        localStorage.setItem('portalVenueSubmitted_' + dateKey + '_' + kind, '1');
+        const w = portalVenueTimeWindowsForUser();
+        const vslug = w && w.venue
+          ? String(w.venue).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+          : '';
+        if(vslug) localStorage.setItem('portalVenueSubmitted_' + dateKey + '_' + vslug + '_' + kind, '1');
+      }catch(e){}
     }
     function portalTodayShiftSessions(){
       return (dashboardData.today || []).filter(it =>
@@ -1578,17 +1587,23 @@
       }
       if(st.venueOpenNeed){
         rows.push(
-          '<div class="setup-row setup-row--work-venue setup-row--portal-op" role="group">' +
+          '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="open" aria-label="Open venue opening report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report</strong><span class="setup-row-sub">Opening check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Opening</strong><span class="setup-row-sub">Opening check still incomplete (late).</span></span>' +
+          '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
+          '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
+          '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
           '<button type="button" class="portal-venue-mark-btn" data-portal-venue-mark="open">Done</button></div>'
         );
       }
       if(st.venueCloseNeed){
         rows.push(
-          '<div class="setup-row setup-row--work-venue setup-row--portal-op" role="group">' +
+          '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="close" aria-label="Open venue closing report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report</strong><span class="setup-row-sub">Closing check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Closing</strong><span class="setup-row-sub">Closing check still incomplete (late).</span></span>' +
+          '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
+          '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
+          '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
           '<button type="button" class="portal-venue-mark-btn" data-portal-venue-mark="close">Done</button></div>'
         );
       }

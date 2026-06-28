@@ -1556,7 +1556,8 @@
         return portalAppendStaffMobileVerticalParam(base);
       }
     }
-    function portalBuildVenueQuickMenuUrl(url){
+    function portalBuildVenueQuickMenuUrl(url, opts){
+      opts = opts || {};
       const base = String(url || '').trim();
       if(!base) return '';
       try{
@@ -1567,8 +1568,10 @@
         }catch(_){}
         if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) u.searchParams.set('date', dateIso);
         try{
-          let vkind = '';
-          if(typeof portalVenueTimeWindowsForUser === 'function'){
+          let vkind = String(opts.kind || '').trim().toLowerCase();
+          if(vkind === 'opening') vkind = 'open';
+          if(vkind === 'closing') vkind = 'close';
+          if(!vkind && typeof portalVenueTimeWindowsForUser === 'function'){
             const vw = portalVenueTimeWindowsForUser();
             if(vw){
               const openDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('open');

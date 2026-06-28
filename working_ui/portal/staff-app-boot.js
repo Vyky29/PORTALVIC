@@ -58,7 +58,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-simon-stf016");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260628-venue-report-clear");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260628-venue-open-close-split");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }

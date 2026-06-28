@@ -4341,6 +4341,26 @@
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           return;
         }
+        const venueGo = e.target.closest('[data-action="open-venue-report"]');
+        if(venueGo){
+          e.preventDefault();
+          const kind = venueGo.getAttribute('data-portal-venue-kind') || '';
+          let target = typeof portalBuildVenueQuickMenuUrl === 'function'
+            ? portalBuildVenueQuickMenuUrl('portal-venue-review.html', { kind: kind })
+            : 'portal-venue-review.html';
+          try{
+            try{ localStorage.setItem('portalLastDashboardUrl', String(window.location.href || '')); }catch(_){}
+            const dash = typeof portalQuickMenuPortalReturnBaseUrl === 'function' ? portalQuickMenuPortalReturnBaseUrl() : '';
+            if(dash){
+              const tu = new URL(String(target || ''), window.location.href);
+              tu.searchParams.set('portalReturn', dash);
+              target = tu.href;
+            }
+          }catch(_){}
+          if(typeof portalQuickMenuNavigate === 'function') portalQuickMenuNavigate(target);
+          else window.location.href = target;
+          return;
+        }
       });
     }
     document.getElementById('menuSheet')?.addEventListener('click', function(e){
