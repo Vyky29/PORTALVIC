@@ -30,11 +30,55 @@ function portalContractNamesMatch(typed, expected) {
   return false;
 }
 
+const PORTAL_HTML2PDF_CDNS = [
+  "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js",
+  "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"
+];
+
+/**
+ * Inside the installed staff app (standalone PWA) the external html2pdf CDN
+ * script in the page sometimes does not finish loading, which left the
+ * "Sign and save" button doing nothing. Load it on demand (with a fallback
+ * CDN) so signing can always complete.
+ */
+export async function portalEnsureHtml2Pdf() {
+  if (typeof window !== "undefined" && typeof window.html2pdf !== "undefined") return true;
+  if (typeof document === "undefined") return false;
+  for (const src of PORTAL_HTML2PDF_CDNS) {
+    try {
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-portal-html2pdf="' + src + '"]');
+        if (existing) {
+          if (typeof window.html2pdf !== "undefined") {
+            resolve();
+            return;
+          }
+          existing.addEventListener("load", () => resolve());
+          existing.addEventListener("error", () => reject(new Error("load_failed")));
+        } else {
+          const s = document.createElement("script");
+          s.src = src;
+          s.async = true;
+          s.crossOrigin = "anonymous";
+          s.referrerPolicy = "no-referrer";
+          s.setAttribute("data-portal-html2pdf", src);
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error("load_failed"));
+          document.head.appendChild(s);
+        }
+        setTimeout(() => reject(new Error("timeout")), 15000);
+      });
+      if (typeof window.html2pdf !== "undefined") return true;
+    } catch (_) {}
+  }
+  return typeof window !== "undefined" && typeof window.html2pdf !== "undefined";
+}
+
 async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260623-pdf-layout";
+      const url = b + "contract-core.js?v=20260628-app-submit-fix";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;
@@ -112,6 +156,7 @@ export async function portalCompleteEmploymentContract(opts) {
   templateData.SIGNED_TIMESTAMP = now;
   templateData.EMPLOYEE_SIGNATURE_DATE = templateData.EMPLOYEE_SIGNATURE_DATE || now;
 
+  await portalEnsureHtml2Pdf();
   if (typeof html2pdf === "undefined" || !docsMod.portalUploadPdfAndCreateDocument) {
     throw new Error("PDF tools not available. Reload the page and try again.");
   }
@@ -228,6 +273,7 @@ async function portalContractWaitForPaint() {
 }
 
 async function portalContractHtmlToPdfBlob(html) {
+  await portalEnsureHtml2Pdf();
   if (typeof html2pdf === "undefined") {
     throw new Error("PDF tools not available. Reload the page and try again.");
   }
@@ -285,6 +331,7 @@ async function portalContractStoredPdfLooksValid(supabase, filePath) {
 
 async function portalUploadContractPdf(row, employeeSignature, supabase, user, docsMod, C) {
   if (!row || !employeeSignature) return null;
+  await portalEnsureHtml2Pdf();
   if (typeof html2pdf === "undefined" || !docsMod.portalUploadPdfAndCreateDocument) return null;
   if (!C.logoDataUrl) {
     const logo = await C.loadLogo();

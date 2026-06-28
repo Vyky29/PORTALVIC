@@ -682,7 +682,7 @@
           typeof html2pdf !== "undefined";
         if ((needsRegen || !currentPath) && docId && typeof html2pdf !== "undefined") {
           if (desk) desk.textContent = "Preparing PDF…";
-          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
+          const mod = await import("./portal/portal_employment_contract.js?v=20260628-app-submit-fix");
           await mod.portalRepairEmploymentContractByDocumentId(docId);
           const docs = await portalListMyDocuments();
           const fresh = (docs || []).find((d) => String(d.id || "") === docId);
@@ -692,7 +692,7 @@
         if (!signed) throw new Error("No URL");
         let blob = await fetchPdfBlobViaXHR(signed);
         if (blob.size <= 8000 && docId && typeof html2pdf !== "undefined") {
-          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
+          const mod = await import("./portal/portal_employment_contract.js?v=20260628-app-submit-fix");
           await mod.portalRepairEmploymentContractByDocumentId(docId);
           const docs = await portalListMyDocuments();
           const fresh = (docs || []).find((d) => String(d.id || "") === docId);

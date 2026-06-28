@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260623-pdf-layout"></script>
+  <script src="portal/contract-core.js?v=20260628-app-submit-fix"></script>
   <script src="portal/portal_announcement_ack.js?v=20260623-contract-ack"></script>
   <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign2">
   <style>
@@ -80,8 +80,9 @@
       portalFetchMyContract,
       portalCompleteEmploymentContract,
       portalPersistContractAnnouncementAck,
-      portalRepairCompletedContractDocument
-    } from "./portal/portal_employment_contract.js?v=20260623-pdf-layout";
+      portalRepairCompletedContractDocument,
+      portalEnsureHtml2Pdf
+    } from "./portal/portal_employment_contract.js?v=20260628-app-submit-fix";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);
@@ -181,6 +182,7 @@
         $("nameHint").textContent =
           'Type your name as on the contract: "' + contractRow.employee_name + '". First name alone is fine.';
         show("signGrid");
+        try { portalEnsureHtml2Pdf(); } catch (_) {}
         requestAnimationFrame(() => {
           padApi = C.setupSignaturePad($("sigCanvas"), { drawing: false }, (url) => {
             sigUrl = url;
@@ -206,6 +208,11 @@
     });
     $("submitBtn").addEventListener("click", async () => {
       $("submitBtn").disabled = true;
+      const hint = $("submitHint");
+      if (hint) {
+        hint.classList.remove("ready");
+        hint.textContent = "Saving your signed contract… this can take a few seconds.";
+      }
       try {
         await portalCompleteEmploymentContract({
           contractId,
@@ -214,8 +221,13 @@
         });
         showDoneState(false);
       } catch (e) {
-        alert(e.message || e);
-        updateSubmit();
+        const msg = (e && e.message) ? e.message : String(e);
+        if (hint) {
+          hint.classList.remove("ready");
+          hint.textContent = "Could not finish: " + msg + " — tap to try again.";
+        }
+        try { alert(msg); } catch (_) {}
+        $("submitBtn").disabled = false;
       }
     });
 

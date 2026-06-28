@@ -4143,7 +4143,7 @@
         if(!window.ContractCore){
           await new Promise(function(resolve, reject){
             var s = document.createElement('script');
-            s.src = 'portal/contract-core.js?v=20260622-sign';
+            s.src = 'portal/contract-core.js?v=20260628-app-submit-fix';
             s.onload = resolve;
             s.onerror = reject;
             document.head.appendChild(s);
