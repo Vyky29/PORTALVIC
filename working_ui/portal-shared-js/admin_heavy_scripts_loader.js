@@ -6,8 +6,8 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260625-youssef-validated",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260622-madre-live",
+      "/portal/term_from_timetable.js?v=20260629-29jun-roster",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
       "/portal/portal_participant_catalog.js?v=20260628-home-manager-exclude",

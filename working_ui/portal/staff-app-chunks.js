@@ -9,9 +9,9 @@
   var VER = "20260628-venue-open-close-split";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260625-youssef-validated",
+    "/portal/term_from_timetable.js?v=20260629-29jun-roster",
     "/portal/term_calendar_dashboard_shared.js?v=20260625-youssef-ma-own-feedback",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-simon-stf016",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260628-hazem-aurora-per-slot",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
