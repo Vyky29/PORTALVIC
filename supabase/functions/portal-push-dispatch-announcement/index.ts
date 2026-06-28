@@ -165,29 +165,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, sent: 0, targets: 0 });
   }
 
-  const onAckAction = String(record.on_ack_action ?? "").trim();
-  if (onAckAction === "portal_permissions") {
-    const permIds = [...targetUserIds];
-    const { data: regRows, error: regErr } = await admin
-      .from("portal_push_subscriptions")
-      .select("user_id")
-      .in("user_id", permIds)
-      .eq("register_app", "portal");
-    if (regErr) {
-      console.error("[portal-push-announcement] portal_permissions subs", regErr);
-      return jsonResponse({ error: regErr.message }, 500);
-    }
-    for (const row of regRows ?? []) {
-      const uid = String(row.user_id ?? "").trim();
-      if (uid) targetUserIds.delete(uid);
-    }
-    return jsonResponse({
-      ok: true,
-      sent: 0,
-      targets: targetUserIds.size,
-      note: "portal_permissions in-app only — staff with portal push already registered are skipped",
-    });
-  }
+  // Note: on_ack_action === "portal_permissions" still pushes to anyone who already
+  // has a portal subscription (so real notices reach them on a locked phone). Workers
+  // without a subscription simply get the in-app red badge and the silent permission
+  // prompt when they open/sign — there is no push endpoint to reach them anyway.
 
   const ids = [...targetUserIds];
   const { data: subs, error: subErr } = await admin
