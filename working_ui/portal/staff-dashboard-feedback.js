@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260628-per-instructor-fanout';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260628-hazem-aurora-per-slot';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -792,7 +792,11 @@
       if(cid && tCanon) add(iso + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) add(iso + '|' + tRaw + '|' + cid);
       if(cid && typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activityMerge)){
-        add(iso + '|' + cid + '|aquatic');
+        var perSlotAquatic = typeof portalStaffLeadClientNeedsPerSlotAquaticFeedback === 'function'
+          && portalStaffLeadClientNeedsPerSlotAquaticFeedback(iso, cid, dayWord);
+        if(!perSlotAquatic){
+          add(iso + '|' + cid + '|aquatic');
+        }
         if(tCanon) add(iso + '|' + cid + '|' + tCanon + '|aquatic');
       }
       if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'

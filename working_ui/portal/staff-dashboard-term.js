@@ -61,7 +61,11 @@
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
       if(cid && typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activityMerge)){
-        tryKey(String(sessionDateIso) + '|' + cid + '|aquatic');
+        var perSlotAquatic = typeof portalStaffLeadClientNeedsPerSlotAquaticFeedback === 'function'
+          && portalStaffLeadClientNeedsPerSlotAquaticFeedback(sessionDateIso, cid, dayWord);
+        if(!perSlotAquatic){
+          tryKey(String(sessionDateIso) + '|' + cid + '|aquatic');
+        }
         if(tCanon) tryKey(String(sessionDateIso) + '|' + cid + '|' + tCanon + '|aquatic');
       }
       if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
