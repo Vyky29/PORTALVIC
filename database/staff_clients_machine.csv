@@ -1,16 +1,13 @@
 area,client_name,day,instructors,service,session_date,time_slot,venue
-Pools,Q6 College,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,11 to 12,SwimFarm
-Hub Room,Ikram,Wednesday,"RAUL, LULIYA",Day Centre,2026-05-13,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,ROBERTO,Day Centre,2026-05-13,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-05-13,4 to 5.15,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-05-13,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,BERTA,Multi-Activity,2026-05-13,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,GIUSEPPE,Multi-Activity,2026-05-13,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-05-13,4.30 to 5.15,Acton
 Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-05-13,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-05-13,5 to 5.30,Northolt
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-05-13,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-05-13,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-05-13,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-05-13,5.15 to 6,Acton
 Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-05-13,5.15 to 6,Acton
@@ -18,29 +15,32 @@ Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-05-13,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-05-13,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,6 to 6.30,Northolt
 Lane,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-05-13,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,ROBERTO,Day Centre,2026-05-14,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"RAUL, LULIYA",Day Centre,2026-05-13,11 to 4,SwimFarm
+Pools,Q6 College,Wednesday,ROBERTO,Aquatic Activity,2026-05-13,11 to 12,SwimFarm
+Hub Room,Fadi,Wednesday,ROBERTO,Day Centre,2026-05-13,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-05-14,3.30 to 5,SwimFarm
+Lane (SE),Ayman,Thursday,JAVI,Aquatic Activity,2026-05-14,4 to 5,Acton
 Teaching Pool,Elijah,Thursday,AURORA,Aquatic Activity,2026-05-14,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-05-14,4 to 4.30,Acton
-Lane (SE),Ayman,Thursday,JAVI,Aquatic Activity,2026-05-14,4 to 5,Acton
+Lane,Aqsa,Thursday,AURORA,Aquatic Activity,2026-05-14,4.30 to 5.30,Acton
 Lane,Thushyan,Thursday,DAN,Aquatic Activity,2026-05-14,4.30 to 5,Acton
 Swallow End,Yassir,Thursday,ROBERTO,Aquatic Activity,2026-05-14,4.30 to 5,Acton
-Lane,Aqsa,Thursday,AURORA,Aquatic Activity,2026-05-14,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVI,Aquatic Activity,2026-05-14,5 to 5.30,Acton
 Lane,Yossi,Thursday,ROBERTO,Aquatic Activity,2026-05-14,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,DAN,Aquatic Activity,2026-05-14,5 to 5.30,Acton
+Lane,Eiji,Thursday,DAN,Aquatic Activity,2026-05-14,5.30 to 6.30,Acton
 Teaching Pool,Hazem,Thursday,AURORA,Aquatic Activity,2026-05-14,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVI,Aquatic Activity,2026-05-14,5.30 to 6,Acton
-Lane,Eiji,Thursday,DAN,Aquatic Activity,2026-05-14,5.30 to 6.30,Acton
 Lane,Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-05-14,5.30 to 6.30,Acton
 Teaching Pool,Hazem,Thursday,JAVI,Aquatic Activity,2026-05-14,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-05-14,6 to 6.30,Acton
+Hub Room,Fadi,Thursday,ROBERTO,Day Centre,2026-05-14,12.30 to 3,SwimFarm
 Hub Room,Timi,Friday,VICTOR,Day Centre,2026-05-15,1 to 3,SwimFarm
-Hub Room,Ikram,Friday,"RAUL, LULIYA",Day Centre,2026-05-15,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,RAUL,Day Centre,2026-05-15,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-05-15,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-05-15,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-05-15,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"RAUL, LULIYA",Day Centre,2026-05-15,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,RAUL,Day Centre,2026-05-15,12.30 to 3,SwimFarm
 Teaching Pool,Emani,Saturday,ROBERTO,Aquatic Activity,2026-05-16,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-05-16,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-05-16,12 to 12.30,Acton
@@ -52,6 +52,21 @@ Hub Room,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-05-17,1.15 to 2,SwimFarm
 Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-05-17,1.15 to 2,SwimFarm
 Big Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-05-17,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-05-17,1.15 to 2,SwimFarm
+Big Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
+Big Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
+Big Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
+Big Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
+Big Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
+Big Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
+Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
+Big Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,GODSWAY,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
+Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
+Big Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
 Climbing Wall,Eiji,Sunday,BISMARK,Climbing Activity,2026-05-17,10 to 11,Westway
 Climbing Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-05-17,10 to 11,Westway
 Hub Room,Adam Ab,Sunday,JOHN,Multi-Activity,2026-05-17,10.15 to 11,SwimFarm
@@ -82,44 +97,27 @@ Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFar
 Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
 Big Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
-Big Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
-Big Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
-Big Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-05-17,2 to 2.30,SwimFarm
-Big Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
-Big Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
-Big Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
-Big Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,GODSWAY,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
-Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
-Big Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,VICTOR,Day Centre,2026-05-18,1 to 3,SwimFarm
+Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-05-18,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-05-18,4 to 5,Westway
+Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-05-18,4.30 to 5,Acton
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-05-18,4.30 to 5,Northolt
+Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-05-18,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-05-18,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-05-18,5 to 6,Northolt
+Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-05-18,5 to 5.30,Northolt
+Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-05-18,5 to 5.30,Acton
+Gym,Serine,Monday,SANDRA,Physical Activity,2026-05-18,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-05-18,5.30 to 6.30,Acton
+Teaching Pool,Steven Ce,Monday,ANGEL,Aquatic Activity,2026-05-18,5.30 to 6,Acton
+Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-05-18,5.30 to 6,Northolt
+Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-05-18,6 to 6.30,Northolt
+Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-05-18,6 to 6.30,Acton
+Teaching Pool,Yamik (Trial 18/05),Monday,ROBERTO,Aquatic Activity,2026-05-18,6 to 6.30,Northolt
 Hub Room,Ikram,Monday,"RAUL, LULIYA",Day Centre,2026-05-18,11 to 12,SwimFarm
 Hub Room,Ikram,Monday,"ROBERTO, LULIYA, RAUL",Day Centre,2026-05-18,12 to 12.30,SwimFarm
 Hub Room,Fadi,Monday,"RAUL, VICTOR",Day Centre,2026-05-18,12.30 to 3,SwimFarm
 Hub Room,Ikram,Monday,"ROBERTO, LULIYA",Day Centre,2026-05-18,12.30 to 3,SwimFarm
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-05-18,4 to 5,Westway
-Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-05-18,4 to 5.30,Acton
-Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-05-18,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-05-18,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-05-18,4.30 to 5,Northolt
-Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-05-18,4.30 to 6,SwimFarm
-Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-05-18,5 to 5.30,Northolt
-Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-05-18,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-05-18,5 to 6,Northolt
-Gym,Serine,Monday,SANDRA,Physical Activity,2026-05-18,5 to 6,Westway
-Teaching Pool,Steven Ce,Monday,ANGEL,Aquatic Activity,2026-05-18,5.30 to 6,Acton
-Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-05-18,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-05-18,5.30 to 6.30,Acton
-Teaching Pool,Aadam Ah,Monday,DAN,Aquatic Activity,2026-05-18,6 to 6.30,Northolt
-Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-05-18,6 to 6.30,Acton
-Teaching Pool,Yamik (Trial 18/05),Monday,ROBERTO,Aquatic Activity,2026-05-18,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"ROBERTO, LULIYA",Day Centre,2026-05-19,11 to 3,SwimFarm
-Hub Room,Fadi,Tuesday,"VICTOR, RAUL",Day Centre,2026-05-19,12.30 to 3,SwimFarm
 Hub Room,Ikram,Tuesday,"VICTOR, LULIYA, RAUL",Day Centre,2026-05-19,3 to 4,SwimFarm
 Lane (SE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-05-19,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-05-19,4 to 4.30,Acton
@@ -142,18 +140,18 @@ Teaching Pool,Hazem,Tuesday,AURORA,Aquatic Activity,2026-05-19,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-05-19,6 to 6.30,Acton
 Lane (DE),Rayyan Fi,Tuesday,YOUSSEF,Aquatic Activity,2026-05-19,6 to 6.30,Acton
 Lane (SE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-05-19,6 to 6.30,Acton
+Hub Room,Ikram,Tuesday,"ROBERTO, LULIYA",Day Centre,2026-05-19,11 to 3,SwimFarm
+Hub Room,Fadi,Tuesday,"VICTOR, RAUL",Day Centre,2026-05-19,12.30 to 3,SwimFarm
 Hub Room,Timi,Wednesday,"RAUL, CARLOS",Day Centre,2026-05-20,1 to 3,SwimFarm
-Hub Room,Ikram,Wednesday,"RAUL, LULIYA",Day Centre,2026-05-20,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,ROBERTO,Day Centre,2026-05-20,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-05-20,4 to 5.15,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-05-20,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-05-20,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,BERTA,Multi-Activity,2026-05-20,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,GIUSEPPE,Multi-Activity,2026-05-20,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-05-20,4.30 to 5.15,Acton
 Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-05-20,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-05-20,5 to 5.30,Northolt
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-05-20,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-05-20,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-05-20,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-05-20,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-05-20,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-05-20,5.15 to 6,Acton
 Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-05-20,5.15 to 6,Acton
@@ -161,61 +159,62 @@ Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-05-20,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-05-20,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-05-20,6 to 6.30,Northolt
 Lane,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-05-20,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,ROBERTO,Day Centre,2026-05-21,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"RAUL, LULIYA",Day Centre,2026-05-20,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,ROBERTO,Day Centre,2026-05-20,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-05-21,3.30 to 5,SwimFarm
+Lane (SE),Ayman,Thursday,JAVI,Aquatic Activity,2026-05-21,4 to 5,Acton
 Teaching Pool,Elijah,Thursday,AURORA,Aquatic Activity,2026-05-21,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-05-21,4 to 4.30,Acton
-Lane (SE),Ayman,Thursday,JAVI,Aquatic Activity,2026-05-21,4 to 5,Acton
+Lane,Aqsa,Thursday,AURORA,Aquatic Activity,2026-05-21,4.30 to 5.30,Acton
 Lane,Thushyan,Thursday,DAN,Aquatic Activity,2026-05-21,4.30 to 5,Acton
 Swallow End,Yassir,Thursday,ROBERTO,Aquatic Activity,2026-05-21,4.30 to 5,Acton
-Lane,Aqsa,Thursday,AURORA,Aquatic Activity,2026-05-21,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVI,Aquatic Activity,2026-05-21,5 to 5.30,Acton
 Lane,Yossi,Thursday,ROBERTO,Aquatic Activity,2026-05-21,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,DAN,Aquatic Activity,2026-05-21,5 to 5.30,Acton
+Lane,Eiji,Thursday,DAN,Aquatic Activity,2026-05-21,5.30 to 6.30,Acton
 Teaching Pool,Hazem,Thursday,AURORA,Aquatic Activity,2026-05-21,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVI,Aquatic Activity,2026-05-21,5.30 to 6,Acton
-Lane,Eiji,Thursday,DAN,Aquatic Activity,2026-05-21,5.30 to 6.30,Acton
 Lane,Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-05-21,5.30 to 6.30,Acton
 Teaching Pool,Hazem,Thursday,JAVI,Aquatic Activity,2026-05-21,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-05-21,6 to 6.30,Acton
+Hub Room,Fadi,Thursday,ROBERTO,Day Centre,2026-05-21,12.30 to 3,SwimFarm
 Hub Room,Timi,Friday,VICTOR,Day Centre,2026-05-22,1 to 3,SwimFarm
-Hub Room,Ikram,Friday,"RAUL, LULIYA",Day Centre,2026-05-22,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,RAUL,Day Centre,2026-05-22,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-05-22,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-05-22,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-05-22,5.30 to 6,Acton
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-06-01,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-01,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-01,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-01,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-01,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-01,4 to 5,Westway
+Hub Room,Ikram,Friday,"RAUL, LULIYA",Day Centre,2026-05-22,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,RAUL,Day Centre,2026-05-22,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-06-01,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-01,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-01,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-06-01,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-01,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-01,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-01,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-01,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-01,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-01,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-06-01,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-06-01,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-01,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-06-01,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-01,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-06-01,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-06-01,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-01,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-06-01,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-06-01,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-06-01,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-02,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-02,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-06-01,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-01,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-01,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-01,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-06-02,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-06-02,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-06-02,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-06-02,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-06-02,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-06-02,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-06-02,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-06-02,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-06-02,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-06-02,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-06-02,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-06-02,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-06-02,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-06-02,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-06-02,5 to 5.30,Acton
@@ -230,85 +229,103 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-06-02,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-06-02,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-06-02,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-06-02,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-03,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, RAUL",Day Centre,2026-06-03,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-02,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-02,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-06-03,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-03,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-03,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-03,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-06-03,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-06-03,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-06-03,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-06-03,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-06-03,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-03,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-03,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-03,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-03,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-06-03,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-03,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-06-03,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-06-03,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-03,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-03,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-06-03,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-06-03,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-06-03,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-06-03,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-03,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-04,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-03,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-03,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-06-04,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-04,4 to 5,Acton
 Lane (SE),Elijah,Thursday,DAN,Aquatic Activity,2026-06-04,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-06-04,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-06-04,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-04,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,DAN,Aquatic Activity,2026-06-04,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-06-04,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-06-04,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,DAN,Aquatic Activity,2026-06-04,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-06-04,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-06-04,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-06-04,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-04,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,DAN,Aquatic Activity,2026-06-04,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-06-04,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-04,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-06-04,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-06-04,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,DAN,Aquatic Activity,2026-06-04,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-06-05,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-06-05,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-05,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-05,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-04,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-06-05,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-05,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-06-05,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-05,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-05,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-06,9.30 to 10,Acton
 Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-06-07,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-07,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
-Big Pool,Erik,Sunday,DAN,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
+Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-07,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-07,2 to 3,Westway
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-07,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-07,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-07,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-06-07,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,DAN,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
+Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
-Small Pool,Arthur Ma,Sunday,DAN,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
+Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,2026-06-07,11 to 12,Westway
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-07,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-07,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
-Small Pool,Cyrus,Sunday,DAN,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
+Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
@@ -316,59 +333,41 @@ Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-07,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-07,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,DAN,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
-Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
-Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,DAN,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-07,2 to 3,Westway
-Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-07,2 to 3,Westway
-Teaching Pool,Faris,Sunday,DAN,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
-Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
-Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-07,9 to 10.15,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,DAN,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,DAN,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-06-08,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-08,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-08,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-08,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-08,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-08,4 to 5,Westway
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-06-08,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-08,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-08,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-06-08,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-08,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-08,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-08,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-08,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-08,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-08,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-06-08,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-06-08,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-08,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-06-08,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-08,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-06-08,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-06-08,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-08,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-06-08,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-06-08,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-06-08,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-09,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-09,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-06-08,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-08,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-08,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-08,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-06-09,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-06-09,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-06-09,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-06-09,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-06-09,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-06-09,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-06-09,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-06-09,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-06-09,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-06-09,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-06-09,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-06-09,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-06-09,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-06-09,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-06-09,5 to 5.30,Acton
@@ -383,85 +382,103 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-06-09,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-06-09,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-06-09,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-06-09,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,LULIA,Day Centre,2026-06-10,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-10,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-09,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-09,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-06-10,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-10,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-10,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-10,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-06-10,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-06-10,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-06-10,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-06-10,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-06-10,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-10,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-10,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-10,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-10,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-06-10,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-10,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-06-10,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-06-10,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-10,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-10,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-06-10,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-06-10,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-06-10,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-06-10,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-10,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-11,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-10,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-10,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-06-11,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-11,4 to 5,Acton
 Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,2026-06-11,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-06-11,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-06-11,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-11,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-06-11,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-06-11,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-06-11,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-06-11,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-06-11,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-06-11,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-06-11,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-11,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,2026-06-11,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-06-11,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-11,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-06-11,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-06-11,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-06-11,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-06-12,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-06-12,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-12,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-12,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-11,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-06-12,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-12,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-06-12,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-12,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-12,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-13,9.30 to 10,Acton
 Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-06-14,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-14,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,BERTA,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
-Big Pool,Erik,Sunday,DAN,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
+Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-14,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-14,2 to 3,Westway
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-14,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-14,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-14,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,BERTA,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-06-14,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,DAN,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
+Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
-Small Pool,Arthur Ma,Sunday,DAN,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
+Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,BERTA,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,2026-06-14,11 to 12,Westway
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-14,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-14,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,BERTA,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
-Small Pool,Cyrus,Sunday,DAN,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
+Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
@@ -469,59 +486,41 @@ Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-14,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-14,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,DAN,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,BERTA,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
-Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
-Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,DAN,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-14,2 to 3,Westway
-Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-14,2 to 3,Westway
-Teaching Pool,Faris,Sunday,DAN,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
-Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
-Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-14,9 to 10.15,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,DAN,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,DAN,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,BERTA,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-06-15,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-15,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-15,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-15,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-15,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-15,4 to 5,Westway
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-06-15,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-15,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-15,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-06-15,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-15,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-15,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-15,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-15,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-15,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-15,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-06-15,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-06-15,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-15,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-06-15,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-15,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-06-15,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-06-15,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-15,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-06-15,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-06-15,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-06-15,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-16,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-16,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-06-15,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-15,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-15,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-15,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-06-16,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-06-16,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-06-16,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-06-16,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-06-16,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-06-16,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-06-16,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-06-16,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-06-16,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-06-16,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-06-16,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-06-16,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-06-16,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-06-16,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-06-16,5 to 5.30,Acton
@@ -536,145 +535,145 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-06-16,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-06-16,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-06-16,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-06-16,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,LULIA,Day Centre,2026-06-17,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-17,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-16,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-16,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-06-17,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-17,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-17,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-17,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-06-17,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-06-17,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-06-17,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-06-17,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-06-17,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-17,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-17,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-17,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-17,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-06-17,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-17,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-06-17,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-06-17,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-17,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-17,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-06-17,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-06-17,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-06-17,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-06-17,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-17,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-18,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-17,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-17,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-06-18,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-18,4 to 5,Acton
 Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,2026-06-18,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-06-18,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-06-18,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-18,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-06-18,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-06-18,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-06-18,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-06-18,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-06-18,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-06-18,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-06-18,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-18,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,2026-06-18,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-06-18,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-18,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-06-18,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-06-18,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-06-18,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-06-19,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-06-19,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-19,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-19,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-18,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-06-19,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-19,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-06-19,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-19,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-19,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-20,9.30 to 10,Acton
-Wall,Rodin,Sunday,ANDRES,Climbing Activity,2026-06-21,1 to 2,Westway
-Wall,Zakariya,Sunday,BISMARK,Climbing Activity,2026-06-21,1 to 2,Westway
+Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-06-21,1 to 2,Westway
+Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-21,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
-Hub Room,Amaar Ah,Sunday,GODSWAY,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
-Big Pool,Erik,Sunday,DAN,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
+Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
+Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
-Wall,Eiji,Sunday,ANDRES,Climbing Activity,2026-06-21,10 to 11,Westway
-Wall,Hazem,Sunday,BISMARK,Climbing Activity,2026-06-21,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,DAN,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Hub Room,Yusuf Ah,Sunday,GODSWAY,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Small Pool,Arthur Ma,Sunday,DAN,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Hub Room,Arthur Mo,Sunday,GODSWAY,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ANDRES,Climbing Activity,2026-06-21,11 to 12,Westway
-Wall,Zaid,Sunday,BISMARK,Climbing Activity,2026-06-21,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Small Pool,Cyrus,Sunday,DAN,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Hub Room,Gabriel,Sunday,GODSWAY,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Wall,Scott,Sunday,ANDRES,Climbing Activity,2026-06-21,12 to 1,Westway
-Wall,Serine,Sunday,BISMARK,Climbing Activity,2026-06-21,12 to 1,Westway
-Hub Room,Adaam Ah,Sunday,GODSWAY,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,DAN,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-21,2 to 3,Westway
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-21,2 to 3,Westway
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,DAN,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ANDRES,Climbing Activity,2026-06-21,2 to 3,Westway
-Wall,Patrick,Sunday,BISMARK,Climbing Activity,2026-06-21,2 to 3,Westway
-Teaching Pool,Faris,Sunday,DAN,Aquatic Activity,2026-06-21,2.30 to 3,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-06-21,2.30 to 3,SwimFarm
 Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-21,2.30 to 3,SwimFarm
 Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-21,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-21,9 to 10.15,SwimFarm
 Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-21,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,DAN,Aquatic Activity,2026-06-21,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,DAN,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,GODSWAY,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-21,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-21,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-06-22,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-22,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-22,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-22,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-22,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-22,4 to 5,Westway
+Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-21,10 to 11,Westway
+Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-21,10 to 11,Westway
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-06-21,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-21,11 to 12,Westway
+Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-21,11 to 12,Westway
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-21,12 to 1,Westway
+Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-21,12 to 1,Westway
+Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-06-22,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-22,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-22,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-06-22,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-22,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-22,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-22,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-22,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-22,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-22,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-06-22,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-06-22,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-22,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-06-22,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-22,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-06-22,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-06-22,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-22,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-06-22,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-06-22,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-06-22,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-23,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-23,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-06-22,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-22,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-22,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-22,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-06-23,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-06-23,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-06-23,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-06-23,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-06-23,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-06-23,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-06-23,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-06-23,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-06-23,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-06-23,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-06-23,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-06-23,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-06-23,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-06-23,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-06-23,5 to 5.30,Acton
@@ -689,85 +688,103 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-06-23,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-06-23,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-06-23,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-06-23,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-24,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-24,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-23,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-23,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-06-24,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-24,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-24,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-24,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-06-24,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-06-24,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,RAUL,Multi-Activity,2026-06-24,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-06-24,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-06-24,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-24,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-24,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-06-24,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-06-24,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-06-24,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-06-24,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-06-24,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-06-24,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-24,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-06-24,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,RAUL,Multi-Activity,2026-06-24,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-06-24,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-06-24,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-06-24,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-06-24,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-25,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-06-24,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-06-24,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-06-25,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-25,4 to 5,Acton
 Lane (SE),Elijah,Thursday,DAN,Aquatic Activity,2026-06-25,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-06-25,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-06-25,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-06-25,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,DAN,Aquatic Activity,2026-06-25,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-06-25,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-06-25,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,DAN,Aquatic Activity,2026-06-25,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-06-25,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-06-25,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-06-25,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-25,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,DAN,Aquatic Activity,2026-06-25,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-06-25,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-06-25,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-06-25,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-06-25,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,DAN,Aquatic Activity,2026-06-25,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-06-26,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-06-26,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-26,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-26,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-06-25,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-06-26,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-26,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-06-26,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-06-26,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-06-26,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-06-27,9.30 to 10,Acton
 Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-06-28,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-28,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
-Big Pool,Erik,Sunday,DAN,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
+Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-28,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-28,2 to 3,Westway
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-28,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-28,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-28,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-06-28,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,DAN,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
+Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
-Small Pool,Arthur Ma,Sunday,DAN,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
+Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,2026-06-28,11 to 12,Westway
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-28,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-28,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
-Small Pool,Cyrus,Sunday,DAN,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
+Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
@@ -775,59 +792,50 @@ Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-28,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-28,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,DAN,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
-Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
-Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,DAN,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-06-28,2 to 3,Westway
-Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-06-28,2 to 3,Westway
-Teaching Pool,Faris,Sunday,DAN,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
-Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
-Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-28,9 to 10.15,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,DAN,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,DAN,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-06-29,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-06-29,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-06-29,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-06-29,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-29,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-29,4 to 5,Westway
+Hub Room,Emmanuel,Monday,VICTOR,Day Centre,2026-06-29,1 to 4,SwimFarm
+Hub Room,Fadi,Monday,YOUSSEF,Day Centre,2026-06-29,1 to 3,SwimFarm
+Manager,MANAGER,Monday,RAUL,Manager,2026-06-29,1 to 4,SwimFarm
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-06-29,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-06-29,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-06-29,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-06-29,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-29,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-29,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-06-29,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-06-29,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-06-29,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-29,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-06-29,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-06-29,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-06-29,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-06-29,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-29,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-06-29,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-06-29,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-06-29,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-06-29,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-06-29,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-06-29,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-30,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-30,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-06-29,10 to 11,Acton
+Big Pool,ACAT,Monday,ROBERTO,Aquatic Activity,2026-06-29,11 to 12,SwimFarm
+Hub Room,Emmanuel,Monday,MICHELLE,Day Centre,2026-06-29,11 to 12,SwimFarm
+HOME,HOME,Monday,RAUL,Day Centre,2026-06-29,11 to 1,SwimFarm
+Hub Room,Ikram,Monday,"YOUSSEF, CARLOS",Day Centre,2026-06-29,11 to 12,SwimFarm
+Hub Room,Timi,Monday,VICTOR,Day Centre,2026-06-29,11 to 1,SwimFarm
+Big Pool,Emmanuel,Monday,YOUSSEF,Aquatic Activity,2026-06-29,12 to 1,SwimFarm
+Hub Room,Ikram,Monday,"MICHELLE, CARLOS",Day Centre,2026-06-29,12 to 4,SwimFarm
+Big Pool,Timi,Monday,ROBERTO,Aquatic Activity,2026-06-29,12 to 12.30,SwimFarm
+Hub Room,Fadi,Monday,ROBERTO,Day Centre,2026-06-29,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-06-30,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-06-30,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-06-30,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-06-30,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-06-30,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-06-30,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-06-30,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-06-30,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-06-30,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-06-30,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-06-30,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-06-30,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-06-30,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-06-30,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-06-30,5 to 5.30,Acton
@@ -842,69 +850,87 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-06-30,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-06-30,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-06-30,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-06-30,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-01,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-01,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-06-30,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-06-30,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-07-01,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-01,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-01,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-01,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-07-01,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-07-01,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-07-01,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-07-01,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-07-01,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-01,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-01,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-01,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-01,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-07-01,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-01,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-07-01,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-07-01,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-01,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-01,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-07-01,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-07-01,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-07-01,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-07-01,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-01,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-02,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-01,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-01,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-07-02,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-02,4 to 5,Acton
 Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,2026-07-02,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-07-02,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-07-02,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-02,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-02,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-07-02,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-07-02,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-02,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-07-02,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-07-02,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-07-02,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-02,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,2026-07-02,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-07-02,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-02,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-07-02,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-07-02,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-07-02,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-07-03,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-07-03,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-03,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-03,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-02,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-07-03,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-03,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-07-03,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-03,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-03,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-04,9.30 to 10,Acton
 Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-07-05,1 to 2,Westway
-Wall,Zakariya,Sunday,ANDRES,Climbing Activity,2026-07-05,1 to 2,Westway
+Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-07-05,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-07-05,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-07-05,2 to 3,Westway
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-07-05,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-07-05,10 to 11,Westway
-Wall,Hazem,Sunday,ANDRES,Climbing Activity,2026-07-05,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,JOHN,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
+Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-07-05,10 to 11,Westway
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-07-05,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
@@ -912,75 +938,57 @@ Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,JOHN,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,2026-07-05,11 to 12,Westway
-Wall,Zaid,Sunday,ANDRES,Climbing Activity,2026-07-05,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-07-05,11 to 12,Westway
+Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-07-05,11 to 12,Westway
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-07-05,12 to 1,Westway
-Wall,Serine,Sunday,ANDRES,Climbing Activity,2026-07-05,12 to 1,Westway
+Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-07-05,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
-Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
-Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-07-05,2 to 3,Westway
-Wall,Patrick,Sunday,ANDRES,Climbing Activity,2026-07-05,2 to 3,Westway
-Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
-Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
-Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-07-05,9 to 10.15,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-07-06,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-07-06,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-07-06,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-07-06,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-07-06,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-07-06,4 to 5,Westway
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-07-06,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-07-06,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-07-06,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-07-06,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-07-06,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-07-06,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-07-06,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-06,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-07-06,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-07-06,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-07-06,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-07-06,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-07-06,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-07-06,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-07-06,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-07-06,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-07-06,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-07-06,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-07-06,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-07-06,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-07-06,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-07-07,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-07-07,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-07-06,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-07-06,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-07-06,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-07-06,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-07-07,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-07-07,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-07-07,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-07-07,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-07-07,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-07-07,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-07-07,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-07-07,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-07-07,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-07-07,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-07-07,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-07-07,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-07-07,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-07-07,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-07-07,5 to 5.30,Acton
@@ -995,69 +1003,87 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-07-07,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-07-07,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-07-07,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-07-07,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-08,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-08,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-07-07,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-07-07,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-07-08,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-08,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-08,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-08,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-07-08,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-07-08,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-07-08,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-07-08,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-07-08,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-08,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-08,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-08,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-08,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-07-08,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-08,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-07-08,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-07-08,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-08,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-08,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-07-08,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-07-08,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-07-08,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-07-08,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-08,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-09,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-08,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-08,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-07-09,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-09,4 to 5,Acton
 Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,2026-07-09,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-07-09,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-07-09,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-09,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-09,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-07-09,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-07-09,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-09,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-07-09,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-07-09,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-07-09,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-09,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,2026-07-09,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-07-09,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-09,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-07-09,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-07-09,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-07-09,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-07-10,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-07-10,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-10,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-10,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-09,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-07-10,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-10,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-07-10,5.30 to 6,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-10,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-10,12.30 to 3,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,9.30 to 10,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,10 to 10.30,Acton
 Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,10.30 to 11,Acton
 Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,11 to 12,Acton
 Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,12 to 12.30,Acton
 Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,2026-07-11,9.30 to 10,Acton
 Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-07-12,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-07-12,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,BERTA,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
+Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-07-12,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
+Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-07-12,2 to 3,Westway
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-07-12,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-07-12,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-07-12,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,BERTA,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-07-12,10 to 11,Northolt
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
@@ -1065,13 +1091,13 @@ Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,BERTA,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,2026-07-12,11 to 12,Westway
+Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-07-12,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-07-12,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,BERTA,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
@@ -1082,58 +1108,40 @@ Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-07-12,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,BERTA,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
-Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
-Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
-Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
-Wall,Ayden W,Sunday,ALEX,Climbing Activity,2026-07-12,2 to 3,Westway
-Wall,Patrick,Sunday,CARLOS,Climbing Activity,2026-07-12,2 to 3,Westway
-Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
-Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
-Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-07-12,9 to 10.15,SwimFarm
-Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,BERTA,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Hub Room,Timi,Monday,RAUL,Day Centre,2026-07-13,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-07-13,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-07-13,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-07-13,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-07-13,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-07-13,4 to 5,Westway
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-07-13,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,2026-07-13,4 to 5,Westway
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,2026-07-13,4 to 4.30,Acton
 Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,2026-07-13,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-07-13,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-07-13,4.30 to 5,Northolt
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,2026-07-13,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-13,4.30 to 6,SwimFarm
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,2026-07-13,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-07-13,5 to 6,Northolt
 Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,2026-07-13,5 to 5.30,Northolt
 Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,2026-07-13,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,2026-07-13,5 to 6,Northolt
 Gym,Serine,Monday,SANDRA,Physical Activity,2026-07-13,5 to 6,Westway
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-07-13,5.30 to 6.30,Acton
 Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,2026-07-13,5.30 to 6,Acton
 Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,2026-07-13,5.30 to 6,Northolt
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,2026-07-13,5.30 to 6.30,Acton
 Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,2026-07-13,6 to 6.30,Northolt
 Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,2026-07-13,6 to 6.30,Acton
 Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,2026-07-13,6 to 6.30,Northolt
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-07-14,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-07-14,12.30 to 3,SwimFarm
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,2026-07-13,10 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,2026-07-13,11 to 12,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,2026-07-13,11 to 4,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,2026-07-13,12.30 to 3,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,2026-07-14,2 to 3,SwimFarm
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,2026-07-14,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,2026-07-14,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,2026-07-14,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,2026-07-14,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,2026-07-14,4 to 4.30,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,2026-07-14,4.30 to 5,Acton
-Lane (DE),Ayman,Tuesday,YOUSSEF,Aquatic Activity,2026-07-14,4.30 to 5,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,2026-07-14,4.30 to 5,Acton
-Lane (SE),Cayra,Tuesday,ANGEL,Aquatic Activity,2026-07-14,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,2026-07-14,4.30 to 5,Acton
+Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,2026-07-14,4.30 to 5,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,2026-07-14,4.30 to 5.30,Acton
 Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,2026-07-14,5 to 5.30,Acton
 Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,2026-07-14,5 to 5.30,Acton
@@ -1148,216 +1156,216 @@ Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,2026-07-14,6 to 6.30,Acton
 Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,2026-07-14,6 to 6.30,Acton
 Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,2026-07-14,6 to 6.30,Acton
 Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,2026-07-14,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-15,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-15,12.30 to 3,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,2026-07-14,11 to 4,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,2026-07-14,12.30 to 3,SwimFarm
 Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,2026-07-15,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-15,4 to 4.30,Acton
-Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-15,4.30 to 5,Northolt
-Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-15,4.30 to 5,Northolt
 Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,2026-07-15,4.30 to 5.15,Acton
 Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,2026-07-15,4.30 to 5.15,Acton
 Room 2,Scott,Wednesday,BERTA,Multi-Activity,2026-07-15,4.30 to 5.15,Acton
 Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,2026-07-15,4.30 to 5.15,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,2026-07-15,4.30 to 6,SwimFarm
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-15,5 to 5.30,Northolt
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-15,4.30 to 6,SwimFarm
+Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,2026-07-15,4.30 to 5,Northolt
+Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,2026-07-15,4.30 to 5,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,2026-07-15,5 to 6,Northolt
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,2026-07-15,5 to 5.30,Northolt
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,2026-07-15,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,2026-07-15,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-15,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,2026-07-15,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,2026-07-15,5.15 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,2026-07-15,5.30 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,2026-07-15,6 to 6.30,Northolt
 Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,2026-07-15,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,2026-07-15,6 to 6.30,Acton
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-16,12.30 to 3,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,2026-07-15,11 to 4,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,2026-07-15,12.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,2026-07-16,3.30 to 5,SwimFarm
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-16,4 to 5,Acton
 Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,2026-07-16,4 to 4.30,Acton
 Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,2026-07-16,4 to 4.30,Acton
 Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,2026-07-16,4 to 4.30,Acton
-Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,2026-07-16,4 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-16,4.30 to 5.30,Acton
 Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,2026-07-16,4.30 to 5,Acton
 Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,2026-07-16,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,2026-07-16,4.30 to 5.30,Acton
 Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,2026-07-16,5 to 5.30,Acton
 Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,2026-07-16,5 to 5.30,Acton
 Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,2026-07-16,5 to 5.30,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-16,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,2026-07-16,5.30 to 6,Acton
 Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,2026-07-16,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,2026-07-16,5.30 to 6.30,Acton
 Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,2026-07-16,5.30 to 6.30,Acton
 Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,2026-07-16,6 to 6.30,Acton
 Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,2026-07-16,6 to 6.30,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,2026-07-17,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,2026-07-17,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-17,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-17,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,2026-07-16,12.30 to 3,SwimFarm
 Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,2026-07-17,4 to 5.30,Acton
 Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,2026-07-17,4.30 to 6,SwimFarm
 Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,2026-07-17,5.30 to 6,Acton
-Hub Room,Timi,Friday,RAUL,Day Centre,,1 to 3,SwimFarm
-Hub Room,Emmanuel,Friday,VICTOR,Day Centre,,11 to 4,SwimFarm
-Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
-Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,,12.30 to 3,SwimFarm
-Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,,4 to 5.30,Acton
-Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,,4.15 to 6.15,SwimFarm
-Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,,5.30 to 6,Acton
-Hub Room,Timi,Monday,RAUL,Day Centre,,1 to 3,SwimFarm
-Hub Room,ACAT,Monday,ROBERTO,Day Centre,,11 to 12,SwimFarm
-Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
-Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,,12.30 to 3,SwimFarm
-Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,,4 to 4.30,Acton
-Gym,Ayaan,Monday,SANDRA,Physical Activity,,4 to 5,Westway
-Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,,4 to 5.30,Acton
-Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,,4.15 to 6.15,SwimFarm
-Lane (SE),Eddie,Monday,YOUSSEF,Aquatic Activity,,4.30 to 5,Acton
-Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,,4.30 to 5,Northolt
-Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,,4.30 to 5,Northolt
-Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,,5 to 5.30,Northolt
-Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,,5 to 5.30,Acton
-Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,,5 to 6,Northolt
-Gym,Serine,Monday,SANDRA,Physical Activity,,5 to 6,Westway
-Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,,5.30 to 6,Acton
-Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,,5.30 to 6,Acton
-Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,,5.30 to 6,Northolt
-Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,,6 to 6.30,Northolt
-Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,,6 to 6.30,Acton
-Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,,6 to 6.30,Northolt
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,10 to 10.30,Acton
-Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,,10.30 to 11,Acton
-Lane (SwallowEnd),Matthias,Saturday,YOUSSEF,Aquatic Activity,,11 to 11.30,Acton
-Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,,12 to 12.30,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,12.30 to 1,Acton
-Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,9.30 to 10,Acton
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,2026-07-17,11 to 4,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,2026-07-17,12.30 to 3,SwimFarm
 Wall,Rodin,Sunday,ALEX,Climbing Activity,,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,,1 to 2,Westway
-Big Pool,Adaam Ah,Sunday,ROBERTO,Aquatic Activity,,1.15 to 2,SwimFarm
+Teaching Pool,Adaam Ah,Sunday,ROBERTO,Aquatic Activity,,1.15 to 2,SwimFarm
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,,1.15 to 2,SwimFarm
 Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,,1.15 to 2,SwimFarm
-Small Pool,Erik,Sunday,AURORA,Aquatic Activity,,1.15 to 2,SwimFarm
-Small Pool,Erik,Sunday,AURORA,Multi-Activity,,1.15 to 2,SwimFarm
-Big Pool,Haneef,Sunday,JAVIER,Aquatic Activity,,1.15 to 2,SwimFarm
-Big Pool,Haneef,Sunday,JAVIER,Multi-Activity,,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,,1.15 to 2,SwimFarm
+Big Pool,Erik,Sunday,AURORA,Multi-Activity,,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,,1.15 to 2,SwimFarm
+Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,,1.15 to 2,SwimFarm
-Wall,Eiji,Sunday,ALEX,Climbing Activity,,10 to 11,Westway
-Wall,Hazem,Sunday,CARLOS,Climbing Activity,,10 to 11,Westway
-Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,,10.15 to 11,SwimFarm
-Big Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,,10.15 to 11,SwimFarm
-Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,AURORA,Aquatic Activity,,10.15 to 11,SwimFarm
-Big Pool,Jack W,Sunday,AURORA,Multi-Activity,,10.15 to 11,SwimFarm
-Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,,10.15 to 11,SwimFarm
-Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,,10.15 to 11,SwimFarm
-Small Pool,Zaid,Sunday,JAVIER,Aquatic Activity,,10.15 to 11,SwimFarm
-Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,,10.15 to 11,SwimFarm
-Big Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,,11 to 11.45,SwimFarm
-Big Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,,11 to 11.45,SwimFarm
-Big Pool,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,,11 to 11.45,SwimFarm
-Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,,11 to 11.45,SwimFarm
-Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,,11 to 11.45,SwimFarm
-Big Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,,11 to 11.45,SwimFarm
-Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,,11 to 11.45,SwimFarm
-Big Pool,Gabriel,Sunday,BISMARK,Multi-Activity,,11 to 11.45,SwimFarm
-Small Pool,Hazem,Sunday,JAVIER,Multi-Activity,,11 to 11.45,SwimFarm
-Small Pool,Hazem,Sunday,GIUSEPPE,Multi-Activity,,11 to 11.45,SwimFarm
-Wall,Yusuf Ah,Sunday,ALEX,Climbing Activity,,11 to 12,Westway
-Wall,Zaid,Sunday,CARLOS,Climbing Activity,,11 to 12,Westway
-Big Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,,11.45 to 12.30,SwimFarm
-Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,,11.45 to 12.30,SwimFarm
-Big Pool,Cyrus,Sunday,AURORA,Aquatic Activity,,11.45 to 12.30,SwimFarm
-Big Pool,Cyrus,Sunday,AURORA,Multi-Activity,,11.45 to 12.30,SwimFarm
-Small Pool,Eiji,Sunday,JAVIER,Aquatic Activity,,11.45 to 12.30,SwimFarm
-Small Pool,Eiji,Sunday,JAVIER,Multi-Activity,,11.45 to 12.30,SwimFarm
-Wall,Scott,Sunday,ALEX,Climbing Activity,,12 to 1,Westway
-Wall,Serine,Sunday,CARLOS,Climbing Activity,,12 to 1,Westway
-Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,,12.30 to 1.15,SwimFarm
-Big Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,,12.30 to 1.15,SwimFarm
-Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,,12.30 to 1.15,SwimFarm
-Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,,12.30 to 1.15,SwimFarm
-Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,,12.30 to 1.15,SwimFarm
-Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,,12.30 to 1.15,SwimFarm
-Small Pool,Max,Sunday,JAVIER,Aquatic Activity,,2 to 2.30,SwimFarm
-Big Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,,2 to 2.30,SwimFarm
-Big Pool,Zakariya,Sunday,AURORA,Aquatic Activity,,2 to 2.30,SwimFarm
 Wall,Ayden W,Sunday,ALEX,Climbing Activity,,2 to 3,Westway
+Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,,2 to 2.30,SwimFarm
 Wall,Patrick,Sunday,CARLOS,Climbing Activity,,2 to 3,Westway
-Big Pool,Faris,Sunday,AURORA,Aquatic Activity,,2.30 to 3,SwimFarm
-Small Pool,Shaan,Sunday,JAVIER,Aquatic Activity,,2.30 to 3,SwimFarm
-Big Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,,2.30 to 3,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,,9 to 10.15,SwimFarm
-Big Pool,Shire,Sunday,JAVIER,Aquatic Activity,,9 to 9.30,SwimFarm
-Small Pool,Simon,Sunday,AURORA,Aquatic Activity,,9 to 9.30,SwimFarm
-Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,,9.30 to 10.15,SwimFarm
-Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,,9.30 to 10.15,SwimFarm
-Big Pool,Samer,Sunday,JAVIER,Multi-Activity,,9.30 to 10.15,SwimFarm
-Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,,9.30 to 10.15,SwimFarm
-Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,,9.30 to 10.15,SwimFarm
-Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,,12.30 to 3,SwimFarm
+Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,,2 to 2.30,SwimFarm
+Hub Room,Sam,Tuesday,TEFLON,Multi-Activity,,2 to 3,SwimFarm
+Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,,2 to 2.30,SwimFarm
+Teaching Pool,Faris,Sunday,AURORA,Aquatic Activity,,2.30 to 3,SwimFarm
+Teaching Pool,Shaan,Sunday,JAVIER,Aquatic Activity,,2.30 to 3,SwimFarm
+Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,,2.30 to 3,SwimFarm
 Hub Room,Cyrus,Thursday,VICTOR,Bespoke Programme,,3.30 to 5,SwimFarm
-Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,,4 to 4.30,Acton
-Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,,4 to 4.30,Acton
-Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,,4 to 4.30,Acton
-Lane (SE),Ayman,Thursday,JAVIER,Aquatic Activity,,4 to 5,Acton
-Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,,4.30 to 5,Acton
-Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,,4.30 to 5,Acton
-Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,,4.30 to 5.30,Acton
-Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,,5 to 5.30,Acton
-Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,,5 to 5.30,Acton
-Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,,5 to 5.30,Acton
-Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,,5.30 to 6,Acton
-Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,,5.30 to 6,Acton
-Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,,5.30 to 6.30,Acton
-Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,,5.30 to 6.30,Acton
-Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
-Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,,6 to 6.30,Acton
-Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
-Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,,12.30 to 3,SwimFarm
+Teaching Pool,Adam Pi,Friday,ROBERTO,Aquatic Activity,,4 to 5.30,Acton
+Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,,4 to 5.30,Acton
+Gym,Ayaan,Monday,SANDRA,Physical Activity,,4 to 5,Westway
+Lane (DE)/(SE),Ayman,Thursday,JAVIER,Aquatic Activity,,4 to 5,Acton
 Lane (DE),Ayman,Tuesday,JAVIER,Aquatic Activity,,4 to 4.30,Acton
+Teaching Pool,CLOSED,Monday,YOUSSEF,Aquatic Activity,,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,ANGEL,Aquatic Activity,,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,AURORA,Aquatic Activity,,4 to 4.30,Acton
 Teaching Pool,CLOSED,Tuesday,YOUSSEF,Aquatic Activity,,4 to 4.30,Acton
+Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,,4 to 4.30,Acton
+Lane (SE),Elijah,Thursday,AURORA,Aquatic Activity,,4 to 4.30,Acton
 Teaching Pool,Jad,Tuesday,ROBERTO,Aquatic Activity,,4 to 4.30,Acton
+Teaching Pool,NO CLIENT,Thursday,SIMON,Aquatic Activity,,4 to 4.30,Acton
+Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,,4 to 4.30,Acton
+Lane (SE),Tom,Thursday,ROBERTO,Aquatic Activity,,4 to 4.30,Acton
+Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,,4.30 to 5.15,Acton
 Teaching Pool,Adam Me,Tuesday,JAVIER,Aquatic Activity,,4.30 to 5,Acton
+Lane (DE),Aqsa,Thursday,AURORA,Aquatic Activity,,4.30 to 5.30,Acton
 Lane (SE),Bediako,Tuesday,AURORA,Aquatic Activity,,4.30 to 5,Acton
+Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,,4.30 to 5.15,Acton
+Teaching Pool,Eddie,Monday,YOUSSEF,Aquatic Activity,,4.30 to 5,Acton
+Teaching Pool,Kirushy,Monday,DAN,Aquatic Activity,,4.30 to 5,Northolt [removed from term — left programme Jun 2026]
 Teaching Pool,NO CLIENT,Tuesday,ANGEL,Aquatic Activity,,4.30 to 5,Acton
 Teaching Pool,NO CLIENT,Tuesday,YOUSSEF,Aquatic Activity,,4.30 to 5,Acton
+Room 2,Scott,Wednesday,BERTA,Multi-Activity,,4.30 to 5.15,Acton
 Lane (DE),Serine,Tuesday,ROBERTO,Aquatic Activity,,4.30 to 5.30,Acton
-Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,,5 to 5.30,Acton
-Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,,5 to 5.30,Acton
-Lane (SE),Linda,Tuesday,JAVIER,Aquatic Activity,,5 to 5.30,Acton
-Teaching Pool,Logan,Tuesday,YOUSSEF,Aquatic Activity,,5 to 5.30,Acton
-Lane (SE),Aydaan Ah,Tuesday,AURORA,Aquatic Activity,,5.30 to 6,Acton
-Lane (DE),Eiji,Tuesday,JAVIER,Aquatic Activity,,5.30 to 6,Acton
-Lane (DE),Hazem,Tuesday,ROBERTO,Aquatic Activity,,5.30 to 6,Acton
-Teaching Pool,Rayan Ta,Tuesday,ANGEL,Aquatic Activity,,5.30 to 6,Acton
-Lane (SE),Rayyan Fi,Tuesday,YOUSSEF,Aquatic Activity,,5.30 to 6.30,Acton
-Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,,6 to 6.30,Acton
-Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,,6 to 6.30,Acton
-Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
-Lane (SE),Richard,Tuesday,ANGEL,Aquatic Activity,,6 to 6.30,Acton
-Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
-Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,,12.30 to 3,SwimFarm
-Teaching Pool,Cyrus,Wednesday,JAVIER,Aquatic Activity,,4 to 4.30,Acton
-Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,,4 to 4.30,Acton
-Hub Room,Tinashe,Wednesday,"JOHN, GODSWAY, BISMARK",Bespoke Programme,,4.15 to 6.15,SwimFarm
+Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,,4.30 to 5.15,Acton
+Lane (DE),Thushyan,Thursday,SIMON,Aquatic Activity,,4.30 to 5,Acton
+Hub Room,Tinashe,Friday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,,4.30 to 6,SwimFarm
+Hub Room,Tinashe,Monday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,,4.30 to 6,SwimFarm
+Hub Room,Tinashe,Wednesday,"BISMARK, GIUSEPPE, JOHN",Bespoke Programme,,4.30 to 6,SwimFarm
 Teaching Pool,Tyson,Wednesday,DAN,Aquatic Activity,,4.30 to 5,Northolt
 Teaching Pool,Vithura,Wednesday,ROBERTO,Aquatic Activity,,4.30 to 5,Northolt
-Room 2,Adam Ab,Wednesday,GIUSEPPE,Multi-Activity,,4.30 to 5.15,Acton
-Teaching Pool,Cyrus,Wednesday,JAVIER,Multi-Activity,,4.30 to 5.15,Acton
-Room 2,Scott,Wednesday,BERTA,Multi-Activity,,4.30 to 5.15,Acton
-Teaching Pool,Stephanie,Wednesday,YOUSSEF,Multi-Activity,,4.30 to 5.15,Acton
-Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,,5 to 5.30,Northolt
+Lane (SE),Yassir,Thursday,ROBERTO,Aquatic Activity,,4.30 to 5,Acton
+Teaching Pool,Yunis,Monday,ROBERTO,Aquatic Activity,,4.30 to 5,Northolt
+Teaching Pool,Amar Ra,Monday,ROBERTO,Aquatic Activity,,5 to 6,Northolt
 Teaching Pool,Amar Ra,Wednesday,ROBERTO,Aquatic Activity,,5 to 6,Northolt
+Teaching Pool,Amir,Tuesday,ANGEL,Aquatic Activity,,5 to 5.30,Acton
+Teaching Pool,Gemma,Monday,DAN,Aquatic Activity,,5 to 5.30,Northolt
+Teaching Pool,Joel,Monday,YOUSSEF,Aquatic Activity,,5 to 5.30,Acton
+Lane (SE),Junaid,Tuesday,AURORA,Aquatic Activity,,5 to 5.30,Acton
+Lane (SE),Khalid Ab,Thursday,JAVIER,Aquatic Activity,,5 to 5.30,Acton
+Lane (SE),Linda,Tuesday,JAVIER,Aquatic Activity,,5 to 5.30,Acton
+Teaching Pool,Logan,Tuesday,YOUSSEF,Aquatic Activity,,5 to 5.30,Acton
+Teaching Pool,Ruben,Wednesday,DAN,Aquatic Activity,,5 to 5.30,Northolt
+Gym,Serine,Monday,SANDRA,Physical Activity,,5 to 6,Westway
+Lane (DE),Yossi,Thursday,ROBERTO,Aquatic Activity,,5 to 5.30,Acton
+Lane (SE),Yuri,Thursday,SIMON,Aquatic Activity,,5 to 5.30,Acton
 Teaching Pool,Adam Ab,Wednesday,JAVIER,Multi-Activity,,5.15 to 6,Acton
 Room 2,Cyrus,Wednesday,GIUSEPPE,Multi-Activity,,5.15 to 6,Acton
-Teaching Pool,Scott,Wednesday,YOUSSEF,Multi-Activity,,5.15 to 6,Acton
+Room 2,Scott,Wednesday,YOUSSEF,Multi-Activity,,5.15 to 6,Acton
 Room 2,Stephanie,Wednesday,BERTA,Multi-Activity,,5.15 to 6,Acton
+Teaching Pool,Abodi P,Monday,YOUSSEF,Aquatic Activity,,5.30 to 6.30,Acton
+Teaching Pool,Amaar Ah,Friday,ROBERTO,Aquatic Activity,,5.30 to 6,Acton
+Lane (SE),Aydaan Ah,Tuesday,AURORA,Aquatic Activity,,5.30 to 6,Acton
+Lane (DE),Eiji,Thursday,SIMON,Aquatic Activity,,5.30 to 6.30,Acton
+Lane (DE),Eiji,Tuesday,JAVIER,Aquatic Activity,,5.30 to 6,Acton
+Lane (DE),Hazem,Thursday,AURORA,Aquatic Activity,,5.30 to 6,Acton
+Lane (DE),Hazem,Tuesday,ROBERTO,Aquatic Activity,,5.30 to 6,Acton
+Lane (SE),Karo,Thursday,JAVIER,Aquatic Activity,,5.30 to 6,Acton
 Teaching Pool,Mia,Wednesday,DAN,Aquatic Activity,,5.30 to 6.30,Northolt
+Lane (SE),Mohammed,Thursday,ROBERTO,Aquatic Activity,,5.30 to 6.30,Acton
+Teaching Pool,Rayan Ta,Tuesday,ANGEL,Aquatic Activity,,5.30 to 6,Acton
+Lane (SE),Rayyan Fi,Tuesday,YOUSSEF,Aquatic Activity,,5.30 to 6.30,Acton
+Teaching Pool,Steven C,Monday,ANGEL,Aquatic Activity,,5.30 to 6,Acton
+Teaching Pool,Zayana,Monday,DAN,Aquatic Activity,,5.30 to 6,Northolt
+Teaching Pool,Adaam Ah,Monday,DAN,Aquatic Activity,,6 to 6.30,Northolt
 Teaching Pool,Amber,Wednesday,ROBERTO,Aquatic Activity,,6 to 6.30,Northolt
-Lane,Kayden,Wednesday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
+Lane (DE),Eiji,Tuesday,ROBERTO,Aquatic Activity,,6 to 6.30,Acton
+Lane (DE),Hazem,Thursday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
+Lane (DE),Hazem,Tuesday,AURORA,Aquatic Activity,,6 to 6.30,Acton
+Lane (SE),Kareena,Tuesday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
+Teaching Pool,Kayden,Wednesday,JAVIER,Aquatic Activity,,6 to 6.30,Acton
+Teaching Pool,Maiyar,Thursday,AURORA,Aquatic Activity,,6 to 6.30,Acton
+Teaching Pool,Mario,Monday,ANGEL,Aquatic Activity,,6 to 6.30,Acton
 Teaching Pool,NO CLIENT,Wednesday,YOUSSEF,Aquatic Activity,,6 to 6.30,Acton
+Lane (DE),Richard,Tuesday,ANGEL,Aquatic Activity,,6 to 6.30,Acton
+Teaching Pool,Yamik,Monday,ROBERTO,Aquatic Activity,,6 to 6.30,Northolt
+Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,,9 to 9.30,SwimFarm
+Small Pool,Simon,Sunday,AURORA,Aquatic Activity,,9 to 9.30,SwimFarm
+Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,,9 to 10.15,SwimFarm
+Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,,9.30 to 10.15,SwimFarm
+Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,,9.30 to 10.15,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,9.30 to 10,Acton
+Big Pool,Samer,Sunday,JAVIER,Multi-Activity,,9.30 to 10.15,SwimFarm
+Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,,9.30 to 10.15,SwimFarm
+Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,,9.30 to 10.15,SwimFarm
+Wall,Eiji,Sunday,ALEX,Climbing Activity,,10 to 11,Westway
+Wall,Hazem,Sunday,CARLOS,Climbing Activity,,10 to 11,Westway
+Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,,10 to 11,Northolt
+Teaching Pool,Mari Trini,Monday,TEFLON,Aquatic Activity,,10 to 11,Acton
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,10 to 10.30,Acton
+Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,,10.15 to 11,SwimFarm
+Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,,10.15 to 11,SwimFarm
+Big Pool,Jack W,Sunday,AURORA,Multi-Activity,,10.15 to 11,SwimFarm
+Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,,10.15 to 11,SwimFarm
+Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,,10.15 to 11,SwimFarm
+Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Emani,Saturday,YOUSSEF,Aquatic Activity,,10.30 to 11,Acton
+Hub Room,ACAT,Monday,ROBERTO,Day Centre,,11 to 12,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,,11 to 11.45,SwimFarm
+Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,,11 to 11.45,SwimFarm
+Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,,11 to 11.45,SwimFarm
+Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,,11 to 11.45,SwimFarm
+Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,,11 to 11.45,SwimFarm
+Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,,11 to 11.45,SwimFarm
+Hub Room,Ikram,Friday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
+Hub Room,Ikram,Monday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
+Hub Room,Ikram,Tuesday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
+Hub Room,Ikram,Wednesday,"LULIA, MICHELLE",Day Centre,,11 to 4,SwimFarm
+Teaching Pool,Matthias,Saturday,YOUSSEF,Aquatic Activity,,11 to 12,Acton
+Wall,Yusef,Sunday,ALEX,Climbing Activity,,11 to 12,Westway
+Wall,Zaid,Sunday,CARLOS,Climbing Activity,,11 to 12,Westway
+Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,,11.45 to 12.30,SwimFarm
+Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,,11.45 to 12.30,SwimFarm
+Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,,11.45 to 12.30,SwimFarm
+Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,,11.45 to 12.30,SwimFarm
+Hub Room,Gabriel,Sunday,BISMARK,Multi-Activity,,11.45 to 12.30,SwimFarm
+Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Saaib,Saturday,YOUSSEF,Aquatic Activity,,12 to 12.30,Acton
+Wall,Scott,Sunday,ALEX,Climbing Activity,,12 to 1,Westway
+Wall,Serine,Sunday,CARLOS,Climbing Activity,,12 to 1,Westway
+Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,,12.30 to 1.15,SwimFarm
+Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,,12.30 to 1.15,SwimFarm
+Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,,12.30 to 1.15,SwimFarm
+Hub Room,Fadi,Friday,"ROBERTO, YOUSSEF",Day Centre,,12.30 to 3,SwimFarm
+Hub Room,Fadi,Monday,"ROBERTO, VICTOR",Day Centre,,12.30 to 3,SwimFarm
+Hub Room,Fadi,Thursday,"ROBERTO, RAUL",Day Centre,,12.30 to 3,SwimFarm
+Hub Room,Fadi,Tuesday,"ROBERTO, VICTOR",Day Centre,,12.30 to 3,SwimFarm
+Hub Room,Fadi,Wednesday,"ROBERTO, YOUSSEF",Day Centre,,12.30 to 3,SwimFarm
+Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,NO CLIENT,Saturday,YOUSSEF,Aquatic Activity,,12.30 to 1,Acton
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,,12.30 to 1.15,SwimFarm
+Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,,12.30 to 1.15,SwimFarm

@@ -93,6 +93,11 @@ SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
 
 # Michelle off these Wednesday day-centre shifts (Ikram cover = Luliya only).
 MICHELLE_OFF_WEDNESDAYS = frozenset({"2026-06-10", "2026-06-17"})
+MONDAY_2026_06_29_STAFF_OVERRIDES = (
+    ("Carlos", "11-4", "SwimFarm"),
+    ("Raul", "11-1", "SwimFarm HOME"),
+    ("Raul", "1-4", "SwimFarm Manager"),
+)
 
 
 def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
@@ -110,24 +115,34 @@ def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
 def monday_assignments() -> list[dict]:
     rows: list[dict] = []
     for iso in MONDAYS:
-        rows.extend(
-            [
-                slot(iso, "Monday", "Sandra", "4-6", "Westway"),
-                slot(iso, "Monday", "Roberto", "4.30-6.30", "Northolt"),
-                slot(iso, "Monday", "Dan", "4.30-6.30", "Northolt"),
-                slot(iso, "Monday", "Angel", "4-6.30", "Acton"),
-                slot(iso, "Monday", "Youssef", "4.30-6.30", "Acton"),
-                slot(iso, "Monday", "John", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Bismark", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Giuseppe", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Luliya", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Michelle", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Roberto", "11-3", "SwimFarm"),
-                slot(iso, "Monday", "Youssef", "11-3", "SwimFarm"),
-                slot(iso, "Monday", "Raul", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Victor", "11-4", "SwimFarm"),
+        day_rows = [
+            slot(iso, "Monday", "Sandra", "4-6", "Westway"),
+            slot(iso, "Monday", "Roberto", "4.30-6.30", "Northolt"),
+            slot(iso, "Monday", "Dan", "4.30-6.30", "Northolt"),
+            slot(iso, "Monday", "Angel", "4-6.30", "Acton"),
+            slot(iso, "Monday", "Youssef", "4.30-6.30", "Acton"),
+            slot(iso, "Monday", "John", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Bismark", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Giuseppe", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Luliya", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Michelle", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Roberto", "11-3", "SwimFarm"),
+            slot(iso, "Monday", "Youssef", "11-3", "SwimFarm"),
+            slot(iso, "Monday", "Raul", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Victor", "11-4", "SwimFarm"),
+        ]
+        if iso == "2026-06-29":
+            day_rows = [
+                row
+                for row in day_rows
+                if row["staff_name"] != "Luliya"
+                and not (row["staff_name"] == "Raul" and row["time_range"] == "11-4")
             ]
-        )
+            day_rows.extend(
+                slot(iso, "Monday", staff, time_range, venue)
+                for staff, time_range, venue in MONDAY_2026_06_29_STAFF_OVERRIDES
+            )
+        rows.extend(day_rows)
     return rows
 
 
