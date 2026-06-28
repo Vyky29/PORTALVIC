@@ -4,8 +4,8 @@
 (function (global) {
   "use strict";
 
-  var EXCLUDE_IDS = { closed: true, available: true, acat: true };
-  var EXCLUDE_NAME_RE = /^(acat|acat group)$/i;
+  var EXCLUDE_IDS = { closed: true, available: true, acat: true, home: true, manager: true };
+  var EXCLUDE_NAME_RE = /^(acat|acat group|home|manager)$/i;
 
   function normalizeParticipantDisplayName(name) {
     return String(name || "")

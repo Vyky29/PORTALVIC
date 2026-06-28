@@ -304,6 +304,9 @@
   function applyPhotoRows(rows, status, stayOnKey) {
     stayOnKey = normalizeClientId(stayOnKey);
     var groups = mergeEmptyDirectoryParticipants(groupByParticipant(rows));
+    groups = groups.filter(function (g) {
+      return !isNonParticipantDirectoryEntry(g.key, g.clientName);
+    });
     directoryState.groups = groups;
     directoryState.byKey = Object.create(null);
     groups.forEach(function (g) {
@@ -409,6 +412,27 @@
     return normalizeClientId(key) === INBOX_CLIENT_ID;
   }
 
+  /** Roster duty markers — not participants (CEO location slots). */
+  var NON_PARTICIPANT_DIRECTORY_KEYS = {
+    closed: true,
+    available: true,
+    acat: true,
+    home: true,
+    manager: true,
+  };
+  var NON_PARTICIPANT_DIRECTORY_NAME_RE = /^(acat|acat group|home|manager|closed|available)$/i;
+
+  function isNonParticipantDirectoryEntry(key, name) {
+    if (typeof global.portalIsParticipantCatalogExcluded === "function") {
+      return global.portalIsParticipantCatalogExcluded(key, name);
+    }
+    var id = normalizeClientId(key);
+    if (NON_PARTICIPANT_DIRECTORY_KEYS[id]) return true;
+    var n = normalizeParticipantName(name);
+    if (!n) return true;
+    return NON_PARTICIPANT_DIRECTORY_NAME_RE.test(n);
+  }
+
   /**
    * Static fallback so these folders still show even if the roster catalog has
    * not loaded yet. The live roster (configure({ getParticipants })) is the
@@ -455,6 +479,7 @@
       var key = normalizeClientId(p.key || p.clientName);
       if (!key || isInboxGroupKey(key)) return;
       var name = String(p.clientName || p.key || key).trim();
+      if (isNonParticipantDirectoryEntry(key, name)) return;
       var nameKey = normalizeParticipantName(name);
       if (byKey[key] || (nameKey && byName[nameKey])) return;
       groups.push({ key: key, clientName: name || key, photos: [] });

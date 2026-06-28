@@ -37,7 +37,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20260616-warn-rate-limit"></script>
-  <script src="/portal/admin-portal-achievements.js?v=20260628-roster-folders"></script>
+  <script src="/portal/admin-portal-achievements.js?v=20260628-home-manager-exclude"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260628-gallery-5col" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
@@ -280,7 +280,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260628-eddie-mc-alias"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260628-home-manager-exclude"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
@@ -19636,6 +19636,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ids.forEach(function(cid){
           var n = String((notes[cid] && notes[cid].name) || '').trim();
           if(!n) return;
+          var idLower = String(cid || '').trim().toLowerCase();
+          if(idLower === 'home' || idLower === 'manager') return;
+          if(/^(home|manager)$/i.test(n)) return;
           out.push({ key: cid, clientName: n });
         });
         return out;
