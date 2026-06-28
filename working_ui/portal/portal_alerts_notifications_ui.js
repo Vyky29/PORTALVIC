@@ -314,17 +314,20 @@
       return;
     }
     if (Notification.permission === "granted") {
-      var reg =
-        typeof global.portalRegisterPushAfterGrant === "function"
-          ? global.portalRegisterPushAfterGrant(statusEl)
-          : typeof global.portalEnsureWebPushSubscription === "function"
-            ? global.portalEnsureWebPushSubscription()
-            : Promise.resolve();
-      void reg.then(function (wp) {
-        sendTestNotification(statusEl).then(function () {
+      if (statusEl) statusEl.textContent = "Sending test…";
+      // Show the test notification first so the button always does something,
+      // even if the background push (re)registration is slow on iOS.
+      sendTestNotification(statusEl).then(function () {
+        var reg =
+          typeof global.portalRegisterPushAfterGrant === "function"
+            ? global.portalRegisterPushAfterGrant(statusEl)
+            : typeof global.portalEnsureWebPushSubscription === "function"
+              ? global.portalEnsureWebPushSubscription()
+              : Promise.resolve();
+        void reg.then(function (wp) {
           if (wp && !wp.ok && statusEl && typeof global.portalSubscribeFailureMessage === "function") {
             statusEl.textContent =
-              "Test banner worked. Background push still needs: " +
+              "Test sent. Background push still needs: " +
               global.portalSubscribeFailureMessage(wp);
           }
           refresh();
