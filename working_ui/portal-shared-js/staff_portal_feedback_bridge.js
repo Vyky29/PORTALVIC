@@ -244,6 +244,7 @@
     if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
     if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
+    if (svc.indexOf("physical activit") >= 0 || svc.indexOf("fitness") >= 0 || svc === "gym") return true;
     return false;
   }
 
@@ -594,6 +595,7 @@
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+    if (act.indexOf("physical activit") >= 0 || act.indexOf("fitness") >= 0 || act === "gym") return true;
     void iso;
     return false;
   }

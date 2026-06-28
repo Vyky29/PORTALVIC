@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260620-absent-perf-fix';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260628-physical-activity-per-instructor';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {

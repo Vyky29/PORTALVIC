@@ -2727,6 +2727,9 @@
     if (isMultiActivityService(slot.service) || isClimbingService(slot.service)) {
       return completedByFitsSlotArea(fb.completed_by_name, slot);
     }
+    if (isPhysicalActivityService(slot.service)) {
+      return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
+    }
     if (clientNeedsPerSlotAquaticFeedback(slot)) {
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
@@ -2825,6 +2828,19 @@
         return climbKey + "|" + primaryInstructorKey(slot);
       }
       return climbKey;
+    }
+    if (isPhysicalActivityService(slot.service)) {
+      return (
+        slot.session_date +
+        "|" +
+        cid +
+        "|" +
+        t +
+        "|" +
+        serviceKey(slot.service) +
+        "|" +
+        primaryInstructorKey(slot)
+      );
     }
     return slot.session_key || slot.session_date + "|" + cid + "|" + t;
   }

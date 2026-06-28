@@ -226,6 +226,9 @@
          are validated by a co-worker's submission. */
       if(/multi[-\s]?activity/.test(act)) return true;
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
+      /* Physical Activity (gym / fitness): each instructor owns their own feedback — a co-worker's
+         submission for the same participant must not paint another instructor's slot green. */
+      if(act.indexOf('physical activit') >= 0 || act.indexOf('fitness') >= 0 || act === 'gym') return true;
       return false;
     }
     function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){
