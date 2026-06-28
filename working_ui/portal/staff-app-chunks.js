@@ -6,14 +6,14 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260627-reassigned-off-next-session";
+  var VER = "20260628-per-instructor-fanout";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260625-youssef-validated",
     "/portal/term_calendar_dashboard_shared.js?v=20260625-youssef-ma-own-feedback",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-simon-stf016",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260625-youssef-ma-own-feedback",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260628-per-instructor-fanout",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260628-per-instructor-fanout",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260625-simon-stf016",
   ];
