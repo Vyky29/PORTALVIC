@@ -1248,13 +1248,24 @@
     return sid.charAt(0).toUpperCase() + sid.slice(1);
   }
 
+  /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
+  function canonicalStaffMatchKey(value) {
+    var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
+    if (k === "luliya" || k === "lulia" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "javiermarquez") return "javier";
+    if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
+    return k;
+  }
+
   function staffIdMatchesInstructor(staffId, instructors) {
     var sid = clean(staffId).toLowerCase();
     if (!sid) return true;
     if (!instructors || !instructors.length) return true;
+    var canonSid = canonicalStaffMatchKey(sid);
     for (var i = 0; i < instructors.length; i++) {
       var inst = clean(instructors[i]).toLowerCase();
       if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
+      if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
     }
     return false;
   }
