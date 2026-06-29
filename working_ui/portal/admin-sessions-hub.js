@@ -552,6 +552,22 @@
     return b ? a + " to " + b : a;
   }
 
+  /**
+   * Display label for any slot, always normalized to roster 12h style (e.g. 5.30 to 6),
+   * regardless of whether the sheet typed it in 24h ("17.30 to 18") or 12h ("5.30 to 6").
+   * Keeps a safe fallback to the raw label so nothing renders blank.
+   */
+  function rosterTimeDisplay(slot) {
+    if (!slot) return "";
+    var raw = clean(slot.time_slot);
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var pt = raw ? parseTimeSlot(raw, wd) : null;
+    var startHm = clean(slot.time_start) || (pt && pt.start) || "";
+    var endHm = clean(slot.time_end) || (pt && pt.end) || "";
+    var label = rosterTimeSlotLabelFromBounds(startHm, endHm, wd);
+    return label || raw || clean(slot.time_start);
+  }
+
   function normalizeAnchorStaffId(raw) {
     return String(raw == null ? "" : raw)
       .trim()
@@ -1581,6 +1597,27 @@
     return out;
   }
 
+  /**
+   * True when this client has an aquatic make-up/replace override ANCHORED on one of their own
+   * slots that day. When that happens the client's two 30' halves must stay separate so each half
+   * can show its own make-up participant + own feedback (instead of collapsing into one 60' block).
+   */
+  function aquaticClientHasAnchoredMakeupOnDate(iso, clientName) {
+    var cid = canonicalClientSlug(clientName);
+    if (!iso || !cid || !_activeScheduleOverrides.length) return false;
+    for (var i = 0; i < _activeScheduleOverrides.length; i++) {
+      var ov = _activeScheduleOverrides[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== iso) continue;
+      if (canonicalClientSlug(ov.anchor_client_id) !== cid) continue;
+      var p = overridePayloadObj(ov);
+      var svc = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+      if (!isAquaticService(svc)) continue;
+      return true;
+    }
+    return false;
+  }
+
   function makeupFeedbackTimeMatchesSlot(fb, slot) {
     var st = slot.time_start || normTimeKey(slot.time_slot, slot.day);
     if (!st) return false;
@@ -2449,6 +2486,8 @@
   function clientNeedsPerSlotAquaticFeedback(slot) {
     if (!slot || !isAquaticService(slot.service)) return false;
     if (aquaticSlotCountForClientOnDate(slot.session_date, slot.client_name) <= 1) return false;
+    // Make-ups handed out on a specific half-hour must never collapse into one 60' block.
+    if (aquaticClientHasAnchoredMakeupOnDate(slot.session_date, slot.client_name)) return true;
     return !aquaticSameInstructorAllSlotsOnDate(slot.session_date, slot.client_name);
   }
 
@@ -5696,7 +5735,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
+        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
         : "";
       var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
       return (
@@ -5748,7 +5787,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "\u2014";
     var svcTimeSub =
       displaySlot && displaySlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(displaySlot.time_slot) + "</div>"
+        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
     var pos = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
@@ -6363,7 +6402,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
                 : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
-          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
+          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "");
         var inst = hubInstructorCellHtml(slot, slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
@@ -6476,7 +6515,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</td>" +
           '<td class="ash-td-center">' +
           esc(slot.service) +
-          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "") +
+          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "") +
           "</td>" +
           '<td class="ash-td-center">' +
           inst +
@@ -7411,7 +7450,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var client = htmlParticipantPill(slot.client_name, esc, slot);
         return (
           "<tr>" +
-          "<td>" + esc(slot.time_slot || slot.time_start) + "</td>" +
+          "<td>" + esc(rosterTimeDisplay(slot) || slot.time_start) + "</td>" +
           "<td>" + esc(slot.venue) + "</td>" +
           "<td>" + inst + "</td>" +
           "<td>" + client + "</td>" +

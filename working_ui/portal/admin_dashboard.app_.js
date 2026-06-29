@@ -3056,6 +3056,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(s.length>=5) return s.slice(0,5);
       return s;
     }
+    /** 24h hour -> roster display hour (Mon-Sat afternoon 13-21 -> 1-9, mornings unchanged). */
+    function rosterHourFrom24Display(h, day){
+      var n = parseInt(h, 10);
+      if(!Number.isFinite(n)) return h;
+      if(String(day) === 'Sunday'){
+        if(n >= 13 && n <= 15) return n - 12;
+        return n;
+      }
+      if(n >= 13 && n <= 21) return n - 12;
+      return n;
+    }
+    function rosterHmToken24(hm, day){
+      var p = String(hm == null ? '' : hm).match(/^(\d{1,2}):(\d{2})/);
+      if(!p) return '';
+      var h = rosterHourFrom24Display(parseInt(p[1], 10), day);
+      var m = parseInt(p[2], 10) || 0;
+      return m ? h + '.' + String(m).padStart(2, '0') : String(h);
+    }
+    /** Canonical roster band label (e.g. 5.30 to 6) from 24h pg times, so every view matches the sheet style. */
+    function rosterBandLabelFromPg(startHm, endHm, day){
+      var a = rosterHmToken24(startHm, day);
+      if(!a) return '';
+      var b = rosterHmToken24(endHm, day);
+      return b ? a + ' to ' + b : a;
+    }
     function slotsForSelectedDate(iso){
       var pack = adminMergeSpreadsheetSessions();
       var wd = portalWeekdayLongFromIsoDate(iso);
@@ -9167,7 +9192,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
         return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'" data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
-          '<td style="white-space:nowrap">'+esc(slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
+          '<td style="white-space:nowrap">'+esc(rosterBandLabelFromPg(slot.anchorStart, slot.anchorEnd, slot.sheetDay)||slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
           '<td style="min-width:0">'+esc(slot.venue)+'</td>'+
           '<td style="min-width:0">'+staffCell+'</td>'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
