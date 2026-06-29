@@ -175,23 +175,53 @@
     return [];
   }
 
-  function staffBaselineShiftDates(staffId) {
+  function termStaffProfileLookupKeys(staffId) {
     var id = String(staffId || "").trim().toLowerCase();
+    if (!id) return [];
+    var keys = [id];
+    if (id === "luliya" || id === "lulia" || id === "aida" || id === "stf021") {
+      if (keys.indexOf("luliya") < 0) keys.push("luliya");
+      if (keys.indexOf("lulia") < 0) keys.push("lulia");
+    }
+    return keys;
+  }
+
+  function termMapMergedDates(map, staffId) {
+    if (!map || typeof map !== "object") return [];
+    var seen = Object.create(null);
+    var out = [];
+    termStaffProfileLookupKeys(staffId).forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(map, k)) return;
+      var raw = map[k];
+      if (!Array.isArray(raw)) return;
+      raw.forEach(function (d) {
+        var iso = normIso(d);
+        if (iso && !seen[iso]) {
+          seen[iso] = true;
+          out.push(iso);
+        }
+      });
+    });
+    return out.sort();
+  }
+
+  function staffBaselineShiftDates(staffId) {
+    var keys = termStaffProfileLookupKeys(staffId);
+    if (!keys.length) return null;
     var t = termCfg();
     var map = t.termStaffShiftDatesByProfileKey;
-    if (!map || typeof map !== "object" || !id) return null;
-    if (!Object.prototype.hasOwnProperty.call(map, id)) return [];
-    var raw = map[id];
-    if (!Array.isArray(raw)) return [];
-    return raw.map(normIso).filter(Boolean);
+    if (!map || typeof map !== "object") return null;
+    var foundAny = false;
+    keys.forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(map, k)) foundAny = true;
+    });
+    if (!foundAny) return [];
+    return termMapMergedDates(map, staffId);
   }
 
   function staffAwayDates(staffId) {
-    var id = String(staffId || "").trim().toLowerCase();
     var map = termCfg().termStaffAwayDatesByProfileKey;
-    var raw = map && map[id];
-    if (!Array.isArray(raw)) return [];
-    return raw.map(normIso).filter(Boolean);
+    return termMapMergedDates(map, staffId);
   }
 
   /** Date was on the published term timetable (zero-hours availability lock). */

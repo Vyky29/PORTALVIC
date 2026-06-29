@@ -6,11 +6,11 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260628-venue-open-close-split";
+  var VER = "20260629-luliya-cal";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260629-29jun-roster",
-    "/portal/term_calendar_dashboard_shared.js?v=20260625-youssef-ma-own-feedback",
+    "/portal/term_from_timetable.js?v=20260629-luliya-cal",
+    "/portal/term_calendar_dashboard_shared.js?v=20260629-luliya-cal",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260628-hazem-aurora-per-slot",

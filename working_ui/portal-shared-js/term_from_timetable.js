@@ -44,6 +44,12 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "carlos": [
       "2026-06-21",
       "2026-07-05"
+    ],
+    "luliya": [
+      "2026-06-29"
+    ],
+    "lulia": [
+      "2026-06-29"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -83,7 +89,13 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
-    "javier": []
+    "javier": [],
+    "luliya": [
+      "2026-06-28"
+    ],
+    "lulia": [
+      "2026-06-28"
+    ]
   },
   "termStaffCatchUpFeedbackDatesByProfileKey": {
     "javier": [
@@ -579,7 +591,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-23",
       "2026-06-24",
       "2026-06-26",
-      "2026-06-29",
       "2026-06-30",
       "2026-07-01",
       "2026-07-03",

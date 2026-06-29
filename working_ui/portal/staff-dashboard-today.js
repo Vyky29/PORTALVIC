@@ -183,11 +183,24 @@
       if(!t || !Object.prototype.hasOwnProperty.call(t, 'termStaffShiftDatesByProfileKey')) return null;
       const map = t.termStaffShiftDatesByProfileKey;
       if(!map || typeof map !== 'object') return null;
-      const id = String(staffId || '').trim().toLowerCase();
-      if(!Object.prototype.hasOwnProperty.call(map, id)) return [];
-      const raw = map[id];
-      if(!Array.isArray(raw)) return [];
-      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      let foundAny = false;
+      const seen = Object.create(null);
+      const out = [];
+      keys.forEach(function(k){
+        if(!Object.prototype.hasOwnProperty.call(map, k)) return;
+        foundAny = true;
+        const raw = map[k];
+        if(!Array.isArray(raw)) return;
+        raw.forEach(function(d){
+          const iso = String(d || '').trim().slice(0, 10);
+          if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+        });
+      });
+      if(!foundAny) return [];
+      return out.sort();
     }
     function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){
       const dates = portalTermStaffShiftDatesFor(staffId);

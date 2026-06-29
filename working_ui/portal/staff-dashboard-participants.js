@@ -1001,7 +1001,7 @@
         let pl = r.payload;
         try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = r.payload; }
         if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') continue;
-        if(portalNormKeyStr(r.anchor_staff_id) === portalNormKeyStr(sid)) continue;
+        if(portalStaffKeysMatch(r.anchor_staff_id, sid)) continue;
         const trainer = String(pl && pl.trainer || '').trim();
         const hosts = portalSessionAddSplitNames(trainer);
         const hostMatch = hosts.length
@@ -1427,7 +1427,14 @@
       }
       return k;
     }
+    function portalStaffKeysMatch(a, b){
+      var ca = portalCanonicalStaffKeyForMatch(a);
+      var cb = portalCanonicalStaffKeyForMatch(b);
+      if(!ca || !cb) return false;
+      return ca === cb;
+    }
     try{ window.portalCanonicalStaffKeyForMatch = portalCanonicalStaffKeyForMatch; }catch(_){}
+    try{ window.portalStaffKeysMatch = portalStaffKeysMatch; }catch(_){}
     function portalCanonicalRosterClientId(clientId){
       const raw = portalNormKeyStr(clientId);
       if(!raw) return '';
@@ -1454,7 +1461,7 @@
       const iso = normaliseIsoDate(sessionDateIso);
       const rowIso = normaliseIsoDate(r.session_date);
       if(!iso || !rowIso || rowIso !== iso) return false;
-      if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
+      if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
       if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
       const ot = String(r.override_type || '').trim();
       return portalScheduleOverrideAnchorTimesMatchSession(r, s, ot);
@@ -1633,7 +1640,7 @@
       const rowIso = normaliseIsoDate(r.session_date);
       const iso = normaliseIsoDate(sessionDateIso);
       if(!rowIso || !iso || rowIso !== iso) return false;
-      if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
+      if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
       if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
       if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
       if(!portalTimeAnchorsMatch(r.anchor_start, s.start)) return false;
@@ -2232,7 +2239,7 @@
         const row = list[i];
         if(!row || String(row.status || 'active') !== 'active') continue;
         if(normaliseIsoDate(row.session_date) !== iso) continue;
-        if(normStaffKey(row.anchor_staff_id) !== sidNorm) continue;
+        if(!portalStaffKeysMatch(row.anchor_staff_id, staffId)) continue;
         const t = String(row.override_type || '').trim();
         if(t === 'session_add') return true;
         if(t === 'slot_update' && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return true;
@@ -2937,7 +2944,7 @@
         if(String(r.status || 'active') !== 'active') return false;
         const rowIso = normaliseIsoDate(r.session_date);
         if(!rowIso || rowIso !== iso) return false;
-        if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
+        if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
         if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         const rowOvType = wantType || String(r.override_type || '').trim();
         const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
@@ -2982,7 +2989,7 @@
     function portalLoggedInStaffReassignedOffSlotForRow(row){
       const me = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
       if(!me || !row) return false;
-      if(portalNormKeyStr(row.anchor_staff_id) !== me) return false;
+      if(!portalStaffKeysMatch(row.anchor_staff_id, me)) return false;
       const iso = normaliseIsoDate(row.session_date);
       if(!iso) return false;
       const startTok = portalCanonicalHmToken(row.anchor_start);
@@ -2993,7 +3000,7 @@
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
         if(normaliseIsoDate(r.session_date) !== iso) continue;
-        if(portalNormKeyStr(r.anchor_staff_id) !== me) continue;
+        if(!portalStaffKeysMatch(r.anchor_staff_id, me)) continue;
         const pl = portalOverrideCoverPayload(r);
         const cover = portalNormKeyStr(pl && pl.covering_staff_id);
         if(!cover || cover === me) continue;
@@ -3064,7 +3071,7 @@
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
         if(normaliseIsoDate(r.session_date) !== iso) continue;
-        if(portalNormKeyStr(r.anchor_staff_id) !== sid) continue;
+        if(!portalStaffKeysMatch(r.anchor_staff_id, sid)) continue;
         if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) continue;
         if(!portalScheduleOverrideMatchesSessionWindow(r, s, iso)) continue;
         if(!best || new Date(r.created_at || 0) > new Date(best.created_at || 0)) best = r;
@@ -3310,7 +3317,7 @@
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
         if(normaliseIsoDate(ov.session_date) !== iso) return;
-        if(portalNormKeyStr(ov.anchor_staff_id) !== sid) return;
+        if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
         if(portalOverrideIsTrial(ov)) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         const ovAnchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
@@ -3354,7 +3361,7 @@
           if(String(ov.status || 'active') !== 'active') return;
           if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
           if(normaliseIsoDate(ov.session_date) !== iso) return;
-          if(portalNormKeyStr(ov.anchor_staff_id) !== sid) return;
+          if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
           if(portalOverrideIsTrial(ov)) return;
           const repId = portalOverrideReplacementClientId(ov.payload);
           const anchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
@@ -3463,7 +3470,7 @@
         if(!ov || String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
         if(normaliseIsoDate(ov.session_date) !== iso) return;
-        if(portalNormKeyStr(ov.anchor_staff_id) !== portalNormKeyStr(sid)) return;
+        if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
         if(ov.id && seenOvIds[String(ov.id)]) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         if(!repId) return;

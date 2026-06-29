@@ -1683,21 +1683,31 @@
     function portalTermStaffExtraCalendarDates(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffExtraCalendarDatesByProfileKey;
-      const id = String(staffId || '').trim().toLowerCase();
-      const raw = map && map[id];
-      const extra = new Set((Array.isArray(raw) ? raw : []).map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean));
-      const shiftDates = portalTermStaffShiftDatesFor(id);
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      const extra = new Set();
+      keys.forEach(function(k){
+        const raw = map && map[k];
+        (Array.isArray(raw) ? raw : []).forEach(function(d){
+          const iso = String(d || '').trim().slice(0, 10);
+          if(iso) extra.add(iso);
+        });
+      });
+      const shiftDates = portalTermStaffShiftDatesFor(staffId);
       const shiftSet = shiftDates ? new Set(shiftDates) : null;
       const cache = Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE) ? window.PORTAL_ROSTER_ROWS_CACHE : [];
-      cache.forEach(function(row){
-        if(String(row.status || 'active') !== 'active') return;
-        if(!portalRosterRowAppliesToStaffId(row, id)) return;
-        const nm = String(row.client_name || '').trim().toLowerCase();
-        if(!nm || nm === 'no client' || nm === 'closed') return;
-        const iso = normaliseIsoDate(row.session_date);
-        if(!iso) return;
-        if(shiftSet && shiftSet.has(iso)) return;
-        extra.add(iso);
+      keys.forEach(function(id){
+        cache.forEach(function(row){
+          if(String(row.status || 'active') !== 'active') return;
+          if(!portalRosterRowAppliesToStaffId(row, id)) return;
+          const nm = String(row.client_name || '').trim().toLowerCase();
+          if(!nm || nm === 'no client' || nm === 'closed') return;
+          const iso = normaliseIsoDate(row.session_date);
+          if(!iso) return;
+          if(shiftSet && shiftSet.has(iso)) return;
+          extra.add(iso);
+        });
       });
       return Array.from(extra).sort();
     }
@@ -1794,14 +1804,39 @@
     function portalTermDateForcedComplete(isoYmd, staffId){
       return portalTermStaffDayExplicitlyForceComplete(isoYmd, staffId);
     }
+    function portalTermStaffProfileLookupKeys(staffId){
+      const id = String(staffId || '').trim().toLowerCase();
+      if(!id) return [];
+      const keys = [id];
+      const canon = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(id)
+        : id;
+      if(canon && keys.indexOf(canon) < 0) keys.push(canon);
+      if(canon === 'lulia' || id === 'luliya' || id === 'lulia' || id === 'aida'){
+        if(keys.indexOf('luliya') < 0) keys.push('luliya');
+        if(keys.indexOf('lulia') < 0) keys.push('lulia');
+      }
+      return keys;
+    }
+    try{ window.portalTermStaffProfileLookupKeys = portalTermStaffProfileLookupKeys; }catch(_){}
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffAwayDatesByProfileKey;
       if(!map || typeof map !== 'object') return [];
-      const id = String(staffId || '').trim().toLowerCase();
-      const raw = map[id];
-      if(!Array.isArray(raw)) return [];
-      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      const seen = Object.create(null);
+      const out = [];
+      keys.forEach(function(k){
+        const raw = map[k];
+        if(!Array.isArray(raw)) return;
+        raw.forEach(function(d){
+          const iso = String(d || '').trim().slice(0, 10);
+          if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+        });
+      });
+      return out.sort();
     }
     /** Day off / time off requested by staff (term timetable away list only — not admin overrides). */
     function portalStaffHasRequestedTimeOffOnDate(isoYmd, staffId){
