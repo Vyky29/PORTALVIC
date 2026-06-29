@@ -3281,6 +3281,51 @@
         });
       });
     }
+    function portalMinuteIntervalsFullyCover(lo, hi, intervals){
+      if(!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo) return false;
+      if(!Array.isArray(intervals) || !intervals.length) return false;
+      const sorted = intervals.slice().sort(function(a, b){ return a[0] - b[0]; });
+      let cursor = lo;
+      for(let i = 0; i < sorted.length; i++){
+        const a = sorted[i][0];
+        const b = sorted[i][1];
+        if(b <= cursor) continue;
+        if(a > cursor) return false;
+        cursor = Math.max(cursor, b);
+        if(cursor >= hi) return true;
+      }
+      return cursor >= hi;
+    }
+    function portalAnchorSessionFullyCoveredByMakeupReplaces(base, iso, staffId){
+      if(!base || !iso || !staffId) return false;
+      const anchorId = String(base.clientId || '').trim().toLowerCase();
+      if(!anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return false;
+      const rowStart = portalHmToMinutes(base.start);
+      const rowEnd = portalHmToMinutes(base.end || base.start);
+      if(!Number.isFinite(rowStart) || !Number.isFinite(rowEnd) || rowEnd <= rowStart) return false;
+      const sid = portalNormKeyStr(staffId);
+      const venue = portalNormKeyStr(base.venue);
+      const intervals = [];
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(String(ov.status || 'active') !== 'active') return;
+        if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
+        if(normaliseIsoDate(ov.session_date) !== iso) return;
+        if(portalNormKeyStr(ov.anchor_staff_id) !== sid) return;
+        if(portalOverrideIsTrial(ov)) return;
+        const repId = portalOverrideReplacementClientId(ov.payload);
+        const ovAnchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
+        if(!repId || !ovAnchorId || repId === ovAnchorId || portalScheduleOverrideAnchorIsOpenSlot(ovAnchorId)) return;
+        if(!portalRosterClientIdsMatch(ovAnchorId, anchorId)) return;
+        if(portalNormKeyStr(ov.anchor_venue) !== venue) return;
+        const lo = portalHmToMinutes(portalHmFromDbTime(ov.anchor_start));
+        const hi = portalHmToMinutes(portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start));
+        if(!Number.isFinite(lo) || !Number.isFinite(hi)) return;
+        const clippedLo = Math.max(lo, rowStart);
+        const clippedHi = Math.min(hi, rowEnd);
+        if(clippedHi > clippedLo) intervals.push([clippedLo, clippedHi]);
+      });
+      return portalMinuteIntervalsFullyCover(rowStart, rowEnd, intervals);
+    }
     function portalSuppressAnchorClientWhenMakeupReplaced(items, sessionDateKey, staffId){
       if(!Array.isArray(items) || !items.length) return items || [];
       const iso = normaliseIsoDate(sessionDateKey);
@@ -3329,7 +3374,8 @@
         if(!base) return true;
         const anchorId = String(base.clientId || it.clientId || '').trim().toLowerCase();
         if(!anchorId) return true;
-        return !replacedAnchors[slotKey(it) + '|' + anchorId];
+        if(replacedAnchors[slotKey(it) + '|' + anchorId]) return false;
+        return !portalAnchorSessionFullyCoveredByMakeupReplaces(base, iso, sid);
       });
     }
     function portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote){

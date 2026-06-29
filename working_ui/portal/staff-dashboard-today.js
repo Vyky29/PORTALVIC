@@ -1319,11 +1319,6 @@
       const seen = Object.create(null);
       const out = [];
       items.forEach(function(it){
-        const k = portalTodayScheduleViewCardDedupeKey(it);
-        if(k){
-          if(seen[k]) return;
-          seen[k] = true;
-        }
         if(it && it.kind === 'client' && !it.portalOverrideMakeUpTag){
           const occ = portalTodaySlotOccupancyKey(it);
           if(occ && makeupSlotKeys[occ]){
@@ -1331,6 +1326,11 @@
             const isMakeupRow = ov && String(ov.override_type || '').trim() === 'client_replace_in_slot';
             if(!isMakeupRow) return;
           }
+        }
+        const k = portalTodayScheduleViewCardDedupeKey(it);
+        if(k){
+          if(seen[k]) return;
+          seen[k] = true;
         }
         out.push(it);
       });
