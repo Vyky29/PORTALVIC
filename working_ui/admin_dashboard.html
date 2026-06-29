@@ -9052,6 +9052,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return { name: name, slug: slug };
     }
+    // Make-up / trial: read the replacement participant from the open Scheduling drawer
+    // so a drafted (unsaved) message names the NEW client, not the original anchor.
+    function notifyParentReplacementFromDrawer(){
+      var name = '';
+      var slug = '';
+      var ri = $('schedFormReplaceInput');
+      var rs = $('schedFormReplaceSlug');
+      if(ri && ri.value) name = String(ri.value).trim();
+      if(rs && rs.value) slug = String(rs.value).trim();
+      if(typeof schedBuildReplacementPickList === 'function' && typeof schedResolveReplacementParticipantSlug === 'function'){
+        try{
+          var pickList = schedBuildReplacementPickList();
+          var resolved = schedResolveReplacementParticipantSlug(pickList, slug, name);
+          if(resolved){
+            slug = resolved;
+            var pi;
+            for(pi = 0; pi < pickList.length; pi++){
+              if(pickList[pi].slug === resolved){
+                if(pickList[pi].display) name = pickList[pi].display;
+                break;
+              }
+            }
+          }
+        }catch(_e){}
+      }
+      return { name: name, slug: slug };
+    }
+    // Synthetic override mirroring saveSchedOverrideFromDrawer's payload, so the parent
+    // message preview reflects the replacement before the override is saved.
+    function notifyParentSyntheticReplaceOverride(kind){
+      var rep = notifyParentReplacementFromDrawer();
+      if(!rep.name && !rep.slug) return null;
+      var payload = {};
+      if(rep.slug){ payload.replacement_client_id = rep.slug; payload.to_client_id = rep.slug; }
+      if(rep.name){ payload.replacement_client_name = rep.name; payload.to_client_name = rep.name; }
+      if(kind === 'trial_scheduled'){ payload.is_trial = true; payload.booking_kind = 'trial'; }
+      return { override_type: 'client_replace_in_slot', payload: payload };
+    }
     function notifyParentInstructorPhotoPack(kind, ctx){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.instructorPhotoForNotify === 'function'){
@@ -9189,6 +9227,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{
           pack = bookingWithLoadedDate(dateIso, function(){
             var ov = findOverrideForSlot(slot, booking.overrides);
+            if(useSchedOv && (kind === 'makeup_scheduled' || kind === 'trial_scheduled')){
+              var synthOv = notifyParentSyntheticReplaceOverride(kind);
+              if(synthOv) ov = synthOv;
+            }
             var meta = bookingMetaForSlot(slot, ov);
             var snap = kind === 'payment_due' ? bookingFinanceSnapshot(slot) : null;
             var newName = (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '';
@@ -9213,8 +9255,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(!pack) return;
-      var meta = adminParentNotifyPrefillFromDirectory(pack.meta, slot);
-      var subj = notifyParentSubjectForKind(kind, slot.clientDisplay);
+      // Make-up / trial: contact + subject should follow the NEW participant (replacement),
+      // so the message and prefilled parent contact target the new client's family.
+      var replacementName = '';
+      if(kind === 'makeup_scheduled' || kind === 'trial_scheduled'){
+        var rp = (pack.ov && pack.ov.payload) || {};
+        replacementName = String(rp.to_client_name || rp.replacement_client_name || '').trim();
+      }
+      var prefillSlot = replacementName
+        ? Object.assign({}, slot, { clientDisplay: replacementName })
+        : slot;
+      var baseMeta = pack.meta;
+      if(replacementName){
+        // Drop the original anchor participant's saved contact so the new client's
+        // family details (from the directory) drive the prefill.
+        baseMeta = Object.assign({}, pack.meta || {});
+        baseMeta.parentCarerName = '';
+        baseMeta.parentEmail = '';
+        baseMeta.parentWhatsapp = '';
+      }
+      var meta = adminParentNotifyPrefillFromDirectory(baseMeta, prefillSlot);
+      var subj = notifyParentSubjectForKind(kind, replacementName || slot.clientDisplay);
       var notifyPhotoCtx = {
         slot: slot,
         ov: pack.ov,
