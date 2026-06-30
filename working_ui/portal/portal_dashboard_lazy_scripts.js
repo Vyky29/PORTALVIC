@@ -1,6 +1,6 @@
 /**
- * Deferred dashboard chunks (help bot, achievements, induction, onboarding, …).
- * Keeps first paint off ~300KB+ of non-roster scripts on staff/lead dashboards.
+ * Deferred dashboard chunks (achievements, induction, onboarding, …).
+ * Keeps first paint off non-roster scripts on staff/lead dashboards.
  */
 (function (global) {
   "use strict";
@@ -13,10 +13,7 @@
     "/portal/portal_induction.js?v=20260614-induction-canonical",
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
-    "/portal/portal_guide_menu.js?v=20260614-no-menu-guide",
-    "/portal/portal-openai-assist.js?v=20260625-voice-agent",
-    "/portal/portal-help-voice-speak.js?v=20260625-voice-fix",
-    "/portal/portal_help_bot.js?v=20260627-chat-greeting-race",
+    "/portal/portal_guide_menu.js?v=20260630-guide-only",
     "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
     "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
   ];

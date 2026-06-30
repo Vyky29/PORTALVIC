@@ -40,7 +40,7 @@
     }
   };
 
-  /** Quick menu: Guide no longer promoted in menus (help bot only). */
+  /** Quick menu: Staff help guide in Settings (no chat bot). */
   global.portalGuideShowInHeader = function portalGuideShowInHeader() {
     return false;
   };

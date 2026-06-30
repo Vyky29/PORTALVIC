@@ -1,6 +1,6 @@
 {
-  "version": "2026-06-help-guide-v4",
-  "description": "Single source of truth for Portal help AI and portal_help_guide.html. Sections may include inline 'demos' (rendered UI mock-ups: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles, participants-list, participant-actions, announcement-card, document-list, daily-form, pickup-form, expense-form, alerts-settings, area-icons, lead-tools, profile-form) so the guide never depends on screenshot files.",
+  "version": "2026-06-help-guide-v5",
+  "description": "Single source of truth for portal_help_guide.html. Sections may include inline 'demos' (real portal UI: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles, participants-list, participant-actions, announcement-card, document-list, daily-form, pickup-form, expense-form, alerts-settings, area-icons, lead-tools, profile-form).",
   "sections": [
     {
       "id": "getting-started",
@@ -8,7 +8,7 @@
       "keywords": ["start", "first", "daily", "phone", "empezar", "primeros pasos", "resumen"],
       "content": "The portal is designed for your phone — before, during and after sessions.\n\nFirst steps: log in with the link provided; install CS Portal on your home screen; turn on Notifications/Alerts in Quick menu → Settings.\n\nDaily use: check the dashboard before sessions; tap orange session cards for feedback; tap the logo if the halo shows notifications; use My participants for client info; use Quick menu for forms, finance, documents and settings.\n\nYou only need two company apps going forward: CS Portal (operations) and Zoho Cliq (team messaging). You may delete Zoho People — payslips are in My Documents.",
       "demos": [
-        { "demo": "quick-menu-tiles", "caption": "Daily tools live in Quick menu — Portal help is the chat bot." }
+        { "demo": "quick-menu-tiles", "caption": "Daily tools live in Quick menu — Staff help guide is in Settings." }
       ],
       "illustrations": []
     },
@@ -32,8 +32,8 @@
       "keywords": ["dashboard", "today", "main screen", "home", "panel", "pantalla principal"],
       "content": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today's participants and what still needs doing — orange means feedback is waiting.\n\nThe logo halo shows feedback, announcements or documents needing attention.\n\nTap the logo for the notification centre. Use session cards, My participants, or Quick menu for forms.\n\nUnder the cards: Next session, Week and Term for planning.",
       "demos": [
-        { "demo": "session-cards", "caption": "Today cards — colours tell staff what needs attention." },
-        { "demo": "halo", "caption": "Logo halo — tap it when dots show." }
+        { "demo": "session-cards", "caption": "Real Today cards — colours match your dashboard." },
+        { "demo": "halo", "caption": "Real logo halo — tap it when coloured dots show." }
       ],
       "illustrations": []
     },
@@ -44,7 +44,7 @@
       "content": "Session card colours:\nBlue — scheduled, nothing to do yet.\nOrange — feedback still pending; tap the card to submit.\nGreen — feedback submitted or absence recorded.\nRed — incident or urgent item.\nPurple — schedule change (cancellation or roster change).\n\nStatus pills: Done = submitted; Pending = needs feedback; Late = after deadline; Absent = did not attend; Incident = report attached.\n\nOverride chips (ABSENT, MAKE UP, Changed by Admin) appear on the right when the office changed a session — pool/room icon may be hidden on those rows.",
       "demos": [
         { "demo": "session-cards", "caption": "Card colours — tap an orange card to add feedback." },
-        { "demo": "status-pills", "caption": "Status pills you'll see on the right of a card." },
+        { "demo": "status-pills", "caption": "Status pills you'll see under the participant name." },
         { "demo": "override-chips", "caption": "Override chips when the office changed a session." }
       ],
       "illustrations": []
@@ -53,9 +53,9 @@
       "id": "logo-halo",
       "title": "Logo halo and notification centre",
       "keywords": ["logo", "halo", "dot", "notification centre", "notifications", "notificaciones", "reminders"],
-      "content": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nGreen — all up to date.\nMultiple dots — more than one type waiting.\n\nUnder Reminders, Outstanding feedbacks (orange) jumps to the pending session.\nTerm view on the dashboard shows days in red when feedback is still outstanding.",
+      "content": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nBlue idle — open the quick menu when nothing is waiting.\nMultiple colours — more than one type waiting.\n\nUnder Reminders, Outstanding feedbacks (orange) jumps to the pending session.\nTerm view on the dashboard shows days in red when feedback is still outstanding.",
       "demos": [
-        { "demo": "halo", "caption": "Dots around the logo show what's waiting — tap the logo to open the notification centre." },
+        { "demo": "halo", "caption": "Real halo states — tap the logo to open the notification centre." },
         { "demo": "term-days", "caption": "Term view — red days still have outstanding feedback; green is done." }
       ],
       "illustrations": []
@@ -85,9 +85,9 @@
       "id": "quick-menu",
       "title": "Quick menu",
       "keywords": ["quick menu", "menu", "forms", "hamburger", "menu rapido", "formularios"],
-      "content": "Open Quick menu from your dashboard (☰) for all forms. Tiles hidden for your role won't show.\n\nIncludes: Session feedback, Incident, Cancellation, Expenses, Timesheet, Venue review, Pickup/handover, Update my profile, My Documents, Training, Compliance, Settings (Guide, Alerts, Logout).\n\nTop bar shortcuts when shown: PHOTO, CLIENTS, VENUE, PICKUP, REVIEW (swimming), PLAN, LEAD/STATS (leads only).",
+      "content": "Open Quick menu from your dashboard (☰) for all forms. Tiles hidden for your role won't show.\n\nIncludes: Session feedback, Incident, Cancellation, Expenses, Timesheet, Venue review, Pickup/handover, Update my profile, My Documents, Training, Compliance, Settings (Staff help guide, Alerts, Logout).\n\nTop bar shortcuts when shown: PHOTO, CLIENTS, VENUE, PICKUP, REVIEW (swimming), PLAN, LEAD/STATS (leads only).",
       "demos": [
-        { "demo": "quick-menu-tiles", "caption": "Quick menu tiles — Portal help (highlighted) is the chat bot." }
+        { "demo": "quick-menu-tiles", "caption": "Quick menu — Staff help guide is in Settings." }
       ],
       "illustrations": []
     },
@@ -138,7 +138,7 @@
       "id": "alerts-settings",
       "title": "Alerts, location and microphone",
       "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "gps", "alertas"],
-      "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nLocation — only Bespoke Programme and Day Centre staff during rota shift (community support live map for leads/admins; buffer before first and after last session).\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nPortal help can answer questions by text or voice when AI is enabled.",
+      "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nLocation — only Bespoke Programme and Day Centre staff during rota shift (community support live map for leads/admins; buffer before first and after last session).\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nFor illustrated help topics, open Staff help guide from Quick menu → Settings.",
       "demos": [
         { "demo": "alerts-settings", "caption": "Settings toggles — notifications, location and microphone." }
       ],
@@ -172,13 +172,6 @@
       "demos": [
         { "demo": "profile-form", "caption": "Annual profile check — confirm each section." }
       ],
-      "illustrations": []
-    },
-    {
-      "id": "portal-help",
-      "title": "Using Portal help",
-      "keywords": ["portal help", "help bot", "ai", "voice", "ask", "ayuda", "pregunta"],
-      "content": "On your dashboard, open Portal help (help sheet) and type a question about login, feedback, timesheets, announcements and more.\n\nWhen AI is enabled, answers can link to a visual example from this guide and a Listen button (browser voice).\n\nFor the full illustrated guide (same content the AI uses), open Staff help guide from the link under each answer, or bookmark portal_help_guide.html.",
       "illustrations": []
     }
   ]
