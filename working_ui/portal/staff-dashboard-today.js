@@ -3707,6 +3707,13 @@
     }
     function portalAnnouncementSignatureKey(item){
       if(!item || typeof item !== 'object') return '';
+      if(
+        typeof portalSignableItemIsCalendar202627 === 'function' &&
+        portalSignableItemIsCalendar202627(item) &&
+        typeof portalCalendar202627SignatureKey === 'function'
+      ){
+        return portalCalendar202627SignatureKey(item);
+      }
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
       if(item.portalContractId) return 'portal-ann:contract:' + String(item.portalContractId);
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);

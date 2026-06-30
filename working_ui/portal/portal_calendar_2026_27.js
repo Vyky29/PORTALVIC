@@ -6,13 +6,16 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-dual-cal";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-dual-cal-fix";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
   var DOC_SOURCE = "calendar-2026-27";
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
+  /** Bump when calendar content changes — staff must re-ack to see updates. */
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 2;
+  var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
   var HTML2CANVAS_URL =
@@ -212,6 +215,53 @@
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === ON_ACK_ACTION;
   };
 
+  global.portalCalendar202627AckKeySuffix = function portalCalendar202627AckKeySuffix() {
+    return ":cal-v" + String(global.PORTAL_CALENDAR_2026_27_ACK_REVISION || 1);
+  };
+
+  global.portalCalendar202627SignatureKey = function portalCalendar202627SignatureKey(item) {
+    var annId = String((item && item.portalAnnouncementId) || "").trim();
+    if (!annId) return "";
+    return "portal-ann:" + annId + global.portalCalendar202627AckKeySuffix();
+  };
+
+  /** Tab switcher — required when HTML is injected (inline scripts do not run). */
+  global.portalInitCalendar202627Tabs = function portalInitCalendar202627Tabs(root) {
+    var scope = root && root.querySelector ? root : global.document;
+    var section = scope.querySelector ? scope.querySelector(".dc-cal") : null;
+    if (!section) return;
+    var tabs = section.querySelectorAll(".dc-cal-tab[data-dc-cal-target]");
+    if (!tabs.length) return;
+
+    function showPanel(targetId) {
+      tabs.forEach(function (t) {
+        var on = t.getAttribute("data-dc-cal-target") === targetId;
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      section.querySelectorAll(".dc-cal-panel").forEach(function (p) {
+        p.hidden = p.id !== targetId;
+      });
+    }
+
+    tabs.forEach(function (tab) {
+      if (tab.__dcCalTabBound) return;
+      tab.__dcCalTabBound = true;
+      tab.addEventListener("click", function () {
+        var target = tab.getAttribute("data-dc-cal-target");
+        if (target) showPanel(target);
+      });
+    });
+
+    var initial =
+      section.querySelector('.dc-cal-tab[aria-selected="true"]') ||
+      tabs[0];
+    var initialTarget =
+      initial && initial.getAttribute("data-dc-cal-target")
+        ? initial.getAttribute("data-dc-cal-target")
+        : "dcCalDayCentrePanel";
+    showPanel(initialTarget);
+  };
+
   /** Inject the interactive HTML calendar into a host element (announcement modal). */
   global.portalLoadCalendar202627Into = async function portalLoadCalendar202627Into(host) {
     if (!host) return;
@@ -222,6 +272,9 @@
     try {
       var node = await buildCalendarSectionNode();
       host.appendChild(node);
+      if (typeof global.portalInitCalendar202627Tabs === "function") {
+        global.portalInitCalendar202627Tabs(node);
+      }
     } catch (e) {
       try {
         console.warn("[calendar-2026-27] preview inject failed, using iframe", e);

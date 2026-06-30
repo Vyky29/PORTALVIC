@@ -68,7 +68,13 @@
       color: var(--dc-white);
       border-color: var(--dc-navy);
     }
-    .dc-cal-panel[hidden] { display: none; }
+    .dc-cal-panel[hidden],
+    .dc-cal__legend[hidden] {
+      display: none !important;
+    }
+    .dc-cal-panel__intro[hidden] {
+      display: none !important;
+    }
     .dc-cal-panel__intro {
       margin: 0 0 14px;
       padding: 10px 12px;
@@ -213,17 +219,12 @@
     <button type="button" class="dc-cal-tab" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel">Weekly &amp; Weekend<br><span style="font-weight:600;font-size:0.82em">Sessions</span></button>
   </div>
 
-  <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
-    <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Open (incl. term starts)</li>
-    <li><span class="dc-cal__swatch dc-cal__swatch--orange" aria-hidden="true"></span> Orange = Day Centre open — school closed</li>
-    <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Day Centre closed</li>
-  </ul>
-  <ul class="dc-cal__legend" id="dcCalLegendSessions" aria-label="Sessions colour key" hidden>
-    <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Sessions running</li>
-    <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / no sessions</li>
-  </ul>
-
-  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentrePanelTab">
+  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab">
+    <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
+      <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Open (incl. term starts)</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--orange" aria-hidden="true"></span> Orange = Day Centre open — school closed</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Day Centre closed</li>
+    </ul>
     <p class="dc-cal-panel__intro">Day Centre runs Monday to Friday only — weekends are not shown. Orange days are when the Day Centre is open but school services are closed.</p>
     <article class="dc-cal-term" aria-labelledby="dcCalDayCentrePanel-term-autumn">
       <header class="dc-cal-term__head">
@@ -618,7 +619,11 @@
     </article>
   </div>
 
-  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsPanelTab">
+  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsTab" hidden>
+    <ul class="dc-cal__legend" id="dcCalLegendSessions" aria-label="Sessions colour key">
+      <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Sessions running (Mon–Sun)</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / no sessions</li>
+    </ul>
     <p class="dc-cal-panel__intro">Weekly and weekend sessions (aquatic, climbing, multi-activity and other programmes). Includes Saturdays and Sundays when sessions run.</p>
     <article class="dc-cal-term" aria-labelledby="dcCalSessionsPanel-term-autumn">
       <header class="dc-cal-term__head">
@@ -1106,26 +1111,27 @@
 
   <script>
     (function () {
-      var tabs = document.querySelectorAll(".dc-cal-tab[data-dc-cal-target]");
-      var legendDc = document.getElementById("dcCalLegendDayCentre");
-      var legendSes = document.getElementById("dcCalLegendSessions");
+      if (typeof window.portalInitCalendar202627Tabs === "function") {
+        window.portalInitCalendar202627Tabs(document.getElementById("dcCal2627"));
+        return;
+      }
+      var section = document.getElementById("dcCal2627");
+      if (!section) return;
+      var tabs = section.querySelectorAll(".dc-cal-tab[data-dc-cal-target]");
+      function showPanel(targetId) {
+        tabs.forEach(function (t) {
+          t.setAttribute("aria-selected", t.getAttribute("data-dc-cal-target") === targetId ? "true" : "false");
+        });
+        section.querySelectorAll(".dc-cal-panel").forEach(function (p) {
+          p.hidden = p.id !== targetId;
+        });
+      }
       tabs.forEach(function (tab) {
         tab.addEventListener("click", function () {
-          var target = tab.getAttribute("data-dc-cal-target");
-          tabs.forEach(function (t) {
-            var on = t.getAttribute("data-dc-cal-target") === target;
-            t.setAttribute("aria-selected", on ? "true" : "false");
-          });
-          document.querySelectorAll(".dc-cal-panel").forEach(function (p) {
-            var show = p.id === target;
-            p.hidden = !show;
-          });
-          if (legendDc) legendDc.hidden = target !== "dcCalDayCentrePanel";
-          if (legendSes) legendSes.hidden = target !== "dcCalSessionsPanel";
+          showPanel(tab.getAttribute("data-dc-cal-target"));
         });
       });
-      var sessionsPanel = document.getElementById("dcCalSessionsPanel");
-      if (sessionsPanel) sessionsPanel.hidden = true;
+      showPanel("dcCalDayCentrePanel");
     })();
   </script>
 </section>
