@@ -27,6 +27,7 @@ import {
   resolveCorporateAuthEmail,
   resolveStaffKeyFromAuthEmail,
   portalCanonicalStaffRosterKey,
+  portalStaffDisplayName,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
@@ -244,7 +245,7 @@ export function portalInferStaffKey(profile, authEmail) {
   return "";
 }
 
-export { portalCanonicalStaffRosterKey };
+export { portalCanonicalStaffRosterKey, portalStaffDisplayName };
 
 export function portalInferEffectiveRole(profile, authEmail) {
   const appRole = String(profile?.app_role || "").toLowerCase();

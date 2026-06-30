@@ -1243,15 +1243,18 @@
   }
 
   function resolveStaffDisplayName(staffId) {
-    var sid = clean(staffId).toLowerCase();
+    var sid = clean(staffId);
     if (!sid) return "";
-    return sid.charAt(0).toUpperCase() + sid.slice(1);
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(sid);
+    }
+    return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
   }
 
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
     var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
-    if (k === "luliya" || k === "lulia" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
     return k;
@@ -3070,14 +3073,20 @@
   function formatInstructorPill(name) {
     var n = clean(name);
     if (!n) return "";
-    var title = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    var title =
+      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
+        ? window.portalStaffDisplayName(n)
+        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 
   function formatInstructorPillOut(name) {
     var n = clean(name);
     if (!n) return "";
-    var title = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    var title =
+      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
+        ? window.portalStaffDisplayName(n)
+        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
   }
 

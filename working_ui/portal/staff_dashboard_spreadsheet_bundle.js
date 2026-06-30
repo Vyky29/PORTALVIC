@@ -170,7 +170,7 @@
     },
     "javi": {
       "staffId": "javi",
-      "staffName": "Palankas",
+      "staffName": "Javi Palankas",
       "avatarFile": "portal/staff_photos/javi.png",
       "staffRoleTrack": "manager",
       "canViewAll": true

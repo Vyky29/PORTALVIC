@@ -49,6 +49,7 @@
       .trim();
     if (!k) return "";
     if (k === "luliya") return "lulia";
+    if (k === "lulya") return "lulia";
     if (k === "aida") return "lulia";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
@@ -96,7 +97,15 @@
     var source = portalDashboardSource();
     if (source && source.staffProfiles && source.staffProfiles[k]) {
       var sn = String(source.staffProfiles[k].staffName || "").trim();
-      if (sn) return sn;
+      if (sn) {
+        if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+          return window.portalStaffDisplayName(sn);
+        }
+        return sn;
+      }
+    }
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(k);
     }
     return "";
   }

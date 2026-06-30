@@ -1,4 +1,4 @@
-import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260625-exec-single-session-exempt";
+import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260630-staff-display-names";
 import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
 import {
   portalEnforceStaffAppPilotGate,
@@ -8,6 +8,7 @@ import {
 window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;
 window.portalCanonicalStaffRosterKey = portalCanonicalStaffRosterKey;
+window.portalStaffDisplayName = portalStaffDisplayName;
 window.portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
 window.portalIsStaffHomeProgrammeLead = portalIsStaffHomeProgrammeLead;
 window.portalIsProgrammeLeadUser = portalIsProgrammeLeadUser;

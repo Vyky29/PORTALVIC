@@ -667,10 +667,14 @@
       const k = String(staffId || '').trim().toLowerCase();
       if(!k) return '';
       try{
+        if(typeof window.portalStaffDisplayName === 'function'){
+          const dn = String(window.portalStaffDisplayName(k) || '').trim();
+          if(dn) return dn.indexOf(' ') >= 0 ? dn : (dn.split(/\s+/).filter(Boolean)[0] || dn);
+        }
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
         const prof = src && src.staffProfiles ? (src.staffProfiles[k] || src.staffProfiles[staffId]) : null;
         const nm = prof && String(prof.staffName || prof.name || '').trim();
-        if(nm) return nm.split(/\s+/).filter(Boolean)[0] || nm;
+        if(nm) return nm.indexOf(' ') >= 0 ? nm : (nm.split(/\s+/).filter(Boolean)[0] || nm);
       }catch(_){}
       return k.charAt(0).toUpperCase() + k.slice(1);
     }
@@ -1418,7 +1422,7 @@
     function portalCanonicalStaffKeyForMatch(v){
       var k = portalNormKeyStr(v);
       if(!k) return '';
-      if(k === 'luliya' || k === 'aida' || k === 'stf021') return 'lulia';
+      if(k === 'luliya' || k === 'lulya' || k === 'aida' || k === 'stf021') return 'lulia';
       if(k === 'javiermarquez') return 'javier';
       if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz') return 'javi';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){

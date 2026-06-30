@@ -2,7 +2,7 @@
  * clubSENsational Staff — cache static portal assets (JS/CSS/icons).
  * HTML stays network-first; scripts/styles cache-first for repeat visits.
  */
-var STAFF_CACHE = "clubsensational-staff-static-v7";
+var STAFF_CACHE = "clubsensational-staff-static-v8";
 var STAFF_PRECACHE = [
   "/portal/app-icon/icon-192.png",
   "/portal/staff-dashboard.css",

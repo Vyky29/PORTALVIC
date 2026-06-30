@@ -11,7 +11,7 @@
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260630-javier-fb1017-off28",
     "/portal/term_calendar_dashboard_shared.js?v=20260629-luliya-cal",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260630-staff-display-names",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260628-hazem-aurora-per-slot",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
@@ -25,7 +25,8 @@
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
     "/portal/portal_staff_lead_aquatic_slots.js?v=20260630-same-cover-merge",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
-    "/portal/staff_roster_resolve.js?v=20260625-simon-stf016",
+    "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",
+    "/portal/portal_staff_display_names.js?v=20260630-staff-display-names",
   ];
 
   var TIER_UI = [
