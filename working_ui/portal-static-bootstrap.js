@@ -458,6 +458,23 @@
         }
       } catch (_) {}
       try {
+        var u = new URL(href, location.href);
+        if (!u.searchParams.get("from_portal")) {
+          var role =
+            typeof window.portalFormRoleFromPath === "function"
+              ? window.portalFormRoleFromPath()
+              : "staff";
+          u.searchParams.set("from_portal", role === "lead" ? "lead" : "staff");
+        }
+        if (!u.searchParams.get("portalReturn")) {
+          var dash = String(location.href || "").split("#")[0];
+          if (/staff_dashboard/i.test(String(location.pathname || "")) && dash) {
+            u.searchParams.set("portalReturn", dash);
+          }
+        }
+        href = u.href;
+      } catch (_) {}
+      try {
         window.location.href = href;
       } catch (_) {}
     })();

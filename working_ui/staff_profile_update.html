@@ -1497,7 +1497,7 @@
         </p>
         <p class="card-help" id="doneSummary" style="text-align:center;color:var(--inkSoft);font-weight:600;"></p>
         <div class="btn-row" style="margin-top:8px;">
-          <button type="button" class="btn btn--ghost" id="doneBack">Back to start</button>
+          <button type="button" class="btn btn--ghost" id="doneBack">Back to dashboard</button>
         </div>
       </div>
     </section>
@@ -1855,9 +1855,12 @@
     function resolveStaffOrLeadHubUrl() {
       try {
         const fp = new URLSearchParams(window.location.search).get("from_portal");
-        if (fp === "lead") return new URL("/leadportal", location.origin).href;
+        if (typeof window.portalResolveHubUrl === "function") {
+          return new URL(window.portalResolveHubUrl(fp || "staff"), location.href).href;
+        }
+        if (fp === "lead") return new URL("staff_dashboard.html", location.href).href;
       } catch (_) {}
-      return new URL("/staffportal", location.origin).href;
+      return new URL("staff_dashboard.html", location.href).href;
     }
 
     function activateScreen(id) {
@@ -2659,7 +2662,7 @@
           }
         } catch (_) {}
       }
-      window.location.replace(resolvePortalLoginUrl());
+      window.location.replace(resolveStaffOrLeadHubUrl());
     });
 
     void (async function profileBootstrapEntry() {
