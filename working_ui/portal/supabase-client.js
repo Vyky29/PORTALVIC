@@ -989,7 +989,9 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   ) {
     return portalSessionKeyClientSlugsMatch(s, r);
   }
-  if (rTime && !sTime && !portalRosterKeyIsSharedFeedbackUnit(r)) return false;
+  const sharedUnit =
+    portalRosterKeyIsSharedFeedbackUnit(r) || portalRosterKeyIsSharedFeedbackUnit(s);
+  if (rTime && !sTime && !sharedUnit) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   /* Participant slugs only — never fall back to raw pipe segment (e.g. "aquatic" on date|amber|aquatic). */
   return portalSessionKeyClientSlugsMatch(s, r);

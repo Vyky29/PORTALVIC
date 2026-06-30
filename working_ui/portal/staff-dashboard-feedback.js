@@ -808,6 +808,9 @@
         || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
         add(iso + '||' + cid);
       }
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s) && cid){
+        add(iso + '|' + cid + '|day_centre');
+      }
       return keys;
     }
     function portalReviewKeyDateIsoFromSessionKey(key){

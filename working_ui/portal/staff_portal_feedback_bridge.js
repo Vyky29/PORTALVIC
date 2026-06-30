@@ -1168,7 +1168,22 @@
     }
     if (isServerTruthFeedbackDay(iso)) {
       if (rec.absent || rec.cancelled) return true;
-      return !!rec.feedbackDone;
+      if (rec.feedbackDone) return true;
+      /* Today+: live session_feedback rows (hydrated after submit) must still resolve
+         Day Centre / shared units even when status export has no row for this date yet. */
+      if (staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById)) return true;
+      const clientKey = rosterKeyForSession(s, clientNotesById);
+      if (
+        isDayCentreRosterSession(s) &&
+        clientKey &&
+        dayCentreClientResolved(iso, staffId, clientKey)
+      ) {
+        return true;
+      }
+      if (isBespokeSharedRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+        return true;
+      }
+      return false;
     }
     if (rec.feedbackDone) return true;
     if (rec.absent || rec.cancelled) return true;

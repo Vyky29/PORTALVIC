@@ -529,7 +529,7 @@
     }
     try{ window.portalApplyAfterIncidentReturnFromUrl = portalApplyAfterIncidentReturnFromUrl; }catch(_){}
 
-    function portalApplyAfterSessionFeedbackReturnFromUrl(){
+    async function portalApplyAfterSessionFeedbackReturnFromUrl(){
       try{
         const u = new URL(location.href.split('#')[0]);
         if(u.searchParams.get('portalAfterFeedback') !== '1') return false;
@@ -542,6 +542,11 @@
         const qs = u.searchParams.toString();
         history.replaceState({}, '', u.pathname + (qs ? '?' + qs : '') + (location.hash || ''));
         if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
+        if(typeof portalMergeServerReviewStateForDashboard === 'function'){
+          try{
+            await portalMergeServerReviewStateForDashboard({ skipRender: true });
+          }catch(_sync){}
+        }
         const termWithLocks = origin === 'term'
           && /^\d{4}-\d{2}-\d{2}$/.test(reviewIso)
           && PORTAL_WEEK_REVIEW_VALID_DAYS.has(reviewDayParam);
@@ -1987,7 +1992,8 @@
       if(item.portalOverrideSuppressReviewOrange) return '';
       const isoGate = portalSessionDateIsoFromItemSessionKey(item);
       if(isoGate && typeof portalStaffFeedbackReviewUiReady === 'function' && !portalStaffFeedbackReviewUiReady(isoGate)){
-        return '';
+        const endedEarly = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
+        if(!endedEarly) return '';
       }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';

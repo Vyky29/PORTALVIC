@@ -749,7 +749,7 @@
           }
         }catch(_){}
 
-        function _finishStaffRehydrateUiNow(){
+        async function _finishStaffRehydrateUiNow(){
           portalStaffMarkInitialTodayScheduleSettled();
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
@@ -769,7 +769,7 @@
             window.portalApplyAfterQuickToolReturnFromUrl();
           }
           if(typeof window.portalApplyAfterSessionFeedbackReturnFromUrl === "function"){
-            window.portalApplyAfterSessionFeedbackReturnFromUrl();
+            await window.portalApplyAfterSessionFeedbackReturnFromUrl();
           }
           if(typeof window.portalApplyAfterVenueReturnFromUrl === "function"){
             window.portalApplyAfterVenueReturnFromUrl();
