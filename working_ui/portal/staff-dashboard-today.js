@@ -1152,7 +1152,7 @@
           __portalScheduleOverride: ov
         }));
       });
-      return acc;
+      return portalStaffKeyIsLulia(sid) ? portalApplyLuliaIkramCutoffToRosterSessions(acc) : acc;
     }
     function portalTermFeedbackSessionsForDate(dayWord, sessionDateIso, staffId, isRealFn){
       const base = portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
@@ -1289,6 +1289,88 @@
         if(!prev || new Date(ov.created_at || 0) > new Date(prev.created_at || 0)) bySlot[slotKey] = ov;
       });
       return Object.keys(bySlot).map(function(k){ return bySlot[k]; });
+    }
+    /** Luliya Day Centre (Ikram) ends at 15:00 when she covers aquatic sessions that afternoon. */
+    function portalStaffKeyIsLulia(staffId){
+      return portalNormKeyStr(staffId) === 'lulia';
+    }
+    function portalRosterRowIsLuliaIkramDayCentre(s){
+      if(!s) return false;
+      const cid = String(s.clientId || s.client_id || '').trim().toLowerCase();
+      const cname = String(s.client_name || s.clientDisplay || s.clientName || s.name || '').trim().toLowerCase();
+      if(cid.indexOf('ikram') < 0 && cname.indexOf('ikram') < 0) return false;
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)) return true;
+      const act = String(s.activity || s.rosterService || s.service || '').toLowerCase();
+      return /day\s*centre/.test(act);
+    }
+    function portalRosterRowIsLuliaAfternoonCover(s){
+      if(!s) return false;
+      const act = String(s.activity || s.rosterService || s.service || '').toLowerCase();
+      if(/day\s*centre/.test(act)) return false;
+      if(!/aquatic|multi[-\s]?activity|swimming/.test(act)) return false;
+      const start = String(s.start || '').trim();
+      if(typeof portalHmToMinutes === 'function'){
+        const m = portalHmToMinutes(start);
+        return Number.isFinite(m) && m >= 15 * 60;
+      }
+      return false;
+    }
+    function portalLuliaDayHasAfternoonCover(sessions){
+      if(!Array.isArray(sessions) || !sessions.length) return false;
+      for(let i = 0; i < sessions.length; i++){
+        if(portalRosterRowIsLuliaAfternoonCover(sessions[i])) return true;
+      }
+      return false;
+    }
+    function portalApplyLuliaIkramCutoffToRosterSessions(sessions){
+      if(!Array.isArray(sessions) || !sessions.length) return sessions || [];
+      if(!portalLuliaDayHasAfternoonCover(sessions)) return sessions;
+      return sessions.map(function(s){
+        if(!portalRosterRowIsLuliaIkramDayCentre(s)) return s;
+        const endM = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(String(s.end || '').trim()) : NaN;
+        if(!Number.isFinite(endM) || endM <= 15 * 60) return s;
+        return Object.assign({}, s, {
+          end: '15:00',
+          timeSlotLabel: '',
+          __portalLuliaIkramCutoff: true
+        });
+      });
+    }
+    function portalTodayItemIsLuliaAfternoonCover(it){
+      if(!it || it.kind !== 'client') return false;
+      const base = it.__portalBaseSession || it;
+      return portalRosterRowIsLuliaAfternoonCover(base);
+    }
+    function portalTodayItemIsLuliaIkramDayCentre(it){
+      if(!it || it.kind !== 'client') return false;
+      return portalRosterRowIsLuliaIkramDayCentre(it.__portalBaseSession || it);
+    }
+    function portalApplyLuliaIkramCutoffToTodayItems(items, staffId, sessionDateKey, anchor){
+      if(!portalStaffKeyIsLulia(staffId)) return items || [];
+      if(!Array.isArray(items) || !items.length) return items;
+      if(!items.some(portalTodayItemIsLuliaAfternoonCover)) return items;
+      return items.map(function(it){
+        if(!portalTodayItemIsLuliaIkramDayCentre(it)) return it;
+        const base = it.__portalBaseSession || {};
+        const endM = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(String(base.end || '').trim()) : NaN;
+        if(!Number.isFinite(endM) || endM <= 15 * 60) return it;
+        const newEnd = '15:00';
+        const newBase = Object.assign({}, base, {
+          end: newEnd,
+          timeSlotLabel: '',
+          __portalLuliaIkramCutoff: true
+        });
+        const newTime = typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(newBase) : '11 to 3';
+        const ts = typeof portalSessionRowTimestamps === 'function'
+          ? portalSessionRowTimestamps(sessionDateKey, newBase.start || base.start, newEnd, anchor)
+          : { sessionStartTs: it.sessionStartTs, sessionEndTs: it.sessionEndTs };
+        return Object.assign({}, it, {
+          time: newTime,
+          sessionEndTs: ts.sessionEndTs,
+          __portalBaseSession: newBase,
+          __portalLuliaIkramCutoff: true
+        });
+      });
     }
     function portalTodayScheduleViewCardDedupeKey(it){
       if(!it) return '';
@@ -1922,7 +2004,17 @@
         const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
-        const slotOv = portalTodayScheduleOverrideForSession(base, sessionDateKey);
+        /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
+           original instructor (base.staffId) or the cover (s.staffId = Luliya). Check both
+           so the cover instructor still sees the green ABSENT / CANCELLED card. */
+        const slotOvBase = portalTodayScheduleOverrideForSession(base, sessionDateKey);
+        const slotOvCover = portalTodayScheduleOverrideForSession(s, sessionDateKey);
+        const isAbsenceOrClearOv = function(o){
+          const t = o && String(o.override_type || '').trim();
+          return t === 'client_absence_announced' || t === 'slot_clear_client';
+        };
+        let slotOv = slotOvBase;
+        if(isAbsenceOrClearOv(slotOvCover) && !isAbsenceOrClearOv(slotOvBase)) slotOv = slotOvCover;
         if(st2 === 'Closed' || st2 === 'Available') return;
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const isCancelledByAdmin = !!(slotOv.payload && slotOv.payload.cancelled_by_admin);
@@ -2234,6 +2326,9 @@
       }
       if(typeof portalDedupeTodayScheduleViewCards === 'function'){
         mergedToday = portalDedupeTodayScheduleViewCards(mergedToday);
+      }
+      if(portalStaffKeyIsLulia(staffId)){
+        mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
       return mergedToday;
     }
