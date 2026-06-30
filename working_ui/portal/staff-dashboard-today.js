@@ -2056,9 +2056,10 @@
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
         const isTrialCoverOv = hasReplaceCoverOv && portalOverrideIsTrial(slotOv);
+        const isInstructorCoverOv = String(ov.override_type || '').trim() === 'instructor_reassign';
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
-        const makeUpPinkCover = !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        const makeUpPinkCover = isInstructorCoverOv || (!isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe));
         extra.push({
           time,
           kind: 'client',
@@ -2078,7 +2079,7 @@
           sessionStartTs: coverTs.sessionStartTs,
           sessionEndTs: coverTs.sessionEndTs,
           scheduleAdminAdjusted: true,
-          portalOverrideMakeUpTag: hasReplaceCoverOv && !isTrialCoverOv,
+          portalOverrideMakeUpTag: makeUpPinkCover,
           portalOverrideTrialTag: isTrialCoverOv,
           portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : ''),
           portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up' : ''),

@@ -1556,7 +1556,7 @@
         const subRaw = String(item.sub || '').trim();
         const sub = subRaw ? escapeHtml(subRaw) : '';
         const k = String(item.kind || 'other');
-        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
+        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day' || k === 'client_moved') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
         const subHtml = sub ? ('<span class="setup-row-sub">' + sub + '</span>') : '';
         rows.push(
           '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note"' + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
@@ -1802,7 +1802,7 @@
       if(k === 'cancelled' || k === 'shift_cancelled') return 'menu-btn--qm-ov-cancelled';
       if(k === 'slot_opened') return 'menu-btn--qm-ov-slot-opened';
       if(k === 'reverted') return 'menu-btn--qm-ov-reverted';
-      if(k === 'new_shift' || k === 'roster_day') return 'menu-btn--qm-ov-new-shift';
+      if(k === 'new_shift' || k === 'roster_day' || k === 'client_moved') return 'menu-btn--qm-ov-new-shift';
       if(k === 'new_participant') return 'menu-btn--qm-ov-new-participant';
       if(k === 'training') return 'menu-btn--qm-ov-training';
       if(k === 'shadowing') return 'menu-btn--qm-ov-shadowing';

@@ -7976,6 +7976,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return null;
     }
+    async function schedCancelDuplicateInstructorReassigns(client, row, keepId){
+      if(!client || !row) return;
+      if(String(row.override_type || '').trim() !== 'instructor_reassign') return;
+      var keep = String(keepId || '').trim();
+      var iso = String(row.session_date || '').trim().slice(0, 10);
+      var cid = adminRosterSlugify(String(row.anchor_client_id || '').trim());
+      var startK = schedNormTimeSlotKey(row.anchor_start);
+      var endK = schedNormTimeSlotKey(row.anchor_end);
+      var ids = [];
+      (sched.overrides || []).forEach(function(o){
+        if(!o || !o.id) return;
+        if(String(o.status || 'active') !== 'active') return;
+        if(keep && String(o.id) === keep) return;
+        if(String(o.override_type || '').trim() !== 'instructor_reassign') return;
+        if(String(o.session_date || '').trim().slice(0, 10) !== iso) return;
+        if(adminRosterSlugify(String(o.anchor_client_id || '').trim()) !== cid) return;
+        if(schedNormTimeSlotKey(o.anchor_start) !== startK) return;
+        if(schedNormTimeSlotKey(o.anchor_end) !== endK) return;
+        ids.push(o.id);
+      });
+      if(!ids.length) return;
+      var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', ids);
+      if(up.error) console.warn('[sched] cancel duplicate instructor_reassign', up.error);
+    }
     async function schedCancelDuplicateActiveOverrides(client, slot, ovType, keepId){
       if(!client || !slot) return;
       var keep = String(keepId || '').trim();
@@ -9120,6 +9144,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return 'Hi,\n\nAbsence update for '+String(slot.clientDisplay || 'participant')+'.';
     }
+    function notifyParentMessageAbsenceThanks(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.absenceThanks === 'function'){
+        return T.absenceThanks(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nThank you for letting us know about the absence for '+String(slot.clientDisplay || 'participant')+'.';
+    }
+    function notifyParentMessageAbsenceFollowup(slot, ov, meta){
+      var T = window.PortalParentNotifyTemplates;
+      if(T && typeof T.absenceFollowup === 'function'){
+        return T.absenceFollowup(slot, ov, meta, notifyParentTemplateOpts());
+      }
+      return 'Hi,\n\nWe have noted the absence for '+String(slot.clientDisplay || 'participant')+'. Is everything OK?';
+    }
     function notifyParentMessageMakeup(slot, ov, meta){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.makeup === 'function'){
@@ -9164,6 +9202,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(kind === 'payment_due') return notifyParentMessagePayment(ctx.slot, ctx.ov, ctx.meta, ctx.snap || { outstanding:0, nextDue:null });
       if(kind === 'absence_announced') return notifyParentMessageAbsence(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'absence_thanks') return notifyParentMessageAbsenceThanks(ctx.slot, ctx.ov, ctx.meta);
+      if(kind === 'absence_followup') return notifyParentMessageAbsenceFollowup(ctx.slot, ctx.ov, ctx.meta);
       if(kind === 'makeup_scheduled') return notifyParentMessageMakeup(ctx.slot, ctx.ov, ctx.meta);
       if(kind === 'trial_scheduled') return notifyParentMessageTrial(ctx.slot, ctx.ov, ctx.meta);
       if(kind === 'session_cancelled') return notifyParentMessageCancelled(ctx.slot, ctx.ov, ctx.meta);
@@ -11299,7 +11339,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Instructor photos from the staff dashboard are included automatically for instructor change and make-up.</p>'+
         '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceThanks">Absence — thanks</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceFollowup">Absence — check-in</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence (office)</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTrial">Trial</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyMakeup">Make up</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyCancelled">Cancelled</button>'+
@@ -11339,6 +11381,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(snI) snI.onclick = function(){ schedOpenParentNotifyForKind('instructor_change'); };
       var snA = $('schedParentNotifyAbsence');
       if(snA) snA.onclick = function(){ schedOpenParentNotifyForKind('absence_announced'); };
+      var snAT = $('schedParentNotifyAbsenceThanks');
+      if(snAT) snAT.onclick = function(){ schedOpenParentNotifyForKind('absence_thanks'); };
+      var snAF = $('schedParentNotifyAbsenceFollowup');
+      if(snAF) snAF.onclick = function(){ schedOpenParentNotifyForKind('absence_followup'); };
       var snT = $('schedParentNotifyTrial');
       if(snT) snT.onclick = function(){ schedOpenParentNotifyForKind('trial_scheduled'); };
       var snM = $('schedParentNotifyMakeup');
@@ -11942,6 +11988,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       await schedCancelDuplicateActiveOverrides(client, slot, ovType, ins0.id);
+      if(ovType === 'instructor_reassign'){
+        await schedCancelDuplicateInstructorReassigns(client, row, ins0.id);
+      }
       var evRow = {
         override_id: ins0.id,
         action: 'create',

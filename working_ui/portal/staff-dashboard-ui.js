@@ -1125,7 +1125,7 @@
               pack.hasTraining = true;
             }else if(k === 'meeting'){
               pack.hasMeeting = true;
-            }else if(k === 'other' || k === 'absent' || k === 'makeup' || k === 'trial' || k === 'cancelled' || k === 'shift_cancelled' || k === 'reverted' || k === 'slot_opened'){
+            }else if(k === 'other' || k === 'absent' || k === 'makeup' || k === 'trial' || k === 'cancelled' || k === 'shift_cancelled' || k === 'client_moved' || k === 'reverted' || k === 'slot_opened'){
               pack.hasUpdated = true;
             }
           }

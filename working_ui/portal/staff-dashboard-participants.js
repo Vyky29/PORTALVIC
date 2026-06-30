@@ -2302,7 +2302,7 @@
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
-      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'new_shift';
+      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'makeup';
       if(P && typeof P.overrideIsRosterDayGroupRow === 'function' && P.overrideIsRosterDayGroupRow(row)){
         if(P.overrideRosterDayGroupIsNewShift && P.overrideRosterDayGroupIsNewShift(row)) return 'new_shift';
         return 'roster_day';
@@ -2318,6 +2318,7 @@
           pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
         }catch(_){ pl = null; }
         if(pl && pl.cancelled_by_admin) return 'cancelled';
+        if(pl && pl.client_move) return 'client_moved';
       }
       if(portalOverrideIsInstructorReplacedOffRow(row)) return 'shift_cancelled';
       if(t === 'session_add'){
@@ -2526,17 +2527,18 @@
           ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
           : '';
       } else {
-        let baseTitle = 'Schedule change';
-        if(kind === 'absent') baseTitle = 'ABSENT';
-        else if(kind === 'trial') baseTitle = 'TRIAL/NEW';
-        else if(kind === 'makeup') baseTitle = 'MAKE UP';
-        const nameBit = (kind === 'makeup' || kind === 'trial')
-          ? portalOverrideReplaceParticipantDisplayName(row)
+        const nameBit = (kind === 'makeup' || kind === 'trial' || kind === 'client_moved')
+          ? (portalOverrideReplaceParticipantDisplayName(row) || portalClientFirstNameTokenForOverride(row))
           : portalClientFirstNameTokenForOverride(row);
         const isoNav = normaliseIsoDate(row && row.session_date);
         const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
           ? portalOverrideCardDateParenLabel(isoNav)
           : '';
+        let baseTitle = 'Schedule change';
+        if(kind === 'absent') baseTitle = 'ABSENT';
+        else if(kind === 'trial') baseTitle = 'TRIAL/NEW';
+        else if(kind === 'makeup') baseTitle = 'MAKE UP';
+        else if(kind === 'client_moved') baseTitle = 'CHANGED';
         title = nameBit
           ? (baseTitle + ' - ' + nameBit + (datePart ? (' ' + datePart) : ''))
           : (baseTitle + (datePart ? (' ' + datePart) : ''));
