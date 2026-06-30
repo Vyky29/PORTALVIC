@@ -1240,8 +1240,22 @@
             portalTermStaffCatchUpFeedbackDates(staffId).forEach(addPreTerm);
           }
           const fromFloor = String(fromIso || '').slice(0, 10);
+          const mainLoopStart = String(loopStart || '').slice(0, 10);
+          const mainLoopEnd = String((t && t.lastDate) || '').slice(0, 10);
           preTermKeys.forEach(function(key){
-            if(!key || (fromFloor && key >= fromFloor)) return;
+            if(!key) return;
+            /* The main worked-weekday loop above already counted in-term days on a
+               worked weekday. Extra/cover dates land here so we can ALSO count:
+               (a) pre-term catch-up days (before the reminder floor), and
+               (b) in-term cover days on a NON-worked weekday — e.g. a Sunday cover
+               like Luliya's 28th — which the main loop skips. Skip only what the
+               main loop already handled, to avoid double counting. */
+            const kd = new Date(String(key) + 'T12:00:00');
+            const kwd = kd.getDay();
+            const inMainLoop = !!mainLoopStart && !!mainLoopEnd
+              && key >= mainLoopStart && key <= mainLoopEnd
+              && worked.indexOf(kwd) >= 0;
+            if(inMainLoop) return;
             if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return;
             if(!portalFeedbackReminderDayInScope(key)) return;
             if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return;
