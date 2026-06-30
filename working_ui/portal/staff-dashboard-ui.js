@@ -166,6 +166,29 @@
       wrap.hidden = true;
     }
 
+    function portalSyncAnnualProfileQuickMenuGroup(){
+      const profGrp = document.getElementById('portalAnnualProfileQuickGroup');
+      if(!profGrp) return;
+      const show = typeof portalAnnualProfileQuickMenuShouldShow === 'function'
+        ? portalAnnualProfileQuickMenuShouldShow()
+        : false;
+      if(show){
+        if(typeof portalShowAnnualProfileQuickMenu === 'function') portalShowAnnualProfileQuickMenu();
+        else {
+          profGrp.hidden = false;
+          profGrp.setAttribute('aria-hidden', 'false');
+        }
+      }else{
+        if(typeof portalHideAnnualProfileQuickMenu === 'function') portalHideAnnualProfileQuickMenu();
+        else {
+          profGrp.hidden = true;
+          profGrp.setAttribute('aria-hidden', 'true');
+        }
+      }
+    }
+
+    window.portalSyncAnnualProfileQuickMenuGroup = portalSyncAnnualProfileQuickMenuGroup;
+
     function portalApplyQuickMenuEntryMode(opts){
       opts = opts || {};
       const menu = document.getElementById('menuSheet');
@@ -175,15 +198,11 @@
       menu.classList.toggle('menu-sheet--full', mode === 'full');
       const titleEl = document.getElementById('portalMenuSheetTitle');
       if(titleEl) titleEl.textContent = mode === 'logo-lite' ? 'Alerts/Notifications' : 'Quick menu';
-      if(opts.shellOnly){
+        if(opts.shellOnly){
         if(mode === 'full'){
           const grp = document.getElementById('portalQuickMenuNotificationsGroup');
           if(grp) grp.hidden = true;
-          const profGrp = document.getElementById('portalAnnualProfileQuickGroup');
-          if(profGrp){
-            profGrp.hidden = true;
-            profGrp.setAttribute('aria-hidden', 'true');
-          }
+          portalSyncAnnualProfileQuickMenuGroup();
         }
         return;
       }
@@ -194,11 +213,7 @@
       }else{
         const grp = document.getElementById('portalQuickMenuNotificationsGroup');
         if(grp) grp.hidden = true;
-        const profGrp = document.getElementById('portalAnnualProfileQuickGroup');
-        if(profGrp){
-          profGrp.hidden = true;
-          profGrp.setAttribute('aria-hidden', 'true');
-        }
+        portalSyncAnnualProfileQuickMenuGroup();
         const stFull = typeof portalReminderState === 'function' ? portalReminderState() : null;
         if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(stFull);
         if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
@@ -210,7 +225,11 @@
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
-          void portalHydrateAnnouncementsFromSupabase();
+          void portalHydrateAnnouncementsFromSupabase().then(function(){
+            if(typeof window.portalSyncAnnualProfileQuickMenuGroup === 'function'){
+              window.portalSyncAnnualProfileQuickMenuGroup();
+            }
+          });
         }
         if(!opts.skipReminderSync){
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
@@ -4144,6 +4163,16 @@
       if(btn) btn.disabled = !chk.checked;
     });
     document.addEventListener('click', function(e){
+      const annualBtn = e.target && e.target.closest ? e.target.closest('#annualProfileAnnOpenBtn') : null;
+      if(annualBtn){
+        e.preventDefault();
+        if(typeof portalOpenAnnualProfileUpdate === 'function'){
+          void portalOpenAnnualProfileUpdate('staff_profile_update.html');
+        }else{
+          window.location.href = 'staff_profile_update.html';
+        }
+        return;
+      }
       const signBtn = e.target && e.target.closest ? e.target.closest('#announcementSignBtn') : null;
       if(signBtn){
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();

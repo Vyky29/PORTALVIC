@@ -22,10 +22,13 @@
 //       wellbeing_notes,
 //       profile_last_updated_at, profile_last_confirmed_at
 //     },
-//     session: { expires_at }
+//     session: { expires_at },
+//     roster_availability: { term_label, summary, shifts_by_day }
 //   }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
+import { buildStaffRosterAvailabilityHint } from "../_shared/staff_roster_availability_summary.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -101,6 +104,24 @@ Deno.serve(async (req) => {
     return jsonInvalid(500);
   }
 
+  let rosterAvailability = null;
+  try {
+    const { data: madreRow } = await supabase
+      .from("portal_madre_document")
+      .select("document")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const doc = (madreRow?.document || null) as MadreDoc | null;
+    rosterAvailability = buildStaffRosterAvailabilityHint(
+      doc,
+      String(row.full_name || ""),
+      String(row.username || ""),
+    );
+  } catch (err) {
+    console.warn("[staff-profile-update-load] roster availability", err);
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -139,6 +160,7 @@ Deno.serve(async (req) => {
         profile_last_confirmed_at: row.profile_last_confirmed_at,
       },
       session: { expires_at: sess.expires_at },
+      roster_availability: rosterAvailability,
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );

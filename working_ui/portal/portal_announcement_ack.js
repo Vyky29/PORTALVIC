@@ -644,6 +644,17 @@
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "portal_permissions";
   };
 
+  global.portalSignableItemIsAnnualProfile = function portalSignableItemIsAnnualProfile(item) {
+    return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "annual_profile";
+  };
+
+  global.portalAnnualProfileCampaignComplete = function portalAnnualProfileCampaignComplete(confirmedAtIso) {
+    if (typeof global.portalAnnualProfileIsCompleteAt === "function") {
+      return global.portalAnnualProfileIsCompleteAt(confirmedAtIso);
+    }
+    return false;
+  };
+
   /** True when this worker already registered portal Web Push (skip onboarding announcements). */
   global.portalWorkerHasPortalPushSubscription = async function portalWorkerHasPortalPushSubscription(
     client,

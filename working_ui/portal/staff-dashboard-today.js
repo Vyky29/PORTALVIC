@@ -3753,6 +3753,18 @@
         }
         if(!Array.isArray(res.data)) return;
         const prof = box && box.staff_profile;
+        if(prof && prof.id && client && prof.profile_last_confirmed_at === undefined){
+          try{
+            const pr = await client
+              .from('staff_profiles')
+              .select('profile_last_confirmed_at')
+              .eq('id', prof.id)
+              .maybeSingle();
+            if(!pr.error && pr.data){
+              prof.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
+            }
+          }catch(_pr){}
+        }
         const workerInboxCtx = {
           authUserId: (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '',
           appRole: prof && prof.app_role,
@@ -3886,6 +3898,14 @@
             return;
           }
           if(existing[id]) return;
+          if(String(row.on_ack_action || '').trim() === 'annual_profile'){
+            if(
+              typeof portalAnnualProfileCampaignComplete === 'function' &&
+              portalAnnualProfileCampaignComplete(prof && prof.profile_last_confirmed_at)
+            ){
+              return;
+            }
+          }
           existing[id] = true;
           annInjected.push({
             type: 'announcement',
@@ -3996,6 +4016,19 @@
       }
     }
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
+    window.addEventListener('portal:annual-profile-complete', function(){
+      try{
+        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
+          void portalHydrateAnnouncementsFromSupabase();
+        }
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+        }
+        if(typeof portalSyncAnnualProfileQuickMenuGroup === 'function'){
+          portalSyncAnnualProfileQuickMenuGroup();
+        }
+      }catch(_){}
+    });
     let _portalStaffDemoAnnouncementAckClearedForSession = false;
     function portalResetStaffDemoAnnouncementAckIfFlagged(){
       if(!PORTAL_STAFF_ANNOUNCEMENT_DEMO_RESET_EVERY_LOAD) return;
@@ -4127,7 +4160,22 @@
         const k = portalAnnouncementSignatureKey(n);
         const contractKey = n && n.portalContractId ? ('portal-ann:contract:' + String(n.portalContractId)) : '';
         const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]);
-        if(!acked) items.push(Object.assign({}, n));
+        if(!acked){
+          if(
+            typeof portalSignableItemIsAnnualProfile === 'function' &&
+            portalSignableItemIsAnnualProfile(n)
+          ){
+            const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+            const p = box && box.staff_profile;
+            if(
+              typeof portalAnnualProfileCampaignComplete === 'function' &&
+              portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at)
+            ){
+              return;
+            }
+          }
+          items.push(Object.assign({}, n));
+        }
       });
       const rems = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
       rems.forEach(function(r){
@@ -4335,6 +4383,20 @@
               '</div>' +
             '</article>';
           portalLoadContractAnnouncementPreview(String(pending.portalContractId));
+        }else if(
+          typeof portalSignableItemIsAnnualProfile === 'function' &&
+          portalSignableItemIsAnnualProfile(pending)
+        ){
+          hostPending.innerHTML =
+            '<article class="announcement-lock-card announcement-lock-card--annual-profile">' +
+              '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+              '<span class="announcement-lock-badge announcement-lock-badge--announcement">Profile</span></div>' +
+              '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+              '<p class="announcement-message-p" style="margin:0 0 12px;font-size:13px;color:var(--muted,#728290);">This notice clears automatically when you submit the annual profile form.</p>' +
+              '<div class="announcement-lock-actions">' +
+                '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile</button>' +
+              '</div>' +
+            '</article>';
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +

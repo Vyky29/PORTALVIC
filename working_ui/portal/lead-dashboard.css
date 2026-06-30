@@ -8804,9 +8804,11 @@
       padding:0 1px;
     }
 
-    /* Quick menu (full): hide alerts/profile groups */
-    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
-    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
+    /* Quick menu (full): hide alerts group; annual profile shows when pending */
+    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup{
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup:not(.portal-annual-profile--pending){
       display:none !important;
     }
 

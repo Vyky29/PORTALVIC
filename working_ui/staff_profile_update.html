@@ -1149,6 +1149,7 @@
                 <li class="readonly-row"><span class="readonly-label">Full name</span><span class="readonly-value" data-readonly="full_name">—</span></li>
                 <li class="readonly-row"><span class="readonly-label">Role</span><span class="readonly-value" data-readonly="staff_role">—</span></li>
                 <li class="readonly-row"><span class="readonly-label">Email</span><span class="readonly-value" data-readonly="email_personal">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Mobile</span><span class="readonly-value" data-readonly="phone_e164">—</span></li>
               </ul>
               <p class="field-hint">
                 Full name and role are managed by the office. Contact them if these need to change.
@@ -1169,6 +1170,11 @@
                 <label for="editEmail">Personal email</label>
                 <input id="editEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" data-edit-input="email_personal" placeholder="you@example.com" />
                 <span class="field-error">Please enter a valid email address.</span>
+              </div>
+              <div class="field" data-edit-field="phone_e164">
+                <label for="editPhone">Your mobile number</label>
+                <input id="editPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" data-edit-input="phone_e164" placeholder="+44 7700 900123" />
+                <span class="field-hint">The number we use to reach you for shifts and urgent club messages.</span>
               </div>
             </form>
             <div class="ps-actions">
@@ -1294,13 +1300,18 @@
           </button>
           <div class="ps-body" id="bodyAvailability">
             <div class="ps-readonly">
-              <p class="field-hint" style="margin:0 0 4px;">Your current shifts, venues and sessions</p>
+              <p class="field-hint" style="margin:0 0 4px;">Your shifts from the roster (last academic year)</p>
+              <div class="roster-avail-hint" id="rosterAvailabilityHint" hidden>
+                <p class="field-hint" style="margin:0 0 8px;"><strong id="rosterAvailabilityTerm">—</strong></p>
+                <ul class="readonly-list" id="rosterAvailabilityList"></ul>
+              </div>
               <ul class="readonly-list">
-                <li class="readonly-row"><span class="readonly-label">Current</span><span class="readonly-value" data-readonly="availability_summary">No availability on file yet.</span></li>
+                <li class="readonly-row"><span class="readonly-label">On file</span><span class="readonly-value" data-readonly="availability_summary">No availability on file yet.</span></li>
               </ul>
+              <p class="field-hint" id="rosterAvailabilityFootnote" style="margin:8px 0 0;">Confirm below whether you want the same pattern next year or something different.</p>
             </div>
             <form class="ps-edit-form" data-edit-form>
-              <p class="field-hint">How would you like your availability to change for next academic year?</p>
+              <p class="field-hint" id="availabilityEditIntro">How would you like your availability to change for next academic year?</p>
               <div class="radio-stack" role="radiogroup" aria-label="Availability for next year">
                 <label class="radio-row">
                   <input type="radio" name="availabilityStatus" value="continue" data-edit-input="availability_status" />
@@ -1905,6 +1916,9 @@
           return false;
         }
         state.profile = body.staff;
+        if (body.roster_availability) {
+          state.profile.roster_availability = body.roster_availability;
+        }
         mergeEmergencyContactDefaults(state.profile);
         state.pristine = JSON.parse(JSON.stringify(body.staff));
         renderProfile();
@@ -2080,6 +2094,62 @@
       return s;
     }
 
+    function renderRosterAvailabilityHint(roster) {
+      const hint = $("rosterAvailabilityHint");
+      const list = $("rosterAvailabilityList");
+      const termEl = $("rosterAvailabilityTerm");
+      const foot = $("rosterAvailabilityFootnote");
+      const intro = $("availabilityEditIntro");
+      if (!hint || !list) return;
+      const rows = roster && Array.isArray(roster.shifts_by_day) ? roster.shifts_by_day : [];
+      if (!rows.length) {
+        hint.hidden = true;
+        if (termEl) termEl.textContent = "";
+        list.innerHTML = "";
+        if (foot) {
+          foot.textContent =
+            "We could not load your roster shifts here — check the days and times you usually work, then confirm below.";
+        }
+        if (intro) {
+          intro.textContent =
+            "How would you like your availability to change for next academic year? Mention your usual days and times if you can.";
+        }
+        return;
+      }
+      hint.hidden = false;
+      if (termEl) {
+        termEl.textContent = String(roster.term_label || "Last academic year") + " — from your roster:";
+      }
+      list.innerHTML = rows
+        .map(function (row) {
+          const lines = (row.lines || []).map(function (ln) {
+            return "<span class=\"readonly-value\" style=\"display:block;margin-top:2px\">" + escHtml(String(ln)) + "</span>";
+          }).join("");
+          return (
+            "<li class=\"readonly-row\"><span class=\"readonly-label\">" +
+            escHtml(String(row.day || "Day")) +
+            "</span><span>" + lines + "</span></li>"
+          );
+        })
+        .join("");
+      if (foot) {
+        foot.textContent =
+          "These are the shifts we have on the roster for you. Tell us below if you want the same pattern next year or something different.";
+      }
+      if (intro) {
+        intro.textContent =
+          "For next academic year — continue with these shifts, or tell us what to change:";
+      }
+    }
+
+    function escHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
     function renderProfile() {
       const p = state.profile;
       $("profileGreetingName").textContent = (p.full_name || "there").split(" ")[0];
@@ -2088,9 +2158,13 @@
       setReadonlyValue("full_name", p.full_name);
       setReadonlyValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setReadonlyValue("email_personal", p.email_personal, { empty: "Not provided" });
+      setReadonlyValue("phone_e164", p.phone_e164, { empty: "Not provided" });
       setEditValue("full_name", p.full_name);
       setEditValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setEditValue("email_personal", p.email_personal);
+      setEditValue("phone_e164", p.phone_e164);
+
+      renderRosterAvailabilityHint(p.roster_availability);
 
       // Section 2: address
       const fullAddr = fmtAddress(p);
@@ -2257,6 +2331,7 @@
       const p = state.profile;
       if (id === 'sectionStaffDetails') {
         if ('email_personal' in edits) p.email_personal = edits.email_personal || null;
+        if ('phone_e164' in edits) p.phone_e164 = edits.phone_e164 || null;
       } else if (id === 'sectionAddress') {
         // Use addressChange radio
         const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
@@ -2298,6 +2373,7 @@
       const p = state.profile;
       if (id === 'sectionStaffDetails') {
         setReadonlyValue('email_personal', p.email_personal, { empty: 'Not provided' });
+        setReadonlyValue('phone_e164', p.phone_e164, { empty: 'Not provided' });
       } else if (id === 'sectionAddress') {
         setReadonlyValue('address_full', fmtAddress(p), { empty: 'No address on file' });
       } else if (id === 'sectionEmergency') {
@@ -2372,6 +2448,7 @@
           const p = state.profile;
           if (sec.id === 'sectionStaffDetails') {
             setEditValue('email_personal', p.email_personal);
+            setEditValue('phone_e164', p.phone_e164);
           } else if (sec.id === 'sectionAddress') {
             setEditValue('address_line1', p.address?.line1);
             setEditValue('address_line2', p.address?.line2);
@@ -2465,6 +2542,11 @@
           localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
         } catch (_) {}
         try {
+          if (typeof window.portalAckAnnualProfileCampaignAnnouncement === 'function') {
+            await window.portalAckAnnualProfileCampaignAnnouncement();
+          }
+        } catch (_) {}
+        try {
           const doneName = String(
             state.profile?.full_name || readPortalPinIdentityName() || '',
           ).trim();
@@ -2494,6 +2576,7 @@
       const out = {};
       const set = (k, prev, next) => { if ((prev ?? null) !== (next ?? null)) out[k] = next ?? null; };
       set('email_personal', pristine.email_personal, current.email_personal);
+      set('phone_e164', pristine.phone_e164, current.phone_e164);
       set('address_line1', pristine.address?.line1, current.address?.line1);
       set('address_line2', pristine.address?.line2, current.address?.line2);
       set('address_city', pristine.address?.city, current.address?.city);
