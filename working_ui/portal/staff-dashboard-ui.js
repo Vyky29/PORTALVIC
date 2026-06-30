@@ -2606,7 +2606,7 @@
         if(typeof portalScheduleTermGridIdleRender === 'function'){
           portalScheduleTermGridIdleRender(function(){
             renderTermCalendarGrid({ force: true });
-          }, 160);
+          }, 480);
           return;
         }
       }
@@ -3904,9 +3904,15 @@
     window.closeClientGeneralSheet = closeClientGeneralSheet;
     window.closeClientSessionsOverviewSheet = closeClientSessionsOverviewSheet;
     if(typeof portalInitSheetBackNavigation === 'function') portalInitSheetBackNavigation();
-    document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
-    document.getElementById('dockParticipantsTile')?.addEventListener('click', handleParticipantsDockClick);
-    document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
+    document.getElementById('dockDashboardTile')?.addEventListener('click', function(){
+      globalThis.setTimeout(handleDashboardDockClick, 0);
+    });
+    document.getElementById('dockParticipantsTile')?.addEventListener('click', function(){
+      globalThis.setTimeout(handleParticipantsDockClick, 0);
+    });
+    document.getElementById('dockQuickMenuTile')?.addEventListener('click', function(){
+      globalThis.setTimeout(handleQuickMenuDockClick, 0);
+    });
     if(typeof syncDockNavContext === 'function') syncDockNavContext();
     if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();
     if(typeof portalSyncParticipantsDockChrome === 'function') portalSyncParticipantsDockChrome();

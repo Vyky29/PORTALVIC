@@ -258,6 +258,8 @@
     termGridIdleTimer = global.setTimeout(function () {
       termGridIdleTimer = null;
       if (gen !== termGridIdleGen) return;
+      /* Heavy term-grid DOM work must not run inside requestIdleCallback — Chrome
+         flags 50ms+ idle handlers. Yield one animation frame after the debounce. */
       var run = function () {
         if (gen !== termGridIdleGen) return;
         try {
@@ -268,10 +270,10 @@
           } catch (_) {}
         }
       };
-      if (typeof global.requestIdleCallback === "function") {
-        global.requestIdleCallback(run, { timeout: 1200 });
+      if (typeof global.requestAnimationFrame === "function") {
+        global.requestAnimationFrame(run);
       } else {
-        run();
+        global.setTimeout(run, 0);
       }
     }, delayMs == null ? 120 : delayMs);
   };
