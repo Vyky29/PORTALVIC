@@ -392,9 +392,13 @@ Deno.serve(async (req) => {
       const cache = cacheById.get(id);
 
       const adminEdited = !!(cache && cache.admin_edited_at);
+      const wasBrokenFallback = String(cache?.review_model || "") === "fallback-no-openai";
       if (
         cache &&
-        (adminEdited || (cache.source_fingerprint === fingerprint && cache.share_status !== "pending"))
+        (adminEdited ||
+          (cache.source_fingerprint === fingerprint &&
+            cache.share_status !== "pending" &&
+            !wasBrokenFallback))
       ) {
         const shareStatus = String(cache.share_status || "hidden");
         const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
