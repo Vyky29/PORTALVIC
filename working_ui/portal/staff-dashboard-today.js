@@ -4401,22 +4401,24 @@
           typeof portalSignableItemIsCalendar202627 === 'function' &&
           portalSignableItemIsCalendar202627(pending)
         ){
-          var posterUrl = typeof portalCalendar202627PosterUrl === 'function'
-            ? portalCalendar202627PosterUrl()
-            : '/portal/assets/calendar-2026-27-poster.png?v=20260701-calendar';
           hostPending.innerHTML =
             '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27">' +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
               '<span class="announcement-lock-badge announcement-lock-badge--announcement">Calendar</span></div>' +
               '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
-              '<div class="portal-calendar-2026-27-preview" role="img" aria-label="Day Centre Calendar 2026/27 poster">' +
-                '<img src="' + escapeHtml(posterUrl) + '" alt="Day Centre term dates and calendar 2026/27" loading="lazy" decoding="async">' +
+              '<div class="portal-calendar-2026-27-preview" id="portalCalendar202627PreviewHost">' +
+                '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Loading calendar…</p>' +
               '</div>' +
-              '<div class="announcement-lock-actions">' +
+              '<div class="announcement-lock-actions announcement-lock-actions--calendar">' +
+                '<button type="button" class="announcement-download-btn" id="calendar202627DownloadBtn">Download PDF to My Documents</button>' +
+                '<p class="announcement-download-hint" id="calendar202627DownloadStatus" hidden></p>' +
                 '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm" name="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
                 '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
               '</div>' +
             '</article>';
+          if(typeof portalLoadCalendar202627Into === 'function'){
+            void portalLoadCalendar202627Into(document.getElementById('portalCalendar202627PreviewHost'));
+          }
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +

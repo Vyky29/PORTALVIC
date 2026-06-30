@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day Centre Term Dates &amp; Calendar 2026–2027</title>
+</head>
+<body>
+<!--
+  ClubSENsational Day Centre Calendar 2026–2027
+  Paste the <section class="dc-cal">…</section> block into a portal modal or HTML widget.
+-->
+<section class="dc-cal" id="dcCal2627" aria-labelledby="dcCal2627Title">
+  <style>
+    .dc-cal {
+      --dc-navy: #162B5B;
+      --dc-orange: #F28C00;
+      --dc-green: #CFEA8B;
+      --dc-red: #F25B5B;
+      --dc-white: #FFFFFF;
+      --dc-border: #E5E7EB;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--dc-navy);
+      background: var(--dc-white);
+      line-height: 1.45;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 12px 24px;
+    }
+    .dc-cal *, .dc-cal *::before, .dc-cal *::after { box-sizing: border-box; }
+    .dc-cal__header { text-align: center; margin-bottom: 16px; }
+    .dc-cal__year {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--dc-navy);
+    }
+    .dc-cal__title {
+      margin: 4px 0 0;
+      font-size: clamp(0.95rem, 2.8vw, 1.15rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--dc-navy);
+    }
+    .dc-cal__legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 18px;
+      margin: 0 0 20px;
+      padding: 12px 14px;
+      list-style: none;
+      border: 1px solid var(--dc-border);
+      border-radius: 10px;
+      background: var(--dc-white);
+    }
+    .dc-cal__legend li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-width: 0;
+    }
+    .dc-cal__swatch {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid var(--dc-border);
+    }
+    .dc-cal__swatch--orange { background: var(--dc-orange); }
+    .dc-cal__swatch--green { background: var(--dc-green); }
+    .dc-cal__swatch--red { background: var(--dc-red); }
+    .dc-cal-term {
+      border: 2px solid var(--dc-orange);
+      border-radius: 14px;
+      padding: 14px 12px 16px;
+      margin-bottom: 18px;
+      background: var(--dc-white);
+      min-width: 0;
+    }
+    .dc-cal-term__head { margin-bottom: 14px; min-width: 0; }
+    .dc-cal-term__title {
+      margin: 0 0 10px;
+      font-size: clamp(1.05rem, 3.2vw, 1.25rem);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .dc-cal-term__icon { line-height: 1; }
+    .dc-cal-term__info {
+      margin: 0 0 10px;
+      padding-left: 1.1rem;
+      font-size: 0.88rem;
+    }
+    .dc-cal-term__info li { margin-bottom: 4px; overflow-wrap: break-word; }
+    .dc-cal-term__weeks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      font-size: 0.85rem;
+    }
+    .dc-cal-term__weeks p { margin: 0; }
+    .dc-cal-term__months {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 14px;
+    }
+    .dc-cal-month {
+      min-width: 0;
+      border: 1px solid var(--dc-border);
+      border-radius: 10px;
+      padding: 10px 8px 12px;
+      background: var(--dc-white);
+    }
+    .dc-cal-month__label {
+      margin: 0 0 8px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--dc-navy);
+      text-align: center;
+    }
+    .dc-cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+      margin-bottom: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--dc-navy);
+      text-align: center;
+    }
+    .dc-cal-weekdays span { min-width: 0; }
+    .dc-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+    }
+    .dc-cal-cell {
+      aspect-ratio: 1;
+      min-width: 0;
+      min-height: 0;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dc-cal-cell--empty { background: transparent; }
+    .dc-cal-cell--green { background: var(--dc-green); }
+    .dc-cal-cell--red { background: var(--dc-red); }
+    .dc-cal-cell--orange { background: var(--dc-orange); }
+    .dc-cal-day {
+      font-size: clamp(0.62rem, 2.4vw, 0.78rem);
+      font-weight: 700;
+      color: #000000;
+      line-height: 1;
+    }
+    @media (min-width: 720px) {
+      .dc-cal { padding: 20px 18px 28px; }
+      .dc-cal-term { padding: 18px 16px 20px; }
+    }
+  </style>
+
+  <header class="dc-cal__header">
+    <p class="dc-cal__year" id="dcCal2627Title">2026–2027</p>
+    <h2 class="dc-cal__title">Day Centre Term Dates &amp; Calendar</h2>
+  </header>
+
+  <ul class="dc-cal__legend" aria-label="Calendar colour key">
+    <li><span class="dc-cal__swatch dc-cal__swatch--orange" aria-hidden="true"></span> Orange = Term Starts</li>
+    <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Open / Day Centre Running</li>
+    <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / Day Centre Closed</li>
+  </ul>
+
+    <article class="dc-cal-term" aria-labelledby="dc-cal-term-autumn">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dc-cal-term-autumn"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> Autumn Term 2026</h3>
+        <ul class="dc-cal-term__info">
+          <li>Term starts: Saturday 5 September 2026</li>
+          <li>Half Term: Monday 26 October – Friday 30 October 2026</li>
+          <li>Day Centre open during Half Term: 26–30 October</li>
+          <li>Weekend closures: 24–25 October and 31 October–1 November</li>
+          <li>Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027</li>
+        </ul>
+        <div class="dc-cal-term__weeks">
+          <p><strong>School Services:</strong> 14 weeks</p>
+          <p><strong>Day Centre:</strong> 16 weeks</p>
+        </div>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">September 2026</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="September 2026">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--orange" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">October 2026</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="October 2026">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">November 2026</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="November 2026">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">December 2026</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="December 2026">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="dc-cal-term" aria-labelledby="dc-cal-term-spring">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dc-cal-term-spring"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> Spring Term 2027</h3>
+        <ul class="dc-cal-term__info">
+          <li>Term starts: Monday 4 January 2027</li>
+          <li>Half Term: Monday 15 February – Friday 19 February 2027</li>
+          <li>Day Centre open during Half Term: 15–19 February</li>
+          <li>Weekend closures: 13–14 February and 20–21 February</li>
+          <li>Easter closure: Friday 26 March – Sunday 11 April 2027</li>
+        </ul>
+        <div class="dc-cal-term__weeks">
+          <p><strong>School Services:</strong> 11 weeks</p>
+          <p><strong>Day Centre:</strong> 11 weeks</p>
+        </div>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">January 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="January 2027">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--orange" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">February 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="February 2027">
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">March 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="March 2027">
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="dc-cal-term" aria-labelledby="dc-cal-term-summer">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dc-cal-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer Term 2027</h3>
+        <ul class="dc-cal-term__info">
+          <li>Term starts: Monday 12 April 2027</li>
+          <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
+          <li>Day Centre open during Half Term: 31 May – 4 June</li>
+          <li>Weekend closures: 29–30 May and 5–6 June</li>
+          <li>Summer Day Centre open: Monday 19 July – Friday 30 July 2027</li>
+          <li>Last Day Centre day: Friday 30 July 2027</li>
+        </ul>
+        <div class="dc-cal-term__weeks">
+          <p><strong>School Services:</strong> 13 weeks</p>
+          <p><strong>Day Centre:</strong> 16 weeks</p>
+        </div>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">April 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="April 2027">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--orange" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">May 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="May 2027">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">June 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="June 2027">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+          </div>
+        </div>
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">July 2027</h4>
+          <div class="dc-cal-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="dc-cal-grid" role="grid" aria-label="July 2027">
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">10</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">11</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">12</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">13</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">30</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+</section>
+</body>
+</html>

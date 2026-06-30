@@ -1472,17 +1472,66 @@
     .portal-calendar-2026-27-preview{
       margin:12px 0 4px;
       min-width:0;
+      max-height:min(58vh,520px);
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
       border:1px solid rgba(23,50,71,.1);
       border-radius:12px;
-      overflow:hidden;
       background:#fff;
     }
-    .portal-calendar-2026-27-preview img{
+    .portal-calendar-2026-27-preview--loading{
+      min-height:120px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal{
+      max-width:none;
+      margin:0;
+      padding:12px 10px 16px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term{
+      margin-bottom:14px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term:last-child{
+      margin-bottom:0;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term__months{
+      grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));
+    }
+    .portal-calendar-2026-27-preview .dc-cal__legend li{
+      font-size:0.76rem;
+    }
+    .portal-calendar-2026-27-iframe{
       display:block;
       width:100%;
-      max-width:100%;
-      height:auto;
-      object-fit:contain;
+      min-height:320px;
+      height:min(52vh,480px);
+      border:0;
+      background:#fff;
+    }
+    .announcement-lock-actions--calendar{
+      margin-top:4px;
+    }
+    .announcement-download-btn{
+      border:2px solid #162B5B;
+      border-radius:12px;
+      padding:11px 12px;
+      min-height:48px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      background:#fff;
+      color:#162B5B;
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+    .announcement-download-btn:disabled{
+      opacity:.52;
+    }
+    .announcement-download-hint{
+      margin:0;
+      font-size:13px;
+      line-height:1.4;
+      color:#475569;
+      overflow-wrap:break-word;
     }
     .announcement-lock-copy{
       margin:0 0 10px;

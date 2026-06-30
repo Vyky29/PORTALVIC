@@ -4173,6 +4173,36 @@
         }
         return;
       }
+      const calendarDownloadBtn = e.target && e.target.closest ? e.target.closest('#calendar202627DownloadBtn') : null;
+      if(calendarDownloadBtn){
+        e.preventDefault();
+        if(typeof portalDownloadCalendar202627Pdf !== 'function'){
+          return;
+        }
+        const statusEl = document.getElementById('calendar202627DownloadStatus');
+        const prevLabel = calendarDownloadBtn.textContent;
+        calendarDownloadBtn.disabled = true;
+        if(statusEl){
+          statusEl.hidden = false;
+          statusEl.textContent = 'Preparing PDF…';
+        }
+        void portalDownloadCalendar202627Pdf().then(function(result){
+          if(statusEl){
+            statusEl.textContent = result && result.alreadyHad
+              ? 'Already in My Documents — download started on your device.'
+              : 'Saved to My Documents — download started on your device.';
+          }
+        }).catch(function(err){
+          try{ console.warn('[portal] calendar 2026/27 download', err); }catch(_){}
+          if(statusEl){
+            statusEl.textContent = 'Could not save the PDF. Please try again.';
+          }
+        }).finally(function(){
+          calendarDownloadBtn.disabled = false;
+          calendarDownloadBtn.textContent = prevLabel;
+        });
+        return;
+      }
       const signBtn = e.target && e.target.closest ? e.target.closest('#announcementSignBtn') : null;
       if(signBtn){
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();
@@ -4210,18 +4240,6 @@
         portalAnnouncementAckMapSave(ack);
         if(typeof portalPersistAnnouncementAckToSupabase === 'function'){
           void portalPersistAnnouncementAckToSupabase(pending);
-        }
-        if(
-          typeof portalSignableItemIsCalendar202627 === 'function' &&
-          portalSignableItemIsCalendar202627(pending) &&
-          typeof portalSaveCalendar202627PdfToMyDocuments === 'function'
-        ){
-          signBtn.disabled = true;
-          void portalSaveCalendar202627PdfToMyDocuments().catch(function(err){
-            try{ console.warn('[portal] calendar 2026/27 My Documents save', err); }catch(_){}
-          }).finally(function(){
-            if(signBtn) signBtn.disabled = false;
-          });
         }
         }
         try{

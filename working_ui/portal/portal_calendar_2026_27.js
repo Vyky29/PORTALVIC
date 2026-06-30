@@ -1,11 +1,12 @@
 /**
- * Day Centre Calendar 2026/27 — announcement poster + PDF to My Documents on sign.
+ * Day Centre Calendar 2026/27 — HTML calendar in announcement modal + PDF to My Documents on sign.
  * Term dates also feed future staff shift-update forms.
  */
 (function (global) {
   "use strict";
 
-  var POSTER_URL = "/portal/assets/calendar-2026-27-poster.png";
+  var HTML_SECTION_URL =
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-html-cal";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -13,13 +14,15 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   var JSPDF_URL =
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260701-calendar";
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
+  var HTML2CANVAS_URL =
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?v=20260702-html-cal";
 
   /** Source of truth for staff shift planning (2026/27). */
   global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 = {
     academicYear: "2026-2027",
     label: "Day Centre Term Dates & Calendar 2026/27",
-    posterUrl: POSTER_URL,
+    htmlSectionUrl: HTML_SECTION_URL,
     terms: [
       {
         id: "autumn_2026",
@@ -57,6 +60,8 @@
     openTo: "2027-07-30",
   };
 
+  var _cachedSectionHtml = "";
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = global.document.createElement("script");
@@ -76,41 +81,38 @@
     return loadScript(JSPDF_URL);
   }
 
-  function calendarPosterFetchUrl(url) {
-    var raw = String(url || POSTER_URL).trim() || POSTER_URL;
-    if (raw.indexOf("http://") === 0 || raw.indexOf("https://") === 0) return raw;
-    try {
-      if (typeof location !== "undefined" && location.href) {
-        return new URL(raw, location.href).href;
-      }
-    } catch (_) {}
-    return raw;
+  function ensureHtml2Canvas() {
+    if (typeof global.html2canvas === "function") return Promise.resolve();
+    return loadScript(HTML2CANVAS_URL);
   }
 
-  async function loadImage(url) {
-    var fetchUrl = calendarPosterFetchUrl(url);
-    var res = await fetch(fetchUrl, { cache: "force-cache" });
-    if (!res.ok) throw new Error("Could not load calendar poster");
-    var blob = await res.blob();
-    var objectUrl = URL.createObjectURL(blob);
+  function calendarSectionFetchUrl() {
     try {
-      return await new Promise(function (resolve, reject) {
-        var img = new Image();
-        img.onload = function () {
-          resolve(img);
-        };
-        img.onerror = function () {
-          reject(new Error("Could not decode calendar poster"));
-        };
-        img.src = objectUrl;
-      });
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
+      if (typeof location !== "undefined" && location.href) {
+        return new URL(HTML_SECTION_URL, location.href).href;
+      }
+    } catch (_) {}
+    return HTML_SECTION_URL;
+  }
+
+  async function fetchCalendarSectionHtml() {
+    if (_cachedSectionHtml) return _cachedSectionHtml;
+    var res = await fetch(calendarSectionFetchUrl(), { cache: "force-cache" });
+    if (!res.ok) throw new Error("Could not load calendar section");
+    _cachedSectionHtml = await res.text();
+    return _cachedSectionHtml;
+  }
+
+  async function buildCalendarSectionNode() {
+    var html = await fetchCalendarSectionHtml();
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var root = doc.querySelector(".dc-cal");
+    if (!root) throw new Error("Calendar section missing");
+    return root.cloneNode(true);
   }
 
   async function importDocumentsModule() {
-    var v = "20260701-calendar";
+    var v = "20260702-html-cal";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -124,44 +126,154 @@
     throw new Error("portal_documents.js not available");
   }
 
-  async function posterImageToPdfBlob() {
-    await ensureJsPdf();
-    var img = await loadImage(POSTER_URL + "?v=20260701-calendar");
-    var w = img.naturalWidth || 1600;
-    var h = img.naturalHeight || 1131;
+  function captureCalendarSectionCanvas(sectionEl) {
+    var w = Math.max(sectionEl.scrollWidth || 0, sectionEl.offsetWidth || 0, 900);
+    var h = Math.max(sectionEl.scrollHeight || 0, sectionEl.offsetHeight || 0, 400);
+    return global.html2canvas(sectionEl, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      letterRendering: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: w,
+      windowHeight: h,
+      backgroundColor: "#FFFFFF",
+    });
+  }
+
+  function canvasToPdfBlob(canvas) {
     if (!global.jspdf || !global.jspdf.jsPDF) throw new Error("jsPDF missing");
     var pdf = new global.jspdf.jsPDF({
-      orientation: w >= h ? "landscape" : "portrait",
-      unit: "px",
-      format: [w, h],
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
       compress: true,
     });
-    var canvas = global.document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    var ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("canvas");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    pdf.addImage(dataUrl, "JPEG", 0, 0, w, h);
+    var margin = 8;
+    var pageW = pdf.internal.pageSize.getWidth();
+    var pageH = pdf.internal.pageSize.getHeight();
+    var drawW = pageW - 2 * margin;
+    var imgData = canvas.toDataURL("image/jpeg", 0.92);
+    var imgH = (canvas.height * drawW) / canvas.width;
+    var heightLeft = imgH;
+    var y = margin;
+
+    pdf.addImage(imgData, "JPEG", margin, y, drawW, imgH);
+    heightLeft -= pageH - 2 * margin;
+
+    while (heightLeft > 0) {
+      y = margin - (imgH - heightLeft);
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", margin, y, drawW, imgH);
+      heightLeft -= pageH - 2 * margin;
+    }
+
     return pdf.output("blob");
   }
 
+  async function htmlSectionToPdfBlob() {
+    await ensureJsPdf();
+    await ensureHtml2Canvas();
+    var host = global.document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText =
+      "position:fixed;left:-12000px;top:0;width:900px;background:#fff;z-index:-1;pointer-events:none;";
+    global.document.body.appendChild(host);
+    try {
+      var section = await buildCalendarSectionNode();
+      host.appendChild(section);
+      try {
+        void section.offsetWidth;
+      } catch (_) {}
+      await new Promise(function (r) {
+        setTimeout(r, 80);
+      });
+      var canvas = await captureCalendarSectionCanvas(section);
+      return canvasToPdfBlob(canvas);
+    } finally {
+      try {
+        global.document.body.removeChild(host);
+      } catch (_) {}
+    }
+  }
+
+  global.portalCalendar202627SectionUrl = function portalCalendar202627SectionUrl() {
+    return HTML_SECTION_URL;
+  };
+
+  /** @deprecated Poster replaced by HTML section — kept for older call sites. */
   global.portalCalendar202627PosterUrl = function portalCalendar202627PosterUrl() {
-    return POSTER_URL + "?v=20260701-calendar";
+    return HTML_SECTION_URL;
   };
 
   global.portalSignableItemIsCalendar202627 = function portalSignableItemIsCalendar202627(item) {
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === ON_ACK_ACTION;
   };
 
+  /** Inject the interactive HTML calendar into a host element (announcement modal). */
+  global.portalLoadCalendar202627Into = async function portalLoadCalendar202627Into(host) {
+    if (!host) return;
+    host.textContent = "";
+    host.setAttribute("role", "region");
+    host.setAttribute("aria-label", "Day Centre term dates and calendar 2026/27");
+    host.classList.add("portal-calendar-2026-27-preview--loading");
+    try {
+      var node = await buildCalendarSectionNode();
+      host.appendChild(node);
+    } catch (e) {
+      try {
+        console.warn("[calendar-2026-27] preview inject failed, using iframe", e);
+      } catch (_) {}
+      try {
+        var iframe = global.document.createElement("iframe");
+        iframe.className = "portal-calendar-2026-27-iframe";
+        iframe.title = "Day Centre term dates and calendar 2026/27";
+        iframe.src = calendarSectionFetchUrl();
+        iframe.loading = "lazy";
+        iframe.addEventListener("load", function () {
+          host.classList.remove("portal-calendar-2026-27-preview--loading");
+        });
+        host.appendChild(iframe);
+        return;
+      } catch (e2) {
+        try {
+          console.warn("[calendar-2026-27] preview iframe", e2);
+        } catch (_) {}
+        host.innerHTML =
+          '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Could not load calendar. Please try again.</p>';
+      }
+    } finally {
+      host.classList.remove("portal-calendar-2026-27-preview--loading");
+    }
+  };
+
+  function triggerBrowserPdfDownload(blob, filename) {
+    var a = global.document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = String(filename || "Calendar 2026-27.pdf").trim() || "Calendar 2026-27.pdf";
+    a.rel = "noopener";
+    global.document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {}
+      try {
+        a.remove();
+      } catch (_) {}
+    }, 600);
+  }
+
   /**
    * Save Calendar 2026/27 PDF to My Documents (idempotent per user).
    * @returns {Promise<{ savedToDocuments: boolean, alreadyHad?: boolean }>}
    */
-  global.portalSaveCalendar202627PdfToMyDocuments = async function portalSaveCalendar202627PdfToMyDocuments() {
+  global.portalSaveCalendar202627PdfToMyDocuments = async function portalSaveCalendar202627PdfToMyDocuments(opts) {
+    var pdfBlob =
+      opts && opts.blob instanceof Blob ? opts.blob : await htmlSectionToPdfBlob();
     var docs = await importDocumentsModule();
     if (
       typeof docs.portalRequireUser !== "function" ||
@@ -179,9 +291,8 @@
       .limit(1);
     if (existing.error) throw existing.error;
     if (existing.data && existing.data.length) {
-      return { savedToDocuments: true, alreadyHad: true };
+      return { savedToDocuments: true, alreadyHad: true, blob: pdfBlob };
     }
-    var pdfBlob = await posterImageToPdfBlob();
     await docs.portalUploadPdfAndCreateDocument({
       blob: pdfBlob,
       document_type: DOC_TYPE,
@@ -192,6 +303,17 @@
       related_session_key: DOC_SESSION_KEY,
       reuseAuth: auth,
     });
-    return { savedToDocuments: true, alreadyHad: false };
+    return { savedToDocuments: true, alreadyHad: false, blob: pdfBlob };
+  };
+
+  /**
+   * Optional download: saves once to My Documents, always offers a browser PDF download.
+   * @returns {Promise<{ savedToDocuments: boolean, alreadyHad?: boolean }>}
+   */
+  global.portalDownloadCalendar202627Pdf = async function portalDownloadCalendar202627Pdf() {
+    var pdfBlob = await htmlSectionToPdfBlob();
+    var result = await global.portalSaveCalendar202627PdfToMyDocuments({ blob: pdfBlob });
+    triggerBrowserPdfDownload(pdfBlob, "Calendar 2026-27.pdf");
+    return result;
   };
 })(typeof window !== "undefined" ? window : globalThis);
