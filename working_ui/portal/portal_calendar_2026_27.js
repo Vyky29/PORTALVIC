@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-dual-cal-fix";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-info";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -212,7 +212,22 @@
   };
 
   global.portalSignableItemIsCalendar202627 = function portalSignableItemIsCalendar202627(item) {
+    var annId = String((item && item.portalAnnouncementId) || "").trim();
+    if (annId === CALENDAR_ANNOUNCEMENT_ID) return true;
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === ON_ACK_ACTION;
+  };
+
+  /** Live calendar announcement row from dashboard notices (informational — no signature). */
+  global.portalCalendar202627NoticeItem = function portalCalendar202627NoticeItem() {
+    try {
+      var dd = global.dashboardData;
+      var raw = dd && Array.isArray(dd.notices) ? dd.notices : [];
+      for (var i = 0; i < raw.length; i++) {
+        var n = raw[i];
+        if (n && global.portalSignableItemIsCalendar202627(n)) return n;
+      }
+    } catch (_) {}
+    return null;
   };
 
   global.portalCalendar202627AckKeySuffix = function portalCalendar202627AckKeySuffix() {

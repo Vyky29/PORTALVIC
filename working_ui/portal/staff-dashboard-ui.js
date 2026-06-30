@@ -264,8 +264,9 @@
         const pendingAnnCount = typeof portalActiveAnnouncementItems === 'function'
           ? portalActiveAnnouncementItems().length
           : 0;
+        const hasCalendarInfo = !!(typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem());
         const hasNoticesEarly = !!(grid && grid.childElementCount > 0);
-        if(!pendingAnnCount && !hasNoticesEarly){
+        if(!pendingAnnCount && !hasNoticesEarly && !hasCalendarInfo){
           grp.hidden = true;
           return;
         }
@@ -349,6 +350,21 @@
             'menu-btn--announcement-attention'
           ),
           'pending'
+        );
+      }
+      const calendarItem = typeof portalCalendar202627NoticeItem === 'function'
+        ? portalCalendar202627NoticeItem()
+        : null;
+      if(calendarItem){
+        appendAnnouncementSubcategory(
+          'Reference',
+          buildAnnouncementQuickRow(
+            'announcementCalendarInfo',
+            'Day Centre Calendar 2026/27',
+            'Open term dates calendar — optional PDF download to My Documents',
+            'menu-btn--announcement-signed'
+          ),
+          'signed'
         );
       }
       const signedHistoryRows = typeof portalSignedMessageHistoryRows === 'function'
@@ -4121,6 +4137,14 @@
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         return;
       }
+      const calAnn = e.target.closest('#announcementCalendarInfo');
+      if(calAnn){
+        e.preventDefault();
+        if(typeof portalOpenAnnouncementsSheet === 'function'){
+          portalOpenAnnouncementsSheet('calendarInfo');
+        }
+        return;
+      }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
       if(ann){
         e.preventDefault();
@@ -4142,6 +4166,14 @@
       if(pol){
         e.preventDefault();
         openSheet('safeguardingFeedbackPolicySheet');
+        return;
+      }
+      const calAnn = e.target.closest('#announcementCalendarInfo');
+      if(calAnn){
+        e.preventDefault();
+        if(typeof portalOpenAnnouncementsSheet === 'function'){
+          portalOpenAnnouncementsSheet('calendarInfo');
+        }
         return;
       }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');

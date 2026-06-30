@@ -3688,10 +3688,11 @@
 
     const PORTAL_ANNOUNCEMENT_ACK_STORAGE = 'portalAnnouncementAckMap_v1';
     let portalAnnouncementLockRequired = false;
-    /** 'signedLog' = quick menu signed history; 'newNotice' = pending sign flow. */
+    /** 'signedLog' | 'calendarInfo' | 'newNotice' (signable pending only). */
     let portalAnnouncementsSheetEntry = '';
     function portalOpenAnnouncementsSheet(entry){
-      portalAnnouncementsSheetEntry = entry === 'signedLog' ? 'signedLog' : 'newNotice';
+      portalAnnouncementsSheetEntry =
+        entry === 'signedLog' ? 'signedLog' : entry === 'calendarInfo' ? 'calendarInfo' : 'newNotice';
       openSheet('announcementsSheet');
     }
     function portalAnnouncementAckMapLoad(){
@@ -4157,6 +4158,31 @@
     function portalSignableItemIsReminder(item){
       return !!(item && (String(item.type || '') === 'reminder' || item.portalAdminReminderId));
     }
+    function portalMountCalendar202627AnnouncementCard(host, item){
+      if(!host || !item) return;
+      const t = portalFixMojibakeText(String(item.title || 'Day Centre Calendar 2026/27').trim() || 'Day Centre Calendar 2026/27');
+      const txt = String(item.text || '').trim() || 'Term dates and calendar for the 2026/27 academic year.';
+      const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
+        ? portalFormatSignableMessageHtml(txt)
+        : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
+      host.innerHTML =
+        '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27 announcement-lock-card--calendar-info">' +
+          '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+          '<span class="announcement-lock-badge announcement-lock-badge--announcement">Calendar</span></div>' +
+          '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+          '<div class="portal-calendar-2026-27-preview" id="portalCalendar202627PreviewHost">' +
+            '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Loading calendar…</p>' +
+          '</div>' +
+          '<div class="announcement-lock-actions announcement-lock-actions--calendar">' +
+            '<button type="button" class="announcement-download-btn" id="calendar202627DownloadBtn">Download PDF to My Documents</button>' +
+            '<p class="announcement-download-hint" id="calendar202627DownloadStatus" hidden></p>' +
+            '<p class="announcement-message-p" style="margin:0;font-size:13px;color:var(--muted,#728290);">Optional — save a copy to My Documents for your records.</p>' +
+          '</div>' +
+        '</article>';
+      if(typeof portalLoadCalendar202627Into === 'function'){
+        void portalLoadCalendar202627Into(document.getElementById('portalCalendar202627PreviewHost'));
+      }
+    }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
       if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
@@ -4164,6 +4190,12 @@
       const remAck = portalReminderAckMapLoad();
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
+        if(
+          typeof portalSignableItemIsCalendar202627 === 'function' &&
+          portalSignableItemIsCalendar202627(n)
+        ){
+          return;
+        }
         const k = portalAnnouncementSignatureKey(n);
         const contractKey = n && n.portalContractId ? ('portal-ann:contract:' + String(n.portalContractId)) : '';
         const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]);
@@ -4205,6 +4237,7 @@
     }
     window.portalActiveAnnouncementItems = portalActiveAnnouncementItems;
     window.portalAnnouncementPendingItem = portalAnnouncementPendingItem;
+    window.portalMountCalendar202627AnnouncementCard = portalMountCalendar202627AnnouncementCard;
     function portalAnnouncementLockActive(){
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
@@ -4363,8 +4396,17 @@
       const hostHistory = document.getElementById('announcementHistoryHost');
       if(!hostPending || !hostHistory) return;
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
-      const pending = signedLogView ? null : portalAnnouncementPendingItem();
-      if(pending){
+      const calendarInfoView = portalAnnouncementsSheetEntry === 'calendarInfo';
+      const calendarItem =
+        typeof portalCalendar202627NoticeItem === 'function' ? portalCalendar202627NoticeItem() : null;
+      const pending = signedLogView || calendarInfoView ? null : portalAnnouncementPendingItem();
+      if(calendarInfoView && calendarItem){
+        portalAnnouncementLockRequired = false;
+        portalMountCalendar202627AnnouncementCard(hostPending, calendarItem);
+        hostHistory.innerHTML = '';
+        hostHistory.hidden = true;
+        hostHistory.setAttribute('aria-hidden', 'true');
+      }else if(pending){
         portalAnnouncementLockRequired = true;
         const isReminder = portalSignableItemIsReminder(pending);
         const kindLabel = isReminder ? 'Reminder' : 'Announcement';
@@ -4404,28 +4446,6 @@
                 '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile</button>' +
               '</div>' +
             '</article>';
-        }else if(
-          typeof portalSignableItemIsCalendar202627 === 'function' &&
-          portalSignableItemIsCalendar202627(pending)
-        ){
-          hostPending.innerHTML =
-            '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27">' +
-              '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
-              '<span class="announcement-lock-badge announcement-lock-badge--announcement">Calendar</span></div>' +
-              '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
-              '<div class="portal-calendar-2026-27-preview" id="portalCalendar202627PreviewHost">' +
-                '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Loading calendar…</p>' +
-              '</div>' +
-              '<div class="announcement-lock-actions announcement-lock-actions--calendar">' +
-                '<button type="button" class="announcement-download-btn" id="calendar202627DownloadBtn">Download PDF to My Documents</button>' +
-                '<p class="announcement-download-hint" id="calendar202627DownloadStatus" hidden></p>' +
-                '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm" name="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
-                '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
-              '</div>' +
-            '</article>';
-          if(typeof portalLoadCalendar202627Into === 'function'){
-            void portalLoadCalendar202627Into(document.getElementById('portalCalendar202627PreviewHost'));
-          }
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +

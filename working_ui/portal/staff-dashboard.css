@@ -1469,6 +1469,10 @@
       border-color:rgba(244,63,94,.24);
       background:linear-gradient(180deg,#fffafa 0%,#fff1f2 100%);
     }
+    .announcement-lock-card--calendar-info{
+      border-color:rgba(22,43,91,.2);
+      background:#fff;
+    }
     .portal-calendar-2026-27-preview{
       margin:12px 0 4px;
       min-width:0;
