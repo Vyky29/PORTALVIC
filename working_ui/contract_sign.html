@@ -113,16 +113,27 @@
     }
 
     function contractNamesMatch(typed, expected) {
-      const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const norm = (s) =>
+        String(s || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
       const t = norm(typed);
       const e = norm(expected);
       if (!t || !e) return false;
       if (t === e) return true;
-      const tParts = t.split(" ");
-      const eParts = e.split(" ");
-      if (tParts.length <= eParts.length) {
-        return tParts.every((part, i) => eParts[i] === part);
-      }
+      const tParts = t.split(" ").filter(Boolean);
+      const eParts = e.split(" ").filter(Boolean);
+      if (!tParts.length || !eParts.length) return false;
+      // Legacy: typed is an in-order prefix of the expected name.
+      if (tParts.length <= eParts.length && tParts.every((part, i) => eParts[i] === part)) return true;
+      // Lenient: every typed token appears somewhere in the expected name (any order).
+      if (tParts.every((part) => eParts.indexOf(part) >= 0)) return true;
+      // First name or last name alone is acceptable.
+      if (tParts.length === 1 && (tParts[0] === eParts[0] || tParts[0] === eParts[eParts.length - 1])) return true;
       return false;
     }
 
@@ -132,6 +143,33 @@
         directorSignatureDataUrl: contractRow.director_signature,
         employeeSignatureDataUrl: employeeSig || ""
       }, contractKind);
+    }
+
+    function canvasHasInk(canvas) {
+      try {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width, h = canvas.height;
+        if (!w || !h) return false;
+        const data = ctx.getImageData(0, 0, w, h).data;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] !== 0) return true;
+        }
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Safety net: capture the signature straight from the canvas in case the
+    // pad's own pointer/touch callback does not fire on some mobile browsers.
+    function captureSignatureFromCanvas() {
+      const canvas = $("sigCanvas");
+      if (!canvas) return;
+      if (canvasHasInk(canvas)) {
+        sigUrl = canvas.toDataURL("image/png");
+        renderPreview(sigUrl);
+      }
+      updateSubmit();
     }
 
     function updateSubmit() {
@@ -190,6 +228,13 @@
             updateSubmit();
           });
           if (padApi && padApi.resize) padApi.resize();
+          const canvas = $("sigCanvas");
+          ["pointerup", "mouseup", "touchend"].forEach((ev) => {
+            canvas.addEventListener(ev, () => {
+              // Let the pad finish its own stroke handler first, then read the canvas.
+              setTimeout(captureSignatureFromCanvas, 0);
+            });
+          });
           updateSubmit();
         });
       } catch (e) {
