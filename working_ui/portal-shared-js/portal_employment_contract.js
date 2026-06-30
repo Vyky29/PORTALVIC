@@ -409,6 +409,44 @@ export async function portalRepairEmploymentContractByDocumentId(documentId) {
   return portalRepairCompletedContractDocument(row.id, { force: true });
 }
 
+/**
+ * Render the signed contract as responsive HTML (for the in-app viewer in
+ * My Documents) given the document id it was saved under. Returns the HTML
+ * string, or null when no matching contract row is found (e.g. an
+ * admin-uploaded PDF with no employment_contracts record).
+ */
+export async function portalRenderContractHtmlByDocumentId(documentId) {
+  const docId = String(documentId || "").trim();
+  if (!docId) return null;
+  const C = await portalContractLoadModule();
+  const { supabase, user } = await portalContractGetAuth();
+  const { data: row, error } = await supabase
+    .from("employment_contracts")
+    .select("template_data, director_signature, employee_signature, form_payload, contract_reference, role")
+    .eq("document_id", docId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !row) return null;
+  if (C.loadLogo && !C.logoDataUrl) {
+    const logo = await C.loadLogo();
+    if (logo) C.logoDataUrl = logo;
+  }
+  const td = row.template_data || {};
+  const kind =
+    td.CONTRACT_KIND || (row.form_payload && row.form_payload.contractKind) || "zero_hours";
+  const filled = C.fillTemplate(td, kind);
+  return C.renderContractHtml(
+    filled,
+    false,
+    {
+      directorSignatureDataUrl: row.director_signature,
+      employeeSignatureDataUrl: row.employee_signature,
+      logoDataUrl: C.logoDataUrl || ""
+    },
+    kind
+  );
+}
+
 export function portalContractSignPageUrl(contractId) {
   const base = typeof location !== "undefined" ? location.origin + location.pathname.replace(/[^/]+$/, "") : "";
   return base + "contract_sign.html?contract_id=" + encodeURIComponent(contractId);
