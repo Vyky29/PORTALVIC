@@ -4403,7 +4403,7 @@
         ){
           var posterUrl = typeof portalCalendar202627PosterUrl === 'function'
             ? portalCalendar202627PosterUrl()
-            : '/portal/assets/calendar-2026-27-poster.png';
+            : '/portal/assets/calendar-2026-27-poster.png?v=20260701-calendar';
           hostPending.innerHTML =
             '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27">' +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +

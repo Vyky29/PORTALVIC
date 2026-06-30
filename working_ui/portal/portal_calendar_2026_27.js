@@ -76,18 +76,37 @@
     return loadScript(JSPDF_URL);
   }
 
-  function loadImage(url) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function () {
-        resolve(img);
-      };
-      img.onerror = function () {
-        reject(new Error("Could not load calendar poster"));
-      };
-      img.src = url;
-    });
+  function calendarPosterFetchUrl(url) {
+    var raw = String(url || POSTER_URL).trim() || POSTER_URL;
+    if (raw.indexOf("http://") === 0 || raw.indexOf("https://") === 0) return raw;
+    try {
+      if (typeof location !== "undefined" && location.href) {
+        return new URL(raw, location.href).href;
+      }
+    } catch (_) {}
+    return raw;
+  }
+
+  async function loadImage(url) {
+    var fetchUrl = calendarPosterFetchUrl(url);
+    var res = await fetch(fetchUrl, { cache: "force-cache" });
+    if (!res.ok) throw new Error("Could not load calendar poster");
+    var blob = await res.blob();
+    var objectUrl = URL.createObjectURL(blob);
+    try {
+      return await new Promise(function (resolve, reject) {
+        var img = new Image();
+        img.onload = function () {
+          resolve(img);
+        };
+        img.onerror = function () {
+          reject(new Error("Could not decode calendar poster"));
+        };
+        img.src = objectUrl;
+      });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   }
 
   async function importDocumentsModule() {
@@ -107,7 +126,7 @@
 
   async function posterImageToPdfBlob() {
     await ensureJsPdf();
-    var img = await loadImage(POSTER_URL);
+    var img = await loadImage(POSTER_URL + "?v=20260701-calendar");
     var w = img.naturalWidth || 1600;
     var h = img.naturalHeight || 1131;
     if (!global.jspdf || !global.jspdf.jsPDF) throw new Error("jsPDF missing");
@@ -131,7 +150,7 @@
   }
 
   global.portalCalendar202627PosterUrl = function portalCalendar202627PosterUrl() {
-    return POSTER_URL;
+    return POSTER_URL + "?v=20260701-calendar";
   };
 
   global.portalSignableItemIsCalendar202627 = function portalSignableItemIsCalendar202627(item) {
