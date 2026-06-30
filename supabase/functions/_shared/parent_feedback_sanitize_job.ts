@@ -61,14 +61,26 @@ function hasReviewableNotes(row: SessionFeedbackRow): boolean {
   return pos.length > 0 || rel.length > 0;
 }
 
+export type ParticipantLite = {
+  contact_id?: string | null;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+};
+
 async function resolveContactIdForFeedback(
   supabase: SupabaseClient,
   clientName: string,
   clientId: string,
+  preloadedParticipants?: ParticipantLite[],
 ): Promise<string> {
-  const { data: participants } = await supabase
-    .from("portal_participants")
-    .select("contact_id, display_name, first_name, last_name");
+  let participants = preloadedParticipants;
+  if (!participants) {
+    const { data } = await supabase
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name, last_name");
+    participants = data || [];
+  }
 
   for (const p of participants || []) {
     if (
@@ -112,6 +124,7 @@ function buildSanitizeInput(row: SessionFeedbackRow, clientDisplayName: string):
 export async function sanitizeAndCacheParentFeedbackShare(
   supabase: SupabaseClient,
   row: SessionFeedbackRow,
+  preloadedParticipants?: ParticipantLite[],
 ): Promise<{ ok: boolean; skipped?: string; share_status?: string }> {
   const id = String(row.id || "").trim();
   if (!id) return { ok: false, skipped: "no_id" };
@@ -124,6 +137,7 @@ export async function sanitizeAndCacheParentFeedbackShare(
           supabase,
           clean(row.client_name, 200),
           clean(row.client_id, 200),
+          preloadedParticipants,
         ),
         source_fingerprint: "absent",
         parent_message: null,
@@ -143,14 +157,19 @@ export async function sanitizeAndCacheParentFeedbackShare(
 
   const clientName = clean(row.client_name, 200);
   const clientId = clean(row.client_id, 200);
-  const contactId = await resolveContactIdForFeedback(supabase, clientName, clientId);
+  const contactId = await resolveContactIdForFeedback(
+    supabase,
+    clientName,
+    clientId,
+    preloadedParticipants,
+  );
   const displayName = clientName || clientId || "Participant";
   const input = buildSanitizeInput(row, displayName);
   const fingerprint = await feedbackSourceFingerprint(input);
 
   const { data: existing } = await supabase
     .from("portal_parent_feedback_share")
-    .select("source_fingerprint, share_status, admin_edited_at")
+    .select("source_fingerprint, share_status, admin_edited_at, review_model")
     .eq("session_feedback_id", id)
     .maybeSingle();
 
@@ -158,10 +177,14 @@ export async function sanitizeAndCacheParentFeedbackShare(
     return { ok: true, skipped: "admin_edited", share_status: String(existing.share_status || "hidden") };
   }
 
+  // Refresh rows left empty by the earlier no-OpenAI fallback even if the source
+  // is unchanged, so restored fallback drafts populate the family-summary column.
+  const wasBrokenFallback = String(existing?.review_model || "") === "fallback-no-openai";
   if (
     existing &&
     existing.source_fingerprint === fingerprint &&
-    existing.share_status !== "pending"
+    existing.share_status !== "pending" &&
+    !wasBrokenFallback
   ) {
     return { ok: true, skipped: "unchanged", share_status: String(existing.share_status) };
   }

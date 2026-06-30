@@ -21,8 +21,21 @@ function str(v: unknown, max = 4000): string {
   return String(v ?? "").trim().slice(0, max);
 }
 
-function fallbackSanitize(_input: SanitizeInput): SanitizeResult {
-  return { share_status: "hidden", parent_message: "", review_model: "fallback-no-openai" };
+/**
+ * No-OpenAI fallback: draft a parent summary from the staff positive note so the
+ * admin family-summary column is populated and reviewable. Admins can edit/hide
+ * before parents rely on it; relevant_information (internal) is never used here.
+ */
+function fallbackSanitize(input: SanitizeInput): SanitizeResult {
+  const positive = str(input.positiveFeedback, 2000);
+  if (positive.length >= 15) {
+    return {
+      share_status: "approved",
+      parent_message: positive,
+      review_model: "fallback-positive-only",
+    };
+  }
+  return { share_status: "hidden", parent_message: "", review_model: "fallback-empty" };
 }
 
 export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<SanitizeResult> {

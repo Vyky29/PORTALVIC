@@ -3545,6 +3545,7 @@
     }
     this.indexAbsentMarks();
     this.indexParentShares();
+    this.ensureParentSharesGenerated();
     if (this.mode === "feedback") this.initFeedbackDateRange();
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
@@ -5369,6 +5370,63 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var id = fb && (fb.id || fb.session_feedback_id);
     if (!id || !this._parentShareByFbId) return null;
     return this._parentShareByFbId[String(id)] || null;
+  };
+
+  /**
+   * Fill the family-summary column for feedback rows that have notes but no
+   * generated share yet (e.g. parents haven't opened the portal). Runs once per
+   * payload load, in the background, then re-renders so admins can review.
+   */
+  AdminSessionsHub.prototype.ensureParentSharesGenerated = function () {
+    var hub = this;
+    if (typeof global.portalAdminGenerateParentFeedbackShares !== "function") return;
+    var rows = (hub.payload && hub.payload.session_feedback) || [];
+    if (!rows.length) return;
+    var have = hub._parentShareByFbId || {};
+    var missing = [];
+    var seen = {};
+    for (var i = 0; i < rows.length; i++) {
+      var fb = rows[i];
+      var id = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
+      if (!id || seen[id]) continue;
+      var pos = clean(fb && fb.positive_feedback);
+      var rel = clean(fb && fb.relevant_information);
+      if (!pos && !rel) continue; // nothing to summarise
+      var existing = have[id];
+      if (existing && String(existing.share_status || "") !== "pending") continue;
+      seen[id] = true;
+      missing.push(id);
+    }
+    if (!missing.length) return;
+    if (hub._generatedShareKey) {
+      var key = missing.slice().sort().join(",");
+      if (hub._generatedShareKey === key) return; // already attempted this set
+      hub._generatedShareKey = key;
+    } else {
+      hub._generatedShareKey = missing.slice().sort().join(",");
+    }
+    var batch = missing.slice(0, 120);
+    global.portalAdminGenerateParentFeedbackShares(batch)
+      .then(function (res) {
+        if (!res || !res.ok || !res.shares || !res.shares.length) return;
+        var list = (hub.payload.parent_feedback_shares = hub.payload.parent_feedback_shares || []);
+        var byId = {};
+        for (var j = 0; j < list.length; j++) {
+          byId[String(list[j].session_feedback_id)] = j;
+        }
+        for (var k = 0; k < res.shares.length; k++) {
+          var sh = res.shares[k];
+          var sid = String(sh.session_feedback_id);
+          if (byId[sid] != null) list[byId[sid]] = Object.assign({}, list[byId[sid]], sh);
+          else { byId[sid] = list.length; list.push(sh); }
+        }
+        hub.indexParentShares();
+        if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+        else hub.render();
+      })
+      .catch(function (e) {
+        console.debug("[AdminSessionsHub] generate family summaries", e);
+      });
   };
 
   AdminSessionsHub.prototype.htmlFamilySummaryCell = function (fb, escFn, terminal) {
