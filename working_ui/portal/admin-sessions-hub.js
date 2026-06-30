@@ -3544,6 +3544,7 @@
       );
     }
     this.indexAbsentMarks();
+    this.indexParentShares();
     if (this.mode === "feedback") this.initFeedbackDateRange();
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
@@ -5351,7 +5352,81 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Positive</th><th>Relevant</th><th>Reviewed by:</th>";
+    "<th>Positive</th><th>Relevant</th><th>Family summary</th><th>Reviewed by:</th>";
+
+  AdminSessionsHub.prototype.indexParentShares = function () {
+    var map = {};
+    var rows = (this.payload && this.payload.parent_feedback_shares) || [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var id = String((r && r.session_feedback_id) || "").trim();
+      if (id) map[id] = r;
+    }
+    this._parentShareByFbId = map;
+  };
+
+  AdminSessionsHub.prototype.parentShareForFeedback = function (fb) {
+    var id = fb && (fb.id || fb.session_feedback_id);
+    if (!id || !this._parentShareByFbId) return null;
+    return this._parentShareByFbId[String(id)] || null;
+  };
+
+  AdminSessionsHub.prototype.htmlFamilySummaryCell = function (fb, escFn, terminal) {
+    var esc = escFn || this.escapeHtml;
+    if (terminal) return '<td class="ash-cell-note"><span class="ash-cell-muted">N/A</span></td>';
+    var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
+    if (!fbId) {
+      return '<td class="ash-cell-note ash-cell-family"><span class="ash-cell-muted">—</span></td>';
+    }
+    var share = this.parentShareForFeedback(fb);
+    var msg = share && share.parent_message ? String(share.parent_message) : "";
+    var status = share ? String(share.share_status || "") : "";
+    var pending = !share || status === "pending";
+    var edited = !!(share && share.admin_edited_at);
+    var hint = pending
+      ? "Preparing family summary…"
+      : status === "hidden" && !msg
+        ? "Hidden from families"
+        : "";
+    return (
+      '<td class="ash-cell-note ash-cell-family">' +
+      '<div class="ash-family-summary">' +
+      (edited ? '<span class="ash-family-summary__tag">Edited</span>' : "") +
+      '<textarea class="ash-family-summary__input" rows="3" data-ash-family-msg="' +
+      esc(fbId) +
+      '" placeholder="' +
+      esc(pending ? "Preparing…" : "Family summary for parents") +
+      '">' +
+      esc(msg) +
+      "</textarea>" +
+      (hint ? '<span class="ash-family-summary__hint">' + esc(hint) + "</span>" : "") +
+      '<button type="button" class="ash-family-summary__save" data-ash-family-save="' +
+      esc(fbId) +
+      '">Save</button>' +
+      "</div></td>"
+    );
+  };
+
+  AdminSessionsHub.prototype.saveParentShare = async function (feedbackId, message) {
+    var hub = this;
+    if (typeof global.portalAdminSaveParentFeedbackShare !== "function") {
+      throw new Error("save_unavailable");
+    }
+    var res = await global.portalAdminSaveParentFeedbackShare(feedbackId, message);
+    if (!res || !res.ok) throw new Error((res && res.error) || "save_failed");
+    var rows = (hub.payload.parent_feedback_shares = hub.payload.parent_feedback_shares || []);
+    var found = false;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].session_feedback_id) === String(feedbackId)) {
+        rows[i] = Object.assign({}, rows[i], res.share || {});
+        found = true;
+        break;
+      }
+    }
+    if (!found && res.share) rows.push(res.share);
+    hub.indexParentShares();
+    return res;
+  };
 
   /** Portal feedback row must match a roster slot on that calendar day (e.g. Tom Thu only, Gabriel Sun only). */
   AdminSessionsHub.prototype.feedbackAllowedOnCalendarDay = function (fb) {
@@ -5744,7 +5819,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(clean(awaitSlot.service) || "\u2014") +
           awaitTime +
           "</td>" +
-          '<td colspan="5" class="ash-td-center">' +
+          '<td colspan="6" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -5767,7 +5842,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(awaitSvc) +
         awaitTime +
         "</td>" +
-        '<td colspan="5" class="ash-td-center">' +
+        '<td colspan="6" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
         '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -5857,6 +5932,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
+      hub.htmlFamilySummaryCell(fb, esc, terminal) +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
       '</div><div class="ash-cell-sub">' +
@@ -5896,7 +5972,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         .join("");
       if (!tableRows) {
         tableRows =
-          '<tr><td colspan="8"><div class="ash-empty">' +
+          '<tr><td colspan="9"><div class="ash-empty">' +
           esc((opts && opts.emptyMsg) || "No feedback for this day.") +
           "</div></td></tr>";
       }
@@ -6057,6 +6133,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (hub._modalFb) hub.markFeedbackHandled(hub._modalFb);
         hub.closeModal();
         hub.renderPanels();
+        return;
+      }
+      var saveFamilyBtn = t.closest("[data-ash-family-save]");
+      if (saveFamilyBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var fid = saveFamilyBtn.getAttribute("data-ash-family-save") || "";
+        var wrap = saveFamilyBtn.closest(".ash-family-summary");
+        var ta = wrap && wrap.querySelector("[data-ash-family-msg]");
+        if (!fid || !ta) return;
+        saveFamilyBtn.disabled = true;
+        saveFamilyBtn.textContent = "Saving…";
+        void hub
+          .saveParentShare(fid, ta.value)
+          .then(function () {
+            saveFamilyBtn.textContent = "Saved";
+            setTimeout(function () {
+              saveFamilyBtn.textContent = "Save";
+              saveFamilyBtn.disabled = false;
+            }, 1200);
+            var tag = wrap.querySelector(".ash-family-summary__tag");
+            if (!tag) {
+              var el = document.createElement("span");
+              el.className = "ash-family-summary__tag";
+              el.textContent = "Edited";
+              wrap.insertBefore(el, wrap.firstChild);
+            }
+          })
+          .catch(function () {
+            saveFamilyBtn.textContent = "Save";
+            saveFamilyBtn.disabled = false;
+            window.alert("Could not save family summary. Try again.");
+          });
+        return;
+      }
+      if (t.closest(".ash-family-summary")) {
+        ev.stopPropagation();
         return;
       }
       var fbRow = t.closest("[data-ash-fb-row]");
@@ -7035,7 +7148,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       .join("");
     if (!tableRows) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No attended feedback this week.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">No attended feedback this week.</div></td></tr>';
     }
     return (
       '<div class="ash-log-week__expanded">' +
@@ -7184,10 +7297,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
     } else if (!tableRows) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
     var weekBlock =

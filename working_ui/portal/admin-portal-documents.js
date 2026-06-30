@@ -45,7 +45,8 @@
     filter: 'all',
     search: '',
     items: [],
-    previewIdx: -1
+    previewIdx: -1,
+    expenseUnpaidCount: 0
   };
 
   function configure(options) {
@@ -131,12 +132,15 @@
       var exPath = r.file_url || r.path || '';
       return {
         type: 'expense',
+        id: r.id || '',
         name: exName,
         path: exPath,
         storageBucket: 'documents',
         size: null,
         created: r.created_at || deriveCreatedFromName(exName, exPath),
         source: 'portal',
+        isPaid: !!r.is_paid || !!r.expense_admin_paid_at,
+        expenseAdminPaidAt: r.expense_admin_paid_at || null,
         details: r
       };
     });
@@ -192,9 +196,10 @@
       global._portalDocsTimesheetMeta = ts.data.meta || {};
       out = out.concat(normalizeTimesheetRows(ts.data.timesheets));
     }
-    var ex = await edgePost('portal-admin-expenses-list', {});
+    var ex = await edgePost('portal-admin-expenses-list', { unpaid_since: '2026-04-01' });
     if (!ex.error) {
       global._portalDocsExpensesMeta = ex.data.meta || {};
+      state.expenseUnpaidCount = Number((ex.data.meta && ex.data.meta.unpaid_count) || 0);
       out = out.concat(normalizeExpenseRows(ex.data.expenses));
     }
     return out;
@@ -364,13 +369,47 @@
     if (root) root.classList.remove('portal-documents--has-preview');
   }
 
+  async function markExpensePaid(documentId, paid) {
+    var res = await edgePost('portal-admin-expense-mark-paid', {
+      document_id: documentId,
+      paid: paid !== false
+    });
+    if (res.error) throw new Error(res.error);
+    if (typeof global.portalAdminBellRemoveExpenseUnpaid === 'function') {
+      global.portalAdminBellRemoveExpenseUnpaid(documentId);
+    }
+    return res.data;
+  }
+
+  function renderExpenseUnpaidBanner() {
+    var el = document.getElementById('portalDocumentsExpenseBanner');
+    if (!el) return;
+    var n = state.expenseUnpaidCount || 0;
+    if (!n) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML =
+      '<div class="portal-documents-expense-banner" role="status">' +
+      '<strong>' + esc(String(n)) + ' expense' + (n === 1 ? '' : 's') + ' pending payment</strong>' +
+      '<span>Since April 2026 — remember to include them in monthly payroll.</span>' +
+      '</div>';
+  }
+
   function rowMetaHtml(it) {
     if (it.type === 'expense' && it.details) {
       var ex = it.details;
-      return (
-        (ex.category ? 'Category: ' + esc(ex.category) + ' · ' : '') +
-        (ex.related_date ? 'Date: ' + esc(ex.related_date) : '')
-      );
+      var bits = [];
+      if (ex.category) bits.push('Category: ' + esc(ex.category));
+      if (ex.related_date) bits.push('Date: ' + esc(ex.related_date));
+      if (it.isPaid) {
+        bits.push('<span class="portal-documents-expense-paid">Paid</span>');
+      } else {
+        bits.push('<span class="portal-documents-expense-unpaid">Pending payment</span>');
+      }
+      return bits.join(' · ');
     }
     return it.path ? esc(it.path) : '';
   }
@@ -387,19 +426,46 @@
     tbody.innerHTML = items
       .map(function (it, idx) {
         var typeLabel = TYPE_LABELS[it.type] || it.type || 'Other';
+        var actionHtml = '—';
+        if (it.path) {
+          actionHtml = '<button type="button" class="portal-forms-view-btn" data-portal-doc-view="' + idx + '">View</button>';
+        }
+        if (it.type === 'expense' && it.id) {
+          var paidLabel = it.isPaid ? 'Mark unpaid' : 'Mark paid';
+          var paidClass = it.isPaid ? 'portal-forms-view-btn' : 'portal-forms-view-btn portal-documents-expense-mark-btn';
+          actionHtml +=
+            ' <button type="button" class="' + paidClass + '" data-portal-expense-paid="' + esc(it.id) + '" data-portal-expense-is-paid="' + (it.isPaid ? '1' : '0') + '">' + paidLabel + '</button>';
+        }
         return (
           '<tr class="portal-documents-data-row" data-portal-doc-idx="' + idx + '">' +
           '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
           '<td><div class="portal-forms-cell-main">' + esc(it.name) + '</div><div class="portal-forms-cell-sub">' + rowMetaHtml(it) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
           '<td style="white-space:nowrap">' + esc(formatBytes(it.size)) + '</td>' +
-          '<td>' + (it.path ? '<button type="button" class="portal-forms-view-btn" data-portal-doc-view="' + idx + '">View</button>' : '—') + '</td></tr>'
+          '<td style="white-space:nowrap">' + actionHtml + '</td></tr>'
         );
       })
       .join('');
     tbody.querySelectorAll('[data-portal-doc-view]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         void openPreview(Number(btn.getAttribute('data-portal-doc-view')));
+      });
+    });
+    tbody.querySelectorAll('[data-portal-expense-paid]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var docId = String(btn.getAttribute('data-portal-expense-paid') || '').trim();
+        var isPaid = btn.getAttribute('data-portal-expense-is-paid') === '1';
+        if (!docId) return;
+        btn.disabled = true;
+        void markExpensePaid(docId, !isPaid)
+          .then(function () { return refresh(); })
+          .catch(function (err) {
+            console.error(err);
+            setStatus('<strong>Error</strong> ' + esc(err.message || String(err)), true);
+          })
+          .finally(function () {
+            btn.disabled = false;
+          });
       });
     });
   }
@@ -412,6 +478,7 @@
       await waitForClient();
       state.items = await loadAllItems();
       updateStats(state.items);
+      renderExpenseUnpaidBanner();
       renderTable(filteredItems());
       setStatus('');
     } catch (err) {
@@ -516,6 +583,11 @@
       '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#portalDocumentsRoot .portal-documents-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}' +
       '#portalDocumentsRoot .portal-documents-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}' +
+      '#portalDocumentsRoot .portal-documents-expense-banner{display:flex;flex-direction:column;gap:4px;padding:12px 14px;margin:0 0 14px;border-radius:12px;border:1px solid #f5c78a;background:#fff7ed;color:#7c2d12;font-size:13px;line-height:1.35}' +
+      '#portalDocumentsRoot .portal-documents-expense-banner strong{font-size:14px;color:#9a3412}' +
+      '#portalDocumentsRoot .portal-documents-expense-unpaid{color:#b45309;font-weight:700}' +
+      '#portalDocumentsRoot .portal-documents-expense-paid{color:#15803d;font-weight:700}' +
+      '#portalDocumentsRoot .portal-documents-expense-mark-btn{background:#0b2a5b;color:#fff;border:0}' +
       '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%}}' +
       '</style>'
     );
@@ -527,6 +599,7 @@
       styleHtml() +
       '<h1 class="page-title">Documents</h1>' +
       '<p class="page-intro" id="portalDocumentsMeta">Timesheets, expenses, and onboarding uploads from Portal Supabase.</p>' +
+      '<div id="portalDocumentsExpenseBanner" hidden></div>' +
       '<div id="portalDocumentsStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-documents-toolbar">' +
       '<input type="search" class="inp" id="portalDocumentsSearch" placeholder="Search files, names…" style="max-width:280px;min-width:0" />' +

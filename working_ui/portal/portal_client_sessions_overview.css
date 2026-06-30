@@ -379,6 +379,32 @@ body.portal-force-landscape{
   color:var(--muted,#728290);
   text-align:center;
   overflow-wrap:break-word;
+  min-width:0;
+}
+.pp-ach-dl-btn{
+  display:block;
+  width:100%;
+  margin-top:6px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(23,50,71,.14);
+  background:#fff;
+  color:var(--ink,#173247);
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pp-ach-dl-btn:active:not(:disabled){
+  background:#f1f5f9;
+}
+.pp-ach-dl-btn:disabled,
+.pp-ach-dl-btn--saved{
+  opacity:.72;
+  cursor:default;
 }
 .pp-participant-body{
   min-width:0;

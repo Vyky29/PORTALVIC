@@ -64,6 +64,7 @@
 
   function statusLabel(status) {
     if (status === "attached") return "In feedback";
+    if (status === "downloaded") return "Downloaded";
     if (status === "draft") return "Draft";
     if (status === "archived_unused") return "Not used";
     return "Not used";
@@ -91,6 +92,10 @@
       var day = formatSessionDate(row.session_date);
       return day ? "Used in feedback · " + day : "Used in feedback";
     }
+    if (row.status === "downloaded") {
+      var dlDay = formatSessionDate(row.parent_downloaded_at || row.session_date);
+      return dlDay ? "Downloaded by family · " + dlDay : "Downloaded by family";
+    }
     if (row.status === "archived_unused") return "Not used in feedback";
     if (row.status === "draft") return "Draft — not in feedback yet";
     return "Not used in feedback";
@@ -98,6 +103,7 @@
 
   function statusChipClass(status) {
     if (status === "attached") return "ok";
+    if (status === "downloaded") return "ok";
     if (status === "draft") return "warn";
     return "info";
   }
@@ -268,9 +274,9 @@
     var fallback = await client
       .from("portal_participant_achievement_photos")
       .select(
-        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key"
+        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key, parent_downloaded_at"
       )
-      .in("status", ["draft", "attached", "archived_unused"])
+      .in("status", ["draft", "attached", "archived_unused", "downloaded"])
       .order("client_name", { ascending: true })
       .order("created_at", { ascending: true });
     if (fallback.error) throw fallback.error;

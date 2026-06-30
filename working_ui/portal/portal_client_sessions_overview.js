@@ -675,8 +675,9 @@
     );
   }
 
-  function achievementsGalleryHtml(items) {
+  function achievementsGalleryHtml(items, opts) {
     var list = Array.isArray(items) ? items : [];
+    var parentDownloads = !!(opts && opts.parentDownloads);
     if (!list.length) {
       return '<p class="pcso-empty">No achievement photos shared yet.</p>';
     }
@@ -685,12 +686,26 @@
       list
         .map(function (a) {
           var when = formatDateLong(a.session_date);
+          var photoId = clean(a.id);
+          var isDownloaded = String(a.status || "").toLowerCase() === "downloaded";
+          var dlLabel = isDownloaded ? "Saved" : "Download";
+          var dlBtn = parentDownloads && photoId
+            ? '<button type="button" class="pp-ach-dl-btn' +
+              (isDownloaded ? " pp-ach-dl-btn--saved" : "") +
+              '" data-pp-ach-download="' +
+              esc(photoId) +
+              '"' +
+              (isDownloaded ? ' disabled aria-label="Already saved on your device"' : ' aria-label="Download achievement photo"') +
+              ">" +
+              esc(dlLabel) +
+              "</button>"
+            : "";
           return (
             '<figure class="pp-ach-item" role="listitem">' +
             '<a href="' + esc(a.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
             '<img src="' + esc(a.url || "") + '" alt="Achievement photo, ' + esc(when) + '" loading="lazy" width="160" height="160" />' +
             "</a>" +
-            '<figcaption class="pp-ach-cap">' + esc(when) + "</figcaption></figure>"
+            '<figcaption class="pp-ach-cap">' + esc(when) + dlBtn + "</figcaption></figure>"
           );
         })
         .join("") +

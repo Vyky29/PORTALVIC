@@ -395,18 +395,63 @@
     var gallery =
       global.PortalClientSessionsOverview &&
       typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
-        ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements)
+        ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
         : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
     host.innerHTML = subviewShell(
       data,
       "achievements",
       '<h3 class="pp-pax-subview-title">Achievement photos</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Photos from sessions — tap any image to view full size.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Photos from sessions — tap to view full size, or use Download to save to your device.</p>' +
         '<div class="pp-ach-view">' +
         gallery +
         "</div>",
     );
     bindBack(host, data, opts);
+    bindAchievementDownloads(host, data, opts);
+  }
+
+  function bindAchievementDownloads(host, data, opts) {
+    if (!opts || typeof opts.downloadAchievement !== "function") return;
+    host.querySelectorAll("[data-pp-ach-download]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.disabled) return;
+        var photoId = btn.getAttribute("data-pp-ach-download") || "";
+        if (!photoId) return;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        var prevLabel = btn.textContent;
+        btn.textContent = "Saving…";
+        void opts
+          .downloadAchievement(photoId)
+          .then(function (res) {
+            if (!res || !res.download_url) throw new Error("download_failed");
+            var link = document.createElement("a");
+            link.href = res.download_url;
+            link.download = res.filename || "achievement.jpg";
+            link.rel = "noopener";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            (data.achievements || []).forEach(function (a) {
+              if (String(a.id) === photoId) {
+                a.status = "downloaded";
+                if (res.downloaded_at) a.downloaded_at = res.downloaded_at;
+              }
+            });
+            btn.textContent = "Saved";
+            btn.classList.add("pp-ach-dl-btn--saved");
+            btn.setAttribute("aria-label", "Already saved on your device");
+          })
+          .catch(function () {
+            btn.disabled = false;
+            btn.textContent = prevLabel || "Download";
+            if (typeof opts.onSectionError === "function") opts.onSectionError("achievements");
+          })
+          .finally(function () {
+            btn.removeAttribute("aria-busy");
+          });
+      });
+    });
   }
 
   function renderSwim(host, data, opts) {

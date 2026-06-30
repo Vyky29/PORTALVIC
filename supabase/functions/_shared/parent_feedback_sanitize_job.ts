@@ -150,9 +150,13 @@ export async function sanitizeAndCacheParentFeedbackShare(
 
   const { data: existing } = await supabase
     .from("portal_parent_feedback_share")
-    .select("source_fingerprint, share_status")
+    .select("source_fingerprint, share_status, admin_edited_at")
     .eq("session_feedback_id", id)
     .maybeSingle();
+
+  if (existing?.admin_edited_at) {
+    return { ok: true, skipped: "admin_edited", share_status: String(existing.share_status || "hidden") };
+  }
 
   if (
     existing &&

@@ -12,6 +12,7 @@
     chat: false,
     late_approval: true,
     wellbeing: true,
+    expense_unpaid: true,
     staff_support: false,
   };
 
@@ -491,6 +492,71 @@
     };
   }
 
+  function activityFromUnpaidExpense(row) {
+    if (!row || !row.id) return null;
+    var title = String(row.title || row.name || "Expense").trim() || "Expense";
+    var d = String(row.related_date || row.created_at || "").trim().slice(0, 10);
+    return {
+      id: "expense-" + row.id,
+      title: "Expense · pending payment",
+      sub: title + (d ? " · " + d : "") + " — include in payroll",
+      created_at: row.created_at || new Date().toISOString(),
+      kind: "expense_unpaid",
+      view: "portal_docs_expense",
+      recordId: String(row.id || ""),
+      clientName: "",
+      sessionDate: d,
+    };
+  }
+
+  function removeExpenseUnpaidAlert(documentId) {
+    var id = "expense-" + String(documentId || "").trim();
+    if (!id || id === "expense-") return false;
+    var list = listRef();
+    var next = list.filter(function (a) {
+      return a.id !== id;
+    });
+    if (next.length === list.length) return false;
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = next;
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return true;
+  }
+
+  /**
+   * @param {(path: string, body: object) => Promise<{ error?: string, data?: object }>} edgePost
+   * @param {{ silent?: boolean, unpaid_since?: string }} [opts]
+   */
+  async function syncUnpaidExpensesFromServer(edgePost, opts) {
+    opts = opts || {};
+    if (typeof edgePost !== "function") return 0;
+    var list = listRef().filter(function (a) {
+      return !a || a.kind !== "expense_unpaid";
+    });
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
+    var res = await edgePost("portal-admin-expenses-list", {
+      unpaid_since: opts.unpaid_since || "2026-04-01",
+    });
+    if (res.error) {
+      console.warn("[admin-bell] unpaid expenses", res.error);
+      return 0;
+    }
+    var unpaid = (res.data && res.data.unpaid) || [];
+    unpaid.forEach(function (row) {
+      var a = activityFromUnpaidExpense(row);
+      if (a && typeof global.portalAdminPushActivityAlert === "function") {
+        global.portalAdminPushActivityAlert(a, { silent: opts.silent || bootstrapSilent });
+      }
+    });
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return unpaid.length;
+  }
+
   function removeLateRequestAlert(requestId) {
     var id = "late-" + String(requestId || "").trim();
     if (!id || id === "late-") return false;
@@ -720,5 +786,8 @@
   global.portalAdminBellSyncSupportUnread = syncSupportUnreadFromMessages;
   global.portalAdminBellClearStaffSupport = clearStaffSupportAlerts;
   global.portalAdminActivityFromSupportDm = activityFromSupportDm;
+  global.portalAdminBellRemoveExpenseUnpaid = removeExpenseUnpaidAlert;
+  global.portalAdminBellSyncUnpaidExpensesFromServer = syncUnpaidExpensesFromServer;
+  global.portalAdminActivityFromUnpaidExpense = activityFromUnpaidExpense;
   unlockBellAudioOnGesture();
 })(typeof window !== "undefined" ? window : globalThis);

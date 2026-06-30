@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
     if (feedbackIds.length) {
       const { data: cached } = await supabase
         .from("portal_parent_feedback_share")
-        .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at")
+        .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at, admin_edited_at")
         .in("session_feedback_id", feedbackIds);
       for (const row of cached || []) {
         cacheById.set(String(row.session_feedback_id), row);
@@ -329,7 +329,11 @@ Deno.serve(async (req) => {
       const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
       const cache = cacheById.get(id);
 
-      if (cache && cache.source_fingerprint === fingerprint && cache.share_status !== "pending") {
+      const adminEdited = !!(cache && cache.admin_edited_at);
+      if (
+        cache &&
+        (adminEdited || (cache.source_fingerprint === fingerprint && cache.share_status !== "pending"))
+      ) {
         const shareStatus = String(cache.share_status || "hidden");
         const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
         sessionsOut.push({
@@ -355,8 +359,8 @@ Deno.serve(async (req) => {
           patterns,
         });
       } else if (cache) {
-        shareStatus = String(cache.share_status || "hidden");
-        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        const shareStatus = String(cache.share_status || "hidden");
+        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
         sessionsOut.push({
           id,
           session_date: isoFromAny(row.session_date),
@@ -440,13 +444,13 @@ Deno.serve(async (req) => {
   let achievements: Record<string, unknown>[] = [];
 
   if (wantAchievements) {
-    const PARENT_ACH_STATUSES = ["attached", "draft"] as const;
+    const PARENT_ACH_STATUSES = ["attached", "downloaded"] as const;
     const achQueries = [];
     if (clientSlugs.length) {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
           .in("status", [...PARENT_ACH_STATUSES])
           .in("client_id", clientSlugs)
           .order("session_date", { ascending: false })
@@ -457,7 +461,7 @@ Deno.serve(async (req) => {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
           .in("status", [...PARENT_ACH_STATUSES])
           .ilike("client_name", nm)
           .order("session_date", { ascending: false })
@@ -493,6 +497,7 @@ Deno.serve(async (req) => {
           session_date: row.session_date,
           session_feedback_id: row.session_feedback_id,
           status: clean(row.status, 40),
+          downloaded_at: row.parent_downloaded_at ? String(row.parent_downloaded_at) : null,
           url: signed.signedUrl,
         };
       }),

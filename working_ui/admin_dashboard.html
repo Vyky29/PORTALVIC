@@ -17,7 +17,7 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260625-makeup-pill" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260703-family-summary" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
@@ -17515,7 +17515,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260630-staff-display-names";
+      "/portal/admin-sessions-hub.js?v=20260703-family-summary";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17667,6 +17667,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         invalidateLiveCaches: adminInvalidateSessionsHubLiveCaches,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
         fetchSessionFeedback: adminFetchSessionFeedbackForHub,
+        fetchParentFeedbackShares: adminFetchParentFeedbackSharesForHub,
         onLogJumpWeek: function(weekStart){
           var iso = String(weekStart || '').trim().substring(0, 10);
           if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
@@ -17741,6 +17742,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var st = String(row.session_time || '').trim() || adminSessionTimeFromPortalKey(pk);
       return {
         client_name: adminSfStr(row.client_name) || '—',
+        id: adminSfStr(row.id) || '',
         session_date: d,
         service: portalDisplayProgrammeFromSheet(row.service) || adminSfStr(row.service) || '—',
         attendance: row.attendance,
@@ -17770,7 +17772,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var res = await client
           .from('session_feedback')
           .select(
-            'client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
+            'id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
           )
           .gte('session_date', sinceIso)
           .order('session_date', { ascending: false })
@@ -17782,6 +17784,54 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return [];
       }
     }
+    async function adminPortalAuthToken(){
+      var client = getSchedSupabaseClient();
+      if(!client || !client.auth) return null;
+      try{
+        var sessResp = await client.auth.getSession();
+        var session = sessResp && sessResp.data && sessResp.data.session;
+        return session && session.access_token ? session.access_token : null;
+      }catch(_e){
+        return null;
+      }
+    }
+    async function adminEdgePost(path, body){
+      var token = await adminPortalAuthToken();
+      if(!token) return { error: 'session_expired' };
+      var base = typeof window.SUPABASE_URL === 'string' ? String(window.SUPABASE_URL).replace(/\/$/, '') : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+      var anon = typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+      var res = await fetch(base + '/functions/v1/' + path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+          apikey: anon
+        },
+        body: body == null ? '{}' : JSON.stringify(body)
+      });
+      var j = null;
+      try { j = await res.json(); } catch(_e) { j = null; }
+      if(!res.ok || !j || !j.ok) return { error: (j && (j.error || j.message)) || res.statusText || 'request_failed' };
+      return { data: j };
+    }
+    async function adminFetchParentFeedbackSharesForHub(){
+      var since = new Date();
+      since.setDate(since.getDate() - 150);
+      var edge = await adminEdgePost('portal-admin-parent-feedback-shares-list', { since: since.toISOString().slice(0, 10) });
+      if(edge.error){
+        console.warn('[admin] parent_feedback_shares', edge.error);
+        return [];
+      }
+      return (edge.data && edge.data.shares) || [];
+    }
+    window.portalAdminSaveParentFeedbackShare = async function(feedbackId, message){
+      var edge = await adminEdgePost('portal-admin-parent-feedback-share-save', {
+        session_feedback_id: feedbackId,
+        parent_message: message
+      });
+      if(edge.error) return { ok: false, error: edge.error };
+      return { ok: true, share: edge.data && edge.data.share };
+    };
     function adminBuildSessionsHubPayload(){
       var rows = adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
       return {
@@ -24478,6 +24528,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return;
       }
+      if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents'){
+        if(tab.indexOf('portal_docs_') === 0){
+          window.__portalDocsPresetFilter = tab.slice('portal_docs_'.length);
+        }else if(tab === 'portal_documents'){
+          window.__portalDocsPresetFilter = 'all';
+        }
+        setView(tab === 'portal_documents' ? 'portal_documents' : tab);
+        return;
+      }
       if(!tab) return;
       var client = String(meta.clientName || '').trim();
       var dateIso = String(meta.sessionDate || '').trim().slice(0, 10);
@@ -24712,6 +24771,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
           await window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+        }
+        if(typeof window.portalAdminBellSyncUnpaidExpensesFromServer === 'function'){
+          await window.portalAdminBellSyncUnpaidExpensesFromServer(adminEdgePost, { silent: true });
         }
         if(typeof window.portalAdminBellPruneAndSort === 'function'){
           window.portalAdminBellPruneAndSort();

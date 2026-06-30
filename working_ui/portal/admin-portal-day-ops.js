@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260628-physical-activity-per-instructor';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260703-family-summary';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -104,6 +104,17 @@
     };
   }
 
+  async function fetchParentFeedbackSharesInto(target) {
+    if (!cfg.fetchParentFeedbackShares) return;
+    try {
+      var shares = await cfg.fetchParentFeedbackShares();
+      target.parent_feedback_shares = shares || [];
+    } catch (eShares) {
+      console.debug('[PortalDayOps] parent_feedback_shares', eShares);
+      target.parent_feedback_shares = target.parent_feedback_shares || [];
+    }
+  }
+
   function applyPayload(j) {
     payload.counts = j.counts || {};
     payload.session_feedback = j.session_feedback || [];
@@ -115,6 +126,7 @@
     payload.cancellation_reports = j.cancellation_reports || [];
     payload.schedule_overrides = j.schedule_overrides || [];
     payload.session_quick_marks = j.session_quick_marks || [];
+    payload.parent_feedback_shares = j.parent_feedback_shares || [];
   }
 
   function feedbackRowMergeKey(row) {
@@ -252,6 +264,7 @@
       }
       payload.session_feedback_total = payload.session_feedback.length;
       payload.session_feedback_loaded = payload.session_feedback.length;
+      await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
       console.debug('[PortalDayOps] refreshSessionFeedbackLive', eFb);
@@ -441,6 +454,7 @@
         return p.catch(function () {});
       })
     );
+    await fetchParentFeedbackSharesInto(out);
     return out;
   }
 
@@ -520,6 +534,7 @@
       overview.session_feedback_total = deferred.session_feedback_total;
       overview.session_feedback_loaded = deferred.session_feedback_loaded;
     }
+    await fetchParentFeedbackSharesInto(overview);
     return overview;
   }
 

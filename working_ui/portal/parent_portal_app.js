@@ -70,6 +70,23 @@
           });
         });
       },
+      downloadAchievement: function (photoId) {
+        return fetch(fn("parent-portal-achievement-download"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, photo_id: photoId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("download_failed");
+            return j;
+          });
+        });
+      },
       isSectionLoaded: function (section) {
         return !!state.participant.loaded[section];
       },
@@ -580,10 +597,11 @@
     initBrand();
     bindEvents();
     bindChildCards();
-    setStep("identify");
     if (loadStoredSession()) {
       var ok = await loadHome();
       if (!ok) setStep("identify");
+    } else {
+      setStep("identify");
     }
   }
 
