@@ -64,6 +64,68 @@ async function detectHasAquatics(
   return (data || []).some((row) => isAquaticService(row.service));
 }
 
+/** Acton / Northolt pool sites — achievement photos are not taken (centre rules). */
+function isCentreAquaticVenue(raw: unknown): boolean {
+  const v = clean(raw, 80).toLowerCase();
+  return v === "acton" || v === "northolt";
+}
+
+/**
+ * True when every active roster slot for this child is Aquatic Activity at Acton or Northolt.
+ * Parents in that programme should see an empty achievement gallery with a centre-rules note.
+ */
+async function detectAquaticOnlyNoPhotos(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
+): Promise<boolean> {
+  const names = [
+    ...new Set(
+      [...lookupNames.slice(0, 5), identityInput.displayName || ""]
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return false;
+
+  const queries = names.map((nm) =>
+    supabase
+      .from("portal_roster_rows")
+      .select("client_name, service, venue, status")
+      .eq("status", "active")
+      .ilike("client_name", nm)
+      .limit(40),
+  );
+
+  const rows: Array<{ service?: unknown; venue?: unknown; client_name?: unknown }> = [];
+  const seen = new Set<string>();
+  const results = await Promise.all(queries);
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+      const key = [
+        clean(row.client_name, 80),
+        clean(row.service, 80),
+        clean(row.venue, 80),
+      ]
+        .join("|")
+        .toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(row);
+    }
+  }
+
+  if (!rows.length) return false;
+  return rows.every((r) => isAquaticService(r.service) && isCentreAquaticVenue(r.venue));
+}
+
 function isAquaticService(raw: unknown): boolean {
   const p = clean(raw, 200).toLowerCase();
   return /aquatic|swim|pool|splash/.test(p);
@@ -517,6 +579,8 @@ Deno.serve(async (req) => {
     hasAquatics = await detectHasAquatics(supabase, clientSlugs);
   }
 
+  const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
+
   const swimTermReviews: Record<string, unknown>[] = [];
   if (wantSwim && hasAquatics) {
     const { data: shares } = await supabase
@@ -579,6 +643,7 @@ Deno.serve(async (req) => {
       general: {
         services,
         has_aquatics: hasAquatics,
+        aquatic_only_no_photos: aquaticOnlyNoPhotos,
         term_label: TERM_LABEL,
         general_info_sheet: generalInfoSheet,
         fields: generalFields,

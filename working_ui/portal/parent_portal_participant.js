@@ -390,18 +390,43 @@
     }
   }
 
+  var AQUATIC_NO_PHOTOS_NOTE =
+    "If your child attends Aquatic Activity at Acton or Northolt, due to the Centre rules we cannot take photos during sessions.";
+
   function renderAchievements(host, data, opts) {
     var achievements = Array.isArray(data.achievements) ? data.achievements : [];
-    var gallery =
-      global.PortalClientSessionsOverview &&
-      typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
-        ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
-        : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
+    var aquaticOnly = !!(data.general && data.general.aquatic_only_no_photos);
+    var gallery = "";
+    if (achievements.length) {
+      gallery =
+        global.PortalClientSessionsOverview &&
+        typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          : "";
+    } else if (aquaticOnly) {
+      gallery =
+        '<div class="pp-ach-aquatic-note" role="note">' +
+        '<p class="pp-ach-aquatic-note__title">No achievement photos</p>' +
+        '<p class="pp-muted pp-ach-aquatic-note__body">' +
+        esc(AQUATIC_NO_PHOTOS_NOTE) +
+        "</p></div>";
+    } else {
+      gallery =
+        global.PortalClientSessionsOverview &&
+        typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
+    }
+    var subNote = aquaticOnly && !achievements.length
+      ? "Achievement photos are not available for Aquatic Activity at Acton or Northolt."
+      : "Photos from sessions — tap to view full size, or use Download to save to your device.";
     host.innerHTML = subviewShell(
       data,
       "achievements",
       '<h3 class="pp-pax-subview-title">Achievement photos</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Photos from sessions — tap to view full size, or use Download to save to your device.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        esc(subNote) +
+        "</p>" +
         '<div class="pp-ach-view">' +
         gallery +
         "</div>",

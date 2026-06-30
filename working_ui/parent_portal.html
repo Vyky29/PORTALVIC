@@ -441,6 +441,27 @@
     .pp-participant-body .pcso-kpi-grid { margin-top: 0; }
     .pp-participant-body .pcso-table-wrap { max-width: 100%; overflow-x: auto; }
     .pp-ach-view { min-width: 0; }
+    .pp-ach-aquatic-note {
+      margin: 0;
+      padding: 16px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(45, 132, 179, .22);
+      background: linear-gradient(180deg, #f3f9fd 0%, #eaf4fb 100%);
+      min-width: 0;
+    }
+    .pp-ach-aquatic-note__title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-ach-aquatic-note__body {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
 
     @media (min-width: 720px) {
       .pp-page {
@@ -568,7 +589,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260703-perf"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260703-ach-dl"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260703-aquatic-note"></script>
   <script src="/portal/parent_portal_app.js?v=20260703-one-screen"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
