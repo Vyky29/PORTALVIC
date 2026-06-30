@@ -49,19 +49,19 @@ Deno.serve(async (req) => {
   });
 
   // Generate for rows without a usable share. Skip admin-edited rows and rows
-  // already settled by a real review — but DO refresh rows left empty by the
-  // earlier no-OpenAI fallback (review_model "fallback-no-openai").
+  // already settled by a real review — but DO refresh rows left empty/hidden.
   const { data: existingShares } = await admin
     .from("portal_parent_feedback_share")
-    .select("session_feedback_id, share_status, admin_edited_at, review_model")
+    .select("session_feedback_id, share_status, admin_edited_at, review_model, parent_message")
     .in("session_feedback_id", ids);
   const settled = new Set<string>();
   for (const s of existingShares || []) {
     const status = String(s.share_status || "");
     const model = String(s.review_model || "");
+    const msg = String(s.parent_message || "").trim();
     if (s.admin_edited_at) {
       settled.add(String(s.session_feedback_id));
-    } else if (status && status !== "pending" && model !== "fallback-no-openai") {
+    } else if (status && status !== "pending" && model !== "fallback-no-openai" && !(status === "hidden" && !msg)) {
       settled.add(String(s.session_feedback_id));
     }
   }

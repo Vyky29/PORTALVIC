@@ -177,14 +177,17 @@ export async function sanitizeAndCacheParentFeedbackShare(
     return { ok: true, skipped: "admin_edited", share_status: String(existing.share_status || "hidden") };
   }
 
-  // Refresh rows left empty by the earlier no-OpenAI fallback even if the source
-  // is unchanged, so restored fallback drafts populate the family-summary column.
+  // Refresh rows left empty/hidden by earlier no-OpenAI fallback or failed AI runs.
   const wasBrokenFallback = String(existing?.review_model || "") === "fallback-no-openai";
+  const wasHiddenEmpty =
+    String(existing?.share_status || "") === "hidden" &&
+    !String(existing?.parent_message || "").trim();
   if (
     existing &&
     existing.source_fingerprint === fingerprint &&
     existing.share_status !== "pending" &&
-    !wasBrokenFallback
+    !wasBrokenFallback &&
+    !wasHiddenEmpty
   ) {
     return { ok: true, skipped: "unchanged", share_status: String(existing.share_status) };
   }
