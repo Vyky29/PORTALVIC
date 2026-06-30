@@ -683,6 +683,38 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle{fill:#3b82f6 !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(2n){fill:#2563eb !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(3n){fill:#93c5fd !important}
+    /* Shadowing — sky blue orbit (session_add shadowing quick-menu tile) */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle{fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(2n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(3n){fill:#7dd3fc !important}
+    /* NEW SHIFT/CHANGES + shadowing — gold and sky blue alternating */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar{
+      animation:avatar-outline-schedule-gold 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    /* Outstanding feedback + shadowing — orange and sky blue */
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    /* Outstanding feedback + NEW SHIFT/CHANGES + shadowing — orange, gold, sky blue */
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar{
+      animation:avatar-outline-reminder-schedule-gold 1.15s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+1){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+2){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0ea5e9 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar{

@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260630-luliya-fb28-29";
+  var VER = "20260630-halo-shadowing";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260630-javier-fb1017-off28",

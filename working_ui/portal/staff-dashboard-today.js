@@ -4303,7 +4303,7 @@
 
     /** Halo colours from quick-menu override kinds (absent = green orbit). */
     function portalRosterOverrideHaloScan(st){
-      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, other: false };
+      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, shadowing: false, meeting: false, other: false };
       const dayGroups = Array.isArray(st && st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
       for(let g = 0; g < dayGroups.length; g++){
         const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
@@ -4312,6 +4312,8 @@
           if(!k) continue;
           if(k === 'absent'){ out.absent = true; continue; }
           if(k === 'training'){ out.training = true; continue; }
+          if(k === 'shadowing'){ out.shadowing = true; continue; }
+          if(k === 'meeting'){ out.meeting = true; continue; }
           if(k === 'cancelled' || k === 'shift_cancelled'){ out.cancelled = true; continue; }
           if(k === 'new_shift' || k === 'roster_day') out.newShift = true;
           else if(k === 'trial' || k === 'new_participant') out.trial = true;
@@ -4325,7 +4327,7 @@
     }
     function portalScheduleHaloActive(scan){
       if(!scan) return false;
-      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.other);
+      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.shadowing || scan.meeting || scan.other);
     }
     function portalScheduleHaloMode(scan){
       if(!portalScheduleHaloActive(scan)) return '';
@@ -4333,7 +4335,9 @@
       const ns = !!(scan.newShift || scan.other);
       if(scan.absent && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.cancelled && !scan.training) return 'schedule-absent';
       if(scan.cancelled && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.training) return 'schedule-cancelled';
-      if(scan.training && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled) return 'schedule-training';
+      if(scan.training && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.shadowing && !scan.meeting) return 'schedule-training';
+      if(scan.shadowing && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.training && !scan.meeting) return 'schedule-shadowing';
+      if(scan.meeting && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.training && !scan.shadowing) return 'schedule-meeting';
       if(scan.undo && !scan.trial && !scan.makeup && !ns && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-undo';
       if(scan.makeup && !scan.trial && !ns && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-makeup';
       if(scan.trial && !ns && !scan.makeup && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-trial-only';
@@ -4384,6 +4388,7 @@
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending));
       const haloScan = portalRosterOverrideHaloScan(state);
       let scheduleMode = portalScheduleHaloMode(haloScan);
+      const hasShadowing = !!haloScan.shadowing;
       if(!scheduleMode && portalStaffHasUpcomingShadowingHostAlert(
         typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '',
         dashboardData && dashboardData.staffName
@@ -4397,14 +4402,22 @@
         feedback: hasFeedback || hasReminderOther,
         schedule: !!scheduleMode,
         scheduleMode: scheduleMode,
-        scheduleTrial: scheduleMode === 'schedule-trial' || scheduleMode === 'schedule-trial-only'
+        scheduleTrial: scheduleMode === 'schedule-trial' || scheduleMode === 'schedule-trial-only',
+        shadowing: hasShadowing
       };
     }
     function portalNotificationAlertState(st){
       const f = portalNotificationAlertFlags(st);
       const orange = f.feedback;
       const green = f.scheduleMode;
+      const sh = f.shadowing;
       const sk = f.scheduleTrial ? '-trial' : '';
+      if(sh && !f.chat && !f.announcement){
+        if(orange && green) return 'reminder-schedule-shadowing' + sk;
+        if(orange && !green) return 'reminder-shadowing';
+        if(green && !orange) return 'schedule-shadowing' + sk;
+        if(!orange && !green) return 'schedule-shadowing-only';
+      }
       if(f.chat && f.announcement && orange && green) return 'quad' + sk;
       if(f.chat && f.announcement && green) return 'chat-ann-schedule' + sk;
       if(f.chat && orange && green) return 'chat-fb-schedule' + sk;
@@ -4445,6 +4458,13 @@
         'avatar-wrap--portal-alert-schedule-undo',
         'avatar-wrap--portal-alert-schedule-cancelled',
         'avatar-wrap--portal-alert-schedule-training',
+        'avatar-wrap--portal-alert-schedule-shadowing',
+        'avatar-wrap--portal-alert-schedule-shadowing-only',
+        'avatar-wrap--portal-alert-schedule-meeting',
+        'avatar-wrap--portal-alert-reminder-shadowing',
+        'avatar-wrap--portal-alert-reminder-schedule-shadowing',
+        'avatar-wrap--portal-alert-schedule-shadowing-trial',
+        'avatar-wrap--portal-alert-reminder-schedule-shadowing-trial',
         'avatar-wrap--portal-alert-chat-schedule',
         'avatar-wrap--portal-alert-chat-schedule-trial',
         'avatar-wrap--portal-alert-announcement-schedule',
@@ -4506,6 +4526,13 @@
         'schedule-undo': 'avatar-wrap--portal-alert-schedule-undo',
         'schedule-cancelled': 'avatar-wrap--portal-alert-schedule-cancelled',
         'schedule-training': 'avatar-wrap--portal-alert-schedule-training',
+        'schedule-shadowing': 'avatar-wrap--portal-alert-schedule-shadowing',
+        'schedule-shadowing-only': 'avatar-wrap--portal-alert-schedule-shadowing-only',
+        'schedule-meeting': 'avatar-wrap--portal-alert-schedule-meeting',
+        'reminder-shadowing': 'avatar-wrap--portal-alert-reminder-shadowing',
+        'reminder-schedule-shadowing': 'avatar-wrap--portal-alert-reminder-schedule-shadowing',
+        'reminder-schedule-shadowing-trial': 'avatar-wrap--portal-alert-reminder-schedule-shadowing-trial',
+        'schedule-shadowing-trial': 'avatar-wrap--portal-alert-schedule-shadowing-trial',
         schedule: 'avatar-wrap--portal-alert-schedule'
       }[mode];
       if(modeClass) el.classList.add(modeClass);
