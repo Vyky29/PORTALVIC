@@ -854,7 +854,17 @@
       if(!sd || sd !== td) return false;
       const ss = portalReviewKeyParticipantSlugFromSessionKey(s);
       const ts = portalReviewKeyParticipantSlugFromSessionKey(t);
-      return !!(ss && ts && ss === ts);
+      if(!ss || !ts) return false;
+      if(ss === ts) return true;
+      const slugEq = typeof window.__PORTAL_CLIENT_SLUG_EQUIV__ === 'function'
+        ? window.__PORTAL_CLIENT_SLUG_EQUIV__
+        : null;
+      if(slugEq){
+        try{
+          if(slugEq(ss, ts)) return true;
+        }catch(_eq){}
+      }
+      return false;
     }
     function portalReviewAbsentInMemoryForAliases(aliases){
       if(!Array.isArray(aliases) || !aliases.length) return false;
@@ -1370,6 +1380,9 @@
         };
         if(typeof mod.portalFeedbackSubmittedKeyMatchesRosterKey === 'function'){
           window.__PORTAL_REVIEW_KEY_MATCHER__ = mod.portalFeedbackSubmittedKeyMatchesRosterKey;
+        }
+        if(typeof mod.portalClientSlugTokensEquivalent === 'function'){
+          window.__PORTAL_CLIENT_SLUG_EQUIV__ = mod.portalClientSlugTokensEquivalent;
         }
         if(dashboardData){
           dashboardData.portalServerAbsentQuickMarkKeys = new Set(

@@ -62,6 +62,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     }
   },
   "termStaffFeedbackCompleteDatesByProfileKey": {
+    "angel": [
+      "2026-06-15",
+      "2026-06-16"
+    ],
     "roberto": [
       "2026-05-17",
       "2026-05-22"
