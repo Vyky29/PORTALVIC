@@ -4397,6 +4397,26 @@
                 '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile</button>' +
               '</div>' +
             '</article>';
+        }else if(
+          typeof portalSignableItemIsCalendar202627 === 'function' &&
+          portalSignableItemIsCalendar202627(pending)
+        ){
+          var posterUrl = typeof portalCalendar202627PosterUrl === 'function'
+            ? portalCalendar202627PosterUrl()
+            : '/portal/assets/calendar-2026-27-poster.png';
+          hostPending.innerHTML =
+            '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27">' +
+              '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+              '<span class="announcement-lock-badge announcement-lock-badge--announcement">Calendar</span></div>' +
+              '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+              '<div class="portal-calendar-2026-27-preview" role="img" aria-label="Day Centre Calendar 2026/27 poster">' +
+                '<img src="' + escapeHtml(posterUrl) + '" alt="Day Centre term dates and calendar 2026/27" loading="lazy" decoding="async">' +
+              '</div>' +
+              '<div class="announcement-lock-actions">' +
+                '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm" name="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
+                '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
+              '</div>' +
+            '</article>';
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +

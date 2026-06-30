@@ -865,7 +865,7 @@
       const cat = String((doc && doc.category) || "").toLowerCase();
       if (cat === categoryKey) return true;
       const t = String((doc && doc.document_type) || "").toLowerCase();
-      if (categoryKey === "documents" && (t === "employment_contract" || cat === "documents" || cat === "hr")) return true;
+      if (categoryKey === "documents" && (t === "employment_contract" || t === "calendar_2026_27" || cat === "documents" || cat === "hr")) return true;
       if (categoryKey === "finance" && (t === "timesheet" || t === "expense")) return true;
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (

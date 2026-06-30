@@ -8,6 +8,7 @@ export const STALE_PARENT_SUMMARY_MODELS = new Set([
   "fallback-positive-only",
   "fallback-needs-ai",
   "fallback-empty",
+  "fallback-specialist-rules",
   "openai-error",
 ]);
 
@@ -16,6 +17,7 @@ export function parentSummaryModelNeedsRefresh(reviewModel: unknown): boolean {
   if (!model) return true;
   if (STALE_PARENT_SUMMARY_MODELS.has(model)) return true;
   if (model.startsWith("openai-http-")) return true;
+  if (model.startsWith("openai-")) return true;
   if (model.endsWith("-empty")) return true;
   return false;
 }
@@ -42,11 +44,78 @@ function str(v: unknown, max = 4000): string {
 }
 
 /**
- * No-OpenAI fallback: do not copy staff notes verbatim — parents need a specialist
- * rewrite. Leave hidden until AI or an admin edits.
+ * Rule-based specialist rewrite when OpenAI is unavailable (no credits, errors, etc.).
+ * Not as rich as AI but reframes staff jargon for parents.
  */
-function fallbackSanitize(_input: SanitizeInput): SanitizeResult {
-  return { share_status: "hidden", parent_message: "", review_model: "fallback-needs-ai" };
+function specialistRuleFallback(input: SanitizeInput): SanitizeResult {
+  const name = str(input.clientName, 80) || "They";
+  const firstName = name.split(/\s+/)[0] || name;
+  const positive = str(input.positiveFeedback, 2000);
+  const relevant = str(input.relevantInformation, 1500);
+  const combined = [positive, relevant].filter(Boolean).join(" ");
+  if (combined.length < 15) {
+    return { share_status: "hidden", parent_message: "", review_model: "fallback-empty" };
+  }
+
+  let body = positive || relevant;
+  const reframes: [RegExp, string][] = [
+    [
+      /physical activit(?:y|ies) where (?:he|she|they) (?:complained a lot because )?(?:didn't|did not|doesn't|didnt) want to do it/gi,
+      "physical activities towards the end of the session; at that point they were less keen to take part, which can happen when they are ready to go home",
+    ],
+    [
+      /complained a lot because (?:didn't|did not|doesn't|didnt) want to do it/gi,
+      "found the later activity harder as the session was coming to an end and they were ready to go home",
+    ],
+    [/complained a lot/gi, "needed gentle encouragement"],
+    [/(?:didn't|did not|doesn't|didnt) want to do it/gi, "was less keen to take part as the session was ending"],
+    [/was lazy(?: today)?/gi, "needed more prompting to stay engaged"],
+    [/hitting himself a lot/gi, "needed support when feeling frustrated"],
+    [
+      /we made him sit down on a chair and use some ice around the head/gi,
+      "needed calm time and sensory support when feeling overwhelmed",
+    ],
+    [/hitting hi(?:m)?self(?: a lot)?/gi, "showed frustration and needed support to regulate"],
+    [/a little frustrated/gi, "some frustration at the start"],
+    [/He was needed support/gi, "He needed support"],
+    [/She was needed support/gi, "She needed support"],
+  ];
+  for (const [re, rep] of reframes) {
+    body = body.replace(re, rep);
+  }
+
+  body = body.charAt(0).toUpperCase() + body.slice(1);
+  const parts = [`${firstName} joined us for today's session. ${body}`];
+
+  const lower = combined.toLowerCase();
+  if (/physical activit|go home|end of|leaving|didn't want|complain|frustrat|ready to leave/.test(lower)) {
+    parts.push(
+      "Physical activity often falls at the end of the session before going home; some young people find it harder to stay engaged indoors at that point, while community or outdoor activities earlier in the day may feel easier and they can appear more regulated.",
+    );
+  }
+
+  const independence = str(input.independenceLabel, 200).toLowerCase();
+  if (independence.includes("full support")) {
+    parts.push("They needed close support throughout the session.");
+  } else if (independence.includes("regular support")) {
+    parts.push("They needed regular support to stay on track.");
+  } else if (independence.includes("little support") || independence.includes("some support")) {
+    parts.push("They needed a little support at times.");
+  }
+
+  const message = parts.join(" ").replace(/\s+/g, " ").trim().slice(0, 2000);
+  if (message.length < 15) {
+    return { share_status: "hidden", parent_message: "", review_model: "fallback-empty" };
+  }
+  return {
+    share_status: "approved",
+    parent_message: message,
+    review_model: "fallback-specialist-rules",
+  };
+}
+
+function fallbackSanitize(input: SanitizeInput): SanitizeResult {
+  return specialistRuleFallback(input);
 }
 
 function parseOpenAiJson(raw: string): { share_status?: string; parent_message?: string } {
@@ -117,19 +186,25 @@ export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<
         },
         body: JSON.stringify(payload),
       });
-      if (res.status !== 429 || attempt >= 3) break;
+      if (res.ok) break;
+      const errText = await res.text();
+      let errCode = String(res.status);
+      try {
+        errCode = String(JSON.parse(errText)?.error?.code || JSON.parse(errText)?.error?.type || res.status);
+      } catch (_) {
+        /* keep status */
+      }
+      if (errCode === "insufficient_quota") {
+        console.warn("[parent-feedback-sanitize] OpenAI insufficient_quota — rule fallback");
+        return specialistRuleFallback(input);
+      }
+      if (res.status !== 429 || attempt >= 3) {
+        console.warn("[parent-feedback-sanitize] OpenAI HTTP", res.status, errText.slice(0, 500));
+        return specialistRuleFallback(input);
+      }
       await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
     }
-    if (!res) return fallbackSanitize(input);
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn("[parent-feedback-sanitize] OpenAI HTTP", res.status, errText.slice(0, 500));
-      return {
-        share_status: "hidden",
-        parent_message: "",
-        review_model: `openai-http-${res.status}`,
-      };
-    }
+    if (!res || !res.ok) return specialistRuleFallback(input);
     const body = await res.json();
     const raw = str(body?.choices?.[0]?.message?.content, 4000);
     const parsed = parseOpenAiJson(raw);
@@ -144,11 +219,7 @@ export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<
     return { share_status: "hidden", parent_message: "", review_model: `${model}-empty` };
   } catch (err) {
     console.warn("[parent-feedback-sanitize] OpenAI error", err);
-    return {
-      share_status: "hidden",
-      parent_message: "",
-      review_model: "openai-error",
-    };
+    return specialistRuleFallback(input);
   }
 }
 

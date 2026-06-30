@@ -643,12 +643,47 @@ function clientSlugTokensFromPortalSessionKey(key) {
   return out;
 }
 
+/** Roster client_id spellings → one canonical slug (spreadsheet vs session_feedback portal_session_key). */
+const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
+  adam_pi: "adam_p",
+  adam_p: "adam_p",
+  aadam_ah: "adaam_ah",
+  adaam_ah: "adaam_ah",
+  abodi_p: "abodi_pa",
+  abodi_pa: "abodi_pa",
+  abodi: "abodi_pa",
+  amar_rai: "amar_ra",
+  amar_ra: "amar_ra",
+  sammer: "samer",
+  samer: "samer",
+  rayan_tapa: "rayan_ta",
+  rayan_ta: "rayan_ta",
+  steven_ces: "steven",
+  steven_c: "steven",
+  steven_ce: "steven",
+  steven: "steven",
+  yusuf: "yusuf_ah",
+  yusef: "yusuf_ah",
+  yusuf_ah: "yusuf_ah",
+  eddie_mc: "eddie",
+  eddie: "eddie",
+  adam_a: "adam_ab",
+  adam_ab: "adam_ab",
+  junaid: "junaid_f",
+  junaid_f: "junaid_f",
+  khalid_ab: "khalid",
+  khalid: "khalid",
+  rayyan_fi: "rayyan_f",
+  rayyan_f: "rayyan_f",
+  chaitanya_trial_28_06: "chaitanya",
+  chaitanya: "chaitanya",
+});
+
 /** Known client_id / slug aliases (roster spreadsheet vs ClassForKids). */
 function portalCanonicalClientSlugToken(slug) {
   const s = String(slug || "").trim().toLowerCase();
   if (!s) return "";
-  if (s === "amar_rai") return "amar_ra";
-  return s;
+  return PORTAL_ROSTER_CLIENT_SLUG_CANON[s] || s;
 }
 
 /** Strict client slug match — never treat "amar" as matching "amber". */

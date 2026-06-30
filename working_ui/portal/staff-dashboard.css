@@ -1469,6 +1469,21 @@
       border-color:rgba(244,63,94,.24);
       background:linear-gradient(180deg,#fffafa 0%,#fff1f2 100%);
     }
+    .portal-calendar-2026-27-preview{
+      margin:12px 0 4px;
+      min-width:0;
+      border:1px solid rgba(23,50,71,.1);
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .portal-calendar-2026-27-preview img{
+      display:block;
+      width:100%;
+      max-width:100%;
+      height:auto;
+      object-fit:contain;
+    }
     .announcement-lock-copy{
       margin:0 0 10px;
       color:#334155;

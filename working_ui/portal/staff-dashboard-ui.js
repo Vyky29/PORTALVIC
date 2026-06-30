@@ -4211,6 +4211,18 @@
         if(typeof portalPersistAnnouncementAckToSupabase === 'function'){
           void portalPersistAnnouncementAckToSupabase(pending);
         }
+        if(
+          typeof portalSignableItemIsCalendar202627 === 'function' &&
+          portalSignableItemIsCalendar202627(pending) &&
+          typeof portalSaveCalendar202627PdfToMyDocuments === 'function'
+        ){
+          signBtn.disabled = true;
+          void portalSaveCalendar202627PdfToMyDocuments().catch(function(err){
+            try{ console.warn('[portal] calendar 2026/27 My Documents save', err); }catch(_){}
+          }).finally(function(){
+            if(signBtn) signBtn.disabled = false;
+          });
+        }
         }
         try{
           const sysDone = JSON.parse(sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {};

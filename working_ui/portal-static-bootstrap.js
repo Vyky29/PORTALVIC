@@ -252,6 +252,8 @@
   window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-01-01";
   /** Fixed announcement row id (portal_staff_announcements) for the 2026 annual profile campaign. */
   window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID = "a0260001-0001-4000-8000-0000000a2601";
+  /** Day Centre Calendar 2026/27 — sign saves PDF to My Documents. */
+  window.PORTAL_CALENDAR_2026_27_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
 
   window.portalAnnualProfileCampaignStartMs = function portalAnnualProfileCampaignStartMs() {
     try {

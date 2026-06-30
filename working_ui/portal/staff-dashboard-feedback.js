@@ -895,7 +895,19 @@
         const rec = sessionReviewMapMemory[aliases[i]];
         if(rec && rec.feedbackDone && !rec.absent && !rec.cancelled) return true;
       }
-      if(needsOwnOnly) return false;
+      if(needsOwnOnly){
+        const memKeys = Object.keys(sessionReviewMapMemory);
+        for(let k = 0; k < memKeys.length; k++){
+          const mk = memKeys[k];
+          const rec = sessionReviewMapMemory[mk];
+          if(!rec || !rec.feedbackDone || rec.absent || rec.cancelled) continue;
+          for(let i = 0; i < aliases.length; i++){
+            if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+              && portalReviewStoredAbsentMatchesSessionKey(mk, aliases[i])) return true;
+          }
+        }
+        return false;
+      }
       const memKeys = Object.keys(sessionReviewMapMemory);
       for(let k = 0; k < memKeys.length; k++){
         const mk = memKeys[k];
@@ -919,7 +931,12 @@
         if(ownPortal && ownPortal.size){
           for(const fk of ownPortal){
             for(let i = 0; i < aliases.length; i++){
-              if(aliases[i] && fk === aliases[i]) return true;
+              const alias = aliases[i];
+              if(alias && fk === alias) return true;
+              if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+                && portalReviewStoredAbsentMatchesSessionKey(fk, alias)){
+                return true;
+              }
             }
           }
         }
