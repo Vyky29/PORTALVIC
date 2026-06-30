@@ -242,6 +242,11 @@
     return (
       '<div class="pp-pax-info-buttons">' +
       '<div class="pp-pax-info-row">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--whatsapp" data-pp-open="messages" aria-label="Messages">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>' +
+      '<span class="pp-pax-info-caption">Messages</span></span></button></div>' +
+      '<div class="pp-pax-info-row">' +
       '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
       '<span class="pp-pax-info-btn-stack">' +
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>' +
@@ -508,6 +513,183 @@
     bindBack(host, data, opts);
   }
 
+  function formatMessageWhen(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function messageKindLabel(m) {
+    if (m.direction === "in") {
+      return m.source === "parent_app" ? "You (app)" : "You (WhatsApp)";
+    }
+    var k = String(m.kind || "").trim();
+    if (k === "custom" || k === "reply") return "Club message";
+    if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (!k) return "Club message";
+    return k.replace(/_/g, " ");
+  }
+
+  function messagesThreadHtml(messages, waBiz) {
+    if (!messages || !messages.length) {
+      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Send a message below or contact us on WhatsApp — everything appears in one thread.</p>';
+    }
+    return (
+      '<div class="pp-pax-msgs-thread" role="log" aria-live="polite">' +
+      messages
+        .map(function (m) {
+          var isOut = m.direction === "out";
+          var preview = String(m.body_text || "").trim();
+          if (preview.length > 1200) preview = preview.slice(0, 1197) + "…";
+          return (
+            '<article class="pp-pax-msg' +
+            (isOut ? " pp-pax-msg--out" : " pp-pax-msg--in") +
+            '">' +
+            '<div class="pp-pax-msg__head">' +
+            '<span class="pp-pax-msg__who">' +
+            esc(isOut ? "Club" : m.sender_name || "You") +
+            "</span>" +
+            '<span class="pp-pax-msg__when pp-muted">' +
+            esc(formatMessageWhen(m.created_at)) +
+            "</span></div>" +
+            (m.client_display && isOut
+              ? '<p class="pp-pax-msg__child pp-muted">' + esc(m.client_display) + "</p>"
+              : "") +
+            (preview ? '<p class="pp-pax-msg__body">' + esc(preview) + "</p>" : "") +
+            '<p class="pp-pax-msg__meta pp-muted">' +
+            esc(messageKindLabel(m)) +
+            (m.venue ? " · " + esc(m.venue) : "") +
+            "</p></article>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function messagesComposeHtml(waBiz) {
+    var waNote = "";
+    if (waBiz && waBiz.wa_me_url) {
+      waNote =
+        '<p class="pp-pax-msgs-wa-note">Prefer WhatsApp? <a href="' +
+        esc(waBiz.wa_me_url) +
+        '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+        (waBiz.display ? " (" + esc(waBiz.display) + ")" : "") +
+        ". Replies there appear here too.</p>";
+    } else {
+      waNote =
+        '<p class="pp-pax-msgs-wa-note pp-muted">You can also message us on WhatsApp using the club number — those messages sync with this thread.</p>';
+    }
+    return (
+      waNote +
+      '<form class="pp-pax-msgs-compose" id="ppMsgsForm">' +
+      '<label class="pp-field" for="ppMsgsInput"><span class="pp-muted">Write to the office</span></label>' +
+      '<textarea id="ppMsgsInput" name="message" rows="3" maxlength="2000" required placeholder="Type your message…"></textarea>' +
+      '<button type="submit" class="pp-btn pp-btn--whatsapp" id="ppMsgsSendBtn">Send message</button>' +
+      "</form>" +
+      '<p id="ppMsgsNotice" class="pp-notice pp-notice--info" hidden role="status"></p>'
+    );
+  }
+
+  function renderMessages(host, data, opts) {
+    var body =
+      '<h3 class="pp-pax-subview-title">Messages</h3>' +
+      '<p class="pp-muted pp-pax-subview-note">Chat with the club office. Messages you send here reach admin — same inbox as WhatsApp.</p>' +
+      '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
+      messagesComposeHtml(null);
+    host.innerHTML = subviewShell(data, "messages", body);
+    bindBack(host, data, opts);
+    bindMessages(host, data, opts);
+    if (typeof opts.loadMessages === "function") {
+      void opts.loadMessages().then(function (payload) {
+        var threadHost = host.querySelector("#ppMsgsThreadHost");
+        if (!threadHost) return;
+        threadHost.innerHTML = messagesThreadHtml(
+          (payload && payload.messages) || [],
+          (payload && payload.whatsapp_business) || null,
+        );
+        var waNote = host.querySelector(".pp-pax-msgs-wa-note");
+        if (waNote && payload && payload.whatsapp_business && payload.whatsapp_business.wa_me_url) {
+          var b = payload.whatsapp_business;
+          waNote.innerHTML =
+            'Prefer WhatsApp? <a href="' +
+            esc(b.wa_me_url) +
+            '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+            (b.display ? " (" + esc(b.display) + ")" : "") +
+            ". Replies there appear here too.";
+        }
+        threadHost.scrollTop = threadHost.scrollHeight;
+      }).catch(function () {
+        var threadHost = host.querySelector("#ppMsgsThreadHost");
+        if (threadHost) {
+          threadHost.innerHTML =
+            '<p class="pp-muted">Could not load messages — try Refresh or go back and open again.</p>';
+        }
+      });
+    }
+  }
+
+  function bindMessages(host, data, opts) {
+    var form = host.querySelector("#ppMsgsForm");
+    if (!form || typeof opts.sendMessage !== "function") return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var input = host.querySelector("#ppMsgsInput");
+      var notice = host.querySelector("#ppMsgsNotice");
+      var sendBtn = host.querySelector("#ppMsgsSendBtn");
+      var text = input ? String(input.value || "").trim() : "";
+      if (!text) return;
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.setAttribute("aria-busy", "true");
+      }
+      if (notice) notice.hidden = true;
+      void opts
+        .sendMessage(text)
+        .then(function (payload) {
+          if (input) input.value = "";
+          if (notice) {
+            notice.hidden = false;
+            notice.className = "pp-notice pp-notice--info";
+            notice.textContent = "Message sent — the office will reply here or on WhatsApp.";
+          }
+          return typeof opts.loadMessages === "function" ? opts.loadMessages() : payload;
+        })
+        .then(function (payload) {
+          if (!payload || !payload.messages) return;
+          var threadHost = host.querySelector("#ppMsgsThreadHost");
+          if (!threadHost) return;
+          threadHost.innerHTML = messagesThreadHtml(
+            payload.messages,
+            payload.whatsapp_business || null,
+          );
+          threadHost.scrollTop = threadHost.scrollHeight;
+        })
+        .catch(function () {
+          if (notice) {
+            notice.hidden = false;
+            notice.className = "pp-notice pp-notice--error";
+            notice.textContent = "Could not send — check your connection and try again.";
+          }
+        })
+        .finally(function () {
+          if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.removeAttribute("aria-busy");
+          }
+        });
+    });
+  }
+
   function bindBack(host, data, opts) {
     host.querySelectorAll("[data-pp-back]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -524,6 +706,7 @@
     } else if (view === "sessions") renderSessions(host, data, opts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
+    else if (view === "messages") renderMessages(host, data, opts);
   }
 
   function bindHub(host, data, opts) {

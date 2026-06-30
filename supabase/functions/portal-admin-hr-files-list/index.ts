@@ -9,6 +9,7 @@ import {
 const DOCUMENTS_BUCKET = "documents";
 
 type TimesheetRow = {
+  id: string;
   name: string;
   path: string;
   bucket: string;
@@ -27,6 +28,7 @@ function mapDocumentToTimesheet(row: Record<string, unknown>): TimesheetRow {
     : fileUrl;
   const created = row.created_at ? String(row.created_at) : null;
   return {
+    id: String(row.id || ""),
     name: title,
     path,
     bucket: DOCUMENTS_BUCKET,

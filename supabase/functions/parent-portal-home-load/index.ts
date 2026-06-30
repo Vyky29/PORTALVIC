@@ -13,11 +13,10 @@ import {
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
-
-function normalizePhoneDigits(raw: string): string {
-  const d = String(raw || "").replace(/\D/g, "");
-  return d.length >= 10 ? d.slice(-10) : d;
-}
+import {
+  mergeParentPortalMessages,
+  parentPhoneLast10,
+} from "../_shared/parent_portal_messages.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -89,11 +88,11 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const emailNorm = String(parentMeta?.email || "").trim().toLowerCase();
-  const phone10 = normalizePhoneDigits(String(parentMeta?.mobile || ""));
+  const phone10 = parentPhoneLast10(String(parentMeta?.mobile || ""));
 
-  let messages: Record<string, unknown>[] = [];
+  let outbound: Record<string, unknown>[] = [];
   const msgSelect =
-    "id, created_at, kind, channel, client_display, subject, body_text, email_status, whatsapp_status, session_date, venue";
+    "id, created_at, kind, channel, client_display, subject, body_text, email_status, whatsapp_status, session_date, venue, sent_by_email";
 
   if (emailNorm) {
     const { data: byEmail } = await supabase
@@ -101,8 +100,8 @@ Deno.serve(async (req) => {
       .select(msgSelect)
       .ilike("parent_email", emailNorm)
       .order("created_at", { ascending: false })
-      .limit(20);
-    messages = byEmail || [];
+      .limit(40);
+    outbound = byEmail || [];
   }
 
   if (phone10) {
@@ -111,21 +110,34 @@ Deno.serve(async (req) => {
       .select(msgSelect)
       .like("parent_phone", `%${phone10}`)
       .order("created_at", { ascending: false })
-      .limit(20);
-    const merged = [...messages, ...(byPhone || [])];
+      .limit(40);
+    const merged = [...outbound, ...(byPhone || [])];
     const seen = new Set<string>();
-    messages = merged.filter((row) => {
+    outbound = merged.filter((row) => {
       const id = String(row.id || "");
       if (!id || seen.has(id)) return false;
       seen.add(id);
       return true;
     });
-    messages.sort(
+  }
+
+  let inbound: Record<string, unknown>[] = [];
+  if (phone10) {
+    const { data, error } = await supabase
+      .from("portal_parent_whatsapp_inbound")
+      .select("id, created_at, wa_message_id, from_phone, contact_name, message_type, body_text, meta")
+      .like("from_phone", `%${phone10}`)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (!error) inbound = data || [];
+  }
+
+  const messages = mergeParentPortalMessages(outbound, inbound)
+    .sort(
       (a, b) =>
         new Date(String(b.created_at || 0)).getTime() - new Date(String(a.created_at || 0)).getTime(),
-    );
-    messages = messages.slice(0, 20);
-  }
+    )
+    .slice(0, 20);
 
   const childrenOut = await Promise.all(
     (contacts || []).map(async (c) => {

@@ -152,6 +152,7 @@
       var path = r.path || r.file_path || '';
       return {
         type: 'timesheet',
+        id: r.id || '',
         name: name,
         path: path,
         storageBucket: r.bucket || r.storage_bucket || 'club-files',
@@ -381,6 +382,28 @@
     return res.data;
   }
 
+  async function deleteDocument(item) {
+    var payload;
+    if (item.id) {
+      payload = { document_id: item.id };
+    } else if (item.path) {
+      payload = {
+        path: item.path,
+        bucket: item.storageBucket || 'documents',
+        source: item.source || 'portal'
+      };
+    } else {
+      throw new Error('Nothing to delete for this row.');
+    }
+    var res = await edgePost('portal-admin-document-delete', payload);
+    if (res.error) throw new Error(res.error);
+    if (item.type === 'expense' && item.id &&
+        typeof global.portalAdminBellRemoveExpenseUnpaid === 'function') {
+      global.portalAdminBellRemoveExpenseUnpaid(item.id);
+    }
+    return res.data;
+  }
+
   function renderExpenseUnpaidBanner() {
     var el = document.getElementById('portalDocumentsExpenseBanner');
     if (!el) return;
@@ -436,6 +459,10 @@
           actionHtml +=
             ' <button type="button" class="' + paidClass + '" data-portal-expense-paid="' + esc(it.id) + '" data-portal-expense-is-paid="' + (it.isPaid ? '1' : '0') + '">' + paidLabel + '</button>';
         }
+        if (it.id || it.path) {
+          actionHtml +=
+            ' <button type="button" class="portal-forms-view-btn portal-documents-delete-btn" data-portal-doc-delete="' + idx + '">Delete</button>';
+        }
         return (
           '<tr class="portal-documents-data-row" data-portal-doc-idx="' + idx + '">' +
           '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
@@ -464,6 +491,33 @@
             setStatus('<strong>Error</strong> ' + esc(err.message || String(err)), true);
           })
           .finally(function () {
+            btn.disabled = false;
+          });
+      });
+    });
+    tbody.querySelectorAll('[data-portal-doc-delete]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var didx = Number(btn.getAttribute('data-portal-doc-delete'));
+        var it = global._portalDocumentsCurrent && global._portalDocumentsCurrent[didx];
+        if (!it) return;
+        var typeLabel = TYPE_LABELS[it.type] || it.type || 'document';
+        var confirmMsg =
+          'Delete this ' + typeLabel.toLowerCase() + '?\n\n' +
+          (it.name || '(unnamed)') + '\n\n' +
+          'This permanently removes the file and cannot be undone.';
+        var ok = false;
+        try { ok = window.confirm(confirmMsg); } catch (_e) { ok = true; }
+        if (!ok) return;
+        btn.disabled = true;
+        setStatus('<strong>Deleting…</strong> Removing ' + esc(it.name || 'file') + '.');
+        void deleteDocument(it)
+          .then(function () {
+            setStatus('<strong>Deleted.</strong> ' + esc(it.name || 'File') + ' removed.');
+            return refresh();
+          })
+          .catch(function (err) {
+            console.error(err);
+            setStatus('<strong>Error</strong> ' + esc(err.message || String(err)), true);
             btn.disabled = false;
           });
       });
@@ -588,6 +642,9 @@
       '#portalDocumentsRoot .portal-documents-expense-unpaid{color:#b45309;font-weight:700}' +
       '#portalDocumentsRoot .portal-documents-expense-paid{color:#15803d;font-weight:700}' +
       '#portalDocumentsRoot .portal-documents-expense-mark-btn{background:#0b2a5b;color:#fff;border:0}' +
+      '#portalDocumentsRoot .portal-documents-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}' +
+      '#portalDocumentsRoot .portal-documents-delete-btn:hover{background:#fef2f2;border-color:#ef4444}' +
+      '#portalDocumentsRoot .portal-documents-delete-btn:disabled{opacity:.6;cursor:default}' +
       '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%}}' +
       '</style>'
     );

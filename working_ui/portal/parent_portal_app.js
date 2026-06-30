@@ -114,6 +114,40 @@
           "Could not load this section — please try again.",
         );
       },
+      loadMessages: function () {
+        return fetch(fn("parent-portal-messages-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("messages_load_failed");
+            return j;
+          });
+        });
+      },
+      sendMessage: function (message) {
+        return fetch(fn("parent-portal-message-send"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, message: message }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("message_send_failed");
+            return j;
+          });
+        });
+      },
     };
   }
 
@@ -350,29 +384,38 @@
     if (msgList) {
       if (!messages.length) {
         msgList.innerHTML =
-          '<p class="pp-muted">No recent messages yet. When the club contacts you by email or WhatsApp, copies may appear here.</p>';
+          '<p class="pp-muted">No recent messages yet. Open a participant and tap <strong>Messages</strong>, or contact us on WhatsApp — everything syncs here.</p>';
       } else {
         msgList.innerHTML = messages
           .map(function (m) {
-            var sent =
-              m.whatsapp_status === "sent" || m.whatsapp_status === "sent_sms"
+            var isIn = m.direction === "in";
+            var sent = isIn
+              ? m.source === "parent_app"
+                ? "You · Parent app"
+                : "You · WhatsApp"
+              : m.whatsapp_status === "sent" || m.whatsapp_status === "sent_sms" || m.source === "whatsapp"
                 ? "WhatsApp"
-                : m.email_status === "sent"
+                : m.email_status === "sent" || m.source === "email"
                   ? "Email"
-                  : "Sent";
+                  : "Club";
             var preview = String(m.body_text || m.subject || "").trim();
             if (preview.length > 220) preview = preview.slice(0, 217) + "…";
+            var chipLabel = isIn ? "Your message" : kindLabel(m.kind);
             return (
-              '<article class="pp-card pp-msg-card">' +
+              '<article class="pp-card pp-msg-card' +
+              (isIn ? " pp-msg-card--in" : "") +
+              '">' +
               '<div class="pp-msg-head">' +
-              '<span class="pp-chip">' +
-              esc(kindLabel(m.kind)) +
+              '<span class="pp-chip' +
+              (isIn ? " pp-chip--you" : "") +
+              '">' +
+              esc(chipLabel) +
               "</span>" +
               '<span class="pp-msg-when">' +
               esc(formatWhen(m.created_at)) +
               "</span>" +
               "</div>" +
-              (m.client_display
+              (m.client_display && !isIn
                 ? '<p class="pp-msg-client"><strong>' + esc(m.client_display) + "</strong></p>"
                 : "") +
               (preview ? '<p class="pp-msg-body">' + esc(preview) + "</p>" : "") +

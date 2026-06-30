@@ -31,6 +31,17 @@ const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
   chaitanya_trial_28_06: "chaitanya",
 };
 
+/**
+ * Portal participant display-name → roster/feedback short client_id.
+ * Use only when the parent-portal record stores a fuller name than the roster
+ * (e.g. "Fadi Abu daud" in portal_participants vs client_id "fadi" in the roster).
+ * Scoped per participant to avoid first-name collisions across distinct children.
+ */
+const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
+  fadi_abu_daud: "fadi",
+  fadi_ab: "fadi",
+};
+
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
   rayan_tapa: "rayan_ta",
   aadam_ah: "adaam_ah",
@@ -39,7 +50,8 @@ const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
 export function rosterParticipantSlugAlias(slug: string): string {
   const s = slugifyParticipantKey(slug);
   if (!s) return s;
-  return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] || CLIENT_INFO_SHEET_ALIASES[s] || s;
+  return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] ||
+    CLIENT_INFO_SHEET_ALIASES[s] || PORTAL_PARTICIPANT_SLUG_ALIASES[s] || s;
 }
 
 export function canonicalParticipantClientId(nameRaw: string): string {

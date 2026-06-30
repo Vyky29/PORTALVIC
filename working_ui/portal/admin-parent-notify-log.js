@@ -563,9 +563,16 @@
           var inWho = esc(inRow.contact_name || "+" + phoneDigits(inRow.from_phone) || "Reply");
           var inSub = esc(bodyPreview(inRow.body_text));
           var inWhen = esc(formatLondon(inRow.created_at));
+          var inMeta = inRow.meta && typeof inRow.meta === "object" ? inRow.meta : {};
+          var fromApp =
+            inMeta.source === "parent_portal" ||
+            String(inRow.wa_message_id || "").indexOf("app:") === 0;
+          var inChannelLabel = fromApp ? "Parent app" : "WhatsApp";
           var inChips =
             statusChip("reply", "whatsapp") +
-            ' <span class="portal-pnlog-chip portal-pnlog-chip--muted">WhatsApp</span>';
+            ' <span class="portal-pnlog-chip portal-pnlog-chip--muted">' +
+            esc(inChannelLabel) +
+            "</span>";
           return (
             '<details class="portal-pnlog-row portal-pnlog-row--in" data-pnlog-idx="' +
             idx +
