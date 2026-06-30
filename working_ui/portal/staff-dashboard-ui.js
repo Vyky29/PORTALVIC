@@ -2697,6 +2697,7 @@
           const isWorked = extraCatchUp || instructorCoverDay || adminAddedShiftDay || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;
+          let dayFlagsOff = null;
           const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay;
           const staffRequestedAway = termStaffId
             && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
@@ -2720,9 +2721,17 @@
             continue;
           }
           if(halfBlocksNav){
-            cls += ' half-term';
             const ovPulseHalf = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
-            if(ovPulseHalf) cls += ' ' + ovPulseHalf;
+            dayFlagsOff = typeof portalDayOverrideBadgeFlags === 'function'
+              ? portalDayOverrideBadgeFlags(dayWordRoster, isoKey)
+              : null;
+            if(ovPulseHalf){
+              /* Off-rota / half-term day but admin schedule change (cover, shadowing, etc.) → blue + outline pulse */
+              cls += ' active';
+              cls += ' ' + ovPulseHalf;
+            }else{
+              cls += ' half-term';
+            }
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
             label = ovPulseHalf
@@ -2730,6 +2739,9 @@
               : (afterTermEnd
                 ? `${day}, term ended`
                 : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`)));
+            if(ovPulseHalf && dayFlagsOff && dayFlagsOff.hasAbsentAnnounced){
+              cls += ' term-cal-day--with-badge';
+            }
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
@@ -2760,12 +2772,28 @@
               continue;
             }
           } else {
-            cls += ' half-term';
             const ovPulseOff = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
-            if(ovPulseOff) cls += ' ' + ovPulseOff;
-            label = ovPulseOff ? `${day}, schedule change — see quick menu` : `${day}, not on your rota`;
+            dayFlagsOff = typeof portalDayOverrideBadgeFlags === 'function'
+              ? portalDayOverrideBadgeFlags(dayWordRoster, isoKey)
+              : null;
+            if(ovPulseOff){
+              cls += ' active';
+              cls += ' ' + ovPulseOff;
+              if(dayFlagsOff && dayFlagsOff.hasAbsentAnnounced) cls += ' term-cal-day--with-badge';
+              label = `${day}, schedule change — see quick menu`;
+            }else{
+              cls += ' half-term';
+              label = `${day}, not on your rota`;
+            }
           }
-          parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+          let dayNumHtml = `<span class="term-cal-day-num">${day}</span>`;
+          if(cls.indexOf('term-cal-day--with-badge') >= 0){
+            const badges = [];
+            if(dayFlagsOff && dayFlagsOff.hasAbsentAnnounced) badges.push('<span class="term-cal-badge term-cal-badge--absent">Absent</span>');
+            if(dayFlagsOff && dayFlagsOff.hasMakeUp) badges.push('<span class="term-cal-badge term-cal-badge--pink">Make Up</span>');
+            if(badges.length) dayNumHtml += `<span class="term-cal-badges">${badges.join('')}</span>`;
+          }
+          parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}">${dayNumHtml}</div>`);
         }
         const daysShown = lastDay - firstDom + 1;
         const used = startPad + daysShown;
