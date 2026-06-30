@@ -5384,7 +5384,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var msg = String(existing.parent_message || "").trim();
     var model = String(existing.review_model || "");
     if (status === "hidden" && !msg) return true;
-    if (model === "fallback-no-openai") return true;
+    if (model === "fallback-no-openai" || model === "fallback-positive-only" || model === "fallback-needs-ai" || model === "openai-error" || model.indexOf("openai-http-") === 0) return true;
     return false;
   }
 
@@ -5416,7 +5416,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } else {
         hub._generatedShareKey = missing.slice().sort().join(",");
       }
-      var batch = missing.slice(0, 120);
+      var batch = missing.slice(0, 30);
       global.portalAdminGenerateParentFeedbackShares(batch)
         .then(function (res) {
           if (!res || !res.ok) return;

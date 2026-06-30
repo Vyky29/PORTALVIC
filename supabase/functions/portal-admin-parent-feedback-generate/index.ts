@@ -12,6 +12,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { parentSummaryModelNeedsRefresh } from "../_shared/parent_feedback_sanitize.ts";
 import {
   sanitizeAndCacheParentFeedbackShare,
   type ParticipantLite,
@@ -19,7 +20,8 @@ import {
 } from "../_shared/parent_feedback_sanitize_job.ts";
 
 const MAX_IDS = 120;
-const CONCURRENCY = 5;
+const CONCURRENCY = 1;
+const CHUNK_DELAY_MS = 1500;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
@@ -61,7 +63,12 @@ Deno.serve(async (req) => {
     const msg = String(s.parent_message || "").trim();
     if (s.admin_edited_at) {
       settled.add(String(s.session_feedback_id));
-    } else if (status && status !== "pending" && model !== "fallback-no-openai" && !(status === "hidden" && !msg)) {
+    } else if (
+      status &&
+      status !== "pending" &&
+      !parentSummaryModelNeedsRefresh(model) &&
+      !(status === "hidden" && !msg)
+    ) {
       settled.add(String(s.session_feedback_id));
     }
   }
@@ -86,6 +93,9 @@ Deno.serve(async (req) => {
       await Promise.all(
         chunk.map((row) => sanitizeAndCacheParentFeedbackShare(admin, row, preloaded)),
       );
+      if (i + CONCURRENCY < queue.length) {
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+      }
     }
   }
 

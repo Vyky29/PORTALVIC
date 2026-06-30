@@ -54,6 +54,14 @@ function clean(v: unknown): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "GET") {
+    const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
+    return json({
+      ok: true,
+      openai: Boolean(apiKey),
+      model: Deno.env.get("PORTAL_OPENAI_MODEL") || "gpt-4o-mini",
+    });
+  }
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
   }

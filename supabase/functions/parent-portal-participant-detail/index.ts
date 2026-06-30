@@ -15,6 +15,7 @@ import {
 import {
   feedbackSourceFingerprint,
   sanitizeFeedbackForParents,
+  parentSummaryModelNeedsRefresh,
 } from "../_shared/parent_feedback_sanitize.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
@@ -392,13 +393,13 @@ Deno.serve(async (req) => {
       const cache = cacheById.get(id);
 
       const adminEdited = !!(cache && cache.admin_edited_at);
-      const wasBrokenFallback = String(cache?.review_model || "") === "fallback-no-openai";
+      const wasStaleSummary = parentSummaryModelNeedsRefresh(cache?.review_model);
       if (
         cache &&
         (adminEdited ||
           (cache.source_fingerprint === fingerprint &&
             cache.share_status !== "pending" &&
-            !wasBrokenFallback))
+            !wasStaleSummary))
       ) {
         const shareStatus = String(cache.share_status || "hidden");
         const parentMessage = cache.parent_message ? String(cache.parent_message) : null;

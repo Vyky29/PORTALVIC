@@ -10,6 +10,7 @@ import {
 } from "./participant_identity.ts";
 import {
   feedbackSourceFingerprint,
+  parentSummaryModelNeedsRefresh,
   sanitizeFeedbackForParents,
   type SanitizeInput,
 } from "./parent_feedback_sanitize.ts";
@@ -177,8 +178,8 @@ export async function sanitizeAndCacheParentFeedbackShare(
     return { ok: true, skipped: "admin_edited", share_status: String(existing.share_status || "hidden") };
   }
 
-  // Refresh rows left empty/hidden by earlier no-OpenAI fallback or failed AI runs.
-  const wasBrokenFallback = String(existing?.review_model || "") === "fallback-no-openai";
+  // Refresh rows left empty/hidden by earlier fallbacks or outdated AI drafts.
+  const wasStaleFallback = parentSummaryModelNeedsRefresh(existing?.review_model);
   const wasHiddenEmpty =
     String(existing?.share_status || "") === "hidden" &&
     !String(existing?.parent_message || "").trim();
@@ -186,7 +187,7 @@ export async function sanitizeAndCacheParentFeedbackShare(
     existing &&
     existing.source_fingerprint === fingerprint &&
     existing.share_status !== "pending" &&
-    !wasBrokenFallback &&
+    !wasStaleFallback &&
     !wasHiddenEmpty
   ) {
     return { ok: true, skipped: "unchanged", share_status: String(existing.share_status) };
