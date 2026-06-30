@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260628-hazem-aurora-per-slot",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260630-same-cover-merge",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260625-simon-stf016",
   ];

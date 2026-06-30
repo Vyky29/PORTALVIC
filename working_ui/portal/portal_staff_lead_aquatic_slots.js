@@ -121,7 +121,14 @@
     return n > 1 && !!lead;
   }
 
-  /** Active instructor covers for one aquatic client on a calendar day (each cover window = one feedback unit). */
+  /**
+   * Distinct covering instructors delivering aquatic to one client on a calendar day.
+   *
+   * Per-slot feedback is only for SPLIT instructor covers (different instructors on
+   * different slots). When the SAME instructor covers two consecutive 30' halves of a
+   * 1-hour session (split only so admin can reassign half), that is ONE logical session
+   * → ONE card + ONE feedback, so it must count as a single unit.
+   */
   function aquaticInstructorCoverUnitsOnDate(iso, clientId, dayWord) {
     var cid = slugClient(clientId);
     if (!iso || !cid) return 0;
@@ -153,16 +160,11 @@
         }
       }
       if (!aquatic) continue;
-      var start =
-        typeof global.portalHmFromDbTime === "function"
-          ? global.portalHmFromDbTime(ov.anchor_start) || ""
-          : String(ov.anchor_start || "").trim().slice(0, 5);
       var cover = String((ov.payload && ov.payload.covering_staff_id) || "")
         .trim()
         .toUpperCase();
-      var key = start + "\0" + cover;
-      if (!start || seen[key]) continue;
-      seen[key] = true;
+      if (!cover || seen[cover]) continue;
+      seen[cover] = true;
       n++;
     }
     return n;
