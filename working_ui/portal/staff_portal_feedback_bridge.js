@@ -827,8 +827,15 @@
     if (!rosterTime) return true;
     const rTime = portalRowTimeTokenFromKey(pk);
     if (rTime && rosterTime && rTime !== rosterTime) return false;
+    // Day Centre / Bespoke-shared are whole-day shared units: one feedback per client
+    // per day with no per-slot time. Their submitted key (e.g. "DATE|fadi|day_centre")
+    // has no time token, so it must still cover the timed roster row.
+    const sharedUnit =
+      portalRosterKeyIsSharedFeedbackUnit(pk) ||
+      isDayCentreRosterSession(s) ||
+      isBespokeSharedRosterSession(s);
     // Submission without a time token must not blanket-match every slot for the same client that day.
-    if (!rTime && rosterTime) return false;
+    if (!rTime && rosterTime && !sharedUnit) return false;
     return true;
   }
 
