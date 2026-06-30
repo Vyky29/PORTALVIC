@@ -622,7 +622,6 @@
   }
 
   function parentFeedbackTableRow(row) {
-    const inst = clean(row.completed_by_name) || "—";
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
@@ -630,7 +629,7 @@
       row.engagement_rating != null && row.engagement_rating !== ""
         ? esc(String(row.engagement_rating))
         : '<span class="muted">—</span>';
-    var msg = clean(row.parent_message || row.positive_feedback);
+    var msg = clean(row.parent_message);
     var msgCell;
     if (row.message_pending) {
       msgCell = '<span class="pcso-pending" title="Review in progress">Preparing summary…</span>';
@@ -641,12 +640,12 @@
     }
     return (
       "<tr>" +
-      '<td class="pcso-tbl__inst">' +
-      '<div class="pcso-tbl__inst-name">' + esc(inst) + "</div>" +
-      '<div class="pcso-tbl__inst-date">' + esc(dateLine) + "</div></td>" +
+      '<td class="pcso-tbl__date">' +
+      '<div class="pcso-tbl__date-main">' + esc(dateLine) + "</div>" +
+      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
+      "</td>" +
       '<td class="pcso-tbl__svc">' +
       '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
-      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
@@ -664,7 +663,7 @@
       '<div class="pcso-table-wrap">' +
       '<table class="pcso-table pcso-table--parent">' +
       "<thead><tr>" +
-      '<th scope="col" class="pcso-tbl__inst">Instructor</th>' +
+      '<th scope="col" class="pcso-tbl__date">Date</th>' +
       '<th scope="col" class="pcso-tbl__svc">Service</th>' +
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
@@ -706,7 +705,7 @@
       client_name: "",
       service: clean(r.service),
       session_time: clean(r.session_time),
-      completed_by_name: clean(r.instructor),
+      completed_by_name: "",
       engagement_rating: r.engagement_rating,
       client_emotions: clean(r.client_emotions),
       engagement_patterns: clean(r.independence),

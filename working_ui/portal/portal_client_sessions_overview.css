@@ -336,9 +336,19 @@ body.portal-force-landscape{
   overflow-wrap:break-word;
   white-space:pre-wrap;
 }
+.pcso-table--parent .pcso-tbl__date{
+  min-width:88px;
+  max-width:120px;
+}
+.pcso-tbl__date-main{
+  font-weight:700;
+  color:var(--ink,#173247);
+  font-size:12px;
+  overflow-wrap:break-word;
+}
 .pcso-table--parent .pcso-tbl__parent-msg{
   min-width:140px;
-  max-width:220px;
+  max-width:280px;
 }
 .pp-ach-grid{
   display:grid;

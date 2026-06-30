@@ -18,7 +18,6 @@ import {
 } from "../_shared/parent_feedback_sanitize.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
-  instructorFirstName,
   lookupClientsInfoSheetForParticipant,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
@@ -30,8 +29,9 @@ import {
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
-/** Read path: never block parents on live OpenAI — use cache or mark pending. */
-const SANITIZE_BATCH = 0;
+/** Max uncached feedback rows to review per parent page load (parallel batches). */
+const SANITIZE_BATCH = 30;
+const SANITIZE_CONCURRENCY = 5;
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
 
@@ -112,6 +112,30 @@ function isoFromAny(raw: unknown): string {
 function independenceLabel(raw: unknown): string {
   if (Array.isArray(raw)) return raw.map((x) => clean(x, 120)).filter(Boolean).join(", ");
   return clean(raw, 400);
+}
+
+async function sanitizeFeedbackBatch(
+  items: Array<{
+    id: string;
+    contactId: string;
+    fingerprint: string;
+    input: Parameters<typeof sanitizeFeedbackForParents>[0];
+  }>,
+  limit: number,
+): Promise<Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>> {
+  const out = new Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>();
+  const queue = items.slice(0, limit);
+  for (let i = 0; i < queue.length; i += SANITIZE_CONCURRENCY) {
+    const chunk = queue.slice(i, i + SANITIZE_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async (item) => {
+        const reviewed = await sanitizeFeedbackForParents(item.input);
+        return { id: item.id, reviewed };
+      }),
+    );
+    for (const row of results) out.set(row.id, row.reviewed);
+  }
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -276,6 +300,14 @@ Deno.serve(async (req) => {
     }
 
     let sanitizeBudget = SANITIZE_BATCH;
+    const pendingSanitize: Array<{
+      id: string;
+      contactId: string;
+      fingerprint: string;
+      input: Parameters<typeof sanitizeFeedbackForParents>[0];
+      row: Record<string, unknown>;
+      patterns: unknown;
+    }> = [];
 
     for (const row of rawFeedback) {
       const id = String(row.id);
@@ -295,24 +327,81 @@ Deno.serve(async (req) => {
       };
 
       const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
-      let cache = cacheById.get(id);
-      let parentMessage: string | null = null;
-      let shareStatus = "hidden";
-      let messagePending = false;
+      const cache = cacheById.get(id);
 
       if (cache && cache.source_fingerprint === fingerprint && cache.share_status !== "pending") {
-        shareStatus = String(cache.share_status || "hidden");
-        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        const shareStatus = String(cache.share_status || "hidden");
+        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
       } else if (sanitizeBudget > 0) {
         sanitizeBudget--;
-        const reviewed = await sanitizeFeedbackForParents(sanitizeInput);
-        shareStatus = reviewed.share_status;
-        parentMessage = reviewed.parent_message || null;
+        pendingSanitize.push({
+          id,
+          contactId,
+          fingerprint,
+          input: sanitizeInput,
+          row,
+          patterns,
+        });
+      } else if (cache) {
+        shareStatus = String(cache.share_status || "hidden");
+        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
+      } else {
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: null,
+          message_pending: true,
+        });
+      }
+    }
+
+    if (pendingSanitize.length) {
+      const reviewedMap = await sanitizeFeedbackBatch(pendingSanitize, pendingSanitize.length);
+      for (const item of pendingSanitize) {
+        const row = item.row;
+        const patterns = item.patterns;
+        const reviewed = reviewedMap.get(item.id) || {
+          share_status: "hidden" as const,
+          parent_message: "",
+          review_model: "missing",
+        };
+        const shareStatus = reviewed.share_status;
+        const parentMessage = reviewed.parent_message || null;
 
         const upsertRow = {
-          session_feedback_id: id,
-          contact_id: contactId,
-          source_fingerprint: fingerprint,
+          session_feedback_id: item.id,
+          contact_id: item.contactId,
+          source_fingerprint: item.fingerprint,
           parent_message: parentMessage,
           share_status: shareStatus,
           review_model: reviewed.review_model,
@@ -324,28 +413,28 @@ Deno.serve(async (req) => {
           .from("portal_parent_feedback_share")
           .upsert(upsertRow, { onConflict: "session_feedback_id" });
         if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
-      } else if (cache) {
-        shareStatus = String(cache.share_status || "hidden");
-        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-      } else {
-        messagePending = true;
-        shareStatus = "pending";
-      }
 
-      sessionsOut.push({
-        id,
-        session_date: isoFromAny(row.session_date),
-        service: clean(row.service, 200),
-        session_time: clean(row.session_time, 80),
-        instructor: instructorFirstName(row.completed_by_name),
-        attendance: clean(row.attendance, 40),
-        engagement_rating: row.engagement_rating,
-        client_emotions: clean(row.client_emotions, 200),
-        independence: independenceLabel(patterns),
-        parent_message: shareStatus === "approved" ? parentMessage : null,
-        message_pending: messagePending,
-      });
+        sessionsOut.push({
+          id: item.id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
+      }
     }
+
+    sessionsOut.sort((a, b) => {
+      const da = String(a.session_date || "");
+      const db = String(b.session_date || "");
+      if (da !== db) return db.localeCompare(da);
+      return clean(b.session_time).localeCompare(clean(a.session_time));
+    });
   }
 
   let achievements: Record<string, unknown>[] = [];

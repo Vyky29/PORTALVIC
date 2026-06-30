@@ -21,16 +21,8 @@ function str(v: unknown, max = 4000): string {
   return String(v ?? "").trim().slice(0, max);
 }
 
-function fallbackSanitize(input: SanitizeInput): SanitizeResult {
-  const positive = str(input.positiveFeedback, 2000);
-  if (positive.length >= 20) {
-    return {
-      share_status: "approved",
-      parent_message: positive,
-      review_model: "fallback-positive-only",
-    };
-  }
-  return { share_status: "hidden", parent_message: "", review_model: "fallback-empty" };
+function fallbackSanitize(_input: SanitizeInput): SanitizeResult {
+  return { share_status: "hidden", parent_message: "", review_model: "fallback-no-openai" };
 }
 
 export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<SanitizeResult> {
@@ -46,14 +38,14 @@ export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<
       {
         role: "system",
         content:
-          "You prepare session feedback for parents/carers of children with SEND at ClubSENsational (UK). " +
+          "You are a UK specialist in autism and SEND, writing session updates for parents and carers at clubSENsational — a club where children with additional needs enjoy swimming, climbing, fitness and multi-activity sessions. " +
           "Return JSON only: {\"share_status\":\"approved\"|\"hidden\",\"parent_message\":\"...\"}. " +
-          "Rules: parent_message must be warm British English, 2–5 short sentences max, celebrate progress and session activities. " +
-          "NEVER include: staff internal concerns, safeguarding allegations, dysregulation management strategies for staff, " +
-          "names of other children, billing, LA/EHCP admin, incident details, challenging behaviour descriptions, " +
-          "quotes that could identify other families, or anything marked for managers only. " +
-          "If the source text is mostly internal/admin or you cannot write something genuinely parent-helpful, set share_status to hidden and parent_message to \"\". " +
-          "You may use engagement/emotion/independence context only in general terms (e.g. 'engaged well', 'needed some support').",
+          "parent_message: warm British English, 2–5 short sentences, strengths-based and constructive — what their child enjoyed, tried, or progressed with. " +
+          "Use engagement, emotions and independence only in gentle general terms (e.g. 'engaged well', 'needed a little support'). " +
+          "NEVER include: staff or instructor names (first or full), names of other children, internal staff jargon, safeguarding allegations, " +
+          "detailed dysregulation or challenging behaviour, incident specifics, billing, LA/EHCP admin, or anything clearly for managers only. " +
+          "staff_relevant_notes_internal is for context only — include only if it helps parents in a constructive, non-alarming way; otherwise ignore it. " +
+          "If you cannot write something genuinely helpful and parent-safe, set share_status to hidden and parent_message to \"\".",
       },
       {
         role: "user",
