@@ -9,7 +9,7 @@
   var VER = "20260630-luliya-fb28-29";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260630-luliya-fb28-29",
+    "/portal/term_from_timetable.js?v=20260630-javier-fb1017-off28",
     "/portal/term_calendar_dashboard_shared.js?v=20260629-luliya-cal",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
