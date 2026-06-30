@@ -303,8 +303,13 @@
     return /\bbespoke\b/.test(p) || /\bfitfun\b/.test(p) || /\bfit fun\b/.test(p);
   }
 
+  function isDayCentreActivity(activity) {
+    return /day\s*centre/i.test(String(activity || ""));
+  }
+
+  /** Multi-Activity / Bespoke / Day Centre: consecutive blocks, same client + venue → one Today card. */
   function isConsecutiveHalfHourMergeActivity(activity) {
-    return isMultiActivity(activity) || isBespokeProgramme(activity);
+    return isMultiActivity(activity) || isBespokeProgramme(activity) || isDayCentreActivity(activity);
   }
 
   function hmToMinutes(hm) {
