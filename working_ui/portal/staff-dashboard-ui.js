@@ -536,12 +536,14 @@
         html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">Day off (Time Off Requested)</p>';
-        html += '<p class="today-day-panel__off-sub">' + (hasNext ? 'No sessions this day — your next session is below' : 'No sessions this day') + '</p></div></div>';
+        html += '<p class="today-day-panel__off-sub">' + (hasNext ? 'No sessions this day — your next session is below' : 'No sessions this day') + '</p>';
+        html += '<p class="today-day-panel__off-action"><a class="today-day-panel__off-link" href="session_disruption_report.html?from=dashboard&type=planned">Report absence / request day off</a></p></div></div>';
       }else if(mode === 'off'){
         html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">Day off</p>';
-        html += '<p class="today-day-panel__off-sub">' + (hasNext ? 'No sessions today — your next session is below' : 'No sessions today') + '</p></div></div>';
+        html += '<p class="today-day-panel__off-sub">' + (hasNext ? 'No sessions today — your next session is below' : 'No sessions today') + '</p>';
+        html += '<p class="today-day-panel__off-action"><a class="today-day-panel__off-link" href="session_disruption_report.html?from=dashboard&type=planned">Request a day off</a></p></div></div>';
       }else if(mode === 'complete'){
         html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
         html += '<div class="today-day-panel__off-copy">';

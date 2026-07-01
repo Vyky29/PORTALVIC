@@ -55,6 +55,20 @@
       min-width:0;scroll-margin-top:12px
     }
     .card h2{margin:0 0 10px;font-size:18px;color:var(--guide-navy);overflow-wrap:break-word}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0;margin:0 0 10px}
+    .card-head h2{margin:0;flex:1;min-width:0}
+    .listen-btn{
+      flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+      border:1px solid var(--guide-border);background:#fff;color:var(--guide-navy);font-size:13px;
+      font-weight:700;cursor:pointer;min-width:0;max-width:100%
+    }
+    .listen-btn:hover,.listen-btn:focus-visible{background:#f4f8fc;outline:2px solid rgba(45,132,179,.35);outline-offset:1px}
+    .listen-btn.is-speaking{border-color:var(--guide-blue);background:#eaf4fb;color:var(--guide-navy)}
+    .listen-btn[disabled]{opacity:.55;cursor:not-allowed}
+    .voice-banner{
+      border:1px solid rgba(45,132,179,.35);background:#eef6fc;border-radius:14px;
+      padding:10px 14px;margin:0 0 16px;font-size:14px;line-height:1.5;color:var(--guide-text)
+    }
     .card p,.card li{line-height:1.55;font-size:15px;overflow-wrap:break-word}
     .card p{color:var(--guide-muted);margin:0 0 10px;white-space:pre-wrap}
     figure{margin:12px 0 0}
@@ -180,15 +194,43 @@
     <div class="banner">
       <strong>Visual guide.</strong> Session cards and halo use the same styles as the live portal.
       Open this page any time from Quick menu → Settings → <strong>Staff help guide</strong>.
+      Tap <strong>Listen</strong> on any section to hear it read aloud (no chat — section by section).
     </div>
+    <p class="voice-banner" id="guideVoiceBanner" hidden></p>
     <ul class="nav" id="guideNav" hidden></ul>
     <div id="guideRoot"><p class="loading">Loading guide…</p></div>
     <p class="foot">Bookmark this page or open it from Quick menu → Settings → <strong>Staff help guide</strong>.</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-voice"></script>
+  <script type="module">
+    import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
+    try {
+      await bootstrapDashboardSupabase({ page: "staff" });
+    } catch (e) {
+      console.warn("[help guide] auth bootstrap", e);
+    }
+    if (window.PortalHelpVoiceSpeak) {
+      window.PortalHelpVoiceSpeak.configure({
+        getClient: function () {
+          var box = window.__PORTAL_SUPABASE__;
+          return box && box.client ? box.client : null;
+        },
+        getSupabaseUrl: function () {
+          return window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+        },
+        getAnonKey: function () {
+          return window.SUPABASE_ANON_KEY || "";
+        },
+      });
+      window.__portalHelpGuideVoiceReady = window.PortalHelpVoiceSpeak.probe(true).catch(function () {
+        return { elevenlabs: false };
+      });
+    }
+  </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v5";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v6";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -472,17 +514,107 @@
     }).join("");
   }
 
+  function sectionVoiceText(s) {
+    var title = String(s && s.title || "").trim();
+    var body = String(s && s.content || "").trim();
+    if (s && s.voice_script) return String(s.voice_script).trim();
+    return title && body ? title + ". " + body : title || body;
+  }
+
   function renderSection(s) {
     var id = String(s.id || "").trim();
     var paras = String(s.content || "").trim();
+    var voiceText = sectionVoiceText(s);
     return (
       '<article class="card" id="' + esc(id) + '">' +
+      '<div class="card-head">' +
       "<h2>" + esc(s.title || id) + "</h2>" +
+      (voiceText
+        ? '<button type="button" class="listen-btn" data-guide-listen="' +
+          esc(id) +
+          '" aria-label="Listen to ' +
+          esc(s.title || id) +
+          '">Listen</button>'
+        : "") +
+      "</div>" +
       "<p>" + esc(paras) + "</p>" +
       renderDemos(s.demos) +
       renderIllustrations(s.illustrations) +
       "</article>"
     );
+  }
+
+  var guideVoiceTexts = {};
+
+  function setSpeakingBtn(id) {
+    document.querySelectorAll(".listen-btn.is-speaking").forEach(function (b) {
+      b.classList.remove("is-speaking");
+      b.textContent = "Listen";
+    });
+    if (!id) return;
+    var btn = document.querySelector('.listen-btn[data-guide-listen="' + id + '"]');
+    if (btn) {
+      btn.classList.add("is-speaking");
+      btn.textContent = "Playing…";
+    }
+  }
+
+  async function playSectionVoice(id) {
+    var text = guideVoiceTexts[id];
+    if (!text || !window.PortalHelpVoiceSpeak) return;
+    if (window.PortalHelpVoiceSpeak.unlock) window.PortalHelpVoiceSpeak.unlock();
+    setSpeakingBtn(id);
+    try {
+      var res = await window.PortalHelpVoiceSpeak.speak(text);
+      if (!res || !res.ok) {
+        var banner = document.getElementById("guideVoiceBanner");
+        if (banner) {
+          banner.hidden = false;
+          banner.textContent =
+            res && res.error === "session_expired"
+              ? "Sign in to the portal to hear the guide with the club voice."
+              : "Could not play audio. Try again or read the section on screen.";
+        }
+      }
+    } finally {
+      setSpeakingBtn(null);
+    }
+  }
+
+  function bindGuideVoice(root) {
+    if (!root) return;
+    root.addEventListener("click", function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest("[data-guide-listen]") : null;
+      if (!btn) return;
+      ev.preventDefault();
+      var id = btn.getAttribute("data-guide-listen");
+      if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
+        if (btn.classList.contains("is-speaking")) {
+          window.PortalHelpVoiceSpeak.stop();
+          setSpeakingBtn(null);
+          return;
+        }
+      }
+      void playSectionVoice(id);
+    });
+  }
+
+  async function initGuideVoiceBanner() {
+    var banner = document.getElementById("guideVoiceBanner");
+    if (!banner || !window.PortalHelpVoiceSpeak) return;
+    try {
+      if (window.__portalHelpGuideVoiceReady) await window.__portalHelpGuideVoiceReady;
+      var avail = await window.PortalHelpVoiceSpeak.probe(true);
+      if (avail && avail.elevenlabs) {
+        banner.hidden = false;
+        banner.textContent =
+          "Tap Listen on any section — read aloud with the club voice (Eleven Labs). No chat; one section at a time.";
+      } else {
+        banner.hidden = false;
+        banner.textContent =
+          "Listen uses your device voice if you are not signed in. Sign in for the club Eleven Labs voice.";
+      }
+    } catch (_) {}
   }
 
   fetch(GUIDE_URL, { credentials: "same-origin" })
@@ -494,7 +626,7 @@
       var meta = document.getElementById("guideMeta");
       if (meta && data.version) {
         meta.textContent =
-          "Version " + data.version + ". Illustrated topics with real portal session cards and logo halo.";
+          "Version " + data.version + ". Illustrated topics with real portal session cards. Tap Listen on each section.";
       }
       if (!sections.length) {
         root.innerHTML = "<p class=\"loading\">Guide is empty. Contact the office.</p>";
@@ -508,6 +640,13 @@
           : "";
       }).join("");
       root.innerHTML = sections.map(renderSection).join("");
+      guideVoiceTexts = {};
+      sections.forEach(function (s) {
+        var id = String(s.id || "").trim();
+        if (id) guideVoiceTexts[id] = sectionVoiceText(s);
+      });
+      bindGuideVoice(root);
+      void initGuideVoiceBanner();
       if (location.hash) {
         try {
           var t = document.querySelector(location.hash);

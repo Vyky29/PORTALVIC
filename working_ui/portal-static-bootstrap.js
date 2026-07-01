@@ -833,6 +833,7 @@
         "portal-lead-feedback",
         "portal-pickup",
         "portal-timesheet",
+        "session_disruption",
       ];
       var isForm = formSlugs.some(function (slug) {
         return path.indexOf(slug) >= 0;

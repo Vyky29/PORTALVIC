@@ -707,6 +707,7 @@
       service: clean(r.service),
       time_slot: clean(r.time_slot),
       time_start: slot.start,
+      time_end: slot.end,
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
@@ -1260,6 +1261,13 @@
     return k;
   }
 
+  /** Sunday SwimFarm lane: live MADRE may say DAN while overrides anchor AURORA (same roster slot). */
+  function swimfarmInstructorAnchorAliases(staffId) {
+    var k = canonicalStaffMatchKey(clean(staffId).toLowerCase());
+    if (k === "dan" || k === "aurora") return ["dan", "aurora"];
+    return k ? [k] : [];
+  }
+
   function staffIdMatchesInstructor(staffId, instructors) {
     var sid = clean(staffId).toLowerCase();
     if (!sid) return true;
@@ -1271,6 +1279,14 @@
       if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
     }
     return false;
+  }
+
+  function staffIdMatchesInstructorWithSwimAliases(staffId, instructors) {
+    var aliases = swimfarmInstructorAnchorAliases(staffId);
+    for (var i = 0; i < aliases.length; i++) {
+      if (staffIdMatchesInstructor(aliases[i], instructors)) return true;
+    }
+    return staffIdMatchesInstructor(staffId, instructors);
   }
 
   function slotFromMakeupOverride(isoDate, wd, ov) {
@@ -1503,10 +1519,10 @@
         clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
       if (!coverId && !coverName) return slot;
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
-      if (anchorId && !staffIdMatchesInstructor(anchorId, slot.instructors)) return slot;
+      if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
       var origInst = (slot.instructors || []).slice();
       var effective = coverName ? [coverName] : coverId ? [coverId] : origInst.slice();
-      return Object.assign({}, slot, {
+      var reassigned = Object.assign({}, slot, {
         instructors: effective,
         instructor_label: effective.join(", "),
         __portalScheduleOverride: ov,
@@ -1515,6 +1531,8 @@
         portalCoveringStaffId: coverId,
         portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
       });
+      reassigned.feedback_unit_key = feedbackUnitKey(reassigned);
+      return reassigned;
     });
   }
 
@@ -2579,6 +2597,13 @@
   }
 
   function completedByMatchesSlotInstructors(completedBy, slot) {
+    if (!slot) return false;
+    if (slot.portalCoveringStaffId && completedByMatchesInstructor(completedBy, slot.portalCoveringStaffId)) {
+      return true;
+    }
+    if (slot.portalCoveringStaffName && completedByMatchesInstructor(completedBy, slot.portalCoveringStaffName)) {
+      return true;
+    }
     var insts = slot.instructors || [];
     if (!insts.length) return true;
     for (var i = 0; i < insts.length; i++) {
@@ -2799,9 +2824,59 @@
     return !!clean(fb.positive_feedback);
   }
 
+  function sessionTimeWindowsOverlap(startA, endA, startB, endB) {
+    function mins(hm) {
+      var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!p) return NaN;
+      return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+    }
+    var lo1 = mins(startA);
+    var hi1 = mins(endA || startA);
+    var lo2 = mins(startB);
+    var hi2 = mins(endB || startB);
+    if (!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) {
+      return false;
+    }
+    return lo1 < hi2 && lo2 < hi1;
+  }
+
+  /** Cover instructor submitted feedback — roster/MADRE times may differ from form entry. */
+  function instructorCoverFeedbackFits(fb, slot) {
+    if (!fb || !slot || !slot.portalInstructorReassigned) return false;
+    if (isAbsentFeedbackRow(fb)) return false;
+    if (!feedbackRosterDateMatches(fb, slot)) return false;
+    if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+    if (!completedByMatchesSlotInstructors(fb.completed_by_name, slot)) return false;
+    var slotSvcKey = serviceKey(clean(slot.service));
+    var fbSvcKey = serviceKey(clean(fb.service));
+    var swimFarmSession =
+      /aquatic|multi|swim|activity|splash/.test(slotSvcKey) &&
+      /aquatic|multi|swim|activity|splash/.test(fbSvcKey);
+    if (!servicesCompatibleForSlot(fb, slot) && !swimFarmSession) return false;
+    var st = slot.time_start || normTimeKey(slot.time_slot);
+    var ft = normTimeKey(fb.session_time);
+    if (ft && st && ft === st) return true;
+    if (
+      sessionTimeWindowsOverlap(
+        st,
+        slot.time_end || st,
+        ft || st,
+        normTimeKey(String(fb.session_time || "").split(/\s+to\s+/i)[1]) || ft || st
+      )
+    ) {
+      return true;
+    }
+    if (sundaySwimFarmMultiAreaDayCovers(fb, slot)) return true;
+    if (isAquaticService(slot.service) && isAquaticService(fb.service)) return true;
+    var er = fb.engagement_rating;
+    if (er != null && er !== "" && !isNaN(Number(er))) return true;
+    return !!clean(fb.positive_feedback);
+  }
+
   function feedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (hubSlotIsMakeup(slot)) return makeupFeedbackStrictFits(fb, slot);
+    if (instructorCoverFeedbackFits(fb, slot)) return true;
     if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
     if (!feedbackRosterDateMatches(fb, slot)) return false;
     if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
@@ -5088,7 +5163,7 @@
       var oCid = canonicalClientSlug(ov.anchor_client_id);
       if (oCid && sCid && oCid !== sCid) return false;
       if (overrideIsInstructorReassignType(ov)) {
-        if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
+        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) return false;
       }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
@@ -5111,6 +5186,21 @@
       if (Number.isFinite(lo1) && Number.isFinite(hi1) && Number.isFinite(lo2) && Number.isFinite(hi2)) {
         return lo1 < hi2 && lo2 < hi1;
       }
+    }
+    if (overrideIsInstructorReassignType(ov) && oStart && sStart && oStart !== sStart) {
+      function minsReassign(hm) {
+        var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!p) return NaN;
+        return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+      }
+      var rLo1 = minsReassign(oStart);
+      var rHi1 = minsReassign(oEnd || oStart);
+      var rLo2 = minsReassign(sStart);
+      var rHi2 = minsReassign(sEnd || sStart);
+      if (Number.isFinite(rLo1) && Number.isFinite(rHi1) && Number.isFinite(rLo2) && Number.isFinite(rHi2)) {
+        return rLo1 < rHi2 && rLo2 < rHi1;
+      }
+      return false;
     }
     if (oStart && sStart && oStart !== sStart) return false;
     return true;

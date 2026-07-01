@@ -4671,6 +4671,24 @@
       color:var(--muted);
       line-height:1.35;
     }
+    .today-day-panel__off-action{
+      margin:8px 0 0;
+      min-width:0;
+    }
+    .today-day-panel__off-link{
+      display:inline-block;
+      max-width:100%;
+      font-size:12px;
+      font-weight:800;
+      color:var(--blue);
+      text-decoration:none;
+      overflow-wrap:break-word;
+    }
+    .today-day-panel__off-link:hover,
+    .today-day-panel__off-link:focus-visible{
+      text-decoration:underline;
+      outline:none;
+    }
     .today-day-panel__next{
       flex:1 1 auto;
       display:flex;

@@ -7,10 +7,17 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
+import {
+  buildFormattedTimesheetPdfBytes,
+  formatIsoDmy,
+  loadTimesheetLogoDataUrl,
+} from "./timesheet-pdf-layout.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
 const PERIOD_MONTH = "2026-06-01";
+const PERIOD_START = "2026-05-25";
+const PERIOD_END = "2026-06-24";
 
 /** Victor-confirmed totals (Youssef dual-role recalc 2026-06-30). */
 const CORRECTIONS = [
@@ -63,28 +70,38 @@ function readEnv(k) {
   return line.slice(k.length + 1).trim();
 }
 
-function minimalPdfBytes(title) {
-  const text = String(title || "Timesheet").slice(0, 120);
-  const content = `BT /F1 12 Tf 50 750 Td (${text.replace(/[()\\]/g, "")}) Tj ET`;
-  const objs = [
-    "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n",
-    "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n",
-    "3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n",
-    `4 0 obj<</Length ${content.length}>>stream\n${content}\nendstream\nendobj\n`,
-    "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n",
-  ];
-  let body = "%PDF-1.4\n" + objs.join("");
-  const xref = [];
-  let pos = 0;
-  for (const part of ["%PDF-1.4\n", ...objs]) {
-    xref.push(pos);
-    pos += part.length;
+async function resolvePdfEntries(admin, prof, c) {
+  const { data: ts } = await admin
+    .from("staff_timesheets")
+    .select("entries, hourly_rate_used, total_hours, total_cost")
+    .eq("submitted_by_user_id", prof.id)
+    .eq("period_month", PERIOD_MONTH)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (ts && Array.isArray(ts.entries) && ts.entries.length) {
+    return {
+      entries: ts.entries.map((e) => ({
+        date: String(e.date || "").slice(0, 10),
+        day: String(e.day || ""),
+        hours: Number(e.hours || 0),
+        service: String(e.service || e.service_label || e.role || "Shift"),
+        serviceLabel: String(e.service_label || e.service || e.role || "Shift"),
+        role: String(e.role || ""),
+        note: String(e.note || ""),
+        completed: e.completed !== false,
+      })),
+      hourlyRate: ts.hourly_rate_used != null ? Number(ts.hourly_rate_used) : c.gross / c.total_hours,
+      totalHours: ts.total_hours != null ? Number(ts.total_hours) : c.total_hours,
+      totalCost: ts.total_cost != null ? Number(ts.total_cost) : c.gross,
+    };
   }
-  const xrefStart = body.length;
-  body += "xref\n0 6\n0000000000 65535 f \n";
-  for (let i = 1; i <= 5; i++) body += String(xref[i]).padStart(10, "0") + " 00000 n \n";
-  body += `trailer<</Size 6/Root 1 0 R>>\nstartxref\n${xrefStart}\n%%EOF`;
-  return new TextEncoder().encode(body);
+  return {
+    entries: [],
+    hourlyRate: c.gross / c.total_hours,
+    totalHours: c.total_hours,
+    totalCost: c.gross,
+  };
 }
 
 async function main() {
@@ -120,6 +137,7 @@ async function main() {
   }
 
   console.log("=== 2) Replace June Timesheet PDFs in Documents ===");
+  const logoDataUrl = loadTimesheetLogoDataUrl(root);
   for (const c of CORRECTIONS) {
     const prof = byUser.get(c.username);
     const { data: docs } = await admin
@@ -133,9 +151,24 @@ async function main() {
       if (doc.file_url) await admin.storage.from("documents").remove([doc.file_url]);
       await admin.from("documents").delete().eq("id", doc.id);
     }
+    const fig = await resolvePdfEntries(admin, prof, c);
     const ts = new Date().toISOString().replace(/[:.]/g, "-");
     const storagePath = `${prof.id}/timesheet/${ts}_Junes_Timesheet.pdf`;
-    const pdf = minimalPdfBytes(`${c.name} — June 2026 (${c.total_hours}h · £${c.gross})`);
+    const pdf = buildFormattedTimesheetPdfBytes({
+      employeeName: c.name || prof.full_name,
+      roleLabel: c.role || "",
+      periodStart: PERIOD_START,
+      periodEnd: PERIOD_END,
+      submittedDate: formatIsoDmy(new Date().toISOString().slice(0, 10)),
+      statusLabel: "On time",
+      entries: fig.entries.map((e) => Object.assign({}, e, { rate: fig.hourlyRate, completed: true })),
+      hourlyRate: fig.hourlyRate,
+      totalHours: fig.totalHours,
+      totalCost: fig.totalCost,
+      pendingCost: 0,
+      potentialCost: fig.totalCost,
+      logoDataUrl,
+    });
     const { error: upErr } = await admin.storage.from("documents").upload(storagePath, pdf, {
       contentType: "application/pdf",
       upsert: true,

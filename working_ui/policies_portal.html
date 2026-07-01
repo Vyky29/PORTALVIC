@@ -9189,7 +9189,7 @@
     </ul>
     <p>Following the notification, staff must complete a <strong>Session Disruption Report Form</strong> within 24 hours of the disruption, unless otherwise agreed by the Administration Team.</p>
     <div class="sf-contact-box">
-      <strong>Staff Portal:</strong> open the <a href="cancellation.html">Cancellation / session disruption report</a> from your session or the staff hub menu.
+      <strong>Staff Portal:</strong> open the <a href="session_disruption_report.html?from=policy">Session disruption report</a> from Quick menu or when you request a day off.
     </div>
   </div>
 
@@ -9209,7 +9209,7 @@
     <p>If you have not received confirmation that your email has been received, you must follow up by contacting the ClubSENsational Administration Team to ensure suitable cover arrangements can be made.</p>
     <p>Following the notification, staff must complete a <strong>Session Disruption Report Form</strong> within 24 hours of the disruption, unless otherwise agreed by the Administration Team.</p>
     <div class="sf-contact-box">
-      <strong>Staff Portal:</strong> open the <a href="cancellation.html">Cancellation / session disruption report</a> from your session or the staff hub menu.
+      <strong>Staff Portal:</strong> open the <a href="session_disruption_report.html?from=policy">Session disruption report</a> from Quick menu or when you request a day off.
     </div>
   </div>
 </section>
@@ -10522,6 +10522,13 @@
 
       applyModeBar();
       mountHomePortal();
+
+      (function initPolicyFromQuery() {
+        try {
+          var pid = new URLSearchParams(window.location.search).get("policy");
+          if (pid && getPolicyById(pid)) mountPolicyInOverlay(pid);
+        } catch (_) {}
+      })();
 
       document.getElementById("cs-pc-dashboard").addEventListener("click", function (e) {
         var fab = e.target.closest("#cs-idx-quick-fab");

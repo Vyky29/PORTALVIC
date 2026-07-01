@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-help-guide-v5",
+  "version": "2026-06-help-guide-v6",
   "description": "Single source of truth for portal_help_guide.html. Sections may include inline 'demos' (real portal UI: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles, participants-list, participant-actions, announcement-card, document-list, daily-form, pickup-form, expense-form, alerts-settings, area-icons, lead-tools, profile-form).",
   "sections": [
     {
@@ -122,6 +122,13 @@
         { "demo": "timesheet-rows", "caption": "Timesheet — green ready to pay, orange waiting on feedback." },
         { "demo": "expense-form", "caption": "Expenses — add description, amount and receipt." }
       ],
+      "illustrations": []
+    },
+    {
+      "id": "session-disruption",
+      "title": "Absence and day off requests",
+      "keywords": ["absence", "day off", "time off", "disruption", "planned absence", "same day", "sick", "leave", "ausencia", "dia libre"],
+      "content": "If you cannot attend a session on the day, or you need a planned day off from the rota, complete the Session Disruption Report (POL-048).\n\nQuick menu → Session disruption report — same form for same-day absence and planned absence (section 3.3 of the procedure).\n\nFill in the affected date, venue and reason, then submit. Admin receives the report and your day off is recorded for cover.\n\nStill notify admin by phone or email as soon as possible — the form is the follow-up within 24 hours.\n\nClient session cancellations (participant did not attend) use a different form: Cancellation from the participant card.",
       "illustrations": []
     },
     {

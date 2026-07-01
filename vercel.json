@@ -10,6 +10,7 @@
     { "source": "/session_feedback.html", "destination": "/portal-session-feedback.html" },
     { "source": "/incident_report.html", "destination": "/portal-incident.html" },
     { "source": "/cancellation_report.html", "destination": "/cancellation.html" },
+    { "source": "/session_disruption.html", "destination": "/session_disruption_report.html" },
     { "source": "/expenses.html", "destination": "/portal-expenses.html" },
     { "source": "/pickup.html", "destination": "/portal-pickup.html" },
     { "source": "/venue_review.html", "destination": "/portal-venue-review.html" },

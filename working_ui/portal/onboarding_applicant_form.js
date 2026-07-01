@@ -186,6 +186,40 @@
     );
   }
 
+  function draftUpdatedAt(draft) {
+    if (!draft || typeof draft !== "object") return 0;
+    var t = Date.parse(String(draft.updated_at || ""));
+    return isNaN(t) ? 0 : t;
+  }
+
+  function mergeDraftPayload(serverDraft, localDraft) {
+    var serverPayload =
+      serverDraft && serverDraft.payload && typeof serverDraft.payload === "object"
+        ? serverDraft.payload
+        : null;
+    var localPayload =
+      localDraft && localDraft.payload && typeof localDraft.payload === "object"
+        ? localDraft.payload
+        : null;
+    if (serverPayload && localPayload) {
+      if (draftUpdatedAt(localDraft) > draftUpdatedAt(serverDraft)) return localPayload;
+      return serverPayload;
+    }
+    return serverPayload || localPayload || null;
+  }
+
+  function saveStatusMessage(source, kind) {
+    if (source === "local") {
+      return kind === "submit"
+        ? "Submitted from this device only — server sync was unavailable."
+        : "Saved on this device only — sign in again or try later to sync across devices.";
+    }
+    return kind === "submit"
+      ? "Application submitted. You can close this page."
+      : "Draft saved to your account — continue on any phone or computer.";
+  }
+
+  global.portalOnboardingFormSaveStatusMessage = saveStatusMessage;
   global.portalOnboardingFormEnsureSession = ensurePortalSession;
   global.portalOnboardingFormStaffName = staffDisplayName;
   global.portalOnboardingFormDashboardUrl = function portalOnboardingFormDashboardUrl() {
@@ -241,6 +275,8 @@
         payload: payload,
         portal_staff_name: name,
       });
+      result = Object.assign({ ok: true, source: "server" }, result || {});
+      writeLocalJobDraft(payload);
     } catch (err) {
       if (isOnboardingBackendMissing(err)) {
         writeLocalJobDraft(payload);
@@ -257,11 +293,45 @@
     return result;
   };
   global.portalOnboardingFormLoadJob = async function () {
+    var local = readLocalJobDraft();
     try {
-      return await edgePost("portal-staff-onboarding-draft-load", { form_type: "job" });
+      var res = await edgePost("portal-staff-onboarding-draft-load", { form_type: "job" });
+      var serverDraft = res && res.draft ? res.draft : null;
+      if (local && local.payload && (!serverDraft || !serverDraft.payload)) {
+        try {
+          await edgePost("portal-staff-onboarding-draft-save", {
+            form_type: "job",
+            payload: local.payload,
+            portal_staff_name: staffDisplayName(),
+          });
+          writeLocalJobDraft(local.payload);
+          return {
+            ok: true,
+            source: "server",
+            draft: { payload: local.payload, updated_at: local.updated_at || null },
+            migrated_from_local: true,
+          };
+        } catch (syncErr) {
+          if (!isOnboardingBackendMissing(syncErr)) throw syncErr;
+        }
+      }
+      var merged = mergeDraftPayload(serverDraft, local);
+      if (merged) {
+        return {
+          ok: true,
+          source: "server",
+          draft: {
+            payload: merged,
+            updated_at:
+              (serverDraft && serverDraft.updated_at) ||
+              (local && local.updated_at) ||
+              null,
+          },
+        };
+      }
+      return { ok: true, source: "server", draft: null };
     } catch (err) {
       if (isOnboardingBackendMissing(err)) {
-        var local = readLocalJobDraft();
         return { ok: true, draft: local, source: "local" };
       }
       throw err;
@@ -283,6 +353,8 @@
         staff_name: name,
         payload: payload,
       });
+      result = Object.assign({ ok: true, source: "server" }, result || {});
+      writeLocalHealthDraft(payload);
     } catch (err) {
       if (isHealthBackendMissing(err) || isOnboardingBackendMissing(err)) {
         writeLocalHealthDraft(payload);
@@ -301,11 +373,45 @@
   global.portalOnboardingFormLoadHealth = async function () {
     var sid = staffSessionId();
     if (!sid) throw new Error("not_signed_in");
+    var local = readLocalHealthDraft();
     try {
-      return await edgePost("staff-health-draft-load", { staff_session_id: sid });
+      var res = await edgePost("staff-health-draft-load", { staff_session_id: sid });
+      var serverDraft = res && res.draft ? res.draft : null;
+      if (local && local.payload && (!serverDraft || !serverDraft.payload)) {
+        try {
+          await edgePost("staff-health-draft-save", {
+            staff_session_id: sid,
+            staff_name: staffDisplayName(),
+            payload: local.payload,
+          });
+          writeLocalHealthDraft(local.payload);
+          return {
+            ok: true,
+            source: "server",
+            draft: { payload: local.payload, updated_at: local.updated_at || null },
+            migrated_from_local: true,
+          };
+        } catch (syncErr) {
+          if (!isHealthBackendMissing(syncErr) && !isOnboardingBackendMissing(syncErr)) throw syncErr;
+        }
+      }
+      var merged = mergeDraftPayload(serverDraft, local);
+      if (merged) {
+        return {
+          ok: true,
+          source: "server",
+          draft: {
+            payload: merged,
+            updated_at:
+              (serverDraft && serverDraft.updated_at) ||
+              (local && local.updated_at) ||
+              null,
+          },
+        };
+      }
+      return { ok: true, source: "server", draft: null };
     } catch (err) {
       if (isHealthBackendMissing(err) || isOnboardingBackendMissing(err)) {
-        var local = readLocalHealthDraft();
         return { ok: true, draft: local, source: "local" };
       }
       throw err;

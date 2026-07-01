@@ -1437,6 +1437,25 @@
       if(!ca || !cb) return false;
       return ca === cb;
     }
+    /** instructor_reassign: live MADRE DAN vs override anchor AURORA (same SwimFarm lane). */
+    function portalOverrideAnchorStaffKeysMatch(anchorStaffId, sessionStaffId){
+      if(portalStaffKeysMatch(anchorStaffId, sessionStaffId)) return true;
+      const a = portalNormKeyStr(anchorStaffId);
+      const s = portalNormKeyStr(sessionStaffId);
+      if(!a || !s) return false;
+      return (a === 'aurora' || a === 'dan') && (s === 'aurora' || s === 'dan');
+    }
+    function portalOverrideAnchorMatchesRosterInstructors(anchorStaffId, instructors){
+      if(typeof portalStaffMatchesStatusInstructor === 'function' && portalStaffMatchesStatusInstructor(anchorStaffId, instructors)) return true;
+      const a = portalNormKeyStr(anchorStaffId);
+      if(a === 'aurora' || a === 'dan'){
+        if(typeof portalStaffMatchesStatusInstructor === 'function'){
+          if(portalStaffMatchesStatusInstructor('aurora', instructors)) return true;
+          if(portalStaffMatchesStatusInstructor('dan', instructors)) return true;
+        }
+      }
+      return false;
+    }
     try{ window.portalCanonicalStaffKeyForMatch = portalCanonicalStaffKeyForMatch; }catch(_){}
     try{ window.portalStaffKeysMatch = portalStaffKeysMatch; }catch(_){}
     function portalCanonicalRosterClientId(clientId){
@@ -2961,7 +2980,7 @@
         if(String(r.status || 'active') !== 'active') return false;
         const rowIso = normaliseIsoDate(r.session_date);
         if(!rowIso || rowIso !== iso) return false;
-        if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
+        if(!portalOverrideAnchorStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
         if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         const rowOvType = wantType || String(r.override_type || '').trim();
         const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
@@ -3665,7 +3684,7 @@
       for(let i = 0; i < list.length; i++){
         const s = list[i];
         if(!s) continue;
-        if(portalNormKeyStr(s.staffId) !== aid) continue;
+        if(!portalOverrideAnchorStaffKeysMatch(aid, s.staffId)) continue;
         if(String(s.day || '').trim() !== vw) continue;
         if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) continue;
         if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
@@ -3679,7 +3698,7 @@
         for(let k = 0; k < list.length; k++){
           const s2 = list[k];
           if(!s2) continue;
-          if(portalNormKeyStr(s2.staffId) !== aid) continue;
+          if(!portalOverrideAnchorStaffKeysMatch(aid, s2.staffId)) continue;
           if(String(s2.day || '').trim() !== vw) continue;
           if(!portalSpreadsheetSessionMatchesOverrideIso(s2, iso)) continue;
           if(portalNormKeyStr(s2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
@@ -3695,7 +3714,7 @@
         const row = srcRows[j];
         if(!row) continue;
         if(String(row.day || '').trim() !== vw) continue;
-        if(!portalStaffMatchesStatusInstructor(aid, row.instructors)) continue;
+        if(!portalOverrideAnchorMatchesRosterInstructors(aid, row.instructors)) continue;
         const rowIso = normaliseIsoDate(row.session_date || row.sessionDate);
         if(iso){
           if(rowIso && rowIso !== iso) continue;
@@ -3728,7 +3747,7 @@
           const row2 = srcRows[j2];
           if(!row2) continue;
           if(String(row2.day || '').trim() !== vw) continue;
-          if(!portalStaffMatchesStatusInstructor(aid, row2.instructors)) continue;
+          if(!portalOverrideAnchorMatchesRosterInstructors(aid, row2.instructors)) continue;
           const rowIso2 = normaliseIsoDate(row2.session_date || row2.sessionDate);
           if(iso){
             if(rowIso2 && rowIso2 !== iso) continue;

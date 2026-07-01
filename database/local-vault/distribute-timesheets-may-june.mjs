@@ -19,6 +19,110 @@ import { buildFormattedTimesheetPdfBytes, formatIsoDmy, loadTimesheetLogoDataUrl
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
 const EXECUTE = process.argv.includes("--execute");
+const MONTH_FILTER = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--month="));
+  if (!arg) return "";
+  return String(arg.split("=")[1] || "").trim().toLowerCase();
+})();
+
+function parseMachineHmToken(token, dayName) {
+  const raw = String(token || "").trim();
+  const m = raw.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+  if (!m) return hmToMinutes(raw.replace(".", ":"));
+  let h = parseInt(m[1], 10) || 0;
+  const min = parseInt(m[2] || "0", 10) || 0;
+  const wd = String(dayName || "").trim();
+  if (wd === "Sunday") {
+    if (h >= 9) return h * 60 + min;
+    if (h >= 1 && h <= 7) return (h + 12) * 60 + min;
+  } else if (h >= 1 && h <= 8) {
+    return (h + 12) * 60 + min;
+  }
+  return h * 60 + min;
+}
+
+function parseMachineSlotHours(timeRange, dayName) {
+  const parts = String(timeRange || "")
+    .split(/\s*-\s*/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return 0;
+  const start = parseMachineHmToken(parts[0], dayName);
+  let end = parseMachineHmToken(parts[1], dayName);
+  if (end <= start) end += 24 * 60;
+  return Number(((end - start) / 60).toFixed(2));
+}
+
+function loadMachineTimetableRows() {
+  const csvPath = path.join(root, "database/staff_timetable_machine.csv");
+  if (!fs.existsSync(csvPath)) return [];
+  return fs
+    .readFileSync(csvPath, "utf8")
+    .split(/\r?\n/)
+    .slice(1)
+    .map((line) => {
+      const cols = line.split(",");
+      if (cols.length < 6) return null;
+      return {
+        session_date: String(cols[0] || "").trim().slice(0, 10),
+        day: String(cols[1] || "").trim(),
+        staff: String(cols[3] || "").trim(),
+        time_range: String(cols[4] || "").trim(),
+        venue: String(cols[5] || "").trim(),
+      };
+    })
+    .filter(Boolean);
+}
+
+function computeTimetableShiftEntries(staffLabel, rosterKey, periodStart, periodEnd) {
+  const want = normStaff(rosterKey);
+  const label = normStaff(staffLabel);
+  const rows = loadMachineTimetableRows().filter((r) => {
+    if (r.session_date < periodStart || r.session_date > periodEnd) return false;
+    const s = normStaff(r.staff);
+    return s === want || s === label;
+  });
+  const entries = rows.map((r) => {
+    const hours = parseMachineSlotHours(r.time_range, r.day);
+    return {
+      date: r.session_date,
+      day: r.day,
+      hours,
+      summary: `${r.time_range} ${r.venue}`.trim(),
+      service: "Support shift",
+      serviceLabel: "Support shift",
+      completed: true,
+    };
+  });
+  const totalHours = Number(entries.reduce((a, e) => a + e.hours, 0).toFixed(2));
+  return { entries, totalHours };
+}
+
+/** When payroll import hours are lower than machine timetable sum, drop extra Sunday rows first, then nudge the last shift. */
+function reconcileEntriesToImportHours(entries, targetHours) {
+  if (!entries.length || targetHours == null || Number(targetHours) <= 0) return entries;
+  const target = Number(targetHours);
+  let list = entries.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  let sum = Number(list.reduce((a, e) => a + e.hours, 0).toFixed(2));
+  if (Math.abs(sum - target) < 0.01) return list;
+
+  while (sum > target + 0.25) {
+    const sunIdx = list.findIndex((e) => String(e.day || "").toLowerCase() === "sunday");
+    if (sunIdx < 0) break;
+    sum = Number((sum - list[sunIdx].hours).toFixed(2));
+    list.splice(sunIdx, 1);
+  }
+
+  if (list.length && Math.abs(sum - target) >= 0.01) {
+    const delta = Number((target - sum).toFixed(2));
+    const last = list[list.length - 1];
+    const adjusted = Number((last.hours + delta).toFixed(2));
+    if (adjusted > 0) {
+      list[list.length - 1] = Object.assign({}, last, { hours: adjusted });
+    }
+  }
+  return list;
+}
 
 const MONTHS = [
   {
@@ -107,6 +211,12 @@ function normStaff(v) {
   if (x === "yousef" || x === "youssef") return "youssef";
   return x;
 }
+
+const STAFF_FILTER = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--staff="));
+  if (!arg) return "";
+  return normStaff(String(arg.split("=")[1] || "").trim());
+})();
 
 function rosterKeyForProfile(p) {
   const uname = normStaff(p.username);
@@ -251,7 +361,7 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
       .maybeSingle(),
     admin
       .from("staff_timesheets")
-      .select("total_hours, total_cost, hourly_rate_used")
+      .select("total_hours, total_cost, hourly_rate_used, entries")
       .eq("submitted_by_user_id", worker.id)
       .eq("period_month", month.periodMonth)
       .order("created_at", { ascending: false })
@@ -265,6 +375,20 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     month.periodStart,
     month.periodEnd,
   );
+
+  let entries = roster.entries;
+  if (ts && Array.isArray(ts.entries) && ts.entries.length) {
+    entries = ts.entries.map((e) => ({
+      date: String(e.date || "").slice(0, 10),
+      day: String(e.day || ""),
+      hours: Number(e.hours || 0),
+      service: String(e.service || e.service_label || e.role || "Shift"),
+      serviceLabel: String(e.service_label || e.service || e.role || "Shift"),
+      role: String(e.role || ""),
+      note: String(e.note || ""),
+      completed: e.completed !== false,
+    }));
+  }
 
   let totalHours = roster.totalHours;
   let gross = worker.hourly_rate != null ? Number((totalHours * worker.hourly_rate).toFixed(2)) : null;
@@ -285,8 +409,20 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     }
   }
 
+  if (!entries.length && totalHours > 0) {
+    const timetable = computeTimetableShiftEntries(
+      worker.full_name,
+      worker.rosterKey,
+      month.periodStart,
+      month.periodEnd,
+    );
+    if (timetable.entries.length) {
+      entries = reconcileEntriesToImportHours(timetable.entries, totalHours);
+    }
+  }
+
   return {
-    entries: roster.entries,
+    entries,
     totalHours,
     gross,
     hourlyRate: ts?.hourly_rate_used != null ? Number(ts.hourly_rate_used) : worker.hourly_rate,
@@ -371,8 +507,18 @@ async function main() {
   let planned = 0;
   let skipped = 0;
 
+  const months = MONTH_FILTER
+    ? MONTHS.filter((m) => m.key === MONTH_FILTER)
+    : MONTHS;
+  if (MONTH_FILTER && !months.length) {
+    throw new Error(`Unknown --month=${MONTH_FILTER} (use may or june)`);
+  }
+
   for (const worker of workers) {
-    for (const month of MONTHS) {
+    if (STAFF_FILTER && normStaff(worker.rosterKey) !== STAFF_FILTER && normStaff(worker.username) !== STAFF_FILTER) {
+      continue;
+    }
+    for (const month of months) {
       if (!monthActiveForWorker(worker, month.periodMonth)) {
         console.log(`  skip ${worker.full_name} ${month.key}: before payroll_start`);
         skipped++;

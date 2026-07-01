@@ -563,25 +563,24 @@
         return "";
       }
     }
-    /** Logo PDF: `logoPDF.png` junto a la página, luego `portal/F-02-1.png`, luego `portal_crest.svg`. */
+    /** Static club logo (same as portal header) — no animated halo in PDFs. */
     async function readPdfLogoDataUrl() {
       const list = [];
-      try {
-        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
-        if (base) list.push(new URL("logoPDF.png", base).href);
-      } catch (_) {}
       try {
         if (typeof location !== "undefined" && location.href) {
           list.push(new URL("portal/F-02-1.png", location.href).href);
         }
       } catch (_) {}
       try {
+        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
+        if (base) list.push(new URL("logoPDF.png", base).href);
+      } catch (_) {}
+      try {
         if (typeof location !== "undefined" && location.href) {
           list.push(new URL("portal/portal_crest.svg", location.href).href);
         }
       } catch (_) {}
-      list.push("portal/F-02-1.png");
-      list.push("portal/portal_crest.svg");
+      list.push("portal/F-02-1.png", "logoPDF.png", "portal/portal_crest.svg");
       const seen = new Set();
       for (let i = 0; i < list.length; i++) {
         const url = list[i];
@@ -2468,8 +2467,7 @@
       const bottomMargin = 10;
 
       // Logo first so we know whether it consumes vertical space before scaling.
-      let logoRaw = await buildHaloLogoDataUrl();
-      if (!logoRaw) logoRaw = await readPdfLogoDataUrl();
+      let logoRaw = await readPdfLogoDataUrl();
       let logoData = logoRaw;
       if (logoRaw) {
         const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 480, 0.85);

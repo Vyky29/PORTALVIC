@@ -784,9 +784,33 @@
     }
 
     .readonly-value.is-empty {
-      color: var(--muted);
-      font-weight: 500;
-      font-style: italic;
+      color: var(--danger);
+      font-weight: 600;
+      font-style: normal;
+    }
+
+    .readonly-row.is-missing .readonly-label {
+      color: var(--dangerInk);
+    }
+
+    .ps-incomplete-hint {
+      flex: 1 1 100%;
+      margin: 0;
+      font-size: .78rem;
+      line-height: 1.35;
+      color: var(--dangerInk);
+      overflow-wrap: break-word;
+    }
+
+    .ps-incomplete-hint[hidden] {
+      display: none !important;
+    }
+
+    .btn--confirm:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      filter: grayscale(.35);
+      box-shadow: none;
     }
 
     .ps-actions {
@@ -1117,7 +1141,7 @@
             <h2 class="card-head-title" id="screenProfileTitle">
               Hi <span id="profileGreetingName">there</span>
             </h2>
-            <p class="card-head-sub">Your details are loaded from staff records. Tap <strong>Confirm</strong> if a section is correct, or <strong>Edit</strong> to change it.</p>
+            <p class="card-head-sub">Check each section. Fields in <strong style="color:var(--danger)">red</strong> must be completed — tap <strong>Edit</strong>, fill them in, then <strong>Confirm</strong>.</p>
           </div>
         </div>
         <p class="card-help">
@@ -1168,18 +1192,19 @@
               </div>
               <div class="field" data-edit-field="email_personal">
                 <label for="editEmail">Personal email</label>
-                <input id="editEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" data-edit-input="email_personal" placeholder="you@example.com" />
+                <input id="editEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" required data-edit-input="email_personal" placeholder="you@example.com" />
                 <span class="field-error">Please enter a valid email address.</span>
               </div>
               <div class="field" data-edit-field="phone_e164">
                 <label for="editPhone">Your mobile number</label>
-                <input id="editPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" data-edit-input="phone_e164" placeholder="+44 7700 900123" />
+                <input id="editPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required data-edit-input="phone_e164" placeholder="+44 7700 900123" />
                 <span class="field-hint">The number we use to reach you for shifts and urgent club messages.</span>
               </div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -1232,8 +1257,9 @@
               </div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -1278,8 +1304,9 @@
               <div class="field"><label for="editECPhone">Phone number</label><input id="editECPhone" type="tel" inputmode="tel" maxlength="20" data-edit-input="emergency_contact_phone" placeholder="+44 7700 900456" /></div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -1352,8 +1379,9 @@
               </div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -1419,8 +1447,9 @@
               </div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -1454,8 +1483,9 @@
               </div>
             </form>
             <div class="ps-actions">
+              <p class="ps-incomplete-hint" data-incomplete-hint hidden>Fill in the fields marked in red via Edit, then confirm this section.</p>
               <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm" disabled>Confirm</button>
               <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
               <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
@@ -2042,10 +2072,32 @@
 
     function setReadonlyValue(key, value, opts = {}) {
       document.querySelectorAll(`[data-readonly="${key}"]`).forEach((el) => {
-        const text = value == null || value === "" ? (opts.empty || "—") : value;
+        const empty = value == null || value === "";
+        const text = empty ? (opts.empty || "—") : value;
         el.textContent = text;
-        el.classList.toggle("is-empty", value == null || value === "");
+        el.classList.toggle("is-empty", empty);
+        const row = el.closest(".readonly-row");
+        if (row) row.classList.toggle("is-missing", empty);
       });
+    }
+
+    function setReadonlyFormatted(key, rawValue, formatter, opts = {}) {
+      const empty = rawValue == null || rawValue === "";
+      const text = empty ? (opts.empty || "Not provided") : formatter(rawValue);
+      document.querySelectorAll(`[data-readonly="${key}"]`).forEach((el) => {
+        el.textContent = text;
+        el.classList.toggle("is-empty", empty);
+        const row = el.closest(".readonly-row");
+        if (row) row.classList.toggle("is-missing", empty);
+      });
+    }
+
+    function isNonEmpty(val) {
+      return val != null && String(val).trim() !== "";
+    }
+
+    function availabilityNeedsSummary(status) {
+      return status === "reduce" || status === "increase" || status === "unsure";
     }
 
     function setEditValue(key, value) {
@@ -2196,18 +2248,34 @@
       setEditValue("emergency_contact_phone", p.emergency_contact?.phone);
 
       // Section 4: availability
-      setReadonlyValue("availability_status_label", fmtAvailabilityStatus(p.availability?.status));
-      setReadonlyValue("availability_summary", p.availability?.summary, { empty: "No availability on file yet — confirm or tell us about changes below." });
+      setReadonlyFormatted("availability_status_label", p.availability?.status, fmtAvailabilityStatus, { empty: "Not provided" });
+      if (!p.availability?.status) {
+        setReadonlyValue("availability_summary", null, { empty: "Choose an option first" });
+      } else if (availabilityNeedsSummary(p.availability.status)) {
+        setReadonlyValue("availability_summary", p.availability?.summary, { empty: "Tell us what to change" });
+      } else {
+        const summary = String(p.availability?.summary || "").trim();
+        setReadonlyValue("availability_summary", summary || "—");
+      }
       setEditValue("availability_status", p.availability?.status);
       setEditValue("availability_summary", p.availability?.summary);
 
       // Section 5: other work
-      setReadonlyValue("other_work_status_label", fmtOtherWorkStatus(p.other_work?.status));
-      setReadonlyValue("other_work_organisation", p.other_work?.organisation, { empty: "—" });
-      setReadonlyValue("other_work_schedule", p.other_work?.schedule, { empty: "—" });
-      setReadonlyValue("other_work_affects_availability_label",
-        p.other_work?.affects_availability == null ? "—" :
-          (p.other_work.affects_availability ? "Yes — please review my availability" : "No — current shifts still work"));
+      setReadonlyFormatted("other_work_status_label", p.other_work?.status, fmtOtherWorkStatus, { empty: "Not provided" });
+      const owAlsoOther = p.other_work?.status === "also_other";
+      setReadonlyValue("other_work_organisation", owAlsoOther ? p.other_work?.organisation : null, { empty: owAlsoOther ? "Not provided" : "—" });
+      setReadonlyValue("other_work_schedule", owAlsoOther ? p.other_work?.schedule : null, { empty: owAlsoOther ? "Not provided" : "—" });
+      setReadonlyValue(
+        "other_work_affects_availability_label",
+        !owAlsoOther
+          ? "—"
+          : p.other_work?.affects_availability == null
+            ? null
+            : p.other_work.affects_availability
+              ? "Yes — please review my availability"
+              : "No — current shifts still work",
+        { empty: owAlsoOther ? "Not provided" : "—" }
+      );
       // hide conditional rows when empty
       const owVisible = p.other_work?.status === "also_other";
       document.querySelectorAll('#sectionOtherWork [data-conditional-row]').forEach((row) => {
@@ -2240,6 +2308,7 @@
       state.pendingEdits = {};
 
       updateConfirmedSummary();
+      updateAllSectionActionButtons();
     }
 
     function refreshConditional(condEl) {
@@ -2325,6 +2394,7 @@
         if (a === 'save-edit' || a === 'cancel-edit') btn.hidden = true;
       });
       if (state.currentlyEditing === sec.id) state.currentlyEditing = null;
+      updateSectionActionButtons(sec);
     }
 
     function collectSectionEdits(sec) {
@@ -2395,16 +2465,31 @@
         setReadonlyValue('emergency_contact_relationship', p.emergency_contact?.relationship, { empty: 'Not provided' });
         setReadonlyValue('emergency_contact_phone', p.emergency_contact?.phone, { empty: 'Not provided' });
       } else if (id === 'sectionAvailability') {
-        setReadonlyValue('availability_status_label', fmtAvailabilityStatus(p.availability?.status));
-        setReadonlyValue('availability_summary', p.availability?.summary,
-          { empty: 'No availability on file yet — confirm or tell us about changes below.' });
+        setReadonlyFormatted('availability_status_label', p.availability?.status, fmtAvailabilityStatus, { empty: 'Not provided' });
+        if (!p.availability?.status) {
+          setReadonlyValue('availability_summary', null, { empty: 'Choose an option first' });
+        } else if (availabilityNeedsSummary(p.availability.status)) {
+          setReadonlyValue('availability_summary', p.availability?.summary, { empty: 'Tell us what to change' });
+        } else {
+          const summary = String(p.availability?.summary || '').trim();
+          setReadonlyValue('availability_summary', summary || '—');
+        }
       } else if (id === 'sectionOtherWork') {
-        setReadonlyValue('other_work_status_label', fmtOtherWorkStatus(p.other_work?.status));
-        setReadonlyValue('other_work_organisation', p.other_work?.organisation, { empty: '—' });
-        setReadonlyValue('other_work_schedule', p.other_work?.schedule, { empty: '—' });
-        setReadonlyValue('other_work_affects_availability_label',
-          p.other_work?.affects_availability == null ? '—' :
-            (p.other_work.affects_availability ? 'Yes — please review my availability' : 'No — current shifts still work'));
+        setReadonlyFormatted('other_work_status_label', p.other_work?.status, fmtOtherWorkStatus, { empty: 'Not provided' });
+        const owAlsoOther = p.other_work?.status === 'also_other';
+        setReadonlyValue('other_work_organisation', owAlsoOther ? p.other_work?.organisation : null, { empty: owAlsoOther ? 'Not provided' : '—' });
+        setReadonlyValue('other_work_schedule', owAlsoOther ? p.other_work?.schedule : null, { empty: owAlsoOther ? 'Not provided' : '—' });
+        setReadonlyValue(
+          'other_work_affects_availability_label',
+          !owAlsoOther
+            ? '—'
+            : p.other_work?.affects_availability == null
+              ? null
+              : p.other_work.affects_availability
+                ? 'Yes — please review my availability'
+                : 'No — current shifts still work',
+          { empty: owAlsoOther ? 'Not provided' : '—' }
+        );
         const owVisible = p.other_work?.status === 'also_other';
         document.querySelectorAll('#sectionOtherWork [data-conditional-row]').forEach((row) => {
           row.style.display = owVisible ? '' : 'none';
@@ -2419,9 +2504,18 @@
       let ok = true;
       if (sec.id === 'sectionStaffDetails') {
         const emailField = sec.querySelector('[data-edit-field="email_personal"]');
+        const phoneField = sec.querySelector('[data-edit-field="phone_e164"]');
         const email = (edits.email_personal || '').trim();
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          emailField.classList.add('has-error');
+        const phone = (edits.phone_e164 || '').trim();
+        if (!email) {
+          emailField?.classList.add('has-error');
+          ok = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          emailField?.classList.add('has-error');
+          ok = false;
+        }
+        if (!phone) {
+          phoneField?.classList.add('has-error');
           ok = false;
         }
       }
@@ -2430,14 +2524,68 @@
 
     function sectionProfileHasRequiredData(sec) {
       const p = state.profile;
-      if (sec.id === 'sectionAvailability') return Boolean(p.availability?.status);
-      if (sec.id === 'sectionOtherWork') return Boolean(p.other_work?.status);
+      if (sec.id === 'sectionStaffDetails') {
+        return isNonEmpty(p.email_personal) && isNonEmpty(p.phone_e164);
+      }
+      if (sec.id === 'sectionAddress') {
+        return isNonEmpty(p.address?.line1) && isNonEmpty(p.address?.city) && isNonEmpty(p.address?.postcode);
+      }
+      if (sec.id === 'sectionEmergency') {
+        return (
+          isNonEmpty(p.emergency_contact?.name) &&
+          isNonEmpty(p.emergency_contact?.relationship) &&
+          isNonEmpty(p.emergency_contact?.phone)
+        );
+      }
+      if (sec.id === 'sectionAvailability') {
+        if (!isNonEmpty(p.availability?.status)) return false;
+        if (availabilityNeedsSummary(p.availability.status)) {
+          return isNonEmpty(p.availability?.summary);
+        }
+        return true;
+      }
+      if (sec.id === 'sectionOtherWork') {
+        if (!isNonEmpty(p.other_work?.status)) return false;
+        if (p.other_work.status === 'also_other') {
+          return (
+            isNonEmpty(p.other_work.organisation) &&
+            isNonEmpty(p.other_work.schedule) &&
+            p.other_work.affects_availability != null
+          );
+        }
+        return true;
+      }
       return true;
     }
 
     function validateSectionRequiredData(sec, edits) {
+      if (sec.id === 'sectionStaffDetails') {
+        if (!(edits.email_personal || '').trim()) return 'Add your personal email address.';
+        if (!(edits.phone_e164 || '').trim()) return 'Add your mobile number.';
+      }
+      if (sec.id === 'sectionAddress') {
+        const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
+        if (changed === 'changed') {
+          if (!(edits.address_line1 || '').trim()) return 'Enter address line 1.';
+          if (!(edits.address_city || '').trim()) return 'Enter town / city.';
+          if (!(edits.address_postcode || '').trim()) return 'Enter postcode.';
+        } else if (!fmtAddress(state.profile)) {
+          return 'No address on file — choose "My address has changed" and enter your address.';
+        }
+      }
+      if (sec.id === 'sectionEmergency') {
+        if (!(edits.emergency_contact_name || '').trim()) return 'Add your emergency contact name.';
+        if (!(edits.emergency_contact_relationship || '').trim()) return 'Select the relationship.';
+        if (!(edits.emergency_contact_phone || '').trim()) return 'Add your emergency contact phone number.';
+      }
       if (sec.id === 'sectionAvailability' && !(edits.availability_status || '').trim()) {
         return 'Choose an availability option before confirming this section.';
+      }
+      if (sec.id === 'sectionAvailability') {
+        const status = (edits.availability_status || '').trim();
+        if (availabilityNeedsSummary(status) && !(edits.availability_summary || '').trim()) {
+          return 'Tell us what you want to change about your availability.';
+        }
       }
       if (sec.id === 'sectionOtherWork' && !(edits.other_work_status || '').trim()) {
         return 'Choose whether you only work for ClubSENsational or also elsewhere.';
@@ -2456,16 +2604,40 @@
       return '';
     }
 
+    function updateSectionActionButtons(sec) {
+      if (!sec) return;
+      const complete = sectionProfileHasRequiredData(sec);
+      const editing = sec.classList.contains('is-editing');
+      const confirmBtn = sec.querySelector('[data-action="confirm"]');
+      const hint = sec.querySelector('[data-incomplete-hint]');
+      if (confirmBtn && !editing) {
+        confirmBtn.disabled = !complete;
+        confirmBtn.title = complete ? '' : 'Edit and complete the fields marked in red first';
+      }
+      if (hint) {
+        hint.hidden = editing || complete || sec.id === 'sectionWellbeing';
+      }
+    }
+
+    function updateAllSectionActionButtons() {
+      SECTIONS.forEach((id) => updateSectionActionButtons($(id)));
+    }
+
     function persistSectionEdits(sec, { relock = true } = {}) {
       const edits = collectSectionEdits(sec);
-      if (!validateSectionEdits(sec, edits)) return false;
+      if (!validateSectionEdits(sec, edits)) {
+        show(profileNotice, 'error', 'Fill in every required field before saving.');
+        return false;
+      }
       const requiredMsg = validateSectionRequiredData(sec, edits);
       if (requiredMsg) {
         show(profileNotice, 'error', requiredMsg);
         return false;
       }
       applyEditsToProfile(sec, edits);
+      renderReadonlyForSection(sec.id);
       if (relock) relockSection(sec);
+      else updateSectionActionButtons(sec);
       return true;
     }
 
@@ -2483,10 +2655,11 @@
         const a = btn.dataset.action;
         if (a === 'confirm') {
           hide(profileNotice);
+          if (btn.disabled) return;
           if (sec.classList.contains('is-editing')) {
             if (!persistSectionEdits(sec, { relock: true })) return;
           } else if (!sectionProfileHasRequiredData(sec)) {
-            show(profileNotice, 'error', 'Tap Edit, fill in this section, then confirm again.');
+            show(profileNotice, 'error', 'Tap Edit and fill in every field marked in red before confirming.');
             unlockSection(sec);
             return;
           }
@@ -2505,6 +2678,7 @@
             }
           }, 220);
           updateConfirmedSummary();
+          updateSectionActionButtons(sec);
         } else if (a === 'edit') {
           unlockSection(sec);
         } else if (a === 'save-edit') {
@@ -2548,9 +2722,14 @@
     });
 
     function updateConfirmedSummary() {
-      const requiredConfirmed = REQUIRED_SECTIONS.filter(
-        (id) => ['confirmed', 'edited'].includes(state.sectionState[id]),
-      ).length;
+      const requiredConfirmed = REQUIRED_SECTIONS.filter((id) => {
+        const sec = $(id);
+        return (
+          sec &&
+          ['confirmed', 'edited'].includes(state.sectionState[id]) &&
+          sectionProfileHasRequiredData(sec)
+        );
+      }).length;
       confirmedSummary.textContent =
         `${requiredConfirmed} of ${REQUIRED_SECTIONS.length} required sections confirmed`;
       const allDone = requiredConfirmed === REQUIRED_SECTIONS.length;

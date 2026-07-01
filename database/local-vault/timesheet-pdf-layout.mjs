@@ -52,8 +52,8 @@ function entryServiceLabel(entry) {
 
 export function loadTimesheetLogoDataUrl(rootDir) {
   const candidates = [
-    path.join(rootDir, "working_ui/logoPDF.png"),
     path.join(rootDir, "working_ui/portal/F-02-1.png"),
+    path.join(rootDir, "working_ui/logoPDF.png"),
     path.join(rootDir, "working_ui/portal/assets/logoPDF.png"),
   ];
   for (const filePath of candidates) {
