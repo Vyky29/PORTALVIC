@@ -236,15 +236,28 @@
     );
   }
 
-  function infoButtonsHtml(data) {
+  function infoButtonsHtml(data, opts) {
     var g = data.general || {};
     var hasAquatics = !!g.has_aquatics;
+    var msgUnread =
+      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
+    var msgBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
+        ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
+        : "";
     return (
       '<div class="pp-pax-info-buttons">' +
       '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--messages" data-pp-open="messages" aria-label="Messages">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--messages' +
+      (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : "") +
+      '" data-pp-open="messages" aria-label="Messages' +
+      (msgUnread > 0 ? " — " + msgUnread + " unread" : "") +
+      '">' +
       '<span class="pp-pax-info-btn-stack">' +
+      '<span class="pp-pax-info-icon-wrap">' +
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+      msgBadge +
+      "</span>" +
       '<span class="pp-pax-info-caption">Messages</span></span></button></div>' +
       '<div class="pp-pax-info-row">' +
       '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
@@ -347,7 +360,7 @@
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       heroHtml(data) +
-      infoButtonsHtml(data) +
+      infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Choose a section — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
@@ -574,7 +587,7 @@
 
   function messagesThreadHtml(messages, waBiz) {
     if (!messages || !messages.length) {
-      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates (WhatsApp and email) appear here. You can also write to the office below.</p>';
+      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates by WhatsApp and email appear here when we send them. Green = WhatsApp, blue = email.</p>';
     }
     return (
       '<div class="pp-pax-msgs-thread" role="log" aria-live="polite">' +
@@ -592,14 +605,19 @@
                 esc(messageChannelLabel(channel)) +
                 "</span>"
               : "";
+          var unreadMark = m.is_unread
+            ? '<span class="pp-pax-msg__unread-dot" aria-hidden="true"></span>'
+            : "";
           return (
             '<article class="pp-pax-msg' +
             (isOut ? " pp-pax-msg--out" : " pp-pax-msg--in") +
             " " +
             messageBubbleClass(m) +
+            (m.is_unread ? " pp-pax-msg--unread" : "") +
             '">' +
             '<div class="pp-pax-msg__head">' +
             '<span class="pp-pax-msg__who">' +
+            unreadMark +
             esc(isOut ? "Club" : m.sender_name || "You") +
             "</span>" +
             '<span class="pp-pax-msg__when pp-muted">' +
@@ -648,32 +666,35 @@
   function renderMessages(host, data, opts) {
     var body =
       '<h3 class="pp-pax-subview-title">Messages</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email in one place. Green = WhatsApp, blue = email.</p>' +
+      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email.</p>' +
       '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
       messagesComposeHtml(null);
     host.innerHTML = subviewShell(data, "messages", body);
     bindBack(host, data, opts);
     bindMessages(host, data, opts);
     if (typeof opts.loadMessages === "function") {
-      void opts.loadMessages().then(function (payload) {
-        var threadHost = host.querySelector("#ppMsgsThreadHost");
-        if (!threadHost) return;
-        threadHost.innerHTML = messagesThreadHtml(
-          (payload && payload.messages) || [],
-          (payload && payload.whatsapp_business) || null,
-        );
-        var waNote = host.querySelector(".pp-pax-msgs-wa-note");
-        if (waNote && payload && payload.whatsapp_business && payload.whatsapp_business.wa_me_url) {
-          var b = payload.whatsapp_business;
-          waNote.innerHTML =
-            'Prefer WhatsApp? <a href="' +
-            esc(b.wa_me_url) +
-            '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
-            (b.display ? " (" + esc(b.display) + ")" : "") +
-            ". Replies there appear here too.";
-        }
-        threadHost.scrollTop = threadHost.scrollHeight;
-      }).catch(function () {
+      void opts
+        .loadMessages({ markRead: true })
+        .then(function (payload) {
+          var threadHost = host.querySelector("#ppMsgsThreadHost");
+          if (!threadHost) return;
+          threadHost.innerHTML = messagesThreadHtml(
+            (payload && payload.messages) || [],
+            (payload && payload.whatsapp_business) || null,
+          );
+          var waNote = host.querySelector(".pp-pax-msgs-wa-note");
+          if (waNote && payload && payload.whatsapp_business && payload.whatsapp_business.wa_me_url) {
+            var b = payload.whatsapp_business;
+            waNote.innerHTML =
+              'Prefer WhatsApp? <a href="' +
+              esc(b.wa_me_url) +
+              '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+              (b.display ? " (" + esc(b.display) + ")" : "") +
+              ". Replies there appear here too.";
+          }
+          threadHost.scrollTop = threadHost.scrollHeight;
+        })
+        .catch(function () {
         var threadHost = host.querySelector("#ppMsgsThreadHost");
         if (threadHost) {
           threadHost.innerHTML =
@@ -707,7 +728,9 @@
             notice.className = "pp-notice pp-notice--info";
             notice.textContent = "Message sent — the office will reply here or on WhatsApp.";
           }
-          return typeof opts.loadMessages === "function" ? opts.loadMessages() : payload;
+          return typeof opts.loadMessages === "function"
+            ? opts.loadMessages({ markRead: false })
+            : payload;
         })
         .then(function (payload) {
           if (!payload || !payload.messages) return;

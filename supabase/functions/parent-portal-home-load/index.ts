@@ -14,8 +14,15 @@ import {
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
+  applyUnreadFlagsToMessages,
+  countUnreadOutboundMessages,
+  fetchParentOutboundNotifyRows,
+  fetchParentWhatsappInboundRows,
+  getParentMessageReadAt,
+  markParentMessagesRead,
   mergeParentPortalMessages,
   parentPhoneLast10,
+  unreadOutboundCountByContact,
 } from "../_shared/parent_portal_messages.ts";
 
 Deno.serve(async (req) => {
@@ -90,47 +97,8 @@ Deno.serve(async (req) => {
   const emailNorm = String(parentMeta?.email || "").trim().toLowerCase();
   const phone10 = parentPhoneLast10(String(parentMeta?.mobile || ""));
 
-  let outbound: Record<string, unknown>[] = [];
-  const msgSelect =
-    "id, created_at, kind, channel, client_display, subject, body_text, email_status, whatsapp_status, session_date, venue, sent_by_email";
-
-  if (emailNorm) {
-    const { data: byEmail } = await supabase
-      .from("portal_parent_notify_log")
-      .select(msgSelect)
-      .ilike("parent_email", emailNorm)
-      .order("created_at", { ascending: false })
-      .limit(40);
-    outbound = byEmail || [];
-  }
-
-  if (phone10) {
-    const { data: byPhone } = await supabase
-      .from("portal_parent_notify_log")
-      .select(msgSelect)
-      .like("parent_phone", `%${phone10}`)
-      .order("created_at", { ascending: false })
-      .limit(40);
-    const merged = [...outbound, ...(byPhone || [])];
-    const seen = new Set<string>();
-    outbound = merged.filter((row) => {
-      const id = String(row.id || "");
-      if (!id || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-  }
-
-  let inbound: Record<string, unknown>[] = [];
-  if (phone10) {
-    const { data, error } = await supabase
-      .from("portal_parent_whatsapp_inbound")
-      .select("id, created_at, wa_message_id, from_phone, contact_name, message_type, body_text, meta")
-      .like("from_phone", `%${phone10}`)
-      .order("created_at", { ascending: false })
-      .limit(40);
-    if (!error) inbound = data || [];
-  }
+  const outbound = await fetchParentOutboundNotifyRows(supabase, emailNorm, phone10, 80);
+  const inbound = await fetchParentWhatsappInboundRows(supabase, phone10, 40);
 
   const messages = mergeParentPortalMessages(outbound, inbound)
     .sort(
@@ -165,6 +133,14 @@ Deno.serve(async (req) => {
     }),
   );
 
+  const readAt = await getParentMessageReadAt(supabase, parentPersonId);
+  const unread_messages_count = countUnreadOutboundMessages(outbound, readAt);
+  const unread_by_contact_id = unreadOutboundCountByContact(
+    outbound,
+    readAt,
+    childrenOut.map((c) => ({ contact_id: String(c.contact_id || ""), display_name: c.display_name })),
+  );
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -183,6 +159,8 @@ Deno.serve(async (req) => {
       },
       children: childrenOut,
       messages,
+      unread_messages_count,
+      unread_by_contact_id,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
   );

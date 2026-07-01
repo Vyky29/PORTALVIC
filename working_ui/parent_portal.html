@@ -191,6 +191,66 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
+    .pp-home-greeting-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .pp-pax-info-icon-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pp-pax-info-icon-wrap .pp-unread-badge {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 10px;
+      box-shadow: 0 0 0 2px #fff;
+    }
+    .pp-pax-info-btn--has-unread {
+      border-color: rgba(220, 38, 38, .35);
+    }
+    .pp-pax-msg--unread {
+      box-shadow: inset 3px 0 0 #dc2626;
+    }
+    .pp-pax-msg__unread-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #dc2626;
+      margin-right: 6px;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+    .pp-pax-msg__who {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
     .pp-home-actions {
       display: flex;
       gap: 8px;
@@ -728,7 +788,9 @@
 
     <section id="ppStepHome" hidden>
       <div class="pp-home-head">
-        <h2 id="ppHomeGreeting">Hello</h2>
+        <div class="pp-home-greeting-wrap">
+          <h2 id="ppHomeGreeting">Hello</h2>
+        </div>
         <div class="pp-home-actions">
           <button id="ppRefresh" class="pp-icon-btn" type="button">Refresh</button>
           <button id="ppSignOut" class="pp-icon-btn" type="button">Sign out</button>
@@ -766,8 +828,8 @@
   <script src="/portal/portal_participant_identity.js?v=20260703-perf"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260704-msgs-inbox"></script>
-  <script src="/portal/parent_portal_app.js?v=20260704-msgs-inbox"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260704-unread-msgs"></script>
+  <script src="/portal/parent_portal_app.js?v=20260704-unread-msgs"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
