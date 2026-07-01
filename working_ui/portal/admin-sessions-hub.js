@@ -2445,6 +2445,79 @@
     return false;
   }
 
+  function slotInstructorLabels(slot) {
+    if (!slot) return [];
+    return (slot.instructors || [])
+      .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
+      .map(function (x) {
+        return clean(x);
+      })
+      .filter(Boolean);
+  }
+
+  /** Shared units (e.g. Tinashe John+Bismark+Giuseppe): peer submitter still visible for co-instructors. */
+  function submittedFeedbackMatchesInstructorFilter(hub, fb, inst) {
+    if (!inst) return true;
+    if (!fb || fb._ashAwaitingSlot) return true;
+    if (completedByMatchesInstructor(fb.completed_by_name, inst)) return true;
+    var day = feedbackSessionDate(fb);
+    if (!day || !hub || typeof hub.expandSlotsForDate !== "function") return false;
+    var cid = canonicalClientSlug(fb.client_name);
+    if (!cid) return false;
+    var slots = hub.expandSlotsForDate(day);
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      if (canonicalClientSlug(slot.client_name) !== cid) continue;
+      if (!feedbackFitsSlot(fb, slot)) continue;
+      var labels = slotInstructorLabels(slot);
+      for (var li = 0; li < labels.length; li++) {
+        if (completedByMatchesInstructor(labels[li], inst)) return true;
+      }
+    }
+    return false;
+  }
+
+  function buildAshFilterComboHtml(cfg) {
+    var esc = cfg.esc;
+    var id = cfg.id;
+    var label = cfg.label;
+    var val = clean(cfg.value);
+    var opts = cfg.options || [];
+    var display = "";
+    if (val) {
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i] === val || completedByMatchesInstructor(opts[i], val)) {
+          display = opts[i];
+          break;
+        }
+      }
+      if (!display) display = val;
+    }
+    var ph = cfg.placeholder || "All " + String(label || "").toLowerCase() + "s";
+    return (
+      '<label class="ash-filter-label">' +
+      esc(label) +
+      '<div class="ash-filter-combo" id="' +
+      id +
+      'Combo">' +
+      '<input type="hidden" id="' +
+      id +
+      '" value="' +
+      esc(val) +
+      '" />' +
+      '<input type="text" class="ash-input ash-input--instructor ash-filter-combo__inp" id="' +
+      id +
+      'Input" value="' +
+      esc(display) +
+      '" placeholder="' +
+      esc(ph) +
+      '" autocomplete="off" spellcheck="false" aria-autocomplete="list" />' +
+      '<div class="ash-filter-suggest" id="' +
+      id +
+      'Suggest" role="listbox" hidden></div></div></label>'
+    );
+  }
+
   /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
   function aquaticSlotCountForClientOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
@@ -4748,7 +4821,7 @@
     var inst = clean(this.instructorFilter);
     if (inst) {
       rows = rows.filter(function (fb) {
-        return completedByMatchesInstructor(fb.completed_by_name, inst);
+        return submittedFeedbackMatchesInstructorFilter(hub, fb, inst);
       });
     }
     var svcFilter = clean(this.serviceFilter);
@@ -4847,41 +4920,28 @@
   AdminSessionsHub.prototype.overviewFilterRowHtml = function () {
     var esc = this.escapeHtml;
     var opts = this.overviewFilterOptionsForDay(this.selectedDay);
-    var instHtml = '<option value="">All instructors</option>';
-    for (var i = 0; i < opts.instructors.length; i++) {
-      var n = opts.instructors[i];
-      instHtml +=
-        '<option value="' +
-        esc(n) +
-        '"' +
-        (this.instructorFilter === n ? " selected" : "") +
-        ">" +
-        esc(n) +
-        "</option>";
-    }
-    var svcHtml = '<option value="">All services</option>';
-    for (var j = 0; j < opts.services.length; j++) {
-      var s = opts.services[j];
-      svcHtml +=
-        '<option value="' +
-        esc(s) +
-        '"' +
-        (this.serviceFilter === s ? " selected" : "") +
-        ">" +
-        esc(s) +
-        "</option>";
-    }
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
       '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
-      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
-      instHtml +
-      "</select></label>" +
-      '<label class="ash-filter-label">Service<select id="ashServiceFilter" class="ash-input ash-input--instructor">' +
-      svcHtml +
-      "</select></label></div>"
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashInstructorFilter",
+        label: "Instructor",
+        value: this.instructorFilter,
+        options: opts.instructors,
+        placeholder: "All instructors",
+      }) +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashServiceFilter",
+        label: "Service",
+        value: this.serviceFilter,
+        options: opts.services,
+        placeholder: "All services",
+      }) +
+      "</div>"
     );
   };
 
@@ -4902,9 +4962,14 @@
       '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
-      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
-      this.feedbackInstructorFilterOptionsHtml() +
-      "</select></label>" +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashInstructorFilter",
+        label: "Instructor",
+        value: this.instructorFilter,
+        options: this.instructorFilterOptionsForDay(this.selectedDay),
+        placeholder: "All instructors",
+      }) +
       '<label class="ash-filter-label">From<input type="date" id="ashRangeFrom" class="ash-input" value="' +
       esc(this.rangeFrom) +
       '"></label>' +
@@ -5842,22 +5907,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return rows.filter(function (fb) {
       var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
       if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
-      if (inst && fb._ashAwaitingSlot && fb.slot) {
-        var labels = (fb.slot.instructors || [])
-          .concat(String(fb.slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
-          .map(function (x) {
-            return clean(x);
-          })
-          .filter(Boolean);
-        var hit = false;
-        for (var li = 0; li < labels.length; li++) {
-          if (completedByMatchesInstructor(labels[li], inst)) {
-            hit = true;
-            break;
-          }
-        }
-        if (!hit) return false;
-      } else if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) {
+      if (inst && !submittedFeedbackMatchesInstructorFilter(hub, fb, inst)) {
         return false;
       }
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
@@ -6462,6 +6512,101 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
   };
 
+  AdminSessionsHub.prototype.bindAshFilterCombos = function () {
+    var hub = this;
+    ["ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
+      var hid = document.getElementById(baseId);
+      var inp = document.getElementById(baseId + "Input");
+      var sug = document.getElementById(baseId + "Suggest");
+      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
+      inp.setAttribute("data-ash-filter-bound", "1");
+
+      function optionsForCombo() {
+        if (baseId === "ashInstructorFilter") {
+          if (hub.tab === "feedback" || hub.mode === "feedback") {
+            return hub.instructorFilterOptionsForDay(hub.selectedDay);
+          }
+          return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).instructors || [];
+        }
+        return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
+      }
+
+      function renderSuggest(query) {
+        sug.replaceChildren();
+        var qt = String(query || "").trim().toLowerCase();
+        var opts = optionsForCombo();
+        var matches = [];
+        if (!qt) matches = opts.slice(0, 24);
+        else {
+          for (var i = 0; i < opts.length; i++) {
+            if (String(opts[i] || "").toLowerCase().indexOf(qt) !== -1) matches.push(opts[i]);
+            if (matches.length >= 24) break;
+          }
+        }
+        var clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.className = "ash-filter-suggest__btn ash-filter-suggest__btn--all";
+        clearBtn.textContent = baseId === "ashInstructorFilter" ? "All instructors" : "All services";
+        clearBtn.addEventListener("mousedown", function (ev) {
+          ev.preventDefault();
+          hid.value = "";
+          inp.value = "";
+          sug.hidden = true;
+          if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
+          else hub.serviceFilter = "";
+          hub.refreshClientFilterView();
+        });
+        sug.appendChild(clearBtn);
+        matches.forEach(function (label) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ash-filter-suggest__btn";
+          btn.textContent = label;
+          btn.addEventListener("mousedown", function (ev) {
+            ev.preventDefault();
+            hid.value = label;
+            inp.value = label;
+            sug.hidden = true;
+            if (baseId === "ashInstructorFilter") hub.instructorFilter = label;
+            else hub.serviceFilter = label;
+            hub.refreshClientFilterView();
+          });
+          sug.appendChild(btn);
+        });
+        sug.hidden = !matches.length && !qt;
+        if (!matches.length && !qt) sug.hidden = true;
+        else sug.hidden = false;
+      }
+
+      inp.addEventListener("input", function () {
+        hid.value = "";
+        if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
+        else hub.serviceFilter = "";
+        renderSuggest(inp.value);
+      });
+      inp.addEventListener("focus", function () {
+        renderSuggest(inp.value);
+      });
+      inp.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") {
+          sug.hidden = true;
+          return;
+        }
+        if (ev.key !== "Enter") return;
+        var first = sug.querySelector(".ash-filter-suggest__btn:not(.ash-filter-suggest__btn--all)");
+        if (first) {
+          ev.preventDefault();
+          first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        }
+      });
+      inp.addEventListener("blur", function () {
+        setTimeout(function () {
+          sug.hidden = true;
+        }, 160);
+      });
+    });
+  };
+
   AdminSessionsHub.prototype.renderPanels = function () {
     this.indexAbsentMarks();
     this.indexFeedback();
@@ -6475,6 +6620,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     else if (this.tab === "relevant") shell.innerHTML = this.htmlFeedbackNotes("relevant");
     else if (this.tab === "feedback") shell.innerHTML = this.htmlFeedback();
     else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
+    this.bindAshFilterCombos();
   };
 
   AdminSessionsHub.prototype.htmlWeekHeader = function () {

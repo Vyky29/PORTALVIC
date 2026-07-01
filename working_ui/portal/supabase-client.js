@@ -201,6 +201,25 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
   return [...out];
 }
 
+/** Keys for shared feedback units where co-instructor absent quick marks should propagate. */
+function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of rosterSessionKeys || []) {
+    const k = String(raw || "").trim();
+    if (!k || seen.has(k)) continue;
+    const parts = k.split("|");
+    const last = String(parts[parts.length - 1] || "")
+      .trim()
+      .toLowerCase();
+    if (last === "bespoke_shared" || last === "day_centre" || parts[1] === "") {
+      seen.add(k);
+      out.push(k);
+    }
+  }
+  return out;
+}
+
 /**
  * Unique YYYY-MM-DD values from roster session keys (term historical peer sync).
  * @param {string[]} rosterSessionKeys
@@ -252,8 +271,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const peerSessionDates = [
     ...new Set([...catchUpDates, ...portalExtractDatesFromRosterKeys(rosterSessionKeys)]),
   ].slice(0, 90);
+  const sharedUnitKeys = portalSharedFeedbackUnitKeys(rosterSessionKeys).slice(0, 400);
 
-  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
+  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, quickMarksPeer, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
@@ -296,6 +316,11 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .eq("staff_user_id", userId)
       .gte("session_date", sinceStr)
       .in("mark_type", ["absent", "feedback_done"]),
+    sharedUnitKeys.length
+      ? supabase.rpc("portal_peer_absent_quick_marks_for_sessions", {
+          p_keys: sharedUnitKeys,
+        })
+      : Promise.resolve({ data: null, error: null }),
     catchUpDates.length
       ? supabase
           .from("session_feedback")
@@ -502,7 +527,14 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   if (quickMarks && quickMarks.error) {
     console.warn("[portal] portal_staff_session_quick_marks fetch skipped", quickMarks.error);
   }
+  if (quickMarksPeer && quickMarksPeer.error) {
+    console.warn("[portal] portal_peer_absent_quick_marks_for_sessions skipped", quickMarksPeer.error);
+  }
   const qmRows = quickMarks && !quickMarks.error && Array.isArray(quickMarks.data) ? quickMarks.data : [];
+  const peerQmRows =
+    quickMarksPeer && !quickMarksPeer.error && Array.isArray(quickMarksPeer.data)
+      ? quickMarksPeer.data
+      : [];
   const seenAbs = new Set();
   const seenQfd = new Set();
   for (const r of qmRows) {
@@ -517,6 +549,15 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       seenQfd.add(k);
       quickFeedbackDoneKeys.push(k);
     }
+  }
+  for (const r of peerQmRows) {
+    const k =
+      r && typeof r === "object"
+        ? String(/** @type {{ portal_session_key?: string }} */ (r).portal_session_key || "").trim()
+        : String(r || "").trim();
+    if (!k || seenAbs.has(k)) continue;
+    seenAbs.add(k);
+    absentKeys.push(k);
   }
 
   portalHydrateLiveSessionFeedbackCache([

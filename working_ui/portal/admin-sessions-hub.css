@@ -1359,6 +1359,24 @@
     .ash-review-sub { margin: 6px 0 0; font-size: 12px; color: #854d0e; line-height: 1.35; }
     .ash-filter-row--feedback { align-items: flex-end; }
     .ash-input--instructor { min-width: 11rem; max-width: 16rem; }
+    .ash-filter-combo { position: relative; min-width: 0; max-width: 16rem; }
+    .ash-filter-combo__inp { width: 100%; min-width: 0; color: var(--text, #243447); background: #fff; }
+    .ash-filter-suggest {
+      position: absolute; left: 0; right: 0; z-index: 40; margin-top: 4px;
+      border: 1px solid var(--border); border-radius: 8px; max-height: min(240px, 42vh);
+      overflow: auto; background: #fff; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+      -webkit-overflow-scrolling: touch;
+    }
+    .ash-filter-suggest[hidden] { display: none !important; }
+    .ash-filter-suggest__btn {
+      display: block; width: 100%; min-width: 0; text-align: left; padding: 9px 11px;
+      border: 0; border-bottom: 1px solid var(--border); background: #fff; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 600; color: var(--text, #243447);
+      overflow-wrap: break-word;
+    }
+    .ash-filter-suggest__btn:last-child { border-bottom: 0; }
+    .ash-filter-suggest__btn:hover, .ash-filter-suggest__btn:focus-visible { background: #f0f7ff; outline: none; }
+    .ash-filter-suggest__btn--all { font-weight: 700; color: var(--muted); }
     .ash-feedback-filter-hint {
       margin: 0 0 10px;
       padding: 10px 14px;
