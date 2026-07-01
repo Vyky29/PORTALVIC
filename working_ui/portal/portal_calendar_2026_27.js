@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-sessions-labels";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-dc-blocks-bh";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -30,24 +30,24 @@
       {
         id: "autumn_2026",
         name: "Autumn Term",
-        starts: "2026-09-05",
-        halfTermOpen: { from: "2026-10-26", to: "2026-10-30" },
+        starts: "2026-09-01",
+        ends: "2026-12-18",
         christmasClosed: { from: "2026-12-19", to: "2027-01-03" },
       },
       {
         id: "spring_2027",
         name: "Spring Term",
         starts: "2027-01-04",
-        halfTermOpen: { from: "2027-02-15", to: "2027-02-19" },
+        ends: "2027-03-25",
         easterClosed: { from: "2027-03-26", to: "2027-04-11" },
       },
       {
         id: "summer_2027",
         name: "Summer Term",
         starts: "2027-04-12",
-        halfTermOpen: { from: "2027-05-31", to: "2027-06-04" },
-        lastDay: "2027-07-30",
+        mainTermEnds: "2027-07-16",
         summerProvision: { from: "2027-07-19", to: "2027-07-30" },
+        lastDay: "2027-07-30",
       },
     ],
     weekendClosures: [
@@ -59,7 +59,7 @@
       { from: "2027-06-05", to: "2027-06-06" },
     ],
     /** First open day through last open day of the academic year. */
-    openFrom: "2026-09-05",
+    openFrom: "2026-09-01",
     openTo: "2027-07-30",
   };
 

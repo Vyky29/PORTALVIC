@@ -227,6 +227,28 @@ s<!DOCTYPE html>
       align-items: center;
       justify-content: center;
     }
+    #dcCalDayCentrePanel .dc-cal-cell--bank-hol {
+      flex-direction: column;
+      padding: 2px 1px;
+    }
+    #dcCalDayCentrePanel .dc-cal-cell__stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      min-width: 0;
+      width: 100%;
+      text-align: center;
+    }
+    #dcCalDayCentrePanel .dc-cal-bh-label {
+      font-size: clamp(0.34rem, 1.3vw, 0.45rem);
+      font-weight: 700;
+      line-height: 1.05;
+      color: rgba(0, 0, 0, 0.78);
+      overflow-wrap: anywhere;
+      max-width: 100%;
+    }
     .dc-cal-cell--empty { background: transparent; }
     .dc-cal-cell--green { background: var(--dc-green); }
     .dc-cal-cell--red { background: var(--dc-red); }
@@ -341,9 +363,8 @@ s<!DOCTYPE html>
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalDayCentrePanel-term-autumn"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> Autumn Term 2026</h3>
         <ul class="dc-cal-term__info">
-          <li>Day Centre opens: Tuesday 1 September 2026</li>
-          <li>Half Term: Monday 26 October – Friday 30 October 2026</li>
-          <li>Day Centre open during Half Term: 26–30 October</li>
+          <li>Opens: Tuesday 1 September 2026</li>
+          <li>Last day: Friday 18 December 2026</li>
           <li>Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027</li>
         </ul>
         <div class="dc-cal-term__weeks">
@@ -481,9 +502,8 @@ s<!DOCTYPE html>
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalDayCentrePanel-term-spring"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> Spring Term 2027</h3>
         <ul class="dc-cal-term__info">
-          <li>Term starts: Monday 4 January 2027</li>
-          <li>Half Term: Monday 15 February – Friday 19 February 2027</li>
-          <li>Day Centre open during Half Term: 15–19 February</li>
+          <li>Opens: Monday 4 January 2027</li>
+          <li>Last day: Thursday 25 March 2027</li>
           <li>Easter closure: Friday 26 March – Sunday 11 April 2027</li>
         </ul>
         <div class="dc-cal-term__weeks">
@@ -499,7 +519,7 @@ s<!DOCTYPE html>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">1</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
@@ -571,8 +591,8 @@ s<!DOCTYPE html>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">26</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">29</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">26</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">29</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
@@ -585,10 +605,9 @@ s<!DOCTYPE html>
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalDayCentrePanel-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer Term 2027</h3>
         <ul class="dc-cal-term__info">
-          <li>Term starts: Monday 12 April 2027</li>
-          <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
-          <li>Day Centre open during Half Term: 1–4 June</li>
-          <li>Summer Day Centre open: Monday 19 July – Friday 30 July 2027</li>
+          <li>Opens: Monday 12 April 2027</li>
+          <li>Main term ends: Friday 16 July 2027</li>
+          <li>Summer provision: Monday 19 July – Friday 30 July 2027</li>
           <li>Last Day Centre day: Friday 30 July 2027</li>
         </ul>
         <div class="dc-cal-term__weeks">
@@ -631,7 +650,7 @@ s<!DOCTYPE html>
           <h4 class="dc-cal-month__label">May 2027</h4>
           <div class="dc-cal-weekdays dc-cal-weekdays--weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
           <div class="dc-cal-grid dc-cal-grid--weekdays" role="grid" aria-label="May 2027">
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">3</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
@@ -651,7 +670,7 @@ s<!DOCTYPE html>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">31</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
