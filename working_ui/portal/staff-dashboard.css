@@ -1501,12 +1501,21 @@
       grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));
     }
     .portal-calendar-2026-27-preview .dc-cal-tabs{
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:repeat(3,minmax(0,1fr));
       gap:6px;
     }
     .portal-calendar-2026-27-preview .dc-cal-tab{
       font-size:0.72rem;
       padding:10px 6px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal__summary{
+      gap:6px 10px;
+      padding:8px 10px;
+      font-size:0.72rem;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-panel[hidden],
+    .portal-calendar-2026-27-preview .dc-cal-panel__intro[hidden]{
+      display:none !important;
     }
     .portal-calendar-2026-27-iframe{
       display:block;

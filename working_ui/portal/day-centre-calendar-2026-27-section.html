@@ -41,9 +41,31 @@
       text-transform: uppercase;
       color: var(--dc-navy);
     }
+    .dc-cal__summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 16px;
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--dc-border);
+      border-radius: 10px;
+      font-size: clamp(0.78rem, 2.4vw, 0.86rem);
+      font-weight: 600;
+      text-align: center;
+      min-width: 0;
+    }
+    .dc-cal__summary span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .dc-cal__summary strong {
+      font-weight: 800;
+      color: var(--dc-navy);
+    }
     .dc-cal-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin: 0 0 14px;
       min-width: 0;
@@ -177,6 +199,7 @@
       text-align: center;
     }
     .dc-cal-weekdays--weekdays { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .dc-cal-weekdays--thu { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .dc-cal-weekdays span { min-width: 0; }
     .dc-cal-grid {
       display: grid;
@@ -184,6 +207,7 @@
       gap: 3px;
     }
     .dc-cal-grid--weekdays { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .dc-cal-grid--thu { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .dc-cal-cell {
       aspect-ratio: 1;
       min-width: 0;
@@ -217,7 +241,14 @@
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
     <button type="button" class="dc-cal-tab" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel">Day Centre<br><span style="font-weight:600;font-size:0.82em">Mon–Fri only</span></button>
     <button type="button" class="dc-cal-tab" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel">Weekly &amp; Weekend<br><span style="font-weight:600;font-size:0.82em">Sessions</span></button>
+    <button type="button" class="dc-cal-tab" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel">Crash Courses<br><span style="font-weight:600;font-size:0.82em">Mon–Thu · half terms</span></button>
   </div>
+
+  <p class="dc-cal__summary" aria-label="Annual weeks summary">
+    <span><strong>38</strong> week sessions</span>
+    <span><strong>33</strong> weekend sessions</span>
+    <span>Day Centre open <strong>43</strong> weeks/year</span>
+  </p>
 
   <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab">
     <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
@@ -230,6 +261,7 @@
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalDayCentrePanel-term-autumn"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> Autumn Term 2026</h3>
         <ul class="dc-cal-term__info">
+          <li>Day Centre opens: Tuesday 1 September 2026</li>
           <li>Term starts: Saturday 5 September 2026</li>
           <li>Half Term: Monday 26 October – Friday 30 October 2026</li>
           <li>Day Centre open during Half Term: 26–30 October</li>
@@ -247,10 +279,10 @@
           <div class="dc-cal-weekdays dc-cal-weekdays--weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
           <div class="dc-cal-grid dc-cal-grid--weekdays" role="grid" aria-label="September 2026">
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">1</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">2</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">3</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">4</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">7</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">8</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">9</span></span>
@@ -480,7 +512,7 @@
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 12 April 2027</li>
           <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
-          <li>Day Centre open during Half Term: 31 May – 4 June</li>
+          <li>Day Centre open during Half Term: 1–4 June (closed bank holiday Mon 31 May)</li>
           <li>Weekend closures: 29–30 May and 5–6 June</li>
           <li>Summer Day Centre open: Monday 19 July – Friday 30 July 2027</li>
           <li>Last Day Centre day: Friday 30 July 2027</li>
@@ -546,7 +578,7 @@
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
-            <span class="dc-cal-cell dc-cal-cell--orange" role="gridcell"><span class="dc-cal-day">31</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
@@ -1088,8 +1120,8 @@
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">18</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">19</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">20</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">21</span></span>
@@ -1104,6 +1136,78 @@
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
           </div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="dc-cal-panel" id="dcCalCrashPanel" role="tabpanel" aria-labelledby="dcCalCrashTab" hidden>
+    <ul class="dc-cal__legend" id="dcCalLegendCrash" aria-label="Crash courses colour key">
+      <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Crash course running</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = No crash course (incl. Fridays)</li>
+    </ul>
+    <p class="dc-cal-panel__intro">Crash courses run <strong>Monday to Thursday only</strong> during the October, February and May half terms. Fridays are not shown as running days.</p>
+    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-october">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-october"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> October half term 2026</h3>
+        <ul class="dc-cal-term__info">
+          <li>Mon 26 – Thu 29 October 2026</li>
+          <li>No crash course: Fri 30 October</li>
+        </ul>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">October 2026</h4>
+          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
+          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="October crash courses 2026">
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-february">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-february"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> February half term 2027</h3>
+        <ul class="dc-cal-term__info">
+          <li>Mon 15 – Thu 18 February 2027</li>
+          <li>No crash course: Fri 19 February</li>
+        </ul>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">February 2027</h4>
+          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
+          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="February crash courses 2027">
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-may">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-may"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> May half term 2027</h3>
+        <ul class="dc-cal-term__info">
+          <li>Mon 31 May – Thu 3 June 2027</li>
+          <li>No crash course: Fri 4 June</li>
+        </ul>
+      </header>
+      <div class="dc-cal-term__months">
+        <div class="dc-cal-month">
+          <h4 class="dc-cal-month__label">May – June 2027</h4>
+          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
+          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="May June crash courses 2027">
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">31</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+          </div>
+          <p style="margin:8px 0 0;font-size:0.75rem;text-align:center;color:var(--dc-navy);font-weight:600;">31 May · 1–3 Jun</p>
         </div>
       </div>
     </article>

@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-info";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-crash";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -242,8 +242,20 @@
 
   /** Tab switcher — required when HTML is injected (inline scripts do not run). */
   global.portalInitCalendar202627Tabs = function portalInitCalendar202627Tabs(root) {
-    var scope = root && root.querySelector ? root : global.document;
-    var section = scope.querySelector ? scope.querySelector(".dc-cal") : null;
+    var section = null;
+    if (root) {
+      if (
+        (root.classList && root.classList.contains("dc-cal")) ||
+        root.id === "dcCal2627"
+      ) {
+        section = root;
+      } else if (root.querySelector) {
+        section = root.querySelector(".dc-cal");
+      }
+    }
+    if (!section && global.document) {
+      section = global.document.querySelector(".dc-cal");
+    }
     if (!section) return;
     var tabs = section.querySelectorAll(".dc-cal-tab[data-dc-cal-target]");
     if (!tabs.length) return;
