@@ -350,7 +350,73 @@
       const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
       return `${day} - ${time}`;
     }
+    function prettyDateTime(iso) {
+      if (!iso) return "-";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "-";
+      const day = d.toLocaleDateString("en-GB");
+      const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+      return `${day} - ${time}`;
+    }
+
+    function workerFirstNameFromProfile(profile) {
+      const name = String(
+        (profile && (profile.full_name || profile.username)) || ""
+      ).trim();
+      if (!name) return "Your";
+      const parts = name.split(/\s+/);
+      return parts[0] || name;
+    }
+
+    function documentMonthKey(doc) {
+      const base = doc && (doc.related_date || doc.created_at);
+      if (!base) return "";
+      const d = new Date(base);
+      if (Number.isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function documentMonthLabel(doc) {
+      const base = doc && (doc.related_date || doc.created_at);
+      if (!base) return "";
+      const d = new Date(base);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", { month: "long" });
+    }
+
+    function enrichWorkerFacingTitles(docs, staffProfile) {
+      const firstName = workerFirstNameFromProfile(staffProfile);
+      const list = Array.isArray(docs) ? docs.slice() : [];
+      ["expense", "payslip"].forEach((type) => {
+        const label = type === "expense" ? "Expenses" : "Payslip";
+        const subset = list.filter(
+          (d) => String((d && d.document_type) || "").toLowerCase() === type
+        );
+        const byMonth = {};
+        subset.forEach((doc) => {
+          const key = documentMonthKey(doc);
+          if (!byMonth[key]) byMonth[key] = [];
+          byMonth[key].push(doc);
+        });
+        Object.keys(byMonth).forEach((key) => {
+          const arr = byMonth[key].sort(
+            (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
+          );
+          arr.forEach((doc, index) => {
+            const month = documentMonthLabel(doc) || "Month";
+            if (arr.length > 1) {
+              doc._workerDisplayTitle = `${firstName}'s ${label} (${month} ${index + 1})`;
+            } else {
+              doc._workerDisplayTitle = `${firstName}'s ${label} (${month})`;
+            }
+          });
+        });
+      });
+      return list;
+    }
+
     function displayTitle(doc) {
+      if (doc && doc._workerDisplayTitle) return doc._workerDisplayTitle;
       const type = String((doc && doc.document_type) || "").toLowerCase();
       if (type === "timesheet") {
         const base = doc.related_date || doc.created_at;
@@ -362,6 +428,8 @@
         return "Timesheet";
       }
       if (type === "expense") {
+        const t = String((doc && doc.title) || "").trim();
+        if (t) return t;
         const base = doc.related_date || doc.created_at;
         const d = base ? new Date(base) : null;
         if (d && !Number.isNaN(d.getTime())) {
@@ -866,7 +934,7 @@
       if (cat === categoryKey) return true;
       const t = String((doc && doc.document_type) || "").toLowerCase();
       if (categoryKey === "documents" && (t === "employment_contract" || t === "calendar_2026_27" || cat === "documents" || cat === "hr")) return true;
-      if (categoryKey === "finance" && (t === "timesheet" || t === "expense")) return true;
+      if (categoryKey === "finance" && (t === "timesheet" || t === "expense" || t === "payslip")) return true;
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (
         categoryKey === "training" &&
@@ -1016,7 +1084,9 @@
           btn.disabled = true;
           try {
             await portalHideMyDocumentFromList(id);
-            const docs = await portalListMyDocuments();
+            const ctx = window.__PORTAL_SUPABASE__ || {};
+            let docs = await portalListMyDocuments();
+            docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
             renderGroups(docs);
           } catch (err) {
             console.error("[my_documents] hide failed:", err);
@@ -1064,7 +1134,9 @@
       if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
       try {
         await ensurePortalStaffContext();
+        const ctx = window.__PORTAL_SUPABASE__ || {};
         let docs = await portalListMyDocuments();
+        docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
         docs = await mergeInductionCertificateRow(docs);
         docs = enrichInductionCertificateRows(docs);
         renderGroups(docs);

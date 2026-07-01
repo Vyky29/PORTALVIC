@@ -62,6 +62,42 @@
     return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   }
 
+  function monthNameOnlyFromIso(iso) {
+    var s = String(iso || "").trim();
+    if (!/^\d{4}-\d{2}/.test(s)) return s || "Payslip";
+    var d = new Date(s.slice(0, 7) + "-01T12:00:00");
+    if (Number.isNaN(d.getTime())) return s;
+    return d.toLocaleDateString("en-GB", { month: "long" });
+  }
+
+  function staffFirstNameById(id) {
+    var hit = state.staff.find(function (s) {
+      return String(s.id) === String(id);
+    });
+    if (!hit) return "Worker";
+    var name = String(hit.full_name || hit.username || "Worker").trim();
+    var parts = name.split(/\s+/);
+    return parts[0] || name;
+  }
+
+  function buildPayslipTitle(staffId, monthVal, existingSameMonthCount) {
+    var first = staffFirstNameById(staffId);
+    var month = monthNameOnlyFromIso(monthVal + "-01");
+    var seq = Number(existingSameMonthCount || 0) + 1;
+    if (seq > 1) {
+      return first + "'s Payslip (" + month + " " + seq + ")";
+    }
+    return first + "'s Payslip (" + month + ")";
+  }
+
+  function countExistingPayslipsForMonth(staffId, monthVal) {
+    return state.uploads.filter(function (row) {
+      if (!row || String(row.user_id) !== String(staffId)) return false;
+      var rd = String(row.related_date || "").trim();
+      return rd.slice(0, 7) === monthVal;
+    }).length;
+  }
+
   function formatDateTime(iso) {
     if (!iso) return "—";
     try {
@@ -348,7 +384,8 @@
     }
 
     var relatedDate = monthVal + "-01";
-    var title = monthLabelFromIso(relatedDate) + " Payslip";
+    var sameMonthCount = countExistingPayslipsForMonth(staffId, monthVal);
+    var title = buildPayslipTitle(staffId, monthVal, sameMonthCount);
     var stamp = new Date().toISOString().replace(/[:.]/g, "-");
     var filename = stamp + "_" + sanitizeFilenamePart(title) + ".pdf";
     var storagePath = staffId + "/payslips/" + filename;
