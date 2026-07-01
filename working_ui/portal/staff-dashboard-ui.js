@@ -363,9 +363,9 @@
           'Reference',
           buildAnnouncementQuickRow(
             'portalOpenCalendar202627',
-            'Calendar',
-            'Open term dates and calendar 2026/27',
-            'menu-btn--announcement-signed'
+            'Calendar 2026/27',
+            'Term dates — Day Centre, after-schools & crash courses',
+            'menu-btn--calendar-ref'
           ),
           'signed'
         );

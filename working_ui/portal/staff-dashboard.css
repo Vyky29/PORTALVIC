@@ -2128,6 +2128,33 @@
       color:#9d174d;
       border:1px solid rgba(131,24,67,.2);
     }
+    /* Calendar 2026/27 reference tile — corporate navy */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref{
+      background:linear-gradient(180deg,#162B5B 0%,#0a3d62 100%);
+      border:1px solid rgba(255,255,255,.14);
+      color:#fff;
+      box-shadow:0 4px 16px rgba(10,61,98,.32);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .announcement-title-line--quick-menu-only{
+      color:#fff;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-sub{
+      color:rgba(255,255,255,.78);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-chev{
+      color:rgba(255,255,255,.55);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-icon{
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.28);
+      color:#fff;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref:hover{
+      background:linear-gradient(180deg,#1a3266 0%,#0d4a75 100%);
+      border-color:rgba(255,255,255,.22);
+      box-shadow:0 6px 20px rgba(10,61,98,.38);
+    }
     /* Internal chat tile: corporate blue (unread state overrides below) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
       border-radius:var(--radiusLg,14px);

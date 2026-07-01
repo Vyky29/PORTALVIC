@@ -1700,11 +1700,25 @@
       const need = !!(st.sessionFeedbackNeed);
       const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
       const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
-      const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
-      const sub = need ? 'Complete session feedback' : 'All caught up through today';
-      const aria = need
+      let firstName = '';
+      try{
+        const nm = String((dashboardData && dashboardData.staffName) || '').trim();
+        if(nm) firstName = nm.split(/\s+/).filter(Boolean)[0] || '';
+      }catch(_){ firstName = ''; }
+      let title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
+      let sub = need ? 'Complete session feedback' : 'All caught up through today';
+      let aria = need
         ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
         : 'Outstanding feedbacks — none pending through today, tap to review sessions';
+      if(need && n === 1){
+        title = firstName
+          ? firstName + ', 1 session feedback left'
+          : '1 session feedback left';
+        sub = 'Complete your session feedback';
+        aria = firstName
+          ? firstName + ' — 1 session feedback left, tap to open'
+          : '1 session feedback left, tap to open';
+      }
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
         '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong><span class="menu-btn-sub">' + escapeHtml(sub) + '</span></div>' +
