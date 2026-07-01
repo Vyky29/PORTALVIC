@@ -82,7 +82,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260622-manager-pill" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260703-sched-ov-picker" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -10845,8 +10845,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         covSug.replaceChildren();
       }
     }
+    function schedOverrideActionUiLabel(val){
+      var map = {
+        client_absence_announced: 'Absent',
+        client_cancelled: 'Cancelled',
+        client_replace_in_slot: 'MakeUp',
+        client_trial: 'Trial',
+        instructor_reassign: 'Change Instructor',
+        client_move_same_day: 'Move to another slot today',
+        slot_open: 'Open closed slot'
+      };
+      var k = String(val == null ? '' : val).trim();
+      return map[k] || k || 'None';
+    }
+    function schedOverrideActionChoices(canTrial, canMoveClient){
+      var out = [
+        { value: 'client_absence_announced', label: 'Absent' },
+        { value: 'client_cancelled', label: 'Cancelled' },
+        { value: 'client_replace_in_slot', label: 'MakeUp' }
+      ];
+      if(canTrial) out.push({ value: 'client_trial', label: 'Trial' });
+      out.push({ value: 'instructor_reassign', label: 'Change Instructor' });
+      if(canMoveClient) out.push({ value: 'client_move_same_day', label: 'Move to another slot today' });
+      out.push({ value: 'slot_open', label: 'Open closed slot' });
+      return out;
+    }
+    function schedOverrideActionPickerHtml(canTrial, canMoveClient){
+      var choices = schedOverrideActionChoices(canTrial, canMoveClient);
+      var btns = choices.map(function(c){
+        return '<button type="button" class="btn btn--sec btn--sm sched-ov-type-btn" data-ov="'+esc(c.value)+'" aria-pressed="false">'+esc(c.label)+'</button>';
+      }).join('');
+      return '<input type="hidden" id="schedFormOvType" value="" />'+
+        '<div id="schedOvTypePicker" class="sched-ov-type-picker" role="group" aria-label="Override action">'+btns+'</div>'+
+        '<p class="muted" style="margin:8px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">Selected: <strong id="schedOvTypeSelText" style="color:var(--ink)">None</strong></p>';
+    }
     function bindSchedDrawerFormControls(){
       var typeEl = $('schedFormOvType');
+      var picker = $('schedOvTypePicker');
+      var selText = $('schedOvTypeSelText');
       var wrapRep = $('schedWrapReplace');
       var wrapCov = $('schedWrapCover');
       var wrapMove = $('schedWrapMoveTarget');
@@ -10959,10 +10995,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         sug.hidden = false;
       }
-      var onTypeChange = function(){
+      var onPickerClick = null;
+      function setOvType(val){
+        val = String(val || '').trim();
+        if(typeEl) typeEl.value = val;
+        if(picker){
+          picker.querySelectorAll('.sched-ov-type-btn').forEach(function(btn){
+            var on = String(btn.getAttribute('data-ov') || '') === val;
+            btn.classList.toggle('is-selected', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        }
+        if(selText) selText.textContent = val ? schedOverrideActionUiLabel(val) : 'None';
         syncFieldVisibility();
-      };
-      if(typeEl) typeEl.addEventListener('change', onTypeChange);
+      }
+      if(picker){
+        onPickerClick = function(ev){
+          var btn = ev.target && ev.target.closest ? ev.target.closest('.sched-ov-type-btn') : null;
+          if(!btn || !picker.contains(btn)) return;
+          setOvType(btn.getAttribute('data-ov') || '');
+        };
+        picker.addEventListener('click', onPickerClick);
+      }
       syncFieldVisibility();
       if(inp){
         inp.addEventListener('input', function(){
@@ -11057,7 +11111,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.addEventListener('click', schedRepSuggestOutsideClick, true);
       sched._schedDrawerFormCleanup = function(){
         document.removeEventListener('click', schedRepSuggestOutsideClick, true);
-        if(typeEl) typeEl.removeEventListener('change', onTypeChange);
+        if(picker && onPickerClick) picker.removeEventListener('click', onPickerClick);
         sched._schedDrawerFormCleanup = null;
       };
     }
@@ -11296,17 +11350,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
         '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
-        '<label class="muted" for="schedFormOvType" style="display:block;margin-top:10px">Action</label>'+
-        '<select id="schedFormOvType" class="sel" style="max-width:100%">'+
-        '<option value="" selected disabled>Select one</option>'+
-        '<option value="client_absence_announced">Absent</option>'+
-        '<option value="client_cancelled">Cancelled</option>'+
-        '<option value="client_replace_in_slot">MakeUp</option>'+
-        (canTrial ? '<option value="client_trial">Trial</option>' : '')+
-        '<option value="instructor_reassign">Change Instructor</option>'+
-        (canMoveClient ? '<option value="client_move_same_day">Move to another slot today</option>' : '')+
-        '<option value="slot_open">Open closed slot</option>'+
-        '</select>'+
+        '<div class="kpi-l" style="margin-top:10px">Action</div>'+
+        schedOverrideActionPickerHtml(canTrial, canMoveClient)+
         '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
         '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+

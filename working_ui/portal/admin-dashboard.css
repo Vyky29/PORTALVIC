@@ -3840,6 +3840,12 @@
     tr.sched-slot-row.is-muted td{opacity:.55}
     #schedDrawerBackdrop{z-index:12150}
     #schedSlotDrawer{z-index:12190}
+    /* Override action pills — native <select> dropdown is clipped inside drawer scroll */
+    .sched-ov-type-picker{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0}
+    .sched-ov-type-picker .sched-ov-type-btn{max-width:100%;min-width:0;overflow-wrap:break-word;text-align:left;line-height:1.35}
+    .sched-ov-type-picker .sched-ov-type-btn.is-selected{
+      background:var(--blueSoft);border-color:rgba(45,132,179,.45);color:var(--blue);box-shadow:inset 0 0 0 1px rgba(45,132,179,.22)
+    }
     /* Scheduling drawer: replacement participant combo (flow layout so list is not clipped by drawer scroll) */
     .sched-combo-wrap{position:relative;min-width:0;max-width:100%;margin-top:6px}
     .sched-combo-wrap .inp{max-width:none}
