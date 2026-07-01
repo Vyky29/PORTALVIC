@@ -264,9 +264,12 @@
         const pendingAnnCount = typeof portalActiveAnnouncementItems === 'function'
           ? portalActiveAnnouncementItems().length
           : 0;
-        const hasCalendarInfo = !!(typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem());
+        const hasCalendarAnn = !!(
+          typeof portalCalendar202627NoticeItem === 'function' &&
+          portalCalendar202627NoticeItem()
+        );
         const hasNoticesEarly = !!(grid && grid.childElementCount > 0);
-        if(!pendingAnnCount && !hasNoticesEarly && !hasCalendarInfo){
+        if(!pendingAnnCount && !hasNoticesEarly && !hasCalendarAnn){
           grp.hidden = true;
           return;
         }
@@ -340,6 +343,9 @@
         b.innerHTML = '<div class="menu-btn-icon" aria-hidden="true">' + iconSvg + '</div><div class="menu-btn-copy txt">' + blockInner + '</div><span class="menu-btn-chev" aria-hidden="true">›</span>';
         return b;
       }
+      const calendarItem = typeof portalCalendar202627NoticeItem === 'function'
+        ? portalCalendar202627NoticeItem()
+        : null;
       if(activeAnnouncementCount > 0){
         appendAnnouncementSubcategory(
           'Need your signature',
@@ -352,16 +358,13 @@
           'pending'
         );
       }
-      const calendarItem = typeof portalCalendar202627NoticeItem === 'function'
-        ? portalCalendar202627NoticeItem()
-        : null;
       if(calendarItem){
         appendAnnouncementSubcategory(
           'Reference',
           buildAnnouncementQuickRow(
-            'announcementCalendarInfo',
-            'Day Centre Calendar 2026/27',
-            'Open term dates calendar — optional PDF download to My Documents',
+            'portalOpenCalendar202627',
+            'Calendar',
+            'Open term dates and calendar 2026/27',
             'menu-btn--announcement-signed'
           ),
           'signed'
@@ -4137,12 +4140,15 @@
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         return;
       }
-      const calAnn = e.target.closest('#announcementCalendarInfo');
-      if(calAnn){
+      const calOpen = e.target.closest('#portalOpenCalendar202627');
+      if(calOpen){
         e.preventDefault();
-        if(typeof portalOpenAnnouncementsSheet === 'function'){
-          portalOpenAnnouncementsSheet('calendarInfo');
-        }
+        e.stopPropagation();
+        const calUrl = typeof portalCalendar202627SectionUrl === 'function'
+          ? portalCalendar202627SectionUrl()
+          : '/portal/day-centre-calendar-2026-27-section.html';
+        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+        globalThis.location.assign(calUrl);
         return;
       }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
@@ -4168,12 +4174,14 @@
         openSheet('safeguardingFeedbackPolicySheet');
         return;
       }
-      const calAnn = e.target.closest('#announcementCalendarInfo');
-      if(calAnn){
+      const calOpen = e.target.closest('#portalOpenCalendar202627');
+      if(calOpen){
         e.preventDefault();
-        if(typeof portalOpenAnnouncementsSheet === 'function'){
-          portalOpenAnnouncementsSheet('calendarInfo');
-        }
+        const calUrl = typeof portalCalendar202627SectionUrl === 'function'
+          ? portalCalendar202627SectionUrl()
+          : '/portal/day-centre-calendar-2026-27-section.html';
+        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+        globalThis.location.assign(calUrl);
         return;
       }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');

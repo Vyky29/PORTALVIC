@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-crash-ui";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-summary-tabs";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -267,6 +267,9 @@
       });
       section.querySelectorAll(".dc-cal-panel").forEach(function (p) {
         p.hidden = p.id !== targetId;
+      });
+      section.querySelectorAll("[data-dc-cal-summary]").forEach(function (s) {
+        s.hidden = s.getAttribute("data-dc-cal-summary") !== targetId;
       });
     }
 

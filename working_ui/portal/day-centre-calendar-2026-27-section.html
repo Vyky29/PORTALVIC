@@ -63,6 +63,9 @@
       font-weight: 800;
       color: var(--dc-navy);
     }
+    .dc-cal__summary[hidden] {
+      display: none !important;
+    }
     .dc-cal-tabs {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -315,11 +318,16 @@
     <button type="button" class="dc-cal-tab" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel">Crash Courses<br><span style="font-weight:600;font-size:0.82em">Mon–Thu · half terms</span></button>
   </div>
 
-  <p class="dc-cal__summary" aria-label="Annual weeks summary">
+  <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary">
+    <span>Day Centre open <strong>43</strong> weeks/year</span>
+  </div>
+  <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary" hidden>
     <span><strong>38</strong> week sessions</span>
     <span><strong>33</strong> weekend sessions</span>
-    <span>Day Centre open <strong>43</strong> weeks/year</span>
-  </p>
+  </div>
+  <div class="dc-cal__summary" id="dcCalSummaryCrash" data-dc-cal-summary="dcCalCrashPanel" aria-label="Crash courses summary" hidden>
+    <span><strong>12</strong> crash course days · 3 half terms</span>
+  </div>
 
   <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab">
     <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
@@ -1271,6 +1279,9 @@
         });
         section.querySelectorAll(".dc-cal-panel").forEach(function (p) {
           p.hidden = p.id !== targetId;
+        });
+        section.querySelectorAll("[data-dc-cal-summary]").forEach(function (s) {
+          s.hidden = s.getAttribute("data-dc-cal-summary") !== targetId;
         });
       }
       tabs.forEach(function (tab) {

@@ -3688,11 +3688,10 @@
 
     const PORTAL_ANNOUNCEMENT_ACK_STORAGE = 'portalAnnouncementAckMap_v1';
     let portalAnnouncementLockRequired = false;
-    /** 'signedLog' | 'calendarInfo' | 'newNotice' (signable pending only). */
+    /** 'signedLog' | 'newNotice' (signable pending or informational calendar). */
     let portalAnnouncementsSheetEntry = '';
     function portalOpenAnnouncementsSheet(entry){
-      portalAnnouncementsSheetEntry =
-        entry === 'signedLog' ? 'signedLog' : entry === 'calendarInfo' ? 'calendarInfo' : 'newNotice';
+      portalAnnouncementsSheetEntry = entry === 'signedLog' ? 'signedLog' : 'newNotice';
       openSheet('announcementsSheet');
     }
     function portalAnnouncementAckMapLoad(){
@@ -4180,7 +4179,10 @@
           '</div>' +
         '</article>';
       if(typeof portalLoadCalendar202627Into === 'function'){
-        void portalLoadCalendar202627Into(document.getElementById('portalCalendar202627PreviewHost'));
+        global.requestAnimationFrame(function(){
+          const hostEl = document.getElementById('portalCalendar202627PreviewHost');
+          if(hostEl) void portalLoadCalendar202627Into(hostEl);
+        });
       }
     }
     function portalActiveAnnouncementItems(){
@@ -4396,16 +4398,38 @@
       const hostHistory = document.getElementById('announcementHistoryHost');
       if(!hostPending || !hostHistory) return;
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
-      const calendarInfoView = portalAnnouncementsSheetEntry === 'calendarInfo';
-      const calendarItem =
-        typeof portalCalendar202627NoticeItem === 'function' ? portalCalendar202627NoticeItem() : null;
-      const pending = signedLogView || calendarInfoView ? null : portalAnnouncementPendingItem();
-      if(calendarInfoView && calendarItem){
+      const pending = signedLogView ? null : portalAnnouncementPendingItem();
+      if(signedLogView){
+        hostPending.innerHTML = '';
         portalAnnouncementLockRequired = false;
-        portalMountCalendar202627AnnouncementCard(hostPending, calendarItem);
-        hostHistory.innerHTML = '';
-        hostHistory.hidden = true;
-        hostHistory.setAttribute('aria-hidden', 'true');
+        hostHistory.hidden = false;
+        hostHistory.setAttribute('aria-hidden', 'false');
+        const rows = portalSignedMessageHistoryRows();
+        if(!rows.length){
+          hostHistory.innerHTML = '<article class="announcement-history-card"><p class="alerts-sheet-placeholder" style="margin:0;">No signed announcements or reminders yet.</p></article>';
+        }else{
+          hostHistory.innerHTML =
+            '<article class="announcement-history-card">' +
+              '<p class="announcement-history-head">Signed Announcements/Reminders</p>' +
+              rows.map(function(r, i){
+                const dt = portalAnnouncementHistoryDateLabel(r.signedAt);
+                const lines = portalAnnouncementHistoryHeadingLines(r.title);
+                const kind = String(r.kind || 'announcement') === 'reminder' ? 'reminder' : 'announcement';
+                const link = '';
+                const histBody = typeof portalFormatSignableMessageHtml === 'function'
+                  ? portalFormatSignableMessageHtml(r.text || 'No details captured.')
+                  : ('<p class="announcement-message-p">' + escapeHtml(r.text || 'No details captured.') + '</p>');
+                return '<div class="announcement-history-item announcement-history-item--' + kind + (i === 0 ? ' is-open' : '') + '">' +
+                  '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-kind">' + escapeHtml(kind === 'reminder' ? 'Reminder' : 'Announcement') + '</span><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
+                  '<div class="announcement-history-body announcement-message-block">' + histBody + link + '</div>' +
+                '</div>';
+              }).join('') +
+            '</article>';
+        }
+        try{
+          const bodyEl = document.getElementById('announcementsSheetBody');
+          if(bodyEl) bodyEl.scrollTop = 0;
+        }catch(_){}
       }else if(pending){
         portalAnnouncementLockRequired = true;
         const isReminder = portalSignableItemIsReminder(pending);
