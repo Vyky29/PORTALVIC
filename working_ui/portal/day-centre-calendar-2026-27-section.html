@@ -96,10 +96,15 @@ s<!DOCTYPE html>
     .dc-cal-tab__services {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
       font-weight: 600;
-      font-size: clamp(0.62rem, 2vw, 0.74rem);
+      font-size: clamp(0.58rem, 1.85vw, 0.7rem);
       line-height: 1.15;
+    }
+    .dc-cal-tab__services-title {
+      font-weight: 800;
+      font-size: clamp(0.64rem, 2.1vw, 0.76rem);
+      line-height: 1.2;
     }
     .dc-cal-panel[hidden],
     .dc-cal__legend[hidden] {
@@ -338,7 +343,7 @@ s<!DOCTYPE html>
 
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
     <button type="button" class="dc-cal-tab" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel">Day Centre<br><span style="font-weight:600;font-size:0.82em">Mon–Fri only</span></button>
-    <button type="button" class="dc-cal-tab" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="Swimming, Climbing, Fitness, Bespoke, Multi-Activity"><span class="dc-cal-tab__services"><span>Swimming</span><span>Climbing</span><span>Fitness</span><span>Bespoke</span><span>Multi-Activity</span></span></button>
+    <button type="button" class="dc-cal-tab" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-School and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__services"><span class="dc-cal-tab__services-title">After-School &amp; Weekends</span><span>Swimming, Climbing, Fitness</span><span>Bespoke &amp; Multi-Activity</span></span></button>
     <button type="button" class="dc-cal-tab" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel">Crash Courses<br><span style="font-weight:600;font-size:0.82em">Half Terms</span></button>
   </div>
 
