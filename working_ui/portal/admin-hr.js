@@ -570,6 +570,16 @@
       + '</div><p class="hr-profile-kv__value' + (muted ? " hr-profile-kv__value--muted" : "") + '">' + esc(show) + "</p></div>";
   }
 
+  function annualProfileHasSavedResponses(r) {
+    if (!r) return false;
+    return Boolean(
+      String(r.availability_status || "").trim()
+        || String(r.availability_summary || r.availability_changes || "").trim()
+        || String(r.other_work_status || "").trim()
+        || String(r.wellbeing_notes || "").trim(),
+    );
+  }
+
   function annualProfileResponseBody(r) {
     if (!r) return '<p class="hr-empty">Profile not found.</p>';
     var complete = annualProfileComplete(r.profile_last_confirmed_at);
@@ -579,6 +589,11 @@
     );
     if (r.profile_last_updated_at && r.profile_last_updated_at !== r.profile_last_confirmed_at) {
       meta += profileKvRow("Last updated", fmtDateTime(r.profile_last_updated_at));
+    }
+    if (complete && !annualProfileHasSavedResponses(r)) {
+      meta += '<p class="hr-profile-kv__warn" style="margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#fef3c7;color:#92400e;font-size:13px;line-height:1.45;overflow-wrap:break-word">'
+        + "Marked Done but no availability answers were saved. Ask them to open <strong>Annual profile</strong> again and resubmit — a form bug previously allowed confirm without saving."
+        + "</p>";
     }
     var avail = profileResponseBlock(
       "Availability",

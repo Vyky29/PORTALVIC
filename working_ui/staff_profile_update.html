@@ -1306,6 +1306,7 @@
                 <ul class="readonly-list" id="rosterAvailabilityList"></ul>
               </div>
               <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Your choice</span><span class="readonly-value" data-readonly="availability_status_label">Not provided</span></li>
                 <li class="readonly-row"><span class="readonly-label">On file</span><span class="readonly-value" data-readonly="availability_summary">No availability on file yet.</span></li>
               </ul>
               <p class="field-hint" id="rosterAvailabilityFootnote" style="margin:8px 0 0;">Confirm below whether you want the same pattern next year or something different.</p>
@@ -2097,6 +2098,15 @@
       return s;
     }
 
+    function fmtAvailabilityStatus(s) {
+      if (!s) return "Not provided";
+      if (s === "continue") return "Continue with my current availability";
+      if (s === "reduce") return "Reduce my availability";
+      if (s === "increase") return "Increase my availability";
+      if (s === "unsure") return "Not sure yet";
+      return s;
+    }
+
     function renderRosterAvailabilityHint(roster) {
       const hint = $("rosterAvailabilityHint");
       const list = $("rosterAvailabilityList");
@@ -2186,6 +2196,7 @@
       setEditValue("emergency_contact_phone", p.emergency_contact?.phone);
 
       // Section 4: availability
+      setReadonlyValue("availability_status_label", fmtAvailabilityStatus(p.availability?.status));
       setReadonlyValue("availability_summary", p.availability?.summary, { empty: "No availability on file yet — confirm or tell us about changes below." });
       setEditValue("availability_status", p.availability?.status);
       setEditValue("availability_summary", p.availability?.summary);
@@ -2384,6 +2395,7 @@
         setReadonlyValue('emergency_contact_relationship', p.emergency_contact?.relationship, { empty: 'Not provided' });
         setReadonlyValue('emergency_contact_phone', p.emergency_contact?.phone, { empty: 'Not provided' });
       } else if (id === 'sectionAvailability') {
+        setReadonlyValue('availability_status_label', fmtAvailabilityStatus(p.availability?.status));
         setReadonlyValue('availability_summary', p.availability?.summary,
           { empty: 'No availability on file yet — confirm or tell us about changes below.' });
       } else if (id === 'sectionOtherWork') {
@@ -2416,12 +2428,68 @@
       return ok;
     }
 
+    function sectionProfileHasRequiredData(sec) {
+      const p = state.profile;
+      if (sec.id === 'sectionAvailability') return Boolean(p.availability?.status);
+      if (sec.id === 'sectionOtherWork') return Boolean(p.other_work?.status);
+      return true;
+    }
+
+    function validateSectionRequiredData(sec, edits) {
+      if (sec.id === 'sectionAvailability' && !(edits.availability_status || '').trim()) {
+        return 'Choose an availability option before confirming this section.';
+      }
+      if (sec.id === 'sectionOtherWork' && !(edits.other_work_status || '').trim()) {
+        return 'Choose whether you only work for ClubSENsational or also elsewhere.';
+      }
+      if (sec.id === 'sectionOtherWork' && edits.other_work_status === 'also_other') {
+        if (!(edits.other_work_organisation || '').trim()) {
+          return 'Add the organisation name(s) for your other work.';
+        }
+        if (!(edits.other_work_schedule || '').trim()) {
+          return 'Add the general days or times for your other work.';
+        }
+        if (edits.other_work_affects_availability === '') {
+          return 'Say whether your other work affects your ClubSENsational availability.';
+        }
+      }
+      return '';
+    }
+
+    function persistSectionEdits(sec, { relock = true } = {}) {
+      const edits = collectSectionEdits(sec);
+      if (!validateSectionEdits(sec, edits)) return false;
+      const requiredMsg = validateSectionRequiredData(sec, edits);
+      if (requiredMsg) {
+        show(profileNotice, 'error', requiredMsg);
+        return false;
+      }
+      applyEditsToProfile(sec, edits);
+      if (relock) relockSection(sec);
+      return true;
+    }
+
+    function flushPendingEditsToProfile() {
+      document.querySelectorAll('.profile-section.is-editing').forEach((sec) => {
+        if (!['confirmed', 'edited'].includes(state.sectionState[sec.id])) return;
+        persistSectionEdits(sec, { relock: true });
+      });
+    }
+
     document.querySelectorAll('.profile-section').forEach((sec) => {
       sec.addEventListener('click', (ev) => {
         const btn = ev.target.closest('[data-action]');
         if (!btn) return;
         const a = btn.dataset.action;
         if (a === 'confirm') {
+          hide(profileNotice);
+          if (sec.classList.contains('is-editing')) {
+            if (!persistSectionEdits(sec, { relock: true })) return;
+          } else if (!sectionProfileHasRequiredData(sec)) {
+            show(profileNotice, 'error', 'Tap Edit, fill in this section, then confirm again.');
+            unlockSection(sec);
+            return;
+          }
           setSectionStatus(sec, 'confirmed');
           // Auto-collapse after confirm to nudge the user to the next section.
           setTimeout(() => {
@@ -2440,10 +2508,7 @@
         } else if (a === 'edit') {
           unlockSection(sec);
         } else if (a === 'save-edit') {
-          const edits = collectSectionEdits(sec);
-          if (!validateSectionEdits(sec, edits)) return;
-          applyEditsToProfile(sec, edits);
-          relockSection(sec);
+          if (!persistSectionEdits(sec, { relock: true })) return;
           setSectionStatus(sec, 'edited');
           updateConfirmedSummary();
         } else if (a === 'cancel-edit') {
@@ -2499,6 +2564,15 @@
     // -----------------------------------------------------------------
     submitUpdatesBtn.addEventListener('click', async () => {
       hide(profileNotice);
+
+      flushPendingEditsToProfile();
+      for (const id of REQUIRED_SECTIONS) {
+        const sec = $(id);
+        if (!sec || sectionProfileHasRequiredData(sec)) continue;
+        show(profileNotice, 'error', 'One or more required sections are missing answers. Open each section, tap Edit, and confirm again.');
+        updateConfirmedSummary();
+        return;
+      }
 
       const updates = diffProfile(state.pristine, state.profile);
       submitUpdatesBtn.setAttribute('aria-busy', 'true');
