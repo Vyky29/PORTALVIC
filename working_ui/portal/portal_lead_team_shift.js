@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260702-michelle-team-strip";
+} from "./portal_lead_session_scope.js?v=20260702-ma-lead-team-absent";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -153,7 +153,7 @@ function portalLeadTeamDayKind(ctx, iso) {
       return normKey(v).indexOf("acton") >= 0;
     });
     if (wd === "Sunday" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && swimfarm) return "sunday_ma_swimfarm";
-    if (wd === "Wednesday" && leadKey === "berta" && sc.programmeWideRoster && isMulti && acton) {
+    if (wd === "Wednesday" && leadKey === "berta" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && acton) {
       return "berta_wed_acton_ma";
     }
     if (wd === "Wednesday" && leadKey === "john" && (sc.leadTeamBanner || sc.programmeWideRoster) && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {

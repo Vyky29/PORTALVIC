@@ -2582,8 +2582,8 @@
       }
       if(sid === 'berta'){
         return [
-          { weekdays: ['Wednesday'], serviceKeys: ['multi'], venues: ['acton'], programmeWideRoster: true },
-          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], programmeWideRoster: true }
+          { weekdays: ['Wednesday'], serviceKeys: ['multi'], venues: ['acton'], leadTeamBanner: true },
+          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
         ];
       }
       if(sid === 'michelle'){
@@ -2591,6 +2591,18 @@
       }
       return [];
     }
+    function portalStaffLeadOwnClientsOnlyOnDate(staffId, isoYmd){
+      var sid = String(staffId || '').trim().toLowerCase();
+      var iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!sid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      var wd = portalStaffWeekdayFromIso(iso);
+      if(!wd) return false;
+      var scopes = portalStaffLeadScopesForStaffId(sid);
+      return scopes.some(function(sc){
+        return sc.ownClientsOnly === true && sc.weekdays.indexOf(wd) >= 0;
+      });
+    }
+    try{ window.portalStaffLeadOwnClientsOnlyOnDate = portalStaffLeadOwnClientsOnlyOnDate; }catch(_){}
     function portalStaffWeekdayFromIso(iso){
       var s = String(iso || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';

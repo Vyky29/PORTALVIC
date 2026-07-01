@@ -107,7 +107,8 @@ const BERTA_SCOPES = [
     weekdays: ["Wednesday"],
     serviceKeys: ["multi"],
     venues: ["acton"],
-    programmeWideRoster: true,
+    /* Team + absent chips: whole MA Acton programme. Today cards: Berta's clients only. */
+    leadTeamBanner: true,
   },
   {
     id: "sunday-ma-swimfarm",
@@ -115,7 +116,7 @@ const BERTA_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
-    programmeWideRoster: true,
+    leadTeamBanner: true,
   },
 ];
 

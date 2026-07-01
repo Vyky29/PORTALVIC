@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260702-berta-today-dedupe";
+  var VER = "20260702-ma-lead-team-absent";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
@@ -45,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260702-michelle-team-strip",
+    "/portal/portal_lead_team_shift.js?v=20260702-ma-lead-team-absent",
   ];
 
   var TIER_IDLE = [

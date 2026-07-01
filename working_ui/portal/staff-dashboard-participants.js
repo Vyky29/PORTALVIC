@@ -3969,9 +3969,13 @@
       if(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess()) return true;
       return false;
     }
-    /** Same participant rows as Today on the dashboard (that calendar day only). Lead/CEO: all club sessions that day. */
+    /** CEO only: org-wide participant list for photos. MA leads (John/Berta) use Today cards like instructors. */
+    function portalAchievementsListUsesOrgWideToday(){
+      return !!(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess());
+    }
+    /** Same participant rows as Today on the dashboard (that calendar day only). */
     function portalAchievementsListTodayParticipants(){
-      if(portalAchievementsLeadPhotoAccessActive()){
+      if(portalAchievementsListUsesOrgWideToday()){
         var org = portalAchievementsListOrgClientsForSelectedDay();
         if(org.length) return org;
       }
