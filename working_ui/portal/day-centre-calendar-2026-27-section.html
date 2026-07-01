@@ -1,4 +1,4 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -68,7 +68,7 @@ s<!DOCTYPE html>
     }
     .dc-cal-tabs {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.82fr) minmax(0, 0.82fr);
       gap: 8px;
       margin: 0 0 14px;
       min-width: 0;
@@ -76,8 +76,9 @@ s<!DOCTYPE html>
     .dc-cal-tab {
       border: 2px solid var(--dc-navy);
       border-radius: 12px;
-      padding: 12px 10px;
+      padding: 10px 4px;
       min-height: 48px;
+      min-width: 0;
       background: var(--dc-white);
       color: var(--dc-navy);
       font-weight: 800;
@@ -93,18 +94,26 @@ s<!DOCTYPE html>
       color: var(--dc-white);
       border-color: var(--dc-navy);
     }
-    .dc-cal-tab__services {
+    .dc-cal-tab--stack {
       display: flex;
       flex-direction: column;
-      gap: 2px;
-      font-weight: 600;
-      font-size: clamp(0.58rem, 1.85vw, 0.7rem);
-      line-height: 1.15;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
     }
-    .dc-cal-tab__services-title {
+    .dc-cal-tab__head {
       font-weight: 800;
-      font-size: clamp(0.64rem, 2.1vw, 0.76rem);
-      line-height: 1.2;
+      line-height: 1.12;
+    }
+    .dc-cal-tab__sub {
+      display: block;
+      font-weight: 600;
+      font-size: 0.82em;
+      line-height: 1.15;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .dc-cal-panel[hidden],
     .dc-cal__legend[hidden] {
@@ -342,9 +351,9 @@ s<!DOCTYPE html>
   </header>
 
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
-    <button type="button" class="dc-cal-tab" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel">Day Centre<br><span style="font-weight:600;font-size:0.82em">Mon–Fri only</span></button>
-    <button type="button" class="dc-cal-tab" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-School and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__services"><span class="dc-cal-tab__services-title">After-School &amp; Weekends</span><span>Swimming, Climbing, Fitness</span><span>Bespoke &amp; Multi-Activity</span></span></button>
-    <button type="button" class="dc-cal-tab" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel">Crash Courses<br><span style="font-weight:600;font-size:0.82em">Half Terms</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Half Terms</span></button>
   </div>
 
   <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary">
