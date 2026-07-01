@@ -442,11 +442,13 @@
       try{
         const t = typeof window !== 'undefined' ? window.PORTAL_TERM_FROM_TIMETABLE : null;
         if(t){
+          const reminder = String(t.termFeedbackReminderFromIso || '').trim().slice(0, 10);
+          if(/^\d{4}-\d{2}-\d{2}$/.test(reminder)) return reminder;
           const v = String(t.termResumeDate || t.termDashboardCalendarFrom || '').trim().slice(0, 10);
           if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
         }
       }catch(_){}
-      return '2026-06-01';
+      return '2026-06-25';
     }
     function portalTermFeedbackAssumeComplete(isoYmd, staffId){
       const ptd = window.PortalTermCalendarDashboard;
@@ -521,6 +523,14 @@
           if(memOnly.feedbackDone){
             if(dashboardData && dashboardData.portalFeedbackServerSynced){
               if(!portalIsServerTruthFeedbackDay(iso)){
+                if(typeof portalTermFeedbackAssumeComplete === 'function'
+                  && portalTermFeedbackAssumeComplete(iso, sid)){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
+                if(typeof portalFeedbackReminderDayInScope === 'function'
+                  && !portalFeedbackReminderDayInScope(iso)){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
                 const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                   ? portalSessionReviewKeyForModelRow(s, dayWord, iso) : '';
                 const pseudo = { sessionKey: sk, __portalBaseSession: s };
@@ -534,6 +544,9 @@
                   feedbackDone: false, incident: false, absent: false, cancelled: false
                 });
                 if(serverOk || bridgeOk){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
+                if(memOnly.feedbackDone){
                   return portalReviewFlagsForResolvedSession(iso, sid, s);
                 }
                 return {
@@ -811,7 +824,21 @@
       if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s) && cid){
         add(iso + '|' + cid + '|day_centre');
       }
+      if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s) && cid){
+        add(iso + '|' + cid + '|bespoke_shared');
+        add(iso + '||' + cid + '|hub_room');
+      }
       return keys;
+    }
+    function portalBridgeSessionFeedbackComplete(iso, staffId, s, mergedRec){
+      try{
+        const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridge && typeof bridge.sessionComplete === 'function'){
+          return bridge.sessionComplete(iso, staffId, s, notes, mergedRec || {});
+        }
+      }catch(_){}
+      return false;
     }
     function portalReviewKeyDateIsoFromSessionKey(key){
       const p = String(key || '').trim().split('|')[0] || '';
@@ -1002,6 +1029,14 @@
       const pastOwnSlot = needsOwn && !portalIsServerTruthFeedbackDay(iso) && serverSynced;
       if(!pastOwnSlot && portalReviewFeedbackInMemoryForAliases(aliases, needsOwn)) return true;
       if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
+      if(!needsOwn){
+        const baseS = portalReviewSessionForItem(item) || (item && item.__portalBaseSession);
+        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const memRec = getSessionReviewRecord(item) || {};
+        if(baseS && sid && portalBridgeSessionFeedbackComplete(iso, sid, baseS, memRec)){
+          return true;
+        }
+      }
       const direct = getSessionReviewRecord(item);
       if(pastOwnSlot) return false;
       return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
@@ -1277,7 +1312,7 @@
           || ''
         ).trim().toLowerCase();
         const resetV = '20260625-aurora-jun23-catchup';
-        const machineResetV = '20260625-youssef-ma-own-feedback';
+        const machineResetV = '20260702-shared-feedback-jun25-floor';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}

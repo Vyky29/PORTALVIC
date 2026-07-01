@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-michelle-own-clients";
+} from "./portal_lead_session_scope.js?v=20260702-michelle-team-strip";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -162,7 +162,12 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Friday")) {
       return "john_bespoke_mwf";
     }
-    if (leadKey === "michelle" && sc.programmeWideRoster && sc.serviceKeys && sc.serviceKeys.indexOf("daycentre") >= 0) {
+    if (
+      leadKey === "michelle" &&
+      (sc.leadTeamBanner || sc.programmeWideRoster) &&
+      sc.serviceKeys &&
+      sc.serviceKeys.indexOf("daycentre") >= 0
+    ) {
       return "michelle_day_centre";
     }
   }
@@ -963,6 +968,7 @@ export function portalSyncLeadTeamShiftUi() {
 
 if (typeof window !== "undefined") {
   window.portalSyncLeadTeamShiftUi = portalSyncLeadTeamShiftUi;
+  window.portalLeadTeamShiftContext = portalLeadTeamShiftContext;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
   window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;

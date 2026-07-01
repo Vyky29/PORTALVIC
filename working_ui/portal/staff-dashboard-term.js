@@ -287,6 +287,8 @@
 
       if(key > todayKey) return 'future';
       if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
+      if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
 
       if(relFb.length && cur){
         let allCancelled = true;
@@ -342,8 +344,23 @@
       if(Array.isArray(relPick) && relPick.length
         && typeof portalTermRosterHasRealClientSessions === 'function'
         && portalTermRosterHasRealClientSessions(relPick, key)){
-        if(key <= todayKey || catchUpDay) return 'late';
-        return 'pending';
+        let anyAccountable = false;
+        for(let ri = 0; ri < relPick.length; ri++){
+          const rs = relPick[ri];
+          if(typeof portalRosterSessionFeedbackExempt === 'function'
+            && portalRosterSessionFeedbackExempt(rs, key, staffId)) continue;
+          if(typeof portalScheduleOverrideForSessionByType === 'function'){
+            const absOv = portalScheduleOverrideForSessionByType(rs, key, 'client_absence_announced');
+            const repOv = portalScheduleOverrideForSessionByType(rs, key, 'client_replace_in_slot');
+            if(absOv && !repOv) continue;
+          }
+          anyAccountable = true;
+          break;
+        }
+        if(anyAccountable){
+          if(key <= todayKey || catchUpDay) return 'late';
+          return 'pending';
+        }
       }
       if(Array.isArray(relPick) && relPick.length) return 'complete';
       return 'pending';
@@ -1107,7 +1124,7 @@
       }
       const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
         ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
-        : '2026-06-01';
+        : '2026-06-25';
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
       return key >= fromIso && key <= todayKey;
     }
@@ -1183,6 +1200,11 @@
           const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
           const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
           if(!portalFeedbackReminderDayInScope(key)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
+          if(typeof portalTermFeedbackAssumeComplete === 'function'
+            && portalTermFeedbackAssumeComplete(key, staffId)){
             cur.setDate(cur.getDate() + 1);
             continue;
           }

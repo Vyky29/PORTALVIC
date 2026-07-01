@@ -552,6 +552,10 @@
       }
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(iso && staffId && typeof portalTermFeedbackAssumeComplete === 'function'
+        && portalTermFeedbackAssumeComplete(iso, staffId)){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
       const baseEarly = portalReviewSessionForItem(item);
       if(baseEarly && iso && !portalTodayCardUsesReplaceOverride(item)
         && typeof portalRosterSessionSupersededByMakeupReplace === 'function'
@@ -565,6 +569,15 @@
         }
         if(exEarly && exEarly.cancelled){
           return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        }
+        if(exEarly && exEarly.feedbackDone){
+          const memEarly = getSessionReviewRecord(item) || {};
+          return {
+            feedbackDone: true,
+            incident: !!(exEarly.incident || memEarly.incident),
+            absent: false,
+            cancelled: false
+          };
         }
       }
       if(item.noSessionFeedbackRequired){
@@ -655,9 +668,19 @@
           if(portalIsServerTruthFeedbackDay(iso)){
             return portalServerTruthReviewRecordForItem(item, iso);
           }
-          const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
+          let feedbackDone = !!mem.feedbackDone;
+          if(!feedbackDone && baseS){
+            try{
+              const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+              const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+              if(bridge && typeof bridge.sessionComplete === 'function'
+                && bridge.sessionComplete(iso, staffId, baseS, notes, mem)){
+                feedbackDone = true;
+              }
+            }catch(_bridgeNull){}
+          }
           return portalApplyGrandfatheredSessionReviewComplete({
-            feedbackDone: serverSynced ? !!mem.feedbackDone : false,
+            feedbackDone: feedbackDone,
             incident: !!mem.incident,
             absent: !!mem.absent,
             cancelled: !!mem.cancelled

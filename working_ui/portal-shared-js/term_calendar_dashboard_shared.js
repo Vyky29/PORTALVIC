@@ -102,8 +102,11 @@
     return true;
   }
 
-  /** Summer Term 2 feedback reminders only from term resume (e.g. 2026-06-01), not April/May roster. */
+  /** Feedback reminders from termFeedbackReminderFromIso (e.g. 2026-06-25), not the calendar view start. */
   function feedbackReminderFromIso() {
+    var t = termCfg();
+    var dedicated = normIso(t.termFeedbackReminderFromIso);
+    if (dedicated) return dedicated;
     return fromIso();
   }
 

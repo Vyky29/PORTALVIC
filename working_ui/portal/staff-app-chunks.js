@@ -6,14 +6,14 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260630-term-offrota-blue";
+  var VER = "20260702-feedback-jun25";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260630-javier-fb1017-off28",
-    "/portal/term_calendar_dashboard_shared.js?v=20260629-luliya-cal",
+    "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
+    "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260630-staff-display-names",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260628-hazem-aurora-per-slot",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
@@ -44,7 +44,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260627-cover-slot-role",
+    "/portal/portal_lead_team_shift.js?v=20260702-michelle-team-strip",
   ];
 
   var TIER_IDLE = [

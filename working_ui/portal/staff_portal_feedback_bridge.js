@@ -219,13 +219,61 @@
     return mergeSubmittedFeedbackRows(staticRows, live);
   }
 
+  /** Shared Day Centre / Bespoke roster keys already confirmed via Supabase sync (RPC fan-out). */
+  function serverSyncedSharedRowsForDate(iso) {
+    const day = String(iso || "").trim().substring(0, 10);
+    const out = [];
+    try {
+      const dd = typeof window !== "undefined" && window.dashboardData;
+      const srv = dd && dd.portalServerResolvedRosterKeys;
+      if (!srv || !srv.feedback || typeof srv.feedback.forEach !== "function") return out;
+      srv.feedback.forEach(function (k) {
+        const key = String(k || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}/.test(key) || key.slice(0, 10) !== day) return;
+        const parts = key
+          .split("|")
+          .map(function (p) {
+            return String(p || "").trim().toLowerCase();
+          })
+          .filter(Boolean);
+        if (parts.length < 2) return;
+        const last = parts[parts.length - 1];
+        const isSharedUnit =
+          last === "day_centre" ||
+          last === "bespoke_shared" ||
+          (key.split("|").length >= 3 && String(key.split("|")[1] || "").trim() === "");
+        if (!isSharedUnit) return;
+        let clientSlug = "";
+        if (last === "day_centre" || last === "bespoke_shared") clientSlug = parts[1];
+        else if (parts.length >= 3) clientSlug = parts[1] === "" ? parts[2] : parts[1];
+        if (!clientSlug) return;
+        out.push({
+          clientName: clientSlug,
+          date: day,
+          service: last === "bespoke_shared" ? "Bespoke Programme" : "Day Centre",
+          portalSessionKey: key,
+          portal_session_key: key,
+          _live: true,
+          _serverResolved: true,
+        });
+      });
+    } catch (_) {}
+    return out;
+  }
+
   /** All submitted feedback on a date (any instructor) — Day Centre / shared slots. */
   function submittedRowsForDateAll(iso) {
     const day = String(iso || "").trim().substring(0, 10);
     const thru = feedbackCoverageThroughIso();
     const live = liveSubmittedRowsForDate(day);
-    if (thru && day > thru) return live;
-    return mergeSubmittedFeedbackRows(staticSubmittedRowsForDate(day), live);
+    const serverShared = serverSyncedSharedRowsForDate(day);
+    if (thru && day > thru) {
+      return mergeSubmittedFeedbackRows(live, serverShared);
+    }
+    return mergeSubmittedFeedbackRows(
+      mergeSubmittedFeedbackRows(staticSubmittedRowsForDate(day), live),
+      serverShared
+    );
   }
 
   function isDayCentreServiceLabel(label) {

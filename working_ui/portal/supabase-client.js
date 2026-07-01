@@ -1435,11 +1435,20 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   }
 
   let changed = false;
+  const assumeThroughRaw =
+    typeof window !== "undefined" &&
+    window.PORTAL_TERM_FROM_TIMETABLE &&
+    window.PORTAL_TERM_FROM_TIMETABLE.termFeedbackAssumeCompleteThroughIso;
+  const assumeThrough = String(assumeThroughRaw || "")
+    .trim()
+    .slice(0, 10);
+  const assumeThroughOk = /^\d{4}-\d{2}-\d{2}$/.test(assumeThrough);
   for (const rk of rosterKeys) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
     const iso = portalReviewKeyDateIso(rosterKey);
     if (!iso || iso < serverTruthFromIso || catchUp.has(iso)) continue;
+    if (assumeThroughOk && iso <= assumeThrough) continue;
     if (resolved.has(rosterKey)) continue;
     const prev = memory[rosterKey] || portalReviewMemoryBase();
     if (prev.absent || prev.cancelled) continue;

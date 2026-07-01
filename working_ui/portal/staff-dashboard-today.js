@@ -929,6 +929,14 @@
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
       }catch(_qa){}
+      try{
+        const bridgeLate = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notesLate = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridgeLate && typeof bridgeLate.sessionComplete === 'function'
+          && bridgeLate.sessionComplete(iso, sid, s, notesLate, {})){
+          return portalReviewFlagsForResolvedSession(iso, sid, s);
+        }
+      }catch(_bridgeLate){}
       return null;
     }
     function portalRosterSessionFeedbackExempt(s, sessionDateIso, staffId){
@@ -1158,12 +1166,20 @@
       const base = portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
-      if(sid && portalTermIsCatchUpFeedbackDate(iso, sid)) return base;
+      const filtered = base.filter(function(s){
+        if(typeof portalScheduleOverrideForSessionByType === 'function'){
+          const absentOv = portalScheduleOverrideForSessionByType(s, iso, 'client_absence_announced');
+          const replaceOv = portalScheduleOverrideForSessionByType(s, iso, 'client_replace_in_slot');
+          if(absentOv && !replaceOv) return false;
+        }
+        return true;
+      });
+      if(sid && portalTermIsCatchUpFeedbackDate(iso, sid)) return filtered;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.termSessionsForDate === 'function'){
-        return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, base, clientNotesById);
+        return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, filtered, clientNotesById);
       }
-      return base;
+      return filtered;
     }
     function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
@@ -2531,7 +2547,7 @@
         ];
       }
       if(sid === 'michelle'){
-        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, ownClientsOnly: true }];
+        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, leadTeamBanner: true, ownClientsOnly: true }];
       }
       return [];
     }

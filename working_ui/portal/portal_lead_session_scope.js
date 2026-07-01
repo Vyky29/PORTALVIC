@@ -94,6 +94,7 @@ const MICHELLE_SCOPES = [
     weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
+    leadTeamBanner: true,
     /* Today cards: only clients on Michelle's roster rows (not every Day Centre slot). */
     ownClientsOnly: true,
   },
@@ -618,27 +619,16 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
       const on = g.portalStaffHasShiftOnCalendarDate(day, lk);
       if (on === true) return true;
+    }
+  } catch (_) {}
+  if (portalLeadProgrammeLeadOnRosterForIso(lk, day, scopes)) return true;
+  try {
+    const g = typeof globalThis !== "undefined" ? globalThis : null;
+    if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
+      const on = g.portalStaffHasShiftOnCalendarDate(day, lk);
       if (on === false) return false;
     }
   } catch (_) {}
-  if (!scopes || !scopes.length) return false;
-  const wd = weekdayFromIso(day);
-  if (!wd) return false;
-  const src =
-    typeof globalThis !== "undefined" && globalThis.portalResolveStaffDashboardSource
-      ? globalThis.portalResolveStaffDashboardSource()
-      : typeof globalThis !== "undefined"
-        ? globalThis.STAFF_DASHBOARD_SOURCE
-        : null;
-  const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r || !isPickupRosterClientName(r.client_name)) continue;
-    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
-    const slot = rosterRowToLeadSlot(r, day, wd);
-    if (!portalLeadSlotInScopeForDay(slot, scopes, lk, day)) continue;
-    if (instructorKeysFromRosterRaw(r.instructors).indexOf(lk) >= 0) return true;
-  }
   return false;
 }
 
@@ -718,6 +708,44 @@ function instructorKeysFromRosterRaw(raw) {
       out.push(k);
     });
   return out;
+}
+
+function rosterInstructorKeysMatchLead(raw, leadKey) {
+  const lk = normKey(leadKey);
+  if (!lk) return false;
+  const keys = instructorKeysFromRosterRaw(raw);
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (k === lk) return true;
+    if (k.indexOf(lk) === 0 || lk.indexOf(k) === 0) return true;
+  }
+  return false;
+}
+
+function portalLeadProgrammeLeadOnRosterForIso(leadKey, iso, scopes) {
+  const lk = normKey(leadKey);
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day) || !scopes || !scopes.length) return false;
+  const wd = weekdayFromIso(day);
+  if (!wd) return false;
+  const src =
+    typeof globalThis !== "undefined" && globalThis.portalResolveStaffDashboardSource
+      ? globalThis.portalResolveStaffDashboardSource()
+      : typeof globalThis !== "undefined"
+        ? globalThis.STAFF_DASHBOARD_SOURCE
+        : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isPickupRosterClientName(r.client_name)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    const slot = rosterRowToLeadSlot(r, day, wd);
+    if (!portalLeadSlotInScopeForDay(slot, scopes, lk, day)) continue;
+    if (rosterInstructorKeysMatchLead(r.instructors, lk)) return true;
+  }
+  return false;
 }
 
 /** Programme-lead MA / Day Centre days: all in-scope roster rows, not lead-instructor only. */
