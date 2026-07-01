@@ -82,11 +82,11 @@
     if (!sb) throw new Error("Supabase client not available.");
     var resp = await sb
       .from("staff_profiles")
-      .select("id, full_name, username, app_role")
+      .select("id, full_name, username, app_role, is_active")
       .order("full_name", { ascending: true });
     if (resp.error) throw resp.error;
     state.staff = (resp.data || []).filter(function (r) {
-      return r && r.id;
+      return r && r.id && r.is_active !== false;
     });
   }
 
@@ -112,24 +112,113 @@
   }
 
   function renderStaffOptions() {
-    var sel = document.getElementById("portalPayslipsStaff");
-    if (!sel) return;
-    var prev = sel.value || "";
-    sel.innerHTML =
-      '<option value="">Select worker…</option>' +
-      state.staff
-        .map(function (s) {
-          var label = s.full_name || s.username || s.id;
-          return (
-            '<option value="' +
-            esc(s.id) +
-            '">' +
-            esc(label) +
-            "</option>"
-          );
-        })
-        .join("");
-    if (prev) sel.value = prev;
+    var hid = document.getElementById("portalPayslipsStaff");
+    var inp = document.getElementById("portalPayslipsStaffInput");
+    var sug = document.getElementById("portalPayslipsStaffSuggest");
+    if (!hid) return;
+    var prev = String(hid.value || "").trim();
+    if (prev && inp) {
+      inp.value = staffNameById(prev);
+    } else if (inp && !prev) {
+      inp.value = "";
+    }
+    if (sug) {
+      sug.hidden = true;
+      sug.replaceChildren();
+    }
+  }
+
+  function payslipsStaffMatches(query) {
+    var qt = String(query || "").trim().toLowerCase();
+    if (!qt) {
+      return state.staff.slice(0, 24);
+    }
+    var out = [];
+    for (var i = 0; i < state.staff.length; i++) {
+      var s = state.staff[i];
+      var label = String(s.full_name || s.username || s.id || "").trim();
+      var blob = (label + " " + String(s.username || "") + " " + String(s.app_role || "")).toLowerCase();
+      if (blob.indexOf(qt) !== -1) out.push(s);
+      if (out.length >= 24) break;
+    }
+    return out;
+  }
+
+  function renderStaffSuggest(query) {
+    var sug = document.getElementById("portalPayslipsStaffSuggest");
+    var inp = document.getElementById("portalPayslipsStaffInput");
+    var hid = document.getElementById("portalPayslipsStaff");
+    if (!sug) return;
+    sug.replaceChildren();
+    var matches = payslipsStaffMatches(query);
+    if (!matches.length) {
+      sug.hidden = true;
+      return;
+    }
+    matches.forEach(function (s) {
+      var label = s.full_name || s.username || s.id;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "portal-payslips-suggest__btn";
+      btn.textContent = label;
+      btn.addEventListener("mousedown", function (ev) {
+        ev.preventDefault();
+        if (hid) hid.value = String(s.id || "");
+        if (inp) inp.value = String(label || "");
+        sug.hidden = true;
+        sug.replaceChildren();
+      });
+      sug.appendChild(btn);
+    });
+    sug.hidden = false;
+  }
+
+  function bindStaffCombo() {
+    var inp = document.getElementById("portalPayslipsStaffInput");
+    var hid = document.getElementById("portalPayslipsStaff");
+    var sug = document.getElementById("portalPayslipsStaffSuggest");
+    if (!inp || inp.getAttribute("data-payslips-staff-bound") === "1") return;
+    inp.setAttribute("data-payslips-staff-bound", "1");
+
+    inp.addEventListener("input", function () {
+      if (hid) hid.value = "";
+      renderStaffSuggest(inp.value);
+    });
+    inp.addEventListener("focus", function () {
+      renderStaffSuggest(inp.value);
+    });
+    inp.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && sug) {
+        sug.hidden = true;
+        sug.replaceChildren();
+        return;
+      }
+      if (ev.key !== "Enter") return;
+      var first = sug && !sug.hidden ? sug.querySelector(".portal-payslips-suggest__btn") : null;
+      if (first) {
+        ev.preventDefault();
+        first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      }
+    });
+    inp.addEventListener("blur", function () {
+      setTimeout(function () {
+        if (sug) {
+          sug.hidden = true;
+          sug.replaceChildren();
+        }
+      }, 160);
+    });
+    document.addEventListener(
+      "click",
+      function (ev) {
+        if (!sug || sug.hidden) return;
+        var wrap = document.getElementById("portalPayslipsStaffCombo");
+        if (wrap && ev.target && wrap.contains(ev.target)) return;
+        sug.hidden = true;
+        sug.replaceChildren();
+      },
+      true
+    );
   }
 
   function renderUploadsTable() {
@@ -212,9 +301,20 @@
     ev.preventDefault();
     if (state.uploading) return;
     var staffSel = document.getElementById("portalPayslipsStaff");
+    var staffInput = document.getElementById("portalPayslipsStaffInput");
     var monthInput = document.getElementById("portalPayslipsMonth");
     var fileInput = document.getElementById("portalPayslipsFile");
     var staffId = staffSel ? String(staffSel.value || "").trim() : "";
+    if (!staffId && staffInput) {
+      var typed = String(staffInput.value || "").trim().toLowerCase();
+      if (typed) {
+        var hit = state.staff.find(function (s) {
+          var label = String(s.full_name || s.username || "").trim().toLowerCase();
+          return label === typed;
+        });
+        if (hit) staffId = String(hit.id || "").trim();
+      }
+    }
     var monthVal = monthInput ? String(monthInput.value || "").trim() : "";
     var file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     if (!staffId) {
@@ -326,6 +426,7 @@
     }
 
     void refreshAll();
+    bindStaffCombo();
   }
 
   function viewHtml() {
@@ -335,7 +436,13 @@
       "#portalPayslipsRoot .portal-payslips-card{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:16px 18px;margin:0 0 16px;min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end;min-width:0}" +
       "#portalPayslipsRoot label{display:block;font-size:12px;font-weight:700;color:var(--muted,#64748b);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em}" +
-      "#portalPayslipsRoot select,#portalPayslipsRoot input[type=month],#portalPayslipsRoot input[type=file]{width:100%;min-width:0;font:inherit;padding:9px 11px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff}" +
+      "#portalPayslipsRoot input[type=month],#portalPayslipsRoot input[type=file],#portalPayslipsRoot .portal-payslips-staff-combo .inp{width:100%;min-width:0;font:inherit;padding:9px 11px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff;color:var(--ink,#0f172a)}" +
+      "#portalPayslipsRoot .portal-payslips-staff-combo{position:relative;min-width:0;max-width:100%}" +
+      "#portalPayslipsRoot .portal-payslips-suggest{margin-top:6px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-height:min(240px,42vh);overflow:auto;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.08);-webkit-overflow-scrolling:touch}" +
+      "#portalPayslipsRoot .portal-payslips-suggest[hidden]{display:none!important}" +
+      "#portalPayslipsRoot .portal-payslips-suggest__btn{display:block;width:100%;max-width:100%;min-width:0;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line,#e5e7eb);background:#fff;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--ink,#0f172a);overflow-wrap:break-word}" +
+      "#portalPayslipsRoot .portal-payslips-suggest__btn:last-child{border-bottom:0}" +
+      "#portalPayslipsRoot .portal-payslips-suggest__btn:hover,#portalPayslipsRoot .portal-payslips-suggest__btn:focus-visible{background:#f0f7ff;outline:none}" +
       "#portalPayslipsRoot .portal-payslips-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}" +
       "</style>" +
       '<h1 class="page-title">Payslips</h1>' +
@@ -345,7 +452,12 @@
       '<h2 style="margin:0 0 12px;font-size:16px;color:var(--ink,#0f172a)">Upload payslip</h2>' +
       '<form id="portalPayslipsForm">' +
       '<div class="portal-payslips-grid">' +
-      "<div><label for=\"portalPayslipsStaff\">Worker</label><select id=\"portalPayslipsStaff\" required></select></div>" +
+      "<div><label for=\"portalPayslipsStaffInput\">Worker</label>" +
+      '<div class="portal-payslips-staff-combo" id="portalPayslipsStaffCombo">' +
+      '<input type="hidden" id="portalPayslipsStaff" value="" />' +
+      '<input class="inp" id="portalPayslipsStaffInput" type="text" placeholder="Type to search worker…" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="portalPayslipsStaffSuggest" required />' +
+      '<div id="portalPayslipsStaffSuggest" class="portal-payslips-suggest" role="listbox" aria-label="Matching workers" hidden></div>' +
+      "</div></div>" +
       "<div><label for=\"portalPayslipsMonth\">Payslip month</label><input type=\"month\" id=\"portalPayslipsMonth\" required /></div>" +
       "<div><label for=\"portalPayslipsFile\">PDF file</label><input type=\"file\" id=\"portalPayslipsFile\" accept=\"application/pdf,.pdf\" required /></div>" +
       "</div>" +
