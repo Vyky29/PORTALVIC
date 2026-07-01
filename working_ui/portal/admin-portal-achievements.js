@@ -412,6 +412,50 @@
     return p.day + "/" + p.month + "/" + p.year + "-" + firstName + "-" + p.hour + ":" + p.minute;
   }
 
+  function photoSessionDayKey(row) {
+    var sd = String((row && row.session_date) || "")
+      .trim()
+      .slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(sd)) return sd;
+    var p = londonParts(row && row.created_at);
+    if (!p) return "";
+    return p.year + "-" + p.month + "-" + p.day;
+  }
+
+  function formatPhotoDayHeading(row) {
+    var key = photoSessionDayKey(row);
+    if (!key) return "Unknown date";
+    try {
+      var d = new Date(key + "T12:00:00");
+      return new Intl.DateTimeFormat("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "Europe/London",
+      }).format(d);
+    } catch (_e) {
+      return key;
+    }
+  }
+
+  function photoSortTimestamp(row) {
+    var created = row && row.created_at ? new Date(row.created_at).getTime() : NaN;
+    if (!isNaN(created)) return created;
+    var sd = photoSessionDayKey(row);
+    if (sd) return new Date(sd + "T12:00:00").getTime();
+    return 0;
+  }
+
+  function sortPhotosChronologically(photos) {
+    return (photos || []).slice().sort(function (a, b) {
+      var ta = photoSortTimestamp(a);
+      var tb = photoSortTimestamp(b);
+      if (ta !== tb) return ta - tb;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
+  }
+
   /** Bucket participant groups by first letter (A–Z, else #); only letters present. */
   function letterBuckets(groups) {
     var map = Object.create(null);
@@ -538,6 +582,9 @@
         order.push(key);
       }
       map[key].photos.push(row);
+    });
+    order.forEach(function (k) {
+      map[k].photos = sortPhotosChronologically(map[k].photos);
     });
     order.sort(function (a, b) {
       if (a === INBOX_CLIENT_ID) return -1;
@@ -1362,142 +1409,153 @@
       updateInboxBulkUi(detailRoot, draftPhotos);
     }
     var grid = detailRoot.querySelector(".portal-admin-achievement-gallery");
-    for (var i = 0; i < group.photos.length; i++) {
+    var galleryPhotos = sortPhotosChronologically(group.photos.slice());
+    var lastGalleryDayKey = "";
+    for (var i = 0; i < galleryPhotos.length; i++) {
       (function (row, photoIndex) {
-        signedUrl(client, row.storage_path)
-          .then(function (url) {
-          var caption = photoCaption(row);
-          var btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "portal-admin-achievement-thumb";
-          var statusDetail = photoStatusDetail(row);
-          btn.setAttribute(
-            "aria-label",
-            esc(group.clientName) + " — " + esc(statusLabel(row.status)) + " — " + esc(caption)
-          );
-          var wrap = document.createElement("div");
-          wrap.className = "portal-admin-achievement-thumb-wrap";
-          if (isInbox && row.status === "draft") {
-            var pick = document.createElement("label");
-            pick.className = "portal-ach-inbox-pick";
-            var checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.className = "portal-ach-inbox-pick__input";
-            checkbox.setAttribute("data-ach-select-id", String(row.id));
-            checkbox.addEventListener("change", function () {
-              if (checkbox.checked) inboxSelection[String(row.id)] = true;
-              else delete inboxSelection[String(row.id)];
-              updateInboxBulkUi(detailRoot, draftPhotos);
-            });
-            pick.appendChild(checkbox);
-            var pickLabel = document.createElement("span");
-            pickLabel.className = "portal-ach-inbox-pick__label";
-            pickLabel.textContent = "Select";
-            pick.appendChild(pickLabel);
-            wrap.appendChild(pick);
-          }
-          var mediaSlot = document.createElement("div");
-          mediaSlot.className = "portal-admin-achievement-thumb__media";
-          appendThumbMedia(mediaSlot, url, row);
-          btn.appendChild(mediaSlot);
-          var cap = document.createElement("span");
-          cap.className = "portal-admin-achievement-thumb__cap";
-          cap.innerHTML =
-            '<span class="chip chip--' +
-            statusChipClass(row.status) +
-            '">' +
-            esc(statusLabel(row.status)) +
-            "</span>" +
-            '<span class="portal-admin-achievement-thumb__who">' +
-            esc(statusDetail) +
-            "</span>" +
-            '<span class="portal-admin-achievement-thumb__title">' +
-            esc(caption) +
-            "</span>";
-          btn.appendChild(cap);
-          btn.addEventListener("dblclick", function (e) {
-            e.preventDefault();
-            void openViewer(group.photos, photoIndex);
+        var dayKey = photoSessionDayKey(row);
+        if (dayKey && dayKey !== lastGalleryDayKey) {
+          var dayHdr = document.createElement("div");
+          dayHdr.className = "portal-ach-gallery-day";
+          dayHdr.textContent = formatPhotoDayHeading(row);
+          grid.appendChild(dayHdr);
+          lastGalleryDayKey = dayKey;
+        }
+        var caption = photoCaption(row);
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "portal-admin-achievement-thumb";
+        var statusDetail = photoStatusDetail(row);
+        btn.setAttribute(
+          "aria-label",
+          esc(group.clientName) + " — " + esc(statusLabel(row.status)) + " — " + esc(caption)
+        );
+        var wrap = document.createElement("div");
+        wrap.className = "portal-admin-achievement-thumb-wrap";
+        if (isInbox && row.status === "draft") {
+          var pick = document.createElement("label");
+          pick.className = "portal-ach-inbox-pick";
+          var checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "portal-ach-inbox-pick__input";
+          checkbox.setAttribute("data-ach-select-id", String(row.id));
+          checkbox.addEventListener("change", function () {
+            if (checkbox.checked) inboxSelection[String(row.id)] = true;
+            else delete inboxSelection[String(row.id)];
+            updateInboxBulkUi(detailRoot, draftPhotos);
           });
-          wrap.appendChild(btn);
-          var actionBar = document.createElement("div");
-          actionBar.className = "portal-ach-admin-photo-actions";
-          if (!isInbox && canReturnPhotoToInbox(row)) {
-            var returnBtn = document.createElement("button");
-            returnBtn.type = "button";
-            returnBtn.className = "btn btn--ghost btn--sm portal-ach-admin-return-inbox__btn";
-            returnBtn.textContent = "Return to inbox";
-            returnBtn.addEventListener("click", function () {
-              if (
-                !global.confirm(
-                  "Return this draft photo to Inbox (unassigned)? You can then assign it to the correct participant."
-                )
-              ) {
-                return;
-              }
-              returnBtn.disabled = true;
-              void returnPhotoToInbox(row.id, row)
-                .then(function () {
-                  if (statusEl) {
-                    statusEl.textContent = "Photo returned to Inbox (unassigned).";
-                    statusEl.className = "portal-forms-status";
-                  }
-                  void refresh({ stayOnKey: "" });
-                })
-                .catch(function (err) {
-                  console.error(err);
-                  returnBtn.disabled = false;
-                  if (statusEl) {
-                    statusEl.textContent = achievementRpcErrorMessage(
-                      err,
-                      "Could not return photo to inbox."
-                    );
-                    statusEl.className = "portal-forms-status is-error";
-                  }
-                });
-            });
-            actionBar.appendChild(returnBtn);
-          }
-          if (!isInbox || row.status !== "draft") {
-            var deleteBtn = document.createElement("button");
-            deleteBtn.type = "button";
-            deleteBtn.className = "btn btn--ghost btn--sm portal-ach-admin-delete__btn";
-            deleteBtn.textContent = "Delete";
-            deleteBtn.addEventListener("click", function () {
-              if (
-                !global.confirm(
-                  "Delete this photo permanently? This cannot be undone."
-                )
-              ) {
-                return;
-              }
-              deleteBtn.disabled = true;
-              void deletePhoto(row.id, row.storage_path)
-                .then(function () {
-                  void refresh({ stayOnKey: key });
-                  if (statusEl) {
-                    statusEl.textContent = "Photo deleted.";
-                    statusEl.className = "portal-forms-status";
-                  }
-                })
-                .catch(function (err) {
-                  console.error(err);
-                  deleteBtn.disabled = false;
-                  if (statusEl) {
-                    statusEl.textContent = (err && err.message) || "Could not delete photo.";
-                    statusEl.className = "portal-forms-status is-error";
-                  }
-                });
-            });
-            actionBar.appendChild(deleteBtn);
-          }
-          if (actionBar.childNodes.length) wrap.appendChild(actionBar);
-          grid.appendChild(wrap);
-        })
+          pick.appendChild(checkbox);
+          var pickLabel = document.createElement("span");
+          pickLabel.className = "portal-ach-inbox-pick__label";
+          pickLabel.textContent = "Select";
+          pick.appendChild(pickLabel);
+          wrap.appendChild(pick);
+        }
+        var mediaSlot = document.createElement("div");
+        mediaSlot.className = "portal-admin-achievement-thumb__media";
+        btn.appendChild(mediaSlot);
+        var cap = document.createElement("span");
+        cap.className = "portal-admin-achievement-thumb__cap";
+        cap.innerHTML =
+          '<span class="chip chip--' +
+          statusChipClass(row.status) +
+          '">' +
+          esc(statusLabel(row.status)) +
+          "</span>" +
+          '<span class="portal-admin-achievement-thumb__who">' +
+          esc(statusDetail) +
+          "</span>" +
+          '<span class="portal-admin-achievement-thumb__title">' +
+          esc(caption) +
+          "</span>";
+        btn.appendChild(cap);
+        btn.addEventListener("dblclick", function (e) {
+          e.preventDefault();
+          void openViewer(galleryPhotos, photoIndex);
+        });
+        wrap.appendChild(btn);
+        var actionBar = document.createElement("div");
+        actionBar.className = "portal-ach-admin-photo-actions";
+        if (!isInbox && canReturnPhotoToInbox(row)) {
+          var returnBtn = document.createElement("button");
+          returnBtn.type = "button";
+          returnBtn.className = "btn btn--ghost btn--sm portal-ach-admin-return-inbox__btn";
+          returnBtn.textContent = "Return to inbox";
+          returnBtn.addEventListener("click", function () {
+            if (
+              !global.confirm(
+                "Return this draft photo to Inbox (unassigned)? You can then assign it to the correct participant."
+              )
+            ) {
+              return;
+            }
+            returnBtn.disabled = true;
+            void returnPhotoToInbox(row.id, row)
+              .then(function () {
+                if (statusEl) {
+                  statusEl.textContent = "Photo returned to Inbox (unassigned).";
+                  statusEl.className = "portal-forms-status";
+                }
+                void refresh({ stayOnKey: "" });
+              })
+              .catch(function (err) {
+                console.error(err);
+                returnBtn.disabled = false;
+                if (statusEl) {
+                  statusEl.textContent = achievementRpcErrorMessage(
+                    err,
+                    "Could not return photo to inbox."
+                  );
+                  statusEl.className = "portal-forms-status is-error";
+                }
+              });
+          });
+          actionBar.appendChild(returnBtn);
+        }
+        if (!isInbox || row.status !== "draft") {
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "btn btn--ghost btn--sm portal-ach-admin-delete__btn";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.addEventListener("click", function () {
+            if (
+              !global.confirm(
+                "Delete this photo permanently? This cannot be undone."
+              )
+            ) {
+              return;
+            }
+            deleteBtn.disabled = true;
+            void deletePhoto(row.id, row.storage_path)
+              .then(function () {
+                void refresh({ stayOnKey: key });
+                if (statusEl) {
+                  statusEl.textContent = "Photo deleted.";
+                  statusEl.className = "portal-forms-status";
+                }
+              })
+              .catch(function (err) {
+                console.error(err);
+                deleteBtn.disabled = false;
+                if (statusEl) {
+                  statusEl.textContent = (err && err.message) || "Could not delete photo.";
+                  statusEl.className = "portal-forms-status is-error";
+                }
+              });
+          });
+          actionBar.appendChild(deleteBtn);
+        }
+        if (actionBar.childNodes.length) wrap.appendChild(actionBar);
+        grid.appendChild(wrap);
+        void signedUrl(client, row.storage_path)
+          .then(function (url) {
+            appendThumbMedia(mediaSlot, url, row);
+          })
           .catch(function (err) {
             console.warn("[achievements] thumb", err);
+            appendThumbMedia(mediaSlot, "", row);
           });
-      })(group.photos[i], i);
+      })(galleryPhotos[i], i);
     }
   }
 

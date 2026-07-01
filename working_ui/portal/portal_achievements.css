@@ -1318,6 +1318,23 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   gap: 10px;
   min-width: 0;
 }
+
+.portal-ach-gallery-day {
+  grid-column: 1 / -1;
+  margin: 6px 0 2px;
+  padding: 8px 2px 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--navy, #0f172a);
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-ach-gallery-day:first-child {
+  margin-top: 0;
+}
 @media (max-width: 900px) {
   .portal-admin-achievement-gallery {
     grid-template-columns: repeat(3, minmax(0, 1fr));
