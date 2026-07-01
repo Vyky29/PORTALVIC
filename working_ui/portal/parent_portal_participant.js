@@ -242,9 +242,9 @@
     return (
       '<div class="pp-pax-info-buttons">' +
       '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--whatsapp" data-pp-open="messages" aria-label="Messages">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--messages" data-pp-open="messages" aria-label="Messages">' +
       '<span class="pp-pax-info-btn-stack">' +
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
       '<span class="pp-pax-info-caption">Messages</span></span></button></div>' +
       '<div class="pp-pax-info-row">' +
       '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
@@ -539,20 +539,64 @@
     return k.replace(/_/g, " ");
   }
 
+  function messageDeliveryChannel(m) {
+    if (!m) return "other";
+    if (m.direction === "in") {
+      return m.source === "parent_app" ? "app_in" : "whatsapp_in";
+    }
+    if (
+      m.whatsapp_status === "sent" ||
+      m.whatsapp_status === "sent_sms" ||
+      m.source === "whatsapp"
+    ) {
+      return "whatsapp";
+    }
+    if (m.email_status === "sent" || m.source === "email") {
+      return "email";
+    }
+    return "other";
+  }
+
+  function messageChannelLabel(channel) {
+    if (channel === "whatsapp" || channel === "whatsapp_in") return "WhatsApp";
+    if (channel === "email") return "Email";
+    if (channel === "app_in") return "Parent app";
+    return "Club";
+  }
+
+  function messageBubbleClass(m) {
+    var ch = messageDeliveryChannel(m);
+    if (ch === "whatsapp" || ch === "whatsapp_in") return "pp-pax-msg--wa";
+    if (ch === "email") return "pp-pax-msg--email";
+    if (ch === "app_in") return "pp-pax-msg--app-in";
+    return m.direction === "in" ? "pp-pax-msg--app-in" : "pp-pax-msg--other";
+  }
+
   function messagesThreadHtml(messages, waBiz) {
     if (!messages || !messages.length) {
-      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Send a message below or contact us on WhatsApp — everything appears in one thread.</p>';
+      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates (WhatsApp and email) appear here. You can also write to the office below.</p>';
     }
     return (
       '<div class="pp-pax-msgs-thread" role="log" aria-live="polite">' +
       messages
         .map(function (m) {
           var isOut = m.direction === "out";
-          var preview = String(m.body_text || "").trim();
+          var channel = messageDeliveryChannel(m);
+          var preview = String(m.body_text || m.subject || "").trim();
           if (preview.length > 1200) preview = preview.slice(0, 1197) + "…";
+          var channelTag =
+            channel === "whatsapp" || channel === "email"
+              ? '<span class="pp-pax-msg__channel pp-pax-msg__channel--' +
+                (channel === "email" ? "email" : "wa") +
+                '">' +
+                esc(messageChannelLabel(channel)) +
+                "</span>"
+              : "";
           return (
             '<article class="pp-pax-msg' +
             (isOut ? " pp-pax-msg--out" : " pp-pax-msg--in") +
+            " " +
+            messageBubbleClass(m) +
             '">' +
             '<div class="pp-pax-msg__head">' +
             '<span class="pp-pax-msg__who">' +
@@ -566,6 +610,7 @@
               : "") +
             (preview ? '<p class="pp-pax-msg__body">' + esc(preview) + "</p>" : "") +
             '<p class="pp-pax-msg__meta pp-muted">' +
+            channelTag +
             esc(messageKindLabel(m)) +
             (m.venue ? " · " + esc(m.venue) : "") +
             "</p></article>"
@@ -594,7 +639,7 @@
       '<form class="pp-pax-msgs-compose" id="ppMsgsForm">' +
       '<label class="pp-field" for="ppMsgsInput"><span class="pp-muted">Write to the office</span></label>' +
       '<textarea id="ppMsgsInput" name="message" rows="3" maxlength="2000" required placeholder="Type your message…"></textarea>' +
-      '<button type="submit" class="pp-btn pp-btn--whatsapp" id="ppMsgsSendBtn">Send message</button>' +
+      '<button type="submit" class="pp-btn pp-btn--primary" id="ppMsgsSendBtn">Send message</button>' +
       "</form>" +
       '<p id="ppMsgsNotice" class="pp-notice pp-notice--info" hidden role="status"></p>'
     );
@@ -603,7 +648,7 @@
   function renderMessages(host, data, opts) {
     var body =
       '<h3 class="pp-pax-subview-title">Messages</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Chat with the club office. Messages you send here reach admin — same inbox as WhatsApp.</p>' +
+      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email in one place. Green = WhatsApp, blue = email.</p>' +
       '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
       messagesComposeHtml(null);
     host.innerHTML = subviewShell(data, "messages", body);

@@ -253,22 +253,6 @@
     } catch (_e) {}
   }
 
-  function formatWhen(iso) {
-    if (!iso) return "";
-    try {
-      var d = new Date(iso);
-      return d.toLocaleString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (_e) {
-      return String(iso);
-    }
-  }
-
   function formatDob(iso) {
     if (!iso) return "";
     try {
@@ -277,18 +261,6 @@
     } catch (_e) {
       return String(iso);
     }
-  }
-
-  function kindLabel(kind) {
-    var map = {
-      instructor_change: "Instructor update",
-      payment_due: "Payment",
-      makeup_scheduled: "Make-up session",
-      absence: "Absence",
-      booking: "Booking",
-      general: "Message",
-    };
-    return map[String(kind || "").trim()] || "Club message";
   }
 
   function childAvatarHtml(c) {
@@ -331,7 +303,6 @@
     state.home = data;
     var parent = (data && data.parent) || {};
     var children = (data && data.children) || [];
-    var messages = (data && data.messages) || [];
 
     $("ppHomeGreeting").textContent = parent.display_name
       ? "Hello, " + parent.display_name.split(" ")[0]
@@ -372,57 +343,7 @@
               chips.join("") +
               "</div>" +
               "</div>" +
-              '<p class="pp-child-card__cta">Sessions &amp; achievements →</p>' +
-              "</article>"
-            );
-          })
-          .join("");
-      }
-    }
-
-    var msgList = $("ppMessageList");
-    if (msgList) {
-      if (!messages.length) {
-        msgList.innerHTML =
-          '<p class="pp-muted">No recent messages yet. Open a participant and tap <strong>Messages</strong>, or contact us on WhatsApp — everything syncs here.</p>';
-      } else {
-        msgList.innerHTML = messages
-          .map(function (m) {
-            var isIn = m.direction === "in";
-            var sent = isIn
-              ? m.source === "parent_app"
-                ? "You · Parent app"
-                : "You · WhatsApp"
-              : m.whatsapp_status === "sent" || m.whatsapp_status === "sent_sms" || m.source === "whatsapp"
-                ? "WhatsApp"
-                : m.email_status === "sent" || m.source === "email"
-                  ? "Email"
-                  : "Club";
-            var preview = String(m.body_text || m.subject || "").trim();
-            if (preview.length > 220) preview = preview.slice(0, 217) + "…";
-            var chipLabel = isIn ? "Your message" : kindLabel(m.kind);
-            return (
-              '<article class="pp-card pp-msg-card' +
-              (isIn ? " pp-msg-card--in" : "") +
-              '">' +
-              '<div class="pp-msg-head">' +
-              '<span class="pp-chip' +
-              (isIn ? " pp-chip--you" : "") +
-              '">' +
-              esc(chipLabel) +
-              "</span>" +
-              '<span class="pp-msg-when">' +
-              esc(formatWhen(m.created_at)) +
-              "</span>" +
-              "</div>" +
-              (m.client_display && !isIn
-                ? '<p class="pp-msg-client"><strong>' + esc(m.client_display) + "</strong></p>"
-                : "") +
-              (preview ? '<p class="pp-msg-body">' + esc(preview) + "</p>" : "") +
-              '<p class="pp-muted pp-msg-channel">' +
-              esc(sent) +
-              (m.venue ? " · " + esc(m.venue) : "") +
-              "</p>" +
+              '<p class="pp-child-card__cta">Sessions, messages &amp; achievements →</p>' +
               "</article>"
             );
           })

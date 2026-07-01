@@ -381,13 +381,7 @@
       text-align: center;
       overflow-wrap: break-word;
     }
-    .pp-pax-info-btn--whatsapp {
-      border-color: #25d366;
-      background: linear-gradient(180deg, #e9fbf0 0%, #d3f5e0 100%);
-      box-shadow: 0 2px 12px rgba(37, 211, 102, .12);
-    }
-    .pp-pax-info-btn--whatsapp .pp-pax-info-icon { color: #128c7e; }
-    .pp-pax-info-btn--whatsapp .pp-pax-info-caption { color: #0d5c4a; }
+    .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
     .pp-btn--whatsapp {
       background: linear-gradient(180deg, #25d366 0%, #1ebe57 100%);
       border: 1px solid #1aad4f;
@@ -415,14 +409,38 @@
     }
     .pp-pax-msg--out {
       align-self: flex-start;
-      background: #f4f8fb;
-      border-color: rgba(45, 132, 179, .18);
     }
     .pp-pax-msg--in {
       align-self: flex-end;
-      background: #e9fbf0;
-      border-color: rgba(37, 211, 102, .28);
     }
+    .pp-pax-msg--wa {
+      background: #e9fbf0;
+      border-color: rgba(37, 211, 102, .32);
+    }
+    .pp-pax-msg--email {
+      background: #eaf5fb;
+      border-color: rgba(45, 132, 179, .32);
+    }
+    .pp-pax-msg--app-in {
+      background: #f4f8fb;
+      border-color: rgba(23, 50, 71, .12);
+    }
+    .pp-pax-msg--other {
+      background: #fff;
+      border-color: var(--line);
+    }
+    .pp-pax-msg__channel {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-right: 6px;
+    }
+    .pp-pax-msg__channel--wa { background: #d3f5e0; color: #0d5c4a; }
+    .pp-pax-msg__channel--email { background: #d6ebf7; color: #1f6587; }
     .pp-pax-msg__head {
       display: flex;
       align-items: baseline;
@@ -556,15 +574,10 @@
         padding-right: max(24px, env(safe-area-inset-right));
       }
       .pp-brand h1 { font-size: 24px; }
-      #ppStepHome {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 16px;
-        align-items: start;
-      }
       #ppStepHome > .pp-home-head,
+      #ppStepHome > .pp-card,
       #ppStepHome > #ppContactBlock {
-        grid-column: 1 / -1;
+        max-width: min(640px, 100%);
       }
       .pp-pax-info-buttons {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -604,7 +617,7 @@
     <header class="pp-brand">
       <img id="ppBrandLogo" class="pp-brand-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="88" height="88" />
       <h1>Family portal</h1>
-      <p>View your linked participants and recent club messages.</p>
+      <p>View your linked participants, sessions and club messages.</p>
     </header>
 
     <div id="ppNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
@@ -644,11 +657,6 @@
         <div id="ppChildList"></div>
       </div>
 
-      <div class="pp-card">
-        <h3 class="pp-section-title">Recent messages</h3>
-        <div id="ppMessageList"></div>
-      </div>
-
       <div class="pp-card" id="ppContactBlock"></div>
     </section>
 
@@ -675,8 +683,8 @@
   <script src="/portal/portal_participant_identity.js?v=20260703-perf"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260630-messages"></script>
-  <script src="/portal/parent_portal_app.js?v=20260630-messages"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260704-msgs-inbox"></script>
+  <script src="/portal/parent_portal_app.js?v=20260704-msgs-inbox"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
