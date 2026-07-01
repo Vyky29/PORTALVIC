@@ -3987,12 +3987,18 @@
         if(!item || String(item.kind || '') !== 'client') return;
         if(item.openSheet === false) return;
         var cid = String(item.clientId || '').trim().toLowerCase();
-        if(!cid || cid === 'closed' || cid === 'available' || seen[cid]) return;
         var nm = String(item.name || '').trim();
         if(!nm) return;
-        seen[cid] = true;
+        var mergeKey = cid;
+        if(typeof window.portalCanonicalParticipantClientId === 'function'){
+          mergeKey = window.portalCanonicalParticipantClientId(nm) || window.portalCanonicalParticipantClientId(cid) || cid;
+        } else if(window.PortalParticipantIdentity && typeof window.PortalParticipantIdentity.canonicalClientId === 'function'){
+          mergeKey = window.PortalParticipantIdentity.canonicalClientId(nm) || window.PortalParticipantIdentity.canonicalClientId(cid) || cid;
+        }
+        if(!mergeKey || mergeKey === 'closed' || mergeKey === 'available' || seen[mergeKey]) return;
+        seen[mergeKey] = true;
         out.push({
-          clientId: cid,
+          clientId: cid || mergeKey,
           clientName: nm,
           portalSessionKey: item.sessionKey || null
         });

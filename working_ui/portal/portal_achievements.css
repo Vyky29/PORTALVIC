@@ -1218,6 +1218,28 @@ body.portal-achievements-viewer-open .dock-bar {
   user-select: none;
 }
 
+.portal-achievements-feedback-inbox-tag {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  max-width: calc(100% - 8px);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-achievements-feedback-pick--inbox .portal-achievements-feedback-thumb {
+  opacity: 0.96;
+}
+
 #menuSheet .menu-btn.menu-btn--work-achievements .menu-btn-icon {
   background: rgba(236, 72, 153, 0.12);
   color: #db2777;

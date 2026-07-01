@@ -69,6 +69,10 @@
       word-break:normal;
     }
     td{font-size:14px}
+    .td-service{min-width:0;text-align:center}
+    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;padding:2px 0}
+    .timesheet-service-cell__service{font-size:14px;line-height:1.25;overflow-wrap:break-word;word-break:break-word;max-width:100%}
+    .timesheet-service-cell__role{font-size:12px;line-height:1.2;max-width:100%;overflow-wrap:break-word;word-break:break-word}
     .num{text-align:center}
     .sum-row td{background:#f4f7fb;font-weight:700}
     .sum-label{text-align:center}
@@ -1758,6 +1762,48 @@
       return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
     }
 
+    function timesheetEntryRoleLabel(entry) {
+      const r = String((entry && entry.role) || "").trim();
+      if (!r) return "";
+      return roleDisplayLabel(r, state.roleScales && state.roleScales[r]) || r;
+    }
+
+    function timesheetEntryServiceCellHtml(entry) {
+      const serviceLabel = timesheetEntryServiceLabel(entry) || "-";
+      const roleLabel = timesheetEntryRoleLabel(entry);
+      const roleHtml = roleLabel ? timesheetRoleHtml(entry.role, roleLabel) : "";
+      return (
+        '<div class="timesheet-service-cell">' +
+        `<div class="timesheet-service-cell__service">${esc(serviceLabel)}</div>` +
+        (roleHtml ? `<div class="timesheet-service-cell__role">${roleHtml}</div>` : "") +
+        "</div>"
+      );
+    }
+
+    function pdfEntryRowHeightScale(entry) {
+      return timesheetEntryRoleLabel(entry) ? 1.38 : 1;
+    }
+
+    function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual) {
+      if (isManual) {
+        doc.text("-", cx, y + cellBaseline, { align: "center" });
+        return;
+      }
+      const service = String(timesheetEntryServiceLabel(entry) || "-").slice(0, 28);
+      const role = timesheetEntryRoleLabel(entry).slice(0, 24);
+      if (role) {
+        doc.setFontSize(8.5 * S);
+        doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+        doc.setFontSize(7.2 * S);
+        doc.setFont("helvetica", "bold");
+        doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5 * S);
+      } else {
+        doc.text(service, cx, y + cellBaseline, { align: "center" });
+      }
+    }
+
     /** Distinct pay groups within one role (e.g. Sunday Aquatic vs Multi-Activity on the same day). */
     function timesheetDistinctServiceGroupKeys(rows, role, dayName) {
       const keys = new Set();
@@ -2126,8 +2172,8 @@
       return "";
     }
 
-    function timesheetRoleHtml(role) {
-      const label = esc(String(role || "").trim());
+    function timesheetRoleHtml(role, displayLabel) {
+      const label = esc(String(displayLabel || role || "").trim());
       if (!label) return "";
       const color = timesheetRoleColor(role);
       const style = color ? `font-weight:700;color:${color}` : "font-weight:700";
@@ -2145,12 +2191,11 @@
         body.innerHTML = state.entries.map((e) => {
           const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.completed ? "day-row--paid" : "day-row--pending";
-          const roleTag = e.role ? ` · ${timesheetRoleHtml(e.role)}` : "";
-          const serviceLabel = timesheetEntryServiceLabel(e) || "-";
+          const statusNote = e.completed ? "completed" : "pending feedback";
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
-            <td>${esc(e.day)}${roleTag}${e.completed ? " - completed" : " - pending feedback"}</td>
-            <td>${esc(serviceLabel)}</td>
+            <td>${esc(e.day)} · ${statusNote}</td>
+            <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
             <td class="num">${money(e.hours)}</td>
             <td class="num">${money(daily)}</td>
           </tr>`;
@@ -2525,13 +2570,14 @@
         summaryRowH: 10
       };
       const labelGap = B.labelSize * 0.42 + 2;
+      const entriesRowH = state.entries.reduce((sum, e) => sum + B.rowH * pdfEntryRowHeightScale(e), 0);
       const neededH =
         (logoData ? B.logoH + B.afterLogo : 0) +
         B.afterTitle +
         5 * labelGap +
         B.gapAfterLabels +
         B.headerRowH +
-        B.rowH * state.entries.length +
+        entriesRowH +
         B.gapBeforeSummary +
         (B.panelPad * 2 + B.summaryRowH * summaryRows.length);
       const availH = pageH - topY - bottomMargin;
@@ -2596,22 +2642,20 @@
       for (let i = 0; i < state.entries.length; i++) {
         const e = state.entries[i];
         const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
-        doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
+        const thisRowH = rowH * pdfEntryRowHeightScale(e);
+        doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
         const isFlat = serviceFlatRate(e.service || e.role) != null;
         const midCol = state.manual
           ? String(e.note || e.day || "").slice(0, 22)
-          : (isFlat ? String(e.role || "Training") : e.day);
-        const serviceCol = state.manual
-          ? "-"
-          : String(timesheetEntryServiceLabel(e) || "-").slice(0, 30);
+          : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day);
         const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
         doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
         doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
-        doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+        drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual);
         doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
         doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
         doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
-        y += rowH;
+        y += thisRowH;
       }
 
       y += B.gapBeforeSummary * S;

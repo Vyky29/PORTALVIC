@@ -15,6 +15,30 @@
   var MAX_VIDEO_MS = 60000;
   var MIN_VIDEO_MS = 800;
 
+  function deviceIsIos() {
+    try {
+      var ua = String((global.navigator && global.navigator.userAgent) || "");
+      if (/iPhone|iPod|iPad/i.test(ua)) return true;
+      if (String(global.navigator.platform || "") === "MacIntel" && Number(global.navigator.maxTouchPoints || 0) > 1) {
+        return true;
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  function deviceIsStandalonePwa() {
+    try {
+      if (global.navigator && global.navigator.standalone === true) return true;
+      if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) return true;
+    } catch (_e) {}
+    return false;
+  }
+
+  /** iPhone/iPad home-screen app: in-browser camera preview is often blocked — use native picker. */
+  function preferNativeCameraOnDevice() {
+    return deviceIsIos() && deviceIsStandalonePwa();
+  }
+
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -427,6 +451,9 @@
   function cameraErrorMessage(err) {
     var name = String((err && err.name) || "").trim();
     if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      if (deviceIsIos() && deviceIsStandalonePwa()) {
+        return "Camera blocked in the staff app. Tap Use phone camera below — that opens the iPhone camera. To allow live preview later: iPhone Settings → clubSENsational Staff → Camera → Allow.";
+      }
       return "Camera blocked on this device. Tap Allow camera now, or Use phone camera below. If there is no prompt: iPhone Settings → Safari → Camera → Allow (or Settings → the portal site → Camera).";
     }
     if (name === "NotFoundError" || name === "DevicesNotFoundError") {
@@ -865,6 +892,10 @@
       setStatus(photoLimitMessage(), true);
       return;
     }
+    if (preferNativeCameraOnDevice()) {
+      openNativePhotoPicker();
+      return;
+    }
     var video = document.getElementById("portalAchievementsCameraVideo");
     if (!video) return;
 
@@ -1272,6 +1303,23 @@
     }
   }
 
+  var DRAFT_PHOTO_SELECT =
+    "id, storage_path, created_at, width, height, staff_user_id, staff_display_name, media_type, duration_ms, client_id";
+
+  function mergeDraftPhotoRows(primary, extra) {
+    var seen = Object.create(null);
+    var out = [];
+    (primary || []).concat(extra || []).forEach(function (r) {
+      if (!r || !r.id || seen[r.id]) return;
+      seen[r.id] = true;
+      out.push(r);
+    });
+    out.sort(function (a, b) {
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    });
+    return out;
+  }
+
   async function fetchInboxDraftPhotos(sessionDate) {
     var client = cfg.getClient();
     if (!client) return [];
@@ -1281,7 +1329,7 @@
     if (!uid) return [];
     var res = await client
       .from("portal_participant_achievement_photos")
-      .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name, media_type, duration_ms")
+      .select(DRAFT_PHOTO_SELECT)
       .eq("session_date", day)
       .eq("client_id", LEAD_INBOX_CLIENT_ID)
       .eq("staff_user_id", uid)
@@ -1311,7 +1359,7 @@
       if (/does not exist|portal_list_participant_achievement_drafts/i.test(res.error.message || "")) {
         var fallback = await client
           .from("portal_participant_achievement_photos")
-          .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name, media_type, duration_ms")
+          .select(DRAFT_PHOTO_SELECT)
           .eq("session_date", day)
           .eq("client_id", cid)
           .eq("status", "draft")
@@ -1371,11 +1419,23 @@
     var uniq = [];
     list.forEach(function (p) {
       var cid = normalizeClientId(p.clientId);
-      if (!cid || seen[cid]) return;
-      seen[cid] = true;
+      var nm = String(p.clientName || p.name || cid).trim();
+      var mergeKey = cid;
+      if (typeof global.portalDedupeParticipantListEntries === "function") {
+        mergeKey =
+          typeof global.portalCanonicalParticipantClientId === "function"
+            ? global.portalCanonicalParticipantClientId(nm) ||
+              global.portalCanonicalParticipantClientId(cid) ||
+              cid
+            : cid;
+      } else if (typeof global.portalCanonicalParticipantClientId === "function") {
+        mergeKey = global.portalCanonicalParticipantClientId(nm) || global.portalCanonicalParticipantClientId(cid) || cid;
+      }
+      if (!mergeKey || seen[mergeKey]) return;
+      seen[mergeKey] = true;
       uniq.push({
-        clientId: cid,
-        clientName: String(p.clientName || p.name || cid).trim(),
+        clientId: cid || mergeKey,
+        clientName: nm,
         portalSessionKey: p.portalSessionKey || p.sessionKey || null,
       });
     });
@@ -2032,16 +2092,126 @@
   /** Feedback form: load draft thumbnails for attach picker. */
   async function listDraftsForFeedback(clientId, sessionDate, portalSessionKey) {
     if (!clientId || !sessionDate) return [];
+    if (normalizeClientId(clientId) === LEAD_INBOX_CLIENT_ID) {
+      try {
+        return await fetchInboxDraftPhotos(sessionDate);
+      } catch (_inbox) {
+        return [];
+      }
+    }
     try {
-      return await fetchDraftPhotosForParticipant(
+      var rows = await fetchDraftPhotosForParticipant(
         {
           clientId: clientId,
           portalSessionKey: portalSessionKey || null,
         },
         sessionDate
       );
+      rows = mergeDraftPhotoRows(rows, await fetchInboxDraftPhotos(sessionDate));
+      return rows;
     } catch (_e) {
       return [];
+    }
+  }
+
+  function inboxAssignNewPath(storagePath, clientId) {
+    var cid = normalizeClientId(clientId);
+    var from = String(storagePath || "").trim();
+    if (!from || !cid || cid === LEAD_INBOX_CLIENT_ID) return from;
+    var next = from.replace("/_inbox/", "/" + cid + "/");
+    if (next !== from) return next;
+    var parts = from.split("/");
+    var idx = parts.indexOf("_inbox");
+    if (idx >= 0) {
+      parts[idx] = cid;
+      return parts.join("/");
+    }
+    return from;
+  }
+
+  async function storageObjectExists(client, path) {
+    path = String(path || "").trim();
+    if (!path || !client) return false;
+    var res = await client.storage.from(BUCKET).download(path);
+    return !res.error;
+  }
+
+  async function moveAchievementStorage(client, fromPath, toPath) {
+    fromPath = String(fromPath || "").trim();
+    toPath = String(toPath || "").trim();
+    if (!fromPath || !toPath || fromPath === toPath) return;
+    if (typeof client.storage.from(BUCKET).move === "function") {
+      var mv = await client.storage.from(BUCKET).move(fromPath, toPath);
+      if (!mv.error) return;
+    }
+    var dl = await client.storage.from(BUCKET).download(fromPath);
+    if (dl.error) throw dl.error;
+    var blob = dl.data;
+    var contentType =
+      blob && blob.type ? blob.type : /\.webm$/i.test(fromPath) ? "video/webm" : "image/jpeg";
+    var up = await client.storage.from(BUCKET).upload(toPath, blob, {
+      contentType: contentType,
+      upsert: true,
+    });
+    if (up.error) throw up.error;
+    var rm = await client.storage.from(BUCKET).remove([fromPath]);
+    if (rm.error) {
+      console.warn("[achievements] storage remove after copy", rm.error);
+    }
+  }
+
+  async function reassignInboxDraftsBeforeFinalize(attachedIds, clientId, clientName) {
+    var client = cfg.getClient();
+    if (!client || !attachedIds || !attachedIds.length) return;
+    var cid = normalizeClientId(clientId);
+    var cname = String(clientName || "").trim();
+    if (!cid || cid === LEAD_INBOX_CLIENT_ID || !cname) return;
+    var userRes = await client.auth.getUser();
+    var uid = userRes.data && userRes.data.user && userRes.data.user.id;
+    if (!uid) return;
+    var res = await client
+      .from("portal_participant_achievement_photos")
+      .select("id, storage_path, client_id, staff_user_id, status")
+      .in("id", attachedIds)
+      .eq("status", "draft");
+    if (res.error) {
+      console.warn("[achievements] inbox reassign load", res.error);
+      return;
+    }
+    var rows = (res.data || []).filter(function (r) {
+      return (
+        r &&
+        normalizeClientId(r.client_id) === LEAD_INBOX_CLIENT_ID &&
+        String(r.staff_user_id || "") === String(uid)
+      );
+    });
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var fromPath = String(row.storage_path || "").trim();
+      var newPath = inboxAssignNewPath(fromPath, cid);
+      if (!fromPath || !newPath || newPath === fromPath) continue;
+      try {
+        await moveAchievementStorage(client, fromPath, newPath);
+        if (!(await storageObjectExists(client, newPath))) {
+          throw new Error("storage_move_failed");
+        }
+        var rpc = await client.rpc("portal_staff_reassign_inbox_achievement_draft", {
+          p_photo_id: row.id,
+          p_client_id: cid,
+          p_client_name: cname,
+          p_new_storage_path: newPath,
+        });
+        if (rpc.error) {
+          try {
+            if (await storageObjectExists(client, newPath)) {
+              await client.storage.from(BUCKET).remove([newPath]);
+            }
+          } catch (_rollback) {}
+          throw rpc.error;
+        }
+      } catch (e) {
+        console.warn("[achievements] inbox reassign", row.id, e);
+      }
     }
   }
 
@@ -2079,20 +2249,32 @@
         '<p class="muted" style="margin:0">No achievement photos or videos for this participant. Take them from Quick menu → Participant achievements, then come back to attach them.</p>';
       return [];
     }
+    var hasInbox = rows.some(function (r) {
+      return normalizeClientId(r.client_id) === LEAD_INBOX_CLIENT_ID;
+    });
     var html =
       '<p class="portal-achievements-feedback-label">Attach achievement photos/videos (optional) — up to ' +
       FEEDBACK_MAX_ATTACH +
       ' <span class="portal-achievements-feedback-count">0 / ' +
       FEEDBACK_MAX_ATTACH +
-      " selected</span></p>" +
-      '<div class="portal-achievements-feedback-grid portal-achievement-protected">';
-    rows.forEach(function (r) {
+      " selected</span></p>";
+    if (hasInbox) {
       html +=
-        '<label class="portal-achievements-feedback-pick"><input type="checkbox" name="achievementPhoto" value="' +
+        '<p class="muted portal-achievements-feedback-inbox-note" style="margin:0 0 8px;font-size:13px">Includes your session photos taken without a participant (Inbox). They will be linked to this feedback when you submit.</p>';
+    }
+    html += '<div class="portal-achievements-feedback-grid portal-achievement-protected">';
+    rows.forEach(function (r) {
+      var inbox = normalizeClientId(r.client_id) === LEAD_INBOX_CLIENT_ID;
+      html +=
+        '<label class="portal-achievements-feedback-pick' +
+        (inbox ? " portal-achievements-feedback-pick--inbox" : "") +
+        '"><input type="checkbox" name="achievementPhoto" value="' +
         esc(r.id) +
         '" /><span class="portal-achievements-feedback-thumb" data-path="' +
         esc(r.storage_path) +
-        '">…</span></label>';
+        '">…</span>' +
+        (inbox ? '<span class="portal-achievements-feedback-inbox-tag">Inbox</span>' : "") +
+        "</label>";
     });
     html += "</div>";
     host.innerHTML = html;
@@ -2138,6 +2320,9 @@
     }
     var ids = (opts && opts.attachedIds) || [];
     if (!ids.length) return;
+    try {
+      await reassignInboxDraftsBeforeFinalize(ids, opts.clientId, opts.clientName);
+    } catch (_prep) {}
     var payload = {
       p_attached_ids: ids,
       p_client_id: opts.clientId || null,

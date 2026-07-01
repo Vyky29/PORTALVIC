@@ -1251,6 +1251,23 @@
       });
     }
 
+    function portalCanonicalTodayClientKey(clientId, displayName){
+      var P = window.PortalParticipantIdentity;
+      var fromName = String(displayName || '').trim();
+      if(fromName && fromName !== '—' && P && typeof P.canonicalClientId === 'function'){
+        var cn = P.canonicalClientId(fromName);
+        if(cn) return cn;
+      }
+      var cid = String(clientId || '').trim().toLowerCase();
+      if(P && cid && typeof P.canonicalClientId === 'function'){
+        return P.canonicalClientId(cid) || cid;
+      }
+      if(typeof window.portalCanonicalParticipantClientId === 'function'){
+        return window.portalCanonicalParticipantClientId(fromName || cid) || cid;
+      }
+      var raw = (fromName && fromName !== '—') ? fromName : cid;
+      return String(raw || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
     function portalRosterSpreadsheetSessionDedupeKey(s){
       if(!s) return '';
       const sid = String(s.staffId || '').trim().toLowerCase();
@@ -1266,12 +1283,29 @@
       const ts = String(s.timeSlotLabel || '').trim();
       return [sid, iso, cid, start || ts, end, venue].join('|');
     }
-    function portalDedupeRosterSpreadsheetSessions(rows){
+    /** Programme-lead wide day: same client slot from multiple instructor bootstraps → one row. */
+    function portalProgrammeWideRosterSessionDedupeKey(s){
+      if(!s) return '';
+      const iso = normaliseIsoDate(s.session_date || s.sessionDate);
+      const cid = portalCanonicalTodayClientKey(s.clientId, s.clientDisplay || s.clientName || s.name);
+      const start = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.start)
+        : String(s.start || '').trim();
+      const end = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.end)
+        : String(s.end || '').trim();
+      const venue = portalNormKeyStr(s.venue);
+      const ts = String(s.timeSlotLabel || '').trim();
+      return [iso, cid, start || ts, end, venue].join('|');
+    }
+    function portalDedupeRosterSpreadsheetSessions(rows, opts){
+      opts = opts || {};
       if(!Array.isArray(rows) || !rows.length) return rows || [];
       const out = [];
       const seen = Object.create(null);
+      const keyFn = opts.programmeWide ? portalProgrammeWideRosterSessionDedupeKey : portalRosterSpreadsheetSessionDedupeKey;
       rows.forEach(function(s){
-        const k = portalRosterSpreadsheetSessionDedupeKey(s);
+        const k = keyFn(s);
         if(k && seen[k]) return;
         if(k) seen[k] = true;
         out.push(s);
@@ -1393,7 +1427,10 @@
       if(it.kind === 'client' || it.kind === 'available'){
         const base = it.__portalBaseSession ? it.__portalBaseSession : (it || {});
         const skParts = String(it.sessionKey || '').split('|');
-        const cid = String(it.clientId || base.clientId || '').trim().toLowerCase();
+        const cid = portalCanonicalTodayClientKey(
+          it.clientId || base.clientId,
+          it.name || base.clientDisplay || base.clientName
+        );
         if(!cid || cid === 'available' || cid === 'closed' || cid === 'meeting' || cid === 'training' || cid === 'shadowing') return '';
         const start = typeof portalCanonicalHmToken === 'function'
           ? portalCanonicalHmToken(base.start || skParts[1] || '')
@@ -1580,7 +1617,10 @@
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord);
       });
-      const todaySessionsAfterDedupe = portalDedupeRosterSpreadsheetSessions(todaySessionsAfterFilter);
+      const todaySessionsAfterDedupe = portalDedupeRosterSpreadsheetSessions(
+        todaySessionsAfterFilter,
+        programmeWidePack ? { programmeWide: true } : null
+      );
       const primary = portalUpgradeTodayItemsWithAbsentOverrides(
         portalInjectAbsentCardsAlongsideMakeup(
         todaySessionsAfterDedupe
@@ -2674,14 +2714,7 @@
               }
             }
           }catch(_reassign){}
-          var dk = [
-            rowIso,
-            String(effectiveSession.start || '').trim(),
-            String(effectiveSession.end || '').trim(),
-            String(effectiveSession.venue || '').trim().toLowerCase(),
-            String(effectiveSession.clientId || '').trim().toLowerCase(),
-            String(effectiveSession.staffId || '').trim().toLowerCase()
-          ].join('\0');
+          var dk = portalProgrammeWideRosterSessionDedupeKey(effectiveSession);
           if(seen[dk]) return;
           seen[dk] = true;
           merged.push(effectiveSession);

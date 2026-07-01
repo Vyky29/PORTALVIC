@@ -135,4 +135,5 @@
     resolveLookupNames: resolveLookupNames,
     lookupClientsInfoSheet: lookupClientsInfoSheet,
   };
+  global.portalCanonicalParticipantClientId = canonicalClientId;
 })(typeof window !== "undefined" ? window : globalThis);
