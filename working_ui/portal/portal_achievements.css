@@ -1790,6 +1790,98 @@ body.portal-achievements-viewer-open .admin-topbar {
   max-width: 280px;
 }
 
+.portal-ach-inbox-bulk__select {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.portal-ach-inbox-participant-pick {
+  position: relative;
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.portal-ach-inbox-participant-pick__input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: var(--navy, #0f172a);
+  height: 36px;
+  line-height: 1.25;
+}
+
+.portal-ach-inbox-participant-pick__input::placeholder {
+  color: var(--muted, #64748b);
+  opacity: 1;
+}
+
+.portal-ach-inbox-participant-pick__input:focus {
+  outline: 2px solid rgba(45, 132, 179, 0.2);
+  border-color: var(--blue, #2d84b3);
+}
+
+.portal-ach-inbox-participant-pick__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(240px, 40vh);
+  overflow: auto;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-ach-inbox-participant-pick__list[hidden] {
+  display: none !important;
+}
+
+.portal-ach-inbox-participant-pick__opt {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy, #0f172a);
+  overflow-wrap: break-word;
+}
+
+.portal-ach-inbox-participant-pick__opt:last-child {
+  border-bottom: 0;
+}
+
+.portal-ach-inbox-participant-pick__opt:hover,
+.portal-ach-inbox-participant-pick__opt:focus-visible {
+  background: #f0f7ff;
+  outline: none;
+}
+
+.portal-ach-inbox-participant-pick__empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
 .portal-ach-inbox-pick {
   display: flex;
   align-items: center;
@@ -1799,6 +1891,25 @@ body.portal-achievements-viewer-open .admin-topbar {
   color: var(--navy, #0f172a);
   min-width: 0;
   cursor: pointer;
+}
+
+.portal-ach-inbox-bulk__select-all input[type="checkbox"],
+.portal-ach-inbox-pick__input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--blue, #2d84b3);
+  appearance: auto;
+  -webkit-appearance: checkbox;
+}
+
+.portal-ach-inbox-pick__label,
+.portal-ach-inbox-bulk__select-all span {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-ach-inbox-pick__input {

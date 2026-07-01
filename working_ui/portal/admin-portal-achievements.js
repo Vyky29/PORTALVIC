@@ -534,19 +534,115 @@
     });
   }
 
-  function populateParticipantSelect(select, targets) {
-    while (select.firstChild) select.removeChild(select.firstChild);
-    var placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = SELECT_ONE_LABEL;
-    placeholder.selected = true;
-    select.appendChild(placeholder);
-    (targets || []).forEach(function (t) {
-      var opt = document.createElement("option");
-      opt.value = t.key;
-      opt.textContent = t.clientName;
-      select.appendChild(opt);
+  function normParticipantPickerText(v) {
+    return String(v || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  /** Searchable picker — native <select> with 80+ options renders as a broken listbox in admin. */
+  function mountParticipantPicker(host, targets) {
+    if (!host) return null;
+    host.innerHTML = "";
+    host.className = "portal-ach-inbox-participant-pick portal-ach-inbox-bulk__select";
+
+    var hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.id = "portalAchInboxBulkAssign";
+    hidden.value = "";
+
+    var input = document.createElement("input");
+    input.type = "search";
+    input.className = "portal-ach-inbox-participant-pick__input";
+    input.placeholder = SELECT_ONE_LABEL;
+    input.autocomplete = "off";
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-controls", "portalAchInboxBulkAssignList");
+    input.setAttribute("aria-label", "Assign selected to participant");
+
+    var list = document.createElement("div");
+    list.id = "portalAchInboxBulkAssignList";
+    list.className = "portal-ach-inbox-participant-pick__list";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+
+    var state = { targets: targets || [], picked: null };
+
+    function closeList() {
+      list.hidden = true;
+      while (list.firstChild) list.removeChild(list.firstChild);
+      input.setAttribute("aria-expanded", "false");
+    }
+
+    function applyPick(target) {
+      state.picked = target || null;
+      hidden.value = target ? target.key : "";
+      input.value = target ? target.clientName : "";
+      closeList();
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function renderList(query) {
+      var q = normParticipantPickerText(query);
+      while (list.firstChild) list.removeChild(list.firstChild);
+      var shown = 0;
+      var max = 14;
+      state.targets.forEach(function (t) {
+        if (q && normParticipantPickerText(t.clientName).indexOf(q) === -1) return;
+        if (shown >= max) return;
+        shown += 1;
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "portal-ach-inbox-participant-pick__opt";
+        btn.setAttribute("role", "option");
+        btn.textContent = t.clientName;
+        btn.addEventListener("click", function () {
+          applyPick(t);
+        });
+        list.appendChild(btn);
+      });
+      if (!shown) {
+        var empty = document.createElement("div");
+        empty.className = "portal-ach-inbox-participant-pick__empty muted";
+        empty.textContent = q ? "No matching participants" : "Type a name to search";
+        list.appendChild(empty);
+      }
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    input.addEventListener("focus", function () {
+      renderList(input.value);
     });
+    input.addEventListener("input", function () {
+      if (
+        state.picked &&
+        normParticipantPickerText(input.value) !== normParticipantPickerText(state.picked.clientName)
+      ) {
+        state.picked = null;
+        hidden.value = "";
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      renderList(input.value);
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeList();
+        input.blur();
+      }
+    });
+    input.addEventListener("blur", function () {
+      global.setTimeout(function () {
+        if (!host.contains(document.activeElement)) closeList();
+      }, 120);
+    });
+
+    host.appendChild(input);
+    host.appendChild(hidden);
+    host.appendChild(list);
+    return hidden;
   }
 
   function clearInboxSelection() {
@@ -1046,7 +1142,7 @@
         '<input type="checkbox" id="portalAchInboxSelectAll" aria-label="Select all draft photos" />' +
         "<span>Select all</span></label>" +
         '<span class="portal-ach-inbox-bulk__count muted" id="portalAchInboxSelCount">0 selected</span>' +
-        '<select class="portal-ach-inbox-assign__select portal-ach-inbox-bulk__select" id="portalAchInboxBulkAssign" aria-label="Assign selected to participant"></select>' +
+        '<div class="portal-ach-inbox-participant-pick portal-ach-inbox-bulk__select" id="portalAchInboxBulkAssignHost"></div>' +
         '<button type="button" class="btn btn--sec btn--sm portal-ach-inbox-assign__btn" id="portalAchInboxBulkAssignBtn" disabled>Assign selected</button>' +
         '<button type="button" class="btn btn--ghost btn--sm portal-ach-admin-delete__btn" id="portalAchInboxBulkDeleteBtn" disabled>Delete selected</button>' +
         "</div>"
@@ -1075,8 +1171,10 @@
     host.innerHTML = "";
     host.appendChild(detailRoot);
     if (isInbox && assignTargets.length) {
-      var bulkSelect = detailRoot.querySelector("#portalAchInboxBulkAssign");
-      if (bulkSelect) populateParticipantSelect(bulkSelect, assignTargets);
+      var bulkSelect = mountParticipantPicker(
+        detailRoot.querySelector("#portalAchInboxBulkAssignHost"),
+        assignTargets
+      );
       var bulkAssignBtn = detailRoot.querySelector("#portalAchInboxBulkAssignBtn");
       var bulkDeleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
       var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
@@ -1219,7 +1317,10 @@
               updateInboxBulkUi(detailRoot, draftPhotos);
             });
             pick.appendChild(checkbox);
-            pick.appendChild(document.createTextNode("Select"));
+            var pickLabel = document.createElement("span");
+            pickLabel.className = "portal-ach-inbox-pick__label";
+            pickLabel.textContent = "Select";
+            pick.appendChild(pickLabel);
             wrap.appendChild(pick);
           }
           var mediaSlot = document.createElement("div");
