@@ -227,6 +227,77 @@
       color: #000000;
       line-height: 1;
     }
+    #dcCalCrashPanel .dc-cal-term {
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #dcCalCrashPanel .dc-cal-term__head {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #dcCalCrashPanel .dc-cal-term__title {
+      justify-content: center;
+    }
+    #dcCalCrashPanel .dc-cal-term__info {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.82rem;
+      color: rgba(22, 43, 91, 0.82);
+    }
+    #dcCalCrashPanel .dc-cal-term__info li:last-child {
+      margin-bottom: 0;
+    }
+    .dc-cal-crash-days {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .dc-cal-crash-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-width: 54px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--dc-green);
+      border: 1px solid rgba(22, 43, 91, 0.1);
+      box-shadow: 0 1px 0 rgba(22, 43, 91, 0.06);
+    }
+    .dc-cal-crash-day__dow {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--dc-navy);
+      line-height: 1.1;
+    }
+    .dc-cal-crash-day__num {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #000;
+      line-height: 1;
+    }
+    .dc-cal-crash-day__sub {
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: rgba(22, 43, 91, 0.72);
+      line-height: 1.1;
+    }
+    .dc-cal-crash-off {
+      margin: 10px 0 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: center;
+      color: rgba(22, 43, 91, 0.72);
+    }
     @media (min-width: 720px) {
       .dc-cal { padding: 20px 18px 28px; }
       .dc-cal-term { padding: 18px 16px 20px; }
@@ -1150,66 +1221,38 @@
     <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-october">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-october"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> October half term 2026</h3>
-        <ul class="dc-cal-term__info">
-          <li>Mon 26 – Thu 29 October 2026</li>
-          <li>No crash course: Fri 30 October</li>
-        </ul>
       </header>
-      <div class="dc-cal-term__months">
-        <div class="dc-cal-month">
-          <h4 class="dc-cal-month__label">October 2026</h4>
-          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
-          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="October crash courses 2026">
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">29</span></span>
-          </div>
-        </div>
-      </div>
+      <ul class="dc-cal-crash-days" aria-label="October crash course days 2026">
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">26</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">27</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">28</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">29</span></li>
+      </ul>
+      <p class="dc-cal-crash-off">Fri 30 October — no crash course</p>
     </article>
     <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-february">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-february"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> February half term 2027</h3>
-        <ul class="dc-cal-term__info">
-          <li>Mon 15 – Thu 18 February 2027</li>
-          <li>No crash course: Fri 19 February</li>
-        </ul>
       </header>
-      <div class="dc-cal-term__months">
-        <div class="dc-cal-month">
-          <h4 class="dc-cal-month__label">February 2027</h4>
-          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
-          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="February crash courses 2027">
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
-          </div>
-        </div>
-      </div>
+      <ul class="dc-cal-crash-days" aria-label="February crash course days 2027">
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">15</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">16</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">17</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">18</span></li>
+      </ul>
+      <p class="dc-cal-crash-off">Fri 19 February — no crash course</p>
     </article>
     <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-may">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-may"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> May half term 2027</h3>
-        <ul class="dc-cal-term__info">
-          <li>Mon 31 May – Thu 3 June 2027</li>
-          <li>No crash course: Fri 4 June</li>
-        </ul>
       </header>
-      <div class="dc-cal-term__months">
-        <div class="dc-cal-month">
-          <h4 class="dc-cal-month__label">May – June 2027</h4>
-          <div class="dc-cal-weekdays dc-cal-weekdays--thu" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span></div>
-          <div class="dc-cal-grid dc-cal-grid--thu" role="grid" aria-label="May June crash courses 2027">
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">31</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
-          </div>
-          <p style="margin:8px 0 0;font-size:0.75rem;text-align:center;color:var(--dc-navy);font-weight:600;">31 May · 1–3 Jun</p>
-        </div>
-      </div>
+      <ul class="dc-cal-crash-days" aria-label="May June crash course days 2027">
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">31</span><span class="dc-cal-crash-day__sub">May</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">1</span><span class="dc-cal-crash-day__sub">Jun</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">2</span><span class="dc-cal-crash-day__sub">Jun</span></li>
+        <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">3</span><span class="dc-cal-crash-day__sub">Jun</span></li>
+      </ul>
+      <p class="dc-cal-crash-off">Fri 4 June — no crash course</p>
     </article>
   </div>
 

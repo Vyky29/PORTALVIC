@@ -1517,6 +1517,17 @@
     .portal-calendar-2026-27-preview .dc-cal-panel__intro[hidden]{
       display:none !important;
     }
+    .portal-calendar-2026-27-preview #dcCalCrashPanel .dc-cal-term{
+      max-width:100%;
+      padding:12px 10px 14px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-crash-day{
+      min-width:48px;
+      padding:7px 8px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-crash-day__num{
+      font-size:0.95rem;
+    }
     .portal-calendar-2026-27-iframe{
       display:block;
       width:100%;
