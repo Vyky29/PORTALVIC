@@ -1604,6 +1604,16 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   color: var(--danger, #b91c1c);
 }
 
+.portal-ach-admin-return-inbox__btn {
+  align-self: flex-start;
+  max-width: 100%;
+  color: var(--blue, #2d84b3);
+  overflow-wrap: break-word;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.3;
+}
+
 .portal-achievements-thumb__empty {
   display: flex;
   align-items: center;

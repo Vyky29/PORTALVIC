@@ -161,6 +161,27 @@
     return path.replace("/" + cid + "/", "/_inbox/");
   }
 
+  function canReturnPhotoToInbox(row) {
+    if (!row || String(row.status || "") !== "draft") return false;
+    if (normalizeClientId(row.client_id) === INBOX_CLIENT_ID) return false;
+    return !!inboxAlternatePathForAssignedRow(row);
+  }
+
+  function achievementRpcErrorMessage(err, fallback) {
+    var msg = String((err && err.message) || "").toLowerCase();
+    if (msg.indexOf("not_inbox") >= 0) {
+      return "This photo is no longer in the inbox (it may already be assigned). Refresh the page.";
+    }
+    if (msg.indexOf("already_inbox") >= 0) return "This photo is already in the inbox.";
+    if (msg.indexOf("not_draft") >= 0) {
+      return "Only draft photos can be moved back to the inbox.";
+    }
+    if (msg.indexOf("path_update_failed") >= 0 || msg.indexOf("storage_path_mismatch") >= 0) {
+      return "Could not compute the inbox folder path for this photo.";
+    }
+    return (err && err.message) || fallback || "Something went wrong.";
+  }
+
   async function storageObjectExists(client, path) {
     path = String(path || "").trim();
     if (!path) return false;
@@ -717,6 +738,51 @@
     return res.data;
   }
 
+  async function returnPhotoToInbox(photoId, row) {
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    photoId = String(photoId || "").trim();
+    row = row || {};
+    if (!photoId) throw new Error("Missing photo id.");
+    if (!canReturnPhotoToInbox(row)) {
+      throw new Error("This draft photo cannot be returned to the inbox.");
+    }
+    var storagePath = String(row.storage_path || "").trim();
+    if (!storagePath) {
+      var rowRes = await client
+        .from("portal_participant_achievement_photos")
+        .select("storage_path, client_id, status")
+        .eq("id", photoId)
+        .maybeSingle();
+      if (rowRes.error) throw rowRes.error;
+      if (!rowRes.data) throw new Error("Photo not found.");
+      row = rowRes.data;
+      if (!canReturnPhotoToInbox(row)) {
+        throw new Error("This draft photo cannot be returned to the inbox.");
+      }
+      storagePath = String(row.storage_path || "").trim();
+    }
+    var newPath = inboxAlternatePathForAssignedRow(row);
+    if (!newPath) throw new Error("Could not compute inbox folder path.");
+    await moveAchievementStorage(client, storagePath, newPath);
+    if (!(await storageObjectExists(client, newPath))) {
+      throw new Error("Photo file did not move back to the inbox folder.");
+    }
+    var res = await client.rpc("portal_admin_return_achievement_photo_to_inbox", {
+      p_photo_id: photoId,
+      p_new_storage_path: newPath,
+    });
+    if (res.error) {
+      try {
+        if (await storageObjectExists(client, newPath)) {
+          await moveAchievementStorage(client, newPath, storagePath);
+        }
+      } catch (_rollback) {}
+      throw res.error;
+    }
+    return res.data;
+  }
+
   async function deletePhoto(photoId, storagePath) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
@@ -1164,7 +1230,7 @@
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
       (isInbox
         ? ". Tick photos, pick a participant above, then Assign selected. Double-click a photo to view full screen."
-        : ". Double-click a photo to view full screen. Delete any photo that should not be kept.") +
+        : ". Double-click a photo to view full screen. Draft photos wrongly assigned from the lead inbox can be returned with Return to inbox. Delete any photo that should not be kept.") +
       "</p></div></div></div></div>" +
       bulkBarHtml +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
@@ -1231,13 +1297,20 @@
           void chain
             .then(function () {
               clearInboxSelection();
+              if (statusEl) {
+                statusEl.textContent = ids.length + " photo(s) assigned.";
+                statusEl.className = "portal-forms-status";
+              }
               void refresh({ stayOnKey: key });
             })
             .catch(function (err) {
               console.error(err);
               bulkAssignBtn.disabled = false;
               if (statusEl) {
-                statusEl.textContent = (err && err.message) || "Could not assign selected photos.";
+                statusEl.textContent = achievementRpcErrorMessage(
+                  err,
+                  "Could not assign selected photos."
+                );
                 statusEl.className = "portal-forms-status is-error";
               }
             });
@@ -1349,6 +1422,42 @@
           wrap.appendChild(btn);
           var actionBar = document.createElement("div");
           actionBar.className = "portal-ach-admin-photo-actions";
+          if (!isInbox && canReturnPhotoToInbox(row)) {
+            var returnBtn = document.createElement("button");
+            returnBtn.type = "button";
+            returnBtn.className = "btn btn--ghost btn--sm portal-ach-admin-return-inbox__btn";
+            returnBtn.textContent = "Return to inbox";
+            returnBtn.addEventListener("click", function () {
+              if (
+                !global.confirm(
+                  "Return this draft photo to Inbox (unassigned)? You can then assign it to the correct participant."
+                )
+              ) {
+                return;
+              }
+              returnBtn.disabled = true;
+              void returnPhotoToInbox(row.id, row)
+                .then(function () {
+                  if (statusEl) {
+                    statusEl.textContent = "Photo returned to Inbox (unassigned).";
+                    statusEl.className = "portal-forms-status";
+                  }
+                  void refresh({ stayOnKey: "" });
+                })
+                .catch(function (err) {
+                  console.error(err);
+                  returnBtn.disabled = false;
+                  if (statusEl) {
+                    statusEl.textContent = achievementRpcErrorMessage(
+                      err,
+                      "Could not return photo to inbox."
+                    );
+                    statusEl.className = "portal-forms-status is-error";
+                  }
+                });
+            });
+            actionBar.appendChild(returnBtn);
+          }
           if (!isInbox || row.status !== "draft") {
             var deleteBtn = document.createElement("button");
             deleteBtn.type = "button";
@@ -1534,7 +1643,7 @@
     return (
       '<div id="portalAdminAchievementsRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Participant achievements</h1>' +
-      '<p class="page-intro">All in-app photos, by participant (A–Z). Lead inbox photos appear under <strong>Inbox (unassigned)</strong> until you assign them to a participant.</p>' +
+      '<p class="page-intro">All in-app photos, by participant (A–Z). Lead inbox photos appear under <strong>Inbox (unassigned)</strong> until you assign them to a participant. If a draft was assigned to the wrong person, open that participant and use <strong>Return to inbox</strong>.</p>' +
       '<div class="portal-activity-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminAchievementsRefresh">Refresh</button>' +
       "</div>" +
