@@ -40,6 +40,8 @@ const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
 const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   fadi_abu_daud: "fadi",
   fadi_ab: "fadi",
+  cyrus_mahdavi: "cyrus",
+  cyrus_ma: "cyrus",
 };
 
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
@@ -98,6 +100,7 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
   if (input.firstName || input.lastName) {
     add(`${input.firstName || ""} ${input.lastName || ""}`.trim());
     add(workerShortName(input.firstName || "", input.lastName || ""));
+    if (input.firstName) add(input.firstName);
   }
 
   return [...out].filter(Boolean);
@@ -114,6 +117,7 @@ export function resolveParticipantLookupNames(input: ParticipantIdentityInput): 
   if (input.firstName || input.lastName) {
     add(`${input.firstName || ""} ${input.lastName || ""}`.trim());
     add(workerShortName(input.firstName || "", input.lastName || ""));
+    if (input.firstName) add(input.firstName);
   }
 
   return [...names];
@@ -136,6 +140,18 @@ export function participantIdentityMatches(
   const wantSlug = canonicalParticipantClientId(input.displayName || "");
   const gotSlug = canonicalParticipantClientId(rowName || rowClientId);
   if (wantSlug && gotSlug && wantSlug === gotSlug) return true;
+
+  const first = normalizeParticipantLookupName(input.firstName || "");
+  if (first) {
+    const gotParts = normalizeParticipantLookupName(rowName).split(" ").filter(Boolean);
+    if (gotParts.length === 1 && gotParts[0] === first) {
+      const rowSlug = slugifyParticipantKey(rowClientId || rowName);
+      const firstSlug = slugifyParticipantKey(input.firstName || "");
+      if (rowSlug === firstSlug || slugs.some((s) => s === rowSlug || s === rosterParticipantSlugAlias(rowSlug))) {
+        return true;
+      }
+    }
+  }
 
   return false;
 }

@@ -35,6 +35,13 @@
     chaitanya_trial_28_06: "chaitanya",
   };
 
+  var PORTAL_PARTICIPANT_SLUG_ALIASES = {
+    fadi_abu_daud: "fadi",
+    fadi_ab: "fadi",
+    cyrus_mahdavi: "cyrus",
+    cyrus_ma: "cyrus",
+  };
+
   var CLIENT_INFO_SHEET_ALIASES = {
     rayan_tapa: "rayan_ta",
     aadam_ah: "adaam_ah",
@@ -47,6 +54,7 @@
       ROSTER_SPELLING_ALIASES[s] ||
       CLIENT_INFO_SLUG_ALIASES[s] ||
       CLIENT_INFO_SHEET_ALIASES[s] ||
+      PORTAL_PARTICIPANT_SLUG_ALIASES[s] ||
       s
     );
   }
@@ -108,6 +116,9 @@
           return String(r.client_info || "").trim();
         }
         if (normName(r.client_name) === normName(displayName)) {
+          return String(r.client_info || "").trim();
+        }
+        if (firstName && normName(r.client_name) === normName(firstName)) {
           return String(r.client_info || "").trim();
         }
       }
