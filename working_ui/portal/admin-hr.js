@@ -543,9 +543,8 @@
 
   function otherWorkStatusLabel(code) {
     var k = String(code || "").trim().toLowerCase();
-    if (k === "none") return "No other work";
-    if (k === "yes") return "Has other work";
-    if (k === "starting") return "Starting other work soon";
+    if (k === "only_clubsensational") return "Only ClubSENsational";
+    if (k === "also_other") return "Also other organisations";
     return String(code || "").trim();
   }
 
