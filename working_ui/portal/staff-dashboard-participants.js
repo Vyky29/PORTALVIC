@@ -2302,7 +2302,7 @@
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
-      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'makeup';
+      if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'new_shift';
       if(P && typeof P.overrideIsRosterDayGroupRow === 'function' && P.overrideIsRosterDayGroupRow(row)){
         if(P.overrideRosterDayGroupIsNewShift && P.overrideRosterDayGroupIsNewShift(row)) return 'new_shift';
         return 'roster_day';
@@ -2443,16 +2443,27 @@
           ? portalOverrideCardDateParenLabel(isoNav)
           : '';
         if(kind === 'new_shift'){
-          title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
-          sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
-            : '';
-          if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
-            const staffForBand = String(row && row.anchor_staff_id || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim();
-            const band = window.portalStaffPayrollShiftBandLabel(staffForBand, isoNav, venue);
-            if(band){
-              const svc = typeof portalOverrideQuickMenuServiceLabel === 'function' ? portalOverrideQuickMenuServiceLabel(row) : '';
-              sub = [svc, band].filter(Boolean).join(' · ');
+          const isCover = portalOverrideIsInstructorCoverForLoggedInStaff(row);
+          if(isCover){
+            const nm = portalClientFirstNameTokenForOverride(row);
+            title = nm
+              ? ('Schedule change - ' + nm + (datePart ? (' ' + datePart) : ''))
+              : ('Schedule change' + (datePart ? (' ' + datePart) : ''));
+            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+              ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+              : '';
+          }else{
+            title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+              ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
+              : '';
+            if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
+              const staffForBand = String(row && row.anchor_staff_id || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim();
+              const band = window.portalStaffPayrollShiftBandLabel(staffForBand, isoNav, venue);
+              if(band){
+                const svc = typeof portalOverrideQuickMenuServiceLabel === 'function' ? portalOverrideQuickMenuServiceLabel(row) : '';
+                sub = [svc, band].filter(Boolean).join(' · ');
+              }
             }
           }
         }else{

@@ -2167,7 +2167,7 @@
         const isInstructorCoverOv = String(ov.override_type || '').trim() === 'instructor_reassign';
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
-        const makeUpPinkCover = isInstructorCoverOv || (!isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe));
+        const makeUpPinkCover = !isInstructorCoverOv && !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
         extra.push({
           time,
           kind: 'client',
