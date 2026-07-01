@@ -52,10 +52,14 @@
       background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
     }
     .pp-page {
-      max-width: var(--max);
+      width: 100%;
+      max-width: min(100%, var(--max));
       margin: 0 auto;
       padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
       min-width: 0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
     }
     .pp-brand {
       text-align: center;
@@ -165,12 +169,19 @@
     }
     .pp-notice--error { background: var(--dangerSoft); color: #8a2725; }
     .pp-notice--info { background: var(--blueSoft); color: var(--ink); }
+    #ppStepHome,
+    #ppStepParticipant {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
     .pp-home-head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 14px;
       min-width: 0;
     }
     .pp-home-head h2 {
@@ -196,7 +207,53 @@
       font-weight: 700;
       cursor: pointer;
     }
-    .pp-child-card { padding: 14px; }
+    .pp-child-card {
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .pp-child-card:hover,
+    .pp-child-card:focus-visible {
+      border-color: rgba(45, 132, 179, .35);
+      box-shadow: 0 8px 28px rgba(23, 50, 71, .1);
+      outline: none;
+    }
+    .pp-child-card__cta {
+      margin: 12px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+      overflow-wrap: break-word;
+    }
+    #ppChildList {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    #ppStepHome > .pp-card,
+    #ppStepHome > #ppContactBlock {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+    .pp-participant-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-participant-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #ppParticipantDetail {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
     .pp-child-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 52px auto;
@@ -303,7 +360,8 @@
     }
     .pp-contact-note { margin-top: 10px; }
     .pp-legal {
-      margin-top: 20px;
+      margin-top: auto;
+      padding-top: 20px;
       text-align: center;
       font-size: 12px;
       color: var(--muted);
@@ -574,11 +632,36 @@
         padding-right: max(24px, env(safe-area-inset-right));
       }
       .pp-brand h1 { font-size: 24px; }
-      #ppStepHome > .pp-home-head,
+      #ppStepIdentify {
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+      }
+      #ppStepHome {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+      #ppStepHome > .pp-home-head {
+        grid-column: 1 / -1;
+      }
       #ppStepHome > .pp-card,
       #ppStepHome > #ppContactBlock {
-        max-width: min(640px, 100%);
+        margin-top: 0;
+        height: 100%;
       }
+      .pp-card + .pp-card { margin-top: 0; }
+      #ppChildList {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+      .pp-child-card { padding: 18px; }
+      .pp-child-row { grid-template-columns: minmax(0, 1fr) 64px auto; }
+      .pp-child-name { font-size: 18px; }
+      .pp-child-photo { width: 64px; height: 64px; }
+      .pp-home-head h2 { font-size: 28px; }
       .pp-pax-info-buttons {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       }
