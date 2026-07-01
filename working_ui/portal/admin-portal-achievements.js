@@ -609,6 +609,38 @@
       .toLowerCase();
   }
 
+  /** Match combobox hidden value and/or typed name to one assign target. */
+  function resolveAssignTarget(targets, hiddenKey, inputText) {
+    targets = targets || [];
+    var key = String(hiddenKey || "").trim();
+    if (key) {
+      var byKey = targets.find(function (t) {
+        return normalizeClientId(t.key) === normalizeClientId(key);
+      });
+      if (byKey) return byKey;
+    }
+    var q = normParticipantPickerText(inputText);
+    if (!q) return null;
+    var exact = targets.filter(function (t) {
+      return normParticipantPickerText(t.clientName) === q;
+    });
+    if (exact.length === 1) return exact[0];
+    if (exact.length > 1) {
+      if (key) {
+        var tied = exact.find(function (t) {
+          return normalizeClientId(t.key) === normalizeClientId(key);
+        });
+        if (tied) return tied;
+      }
+      return null;
+    }
+    var partial = targets.filter(function (t) {
+      return normParticipantPickerText(t.clientName).indexOf(q) >= 0;
+    });
+    if (partial.length === 1) return partial[0];
+    return null;
+  }
+
   /** Searchable picker — native <select> with 80+ options renders as a broken listbox in admin. */
   function mountParticipantPicker(host, targets) {
     if (!host) return null;
@@ -649,7 +681,7 @@
       hidden.value = target ? target.key : "";
       input.value = target ? target.clientName : "";
       closeList();
-      input.dispatchEvent(new Event("change", { bubbles: true }));
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
     function renderList(query) {
@@ -666,9 +698,14 @@
         btn.className = "portal-ach-inbox-participant-pick__opt";
         btn.setAttribute("role", "option");
         btn.textContent = t.clientName;
-        btn.addEventListener("click", function () {
+        btn.addEventListener("mousedown", function (e) {
+          e.preventDefault();
           applyPick(t);
         });
+        btn.addEventListener("touchstart", function (e) {
+          e.preventDefault();
+          applyPick(t);
+        }, { passive: false });
         list.appendChild(btn);
       });
       if (!shown) {
@@ -691,7 +728,7 @@
       ) {
         state.picked = null;
         hidden.value = "";
-        input.dispatchEvent(new Event("change", { bubbles: true }));
+        hidden.dispatchEvent(new Event("change", { bubbles: true }));
       }
       renderList(input.value);
     });
@@ -699,6 +736,20 @@
       if (e.key === "Escape") {
         closeList();
         input.blur();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        var picked = resolveAssignTarget(state.targets, hidden.value, input.value);
+        if (!picked) {
+          var first = list.querySelector(".portal-ach-inbox-participant-pick__opt");
+          if (first && first.textContent) {
+            picked = state.targets.find(function (t) {
+              return t.clientName === first.textContent;
+            });
+          }
+        }
+        if (picked) applyPick(picked);
       }
     });
     input.addEventListener("blur", function () {
@@ -730,8 +781,16 @@
     var deleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
     var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
     var bulkSelect = detailRoot.querySelector("#portalAchInboxBulkAssign");
+    var pickerInput = detailRoot.querySelector(
+      "#portalAchInboxBulkAssignHost .portal-ach-inbox-participant-pick__input"
+    );
+    var assignTargets = detailRoot._assignTargets || [];
     var ids = inboxSelectedIds();
-    var participantPicked = !!(bulkSelect && String(bulkSelect.value || "").trim());
+    var participantPicked = !!resolveAssignTarget(
+      assignTargets,
+      bulkSelect && bulkSelect.value,
+      pickerInput && pickerInput.value
+    );
     if (countEl) {
       countEl.textContent =
         ids.length + " selected · " + (draftRows ? draftRows.length : 0) + " draft photo(s)";
@@ -1241,6 +1300,20 @@
     var staffList = uniqueStaffNames(group.photos);
     var isInbox = isInboxGroupKey(key);
     var assignTargets = isInbox ? participantAssignOptions(key) : [];
+    if (isInbox && !assignTargets.length) {
+      assignTargets = emptyDirectoryParticipants()
+        .filter(function (p) {
+          if (!p) return false;
+          var slug = normalizeClientId(p.key || p.clientName);
+          return slug && !isInboxGroupKey(slug) && !isNonParticipantDirectoryEntry(slug, p.clientName);
+        })
+        .map(function (p) {
+          return {
+            key: normalizeClientId(p.key || p.clientName),
+            clientName: String(p.clientName || p.key || "").trim(),
+          };
+        });
+    }
     var draftPhotos = isInbox
       ? group.photos.filter(function (row) {
           return row.status === "draft";
@@ -1283,16 +1356,34 @@
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
     host.appendChild(detailRoot);
-    if (isInbox && assignTargets.length) {
-      var bulkSelect = mountParticipantPicker(
-        detailRoot.querySelector("#portalAchInboxBulkAssignHost"),
-        assignTargets
-      );
+    if (isInbox) {
+      detailRoot._assignTargets = assignTargets;
+      var bulkSelect = assignTargets.length
+        ? mountParticipantPicker(
+            detailRoot.querySelector("#portalAchInboxBulkAssignHost"),
+            assignTargets
+          )
+        : null;
+      if (assignTargets.length === 0) {
+        var pickHost = detailRoot.querySelector("#portalAchInboxBulkAssignHost");
+        if (pickHost) {
+          pickHost.innerHTML =
+            '<span class="portal-ach-inbox-participant-pick__empty muted">No participants loaded — refresh or open roster first.</span>';
+        }
+      }
       var bulkAssignBtn = detailRoot.querySelector("#portalAchInboxBulkAssignBtn");
       var bulkDeleteBtn = detailRoot.querySelector("#portalAchInboxBulkDeleteBtn");
       var selectAll = detailRoot.querySelector("#portalAchInboxSelectAll");
+      var pickerInput = detailRoot.querySelector(
+        "#portalAchInboxBulkAssignHost .portal-ach-inbox-participant-pick__input"
+      );
       if (bulkSelect) {
         bulkSelect.addEventListener("change", function () {
+          updateInboxBulkUi(detailRoot, draftPhotos);
+        });
+      }
+      if (pickerInput) {
+        pickerInput.addEventListener("input", function () {
           updateInboxBulkUi(detailRoot, draftPhotos);
         });
       }
@@ -1310,20 +1401,25 @@
           updateInboxBulkUi(detailRoot, draftPhotos);
         });
       }
-      if (bulkAssignBtn && bulkSelect) {
+      if (bulkAssignBtn && assignTargets.length) {
         bulkAssignBtn.addEventListener("click", function () {
-          var target = assignTargets.find(function (t) {
-            return t.key === bulkSelect.value;
-          });
+          var target = resolveAssignTarget(
+            assignTargets,
+            bulkSelect && bulkSelect.value,
+            pickerInput && pickerInput.value
+          );
           var ids = inboxSelectedIds();
           if (!ids.length) return;
           if (!target) {
             if (statusEl) {
-              statusEl.textContent = "Choose a participant first.";
+              statusEl.textContent =
+                "Choose a participant from the list (or type their exact name).";
               statusEl.className = "portal-forms-status is-error";
             }
             return;
           }
+          if (bulkSelect) bulkSelect.value = target.key;
+          if (pickerInput) pickerInput.value = target.clientName;
           bulkAssignBtn.disabled = true;
           var rowsById = Object.create(null);
           draftPhotos.forEach(function (row) {
