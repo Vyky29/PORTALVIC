@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260704-cover-merge-feedback",
     "/portal/portal_participant_identity.js?v=20260702-berta-today-dedupe",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",

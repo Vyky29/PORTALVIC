@@ -224,7 +224,7 @@
       if (!sessionAppliesOnIso(s, date)) return;
       if (
         typeof global.portalStaffDashboardOmitSpreadsheetSession === "function" &&
-        global.portalStaffDashboardOmitSpreadsheetSession(s, dayName || String(s.day || "").trim())
+        global.portalStaffDashboardOmitSpreadsheetSession(s, dayName || String(s.day || "").trim(), date)
       ) {
         return;
       }

@@ -434,14 +434,78 @@
     return out;
   }
 
-  function staffMatchesMergeInstructors(ruleInstructors, staffId) {
-    var want = String(ruleInstructors || "").trim().toUpperCase();
-    var sid = String(staffId || "").trim().toUpperCase();
+  function canonicalStaffKeyForMerge(id) {
+    var k = String(id || "")
+      .trim()
+      .toLowerCase();
+    if (k === "javi") return "javier";
+    if (k === "yousef" || k === "yusef" || k === "yousseff") return "youssef";
+    return k;
+  }
+
+  function instructorTokenMatchesStaff(token, staffKey) {
+    var t = String(token || "").trim().toUpperCase();
+    var s = String(staffKey || "").trim().toUpperCase();
+    if (!t || !s) return !t;
+    if (t === s) return true;
+    if (t.indexOf(s) >= 0) return true;
+    if (s === "JAVIER" && (t === "JAVI" || t.indexOf("JAVIER") >= 0)) return true;
+    if (s === "ROBERTO" && t.indexOf("ROBERTO") >= 0) return true;
+    return false;
+  }
+
+  /** Cover instructor (e.g. Raul) inherits roster merge rules from anchor (e.g. Javier). */
+  function staffCoversMergeInstructorOnDate(coverStaffId, rosterInstructor, sessionDateIso, clientSlug) {
+    var cov = canonicalStaffKeyForMerge(coverStaffId);
+    var roster = String(rosterInstructor || "").trim();
+    if (!cov || !roster) return false;
+    if (instructorTokenMatchesStaff(roster, cov)) return true;
+    var iso = String(sessionDateIso || "").trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+    var rowsFn = global.portalScheduleOverrideRowsAll;
+    if (typeof rowsFn !== "function") return false;
+    var wantAnchors = roster
+      .split(",")
+      .map(function (x) {
+        return canonicalStaffKeyForMerge(x);
+      })
+      .filter(Boolean);
+    if (!wantAnchors.length) return false;
+    var rows = rowsFn();
+    for (var i = 0; i < rows.length; i++) {
+      var ov = rows[i];
+      if (!ov || String(ov.override_type || "").trim() !== "instructor_reassign") continue;
+      if (String(ov.status || "active") !== "active") continue;
+      if (String(ov.session_date || "").trim().slice(0, 10) !== iso) continue;
+      var ovCover = canonicalStaffKeyForMerge(ov.payload && ov.payload.covering_staff_id);
+      if (ovCover !== cov) continue;
+      var ovAnchor = canonicalStaffKeyForMerge(
+        (ov.payload && (ov.payload.anchor_staff_id || ov.payload.original_staff_id)) ||
+          ov.anchor_staff_id
+      );
+      if (wantAnchors.indexOf(ovAnchor) < 0) continue;
+      if (clientSlug) {
+        var ovClient = slugClient(ov.anchor_client_id);
+        if (ovClient && slugClient(clientSlug) !== ovClient) continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function staffMatchesMergeInstructors(ruleInstructors, staffId, opts) {
+    var want = String(ruleInstructors || "").trim();
+    var sid = String(staffId || "").trim();
     if (!want || !sid) return !want;
-    if (want === sid) return true;
-    if (want.indexOf(sid) >= 0) return true;
-    if (sid === "ROBERTO" && want.indexOf("ROBERTO") >= 0) return true;
-    if (sid === "JAVIER" && want.indexOf("JAVIER") >= 0) return true;
+    var iso = opts && opts.sessionDateIso;
+    var clientSlug = opts && opts.clientSlug;
+    if (staffCoversMergeInstructorOnDate(sid, want, iso, clientSlug)) return true;
+    var wantU = want.toUpperCase();
+    var sidU = sid.toUpperCase();
+    if (wantU === sidU) return true;
+    if (wantU.indexOf(sidU) >= 0) return true;
+    if (sidU === "ROBERTO" && wantU.indexOf("ROBERTO") >= 0) return true;
+    if ((sidU === "JAVIER" || sidU === "JAVI") && wantU.indexOf("JAVIER") >= 0) return true;
     return false;
   }
 
@@ -461,17 +525,21 @@
     return true;
   }
 
-  function feedbackMergeGroupForTodayItem(it, dayWord, staffId) {
+  function feedbackMergeGroupForTodayItem(it, dayWord, staffId, sessionDateIso) {
     var rules = sundayFeedbackMergeRules();
     if (!rules.length || !it) return "";
     var cid = slugClient(it.clientId || (it.__portalBaseSession && it.__portalBaseSession.clientId));
     if (!cid) return "";
     var dw = String(dayWord || "").trim();
+    var iso =
+      String(sessionDateIso || "").trim().slice(0, 10) ||
+      String((it.__portalBaseSession && it.__portalBaseSession.session_date) || "").trim().slice(0, 10);
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
       if (rule.day && String(rule.day).trim() !== dw) continue;
       if (slugClient(rule.client_name) !== cid) continue;
-      if (!staffMatchesMergeInstructors(rule.instructors, staffId)) continue;
+      if (!staffMatchesMergeInstructors(rule.instructors, staffId, { sessionDateIso: iso, clientSlug: cid }))
+        continue;
       var sub = rule.slots || [];
       for (var j = 0; j < sub.length; j++) {
         if (cardMatchesMergeSlot(it, sub[j], dw)) {
@@ -498,7 +566,7 @@
         passthrough.push(it);
         continue;
       }
-      var mg = feedbackMergeGroupForTodayItem(it, dw, sid);
+      var mg = feedbackMergeGroupForTodayItem(it, dw, sid, iso);
       if (!mg) {
         passthrough.push(it);
         continue;
@@ -659,4 +727,6 @@
   global.portalMergeStaffTodayFeedbackMergeGroups = mergeTodayFeedbackMergeGroups;
   global.portalMergeStaffTodayConsecutiveHalfHourSlots = mergeTodayConsecutiveHalfHourClientSlots;
   global.portalStaffFeedbackMergeGroupForTodayItem = feedbackMergeGroupForTodayItem;
+  global.portalStaffCoversMergeInstructorOnDate = staffCoversMergeInstructorOnDate;
+  global.portalStaffMatchesFeedbackMergeInstructors = staffMatchesMergeInstructors;
 })(typeof window !== "undefined" ? window : globalThis);

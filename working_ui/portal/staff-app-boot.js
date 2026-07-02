@@ -58,7 +58,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260628-venue-open-close-split");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260704-cover-merge-feedback");
     if (!isHandheld) {
       preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
     }
@@ -138,7 +138,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20260704-cover-merge-feedback",
     "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",

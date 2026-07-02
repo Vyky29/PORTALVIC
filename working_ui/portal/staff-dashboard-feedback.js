@@ -343,7 +343,7 @@
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
-    function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday){
+    function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday, sessionDateIso){
       try{
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
         const merges = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
@@ -353,6 +353,9 @@
         const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
         const ts = String(s.timeSlotLabel || '').trim();
         const svc = String(s.rosterService || s.activity || '').trim();
+        const iso = String(
+          sessionDateIso || s.session_date || s.sessionDate || ''
+        ).trim().slice(0, 10);
         for(let i = 0; i < merges.length; i++){
           const m = merges[i];
           if(m.day && String(m.day).trim() !== day) continue;
@@ -363,11 +366,19 @@
             if(sl.time_slot && String(sl.time_slot).trim() !== ts) continue;
             if(sl.service && String(sl.service).trim() !== svc) continue;
             if(!sid) return true;
-            const inst = String(m.instructors || '').trim().toUpperCase();
+            const inst = String(m.instructors || '').trim();
             if(!inst) return true;
-            if(inst.indexOf(sid.toUpperCase()) >= 0) return true;
-            if(sid === 'roberto' && inst.indexOf('ROBERTO') >= 0) return true;
-            if(sid === 'javier' && inst.indexOf('JAVIER') >= 0) return true;
+            if(typeof window !== 'undefined'
+              && typeof window.portalStaffMatchesFeedbackMergeInstructors === 'function'){
+              return window.portalStaffMatchesFeedbackMergeInstructors(inst, sid, {
+                sessionDateIso: iso,
+                clientSlug: slug
+              });
+            }
+            const instU = inst.toUpperCase();
+            if(instU.indexOf(sid.toUpperCase()) >= 0) return true;
+            if(sid === 'roberto' && instU.indexOf('ROBERTO') >= 0) return true;
+            if(sid === 'javier' && instU.indexOf('JAVIER') >= 0) return true;
             return false;
           }
         }
@@ -375,7 +386,7 @@
       return true;
     }
     /** Hide merged duplicate slots on Today (e.g. Cyrus Aquatic 4–4.30 when MA pool row covers swimming). */
-    function portalStaffDashboardOmitSpreadsheetSession(s, weekday){
+    function portalStaffDashboardOmitSpreadsheetSession(s, weekday, sessionDateIso){
       try{
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
         const rules = src && Array.isArray(src.overviewOmitRosterSlots) ? src.overviewOmitRosterSlots : [];
@@ -384,13 +395,16 @@
         const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
         const ts = String(s.timeSlotLabel || '').trim();
         const svc = String(s.rosterService || s.activity || '').trim();
+        const iso = String(
+          sessionDateIso || s.session_date || s.sessionDate || ''
+        ).trim().slice(0, 10);
         for(let i = 0; i < rules.length; i++){
           const r = rules[i];
           if(r.weekday && String(r.weekday).trim() !== day) continue;
           if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
           if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
           if(r.service && String(r.service).trim() !== svc) continue;
-          if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day)) return false;
+          if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day, iso)) return false;
           return true;
         }
       }catch(_){}
