@@ -336,9 +336,19 @@ body.portal-force-landscape{
   overflow-wrap:break-word;
   white-space:pre-wrap;
 }
+.pcso-table--parent .pcso-tbl__date{
+  min-width:88px;
+  max-width:120px;
+}
+.pcso-tbl__date-main{
+  font-weight:700;
+  color:var(--ink,#173247);
+  font-size:12px;
+  overflow-wrap:break-word;
+}
 .pcso-table--parent .pcso-tbl__parent-msg{
   min-width:140px;
-  max-width:220px;
+  max-width:280px;
 }
 .pp-ach-grid{
   display:grid;
@@ -369,6 +379,32 @@ body.portal-force-landscape{
   color:var(--muted,#728290);
   text-align:center;
   overflow-wrap:break-word;
+  min-width:0;
+}
+.pp-ach-dl-btn{
+  display:block;
+  width:100%;
+  margin-top:6px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(23,50,71,.14);
+  background:#fff;
+  color:var(--ink,#173247);
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pp-ach-dl-btn:active:not(:disabled){
+  background:#f1f5f9;
+}
+.pp-ach-dl-btn:disabled,
+.pp-ach-dl-btn--saved{
+  opacity:.72;
+  cursor:default;
 }
 .pp-participant-body{
   min-width:0;

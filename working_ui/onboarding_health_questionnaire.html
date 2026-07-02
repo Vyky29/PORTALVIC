@@ -19,6 +19,7 @@
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Health questionnaire</h1>
       <p>Answer Yes or No in each section. If Yes, details appear below that question.</p>
+      <p class="ob-form-hint">Save draft stores progress on your portal account so you can continue on another phone or computer.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
     <form id="healthForm" class="ob-form-stack">
@@ -201,6 +202,9 @@
         try {
           var res = await portalOnboardingFormLoadHealth();
           if (res && res.draft && res.draft.payload) portalHealthFormFill(form, res.draft.payload);
+          if (res && res.migrated_from_local) {
+            showStatus("Draft from this device synced to your account.");
+          }
         } catch (e) {
           console.warn("[health questionnaire] draft load", e);
         }
@@ -208,8 +212,12 @@
       document.getElementById("healthSaveDraft").addEventListener("click", async function () {
         showStatus("Saving…");
         try {
-          await portalOnboardingFormSaveHealth(portalHealthFormReadPayload(form), { submit: false });
-          showStatus("Draft saved.");
+          var saved = await portalOnboardingFormSaveHealth(portalHealthFormReadPayload(form), { submit: false });
+          showStatus(
+            typeof portalOnboardingFormSaveStatusMessage === "function"
+              ? portalOnboardingFormSaveStatusMessage(saved && saved.source, "draft")
+              : "Draft saved."
+          );
         } catch (e) {
           showStatus("Save failed. Try again.", true);
         }
@@ -223,8 +231,12 @@
         }
         showStatus("Submitting…");
         try {
-          await portalOnboardingFormSaveHealth(portalHealthFormReadPayload(form), { submit: true });
-          showStatus("Questionnaire submitted. You can close this page.");
+          var submitted = await portalOnboardingFormSaveHealth(portalHealthFormReadPayload(form), { submit: true });
+          showStatus(
+            typeof portalOnboardingFormSaveStatusMessage === "function"
+              ? portalOnboardingFormSaveStatusMessage(submitted && submitted.source, "submit")
+              : "Questionnaire submitted. You can close this page."
+          );
         } catch (e) {
           showStatus("Submit failed. Try again.", true);
         }

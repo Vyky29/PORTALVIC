@@ -122,6 +122,15 @@ Deno.serve(async (req) => {
   const targetStaffRole = String(record.target_staff_role ?? "").trim();
   const targetUserId = String(record.target_user_id ?? "").trim();
 
+  const messageType = String(record.message_type ?? "announcement")
+    .trim()
+    .toLowerCase();
+  const leadershipMirrorTypes = new Set([
+    "announcement",
+    "reminder",
+    "urgent",
+  ]);
+
   const admin = createClient(supabaseUrl, serviceKey);
 
   // Resolve recipient auth user ids, mirroring the table's SELECT RLS.
@@ -161,33 +170,34 @@ Deno.serve(async (req) => {
     }
   }
 
+  // CEO + admin always receive staff announcements/reminders (team awareness).
+  if (
+    leadershipMirrorTypes.has(messageType) &&
+    !(messageType === "contract_signing" && deliveryScope === "single_user")
+  ) {
+    const { data: leadership, error: leadErr } = await admin
+      .from("staff_profiles")
+      .select("id")
+      .in("app_role", ["ceo", "admin"]);
+
+    if (leadErr) {
+      console.error("[portal-push-announcement] leadership profiles", leadErr);
+    } else {
+      for (const p of leadership ?? []) {
+        const id = String((p as { id?: string }).id ?? "").trim();
+        if (id) targetUserIds.add(id);
+      }
+    }
+  }
+
   if (!targetUserIds.size) {
     return jsonResponse({ ok: true, sent: 0, targets: 0 });
   }
 
-  const onAckAction = String(record.on_ack_action ?? "").trim();
-  if (onAckAction === "portal_permissions") {
-    const permIds = [...targetUserIds];
-    const { data: regRows, error: regErr } = await admin
-      .from("portal_push_subscriptions")
-      .select("user_id")
-      .in("user_id", permIds)
-      .eq("register_app", "portal");
-    if (regErr) {
-      console.error("[portal-push-announcement] portal_permissions subs", regErr);
-      return jsonResponse({ error: regErr.message }, 500);
-    }
-    for (const row of regRows ?? []) {
-      const uid = String(row.user_id ?? "").trim();
-      if (uid) targetUserIds.delete(uid);
-    }
-    return jsonResponse({
-      ok: true,
-      sent: 0,
-      targets: targetUserIds.size,
-      note: "portal_permissions in-app only — staff with portal push already registered are skipped",
-    });
-  }
+  // Note: on_ack_action === "portal_permissions" still pushes to anyone who already
+  // has a portal subscription (so real notices reach them on a locked phone). Workers
+  // without a subscription simply get the in-app red badge and the silent permission
+  // prompt when they open/sign — there is no push endpoint to reach them anyway.
 
   const ids = [...targetUserIds];
   const { data: subs, error: subErr } = await admin

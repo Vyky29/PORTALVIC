@@ -813,6 +813,7 @@
     targetCanvas.addEventListener('touchstart', start, { passive: false });
     targetCanvas.addEventListener('touchmove', move, { passive: false });
     targetCanvas.addEventListener('touchend', end);
+    targetCanvas.addEventListener('touchcancel', end);
     return { context, resize, clear: () => { resize(); } };
   }
 

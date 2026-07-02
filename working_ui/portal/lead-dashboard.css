@@ -1009,7 +1009,8 @@
     .portal-alerts-block{margin:0 0 20px;min-width:0}
     .portal-alerts-status{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--blue);min-width:0;overflow-wrap:break-word}
     .portal-alerts-section-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--ink)}
-    .portal-alerts-action-btn{display:block;width:100%;max-width:20rem;margin:0 0 8px}
+    .portal-alerts-action-btn{display:block;width:100%;max-width:20rem;margin:0 0 8px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(45,132,179,.18);cursor:pointer}
+    .portal-alerts-action-btn--tapped{transform:scale(.98);opacity:.88}
     .portal-alerts-action-btn--ghost{font-weight:600}
     .portal-alerts-footnote{margin:4px 0 0;font-size:12px;line-height:1.4;overflow-wrap:break-word}
     .portal-alerts-block--primary{margin-bottom:10px;padding-bottom:0;border-bottom:none}
@@ -6475,7 +6476,9 @@
       z-index:100;
     }
     #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
-    #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open{
+    #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open,
+    #alertsNotificationsSheet.sheet--fullscreen.sheet--mobile-frame.open,
+    #achievementsSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
     }
 
@@ -8804,9 +8807,11 @@
       padding:0 1px;
     }
 
-    /* Quick menu (full): hide alerts/profile groups */
-    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
-    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
+    /* Quick menu (full): hide alerts group; annual profile shows when pending */
+    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup{
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup:not(.portal-annual-profile--pending){
       display:none !important;
     }
 

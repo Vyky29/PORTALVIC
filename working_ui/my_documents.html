@@ -119,11 +119,24 @@
       flex-shrink:0;border:0;background:#e4edf8;color:#0b2a5b;border-radius:10px;
       width:40px;height:40px;font-size:22px;line-height:1;cursor:pointer;font-weight:700;
     }
-    .doc-viewer-body{flex:1;min-height:0;background:#f4f7fb;padding:10px}
+    .doc-viewer-body{flex:1;min-height:0;background:#f4f7fb;padding:10px;overflow:hidden}
     .doc-viewer-frame{
       display:block;width:100%;height:min(72vh,640px);min-height:280px;border:1px solid #e6ecf4;
       border-radius:10px;background:#fff;
     }
+    .doc-viewer-html{
+      display:block;width:100%;max-width:100%;height:min(72vh,640px);min-height:280px;
+      border:1px solid #e6ecf4;border-radius:10px;background:#fff;
+      overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;box-sizing:border-box;
+    }
+    .doc-viewer-html .contract-document{
+      width:100%;max-width:100%;box-sizing:border-box;overflow-wrap:break-word;word-wrap:break-word;
+    }
+    .doc-viewer-html .contract-document *{min-width:0;max-width:100%;box-sizing:border-box}
+    .doc-viewer-html .contract-parties p,
+    .doc-viewer-html .contract-section p{overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap}
+    .doc-viewer-html .contract-letterhead{padding:1rem 1rem .85rem}
+    .doc-viewer-html .contract-body{padding:1rem 1rem .85rem}
     .doc-viewer-foot{
       display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid #e6ecf4;
     }
@@ -131,6 +144,7 @@
     @media (max-width:560px){
       .doc-viewer-panel{border-radius:0;max-height:100%;height:100%}
       .doc-viewer-frame{height:calc(100vh - 200px);min-height:200px}
+      .doc-viewer-html{height:calc(100vh - 200px);min-height:200px}
       .doc-viewer-foot .btn{flex:1}
       .doc-download-toast{margin:8px 12px 0}
       .page{padding:10px}
@@ -188,6 +202,7 @@
       </header>
       <div class="doc-viewer-body">
         <iframe id="docViewerFrame" class="doc-viewer-frame" title="Document preview"></iframe>
+        <div id="docViewerHtml" class="doc-viewer-html" hidden></div>
       </div>
       <footer class="doc-viewer-foot">
         <button type="button" class="btn btn-outline" id="docViewerDownloadBtn">Download PDF</button>
@@ -197,6 +212,7 @@
   </div>
 
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
+  <link rel="stylesheet" href="/portal/contract-preview.css?v=20260630-contract-html-view" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
@@ -334,7 +350,65 @@
       const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
       return `${day} - ${time}`;
     }
+
+    function workerFirstNameFromProfile(profile) {
+      const name = String(
+        (profile && (profile.full_name || profile.username)) || ""
+      ).trim();
+      if (!name) return "Your";
+      const parts = name.split(/\s+/);
+      return parts[0] || name;
+    }
+
+    function documentMonthKey(doc) {
+      const base = doc && (doc.related_date || doc.created_at);
+      if (!base) return "";
+      const d = new Date(base);
+      if (Number.isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function documentMonthLabel(doc) {
+      const base = doc && (doc.related_date || doc.created_at);
+      if (!base) return "";
+      const d = new Date(base);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", { month: "long" });
+    }
+
+    function enrichWorkerFacingTitles(docs, staffProfile) {
+      const firstName = workerFirstNameFromProfile(staffProfile);
+      const list = Array.isArray(docs) ? docs.slice() : [];
+      ["expense", "payslip"].forEach((type) => {
+        const label = type === "expense" ? "Expenses" : "Payslip";
+        const subset = list.filter(
+          (d) => String((d && d.document_type) || "").toLowerCase() === type
+        );
+        const byMonth = {};
+        subset.forEach((doc) => {
+          const key = documentMonthKey(doc);
+          if (!byMonth[key]) byMonth[key] = [];
+          byMonth[key].push(doc);
+        });
+        Object.keys(byMonth).forEach((key) => {
+          const arr = byMonth[key].sort(
+            (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
+          );
+          arr.forEach((doc, index) => {
+            const month = documentMonthLabel(doc) || "Month";
+            if (arr.length > 1) {
+              doc._workerDisplayTitle = `${firstName}'s ${label} (${month} ${index + 1})`;
+            } else {
+              doc._workerDisplayTitle = `${firstName}'s ${label} (${month})`;
+            }
+          });
+        });
+      });
+      return list;
+    }
+
     function displayTitle(doc) {
+      if (doc && doc._workerDisplayTitle) return doc._workerDisplayTitle;
       const type = String((doc && doc.document_type) || "").toLowerCase();
       if (type === "timesheet") {
         const base = doc.related_date || doc.created_at;
@@ -346,6 +420,8 @@
         return "Timesheet";
       }
       if (type === "expense") {
+        const t = String((doc && doc.title) || "").trim();
+        if (t) return t;
         const base = doc.related_date || doc.created_at;
         const d = base ? new Date(base) : null;
         if (d && !Number.isNaN(d.getTime())) {
@@ -499,7 +575,13 @@
     function closeDocumentViewer() {
       const sheet = document.getElementById("docViewerSheet");
       const frame = document.getElementById("docViewerFrame");
+      const htmlHost = document.getElementById("docViewerHtml");
       if (frame) frame.removeAttribute("src");
+      if (htmlHost) {
+        htmlHost.innerHTML = "";
+        htmlHost.hidden = true;
+        htmlHost.scrollTop = 0;
+      }
       if (typeof docViewerCleanup === "function") {
         try {
           docViewerCleanup();
@@ -514,14 +596,36 @@
       document.body.style.overflow = "";
     }
 
+    /**
+     * Show a document in the modal. When `src` is `{ html }` the contract is
+     * rendered as responsive, vertically-scrollable HTML (fits the screen, no
+     * horizontal cut-off); otherwise `src` is an iframe URL (PDF preview).
+     */
     function openDocumentViewer(title, src, onDownload) {
       const sheet = document.getElementById("docViewerSheet");
       const titleEl = document.getElementById("docViewerTitle");
       const frame = document.getElementById("docViewerFrame");
+      const htmlHost = document.getElementById("docViewerHtml");
       const dlBtn = document.getElementById("docViewerDownloadBtn");
       if (!sheet || !frame) return;
       if (titleEl) titleEl.textContent = String(title || "Document").trim() || "Document";
-      frame.src = src;
+      const htmlMode = src && typeof src === "object" && typeof src.html === "string";
+      if (htmlMode) {
+        frame.removeAttribute("src");
+        frame.hidden = true;
+        if (htmlHost) {
+          htmlHost.innerHTML = src.html;
+          htmlHost.hidden = false;
+          htmlHost.scrollTop = 0;
+        }
+      } else {
+        if (htmlHost) {
+          htmlHost.innerHTML = "";
+          htmlHost.hidden = true;
+        }
+        frame.hidden = false;
+        frame.src = src;
+      }
       docViewerDownloadHandler = typeof onDownload === "function" ? onDownload : null;
       if (dlBtn) dlBtn.style.display = docViewerDownloadHandler ? "" : "none";
       sheet.hidden = false;
@@ -682,7 +786,7 @@
           typeof html2pdf !== "undefined";
         if ((needsRegen || !currentPath) && docId && typeof html2pdf !== "undefined") {
           if (desk) desk.textContent = "Preparing PDF…";
-          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
+          const mod = await import("./portal/portal_employment_contract.js?v=20260630-contract-html-view");
           await mod.portalRepairEmploymentContractByDocumentId(docId);
           const docs = await portalListMyDocuments();
           const fresh = (docs || []).find((d) => String(d.id || "") === docId);
@@ -692,7 +796,7 @@
         if (!signed) throw new Error("No URL");
         let blob = await fetchPdfBlobViaXHR(signed);
         if (blob.size <= 8000 && docId && typeof html2pdf !== "undefined") {
-          const mod = await import("./portal/portal_employment_contract.js?v=20260623-pdf-layout");
+          const mod = await import("./portal/portal_employment_contract.js?v=20260630-contract-html-view");
           await mod.portalRepairEmploymentContractByDocumentId(docId);
           const docs = await portalListMyDocuments();
           const fresh = (docs || []).find((d) => String(d.id || "") === docId);
@@ -717,7 +821,7 @@
           } catch (_e) {}
         }
         docViewerCleanup = () => URL.revokeObjectURL(previewUrl);
-        openDocumentViewer(title, previewUrl, async () => {
+        const downloadFn = async () => {
           const base = sanitizeDownloadBasename(title);
           const a = document.createElement("a");
           a.href = previewUrl;
@@ -726,7 +830,18 @@
           document.body.appendChild(a);
           a.click();
           a.remove();
-        });
+        };
+        let contractHtml = null;
+        try {
+          contractHtml = await mod.portalRenderContractHtmlByDocumentId(docId);
+        } catch (_htmlErr) {
+          contractHtml = null;
+        }
+        if (contractHtml) {
+          openDocumentViewer(title, { html: contractHtml }, downloadFn);
+        } else {
+          openDocumentViewer(title, previewUrl, downloadFn);
+        }
       } catch (err) {
         console.warn("[my_documents] employment contract view", err);
         alert("Could not open this contract right now.");
@@ -810,8 +925,8 @@
       const cat = String((doc && doc.category) || "").toLowerCase();
       if (cat === categoryKey) return true;
       const t = String((doc && doc.document_type) || "").toLowerCase();
-      if (categoryKey === "documents" && (t === "employment_contract" || cat === "documents" || cat === "hr")) return true;
-      if (categoryKey === "finance" && (t === "timesheet" || t === "expense")) return true;
+      if (categoryKey === "documents" && (t === "employment_contract" || t === "calendar_2026_27" || cat === "documents" || cat === "hr")) return true;
+      if (categoryKey === "finance" && (t === "timesheet" || t === "expense" || t === "payslip")) return true;
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (
         categoryKey === "training" &&
@@ -823,7 +938,7 @@
       ) {
         return true;
       }
-      if (categoryKey === "payslips" && t === "payslip") return true;
+      if (categoryKey === "payslips" && (t === "payslip" || t === "contractor_invoice")) return true;
       return false;
     }
 
@@ -961,7 +1076,9 @@
           btn.disabled = true;
           try {
             await portalHideMyDocumentFromList(id);
-            const docs = await portalListMyDocuments();
+            const ctx = window.__PORTAL_SUPABASE__ || {};
+            let docs = await portalListMyDocuments();
+            docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
             renderGroups(docs);
           } catch (err) {
             console.error("[my_documents] hide failed:", err);
@@ -1009,7 +1126,9 @@
       if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
       try {
         await ensurePortalStaffContext();
+        const ctx = window.__PORTAL_SUPABASE__ || {};
         let docs = await portalListMyDocuments();
+        docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
         docs = await mergeInductionCertificateRow(docs);
         docs = enrichInductionCertificateRows(docs);
         renderGroups(docs);

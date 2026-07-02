@@ -25,6 +25,81 @@
     return "";
   };
 
+  /** CEO / admin / Sevitha — always see staff announcements for team awareness (even role- or user-targeted). */
+  global.portalStaffAnnouncementLeadershipMirrorUser = function portalStaffAnnouncementLeadershipMirrorUser(
+    ctx
+  ) {
+    ctx = ctx || {};
+    var appRole = String(ctx.appRole || "")
+      .trim()
+      .toLowerCase();
+    if (appRole === "ceo" || appRole === "admin") return true;
+    var staffKey = String(ctx.staffKey || ctx.staffUsername || "")
+      .trim()
+      .toLowerCase();
+    return staffKey === "sevitha" || staffKey === "info";
+  };
+
+  function portalAnnouncementLeadershipMirrorMessage(row) {
+    var typ = String((row && row.message_type) || "")
+      .trim()
+      .toLowerCase();
+    return typ === "announcement" || typ === "reminder" || typ === "urgent";
+  }
+
+  /**
+   * Whether this viewer must sign the announcement (matches portal_staff_announcement_acks INSERT RLS).
+   * Leadership mirror can see team-targeted rows for awareness but must not enter the sign lock.
+   * @param {object} row portal_staff_announcements row
+   * @param {{authUserId?:string,userId?:string,appRole?:string,staffRole?:string}} ctx
+   */
+  global.portalStaffAnnouncementRowRequiresSignature = function portalStaffAnnouncementRowRequiresSignature(
+    row,
+    ctx
+  ) {
+    ctx = ctx || {};
+    if (!row || !row.id) return false;
+
+    var uid = String(ctx.authUserId || ctx.userId || "").trim();
+    var appRole = String(ctx.appRole || "")
+      .trim()
+      .toLowerCase();
+    var staffRole = String(ctx.staffRole || "").trim();
+
+    var audience = String(row.audience_scope || "all_staff").trim();
+    var delivery = String(row.delivery_scope || "everyone").trim();
+    var targetUser = String(row.target_user_id || "").trim();
+    var targetRole = String(row.target_staff_role || "").trim();
+    var targetRoleBlank = !targetRole;
+
+    if (delivery === "single_user") {
+      return !!uid && targetUser === uid;
+    }
+
+    if (
+      delivery === "everyone" &&
+      audience === "all_staff" &&
+      !targetUser &&
+      targetRoleBlank
+    ) {
+      return !!uid;
+    }
+
+    if (delivery === "everyone" && audience === "leads") {
+      return appRole === "lead" || appRole === "ceo" || appRole === "admin";
+    }
+
+    if (
+      delivery === "staff_role" &&
+      audience === "all_staff" &&
+      targetRole
+    ) {
+      return !!uid && staffRole === targetRole;
+    }
+
+    return false;
+  };
+
   /**
    * Worker inbox visibility on staff/lead dashboards (ignores admin/ceo SELECT bypass in RLS).
    * @param {object} row portal_staff_announcements row
@@ -48,6 +123,17 @@
     var targetUser = String(row.target_user_id || "").trim();
     var targetRole = String(row.target_staff_role || "").trim();
     var targetRoleBlank = !targetRole;
+
+    if (
+      global.portalStaffAnnouncementLeadershipMirrorUser(ctx) &&
+      portalAnnouncementLeadershipMirrorMessage(row)
+    ) {
+      var typ = String(row.message_type || "").trim().toLowerCase();
+      if (typ === "contract_signing" && delivery === "single_user") {
+        return !!uid && targetUser === uid;
+      }
+      return true;
+    }
 
     if (delivery === "single_user") {
       return !!uid && targetUser === uid;
@@ -642,6 +728,17 @@
 
   global.portalSignableItemTriggersPortalPermissions = function portalSignableItemTriggersPortalPermissions(item) {
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "portal_permissions";
+  };
+
+  global.portalSignableItemIsAnnualProfile = function portalSignableItemIsAnnualProfile(item) {
+    return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "annual_profile";
+  };
+
+  global.portalAnnualProfileCampaignComplete = function portalAnnualProfileCampaignComplete(confirmedAtIso) {
+    if (typeof global.portalAnnualProfileIsCompleteAt === "function") {
+      return global.portalAnnualProfileIsCompleteAt(confirmedAtIso);
+    }
+    return false;
   };
 
   /** True when this worker already registered portal Web Push (skip onboarding announcements). */

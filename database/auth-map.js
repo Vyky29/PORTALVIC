@@ -310,6 +310,7 @@ export function portalCanonicalStaffRosterKey(value) {
     .replace(/[^a-z0-9]+/g, "");
   if (!k) return "";
   if (k === "luliya") return "lulia";
+  if (k === "lulya") return "lulia";
   if (k === "aida") return "lulia";
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;

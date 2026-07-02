@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260623-yusuf-own-slot';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260705-day-centre-peer';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -131,7 +131,9 @@
             const cidAlias = typeof portalEffectiveClientIdForReview === 'function'
               ? portalEffectiveClientIdForReview(s, sessionDateKey)
               : String(s.clientId || '').trim().toLowerCase();
-            if(cidAlias && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+            if(cidAlias && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+              && portalSessionNeedsPerStaffOwnFeedbackOnly(s, sessionDateKey))
+              && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
               || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, sessionDateKey, dayWord))){
               keys.add(`${sessionDateKey}||${cidAlias}`);
             }
@@ -224,6 +226,9 @@
          are validated by a co-worker's submission. */
       if(/multi[-\s]?activity/.test(act)) return true;
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
+      /* Physical Activity (gym / fitness): each instructor owns their own feedback — a co-worker's
+         submission for the same participant must not paint another instructor's slot green. */
+      if(act.indexOf('physical activit') >= 0 || act.indexOf('fitness') >= 0 || act === 'gym') return true;
       return false;
     }
     function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){
@@ -338,7 +343,7 @@
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
-    function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday){
+    function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday, sessionDateIso){
       try{
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
         const merges = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
@@ -348,6 +353,9 @@
         const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
         const ts = String(s.timeSlotLabel || '').trim();
         const svc = String(s.rosterService || s.activity || '').trim();
+        const iso = String(
+          sessionDateIso || s.session_date || s.sessionDate || ''
+        ).trim().slice(0, 10);
         for(let i = 0; i < merges.length; i++){
           const m = merges[i];
           if(m.day && String(m.day).trim() !== day) continue;
@@ -358,11 +366,19 @@
             if(sl.time_slot && String(sl.time_slot).trim() !== ts) continue;
             if(sl.service && String(sl.service).trim() !== svc) continue;
             if(!sid) return true;
-            const inst = String(m.instructors || '').trim().toUpperCase();
+            const inst = String(m.instructors || '').trim();
             if(!inst) return true;
-            if(inst.indexOf(sid.toUpperCase()) >= 0) return true;
-            if(sid === 'roberto' && inst.indexOf('ROBERTO') >= 0) return true;
-            if(sid === 'javier' && inst.indexOf('JAVIER') >= 0) return true;
+            if(typeof window !== 'undefined'
+              && typeof window.portalStaffMatchesFeedbackMergeInstructors === 'function'){
+              return window.portalStaffMatchesFeedbackMergeInstructors(inst, sid, {
+                sessionDateIso: iso,
+                clientSlug: slug
+              });
+            }
+            const instU = inst.toUpperCase();
+            if(instU.indexOf(sid.toUpperCase()) >= 0) return true;
+            if(sid === 'roberto' && instU.indexOf('ROBERTO') >= 0) return true;
+            if(sid === 'javier' && instU.indexOf('JAVIER') >= 0) return true;
             return false;
           }
         }
@@ -370,7 +386,7 @@
       return true;
     }
     /** Hide merged duplicate slots on Today (e.g. Cyrus Aquatic 4–4.30 when MA pool row covers swimming). */
-    function portalStaffDashboardOmitSpreadsheetSession(s, weekday){
+    function portalStaffDashboardOmitSpreadsheetSession(s, weekday, sessionDateIso){
       try{
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
         const rules = src && Array.isArray(src.overviewOmitRosterSlots) ? src.overviewOmitRosterSlots : [];
@@ -379,13 +395,16 @@
         const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
         const ts = String(s.timeSlotLabel || '').trim();
         const svc = String(s.rosterService || s.activity || '').trim();
+        const iso = String(
+          sessionDateIso || s.session_date || s.sessionDate || ''
+        ).trim().slice(0, 10);
         for(let i = 0; i < rules.length; i++){
           const r = rules[i];
           if(r.weekday && String(r.weekday).trim() !== day) continue;
           if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
           if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
           if(r.service && String(r.service).trim() !== svc) continue;
-          if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day)) return false;
+          if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day, iso)) return false;
           return true;
         }
       }catch(_){}
@@ -437,11 +456,13 @@
       try{
         const t = typeof window !== 'undefined' ? window.PORTAL_TERM_FROM_TIMETABLE : null;
         if(t){
+          const reminder = String(t.termFeedbackReminderFromIso || '').trim().slice(0, 10);
+          if(/^\d{4}-\d{2}-\d{2}$/.test(reminder)) return reminder;
           const v = String(t.termResumeDate || t.termDashboardCalendarFrom || '').trim().slice(0, 10);
           if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
         }
       }catch(_){}
-      return '2026-06-01';
+      return '2026-06-25';
     }
     function portalTermFeedbackAssumeComplete(isoYmd, staffId){
       const ptd = window.PortalTermCalendarDashboard;
@@ -497,9 +518,17 @@
             const tr = String(s && s.start != null ? s.start : '').trim();
             if(cid && tc) tryK(iso + '|' + tc + '|' + cid);
             if(cid && tr && tr !== tc) tryK(iso + '|' + tr + '|' + cid);
-            if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+            if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+              && portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso))
+              && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
               || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
               tryK(iso + '||' + cid);
+            }
+            if(cid && typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)){
+              tryK(iso + '|' + cid + '|day_centre');
+            }
+            if(cid && typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)){
+              tryK(iso + '|' + cid + '|bespoke_shared');
             }
             return o;
           })();
@@ -514,6 +543,14 @@
           if(memOnly.feedbackDone){
             if(dashboardData && dashboardData.portalFeedbackServerSynced){
               if(!portalIsServerTruthFeedbackDay(iso)){
+                if(typeof portalTermFeedbackAssumeComplete === 'function'
+                  && portalTermFeedbackAssumeComplete(iso, sid)){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
+                if(typeof portalFeedbackReminderDayInScope === 'function'
+                  && !portalFeedbackReminderDayInScope(iso)){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
                 const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                   ? portalSessionReviewKeyForModelRow(s, dayWord, iso) : '';
                 const pseudo = { sessionKey: sk, __portalBaseSession: s };
@@ -529,6 +566,9 @@
                 if(serverOk || bridgeOk){
                   return portalReviewFlagsForResolvedSession(iso, sid, s);
                 }
+                if(memOnly.feedbackDone){
+                  return portalReviewFlagsForResolvedSession(iso, sid, s);
+                }
                 return {
                   feedbackDone: false,
                   incident: !!memOnly.incident,
@@ -542,6 +582,24 @@
             }
           } else if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
             return portalReviewFlagsForResolvedSession(iso, sid, s);
+          }
+          const clientKeyPeer = portalRosterClientLabelForMatch(s);
+          if(clientKeyPeer && typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
+            && typeof bridge.dayCentrePeerSubmissionCoversClient === 'function'
+            && bridge.dayCentrePeerSubmissionCoversClient(iso, clientKeyPeer)){
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
+          }
+          if(clientKeyPeer && typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)
+            && typeof bridge.submittedRowsForDateAll === 'function'){
+            const bespokePeer = bridge.submittedRowsForDateAll(iso).find(function(r){
+              const rKey = portalSlugifyClientKey(r.clientName);
+              if(rKey !== clientKeyPeer && rKey.indexOf(clientKeyPeer) < 0 && clientKeyPeer.indexOf(rKey) < 0) return false;
+              if(bridge.submittedRowMarksAbsent && bridge.submittedRowMarksAbsent(r)) return false;
+              const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || '').trim();
+              if(pk.indexOf('|bespoke_shared') >= 0) return true;
+              return /bespoke/i.test(String(r.service || ''));
+            });
+            if(bespokePeer) return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
           if(src && Array.isArray(src.rows)){
@@ -605,19 +663,15 @@
         if(dayCentre && clientKey){
           const allDay = src.rows.filter(function(st){
             return String(st.date || '').trim().substring(0, 10) === iso
-              && portalStaffOwnsFeedbackStatusRow(sid, st)
               && portalSlugifyClientKey(st.client) === clientKey
               && (String(st.feedbackUnitKey || '').indexOf('day_centre') >= 0 || /day\s*centre/i.test(String(st.service || '')));
           });
           if(allDay.some(portalStatusRowIsDoneForCalendar)) {
             return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
-          if(typeof window !== 'undefined' && window.SESSION_FEEDBACK_PORTAL_SOURCE && Array.isArray(window.SESSION_FEEDBACK_PORTAL_SOURCE.rows)){
-            const fbHit = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.find(function(r){
-              return String(r.date || '').trim().substring(0, 10) === iso
-                && portalSlugifyClientKey(r.clientName) === clientKey;
-            });
-            if(fbHit) return portalReviewFlagsForResolvedSession(iso, sid, s);
+          if(bridge && typeof bridge.dayCentrePeerSubmissionCoversClient === 'function'
+            && bridge.dayCentrePeerSubmissionCoversClient(iso, clientKey)){
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
         }
         const bespokeShared = portalRosterSessionIsBespokeShared(s) || matches.some(function(st){
@@ -625,13 +679,13 @@
           return u.indexOf('bespoke_shared') >= 0;
         });
         if(bespokeShared && clientKey){
-          if(typeof window !== 'undefined' && window.SESSION_FEEDBACK_PORTAL_SOURCE && Array.isArray(window.SESSION_FEEDBACK_PORTAL_SOURCE.rows)){
-            const fbShared = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.find(function(r){
-              if(String(r.date || '').trim().substring(0, 10) !== iso) return false;
+          if(bridge && typeof bridge.submittedRowsForDateAll === 'function'){
+            const fbShared = bridge.submittedRowsForDateAll(iso).find(function(r){
               const rKey = portalSlugifyClientKey(r.clientName);
               if(rKey !== clientKey && rKey.indexOf(clientKey) < 0 && clientKey.indexOf(rKey) < 0) return false;
-              const att = String(r.attendance != null ? r.attendance : '').trim().toLowerCase();
-              if(att === 'no' || att === 'n') return false;
+              if(bridge.submittedRowMarksAbsent && bridge.submittedRowMarksAbsent(r)) return false;
+              const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || '').trim();
+              if(pk.indexOf('|bespoke_shared') >= 0) return true;
               return /bespoke/i.test(String(r.service || ''));
             });
             if(fbShared) return portalReviewFlagsForResolvedSession(iso, sid, s);
@@ -664,8 +718,14 @@
           }
         }
         if(matches.some(function(st){
-          if(!portalStatusRowIsDoneForCalendar(st)) return false;
-          return portalStatusRowMatchesRosterSession(st, s);
+          if(!portalStatusRowMatchesRosterSession(st, s)) return false;
+          /* Per-slot Aquatic / Climbing / Multi-Activity: each worker owns their own feedback.
+             A co-instructor's submission (stamped on the participant via matchedFeedbackBy) must
+             not complete this worker's slot — defer to the bridge's per-worker resolution. */
+          if(bridge && typeof bridge.statusSlotResolved === 'function'){
+            return bridge.statusSlotResolved(iso, st, sid);
+          }
+          return portalStatusRowIsDoneForCalendar(st);
         })){
           return portalReviewFlagsForResolvedSession(iso, sid, s);
         }
@@ -713,6 +773,8 @@
           document.body.classList.remove('staff-dashboard-feedback-syncing');
         }
         if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        else if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       }catch(_){}
     }
     function portalStaffRefreshFeedbackDependentUi(){
@@ -782,18 +844,62 @@
       if(cid && tCanon) add(iso + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) add(iso + '|' + tRaw + '|' + cid);
       if(cid && typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activityMerge)){
-        add(iso + '|' + cid + '|aquatic');
+        var perSlotAquatic = typeof portalStaffLeadClientNeedsPerSlotAquaticFeedback === 'function'
+          && portalStaffLeadClientNeedsPerSlotAquaticFeedback(iso, cid, dayWord);
+        if(!perSlotAquatic){
+          add(iso + '|' + cid + '|aquatic');
+        }
         if(tCanon) add(iso + '|' + cid + '|' + tCanon + '|aquatic');
       }
-      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+      if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+        && portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso))
+        && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
         || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
         add(iso + '||' + cid);
       }
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s) && cid){
+        add(iso + '|' + cid + '|day_centre');
+      }
+      if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s) && cid){
+        add(iso + '|' + cid + '|bespoke_shared');
+        add(iso + '||' + cid + '|hub_room');
+      }
       return keys;
+    }
+    function portalBridgeSessionFeedbackComplete(iso, staffId, s, mergedRec){
+      try{
+        const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridge && typeof bridge.sessionComplete === 'function'){
+          return bridge.sessionComplete(iso, staffId, s, notes, mergedRec || {});
+        }
+      }catch(_){}
+      return false;
     }
     function portalReviewKeyDateIsoFromSessionKey(key){
       const p = String(key || '').trim().split('|')[0] || '';
       return /^\d{4}-\d{2}-\d{2}$/.test(p) ? p : '';
+    }
+    function portalReviewKeyTimeTokenFromSessionKey(key){
+      const parts = String(key || '').trim().split('|').map(function(p){
+        return String(p || '').trim();
+      });
+      for(let i = 0; i < parts.length; i++){
+        const p = parts[i];
+        if(/^\d{1,2}:\d{2}$/.test(p)){
+          const m = p.match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) continue;
+          return String(parseInt(m[1], 10)).padStart(2, '0') + ':' + m[2];
+        }
+      }
+      return '';
+    }
+    function portalReviewStoredAbsentKeyIsSharedDayUnit(storedKey){
+      const s = String(storedKey || '').trim();
+      if(!s) return false;
+      if(/\|\|/.test(s)) return true;
+      const low = s.toLowerCase();
+      return low.indexOf('|day_centre') >= 0 || low.indexOf('|bespoke_shared') >= 0;
     }
     function portalReviewKeyParticipantSlugFromSessionKey(key){
       const parts = String(key || '').trim().split('|').map(function(p){
@@ -824,7 +930,13 @@
         : null;
       if(matcher){
         try{
-          if(matcher(s, t)) return true;
+          if(matcher(s, t)){
+            const stTimeM = portalReviewKeyTimeTokenFromSessionKey(s);
+            const ttTimeM = portalReviewKeyTimeTokenFromSessionKey(t);
+            if(stTimeM && ttTimeM) return stTimeM === ttTimeM;
+            if(!stTimeM && ttTimeM) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
+            return true;
+          }
         }catch(_m){}
       }
       const sd = portalReviewKeyDateIsoFromSessionKey(s);
@@ -832,7 +944,24 @@
       if(!sd || sd !== td) return false;
       const ss = portalReviewKeyParticipantSlugFromSessionKey(s);
       const ts = portalReviewKeyParticipantSlugFromSessionKey(t);
-      return !!(ss && ts && ss === ts);
+      if(!ss || !ts) return false;
+      let slugMatch = ss === ts;
+      if(!slugMatch){
+        const slugEq = typeof window.__PORTAL_CLIENT_SLUG_EQUIV__ === 'function'
+          ? window.__PORTAL_CLIENT_SLUG_EQUIV__
+          : null;
+        if(slugEq){
+          try{
+            slugMatch = slugEq(ss, ts);
+          }catch(_eq){}
+        }
+      }
+      if(!slugMatch) return false;
+      const stTime = portalReviewKeyTimeTokenFromSessionKey(s);
+      const ttTime = portalReviewKeyTimeTokenFromSessionKey(t);
+      if(stTime && ttTime) return stTime === ttTime;
+      if(!stTime && ttTime) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
+      return true;
     }
     function portalReviewAbsentInMemoryForAliases(aliases){
       if(!Array.isArray(aliases) || !aliases.length) return false;
@@ -873,7 +1002,19 @@
         const rec = sessionReviewMapMemory[aliases[i]];
         if(rec && rec.feedbackDone && !rec.absent && !rec.cancelled) return true;
       }
-      if(needsOwnOnly) return false;
+      if(needsOwnOnly){
+        const memKeys = Object.keys(sessionReviewMapMemory);
+        for(let k = 0; k < memKeys.length; k++){
+          const mk = memKeys[k];
+          const rec = sessionReviewMapMemory[mk];
+          if(!rec || !rec.feedbackDone || rec.absent || rec.cancelled) continue;
+          for(let i = 0; i < aliases.length; i++){
+            if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+              && portalReviewStoredAbsentMatchesSessionKey(mk, aliases[i])) return true;
+          }
+        }
+        return false;
+      }
       const memKeys = Object.keys(sessionReviewMapMemory);
       for(let k = 0; k < memKeys.length; k++){
         const mk = memKeys[k];
@@ -897,7 +1038,12 @@
         if(ownPortal && ownPortal.size){
           for(const fk of ownPortal){
             for(let i = 0; i < aliases.length; i++){
-              if(aliases[i] && fk === aliases[i]) return true;
+              const alias = aliases[i];
+              if(alias && fk === alias) return true;
+              if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+                && portalReviewStoredAbsentMatchesSessionKey(fk, alias)){
+                return true;
+              }
             }
           }
         }
@@ -938,6 +1084,30 @@
           if(srv.feedback.has(aliases[i])) return true;
         }
       }
+      const liveRows = typeof window !== 'undefined' && window.__PORTAL_LIVE_SESSION_FEEDBACK_ROWS__;
+      if(Array.isArray(liveRows) && liveRows.length){
+        const matcher = typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === 'function'
+          ? window.__PORTAL_REVIEW_KEY_MATCHER__
+          : null;
+        for(let li = 0; li < liveRows.length; li++){
+          const row = liveRows[li];
+          const pk = String((row && (row.portalSessionKey || row.portal_session_key)) || '').trim();
+          if(!pk) continue;
+          for(let i = 0; i < aliases.length; i++){
+            const alias = aliases[i];
+            if(alias && pk === alias) return true;
+            if(matcher){
+              try{
+                if(matcher(pk, alias)) return true;
+              }catch(_lm){}
+            }
+            if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+              && portalReviewStoredAbsentMatchesSessionKey(pk, alias)){
+              return true;
+            }
+          }
+        }
+      }
       return false;
     }
     function portalReviewFeedbackResolvedForItem(item, iso){
@@ -953,6 +1123,14 @@
       const pastOwnSlot = needsOwn && !portalIsServerTruthFeedbackDay(iso) && serverSynced;
       if(!pastOwnSlot && portalReviewFeedbackInMemoryForAliases(aliases, needsOwn)) return true;
       if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
+      if(!needsOwn){
+        const baseS = portalReviewSessionForItem(item) || (item && item.__portalBaseSession);
+        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const memRec = getSessionReviewRecord(item) || {};
+        if(baseS && sid && portalBridgeSessionFeedbackComplete(iso, sid, baseS, memRec)){
+          return true;
+        }
+      }
       const direct = getSessionReviewRecord(item);
       if(pastOwnSlot) return false;
       return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
@@ -1037,7 +1215,7 @@
         const needsOwnFb = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
           && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         if(portalReviewFeedbackFromServerForAliases(aliases, needsOwnFb)) feedbackDone = true;
-        else if(portalReviewFeedbackInMemoryForAliases(aliases)) feedbackDone = true;
+        else if(portalReviewFeedbackInMemoryForAliases(aliases, needsOwnFb)) feedbackDone = true;
       }
       const mem = getSessionReviewRecord(item) || {};
       return {
@@ -1227,8 +1405,8 @@
           || STAFF_DASHBOARD_ID
           || ''
         ).trim().toLowerCase();
-        const resetV = '20260608-bespoke-trio-shared';
-        const machineResetV = '20260621-sunday-cover-feedback';
+        const resetV = '20260625-aurora-jun23-catchup';
+        const machineResetV = '20260702-shared-feedback-jun25-floor';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
           try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}
@@ -1331,6 +1509,9 @@
         };
         if(typeof mod.portalFeedbackSubmittedKeyMatchesRosterKey === 'function'){
           window.__PORTAL_REVIEW_KEY_MATCHER__ = mod.portalFeedbackSubmittedKeyMatchesRosterKey;
+        }
+        if(typeof mod.portalClientSlugTokensEquivalent === 'function'){
+          window.__PORTAL_CLIENT_SLUG_EQUIV__ = mod.portalClientSlugTokensEquivalent;
         }
         if(dashboardData){
           dashboardData.portalServerAbsentQuickMarkKeys = new Set(
@@ -1537,7 +1718,8 @@
         return portalAppendStaffMobileVerticalParam(base);
       }
     }
-    function portalBuildVenueQuickMenuUrl(url){
+    function portalBuildVenueQuickMenuUrl(url, opts){
+      opts = opts || {};
       const base = String(url || '').trim();
       if(!base) return '';
       try{
@@ -1547,6 +1729,23 @@
           dateIso = String(typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '').trim();
         }catch(_){}
         if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) u.searchParams.set('date', dateIso);
+        try{
+          let vkind = String(opts.kind || '').trim().toLowerCase();
+          if(vkind === 'opening') vkind = 'open';
+          if(vkind === 'closing') vkind = 'close';
+          if(!vkind && typeof portalVenueTimeWindowsForUser === 'function'){
+            const vw = portalVenueTimeWindowsForUser();
+            if(vw){
+              const openDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('open');
+              const closeDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('close');
+              if(vw.opening && !openDoneV) vkind = 'open';
+              else if(vw.closing && !closeDoneV) vkind = 'close';
+              else if(vw.closing) vkind = 'close';
+              else if(vw.opening) vkind = 'open';
+            }
+          }
+          if(vkind) u.searchParams.set('kind', vkind);
+        }catch(_){}
         let venue = '';
         try{
           venue = typeof formatTodayVenueOnlyLabel === 'function' ? String(formatTodayVenueOnlyLabel() || '').trim() : '';

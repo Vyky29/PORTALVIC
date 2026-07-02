@@ -111,6 +111,13 @@
     var mobile = isMobileLayout();
     var cohort = ceo ? "ceo_exec" : ops ? "ops_admin" : "other_admin";
 
+    var mobileDefaultView = ceo || ops ? "nav_hub" : "dashboard";
+    var desktopDefaultView = ceo ? "nav_hub" : ops ? "operations_admin" : "dashboard";
+    var mobileBottomNav =
+      ceo || ops
+        ? ["nav_hub", "dashboard", "operations_admin", "nav_all_menu"]
+        : ["nav_hub", "fullnav"];
+
     return {
       profileKey: key,
       cohort: cohort,
@@ -126,12 +133,12 @@
         ceoExecLabel: "Executive messages",
       },
       mobile: {
-        bottomNavViews: ["staff_live_map", "fullnav"],
-        defaultView: "staff_live_map",
+        bottomNavViews: mobileBottomNav,
+        defaultView: mobileDefaultView,
         csCliqStartPane: "list",
       },
       desktop: {
-        defaultView: "staff_live_map",
+        defaultView: desktopDefaultView,
         csCliqStartPane: "channels",
       },
     };
@@ -149,13 +156,9 @@
     return true;
   }
 
-  /** Ops admin (Sevitha) should not stay on worker shells; CEOs may preview with ?portalPreviewWorker=1 */
+  /** Ops admin may use staff dashboard (shifts, term, invoices); no redirect to admin only. */
   function shouldRedirectFromWorkerPortal(prof, pathname) {
     if (previewWorkerPortalActive()) return false;
-    prof = profileRow(prof);
-    pathname = String(pathname || (global.location && global.location.pathname) || "");
-    if (!/staff_dashboard/i.test(pathname)) return false;
-    if (isOpsAdmin(prof)) return true;
     return false;
   }
 
@@ -164,7 +167,7 @@
     surface = surface || resolve();
     try {
       var u = new URL("admin_dashboard.html", global.location.href);
-      var view = String(opts.view || surface.mobile.defaultView || "staff_live_map").trim();
+      var view = String(opts.view || surface.mobile.defaultView || "nav_hub").trim();
       if (view) {
         u.searchParams.set("view", view);
         u.hash = view;

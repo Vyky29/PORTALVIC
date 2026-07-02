@@ -3118,6 +3118,14 @@
   {
     "date": "2026-06-29",
     "day": "Monday",
+    "venue": "SwimFarm",
+    "staff_name": "Carlos",
+    "time_range": "11-4",
+    "raw_assignment": "Carlos 11-4"
+  },
+  {
+    "date": "2026-06-29",
+    "day": "Monday",
     "venue": "Northolt",
     "staff_name": "Dan",
     "time_range": "4.30-6.30",
@@ -3143,14 +3151,6 @@
     "date": "2026-06-29",
     "day": "Monday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-06-29",
-    "day": "Monday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
     "raw_assignment": "Michelle 11-4"
@@ -3158,10 +3158,18 @@
   {
     "date": "2026-06-29",
     "day": "Monday",
-    "venue": "SwimFarm",
+    "venue": "SwimFarm HOME",
     "staff_name": "Raul",
-    "time_range": "11-4",
-    "raw_assignment": "Raul 11-4"
+    "time_range": "11-1",
+    "raw_assignment": "Raul 11-1"
+  },
+  {
+    "date": "2026-06-29",
+    "day": "Monday",
+    "venue": "SwimFarm Manager",
+    "staff_name": "Raul",
+    "time_range": "1-4",
+    "raw_assignment": "Raul 1-4"
   },
   {
     "date": "2026-06-29",
@@ -3558,6 +3566,14 @@
   {
     "date": "2026-07-05",
     "day": "Sunday",
+    "venue": "SwimFarm",
+    "staff_name": "Berta",
+    "time_range": "9.15-2.15",
+    "raw_assignment": "Berta 9.15-2.15"
+  },
+  {
+    "date": "2026-07-05",
+    "day": "Sunday",
     "venue": "Westway",
     "staff_name": "Bismark",
     "time_range": "10-3",
@@ -3586,14 +3602,6 @@
     "staff_name": "Javier",
     "time_range": "9-3",
     "raw_assignment": "Javier 9-3"
-  },
-  {
-    "date": "2026-07-05",
-    "day": "Sunday",
-    "venue": "SwimFarm",
-    "staff_name": "John",
-    "time_range": "9.15-2.15",
-    "raw_assignment": "John 9.15-2.15"
   },
   {
     "date": "2026-07-05",

@@ -18,6 +18,7 @@
     stf013: "victor",
     stf014: "carlos",
     stf015: "alex",
+    stf016: "simon",
     stf017: "javi",
     stf018: "raul",
     stf019: "sevitha",
@@ -48,6 +49,7 @@
       .trim();
     if (!k) return "";
     if (k === "luliya") return "lulia";
+    if (k === "lulya") return "lulia";
     if (k === "aida") return "lulia";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
@@ -57,6 +59,15 @@
     return k;
   }
 
+  var EXEC_TOPBAR_NAMES = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
+
+  function isGenericTopbarName(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase();
+    return !n || n === "admin" || n === "staff" || n === "user" || n === "member";
+  }
+
   var PORTAL_AUTH_EMAIL_TO_ROSTER_KEY = {
     "b.traperocasado@gmail.com": "berta",
     "johnnyosti37@gmail.com": "john",
@@ -64,6 +75,7 @@
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
+    "stf016@staff.import.pending": "simon",
     "victor@clubsensational.org": "victor",
     "raul@clubsensational.org": "raul",
     "javier@clubsensational.org": "javi",
@@ -94,7 +106,15 @@
     var source = portalDashboardSource();
     if (source && source.staffProfiles && source.staffProfiles[k]) {
       var sn = String(source.staffProfiles[k].staffName || "").trim();
-      if (sn) return sn;
+      if (sn) {
+        if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+          return window.portalStaffDisplayName(sn);
+        }
+        return sn;
+      }
+    }
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(k);
     }
     return "";
   }
@@ -123,20 +143,24 @@
       return blocked.indexOf(g) >= 0;
     }
     var n = "";
-    if (p.full_name && !nameWouldCross(String(p.full_name).split(/\s+/)[0])) {
+    if (p.full_name && !nameWouldCross(String(p.full_name).split(/\s+/)[0]) && !isGenericTopbarName(p.full_name)) {
       n = String(p.full_name || "").trim();
     }
-    if (!n && p.username && !nameWouldCross(p.username)) {
+    if (!n && p.username && !nameWouldCross(p.username) && !isGenericTopbarName(p.username)) {
       n = String(p.username).trim();
     }
     if (!n && user) {
       var meta = user.user_metadata || {};
       var metaName = String(meta.full_name || meta.name || "").trim();
-      if (metaName && !nameWouldCross(metaName.split(/\s+/)[0])) n = metaName;
+      if (metaName && !nameWouldCross(metaName.split(/\s+/)[0]) && !isGenericTopbarName(metaName)) n = metaName;
     }
     if (!n && sid) {
       var canon = portalStaffRosterDisplayName(sid);
       if (canon) return canon;
+    }
+    if (!n && email) {
+      var emailKey = portalRosterKeyFromAuthEmail(email);
+      if (emailKey && EXEC_TOPBAR_NAMES[emailKey]) return EXEC_TOPBAR_NAMES[emailKey];
     }
     if (!n && email && !portalRosterKeyFromAuthEmail(email)) {
       n = String(email.split("@")[0] || "").trim();

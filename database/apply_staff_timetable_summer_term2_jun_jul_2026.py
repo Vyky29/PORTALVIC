@@ -87,12 +87,24 @@ SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
     "2026-06-14": "Berta",
     "2026-06-21": "John",
     "2026-06-28": "John",
-    "2026-07-05": "John",
+    "2026-07-05": "Berta",
     "2026-07-12": "Berta",
+}
+
+# Dated Sunday instructor swaps (covers) merged into bundle sundayDateOverrides.
+SUNDAY_EXTRA_REPLACE: dict[str, dict[str, str]] = {
+    "2026-06-21": {"ALEX": "BISMARK", "CARLOS": "JAVI"},
+    "2026-06-28": {"AURORA": "YOUSSEF", "JAVIER": "LULIYA"},
+    "2026-07-05": {"CARLOS": "BISMARK"},
 }
 
 # Michelle off these Wednesday day-centre shifts (Ikram cover = Luliya only).
 MICHELLE_OFF_WEDNESDAYS = frozenset({"2026-06-10", "2026-06-17"})
+MONDAY_2026_06_29_STAFF_OVERRIDES = (
+    ("Carlos", "11-4", "SwimFarm"),
+    ("Raul", "11-1", "SwimFarm HOME"),
+    ("Raul", "1-4", "SwimFarm Manager"),
+)
 
 
 def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
@@ -110,24 +122,34 @@ def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
 def monday_assignments() -> list[dict]:
     rows: list[dict] = []
     for iso in MONDAYS:
-        rows.extend(
-            [
-                slot(iso, "Monday", "Sandra", "4-6", "Westway"),
-                slot(iso, "Monday", "Roberto", "4.30-6.30", "Northolt"),
-                slot(iso, "Monday", "Dan", "4.30-6.30", "Northolt"),
-                slot(iso, "Monday", "Angel", "4-6.30", "Acton"),
-                slot(iso, "Monday", "Youssef", "4.30-6.30", "Acton"),
-                slot(iso, "Monday", "John", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Bismark", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Giuseppe", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Monday", "Luliya", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Michelle", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Roberto", "11-3", "SwimFarm"),
-                slot(iso, "Monday", "Youssef", "11-3", "SwimFarm"),
-                slot(iso, "Monday", "Raul", "11-4", "SwimFarm"),
-                slot(iso, "Monday", "Victor", "11-4", "SwimFarm"),
+        day_rows = [
+            slot(iso, "Monday", "Sandra", "4-6", "Westway"),
+            slot(iso, "Monday", "Roberto", "4.30-6.30", "Northolt"),
+            slot(iso, "Monday", "Dan", "4.30-6.30", "Northolt"),
+            slot(iso, "Monday", "Angel", "4-6.30", "Acton"),
+            slot(iso, "Monday", "Youssef", "4.30-6.30", "Acton"),
+            slot(iso, "Monday", "John", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Bismark", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Giuseppe", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Monday", "Luliya", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Michelle", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Roberto", "11-3", "SwimFarm"),
+            slot(iso, "Monday", "Youssef", "11-3", "SwimFarm"),
+            slot(iso, "Monday", "Raul", "11-4", "SwimFarm"),
+            slot(iso, "Monday", "Victor", "11-4", "SwimFarm"),
+        ]
+        if iso == "2026-06-29":
+            day_rows = [
+                row
+                for row in day_rows
+                if row["staff_name"] != "Luliya"
+                and not (row["staff_name"] == "Raul" and row["time_range"] == "11-4")
             ]
-        )
+            day_rows.extend(
+                slot(iso, "Monday", staff, time_range, venue)
+                for staff, time_range, venue in MONDAY_2026_06_29_STAFF_OVERRIDES
+            )
+        rows.extend(day_rows)
     return rows
 
 
@@ -267,7 +289,7 @@ def sunday_assignments() -> list[dict]:
             ("Alex", "10-3", "Westway"),
         ],
         "2026-07-05": [
-            ("John", "9.15-2.15", "SwimFarm"),
+            ("Berta", "9.15-2.15", "SwimFarm"),
             ("Giuseppe", "9.15-2.15", "SwimFarm"),
             ("Godsway", "9.15-2.15", "SwimFarm"),
             ("Aurora", "9-3", "SwimFarm"),
@@ -557,13 +579,11 @@ def patch_bundle_sunday_lead_overrides() -> None:
         patch_bundle_rows_from_json,
     )
 
-    overrides = {
-        iso: {
-            "leadOnDuty": lead,
-            "replaceInstructor": {"JOHN, BERTA": lead.upper()},
-        }
-        for iso, lead in SUNDAY_LEAD_ON_DUTY.items()
-    }
+    overrides = {}
+    for iso, lead in SUNDAY_LEAD_ON_DUTY.items():
+        replace = {"JOHN, BERTA": lead.upper()}
+        replace.update(SUNDAY_EXTRA_REPLACE.get(iso, {}))
+        overrides[iso] = {"leadOnDuty": lead, "replaceInstructor": replace}
     bundle_path = OUT / "staff_dashboard_spreadsheet_bundle.js"
     if not bundle_path.exists():
         return

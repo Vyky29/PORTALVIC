@@ -250,6 +250,10 @@
 
   /** Annual profile check-in campaign — hide hub menu once confirmed on/after this date (UTC). */
   window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-01-01";
+  /** Fixed announcement row id (portal_staff_announcements) for the 2026 annual profile campaign. */
+  window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID = "a0260001-0001-4000-8000-0000000a2601";
+  /** Day Centre Calendar 2026/27 — sign saves PDF to My Documents. */
+  window.PORTAL_CALENDAR_2026_27_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
 
   window.portalAnnualProfileCampaignStartMs = function portalAnnualProfileCampaignStartMs() {
     try {
@@ -278,8 +282,38 @@
       if (g) {
         g.hidden = true;
         g.setAttribute("aria-hidden", "true");
+        g.classList.remove("portal-annual-profile--pending");
       }
     } catch (_) {}
+  };
+
+  window.portalShowAnnualProfileQuickMenu = function portalShowAnnualProfileQuickMenu() {
+    try {
+      var g = document.getElementById("portalAnnualProfileQuickGroup");
+      if (g) {
+        g.hidden = false;
+        g.setAttribute("aria-hidden", "false");
+        g.classList.add("portal-annual-profile--pending");
+      }
+    } catch (_) {}
+  };
+
+  window.portalAnnualProfileQuickMenuShouldShow = function portalAnnualProfileQuickMenuShouldShow(opts) {
+    opts = opts || {};
+    try {
+      if (new URLSearchParams(window.location.search).get("portalAnnualProfile") === "1") return true;
+    } catch (_) {}
+    try {
+      if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") return false;
+    } catch (_) {}
+    var profile = opts.profile;
+    if (
+      profile &&
+      portalAnnualProfileIsCompleteAt(profile.profile_last_confirmed_at)
+    ) {
+      return false;
+    }
+    return true;
   };
 
   /** Hide Annual profile check-in when Supabase says this user already confirmed (2026 cycle). */
@@ -290,11 +324,15 @@
       try {
         force = new URLSearchParams(window.location.search).get("portalAnnualProfile") === "1";
       } catch (_) {}
-      if (force) return;
+      if (force) {
+        portalShowAnnualProfileQuickMenu();
+        return;
+      }
 
       try {
         if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") {
           portalHideAnnualProfileQuickMenu();
+          return;
         }
       } catch (_) {}
 
@@ -308,6 +346,10 @@
         } catch (_) {}
         portalHideAnnualProfileQuickMenu();
         return;
+      }
+
+      if (portalAnnualProfileQuickMenuShouldShow({ profile: profile })) {
+        portalShowAnnualProfileQuickMenu();
       }
 
       var client = opts.client;
@@ -337,8 +379,61 @@
           localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
         } catch (_) {}
         portalHideAnnualProfileQuickMenu();
+      } else if (portalAnnualProfileQuickMenuShouldShow()) {
+        portalShowAnnualProfileQuickMenu();
       }
     } catch (_) {}
+  };
+
+  /** Auto-ack annual profile announcement after staff_profile_update save (Option A + B). */
+  window.portalAckAnnualProfileCampaignAnnouncement = async function portalAckAnnualProfileCampaignAnnouncement() {
+    var annId = String(window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID || "").trim();
+    if (!annId) return { ok: false };
+    try {
+      localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
+    } catch (_) {}
+    portalHideAnnualProfileQuickMenu();
+    var key = "portal-ann:" + annId;
+    var ack = {};
+    try {
+      var raw = localStorage.getItem("portalAnnouncementAckMap_v1");
+      ack = raw ? JSON.parse(raw) : {};
+      if (!ack || typeof ack !== "object") ack = {};
+    } catch (_) {
+      ack = {};
+    }
+    if (!ack[key]) {
+      ack[key] = {
+        title: "Annual profile check-in — please update your details",
+        text: "",
+        href: "staff_profile_update.html",
+        signedAt: Date.now(),
+        portalAnnouncementId: annId,
+      };
+      try {
+        localStorage.setItem("portalAnnouncementAckMap_v1", JSON.stringify(ack));
+      } catch (_) {}
+    }
+    try {
+      if (typeof window.portalPersistAnnouncementAckToSupabase === "function") {
+        await window.portalPersistAnnouncementAckToSupabase({
+          portalAnnouncementId: annId,
+          title: ack[key].title,
+          text: ack[key].text,
+          href: ack[key].href,
+        });
+      }
+    } catch (_) {}
+    try {
+      var box = window.__PORTAL_SUPABASE__;
+      if (box && box.staff_profile) {
+        box.staff_profile.profile_last_confirmed_at = new Date().toISOString();
+      }
+    } catch (_) {}
+    try {
+      window.dispatchEvent(new CustomEvent("portal:annual-profile-complete"));
+    } catch (_) {}
+    return { ok: true };
   };
 
   (function portalAnnualProfileQuickMenuBootstrap() {
@@ -361,6 +456,23 @@
         } else if (typeof window.portalPrepareProfileUpdateHandoff === "function") {
           window.portalPrepareProfileUpdateHandoff();
         }
+      } catch (_) {}
+      try {
+        var u = new URL(href, location.href);
+        if (!u.searchParams.get("from_portal")) {
+          var role =
+            typeof window.portalFormRoleFromPath === "function"
+              ? window.portalFormRoleFromPath()
+              : "staff";
+          u.searchParams.set("from_portal", role === "lead" ? "lead" : "staff");
+        }
+        if (!u.searchParams.get("portalReturn")) {
+          var dash = String(location.href || "").split("#")[0];
+          if (/staff_dashboard/i.test(String(location.pathname || "")) && dash) {
+            u.searchParams.set("portalReturn", dash);
+          }
+        }
+        href = u.href;
       } catch (_) {}
       try {
         window.location.href = href;
@@ -700,7 +812,7 @@
       } else {
         var voiceScript = document.createElement("script");
         voiceScript.src =
-          "/portal/portal_feedback_voice_input.js?v=20260610-voice-status-clear";
+          "/portal/portal_feedback_voice_input.js?v=20260628-voice-whisper-first-es-it";
         voiceScript.onload = startPortalVoice;
         voiceScript.onerror = function () {};
         (document.head || document.documentElement).appendChild(voiceScript);
@@ -721,6 +833,7 @@
         "portal-lead-feedback",
         "portal-pickup",
         "portal-timesheet",
+        "session_disruption",
       ];
       var isForm = formSlugs.some(function (slug) {
         return path.indexOf(slug) >= 0;

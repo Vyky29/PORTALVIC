@@ -183,11 +183,24 @@
       if(!t || !Object.prototype.hasOwnProperty.call(t, 'termStaffShiftDatesByProfileKey')) return null;
       const map = t.termStaffShiftDatesByProfileKey;
       if(!map || typeof map !== 'object') return null;
-      const id = String(staffId || '').trim().toLowerCase();
-      if(!Object.prototype.hasOwnProperty.call(map, id)) return [];
-      const raw = map[id];
-      if(!Array.isArray(raw)) return [];
-      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      let foundAny = false;
+      const seen = Object.create(null);
+      const out = [];
+      keys.forEach(function(k){
+        if(!Object.prototype.hasOwnProperty.call(map, k)) return;
+        foundAny = true;
+        const raw = map[k];
+        if(!Array.isArray(raw)) return;
+        raw.forEach(function(d){
+          const iso = String(d || '').trim().slice(0, 10);
+          if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+        });
+      });
+      if(!foundAny) return [];
+      return out.sort();
     }
     function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){
       const dates = portalTermStaffShiftDatesFor(staffId);
@@ -916,6 +929,14 @@
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
       }catch(_qa){}
+      try{
+        const bridgeLate = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notesLate = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridgeLate && typeof bridgeLate.sessionComplete === 'function'
+          && bridgeLate.sessionComplete(iso, sid, s, notesLate, {})){
+          return portalReviewFlagsForResolvedSession(iso, sid, s);
+        }
+      }catch(_bridgeLate){}
       return null;
     }
     function portalRosterSessionFeedbackExempt(s, sessionDateIso, staffId){
@@ -988,13 +1009,14 @@
       const sid = String(staffId || '').trim().toLowerCase();
       if(String(s.staffId || '').toLowerCase() !== sid) return false;
       if(String(s.day || '').trim() !== String(dayName || '').trim()) return false;
-      if(typeof portalStaffDashboardOmitSpreadsheetSession === 'function'
-        && portalStaffDashboardOmitSpreadsheetSession(s, dayName)) return false;
-      const st = sessionModelStatus(s);
-      if(st === 'Available') return false;
       const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
       if(!cell) return false;
-      const iso = portalIsoYmdFromDate(cell);
+      const isoEarly = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cell) : '';
+      if(typeof portalStaffDashboardOmitSpreadsheetSession === 'function'
+        && portalStaffDashboardOmitSpreadsheetSession(s, dayName, isoEarly)) return false;
+      const st = sessionModelStatus(s);
+      if(st === 'Available') return false;
+      const iso = isoEarly || portalIsoYmdFromDate(cell);
       if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
         && !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayName)) return false;
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
@@ -1075,6 +1097,7 @@
         }
         const ov0 = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(s, sessionDateIso) : null;
         if(ov0 && ov0.override_type === 'instructor_reassign' && String(ov0.payload && ov0.payload.covering_staff_id || '').trim()) return;
+        if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateIso)) return;
         const eid = typeof portalEffectiveClientIdForReview === 'function' ? portalEffectiveClientIdForReview(s, sessionDateIso) : String(s.clientId || '').trim().toLowerCase();
         const eff = eid !== String(s.clientId || '').trim().toLowerCase()
           ? Object.assign({}, s, { clientId: eid, __portalBaseSession: s })
@@ -1138,18 +1161,26 @@
           __portalScheduleOverride: ov
         }));
       });
-      return acc;
+      return portalStaffKeyIsLulia(sid) ? portalApplyLuliaIkramCutoffToRosterSessions(acc) : acc;
     }
     function portalTermFeedbackSessionsForDate(dayWord, sessionDateIso, staffId, isRealFn){
       const base = portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
-      if(sid && portalTermIsCatchUpFeedbackDate(iso, sid)) return base;
+      const filtered = base.filter(function(s){
+        if(typeof portalScheduleOverrideForSessionByType === 'function'){
+          const absentOv = portalScheduleOverrideForSessionByType(s, iso, 'client_absence_announced');
+          const replaceOv = portalScheduleOverrideForSessionByType(s, iso, 'client_replace_in_slot');
+          if(absentOv && !replaceOv) return false;
+        }
+        return true;
+      });
+      if(sid && portalTermIsCatchUpFeedbackDate(iso, sid)) return filtered;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.termSessionsForDate === 'function'){
-        return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, base, clientNotesById);
+        return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, filtered, clientNotesById);
       }
-      return base;
+      return filtered;
     }
     function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
@@ -1221,6 +1252,23 @@
       });
     }
 
+    function portalCanonicalTodayClientKey(clientId, displayName){
+      var P = window.PortalParticipantIdentity;
+      var fromName = String(displayName || '').trim();
+      if(fromName && fromName !== '—' && P && typeof P.canonicalClientId === 'function'){
+        var cn = P.canonicalClientId(fromName);
+        if(cn) return cn;
+      }
+      var cid = String(clientId || '').trim().toLowerCase();
+      if(P && cid && typeof P.canonicalClientId === 'function'){
+        return P.canonicalClientId(cid) || cid;
+      }
+      if(typeof window.portalCanonicalParticipantClientId === 'function'){
+        return window.portalCanonicalParticipantClientId(fromName || cid) || cid;
+      }
+      var raw = (fromName && fromName !== '—') ? fromName : cid;
+      return String(raw || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
     function portalRosterSpreadsheetSessionDedupeKey(s){
       if(!s) return '';
       const sid = String(s.staffId || '').trim().toLowerCase();
@@ -1236,12 +1284,29 @@
       const ts = String(s.timeSlotLabel || '').trim();
       return [sid, iso, cid, start || ts, end, venue].join('|');
     }
-    function portalDedupeRosterSpreadsheetSessions(rows){
+    /** Programme-lead wide day: same client slot from multiple instructor bootstraps → one row. */
+    function portalProgrammeWideRosterSessionDedupeKey(s){
+      if(!s) return '';
+      const iso = normaliseIsoDate(s.session_date || s.sessionDate);
+      const cid = portalCanonicalTodayClientKey(s.clientId, s.clientDisplay || s.clientName || s.name);
+      const start = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.start)
+        : String(s.start || '').trim();
+      const end = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(s.end)
+        : String(s.end || '').trim();
+      const venue = portalNormKeyStr(s.venue);
+      const ts = String(s.timeSlotLabel || '').trim();
+      return [iso, cid, start || ts, end, venue].join('|');
+    }
+    function portalDedupeRosterSpreadsheetSessions(rows, opts){
+      opts = opts || {};
       if(!Array.isArray(rows) || !rows.length) return rows || [];
       const out = [];
       const seen = Object.create(null);
+      const keyFn = opts.programmeWide ? portalProgrammeWideRosterSessionDedupeKey : portalRosterSpreadsheetSessionDedupeKey;
       rows.forEach(function(s){
-        const k = portalRosterSpreadsheetSessionDedupeKey(s);
+        const k = keyFn(s);
         if(k && seen[k]) return;
         if(k) seen[k] = true;
         out.push(s);
@@ -1276,12 +1341,97 @@
       });
       return Object.keys(bySlot).map(function(k){ return bySlot[k]; });
     }
+    /** Luliya Day Centre (Ikram) ends at 15:00 when she covers aquatic sessions that afternoon. */
+    function portalStaffKeyIsLulia(staffId){
+      return portalNormKeyStr(staffId) === 'lulia';
+    }
+    function portalRosterRowIsLuliaIkramDayCentre(s){
+      if(!s) return false;
+      const cid = String(s.clientId || s.client_id || '').trim().toLowerCase();
+      const cname = String(s.client_name || s.clientDisplay || s.clientName || s.name || '').trim().toLowerCase();
+      if(cid.indexOf('ikram') < 0 && cname.indexOf('ikram') < 0) return false;
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)) return true;
+      const act = String(s.activity || s.rosterService || s.service || '').toLowerCase();
+      return /day\s*centre/.test(act);
+    }
+    function portalRosterRowIsLuliaAfternoonCover(s){
+      if(!s) return false;
+      const act = String(s.activity || s.rosterService || s.service || '').toLowerCase();
+      if(/day\s*centre/.test(act)) return false;
+      if(!/aquatic|multi[-\s]?activity|swimming/.test(act)) return false;
+      const start = String(s.start || '').trim();
+      if(typeof portalHmToMinutes === 'function'){
+        const m = portalHmToMinutes(start);
+        return Number.isFinite(m) && m >= 15 * 60;
+      }
+      return false;
+    }
+    function portalLuliaDayHasAfternoonCover(sessions){
+      if(!Array.isArray(sessions) || !sessions.length) return false;
+      for(let i = 0; i < sessions.length; i++){
+        if(portalRosterRowIsLuliaAfternoonCover(sessions[i])) return true;
+      }
+      return false;
+    }
+    function portalApplyLuliaIkramCutoffToRosterSessions(sessions){
+      if(!Array.isArray(sessions) || !sessions.length) return sessions || [];
+      if(!portalLuliaDayHasAfternoonCover(sessions)) return sessions;
+      return sessions.map(function(s){
+        if(!portalRosterRowIsLuliaIkramDayCentre(s)) return s;
+        const endM = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(String(s.end || '').trim()) : NaN;
+        if(!Number.isFinite(endM) || endM <= 15 * 60) return s;
+        return Object.assign({}, s, {
+          end: '15:00',
+          timeSlotLabel: '',
+          __portalLuliaIkramCutoff: true
+        });
+      });
+    }
+    function portalTodayItemIsLuliaAfternoonCover(it){
+      if(!it || it.kind !== 'client') return false;
+      const base = it.__portalBaseSession || it;
+      return portalRosterRowIsLuliaAfternoonCover(base);
+    }
+    function portalTodayItemIsLuliaIkramDayCentre(it){
+      if(!it || it.kind !== 'client') return false;
+      return portalRosterRowIsLuliaIkramDayCentre(it.__portalBaseSession || it);
+    }
+    function portalApplyLuliaIkramCutoffToTodayItems(items, staffId, sessionDateKey, anchor){
+      if(!portalStaffKeyIsLulia(staffId)) return items || [];
+      if(!Array.isArray(items) || !items.length) return items;
+      if(!items.some(portalTodayItemIsLuliaAfternoonCover)) return items;
+      return items.map(function(it){
+        if(!portalTodayItemIsLuliaIkramDayCentre(it)) return it;
+        const base = it.__portalBaseSession || {};
+        const endM = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(String(base.end || '').trim()) : NaN;
+        if(!Number.isFinite(endM) || endM <= 15 * 60) return it;
+        const newEnd = '15:00';
+        const newBase = Object.assign({}, base, {
+          end: newEnd,
+          timeSlotLabel: '',
+          __portalLuliaIkramCutoff: true
+        });
+        const newTime = typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(newBase) : '11 to 3';
+        const ts = typeof portalSessionRowTimestamps === 'function'
+          ? portalSessionRowTimestamps(sessionDateKey, newBase.start || base.start, newEnd, anchor)
+          : { sessionStartTs: it.sessionStartTs, sessionEndTs: it.sessionEndTs };
+        return Object.assign({}, it, {
+          time: newTime,
+          sessionEndTs: ts.sessionEndTs,
+          __portalBaseSession: newBase,
+          __portalLuliaIkramCutoff: true
+        });
+      });
+    }
     function portalTodayScheduleViewCardDedupeKey(it){
       if(!it) return '';
       if(it.kind === 'client' || it.kind === 'available'){
         const base = it.__portalBaseSession ? it.__portalBaseSession : (it || {});
         const skParts = String(it.sessionKey || '').split('|');
-        const cid = String(it.clientId || base.clientId || '').trim().toLowerCase();
+        const cid = portalCanonicalTodayClientKey(
+          it.clientId || base.clientId,
+          it.name || base.clientDisplay || base.clientName
+        );
         if(!cid || cid === 'available' || cid === 'closed' || cid === 'meeting' || cid === 'training' || cid === 'shadowing') return '';
         const start = typeof portalCanonicalHmToken === 'function'
           ? portalCanonicalHmToken(base.start || skParts[1] || '')
@@ -1307,6 +1457,35 @@
       const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
       return [start, end, staff, venue].join('|');
     }
+    function portalTodayItemFeedbackPriority(it){
+      if(!it || it.kind !== 'client') return 0;
+      const r = typeof getEffectiveSessionReviewRecord === 'function'
+        ? (getEffectiveSessionReviewRecord(it) || {})
+        : {};
+      if(r.feedbackDone || r.absent || r.cancelled) return 3;
+      if(r.incident) return 2;
+      if(typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(it)) return 1;
+      return 0;
+    }
+    function portalMergeDuplicateTodayClientCard(existing, incoming){
+      if(!existing || !incoming) return existing || incoming;
+      const keep = portalTodayItemFeedbackPriority(incoming) > portalTodayItemFeedbackPriority(existing)
+        ? incoming
+        : existing;
+      const drop = keep === incoming ? existing : incoming;
+      if(keep === drop) return keep;
+      if(drop && drop.sessionKey && keep.sessionKey && drop.sessionKey !== keep.sessionKey){
+        const mem = typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(drop) : null;
+        if(mem && typeof sessionReviewMapMemory === 'object' && sessionReviewMapMemory){
+          sessionReviewMapMemory[keep.sessionKey] = Object.assign(
+            {},
+            sessionReviewMapMemory[keep.sessionKey] || {},
+            mem
+          );
+        }
+      }
+      return keep;
+    }
     function portalDedupeTodayScheduleViewCards(items){
       if(!Array.isArray(items) || !items.length) return items || [];
       const makeupSlotKeys = Object.create(null);
@@ -1318,11 +1497,6 @@
       const seen = Object.create(null);
       const out = [];
       items.forEach(function(it){
-        const k = portalTodayScheduleViewCardDedupeKey(it);
-        if(k){
-          if(seen[k]) return;
-          seen[k] = true;
-        }
         if(it && it.kind === 'client' && !it.portalOverrideMakeUpTag){
           const occ = portalTodaySlotOccupancyKey(it);
           if(occ && makeupSlotKeys[occ]){
@@ -1330,6 +1504,14 @@
             const isMakeupRow = ov && String(ov.override_type || '').trim() === 'client_replace_in_slot';
             if(!isMakeupRow) return;
           }
+        }
+        const k = portalTodayScheduleViewCardDedupeKey(it);
+        if(k){
+          if(Object.prototype.hasOwnProperty.call(seen, k)){
+            out[seen[k]] = portalMergeDuplicateTodayClientCard(out[seen[k]], it);
+            return;
+          }
+          seen[k] = out.length;
         }
         out.push(it);
       });
@@ -1466,9 +1648,12 @@
         return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord);
       }).filter(function(s){
-        return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord);
+        return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord, sessionDateKey);
       });
-      const todaySessionsAfterDedupe = portalDedupeRosterSpreadsheetSessions(todaySessionsAfterFilter);
+      const todaySessionsAfterDedupe = portalDedupeRosterSpreadsheetSessions(
+        todaySessionsAfterFilter,
+        programmeWidePack ? { programmeWide: true } : null
+      );
       const primary = portalUpgradeTodayItemsWithAbsentOverrides(
         portalInjectAbsentCardsAlongsideMakeup(
         todaySessionsAfterDedupe
@@ -1494,6 +1679,10 @@
             const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
             if(cov) return null;
           }
+          // The slot was reassigned to a cover instructor — drop it even when a
+          // higher-priority override (e.g. a client absence) outranked the reassign
+          // in the picker, so the original worker does not see a slot they're off.
+          if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateKey)) return null;
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
           const activity = (s.activity || 'Swimming').trim();
@@ -1502,23 +1691,24 @@
           const sessionEndTs = _rowTs.sessionEndTs;
           const dutyLabel = portalRosterDutySlotLabel(s);
           if(dutyLabel){
-            const dutyKind = dutyLabel === 'HOME' ? 'home' : 'manager';
-            const dutyArea = dutyLabel === 'HOME'
-              ? 'HOME'
-              : String(s.rosterArea || s.area || 'Hub · Manager').trim();
+            const isHomeDuty = dutyLabel === 'HOME';
+            const isAdminDuty = !isHomeDuty && String(dutyLabel).toUpperCase() === 'ADMIN';
+            const dutyKind = isHomeDuty ? 'home' : (isAdminDuty ? 'admin' : 'manager');
+            const hubRoom = 'Hub Room';
             return Object.assign({
-              time,
+              time: isHomeDuty ? '' : time,
               kind: dutyKind,
               clientId: String(s.clientId || '').trim().toLowerCase() || dutyKind,
               name: dutyLabel,
               activity,
-              areaLabel: dutyArea,
-              poolLocationLabel: null,
+              areaLabel: isHomeDuty ? '' : hubRoom,
+              poolLocationLabel: isHomeDuty ? null : hubRoom,
               poolTier: null,
-              showPoolSymbol: false,
+              showPoolSymbol: !isHomeDuty,
               showSpecialty: false,
               specialtyLabel: '',
-              general: dutyLabel === 'HOME' ? 'Working from home.' : 'Manager on duty.',
+              portalDutyFullCard: isHomeDuty,
+              general: isHomeDuty ? 'Working from home.' : (isAdminDuty ? 'Admin on duty.' : 'Manager on duty.'),
               specialty: '—',
               openSheet: false,
               sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || dutyKind).toLowerCase()}`,
@@ -1675,7 +1865,10 @@
               generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: ''
             };
             const showSpec = !isBespokeActivity(activity);
-            const skAbs = `${sessionDateKey}|${s.start}|${String(s.clientId || '').toLowerCase()}`;
+            const effCidAbs = String(s.clientId || '').trim().toLowerCase();
+            const skAbs = typeof portalBuildSessionReviewKey === 'function'
+              ? portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effCidAbs)
+              : `${sessionDateKey}|${s.start}|${effCidAbs}`;
             let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activity, cAbs, viewDay);
             if(supportHidePoolNote) poolLocationAbs = null;
             const areaAbs = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
@@ -1825,7 +2018,16 @@
               nameFromReplace = portalOverrideReplacementClientName(ov.payload);
             }
           }
-          const c = clientNotesById[effClientId] || (nameFromReplace ? { name: nameFromReplace, generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' } : null);
+          const c = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(effClientId) : null)
+            || clientNotesById[effClientId]
+            || (nameFromReplace || effClientId ? {
+              name: nameFromReplace || effClientId,
+              generalLead: '',
+              specialty: '',
+              specialtyClimbing: '',
+              specialtyFitness: '',
+              generalInfoSheet: ''
+            } : null);
           if(!c) return null;
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
           const anchorNotesForMakeup = hasReplaceOv
@@ -1904,7 +2106,17 @@
         const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
-        const slotOv = portalTodayScheduleOverrideForSession(base, sessionDateKey);
+        /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
+           original instructor (base.staffId) or the cover (s.staffId = Luliya). Check both
+           so the cover instructor still sees the green ABSENT / CANCELLED card. */
+        const slotOvBase = portalTodayScheduleOverrideForSession(base, sessionDateKey);
+        const slotOvCover = portalTodayScheduleOverrideForSession(s, sessionDateKey);
+        const isAbsenceOrClearOv = function(o){
+          const t = o && String(o.override_type || '').trim();
+          return t === 'client_absence_announced' || t === 'slot_clear_client';
+        };
+        let slotOv = slotOvBase;
+        if(isAbsenceOrClearOv(slotOvCover) && !isAbsenceOrClearOv(slotOvBase)) slotOv = slotOvCover;
         if(st2 === 'Closed' || st2 === 'Available') return;
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const isCancelledByAdmin = !!(slotOv.payload && slotOv.payload.cancelled_by_admin);
@@ -2038,9 +2250,10 @@
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
         const isTrialCoverOv = hasReplaceCoverOv && portalOverrideIsTrial(slotOv);
+        const isInstructorCoverOv = String(ov.override_type || '').trim() === 'instructor_reassign';
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
-        const makeUpPinkCover = !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        const makeUpPinkCover = !isInstructorCoverOv && !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
         extra.push({
           time,
           kind: 'client',
@@ -2060,7 +2273,7 @@
           sessionStartTs: coverTs.sessionStartTs,
           sessionEndTs: coverTs.sessionEndTs,
           scheduleAdminAdjusted: true,
-          portalOverrideMakeUpTag: hasReplaceCoverOv && !isTrialCoverOv,
+          portalOverrideMakeUpTag: makeUpPinkCover,
           portalOverrideTrialTag: isTrialCoverOv,
           portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : ''),
           portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up' : ''),
@@ -2215,6 +2428,9 @@
       }
       if(typeof portalDedupeTodayScheduleViewCards === 'function'){
         mergedToday = portalDedupeTodayScheduleViewCards(mergedToday);
+      }
+      if(portalStaffKeyIsLulia(staffId)){
+        mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
       return mergedToday;
     }
@@ -2412,15 +2628,27 @@
       }
       if(sid === 'berta'){
         return [
-          { weekdays: ['Wednesday'], serviceKeys: ['multi'], venues: ['acton'], programmeWideRoster: true },
-          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], programmeWideRoster: true }
+          { weekdays: ['Wednesday'], serviceKeys: ['multi'], venues: ['acton'], leadTeamBanner: true },
+          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
         ];
       }
       if(sid === 'michelle'){
-        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true }];
+        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, leadTeamBanner: true, ownClientsOnly: true }];
       }
       return [];
     }
+    function portalStaffLeadOwnClientsOnlyOnDate(staffId, isoYmd){
+      var sid = String(staffId || '').trim().toLowerCase();
+      var iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!sid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      var wd = portalStaffWeekdayFromIso(iso);
+      if(!wd) return false;
+      var scopes = portalStaffLeadScopesForStaffId(sid);
+      return scopes.some(function(sc){
+        return sc.ownClientsOnly === true && sc.weekdays.indexOf(wd) >= 0;
+      });
+    }
+    try{ window.portalStaffLeadOwnClientsOnlyOnDate = portalStaffLeadOwnClientsOnlyOnDate; }catch(_){}
     function portalStaffWeekdayFromIso(iso){
       var s = String(iso || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
@@ -2479,6 +2707,10 @@
       if(!scopes.length || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       var wd = portalStaffWeekdayFromIso(iso);
       if(!wd) return false;
+      if(typeof portalStaffHasShiftOnCalendarDate === 'function'){
+        const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
+        if(onShift === false) return false;
+      }
       var active = scopes.filter(function(sc){ return sc.weekdays.indexOf(wd) >= 0; });
       return active.length > 0 && active.every(function(sc){ return sc.programmeWideRoster === true; });
     }
@@ -2494,16 +2726,21 @@
       var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
       if(!src || !Adapter || typeof Adapter.bootstrap !== 'function') return null;
       var rows = Array.isArray(src.rows) ? src.rows : [];
+      var ownOnly = scopes.some(function(sc){ return sc.ownClientsOnly === true; });
       var instructorKeys = Object.create(null);
-      rows.forEach(function(r){
-        if(!r || !portalStaffLeadSpreadsheetRowInScope(r, iso, scopes)) return;
-        var cn = portalStaffNormLeadScopeKey(r.client_name);
-        if(!cn || cn === 'closed' || cn === 'available' || cn === 'noclient') return;
-        String(r.instructors || '').split(/,|\/|&|\band\b/gi).forEach(function(part){
-          var k = portalStaffNormLeadScopeKey(part);
-          if(k) instructorKeys[k] = true;
+      if(ownOnly){
+        instructorKeys[sid] = true;
+      }else{
+        rows.forEach(function(r){
+          if(!r || !portalStaffLeadSpreadsheetRowInScope(r, iso, scopes)) return;
+          var cn = portalStaffNormLeadScopeKey(r.client_name);
+          if(!cn || cn === 'closed' || cn === 'available' || cn === 'noclient') return;
+          String(r.instructors || '').split(/,|\/|&|\band\b/gi).forEach(function(part){
+            var k = portalStaffNormLeadScopeKey(part);
+            if(k) instructorKeys[k] = true;
+          });
         });
-      });
+      }
       var merged = [];
       var seen = Object.create(null);
       var notes = {};
@@ -2535,14 +2772,7 @@
               }
             }
           }catch(_reassign){}
-          var dk = [
-            rowIso,
-            String(effectiveSession.start || '').trim(),
-            String(effectiveSession.end || '').trim(),
-            String(effectiveSession.venue || '').trim().toLowerCase(),
-            String(effectiveSession.clientId || '').trim().toLowerCase(),
-            String(effectiveSession.staffId || '').trim().toLowerCase()
-          ].join('\0');
+          var dk = portalProgrammeWideRosterSessionDedupeKey(effectiveSession);
           if(seen[dk]) return;
           seen[dk] = true;
           merged.push(effectiveSession);
@@ -2764,13 +2994,32 @@
       if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function') return false;
       return portalCalendarIsoIsTomorrow(iso);
     }
+    function portalNextSessionPreviewParticipantsComplete(preview){
+      if(!portalNextSessionPreviewHasParticipants(preview)) return false;
+      var list = Array.isArray(preview.participants) ? preview.participants : [];
+      if(!list.length) return false;
+      for(var i = 0; i < list.length; i++){
+        var nm = String((list[i] && list[i].name) || '').trim();
+        if(!nm || nm === '—') return false;
+      }
+      return true;
+    }
     function portalStabilizeNextSessionPreview(nextPreview, prevPreview, staffId){
       var sid = String(staffId || portalAuthStaffRosterId() || '').trim().toLowerCase();
       if(dashboardData && dashboardData.__portalStableNextSessionStaffId !== sid){
         dashboardData.__portalStableNextSessionPreview = null;
         prevPreview = null;
       }
-      if(portalNextSessionPreviewHasParticipants(nextPreview) && portalNextSessionPreviewIsTomorrow(nextPreview)){
+      var prevUsable = prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
+        && portalNextSessionPreviewHasParticipants(prevPreview);
+      if(portalNextSessionPreviewHasParticipants(nextPreview)){
+        /* Avoid the avatar/name flicker: a transient incomplete rebuild (participant missing its
+           resolved name while the model is still hydrating) must not replace a complete cached
+           next-session preview. */
+        if(prevUsable && portalNextSessionPreviewParticipantsComplete(prevPreview)
+          && !portalNextSessionPreviewParticipantsComplete(nextPreview)){
+          return prevPreview;
+        }
         if(dashboardData){
           dashboardData.__portalStableNextSessionPreview = nextPreview;
           dashboardData.__portalStableNextSessionStaffId = sid;
@@ -2778,11 +3027,10 @@
         return nextPreview;
       }
       if(!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)){
-        return portalNextSessionPreviewIsTomorrow(nextPreview) ? nextPreview : null;
+        if(prevUsable) return prevPreview;
+        return portalNextSessionPreviewHasParticipants(nextPreview) ? nextPreview : null;
       }
-      if(prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
-        && portalNextSessionPreviewHasParticipants(prevPreview)
-        && portalNextSessionPreviewIsTomorrow(prevPreview)){
+      if(prevUsable){
         return prevPreview;
       }
       if(dashboardData){
@@ -2841,7 +3089,9 @@
         : null;
       if(!info || !info.date) return null;
       const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-      if(!iso || typeof portalCalendarIsoIsTomorrow !== 'function' || !portalCalendarIsoIsTomorrow(iso)) return null;
+      // Show the genuine next session even when it is not literally tomorrow
+      // (e.g. a worker off until Tuesday): the panel says "your next session is below".
+      if(!iso) return null;
       let rows = [];
       try{
         rows = iso ? portalBuildTodayRowsForIso(iso) : [];
@@ -2966,6 +3216,24 @@
       const selectedIso = selectedAnchor && typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(selectedAnchor)
         : '';
+      /* Selected (non-live) day review: hold the cards on the brief "syncing" panel until schedule
+         overrides hydrate, so reassignments/absences apply before the list renders. Without this a
+         refresh on a past day flashes the pre-override roster (e.g. Aurora 23 Jun: Aydaan Ah present
+         and Bediako not yet absent) before settling. Overrides stay hydrated after the first settle,
+         so this only affects the initial load window, and the hydrate/rehydrate timers force it true
+         on error so it can never hang. Day-off days are term-data driven and skip this wait. */
+      if(!liveToday && id && selectedIso
+        && dashboardData.portalIdentityResolved !== false
+        && typeof window !== 'undefined'
+        && window.__PORTAL_STAFF_ROSTER_HYDRATED__
+        && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+        && !(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(selectedIso, id))){
+        dashboardData.portalTodayEmptyPanelMode = 'sync';
+        dashboardData.portalTodayNextSessionPreview = null;
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        return [];
+      }
       const todayOff = id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id);
@@ -3527,7 +3795,7 @@
 
     const PORTAL_ANNOUNCEMENT_ACK_STORAGE = 'portalAnnouncementAckMap_v1';
     let portalAnnouncementLockRequired = false;
-    /** 'signedLog' = quick menu signed history; 'newNotice' = pending sign flow. */
+    /** 'signedLog' | 'newNotice' (signable pending or informational calendar). */
     let portalAnnouncementsSheetEntry = '';
     function portalOpenAnnouncementsSheet(entry){
       portalAnnouncementsSheetEntry = entry === 'signedLog' ? 'signedLog' : 'newNotice';
@@ -3546,6 +3814,13 @@
     }
     function portalAnnouncementSignatureKey(item){
       if(!item || typeof item !== 'object') return '';
+      if(
+        typeof portalSignableItemIsCalendar202627 === 'function' &&
+        portalSignableItemIsCalendar202627(item) &&
+        typeof portalCalendar202627SignatureKey === 'function'
+      ){
+        return portalCalendar202627SignatureKey(item);
+      }
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
       if(item.portalContractId) return 'portal-ann:contract:' + String(item.portalContractId);
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
@@ -3592,10 +3867,27 @@
         }
         if(!Array.isArray(res.data)) return;
         const prof = box && box.staff_profile;
+        if(prof && prof.id && client && prof.profile_last_confirmed_at === undefined){
+          try{
+            const pr = await client
+              .from('staff_profiles')
+              .select('profile_last_confirmed_at')
+              .eq('id', prof.id)
+              .maybeSingle();
+            if(!pr.error && pr.data){
+              prof.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
+            }
+          }catch(_pr){}
+        }
         const workerInboxCtx = {
           authUserId: (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '',
           appRole: prof && prof.app_role,
-          staffRole: prof && prof.staff_role
+          staffRole: prof && prof.staff_role,
+          staffUsername: prof && prof.username,
+          staffKey:
+            typeof portalInferStaffKey === 'function'
+              ? portalInferStaffKey(prof, (box.session && box.session.user && box.session.user.email) || '')
+              : (prof && prof.username) || ''
         };
         if(typeof portalWorkerHasPortalPushSubscription === 'function'){
           workerInboxCtx.hasPortalPushSubscription = await portalWorkerHasPortalPushSubscription(client, workerInboxCtx.authUserId);
@@ -3725,6 +4017,41 @@
             return;
           }
           if(existing[id]) return;
+          if(
+            typeof portalAnnouncementRowIsCalendar202627 === 'function' &&
+            portalAnnouncementRowIsCalendar202627(row)
+          ){
+            existing[id] = true;
+            const calNotice = {
+              type: 'announcement',
+              title: String(row.title || 'Calendar 2026/27').trim() || 'Calendar 2026/27',
+              text: String(row.body || '').trim(),
+              href: '#portal-ann-' + id,
+              portalAnnouncementId: id,
+              hideAfterAckAmount: row.hide_after_ack_amount,
+              hideAfterAckUnit: row.hide_after_ack_unit,
+              onAckAction: 'calendar_2026_27',
+              requiresSignature: false,
+              created_at: row.created_at
+            };
+            dashboardData.portalCalendar202627LiveNotice = calNotice;
+            annInjected.push(calNotice);
+            return;
+          }
+          if(
+            typeof portalStaffAnnouncementRowRequiresSignature === 'function' &&
+            !portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
+          ){
+            return;
+          }
+          if(String(row.on_ack_action || '').trim() === 'annual_profile'){
+            if(
+              typeof portalAnnualProfileCampaignComplete === 'function' &&
+              portalAnnualProfileCampaignComplete(prof && prof.profile_last_confirmed_at)
+            ){
+              return;
+            }
+          }
           existing[id] = true;
           annInjected.push({
             type: 'announcement',
@@ -3739,7 +4066,7 @@
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
         dashboardData.portalRemindersFromAdmin = remList;
-        if(annInjected.length){
+        if(annInjected.length || dashboardData.portalCalendar202627LiveNotice){
           dashboardData.notices = annInjected.concat(preserved);
         }
         if(typeof portalReconcileAnnouncementAckKeys === 'function'){
@@ -3835,6 +4162,19 @@
       }
     }
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
+    window.addEventListener('portal:annual-profile-complete', function(){
+      try{
+        if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
+          void portalHydrateAnnouncementsFromSupabase();
+        }
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+        }
+        if(typeof portalSyncAnnualProfileQuickMenuGroup === 'function'){
+          portalSyncAnnualProfileQuickMenuGroup();
+        }
+      }catch(_){}
+    });
     let _portalStaffDemoAnnouncementAckClearedForSession = false;
     function portalResetStaffDemoAnnouncementAckIfFlagged(){
       if(!PORTAL_STAFF_ANNOUNCEMENT_DEMO_RESET_EVERY_LOAD) return;
@@ -3956,17 +4296,66 @@
     function portalSignableItemIsReminder(item){
       return !!(item && (String(item.type || '') === 'reminder' || item.portalAdminReminderId));
     }
+    function portalMountCalendar202627AnnouncementCard(host, item){
+      if(!host || !item) return;
+      const t = portalFixMojibakeText(String(item.title || 'Day Centre Calendar 2026/27').trim() || 'Day Centre Calendar 2026/27');
+      const txt = String(item.text || '').trim() || 'Term dates and calendar for the 2026/27 academic year.';
+      const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
+        ? portalFormatSignableMessageHtml(txt)
+        : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
+      host.innerHTML =
+        '<article class="announcement-lock-card announcement-lock-card--calendar-2026-27 announcement-lock-card--calendar-info">' +
+          '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+          '<span class="announcement-lock-badge announcement-lock-badge--announcement">Calendar</span></div>' +
+          '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+          '<div class="portal-calendar-2026-27-preview" id="portalCalendar202627PreviewHost">' +
+            '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Loading calendar…</p>' +
+          '</div>' +
+          '<div class="announcement-lock-actions announcement-lock-actions--calendar">' +
+            '<button type="button" class="announcement-download-btn" id="calendar202627DownloadBtn">Download PDF to My Documents</button>' +
+            '<p class="announcement-download-hint" id="calendar202627DownloadStatus" hidden></p>' +
+            '<p class="announcement-message-p" style="margin:0;font-size:13px;color:var(--muted,#728290);">Optional — save a copy to My Documents for your records.</p>' +
+          '</div>' +
+        '</article>';
+      if(typeof portalLoadCalendar202627Into === 'function'){
+        global.requestAnimationFrame(function(){
+          const hostEl = document.getElementById('portalCalendar202627PreviewHost');
+          if(hostEl) void portalLoadCalendar202627Into(hostEl);
+        });
+      }
+    }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
-      if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
       const annAck = portalAnnouncementAckMapLoad();
       const remAck = portalReminderAckMapLoad();
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
+        if(n && n.requiresSignature === false) return;
+        if(
+          typeof portalSignableItemIsCalendar202627 === 'function' &&
+          portalSignableItemIsCalendar202627(n)
+        ){
+          return;
+        }
         const k = portalAnnouncementSignatureKey(n);
         const contractKey = n && n.portalContractId ? ('portal-ann:contract:' + String(n.portalContractId)) : '';
         const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]);
-        if(!acked) items.push(Object.assign({}, n));
+        if(!acked){
+          if(
+            typeof portalSignableItemIsAnnualProfile === 'function' &&
+            portalSignableItemIsAnnualProfile(n)
+          ){
+            const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+            const p = box && box.staff_profile;
+            if(
+              typeof portalAnnualProfileCampaignComplete === 'function' &&
+              portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at)
+            ){
+              return;
+            }
+          }
+          items.push(Object.assign({}, n));
+        }
       });
       const rems = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
       rems.forEach(function(r){
@@ -3989,6 +4378,7 @@
     }
     window.portalActiveAnnouncementItems = portalActiveAnnouncementItems;
     window.portalAnnouncementPendingItem = portalAnnouncementPendingItem;
+    window.portalMountCalendar202627AnnouncementCard = portalMountCalendar202627AnnouncementCard;
     function portalAnnouncementLockActive(){
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
@@ -4091,7 +4481,7 @@
         if(!window.ContractCore){
           await new Promise(function(resolve, reject){
             var s = document.createElement('script');
-            s.src = 'portal/contract-core.js?v=20260622-sign';
+            s.src = 'portal/contract-core.js?v=20260628-app-submit-fix';
             s.onload = resolve;
             s.onerror = reject;
             document.head.appendChild(s);
@@ -4148,7 +4538,38 @@
       if(!hostPending || !hostHistory) return;
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
       const pending = signedLogView ? null : portalAnnouncementPendingItem();
-      if(pending){
+      if(signedLogView){
+        hostPending.innerHTML = '';
+        portalAnnouncementLockRequired = false;
+        hostHistory.hidden = false;
+        hostHistory.setAttribute('aria-hidden', 'false');
+        const rows = portalSignedMessageHistoryRows();
+        if(!rows.length){
+          hostHistory.innerHTML = '<article class="announcement-history-card"><p class="alerts-sheet-placeholder" style="margin:0;">No signed announcements or reminders yet.</p></article>';
+        }else{
+          hostHistory.innerHTML =
+            '<article class="announcement-history-card">' +
+              '<p class="announcement-history-head">Signed Announcements/Reminders</p>' +
+              rows.map(function(r, i){
+                const dt = portalAnnouncementHistoryDateLabel(r.signedAt);
+                const lines = portalAnnouncementHistoryHeadingLines(r.title);
+                const kind = String(r.kind || 'announcement') === 'reminder' ? 'reminder' : 'announcement';
+                const link = '';
+                const histBody = typeof portalFormatSignableMessageHtml === 'function'
+                  ? portalFormatSignableMessageHtml(r.text || 'No details captured.')
+                  : ('<p class="announcement-message-p">' + escapeHtml(r.text || 'No details captured.') + '</p>');
+                return '<div class="announcement-history-item announcement-history-item--' + kind + (i === 0 ? ' is-open' : '') + '">' +
+                  '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-kind">' + escapeHtml(kind === 'reminder' ? 'Reminder' : 'Announcement') + '</span><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
+                  '<div class="announcement-history-body announcement-message-block">' + histBody + link + '</div>' +
+                '</div>';
+              }).join('') +
+            '</article>';
+        }
+        try{
+          const bodyEl = document.getElementById('announcementsSheetBody');
+          if(bodyEl) bodyEl.scrollTop = 0;
+        }catch(_){}
+      }else if(pending){
         portalAnnouncementLockRequired = true;
         const isReminder = portalSignableItemIsReminder(pending);
         const kindLabel = isReminder ? 'Reminder' : 'Announcement';
@@ -4174,6 +4595,20 @@
               '</div>' +
             '</article>';
           portalLoadContractAnnouncementPreview(String(pending.portalContractId));
+        }else if(
+          typeof portalSignableItemIsAnnualProfile === 'function' &&
+          portalSignableItemIsAnnualProfile(pending)
+        ){
+          hostPending.innerHTML =
+            '<article class="announcement-lock-card announcement-lock-card--annual-profile">' +
+              '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+              '<span class="announcement-lock-badge announcement-lock-badge--announcement">Profile</span></div>' +
+              '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+              '<p class="announcement-message-p" style="margin:0 0 12px;font-size:13px;color:var(--muted,#728290);">This notice clears automatically when you submit the annual profile form.</p>' +
+              '<div class="announcement-lock-actions">' +
+                '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile</button>' +
+              '</div>' +
+            '</article>';
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +
@@ -4238,7 +4673,7 @@
 
     /** Halo colours from quick-menu override kinds (absent = green orbit). */
     function portalRosterOverrideHaloScan(st){
-      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, other: false };
+      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, shadowing: false, meeting: false, other: false };
       const dayGroups = Array.isArray(st && st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
       for(let g = 0; g < dayGroups.length; g++){
         const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
@@ -4247,6 +4682,8 @@
           if(!k) continue;
           if(k === 'absent'){ out.absent = true; continue; }
           if(k === 'training'){ out.training = true; continue; }
+          if(k === 'shadowing'){ out.shadowing = true; continue; }
+          if(k === 'meeting'){ out.meeting = true; continue; }
           if(k === 'cancelled' || k === 'shift_cancelled'){ out.cancelled = true; continue; }
           if(k === 'new_shift' || k === 'roster_day') out.newShift = true;
           else if(k === 'trial' || k === 'new_participant') out.trial = true;
@@ -4260,7 +4697,7 @@
     }
     function portalScheduleHaloActive(scan){
       if(!scan) return false;
-      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.other);
+      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.shadowing || scan.meeting || scan.other);
     }
     function portalScheduleHaloMode(scan){
       if(!portalScheduleHaloActive(scan)) return '';
@@ -4268,7 +4705,9 @@
       const ns = !!(scan.newShift || scan.other);
       if(scan.absent && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.cancelled && !scan.training) return 'schedule-absent';
       if(scan.cancelled && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.training) return 'schedule-cancelled';
-      if(scan.training && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled) return 'schedule-training';
+      if(scan.training && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.shadowing && !scan.meeting) return 'schedule-training';
+      if(scan.shadowing && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.training && !scan.meeting) return 'schedule-shadowing';
+      if(scan.meeting && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.training && !scan.shadowing) return 'schedule-meeting';
       if(scan.undo && !scan.trial && !scan.makeup && !ns && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-undo';
       if(scan.makeup && !scan.trial && !ns && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-makeup';
       if(scan.trial && !ns && !scan.makeup && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-trial-only';
@@ -4319,6 +4758,7 @@
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending));
       const haloScan = portalRosterOverrideHaloScan(state);
       let scheduleMode = portalScheduleHaloMode(haloScan);
+      const hasShadowing = !!haloScan.shadowing;
       if(!scheduleMode && portalStaffHasUpcomingShadowingHostAlert(
         typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '',
         dashboardData && dashboardData.staffName
@@ -4328,18 +4768,28 @@
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
-        announcement: portalActiveAnnouncementItems().length > 0,
+        announcement: portalActiveAnnouncementItems().length > 0 || !!(
+          typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem()
+        ),
         feedback: hasFeedback || hasReminderOther,
         schedule: !!scheduleMode,
         scheduleMode: scheduleMode,
-        scheduleTrial: scheduleMode === 'schedule-trial' || scheduleMode === 'schedule-trial-only'
+        scheduleTrial: scheduleMode === 'schedule-trial' || scheduleMode === 'schedule-trial-only',
+        shadowing: hasShadowing
       };
     }
     function portalNotificationAlertState(st){
       const f = portalNotificationAlertFlags(st);
       const orange = f.feedback;
       const green = f.scheduleMode;
+      const sh = f.shadowing;
       const sk = f.scheduleTrial ? '-trial' : '';
+      if(sh && !f.chat && !f.announcement){
+        if(orange && green) return 'reminder-schedule-shadowing' + sk;
+        if(orange && !green) return 'reminder-shadowing';
+        if(green && !orange) return 'schedule-shadowing' + sk;
+        if(!orange && !green) return 'schedule-shadowing-only';
+      }
       if(f.chat && f.announcement && orange && green) return 'quad' + sk;
       if(f.chat && f.announcement && green) return 'chat-ann-schedule' + sk;
       if(f.chat && orange && green) return 'chat-fb-schedule' + sk;
@@ -4380,6 +4830,13 @@
         'avatar-wrap--portal-alert-schedule-undo',
         'avatar-wrap--portal-alert-schedule-cancelled',
         'avatar-wrap--portal-alert-schedule-training',
+        'avatar-wrap--portal-alert-schedule-shadowing',
+        'avatar-wrap--portal-alert-schedule-shadowing-only',
+        'avatar-wrap--portal-alert-schedule-meeting',
+        'avatar-wrap--portal-alert-reminder-shadowing',
+        'avatar-wrap--portal-alert-reminder-schedule-shadowing',
+        'avatar-wrap--portal-alert-schedule-shadowing-trial',
+        'avatar-wrap--portal-alert-reminder-schedule-shadowing-trial',
         'avatar-wrap--portal-alert-chat-schedule',
         'avatar-wrap--portal-alert-chat-schedule-trial',
         'avatar-wrap--portal-alert-announcement-schedule',
@@ -4441,6 +4898,13 @@
         'schedule-undo': 'avatar-wrap--portal-alert-schedule-undo',
         'schedule-cancelled': 'avatar-wrap--portal-alert-schedule-cancelled',
         'schedule-training': 'avatar-wrap--portal-alert-schedule-training',
+        'schedule-shadowing': 'avatar-wrap--portal-alert-schedule-shadowing',
+        'schedule-shadowing-only': 'avatar-wrap--portal-alert-schedule-shadowing-only',
+        'schedule-meeting': 'avatar-wrap--portal-alert-schedule-meeting',
+        'reminder-shadowing': 'avatar-wrap--portal-alert-reminder-shadowing',
+        'reminder-schedule-shadowing': 'avatar-wrap--portal-alert-reminder-schedule-shadowing',
+        'reminder-schedule-shadowing-trial': 'avatar-wrap--portal-alert-reminder-schedule-shadowing-trial',
+        'schedule-shadowing-trial': 'avatar-wrap--portal-alert-schedule-shadowing-trial',
         schedule: 'avatar-wrap--portal-alert-schedule'
       }[mode];
       if(modeClass) el.classList.add(modeClass);
@@ -4558,7 +5022,7 @@
           : [];
         if(typeof portalStaffDashboardOmitSpreadsheetSession !== 'function') return rows;
         return rows.filter(function(s){
-          return !portalStaffDashboardOmitSpreadsheetSession(s, wname);
+          return !portalStaffDashboardOmitSpreadsheetSession(s, wname, iso);
         });
       }
       function portalFindNextSessionCalendarInfo(staffId, fromNow, model){
@@ -4578,12 +5042,15 @@
               || '2026-07-17'
           ).trim().slice(0, 10);
         }catch(_){}
-        for(var i = 1; i <= 1; i++){
+        // Scan forward to the genuine next working day, not just tomorrow: a worker
+        // whose tomorrow is off (or whose tomorrow was fully reassigned to a cover)
+        // should see the participants of their actual next session (e.g. Tuesday).
+        for(var i = 1; i <= 30; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
           if(viewFrom && iso && iso < viewFrom) continue;
-          if(viewTo && iso && iso > viewTo) continue;
+          if(viewTo && iso && iso > viewTo) break;
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
           try{
@@ -4813,6 +5280,9 @@
         dashboardData.termFeedbackByDate = {};
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_re){}
+        }
       }
       const extraDates = (id === 'javier' || id === 'youssef') ? [] : portalTermStaffExtraCalendarDates(id);
       if(extraDates.length){

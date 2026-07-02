@@ -3,11 +3,14 @@
 This document mirrors `portal-shared-js/admin-sessions-hub.js` — the **Sessions Overview** tab.
 If your other app shows "missing feedback" but Portal shows **Feedback submitted**, you are probably counting **per staff user** or **per exact time** instead of **per feedback unit**.
 
-## Golden rule
+## Golden rule (per-instructor vs shared)
 
-> **One submitted `session_feedback` row can mark several roster slots as done.**  
-> Co-instructors on the same session share the same `portal_session_key`.  
-> Do **not** require every instructor to submit.
+Two distinct models, decided by **service**:
+
+- **Shared (team) feedback — Day Centre & Bespoke Programme only.** These run as a team (2:1, 3:1). If a worker has the participant on their dashboard (e.g. any block of the Day Centre 11:00–16:00 window), **any** of those workers can submit, and **one** submitted row turns the participant green for **all** staff who have that participant that day. Co-instructors on the same session share the same `portal_session_key`.
+- **Per-instructor feedback — Aquatic, Climbing, Physical Activity, Multi-Activity.** Each instructor owns their **own** feedback. A submission by one instructor must **not** turn another instructor's slot green. When the same participant is covered by **different instructors** on the same day (different slots/reassigns), **each** instructor stays "awaiting" (orange) until they submit, in **both** the staff dashboard **and** admin Sessions Overview. Same instructor across consecutive slots (or co-instructors on the exact same block) may still merge to one feedback.
+
+> Do not blanket-share across instructors: sharing applies **only** to Day Centre and Bespoke.
 
 Staff dashboard uses RPC `portal_feedback_submitted_keys_for_sessions`: if **anyone** submitted for a roster `portal_session_key`, all staff on that slot see it as done.
 
@@ -37,9 +40,12 @@ Computed per roster slot:
 
 | Service type | Unit key pattern |
 |--------------|------------------|
-| Day Centre | `{date}|{client_slug}|day_centre` |
-| Bespoke / Multi-Activity | `{date}|{client_slug}|{time_start}|{service}|{area}` |
-| Most others (swim, fitness, …) | `session_key` or `{date}|{client_slug}|{time_start}` |
+| Day Centre (shared) | `{date}|{client_slug}|day_centre` |
+| Bespoke shared (2:1/3:1) | `{date}|{client_slug}|bespoke_shared` |
+| Multi-Activity (per-instructor) | `{date}|{client_slug}|{time_start}|{service}|{area}|{instructor}` |
+| Climbing (per-instructor) | `{date}|{client_slug}|{time_start}|{service}|{area}|{instructor}` |
+| Aquatic (per-slot when >1 instructor) | `{date}|{client_slug}|{time_start}|aquatic` |
+| Physical Activity (per-instructor) | `{date}|{client_slug}|{time_start}|{service}|{instructor}` |
 
 Use **`sessions-with-feedback-status-*.csv`** — column `overview_status` is what Portal shows.
 

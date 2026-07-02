@@ -60,6 +60,52 @@ function parseReviewDate(ctxDate) {
   return localIsoDateToday();
 }
 
+function venueSlugForMarker(v) {
+  return String(v || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/**
+ * Mirror the staff dashboard "venue report done" flag so the reminder clears
+ * after the report is submitted (until the next day's reminder). Only the
+ * specific kind (opening or closing) is marked — staff who owe two reports
+ * per day keep the other reminder until that one is submitted too.
+ */
+function markVenueReportDoneLocal(row, ctx) {
+  try {
+    const oc = String(
+      (row && row.opening_or_closing) || (ctx && ctx.openingClosing) || ""
+    ).toLowerCase();
+    var kinds = [];
+    if (oc.indexOf("clos") >= 0) kinds = ["close"];
+    else if (oc.indexOf("open") >= 0) kinds = ["open"];
+    else return;
+    const dates = [];
+    const rd = String((row && row.review_date) || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rd)) dates.push(rd);
+    const today = localIsoDateToday();
+    if (dates.indexOf(today) < 0) dates.push(today);
+    const vslug = venueSlugForMarker(row && row.venue);
+    for (let d = 0; d < dates.length; d++) {
+      for (let k = 0; k < kinds.length; k++) {
+        try {
+          localStorage.setItem("portalVenueSubmitted_" + dates[d] + "_" + kinds[k], "1");
+        } catch (_) {}
+        if (vslug) {
+          try {
+            localStorage.setItem(
+              "portalVenueSubmitted_" + dates[d] + "_" + vslug + "_" + kinds[k],
+              "1"
+            );
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+}
+
 function toUkDisplayDate(isoLike) {
   const s = clean(isoLike);
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
@@ -251,15 +297,27 @@ async function renderVenueContextHeader(ctx) {
   const completedByEl = document.getElementById("venueContextCompletedBy");
   const venueEl = document.getElementById("venueContextVenue");
   const dateEl = document.getElementById("venueContextDate");
+  const kindEl = document.getElementById("venueContextKind");
   if (!completedByEl || !venueEl || !dateEl) return;
 
   const fallbackName = clean(ctx.completedBy) || "Portal user";
   const venue = clean(ctx.venue) || "Venue not detected";
   const date = toUkDisplayDate(parseReviewDate(ctx.date));
+  const kindLabel = clean(ctx.openingClosing) || "";
 
   completedByEl.textContent = fallbackName;
   venueEl.textContent = venue;
   dateEl.textContent = date;
+  if (kindEl) {
+    const kindRow = document.getElementById("venueContextKindRow");
+    if (kindLabel) {
+      kindEl.textContent = kindLabel;
+      if (kindRow) kindRow.removeAttribute("hidden");
+    } else {
+      kindEl.textContent = "—";
+      if (kindRow) kindRow.setAttribute("hidden", "hidden");
+    }
+  }
 
   try {
     const submission = await resolveSubmissionContext(ctx);
@@ -438,6 +496,7 @@ function initVenueReviewPage() {
     try {
       await submitVenueReviewToSupabase(submission.supabase, row);
       successSubmitted = true;
+      markVenueReportDoneLocal(row, ctx);
       showVenueReviewSuccessLocked();
       lockVenueReviewForm(form, submitBtn);
       showCompletionPopupAndReturnDashboard();

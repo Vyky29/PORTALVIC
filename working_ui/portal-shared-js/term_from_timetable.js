@@ -28,9 +28,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "2026-05-04"
   ],
   "termStaffAwayDatesByProfileKey": {
-    "giuseppe": [
-      "2026-06-14"
-    ],
     "roberto": [
       "2026-05-07"
     ],
@@ -45,8 +42,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-21",
       "2026-07-05"
     ],
-    "aurora": [
-      "2026-07-02"
+    "luliya": [
+      "2026-06-29"
+    ],
+    "lulia": [
+      "2026-06-29"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -58,12 +58,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ]
     }
   },
-  "termStaffServiceStartDatesByProfileKey": {
-    "youssef": {
-      "day_centre": "2026-06-12"
-    }
-  },
   "termStaffFeedbackCompleteDatesByProfileKey": {
+    "angel": [
+      "2026-06-15",
+      "2026-06-16"
+    ],
     "roberto": [
       "2026-05-17",
       "2026-05-22"
@@ -88,39 +87,15 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "dan": [
       "2026-06-07"
-    ],
-    "giuseppe": [
-      "2026-06-01",
-      "2026-06-03",
-      "2026-06-05",
-      "2026-06-07",
-      "2026-06-08",
-      "2026-06-10",
-      "2026-06-12",
-      "2026-06-15",
-      "2026-06-17",
-      "2026-06-19",
-      "2026-06-21",
-      "2026-06-22"
-    ],
-    "aurora": [
-      "2026-06-02",
-      "2026-06-09",
-      "2026-06-11",
-      "2026-06-16",
-      "2026-06-18"
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
     "javier": [],
-    "lulia": [
-      "2026-06-14"
-    ],
     "luliya": [
-      "2026-06-14"
+      "2026-06-28"
     ],
-    "aida": [
-      "2026-06-14"
+    "lulia": [
+      "2026-06-28"
     ]
   },
   "termStaffCatchUpFeedbackDatesByProfileKey": {
@@ -618,8 +593,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       4
     ],
     "teflon": [
-      4,
-      5
+      0,
+      1,
+      2
     ],
     "victor": [
       1,
@@ -831,6 +807,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-07",
       "2026-06-14",
       "2026-06-28",
+      "2026-06-29",
       "2026-07-12"
     ],
     "dan": [
@@ -863,6 +840,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-08",
       "2026-06-10",
       "2026-06-12",
+      "2026-06-14",
       "2026-06-15",
       "2026-06-17",
       "2026-06-19",
@@ -964,7 +942,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09",
       "2026-06-10",
       "2026-06-12",
-      "2026-06-14",
       "2026-06-15",
       "2026-06-16",
       "2026-06-17",
@@ -973,7 +950,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-23",
       "2026-06-24",
       "2026-06-26",
-      "2026-06-29",
       "2026-06-30",
       "2026-07-01",
       "2026-07-03",
@@ -995,7 +971,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-09",
       "2026-06-10",
       "2026-06-12",
-      "2026-06-14",
       "2026-06-15",
       "2026-06-16",
       "2026-06-17",
@@ -1004,7 +979,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-23",
       "2026-06-24",
       "2026-06-26",
-      "2026-06-29",
       "2026-06-30",
       "2026-07-01",
       "2026-07-03",
@@ -1179,6 +1153,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-01",
       "2026-06-02",
       "2026-06-03",
+      "2026-06-05",
       "2026-06-06",
       "2026-06-08",
       "2026-06-09",
@@ -1216,28 +1191,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-05"
     ]
   },
-  "termStaffTimesheetFeedbackTrustThroughIsoByProfileKey": {
-    "berta": "2026-06-24",
-    "michelle": "2026-06-24",
-    "youssef": "2026-06-24",
-    "luliya": "2026-06-24",
-    "lulia": "2026-06-24",
-    "bismark": "2026-06-24",
-    "john": "2026-06-24",
-    "godsway": "2026-06-24",
-    "giuseppe": "2026-06-24",
-    "sandra": "2026-06-24",
-    "simon": "2026-06-24",
-    "carlos": "2026-06-24"
-  },
-  "termStaffTimesheetFeedbackPendingDatesByProfileKey": {
-    "aurora": [
-      "2026-06-21",
-      "2026-06-23"
-    ],
-    "alex": [
-      "2026-06-14"
-    ]
-  },
-  "termFeedbackAssumeCompleteThroughIso": "2026-06-24"
+  "termFeedbackAssumeCompleteThroughIso": "2026-06-22"
 };

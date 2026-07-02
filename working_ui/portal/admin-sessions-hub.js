@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260614-madre-roster";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -335,6 +335,8 @@
     yusef: "yusuf_ah",
     rayyan: "rayyan_fi",
     rayyan_f: "rayyan_fi",
+    eddie: "eddie_mc",
+    chaitanya_trial_28_06: "chaitanya",
     junaid: "junaid_f",
   };
 
@@ -552,6 +554,22 @@
     return b ? a + " to " + b : a;
   }
 
+  /**
+   * Display label for any slot, always normalized to roster 12h style (e.g. 5.30 to 6),
+   * regardless of whether the sheet typed it in 24h ("17.30 to 18") or 12h ("5.30 to 6").
+   * Keeps a safe fallback to the raw label so nothing renders blank.
+   */
+  function rosterTimeDisplay(slot) {
+    if (!slot) return "";
+    var raw = clean(slot.time_slot);
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var pt = raw ? parseTimeSlot(raw, wd) : null;
+    var startHm = clean(slot.time_start) || (pt && pt.start) || "";
+    var endHm = clean(slot.time_end) || (pt && pt.end) || "";
+    var label = rosterTimeSlotLabelFromBounds(startHm, endHm, wd);
+    return label || raw || clean(slot.time_start);
+  }
+
   function normalizeAnchorStaffId(raw) {
     return String(raw == null ? "" : raw)
       .trim()
@@ -561,7 +579,8 @@
 
   function slotAnchorStaffKey(slot) {
     var raw = "";
-    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    var insts = slotInstructors(slot);
+    if (insts.length) raw = insts[0];
     else if (slot.instructor_label) {
       raw = String(slot.instructor_label).split(/[,/&+]+|\s+and\s+/gi)[0];
     }
@@ -691,6 +710,7 @@
       service: clean(r.service),
       time_slot: clean(r.time_slot),
       time_start: slot.start,
+      time_end: slot.end,
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
@@ -1131,10 +1151,7 @@
     if (!slot || !overrideIsShadowingSessionAdd(ov)) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     var p = overridePayloadObj(ov);
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
+    var insts = slotInstructors(slot);
     if (!trainerMatchesSlotInstructors(p.trainer, insts)) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
@@ -1172,8 +1189,8 @@
       var observerName = resolveStaffDisplayName(ov.anchor_staff_id);
       var origInst =
         slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
-          ? slot.portalOriginalInstructors.slice()
-          : (slot.instructors || []).slice();
+          ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
+          : slotInstructors(slot).slice();
       return Object.assign({}, slot, {
         instructors: origInst,
         instructor_label: origInst.join(", "),
@@ -1227,20 +1244,64 @@
   }
 
   function resolveStaffDisplayName(staffId) {
-    var sid = clean(staffId).toLowerCase();
+    var sid = clean(staffId);
     if (!sid) return "";
-    return sid.charAt(0).toUpperCase() + sid.slice(1);
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(sid);
+    }
+    return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
+  }
+
+  /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
+  function canonicalStaffMatchKey(value) {
+    var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "javiermarquez") return "javier";
+    if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
+    return k;
+  }
+
+  /** Sunday SwimFarm lane: live MADRE may say DAN while overrides anchor AURORA (same roster slot). */
+  function swimfarmInstructorAnchorAliases(staffId) {
+    var k = canonicalStaffMatchKey(clean(staffId).toLowerCase());
+    if (k === "dan" || k === "aurora") return ["dan", "aurora"];
+    return k ? [k] : [];
   }
 
   function staffIdMatchesInstructor(staffId, instructors) {
     var sid = clean(staffId).toLowerCase();
     if (!sid) return true;
-    if (!instructors || !instructors.length) return true;
-    for (var i = 0; i < instructors.length; i++) {
-      var inst = clean(instructors[i]).toLowerCase();
+    var list = normalizeInstructorList(instructors);
+    if (!list.length) return true;
+    var canonSid = canonicalStaffMatchKey(sid);
+    for (var i = 0; i < list.length; i++) {
+      var inst = clean(list[i]).toLowerCase();
       if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
+      if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
     }
     return false;
+  }
+
+  function staffIdMatchesInstructorWithSwimAliases(staffId, instructors) {
+    var aliases = swimfarmInstructorAnchorAliases(staffId);
+    for (var i = 0; i < aliases.length; i++) {
+      if (staffIdMatchesInstructor(aliases[i], instructors)) return true;
+    }
+    return staffIdMatchesInstructor(staffId, instructors);
+  }
+
+  function inferOverrideSlotService(ov, p) {
+    var fromPayload = clean(p.service || p.roster_service || p.rosterService);
+    if (fromPayload) return fromPayload;
+    var venue = clean(ov && ov.anchor_venue).toLowerCase();
+    var staff = clean(ov && ov.anchor_staff_id).toLowerCase();
+    if (staff === "carlos") {
+      if (venue === "westway") return "Climbing Activity";
+      if (venue === "swimfarm") return "Day Centre";
+      return "Climbing Activity";
+    }
+    if (venue === "westway" || overrideIsTrialType(ov)) return "Climbing Activity";
+    return "Aquatic Activity";
   }
 
   function slotFromMakeupOverride(isoDate, wd, ov) {
@@ -1263,7 +1324,10 @@
       rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
     var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
     var instructors = staffLabel ? [staffLabel] : [];
-    var service = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+    var service = inferOverrideSlotService(ov, p);
+    var area =
+      clean(p.area || p.pool_note || "") ||
+      (serviceKey(service).indexOf("climbing") >= 0 ? "Wall" : "");
     var slotRow = {
       session_date: isoDate,
       day: wd,
@@ -1273,7 +1337,7 @@
       time_start: startHm,
       time_end: endHm,
       venue: clean(ov.anchor_venue),
-      area: clean(p.area || p.pool_note || ""),
+      area: area,
       instructors: instructors,
       instructor_label: instructors.join(", "),
       anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
@@ -1282,7 +1346,7 @@
         service: service,
         time_slot: timeLabel,
         venue: clean(ov.anchor_venue),
-        area: clean(p.area || ""),
+        area: area,
         instructors: staffLabel,
       }),
       portalOverrideMakeUpTag: !overrideIsTrialType(ov),
@@ -1303,11 +1367,9 @@
       var s = out[i];
       var ov0 = s && s.__portalScheduleOverride;
       if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
-      if (s && (s.portalOverrideMakeUpTag || s.portalOverrideTrialTag)) {
-        var rid = canonicalClientSlug(s.client_name);
-        var st = s.time_start || normTimeKey(s.time_slot, wd);
-        if (rid && st) seenRepKeys[rid + "|" + st] = true;
-      }
+      var rid0 = canonicalClientSlug(s && s.client_name);
+      var st0 = s && (s.time_start || normTimeKey(s.time_slot, wd));
+      if (rid0 && st0) seenRepKeys[rid0 + "|" + st0] = true;
     }
     var added = [];
     for (var j = 0; j < ovs.length; j++) {
@@ -1331,6 +1393,70 @@
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
     return out;
+  }
+
+  /**
+   * Active client_replace makeup whose ANCHOR is this booked participant — i.e. the original
+   * participant told us they were not coming and admin handed their slot to someone else as a
+   * makeup. The original roster row stays "Booked" in the data, so without this it shows
+   * "Awaiting feedback" forever. We surface the makeup here so the row can render the original
+   * as replaced (red) alongside the makeup participant (green) and resolve via the makeup feedback.
+   */
+  function makeupOverrideDisplacingSlot(hub, slot) {
+    if (!hub || !slot) return null;
+    if (slot.portalOverrideMakeUpTag || slot.portalOverrideTrialTag) return null;
+    if (isOpenRosterSlot(slot.client_name)) return null;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return null;
+    var sCid = canonicalClientSlug(slot.client_name);
+    if (!sCid) return null;
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (overrideIsTrialType(ov)) continue;
+      if (clean(ov.session_date) !== slot.session_date) continue;
+      if (overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+      if (canonicalClientSlug(ov.anchor_client_id) !== sCid) continue;
+      if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) continue;
+      var oStart =
+        normTimeShort(ov.anchor_start) ||
+        normTimeShort(normTimeKey(ov.anchor_time_slot_label, wd));
+      if (oStart && sStart && oStart !== sStart) continue;
+      var p = overridePayloadObj(ov);
+      var repSlug =
+        overrideReplacementClientId(p) ||
+        canonicalClientSlug(overrideReplacementClientName(p));
+      if (!repSlug || canonicalClientSlug(repSlug) === sCid) continue;
+      if (
+        !best ||
+        (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+      ) {
+        best = ov;
+      }
+    }
+    if (!best) return null;
+    return { ov: best, makeupSlot: slotFromMakeupOverride(slot.session_date, wd, best) };
+  }
+
+  /** Synthetic makeup row whose displaced participant still has their own roster row that day —
+      fold it into that row (Original red / MakeUp green) instead of showing a duplicate line. */
+  function makeupSlotAbsorbedByDisplacedRow(hub, slot) {
+    if (!hub || !slot || !slot.portalOverrideMakeUpTag) return false;
+    var ov = slot.__portalScheduleOverride;
+    if (!ov || overrideAnchorIsOpenSlot(ov.anchor_client_id)) return false;
+    var anchorSlug = canonicalClientSlug(ov.anchor_client_id);
+    if (!anchorSlug || anchorSlug === canonicalClientSlug(slot.client_name)) return false;
+    var daySlots = hub.expandSlotsForDate(slot.session_date) || [];
+    for (var i = 0; i < daySlots.length; i++) {
+      var s = daySlots[i];
+      if (s === slot) continue;
+      if (s.portalOverrideMakeUpTag || s.portalOverrideTrialTag) continue;
+      if (canonicalClientSlug(s.client_name) === anchorSlug) return true;
+    }
+    return false;
   }
 
   function hubOverrideLabel(ov) {
@@ -1409,10 +1535,10 @@
         clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
       if (!coverId && !coverName) return slot;
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
-      if (anchorId && !staffIdMatchesInstructor(anchorId, slot.instructors)) return slot;
-      var origInst = (slot.instructors || []).slice();
+      if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
+      var origInst = slotInstructors(slot).slice();
       var effective = coverName ? [coverName] : coverId ? [coverId] : origInst.slice();
-      return Object.assign({}, slot, {
+      var reassigned = Object.assign({}, slot, {
         instructors: effective,
         instructor_label: effective.join(", "),
         __portalScheduleOverride: ov,
@@ -1421,13 +1547,15 @@
         portalCoveringStaffId: coverId,
         portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
       });
+      reassigned.feedback_unit_key = feedbackUnitKey(reassigned);
+      return reassigned;
     });
   }
 
   function hubInstructorCellHtml(slot, slotOv) {
     if (!slot) return "\u2014";
     if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
-      var origInstSh = slot.portalOriginalInstructors || slot.instructors || [];
+      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
       var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
       var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
       return (
@@ -1439,8 +1567,8 @@
       );
     }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
-      var origHtml = slot.portalOriginalInstructors.map(formatInstructorPillOut).join("");
-      var coverHtml = (slot.instructors || []).map(formatInstructorPill).join("");
+      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
+      var coverHtml = slotInstructors(slot).map(formatInstructorPill).join("");
       return (
         '<span class="ash-instructor-reassign">' +
         origHtml +
@@ -1449,7 +1577,7 @@
         "</span>"
       );
     }
-    return (slot.instructors || []).map(formatInstructorPill).join(" ") || "\u2014";
+    return slotInstructors(slot).map(formatInstructorPill).join(" ") || "\u2014";
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
@@ -1515,6 +1643,27 @@
       });
     }
     return out;
+  }
+
+  /**
+   * True when this client has an aquatic make-up/replace override ANCHORED on one of their own
+   * slots that day. When that happens the client's two 30' halves must stay separate so each half
+   * can show its own make-up participant + own feedback (instead of collapsing into one 60' block).
+   */
+  function aquaticClientHasAnchoredMakeupOnDate(iso, clientName) {
+    var cid = canonicalClientSlug(clientName);
+    if (!iso || !cid || !_activeScheduleOverrides.length) return false;
+    for (var i = 0; i < _activeScheduleOverrides.length; i++) {
+      var ov = _activeScheduleOverrides[i];
+      if (!overrideIsReplaceType(ov)) continue;
+      if (clean(ov.session_date) !== iso) continue;
+      if (canonicalClientSlug(ov.anchor_client_id) !== cid) continue;
+      var p = overridePayloadObj(ov);
+      var svc = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+      if (!isAquaticService(svc)) continue;
+      return true;
+    }
+    return false;
   }
 
   function makeupFeedbackTimeMatchesSlot(fb, slot) {
@@ -1704,6 +1853,10 @@
     if (isPhysicalActivityService(slot.service)) {
       keys.push(slot.session_date + "|" + cid);
       keys.push(feedbackUnitKey(slot));
+    }
+    if (cid === "eddie_mc" && t) {
+      keys.push(slot.session_date + "|" + t + "|eddie");
+      keys.push(slot.session_date + "|" + cid + "|aquatic");
     }
     return keys;
   }
@@ -1984,7 +2137,29 @@
       return '<span class="ash-pill ash-pill--home">' + esc(homeLab) + "</span>";
     }
     if (kind === "manager") {
-      return '<span class="ash-pill ash-pill--manager">' + esc("MANAGER") + "</span>";
+      var mgrLab = "MANAGER";
+      if (
+        global.portalOpsAdminDisplay &&
+        typeof global.portalOpsAdminDisplay.rosterDutyLabel === "function"
+      ) {
+        var staffKey = "";
+        if (slotOpt) {
+          staffKey = clean(slotOpt.anchor_staff_id || slotOpt.staff_id || "").toLowerCase();
+          if (!staffKey && slotOpt.instructors && slotOpt.instructors.length) {
+            for (var mi = 0; mi < slotOpt.instructors.length; mi++) {
+              var instKey = clean(slotOpt.instructors[mi]).toLowerCase();
+              if (global.portalOpsAdminDisplay.isOpsAdminStaffKey(instKey)) {
+                staffKey = instKey;
+                break;
+              }
+            }
+          }
+        }
+        mgrLab = global.portalOpsAdminDisplay.rosterDutyLabel("MANAGER", staffKey);
+      }
+      var mgrCls =
+        String(mgrLab).toUpperCase() === "ADMIN" ? "ash-pill--admin" : "ash-pill--manager";
+      return '<span class="ash-pill ' + mgrCls + '">' + esc(mgrLab) + "</span>";
     }
     return '<span class="ash-pill ash-pill--client">' + esc(name) + "</span>";
   }
@@ -2005,6 +2180,23 @@
       .filter(Boolean);
   }
 
+  /** Roster bundles may expose instructors as a string ("JOHN, BERTA") or an array. */
+  function normalizeInstructorList(raw) {
+    if (raw == null || raw === "") return [];
+    if (Array.isArray(raw)) {
+      return raw.map(function (x) { return clean(x); }).filter(Boolean);
+    }
+    if (typeof raw === "string") return parseInstructors(raw);
+    return [];
+  }
+
+  function slotInstructors(slot) {
+    if (!slot) return [];
+    var fromField = normalizeInstructorList(slot.instructors);
+    if (fromField.length) return fromField;
+    return parseInstructors(slot.instructor_label || "");
+  }
+
   function serviceKey(service) {
     return clean(service).toLowerCase();
   }
@@ -2019,11 +2211,7 @@
   }
 
   function slotInstructorCount(slot) {
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
-    return insts.length;
+    return slotInstructors(slot).length;
   }
 
   /** 2:1 / 3:1 Bespoke at SwimFarm Hub — one feedback per client per day for the whole team (e.g. Tinashe). */
@@ -2143,6 +2331,7 @@
 
   function shouldOmitOverviewSlot(hub, slot) {
     if (!slot) return false;
+    if (makeupSlotAbsorbedByDisplacedRow(hub, slot)) return true;
     var cfg = acatGroupCoverageConfig();
     if (cfg && slotMatchesAcatCoverage(slot, cfg)) {
       if (cfg.always_hide_individual_rows === true) return true;
@@ -2156,6 +2345,7 @@
     for (var oi = 0; oi < omitRules.length; oi++) {
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
+    if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
     return false;
   }
 
@@ -2218,11 +2408,166 @@
     return false;
   }
 
-  function instructorRuleMatches(ruleRaw, slotInstructors) {
+  function instructorRuleMatches(ruleRaw, slotInstructorsRaw) {
     var want = clean(ruleRaw).toUpperCase();
-    var list = slotInstructors || [];
+    var list = normalizeInstructorList(slotInstructorsRaw);
     for (var i = 0; i < list.length; i++) {
       if (clean(list[i]).toUpperCase() === want) return true;
+    }
+    return false;
+  }
+
+  /** Aquatic + consecutive MA pool block with the same swim instructor → one feedback (Roberto/Yusuf, Javier/Cyrus). */
+  function isSwimInstructorPoolAreaKind(kind) {
+    return kind === "pool" || kind === "aquatic" || kind === "teaching_pool" || kind === "small_pool" || kind === "big_pool";
+  }
+
+  function isConsecutiveSwimMergeableSlot(slot) {
+    if (!slot) return false;
+    if (isAquaticService(slot.service)) return true;
+    if (isMultiActivityService(slot.service)) {
+      return isSwimInstructorPoolAreaKind(slotAreaKind(slot));
+    }
+    return false;
+  }
+
+  function rosterRowToSlotLite(isoDate, wd, r) {
+    var pt = parseTimeSlot(r.time_slot, wd);
+    var instructors = parseInstructors(applySundayInstructorOverride(isoDate, r.instructors));
+    return {
+      session_date: isoDate,
+      day: wd,
+      client_name: clean(r.client_name),
+      service: clean(r.service),
+      time_slot: clean(r.time_slot),
+      time_start: pt.start,
+      time_end: pt.end,
+      venue: clean(r.venue),
+      area: clean(r.area),
+      instructors: instructors,
+      instructor_label: instructors.join(", ") || clean(r.instructors),
+    };
+  }
+
+  function rosterSlotsForDate(iso) {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var wd = weekdayLongFromIso(iso);
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (!isRosterClient(r.client_name)) continue;
+      out.push(rosterRowToSlotLite(iso, wd, r));
+    }
+    return out;
+  }
+
+  function rosterSlotIdentity(s) {
+    return (
+      canonicalClientSlug(s.client_name) +
+      "|" +
+      (s.time_start || normTimeKey(s.time_slot, s.day)) +
+      "|" +
+      serviceKey(s.service) +
+      "|" +
+      primaryInstructorKey(s)
+    );
+  }
+
+  function slotsShareSwimInstructor(a, b) {
+    if (primaryInstructorKey(a) !== primaryInstructorKey(b)) return false;
+    var ai = slotInstructors(a);
+    var bi = slotInstructors(b);
+    if (ai.length > 1 || bi.length > 1) {
+      if (ai.length !== bi.length) return false;
+      for (var i = 0; i < ai.length; i++) {
+        if (!instructorRuleMatches(ai[i], bi)) return false;
+      }
+    }
+    return true;
+  }
+
+  function swimBlocksOverlapOrTouch(a, b) {
+    var aStart = a.time_start || "";
+    var aEnd = a.time_end || aStart;
+    var bStart = b.time_start || "";
+    var bEnd = b.time_end || bStart;
+    if (!aStart || !bStart) return false;
+    return aStart < bEnd && bStart < aEnd;
+  }
+
+  function autoConsecutiveSwimInstructorMergeKey(slot) {
+    if (!isConsecutiveSwimMergeableSlot(slot)) return "";
+    if (isTeflonDemoRosterSlot(slot)) return "";
+    var iso = slot.session_date;
+    var cid = canonicalClientSlug(slot.client_name);
+    if (!iso || !cid) return "";
+    var candidates = rosterSlotsForDate(iso).filter(function (s) {
+      if (canonicalClientSlug(s.client_name) !== cid) return false;
+      if (!isConsecutiveSwimMergeableSlot(s)) return false;
+      return slotsShareSwimInstructor(slot, s);
+    });
+    if (candidates.length < 2) return "";
+    var id = rosterSlotIdentity(slot);
+    var parent = {};
+    var rank = {};
+    for (var ci = 0; ci < candidates.length; ci++) {
+      var ck = rosterSlotIdentity(candidates[ci]);
+      parent[ck] = ck;
+      rank[ck] = 0;
+    }
+    function find(k) {
+      while (parent[k] !== k) {
+        parent[k] = parent[parent[k]];
+        k = parent[k];
+      }
+      return k;
+    }
+    function unite(a, b) {
+      var ra = find(a);
+      var rb = find(b);
+      if (ra === rb) return;
+      if (rank[ra] < rank[rb]) parent[ra] = rb;
+      else if (rank[ra] > rank[rb]) parent[rb] = ra;
+      else {
+        parent[rb] = ra;
+        rank[ra]++;
+      }
+    }
+    for (var i = 0; i < candidates.length; i++) {
+      for (var j = i + 1; j < candidates.length; j++) {
+        if (swimBlocksOverlapOrTouch(candidates[i], candidates[j])) {
+          unite(rosterSlotIdentity(candidates[i]), rosterSlotIdentity(candidates[j]));
+        }
+      }
+    }
+    var root = find(id);
+    var componentSize = 0;
+    for (var k in parent) {
+      if (Object.prototype.hasOwnProperty.call(parent, k) && find(k) === root) componentSize++;
+    }
+    if (componentSize < 2) return "";
+    return "consec_swim|" + cid + "|" + primaryInstructorKey(slot);
+  }
+
+  function shouldOmitAutoMergedSwimDuplicate(slot) {
+    if (!slot || !isAquaticService(slot.service)) return false;
+    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot);
+    if (!mg) return false;
+    var iso = slot.session_date;
+    if (!iso) return false;
+    var slots = rosterSlotsForDate(iso);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (isAquaticService(s.service)) continue;
+      if (!isMultiActivityService(s.service)) continue;
+      var kind = slotAreaKind(s);
+      if (!isSwimInstructorPoolAreaKind(kind)) continue;
+      if (canonicalClientSlug(s.client_name) !== canonicalClientSlug(slot.client_name)) continue;
+      if (!slotsShareSwimInstructor(slot, s)) continue;
+      var sMg = feedbackMergeGroupForSlot(s);
+      if (sMg === mg) return true;
     }
     return false;
   }
@@ -2248,6 +2593,8 @@
         }
       }
     }
+    var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot);
+    if (autoSwim) return autoSwim;
     if (
       wd === "Sunday" &&
       isMultiActivityService(slot.service) &&
@@ -2329,6 +2676,73 @@
     return false;
   }
 
+  function slotInstructorLabels(slot) {
+    return slotInstructors(slot);
+  }
+
+  /** Shared units (e.g. Tinashe John+Bismark+Giuseppe): peer submitter still visible for co-instructors. */
+  function submittedFeedbackMatchesInstructorFilter(hub, fb, inst) {
+    if (!inst) return true;
+    if (!fb || fb._ashAwaitingSlot) return true;
+    if (completedByMatchesInstructor(fb.completed_by_name, inst)) return true;
+    var day = feedbackSessionDate(fb);
+    if (!day || !hub || typeof hub.expandSlotsForDate !== "function") return false;
+    var cid = canonicalClientSlug(fb.client_name);
+    if (!cid) return false;
+    var slots = hub.expandSlotsForDate(day);
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      if (canonicalClientSlug(slot.client_name) !== cid) continue;
+      if (!feedbackFitsSlot(fb, slot)) continue;
+      var labels = slotInstructorLabels(slot);
+      for (var li = 0; li < labels.length; li++) {
+        if (completedByMatchesInstructor(labels[li], inst)) return true;
+      }
+    }
+    return false;
+  }
+
+  function buildAshFilterComboHtml(cfg) {
+    var esc = cfg.esc;
+    var id = cfg.id;
+    var label = cfg.label;
+    var val = clean(cfg.value);
+    var opts = cfg.options || [];
+    var display = "";
+    if (val) {
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i] === val || completedByMatchesInstructor(opts[i], val)) {
+          display = opts[i];
+          break;
+        }
+      }
+      if (!display) display = val;
+    }
+    var ph = cfg.placeholder || "All " + String(label || "").toLowerCase() + "s";
+    return (
+      '<label class="ash-filter-label">' +
+      esc(label) +
+      '<div class="ash-filter-combo" id="' +
+      id +
+      'Combo">' +
+      '<input type="hidden" id="' +
+      id +
+      '" value="' +
+      esc(val) +
+      '" />' +
+      '<input type="text" class="ash-input ash-input--instructor ash-filter-combo__inp" id="' +
+      id +
+      'Input" value="' +
+      esc(display) +
+      '" placeholder="' +
+      esc(ph) +
+      '" autocomplete="off" spellcheck="false" aria-autocomplete="list" />' +
+      '<div class="ash-filter-suggest" id="' +
+      id +
+      'Suggest" role="listbox" hidden></div></div></label>'
+    );
+  }
+
   /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
   function aquaticSlotCountForClientOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
@@ -2384,11 +2798,20 @@
   function clientNeedsPerSlotAquaticFeedback(slot) {
     if (!slot || !isAquaticService(slot.service)) return false;
     if (aquaticSlotCountForClientOnDate(slot.session_date, slot.client_name) <= 1) return false;
+    // Make-ups handed out on a specific half-hour must never collapse into one 60' block.
+    if (aquaticClientHasAnchoredMakeupOnDate(slot.session_date, slot.client_name)) return true;
     return !aquaticSameInstructorAllSlotsOnDate(slot.session_date, slot.client_name);
   }
 
   function completedByMatchesSlotInstructors(completedBy, slot) {
-    var insts = slot.instructors || [];
+    if (!slot) return false;
+    if (slot.portalCoveringStaffId && completedByMatchesInstructor(completedBy, slot.portalCoveringStaffId)) {
+      return true;
+    }
+    if (slot.portalCoveringStaffName && completedByMatchesInstructor(completedBy, slot.portalCoveringStaffName)) {
+      return true;
+    }
+    var insts = slotInstructors(slot);
     if (!insts.length) return true;
     for (var i = 0; i < insts.length; i++) {
       if (completedByMatchesInstructor(completedBy, insts[i])) return true;
@@ -2399,10 +2822,7 @@
   function completedByFitsSlotArea(completedBy, slot) {
     var by = clean(completedBy).toLowerCase();
     if (!by) return true;
-    var insts = slot.instructors || [];
-    if (!insts.length && slot.instructor_label) {
-      insts = parseInstructors(slot.instructor_label);
-    }
+    var insts = slotInstructors(slot);
     if (insts.length) {
       for (var i = 0; i < insts.length; i++) {
         if (completedByMatchesInstructor(completedBy, insts[i])) return true;
@@ -2518,12 +2938,33 @@
   /** Portal guide (Teflon) demo roster — visible in roster but excluded from session totals. */
   function isTeflonDemoRosterSlot(slot) {
     if (!slot) return false;
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
+    var insts = slotInstructors(slot);
     if (!insts.length) return false;
-    if (insts.length === 1) return clean(insts[0]).toUpperCase() === "TEFLON";
+    if (insts.length === 1) return isTeflonDemoInstructor(insts[0]);
+    return false;
+  }
+
+  function isTeflonDemoInstructor(name) {
+    return clean(name).toUpperCase() === "TEFLON";
+  }
+
+  /** Submitted feedback or awaiting row tied to the Teflon demo account / roster slot. */
+  function isTeflonDemoFeedbackRow(hub, row) {
+    if (!row) return false;
+    if (row._ashAwaitingSlot) return isTeflonDemoRosterSlot(row.slot);
+    if (isTeflonDemoInstructor(row.completed_by_name) || isTeflonDemoInstructor(row.submitted_by_name)) {
+      return true;
+    }
+    if (!hub || typeof hub.expandSlotsForDate !== "function") return false;
+    var day = hub.feedbackRowDate(row) || feedbackSessionDate(row);
+    if (!day) return false;
+    var cid = canonicalClientSlug(row.client_name);
+    if (!cid) return false;
+    var slots = hub.expandSlotsForDate(day);
+    for (var i = 0; i < slots.length; i++) {
+      if (canonicalClientSlug(slots[i].client_name) !== cid) continue;
+      if (isTeflonDemoRosterSlot(slots[i])) return true;
+    }
     return false;
   }
 
@@ -2547,7 +2988,7 @@
     var pk = clean(fb.portal_session_key).toLowerCase();
     if (pk.indexOf("hub_room") >= 0 || pk.indexOf("|hub") >= 0) return "hub";
     if (pk.indexOf("big_pool") >= 0) return "pool";
-    if (pk.indexOf("climbing") >= 0 || pk.indexOf("climb") >= 0) return "climb";
+    if (pk.indexOf("|wall") >= 0 || pk.indexOf("climbing") >= 0 || pk.indexOf("climb") >= 0) return "climb";
     if (pk.indexOf("small_pool") >= 0) return "aquatic";
     if (isClimbingService(fb.service)) return "climb";
     if (isAquaticService(fb.service)) return "aquatic";
@@ -2608,9 +3049,59 @@
     return !!clean(fb.positive_feedback);
   }
 
+  function sessionTimeWindowsOverlap(startA, endA, startB, endB) {
+    function mins(hm) {
+      var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!p) return NaN;
+      return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+    }
+    var lo1 = mins(startA);
+    var hi1 = mins(endA || startA);
+    var lo2 = mins(startB);
+    var hi2 = mins(endB || startB);
+    if (!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) {
+      return false;
+    }
+    return lo1 < hi2 && lo2 < hi1;
+  }
+
+  /** Cover instructor submitted feedback — roster/MADRE times may differ from form entry. */
+  function instructorCoverFeedbackFits(fb, slot) {
+    if (!fb || !slot || !slot.portalInstructorReassigned) return false;
+    if (isAbsentFeedbackRow(fb)) return false;
+    if (!feedbackRosterDateMatches(fb, slot)) return false;
+    if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+    if (!completedByMatchesSlotInstructors(fb.completed_by_name, slot)) return false;
+    var slotSvcKey = serviceKey(clean(slot.service));
+    var fbSvcKey = serviceKey(clean(fb.service));
+    var swimFarmSession =
+      /aquatic|multi|swim|activity|splash/.test(slotSvcKey) &&
+      /aquatic|multi|swim|activity|splash/.test(fbSvcKey);
+    if (!servicesCompatibleForSlot(fb, slot) && !swimFarmSession) return false;
+    var st = slot.time_start || normTimeKey(slot.time_slot);
+    var ft = normTimeKey(fb.session_time);
+    if (ft && st && ft === st) return true;
+    if (
+      sessionTimeWindowsOverlap(
+        st,
+        slot.time_end || st,
+        ft || st,
+        normTimeKey(String(fb.session_time || "").split(/\s+to\s+/i)[1]) || ft || st
+      )
+    ) {
+      return true;
+    }
+    if (sundaySwimFarmMultiAreaDayCovers(fb, slot)) return true;
+    if (isAquaticService(slot.service) && isAquaticService(fb.service)) return true;
+    var er = fb.engagement_rating;
+    if (er != null && er !== "" && !isNaN(Number(er))) return true;
+    return !!clean(fb.positive_feedback);
+  }
+
   function feedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (hubSlotIsMakeup(slot)) return makeupFeedbackStrictFits(fb, slot);
+    if (instructorCoverFeedbackFits(fb, slot)) return true;
     if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
     if (!feedbackRosterDateMatches(fb, slot)) return false;
     if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
@@ -2662,6 +3153,9 @@
     if (isMultiActivityService(slot.service) || isClimbingService(slot.service)) {
       return completedByFitsSlotArea(fb.completed_by_name, slot);
     }
+    if (isPhysicalActivityService(slot.service)) {
+      return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
+    }
     if (clientNeedsPerSlotAquaticFeedback(slot)) {
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
@@ -2671,7 +3165,8 @@
   /** Support vs swim instructor on the same MA block are separate feedback units. */
   function primaryInstructorKey(slot) {
     var raw = "";
-    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    var insts = slotInstructors(slot);
+    if (insts.length) raw = insts[0];
     else if (slot.instructor_label) {
       raw = String(slot.instructor_label).split(/[,/&]+|\s+and\s+/gi)[0];
     }
@@ -2761,6 +3256,19 @@
       }
       return climbKey;
     }
+    if (isPhysicalActivityService(slot.service)) {
+      return (
+        slot.session_date +
+        "|" +
+        cid +
+        "|" +
+        t +
+        "|" +
+        serviceKey(slot.service) +
+        "|" +
+        primaryInstructorKey(slot)
+      );
+    }
     return slot.session_key || slot.session_date + "|" + cid + "|" + t;
   }
 
@@ -2788,6 +3296,27 @@
     return !!(st && st >= "16:00");
   }
 
+  /** Day Centre split blocks (e.g. Roberto 12.30–3 + Youssef 1–3): union instructors for overview/filter. */
+  function mergeDayCentreInstructorLabels(slots) {
+    var seen = Object.create(null);
+    var out = [];
+    for (var i = 0; i < slots.length; i++) {
+      String(slots[i].instructors || "")
+        .split(/,|\/|&|\band\b/gi)
+        .map(function (s) {
+          return clean(s);
+        })
+        .filter(Boolean)
+        .forEach(function (name) {
+          var key = name.toLowerCase();
+          if (seen[key]) return;
+          seen[key] = true;
+          out.push(name);
+        });
+    }
+    return out.join(", ");
+  }
+
   /** One overview row per feedback unit (Day Centre blocks collapse to one row per client). */
   function pickRepresentativeSlotForUnit(unit) {
     var slots = unit.slots;
@@ -2802,18 +3331,65 @@
     for (si = 0; si < slots.length; si++) {
       if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
     }
-    if (last === rep) return rep;
     var merged = Object.assign({}, rep);
-    var a = clean(rep.time_slot);
-    var b = clean(last.time_slot);
-    if (a && b && a !== b) {
-      var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
-      var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
-      merged.time_slot = startPart + " to " + endPart;
-      var pt = parseTimeSlot(merged.time_slot, rep.day);
-      merged.time_start = pt.start;
+    if (last !== rep) {
+      var a = clean(rep.time_slot);
+      var b = clean(last.time_slot);
+      if (a && b && a !== b) {
+        var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
+        var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
+        merged.time_slot = startPart + " to " + endPart;
+        var pt = parseTimeSlot(merged.time_slot, rep.day);
+        merged.time_start = pt.start;
+      }
     }
+    var allInst = mergeDayCentreInstructorLabels(slots);
+    if (allInst) merged.instructors = allInst;
     return merged;
+  }
+
+  function overviewSlotDedupeKey(slot) {
+    var cid = canonicalClientSlug(slot && slot.client_name);
+    var day = clean(slot && slot.session_date);
+    if (!cid || !day) return "";
+    var wd = slot.day || weekdayLongFromIso(day);
+    var t = slot.time_start || normTimeKey(slot.time_slot, wd);
+    return t ? day + "|" + cid + "|" + t : "";
+  }
+
+  function overviewSlotRichnessScore(slot) {
+    var score = 0;
+    if (clean(slot.service)) score += 4;
+    if (clean(slot.area)) score += 2;
+    if (clean(slot.venue)) score += 1;
+    if (!slot.portalOverrideMakeUpTag && !slot.portalOverrideTrialTag) score += 2;
+    var resolved = resolveRosterClientName(slot.client_name);
+    if (resolved && clean(slot.client_name) === resolved) score += 1;
+    return score;
+  }
+
+  /** Same client+time must not appear twice (roster + orphan makeup override). */
+  function dedupeOverviewDisplaySlots(slots) {
+    var map = {};
+    var order = [];
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      var key = overviewSlotDedupeKey(slot);
+      if (!key) {
+        order.push({ key: "__row-" + i, slot: slot });
+        continue;
+      }
+      if (!map[key]) {
+        map[key] = { slot: slot, idx: order.length };
+        order.push({ key: key, slot: slot });
+      } else if (overviewSlotRichnessScore(slot) > overviewSlotRichnessScore(map[key].slot)) {
+        map[key].slot = slot;
+        order[map[key].idx].slot = slot;
+      }
+    }
+    return order.map(function (o) {
+      return o.slot;
+    });
   }
 
   function overviewDisplaySlotsFromUnits(hub, slots) {
@@ -2824,7 +3400,7 @@
       if (!rep) continue;
       out.push(rep);
     }
-    return out;
+    return dedupeOverviewDisplaySlots(out);
   }
 
   /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
@@ -2939,15 +3515,52 @@
   function formatInstructorPill(name) {
     var n = clean(name);
     if (!n) return "";
-    var title = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    var title =
+      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
+        ? window.portalStaffDisplayName(n)
+        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 
   function formatInstructorPillOut(name) {
     var n = clean(name);
     if (!n) return "";
-    var title = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    var title =
+      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
+        ? window.portalStaffDisplayName(n)
+        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
+  }
+
+  /** One display label per instructor for filter dropdowns (roster may mix LULIYA / Luliya). */
+  function canonicalInstructorFilterName(name) {
+    var n = clean(name);
+    if (!n) return "";
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(n);
+    }
+    if (/^[A-Z]{2,}$/.test(n)) {
+      return n.charAt(0) + n.slice(1).toLowerCase();
+    }
+    return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+  }
+
+  function uniqueInstructorFilterNames(rawLabels) {
+    var byKey = Object.create(null);
+    var list = rawLabels || [];
+    for (var i = 0; i < list.length; i++) {
+      var raw = clean(list[i]);
+      if (!raw) continue;
+      var key = raw.toLowerCase();
+      if (!byKey[key]) byKey[key] = canonicalInstructorFilterName(raw);
+    }
+    return Object.keys(byKey)
+      .map(function (k) {
+        return byKey[k];
+      })
+      .sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      });
   }
 
   function emotionDotClass(emotionsText) {
@@ -3404,6 +4017,8 @@
       );
     }
     this.indexAbsentMarks();
+    this.indexParentShares();
+    this.ensureParentSharesGenerated();
     if (this.mode === "feedback") this.initFeedbackDateRange();
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
@@ -3986,6 +4601,7 @@
       var fb = list[i];
       if (feedbackSessionDate(fb) !== iso) continue;
       if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      if (isTeflonDemoFeedbackRow(hub, fb)) continue;
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
       n++;
     }
@@ -4150,6 +4766,25 @@
     if (this.acatGroupCoversSlot(slot)) {
       return this.findAcatGroupFeedbackForDate(slot.session_date);
     }
+    if (isAcatGroupClient(slot.client_name)) {
+      var acatFb = this.findAcatGroupFeedbackForDate(slot.session_date);
+      if (acatFb) return acatFb;
+    }
+    if (
+      slot.portalOverrideTrialTag &&
+      canonicalClientSlug(slot.client_name) === "chaitanya" &&
+      isClimbingService(slot.service)
+    ) {
+      var trialList = this.payload.session_feedback || [];
+      for (var ti = 0; ti < trialList.length; ti++) {
+        var tfb = trialList[ti];
+        if (canonicalClientSlug(tfb.client_name) !== "chaitanya") continue;
+        if (feedbackSessionDate(tfb) !== slot.session_date) continue;
+        if (isAbsentFeedbackRow(tfb)) continue;
+        if (!isClimbingService(tfb.service)) continue;
+        if (feedbackFitsSlot(tfb, slot) || sundayWestwayClimbDayCovers(tfb, slot)) return tfb;
+      }
+    }
     if (isDayCentreService(slot.service)) {
       var dkDc = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
       var fbDc = this._fbByDateClient && this._fbByDateClient[dkDc];
@@ -4223,6 +4858,13 @@
   };
 
   AdminSessionsHub.prototype.slotFeedbackComplete = function (slot) {
+    if (slot && !slot.portalOverrideMakeUpTag) {
+      var disp = makeupOverrideDisplacingSlot(this, slot);
+      if (disp && disp.makeupSlot) {
+        if (this.slotIsAbsent(disp.makeupSlot)) return true;
+        return this.slotFeedbackComplete(disp.makeupSlot);
+      }
+    }
     if (this.acatGroupCoversSlot(slot)) return true;
     if (sameDayAquaticFeedbackCoversMakeupSlot(this, slot)) return true;
     if (this.findFeedbackForSlot(slot)) return true;
@@ -4335,7 +4977,7 @@
     var absentMap = this._absentFbByDateClient || {};
     var dk = slot.session_date + "|" + cid;
     var afb = absentMap[dk] || absentMap[dk + "|" + serviceKey(clean(slot.service))];
-    if (afb) return true;
+    if (afb && absentFeedbackFitsSlot(afb, slot)) return true;
     if (this.findAbsentFeedbackForSlot(slot)) return true;
     var slotAliases = feedbackAliasKeysForSlot(slot);
     for (var sa = 0; sa < slotAliases.length; sa++) {
@@ -4599,7 +5241,7 @@
     var inst = clean(this.instructorFilter);
     if (inst) {
       rows = rows.filter(function (fb) {
-        return completedByMatchesInstructor(fb.completed_by_name, inst);
+        return submittedFeedbackMatchesInstructorFilter(hub, fb, inst);
       });
     }
     var svcFilter = clean(this.serviceFilter);
@@ -4630,20 +5272,18 @@
   };
 
   AdminSessionsHub.prototype.instructorFilterOptionsForDay = function (dayIso) {
-    var map = {};
+    var raw = [];
     var rows = this.feedbackLogRowsForDay(dayIso);
     for (var i = 0; i < rows.length; i++) {
       var n = clean(rows[i].completed_by_name);
-      if (n) map[n] = true;
+      if (n) raw.push(n);
     }
-    return Object.keys(map).sort(function (a, b) {
-      return a.localeCompare(b, "en", { sensitivity: "base" });
-    });
+    return uniqueInstructorFilterNames(raw);
   };
 
   AdminSessionsHub.prototype.overviewFilterOptionsForDay = function (dayIso) {
     var hub = this;
-    var instMap = {};
+    var instRaw = [];
     var svcMap = {};
     var slots = this.expandSlotsForDate(dayIso);
     for (var i = 0; i < slots.length; i++) {
@@ -4652,18 +5292,11 @@
       if (isTeflonDemoRosterSlot(s)) continue;
       var svc = clean(s.service);
       if (svc) svcMap[svc] = true;
-      var labels = (s.instructors || [])
-        .concat(String(s.instructor_label || "").split(/,|\/|&|\band\b/gi))
-        .map(function (x) {
-          return clean(x);
-        })
-        .filter(Boolean);
-      for (var j = 0; j < labels.length; j++) instMap[labels[j]] = true;
+      var labels = slotInstructors(s);
+      for (var j = 0; j < labels.length; j++) instRaw.push(labels[j]);
     }
     return {
-      instructors: Object.keys(instMap).sort(function (a, b) {
-        return a.localeCompare(b, "en", { sensitivity: "base" });
-      }),
+      instructors: uniqueInstructorFilterNames(instRaw),
       services: Object.keys(svcMap).sort(function (a, b) {
         return a.localeCompare(b, "en", { sensitivity: "base" });
       }),
@@ -4675,12 +5308,7 @@
     if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
     var inst = clean(this.instructorFilter);
     if (inst) {
-      var labels = (slot.instructors || [])
-        .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
-        .map(function (x) {
-          return clean(x);
-        })
-        .filter(Boolean);
+      var labels = slotInstructors(slot);
       var hit = false;
       for (var li = 0; li < labels.length; li++) {
         if (completedByMatchesInstructor(labels[li], inst)) {
@@ -4698,41 +5326,28 @@
   AdminSessionsHub.prototype.overviewFilterRowHtml = function () {
     var esc = this.escapeHtml;
     var opts = this.overviewFilterOptionsForDay(this.selectedDay);
-    var instHtml = '<option value="">All instructors</option>';
-    for (var i = 0; i < opts.instructors.length; i++) {
-      var n = opts.instructors[i];
-      instHtml +=
-        '<option value="' +
-        esc(n) +
-        '"' +
-        (this.instructorFilter === n ? " selected" : "") +
-        ">" +
-        esc(n) +
-        "</option>";
-    }
-    var svcHtml = '<option value="">All services</option>';
-    for (var j = 0; j < opts.services.length; j++) {
-      var s = opts.services[j];
-      svcHtml +=
-        '<option value="' +
-        esc(s) +
-        '"' +
-        (this.serviceFilter === s ? " selected" : "") +
-        ">" +
-        esc(s) +
-        "</option>";
-    }
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
       '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
-      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
-      instHtml +
-      "</select></label>" +
-      '<label class="ash-filter-label">Service<select id="ashServiceFilter" class="ash-input ash-input--instructor">' +
-      svcHtml +
-      "</select></label></div>"
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashInstructorFilter",
+        label: "Instructor",
+        value: this.instructorFilter,
+        options: opts.instructors,
+        placeholder: "All instructors",
+      }) +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashServiceFilter",
+        label: "Service",
+        value: this.serviceFilter,
+        options: opts.services,
+        placeholder: "All services",
+      }) +
+      "</div>"
     );
   };
 
@@ -4753,9 +5368,14 @@
       '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
-      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
-      this.feedbackInstructorFilterOptionsHtml() +
-      "</select></label>" +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashInstructorFilter",
+        label: "Instructor",
+        value: this.instructorFilter,
+        options: this.instructorFilterOptionsForDay(this.selectedDay),
+        placeholder: "All instructors",
+      }) +
       '<label class="ash-filter-label">From<input type="date" id="ashRangeFrom" class="ash-input" value="' +
       esc(this.rangeFrom) +
       '"></label>' +
@@ -4785,6 +5405,7 @@
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
+      if (isTeflonDemoFeedbackRow(hub, fb)) return false;
       if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
         if (!hub.opts.feedbackRowScopeFilter(fb)) return false;
       }
@@ -4874,7 +5495,7 @@
       var oCid = canonicalClientSlug(ov.anchor_client_id);
       if (oCid && sCid && oCid !== sCid) return false;
       if (overrideIsInstructorReassignType(ov)) {
-        if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
+        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) return false;
       }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
@@ -4897,6 +5518,21 @@
       if (Number.isFinite(lo1) && Number.isFinite(hi1) && Number.isFinite(lo2) && Number.isFinite(hi2)) {
         return lo1 < hi2 && lo2 < hi1;
       }
+    }
+    if (overrideIsInstructorReassignType(ov) && oStart && sStart && oStart !== sStart) {
+      function minsReassign(hm) {
+        var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!p) return NaN;
+        return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+      }
+      var rLo1 = minsReassign(oStart);
+      var rHi1 = minsReassign(oEnd || oStart);
+      var rLo2 = minsReassign(sStart);
+      var rHi2 = minsReassign(sEnd || sStart);
+      if (Number.isFinite(rLo1) && Number.isFinite(rHi1) && Number.isFinite(rLo2) && Number.isFinite(rHi2)) {
+        return rLo1 < rHi2 && rLo2 < rHi1;
+      }
+      return false;
     }
     if (oStart && sStart && oStart !== sStart) return false;
     return true;
@@ -5204,7 +5840,163 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Positive</th><th>Relevant</th><th>Reviewed by:</th>";
+    "<th>Positive</th><th>Relevant</th><th>Family summary</th><th>Reviewed by:</th>";
+
+  AdminSessionsHub.prototype.indexParentShares = function () {
+    var map = {};
+    var rows = (this.payload && this.payload.parent_feedback_shares) || [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var id = String((r && r.session_feedback_id) || "").trim();
+      if (id) map[id] = r;
+    }
+    this._parentShareByFbId = map;
+  };
+
+  AdminSessionsHub.prototype.parentShareForFeedback = function (fb) {
+    var id = fb && (fb.id || fb.session_feedback_id);
+    if (!id || !this._parentShareByFbId) return null;
+    return this._parentShareByFbId[String(id)] || null;
+  };
+
+  /**
+   * Fill the family-summary column for feedback rows that have notes but no
+   * generated share yet (e.g. parents haven't opened the portal). Runs once per
+   * payload load, in the background, then re-renders so admins can review.
+   */
+  function shareNeedsGeneration(existing) {
+    if (!existing) return true;
+    var status = String(existing.share_status || "");
+    if (status === "pending") return true;
+    var msg = String(existing.parent_message || "").trim();
+    var model = String(existing.review_model || "");
+    if (status === "hidden" && !msg) return true;
+    if (model === "fallback-no-openai" || model === "fallback-positive-only" || model === "fallback-needs-ai" || model === "openai-error" || model.indexOf("openai-http-") === 0) return true;
+    return false;
+  }
+
+  AdminSessionsHub.prototype.ensureParentSharesGenerated = function () {
+    var hub = this;
+    var runGenerate = function () {
+      if (typeof global.portalAdminGenerateParentFeedbackShares !== "function") return;
+      var rows = (hub.payload && hub.payload.session_feedback) || [];
+      if (!rows.length) return;
+      var have = hub._parentShareByFbId || {};
+      var missing = [];
+      var seen = {};
+      for (var i = 0; i < rows.length; i++) {
+        var fb = rows[i];
+        var id = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
+        if (!id || seen[id]) continue;
+        var pos = clean(fb && fb.positive_feedback);
+        var rel = clean(fb && fb.relevant_information);
+        if (!pos && !rel) continue;
+        if (!shareNeedsGeneration(have[id])) continue;
+        seen[id] = true;
+        missing.push(id);
+      }
+      if (!missing.length) return;
+      if (hub._generatedShareKey) {
+        var key = missing.slice().sort().join(",");
+        if (hub._generatedShareKey === key) return;
+        hub._generatedShareKey = key;
+      } else {
+        hub._generatedShareKey = missing.slice().sort().join(",");
+      }
+      var batch = missing.slice(0, 30);
+      global.portalAdminGenerateParentFeedbackShares(batch)
+        .then(function (res) {
+          if (!res || !res.ok) return;
+          var refetch =
+            typeof global.adminFetchParentFeedbackSharesForHub === "function"
+              ? global.adminFetchParentFeedbackSharesForHub()
+              : Promise.resolve((res && res.shares) || []);
+          return refetch.then(function (shares) {
+            hub.payload.parent_feedback_shares = shares || [];
+            hub.indexParentShares();
+            if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+            else hub.render();
+          });
+        })
+        .catch(function (e) {
+          console.debug("[AdminSessionsHub] generate family summaries", e);
+        });
+    };
+
+    if (typeof global.adminFetchParentFeedbackSharesForHub === "function") {
+      global
+        .adminFetchParentFeedbackSharesForHub()
+        .then(function (shares) {
+          hub.payload.parent_feedback_shares = shares || [];
+          hub.indexParentShares();
+          runGenerate();
+          if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+          else hub.render();
+        })
+        .catch(function () {
+          runGenerate();
+        });
+      return;
+    }
+    runGenerate();
+  };
+
+  AdminSessionsHub.prototype.htmlFamilySummaryCell = function (fb, escFn, terminal) {
+    var esc = escFn || this.escapeHtml;
+    if (terminal) return '<td class="ash-cell-note"><span class="ash-cell-muted">N/A</span></td>';
+    var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
+    if (!fbId) {
+      return '<td class="ash-cell-note ash-cell-family"><span class="ash-cell-muted">—</span></td>';
+    }
+    var share = this.parentShareForFeedback(fb);
+    var msg = share && share.parent_message ? String(share.parent_message) : "";
+    var status = share ? String(share.share_status || "") : "";
+    var pending = !share || status === "pending";
+    var edited = !!(share && share.admin_edited_at);
+    var hint = pending
+      ? "Preparing family summary…"
+      : status === "hidden" && !msg
+        ? "Hidden from families"
+        : "";
+    return (
+      '<td class="ash-cell-note ash-cell-family">' +
+      '<div class="ash-family-summary">' +
+      (edited ? '<span class="ash-family-summary__tag">Edited</span>' : "") +
+      '<textarea class="ash-family-summary__input" rows="3" data-ash-family-msg="' +
+      esc(fbId) +
+      '" placeholder="' +
+      esc(pending ? "Preparing…" : "Family summary for parents") +
+      '">' +
+      esc(msg) +
+      "</textarea>" +
+      (hint ? '<span class="ash-family-summary__hint">' + esc(hint) + "</span>" : "") +
+      '<button type="button" class="ash-family-summary__save" data-ash-family-save="' +
+      esc(fbId) +
+      '">Save</button>' +
+      "</div></td>"
+    );
+  };
+
+  AdminSessionsHub.prototype.saveParentShare = async function (feedbackId, message) {
+    var hub = this;
+    if (typeof global.portalAdminSaveParentFeedbackShare !== "function") {
+      throw new Error("save_unavailable");
+    }
+    var res = await global.portalAdminSaveParentFeedbackShare(feedbackId, message);
+    if (!res || !res.ok) throw new Error((res && res.error) || "save_failed");
+    var rows = (hub.payload.parent_feedback_shares = hub.payload.parent_feedback_shares || []);
+    var found = false;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].session_feedback_id) === String(feedbackId)) {
+        rows[i] = Object.assign({}, rows[i], res.share || {});
+        found = true;
+        break;
+      }
+    }
+    if (!found && res.share) rows.push(res.share);
+    hub.indexParentShares();
+    return res;
+  };
 
   /** Portal feedback row must match a roster slot on that calendar day (e.g. Tom Thu only, Gabriel Sun only). */
   AdminSessionsHub.prototype.feedbackAllowedOnCalendarDay = function (fb) {
@@ -5252,6 +6044,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     function pushRow(row) {
       if (isMislabeledRosterAreaClientName(row.client_name)) return;
+      if (isTeflonDemoFeedbackRow(hub, row)) return;
       if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
         if (!hub.opts.feedbackRowScopeFilter(row)) return;
       }
@@ -5375,6 +6168,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     function scopedSlots(unit) {
       return unit.slots.filter(function (s) {
         if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (isTeflonDemoRosterSlot(s)) return false;
         if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
         return true;
       });
@@ -5451,11 +6245,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
     var displaySlots = hub.sortOverviewSlotsForDisplay(
-      slots.filter(function (s) {
-        if (shouldOmitOverviewSlot(hub, s)) return false;
-        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
-        return true;
-      }),
+      overviewDisplaySlotsFromUnits(
+        hub,
+        slots.filter(function (s) {
+          if (shouldOmitOverviewSlot(hub, s)) return false;
+          if (isTeflonDemoRosterSlot(s)) return false;
+          if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+          return true;
+        })
+      ),
       unitComplete,
       unitAbsent
     );
@@ -5514,10 +6312,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       out.push({ _ashAwaitingSlot: true, slot: slot });
     }
     for (var j = 0; j < submitted.length; j++) {
-      if (!isUsed(submitted[j])) {
-        out.push(submitted[j]);
-        markUsed(submitted[j]);
+      if (isUsed(submitted[j])) continue;
+      if (isAbsentFeedbackRow(submitted[j])) {
+        var orphanDup = false;
+        var oc = canonicalClientSlug(submitted[j].client_name);
+        var ot = normTimeKey(submitted[j].session_time);
+        for (var oi = 0; oi < out.length; oi++) {
+          var shown = out[oi];
+          if (!isAbsentFeedbackRow(shown)) continue;
+          if (canonicalClientSlug(shown.client_name) !== oc) continue;
+          var st = normTimeKey(shown.session_time);
+          if (!ot || !st || ot === st) {
+            orphanDup = true;
+            break;
+          }
+        }
+        if (orphanDup) continue;
       }
+      out.push(submitted[j]);
+      markUsed(submitted[j]);
     }
     return out;
   };
@@ -5537,22 +6350,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return rows.filter(function (fb) {
       var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
       if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
-      if (inst && fb._ashAwaitingSlot && fb.slot) {
-        var labels = (fb.slot.instructors || [])
-          .concat(String(fb.slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
-          .map(function (x) {
-            return clean(x);
-          })
-          .filter(Boolean);
-        var hit = false;
-        for (var li = 0; li < labels.length; li++) {
-          if (completedByMatchesInstructor(labels[li], inst)) {
-            hit = true;
-            break;
-          }
-        }
-        if (!hit) return false;
-      } else if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) {
+      if (inst && !submittedFeedbackMatchesInstructorFilter(hub, fb, inst)) {
         return false;
       }
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
@@ -5597,7 +6395,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(clean(awaitSlot.service) || "\u2014") +
           awaitTime +
           "</td>" +
-          '<td colspan="5" class="ash-td-center">' +
+          '<td colspan="6" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -5608,7 +6406,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
+        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
         : "";
       var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
       return (
@@ -5620,7 +6418,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(awaitSvc) +
         awaitTime +
         "</td>" +
-        '<td colspan="5" class="ash-td-center">' +
+        '<td colspan="6" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
         '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -5660,7 +6458,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "\u2014";
     var svcTimeSub =
       displaySlot && displaySlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(displaySlot.time_slot) + "</div>"
+        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
     var pos = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
@@ -5710,6 +6508,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
+      hub.htmlFamilySummaryCell(fb, esc, terminal) +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
       '</div><div class="ash-cell-sub">' +
@@ -5749,7 +6548,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         .join("");
       if (!tableRows) {
         tableRows =
-          '<tr><td colspan="8"><div class="ash-empty">' +
+          '<tr><td colspan="9"><div class="ash-empty">' +
           esc((opts && opts.emptyMsg) || "No feedback for this day.") +
           "</div></td></tr>";
       }
@@ -5853,6 +6652,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var d = dayList[di];
       var slots = hub.expandSlotsForDate(d);
       for (var i = 0; i < slots.length; i++) {
+        if (isTeflonDemoRosterSlot(slots[i])) continue;
         out.push({ date_iso: d, slot: slots[i] });
       }
     }
@@ -5910,6 +6710,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (hub._modalFb) hub.markFeedbackHandled(hub._modalFb);
         hub.closeModal();
         hub.renderPanels();
+        return;
+      }
+      var saveFamilyBtn = t.closest("[data-ash-family-save]");
+      if (saveFamilyBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var fid = saveFamilyBtn.getAttribute("data-ash-family-save") || "";
+        var wrap = saveFamilyBtn.closest(".ash-family-summary");
+        var ta = wrap && wrap.querySelector("[data-ash-family-msg]");
+        if (!fid || !ta) return;
+        saveFamilyBtn.disabled = true;
+        saveFamilyBtn.textContent = "Saving…";
+        void hub
+          .saveParentShare(fid, ta.value)
+          .then(function () {
+            saveFamilyBtn.textContent = "Saved";
+            setTimeout(function () {
+              saveFamilyBtn.textContent = "Save";
+              saveFamilyBtn.disabled = false;
+            }, 1200);
+            var tag = wrap.querySelector(".ash-family-summary__tag");
+            if (!tag) {
+              var el = document.createElement("span");
+              el.className = "ash-family-summary__tag";
+              el.textContent = "Edited";
+              wrap.insertBefore(el, wrap.firstChild);
+            }
+          })
+          .catch(function () {
+            saveFamilyBtn.textContent = "Save";
+            saveFamilyBtn.disabled = false;
+            window.alert("Could not save family summary. Try again.");
+          });
+        return;
+      }
+      if (t.closest(".ash-family-summary")) {
+        ev.stopPropagation();
         return;
       }
       var fbRow = t.closest("[data-ash-fb-row]");
@@ -6119,6 +6956,124 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
   };
 
+  AdminSessionsHub.prototype.bindAshFilterCombos = function () {
+    var hub = this;
+    var comboApi = global.PortalAdminSearchCombo;
+    ["ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
+      function optionsForCombo() {
+        if (baseId === "ashInstructorFilter") {
+          if (hub.tab === "feedback" || hub.mode === "feedback") {
+            return hub.instructorFilterOptionsForDay(hub.selectedDay);
+          }
+          return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).instructors || [];
+        }
+        return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
+      }
+
+      if (comboApi) {
+        comboApi.ensure({
+          id: baseId,
+          placeholder: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
+          allLabel: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
+          maxVisible: 24,
+          onChange: function (val) {
+            if (baseId === "ashInstructorFilter") hub.instructorFilter = val || "";
+            else hub.serviceFilter = val || "";
+            hub.refreshClientFilterView();
+          },
+        });
+        comboApi.setOptions(baseId, optionsForCombo(), { keepValue: true });
+        var cur = baseId === "ashInstructorFilter" ? hub.instructorFilter : hub.serviceFilter;
+        if (cur) comboApi.setValue(baseId, cur, cur);
+        return;
+      }
+
+      var hid = document.getElementById(baseId);
+      var inp = document.getElementById(baseId + "Input");
+      var sug = document.getElementById(baseId + "Suggest");
+      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
+      inp.setAttribute("data-ash-filter-bound", "1");
+
+      function renderSuggest(query) {
+        sug.replaceChildren();
+        var qt = String(query || "").trim().toLowerCase();
+        var opts = optionsForCombo();
+        var matches = [];
+        if (!qt) matches = opts.slice(0, 24);
+        else {
+          for (var i = 0; i < opts.length; i++) {
+            if (String(opts[i] || "").toLowerCase().indexOf(qt) !== -1) matches.push(opts[i]);
+            if (matches.length >= 24) break;
+          }
+        }
+        var clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.className = "ash-filter-suggest__btn ash-filter-suggest__btn--all";
+        clearBtn.textContent = baseId === "ashInstructorFilter" ? "All instructors" : "All services";
+        clearBtn.addEventListener("mousedown", function (ev) {
+          ev.preventDefault();
+          hid.value = "";
+          inp.value = "";
+          sug.hidden = true;
+          if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
+          else hub.serviceFilter = "";
+          hub.refreshClientFilterView();
+        });
+        sug.appendChild(clearBtn);
+        matches.forEach(function (label) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ash-filter-suggest__btn";
+          btn.textContent = label;
+          btn.addEventListener("mousedown", function (ev) {
+            ev.preventDefault();
+            hid.value = label;
+            inp.value = label;
+            sug.hidden = true;
+            if (baseId === "ashInstructorFilter") hub.instructorFilter = label;
+            else hub.serviceFilter = label;
+            hub.refreshClientFilterView();
+          });
+          sug.appendChild(btn);
+        });
+        if (!matches.length && !qt) {
+          var empty = document.createElement("div");
+          empty.className = "portal-search-combo__empty muted";
+          empty.textContent = opts.length ? "Type to search" : "No options loaded";
+          sug.appendChild(empty);
+        }
+        sug.hidden = false;
+      }
+
+      inp.addEventListener("input", function () {
+        hid.value = "";
+        if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
+        else hub.serviceFilter = "";
+        renderSuggest(inp.value);
+      });
+      inp.addEventListener("focus", function () {
+        renderSuggest(inp.value);
+      });
+      inp.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") {
+          sug.hidden = true;
+          return;
+        }
+        if (ev.key !== "Enter") return;
+        var first = sug.querySelector(".ash-filter-suggest__btn:not(.ash-filter-suggest__btn--all)");
+        if (first) {
+          ev.preventDefault();
+          first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        }
+      });
+      inp.addEventListener("blur", function () {
+        setTimeout(function () {
+          sug.hidden = true;
+        }, 160);
+      });
+    });
+  };
+
   AdminSessionsHub.prototype.renderPanels = function () {
     this.indexAbsentMarks();
     this.indexFeedback();
@@ -6132,6 +7087,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     else if (this.tab === "relevant") shell.innerHTML = this.htmlFeedbackNotes("relevant");
     else if (this.tab === "feedback") shell.innerHTML = this.htmlFeedback();
     else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
+    this.bindAshFilterCombos();
   };
 
   AdminSessionsHub.prototype.htmlWeekHeader = function () {
@@ -6228,8 +7184,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
+        var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
         var fbCell;
-        if (isOpenSlot) {
+        if (makeupDisp) {
+          var mkSlotDisp = makeupDisp.makeupSlot;
+          var mkAbsentDisp = mkSlotDisp ? hub.slotIsAbsent(mkSlotDisp) : false;
+          var mkDoneDisp = mkSlotDisp ? hub.slotFeedbackComplete(mkSlotDisp) : false;
+          fbCell = mkAbsentDisp
+            ? '<span class="ash-status ash-status--absent">Submitted (Absent)</span>'
+            : rosterFeedbackStatusHtml(false, mkDoneDisp);
+        } else if (isOpenSlot) {
           fbCell = '<span class="ash-muted">N/A</span>';
         } else if (isTrial) {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
@@ -6240,7 +7204,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else {
           fbCell = rosterFeedbackStatusHtml(false, fbDone);
         }
-        var statusCell = isOpenSlot
+        var statusCell = makeupDisp
+          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+          : isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
           : isTrial
             ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
@@ -6263,12 +7229,32 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
                   esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
                   "</span>"
                 : '<span class="ash-badge ash-badge--booked">Booked</span>';
+        var svcLabel =
+          clean(slot.service) ||
+          (hubSlotIsMakeup(slot) ? inferOverrideSlotService(slot.__portalScheduleOverride, overridePayloadObj(slot.__portalScheduleOverride)) : "") ||
+          "\u2014";
         var svc =
-          esc(slot.service) +
-          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
+          esc(svcLabel) +
+          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "");
         var inst = hubInstructorCellHtml(slot, slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
+        var participantCell;
+        if (makeupDisp) {
+          var mkNameDisp =
+            (makeupDisp.makeupSlot && clean(makeupDisp.makeupSlot.client_name)) ||
+            clean(overrideReplacementClientName(overridePayloadObj(makeupDisp.ov))) ||
+            "MakeUp";
+          participantCell =
+            '<span class="ash-pill ash-pill--out" title="Replaced \u2014 told us they were not coming; slot given as a makeup">' +
+            esc(clean(slot.client_name)) +
+            "</span>" +
+            '<span class="ash-pill ash-pill--makeup" title="MakeUp participant in this slot">' +
+            esc(mkNameDisp) +
+            "</span>";
+        } else {
+          participantCell = htmlParticipantPill(slot.client_name, esc, slot);
+        }
         return (
           "<tr>" +
           '<td class="ash-td-center">' +
@@ -6278,7 +7264,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           inst +
           "</td>" +
           '<td class="ash-td-center">' +
-          htmlParticipantPill(slot.client_name, esc, slot) +
+          participantCell +
           "</td>" +
           '<td class="ash-td-center">' +
           esc(venue) +
@@ -6334,7 +7320,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlRosterSessionsBreakdown = function (iso) {
     var esc = this.escapeHtml;
     var hub = this;
-    var slots = this.expandSlotsForDate(iso);
+    var slots = this.expandSlotsForDate(iso).filter(function (s) {
+      return !isTeflonDemoRosterSlot(s);
+    });
     if (!slots.length) return "";
     var rows = slots
       .map(function (slot) {
@@ -6362,7 +7350,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</td>" +
           '<td class="ash-td-center">' +
           esc(slot.service) +
-          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "") +
+          (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "") +
           "</td>" +
           '<td class="ash-td-center">' +
           inst +
@@ -6862,7 +7850,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       .join("");
     if (!tableRows) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No attended feedback this week.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">No attended feedback this week.</div></td></tr>';
     }
     return (
       '<div class="ash-log-week__expanded">' +
@@ -7011,10 +7999,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
     } else if (!tableRows) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
     var weekBlock =
@@ -7297,7 +8285,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var client = htmlParticipantPill(slot.client_name, esc, slot);
         return (
           "<tr>" +
-          "<td>" + esc(slot.time_slot || slot.time_start) + "</td>" +
+          "<td>" + esc(rosterTimeDisplay(slot) || slot.time_start) + "</td>" +
           "<td>" + esc(slot.venue) + "</td>" +
           "<td>" + inst + "</td>" +
           "<td>" + client + "</td>" +
@@ -7375,7 +8363,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         time: slot.time_slot,
         area: slot.area,
         merge: slot.feedback_merge_group || "",
-        instructors: slot.instructor_label || (slot.instructors || []).join(", ")
+        instructors: slot.instructor_label || slotInstructors(slot).join(", ")
       };
       if (hub.slotIsAbsent(slot)) {
         row.status = "absent";

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<script src="/portal-static-bootstrap.js?v=20260630-session-disruption-v3"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Session Disruption Report — clubSENsational</title>
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
+<style>
+:root{
+  --navy:#0a3d62;
+  --navy-deep:#072f4b;
+  --gold:#f4b740;
+  --line:#d9e4ef;
+  --field:#f4f8fc;
+  --text:#1d2b3a;
+  --muted:#5f7185;
+  --ok:#1f7a4d;
+  --okBg:#ecfdf3;
+  --err:#b91c1c;
+  --errBg:#fff1f2;
+  --radius:18px;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding:18px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+}
+.wrap{max-width:760px;margin:0 auto;min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-width:0}
+.back{
+  flex:0 1 auto;min-width:0;max-width:100%;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;
+  border:1px solid var(--line);background:#fff;color:var(--navy);font-weight:700;
+  font-size:14px;text-decoration:none
+}
+h1{margin:0 0 6px;font-size:clamp(22px,4vw,28px);color:var(--navy);letter-spacing:-.02em;text-align:center}
+.lead{margin:0 0 14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.55}
+.policy-link{
+  display:block;margin:0 0 16px;padding:12px 14px;border-radius:14px;
+  border:1px solid rgba(244,183,64,.55);background:#fff9eb;font-size:14px;line-height:1.5
+}
+.policy-link a{color:var(--navy);font-weight:700}
+.card{
+  border:1px solid var(--line);border-radius:var(--radius);background:#fff;
+  box-shadow:0 12px 32px rgba(10,61,98,.08);overflow:hidden
+}
+form{padding:18px}
+section{margin:0 0 18px;padding:0 0 18px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0;margin-bottom:0;padding-bottom:0}
+section h2{margin:0 0 4px;font-size:17px;color:var(--navy)}
+section .hint{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.45}
+.grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.grid .full{grid-column:1/-1}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-size:14px;font-weight:700;color:var(--text);overflow-wrap:break-word}
+.req{color:var(--err)}
+input,select,textarea{
+  width:100%;min-width:0;border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;font:inherit;font-size:16px;background:#fff;color:var(--text)
+}
+input[readonly]{background:var(--field);color:var(--muted)}
+textarea{min-height:88px;resize:vertical}
+.radio-row{display:flex;flex-wrap:wrap;gap:8px}
+.radio-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  border:1px solid var(--line);background:var(--field);font-size:14px;font-weight:600;
+  cursor:pointer;min-width:0;max-width:100%
+}
+.radio-pill input{accent-color:var(--navy);width:auto;margin:0;flex:none}
+.radio-pill:has(input:checked){border-color:var(--navy);background:#eef6fc}
+.conditional[hidden]{display:none!important}
+.check-row{
+  display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;
+  min-width:0;width:100%;cursor:pointer
+}
+.check-row input[type="checkbox"]{
+  margin-top:3px;flex:none;width:auto;min-width:18px;max-width:18px;height:18px;padding:0
+}
+.check-row span{flex:1;min-width:0;overflow-wrap:break-word}
+.actions{
+  margin-top:16px;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px
+}
+.btn{
+  border:none;border-radius:12px;padding:12px 18px;font:inherit;font-weight:800;
+  font-size:14px;cursor:pointer
+}
+.btn-primary{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);color:#fff}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.btn-ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+.msg{
+  margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;display:none
+}
+.msg.show{display:block}
+.msg.ok{background:var(--okBg);color:var(--ok);border:1px solid #bbf7d0}
+.msg.err{background:var(--errBg);color:var(--err);border:1px solid #fecaca}
+.autofill{
+  display:grid;gap:8px;padding:12px 14px;border-radius:14px;background:var(--field);
+  border:1px solid var(--line);margin-bottom:12px
+}
+.autofill div{font-size:14px;min-width:0;overflow-wrap:break-word}
+.autofill strong{color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" id="backLink" href="staff_dashboard.html">← Back to dashboard</a>
+  </div>
+  <h1>Session Disruption Report</h1>
+  <p class="lead">Complete this form after a same-day absence or planned absence, in line with the Session Disruption Reporting Procedure.</p>
+  <p class="policy-link">Read the full procedure: <a href="policies_portal.html?policy=POL-048">Session Disruption Reporting Procedure (POL-048)</a></p>
+  <p class="policy-link">Not for participant cancellations — if a child did not attend, use <strong>Cancellation</strong> on their client card instead.</p>
+
+  <div class="card">
+    <form id="disruptionForm" novalidate>
+      <section aria-labelledby="secStaff">
+        <h2 id="secStaff">1. Staff details</h2>
+        <p class="hint">Filled automatically from your portal account.</p>
+        <div class="autofill">
+          <div><strong>Full name</strong> <span id="afName">—</span></div>
+          <div><strong>Role</strong> <span id="afRole">—</span></div>
+          <div><strong>Date submitted</strong> <span id="afDate">—</span></div>
+          <div><strong>Time submitted</strong> <span id="afTime">—</span></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secSession">
+        <h2 id="secSession">2. Session details</h2>
+        <div class="grid">
+          <div class="field full">
+            <span class="field-label">Type of disruption <span class="req">*</span></span>
+            <div class="radio-row" role="radiogroup" aria-label="Type of disruption">
+              <label class="radio-pill"><input type="radio" name="disruptionType" value="Same-Day Absence" required /> Same-Day Absence</label>
+              <label class="radio-pill"><input type="radio" name="disruptionType" value="Planned Absence" /> Planned Absence</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="sessionDate">Date of affected session(s) <span class="req">*</span></label>
+            <input type="date" id="sessionDate" name="sessionDate" required />
+          </div>
+          <div class="field">
+            <label for="venue">Venue <span class="req">*</span></label>
+            <input type="text" id="venue" name="venue" list="venueList" required placeholder="e.g. Acton" autocomplete="off" />
+            <datalist id="venueList">
+              <option value="Acton"></option>
+              <option value="Wandsworth"></option>
+              <option value="Home visit"></option>
+              <option value="Community"></option>
+              <option value="Online"></option>
+            </datalist>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secReason">
+        <h2 id="secReason">3. Reason for absence</h2>
+        <div class="grid">
+          <div class="field full">
+            <label for="reasonCategory">Reason <span class="req">*</span></label>
+            <select id="reasonCategory" name="reasonCategory" required>
+              <option value="">Select…</option>
+              <option>Illness</option>
+              <option>Family Emergency</option>
+              <option>Medical Appointment</option>
+              <option>Bereavement</option>
+              <option>Vehicle Breakdown</option>
+              <option>Transport Disruption</option>
+              <option>Annual Leave</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="reasonDescription">Brief description</label>
+            <textarea id="reasonDescription" name="reasonDescription" maxlength="1500" placeholder="Brief explanation only — confidential medical or personal detail is not required."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secReturn">
+        <h2 id="secReturn">4. Expected return to work</h2>
+        <div class="grid">
+          <div class="field full">
+            <span class="field-label">Expected return <span class="req">*</span></span>
+            <div class="radio-row" role="radiogroup" aria-label="Expected return to work">
+              <label class="radio-pill"><input type="radio" name="expectedReturn" value="Next scheduled session" required /> Next scheduled session</label>
+              <label class="radio-pill"><input type="radio" name="expectedReturn" value="Return on a specific date" /> Return on a specific date</label>
+              <label class="radio-pill"><input type="radio" name="expectedReturn" value="Unknown at this stage" /> Unknown at this stage</label>
+            </div>
+          </div>
+          <div class="field conditional" id="returnDateWrap" hidden>
+            <label for="returnDate">Return date <span class="req">*</span></label>
+            <input type="date" id="returnDate" name="returnDate" />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secReflect">
+        <h2 id="secReflect">5. Reflection</h2>
+        <div class="grid">
+          <div class="field full">
+            <span class="field-label">Could this disruption reasonably have been prevented? <span class="req">*</span></span>
+            <div class="radio-row" role="radiogroup" aria-label="Could this have been prevented">
+              <label class="radio-pill"><input type="radio" name="couldPrevent" value="No" required /> No</label>
+              <label class="radio-pill"><input type="radio" name="couldPrevent" value="Yes" /> Yes</label>
+              <label class="radio-pill"><input type="radio" name="couldPrevent" value="Unsure" /> Unsure</label>
+            </div>
+          </div>
+          <div class="field full conditional" id="preventWrap" hidden>
+            <label for="preventionDetails">If Yes or Unsure, please provide further details <span class="req">*</span></label>
+            <textarea id="preventionDetails" name="preventionDetails" maxlength="1500"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secComments">
+        <h2 id="secComments">6. Additional comments</h2>
+        <div class="field">
+          <label for="additionalComments">Optional</label>
+          <textarea id="additionalComments" name="additionalComments" maxlength="2000" placeholder="Any other information that may help the Administration Team."></textarea>
+        </div>
+      </section>
+
+      <section aria-labelledby="secDecl">
+        <h2 id="secDecl">7. Declaration</h2>
+        <label class="check-row">
+          <input type="checkbox" id="declaration" name="declaration" required />
+          <span>I confirm that the information provided is accurate to the best of my knowledge.</span>
+        </label>
+      </section>
+
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="clearBtn">Clear</button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Submit report</button>
+      </div>
+      <p class="msg" id="formMsg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import { bootstrapDashboardSupabase, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260630-sevitha-day-off";
+
+const form = document.getElementById("disruptionForm");
+const msgEl = document.getElementById("formMsg");
+const submitBtn = document.getElementById("submitBtn");
+const returnDateWrap = document.getElementById("returnDateWrap");
+const preventWrap = document.getElementById("preventWrap");
+let profile = null;
+
+function clean(v) {
+  return String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+}
+function todayIso() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function nowTimeLabel() {
+  return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+function nowDateLabel() {
+  return new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+function setMsg(text, kind) {
+  if (!msgEl) return;
+  msgEl.textContent = text || "";
+  msgEl.className = "msg" + (text ? " show" : "") + (kind === "ok" ? " ok" : kind === "err" ? " err" : "");
+}
+function readRadio(name) {
+  const el = form.querySelector('input[name="' + name + '"]:checked');
+  return el ? clean(el.value) : "";
+}
+function syncConditionalFields() {
+  const er = readRadio("expectedReturn");
+  returnDateWrap.hidden = er !== "Return on a specific date";
+  const cp = readRadio("couldPrevent");
+  preventWrap.hidden = cp !== "Yes" && cp !== "Unsure";
+}
+function readOrigin() {
+  try {
+    const o = clean(new URLSearchParams(location.search).get("from"));
+    if (o === "quick_menu" || o === "policy" || o === "dashboard") return o;
+  } catch (_) {}
+  return "direct";
+}
+function applyPrefill() {
+  try {
+    const qs = new URLSearchParams(location.search);
+    const type = clean(qs.get("type")).toLowerCase();
+    if (type === "planned" || type === "planned_absence") {
+      const el = form.querySelector('input[name="disruptionType"][value="Planned Absence"]');
+      if (el) el.checked = true;
+    } else if (type === "same_day" || type === "same-day") {
+      const el = form.querySelector('input[name="disruptionType"][value="Same-Day Absence"]');
+      if (el) el.checked = true;
+    }
+    const date = clean(qs.get("date")).slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) document.getElementById("sessionDate").value = date;
+    const venue = clean(qs.get("venue"));
+    if (venue) document.getElementById("venue").value = venue;
+  } catch (_) {}
+}
+
+form.querySelectorAll('input[name="expectedReturn"], input[name="couldPrevent"]').forEach(function (el) {
+  el.addEventListener("change", syncConditionalFields);
+});
+
+document.getElementById("clearBtn").addEventListener("click", function () {
+  form.reset();
+  applyPrefill();
+  syncConditionalFields();
+  setMsg("", "");
+  refreshAutofillClock();
+});
+
+function refreshAutofillClock() {
+  document.getElementById("afDate").textContent = nowDateLabel();
+  document.getElementById("afTime").textContent = nowTimeLabel();
+}
+
+function parseProfileRpc(data) {
+  if (data == null) return null;
+  if (typeof data === "object" && !Array.isArray(data)) {
+    return data.id != null ? data : null;
+  }
+  if (typeof data === "string") {
+    try {
+      return parseProfileRpc(JSON.parse(data));
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
+
+async function loadStaffProfile(client, session) {
+  const rpc = await client.rpc("portal_get_session_staff_profile");
+  if (!rpc.error && rpc.data) {
+    const fromRpc = parseProfileRpc(rpc.data);
+    if (fromRpc) return fromRpc;
+  }
+  const { data: prof, error } = await client
+    .from("staff_profiles")
+    .select("id, full_name, username, staff_role, app_role")
+    .eq("id", session.user.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (prof) return prof;
+  const meta = session.user.user_metadata || {};
+  const name = clean(meta.full_name || meta.name || meta.preferred_username);
+  if (name) {
+    return { full_name: name, username: name, staff_role: "", app_role: "staff" };
+  }
+  return null;
+}
+
+async function init() {
+  try {
+    await bootstrapDashboardSupabase({ page: "staff" });
+  } catch (e) {
+    setMsg("Sign in to the portal to submit this report.", "err");
+    return;
+  }
+  const box = window.__PORTAL_SUPABASE__ || {};
+  const client = box.client;
+  const session = box.session;
+  if (!client || !session?.user?.id) {
+    location.href = "login.html?next=" + encodeURIComponent(location.href);
+    return;
+  }
+  let prof = null;
+  try {
+    prof = await loadStaffProfile(client, session);
+  } catch (e) {
+    console.warn("[session disruption] profile load", e);
+  }
+  if (!prof) {
+    setMsg("Could not load your staff profile. Try signing out and back in, or contact the office.", "err");
+    return;
+  }
+  const role = clean(prof.app_role).toLowerCase();
+  const authEmail = String(session.user?.email || "");
+  const opsAdmin = portalIsOperationsAdminUser(prof, authEmail);
+  if (role !== "staff" && role !== "lead" && !opsAdmin) {
+    setMsg("This form is for staff and lead accounts only.", "err");
+    submitBtn.disabled = true;
+    return;
+  }
+  profile = prof;
+  document.getElementById("afName").textContent = clean(prof.full_name || prof.username) || "—";
+  document.getElementById("afRole").textContent = clean(prof.staff_role) || "—";
+  refreshAutofillClock();
+  applyPrefill();
+  if (!document.getElementById("sessionDate").value) {
+    document.getElementById("sessionDate").value = todayIso();
+  }
+  syncConditionalFields();
+}
+
+form.addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  syncConditionalFields();
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  if (!profile) {
+    setMsg("Not signed in.", "err");
+    return;
+  }
+  const disruptionType = readRadio("disruptionType");
+  const expectedReturn = readRadio("expectedReturn");
+  const couldPrevent = readRadio("couldPrevent");
+  const payload = {
+    disruption_type: disruptionType,
+    session_date: document.getElementById("sessionDate").value,
+    venue: clean(document.getElementById("venue").value),
+    reason_category: clean(document.getElementById("reasonCategory").value),
+    reason_description: clean(document.getElementById("reasonDescription").value),
+    expected_return: expectedReturn,
+    return_date: expectedReturn === "Return on a specific date" ? document.getElementById("returnDate").value : null,
+    could_prevent: couldPrevent,
+    prevention_details: clean(document.getElementById("preventionDetails").value),
+    additional_comments: clean(document.getElementById("additionalComments").value),
+    declaration_accepted: document.getElementById("declaration").checked,
+    role_label: clean(profile.staff_role),
+    origin: readOrigin(),
+  };
+  submitBtn.disabled = true;
+  setMsg("Submitting…", "");
+  try {
+    const token = window.__PORTAL_SUPABASE__?.session?.access_token;
+    const url = (window.SUPABASE_URL || "").replace(/\/$/, "") + "/functions/v1/portal-session-disruption-submit";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        apikey: window.SUPABASE_ANON_KEY || "",
+      },
+      body: JSON.stringify({ report: payload }),
+    });
+    const body = await res.json().catch(function () { return {}; });
+    if (!res.ok || !body?.ok) {
+      throw new Error(body?.error || "submit_failed");
+    }
+    let okMsg = "Report submitted. The Administration Team will acknowledge your absence.";
+    if (body.day_off_recorded) {
+      okMsg += " Your day off has been recorded — admin will confirm cover.";
+    } else {
+      okMsg += " If you requested a day off, admin will add it after review.";
+    }
+    setMsg(okMsg, "ok");
+    submitBtn.disabled = true;
+    form.querySelectorAll("input, select, textarea, button").forEach(function (el) {
+      if (el.id !== "backLink") el.disabled = true;
+    });
+  } catch (err) {
+    setMsg("Could not submit: " + (err?.message || err), "err");
+    submitBtn.disabled = false;
+  }
+});
+
+void init();
+</script>
+</body>
+</html>

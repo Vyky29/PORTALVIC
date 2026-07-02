@@ -80,6 +80,24 @@ function money(n: unknown): string {
   return (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
 }
 
+// Fixed monthly part-time salary (GBP) for staff paid by invoice/contract. They
+// appear automatically in the "Contract / invoice — paid separately" section
+// every month (so a missing manual import row never drops their salary). Keyed
+// by lowercase username / first name. A real import row for the month wins.
+const FIXED_MONTHLY_SALARY_BY_KEY: Record<string, number> = {
+  roberto: 2166.67,
+};
+const FIXED_SALARY_CONTRACT_TYPE = "Part time";
+function fixedSalaryForNames(...names: string[]): number {
+  for (const n of names) {
+    const k = String(n || "").trim().toLowerCase();
+    if (k && FIXED_MONTHLY_SALARY_BY_KEY[k] != null) return Number(FIXED_MONTHLY_SALARY_BY_KEY[k]) || 0;
+    const first = k.split(/\s+/)[0];
+    if (first && FIXED_MONTHLY_SALARY_BY_KEY[first] != null) return Number(FIXED_MONTHLY_SALARY_BY_KEY[first]) || 0;
+  }
+  return 0;
+}
+
 function firstOfMonthIso(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-01`;
 }
@@ -223,17 +241,35 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   const nameById = new Map<string, string>();
   // Test/demo accounts are never part of payroll (kept only for button testing).
   const excludedIds = new Set<string>();
+  // Staff on a fixed monthly salary paid by invoice/contract (id -> GBP).
+  const salaryById = new Map<string, number>();
   for (const p of profs || []) {
     const nm = String(p.full_name || p.username || "").trim();
     if (p.id && nm) nameById.set(String(p.id), nm);
     const uname = String(p.username || "").toLowerCase().trim();
     const fname = String(p.full_name || "").toLowerCase().trim();
     if (p.id && (uname === "demo" || fname === "demo")) excludedIds.add(String(p.id));
+    if (p.id) {
+      const sal = fixedSalaryForNames(uname, fname);
+      if (sal > 0) salaryById.set(String(p.id), sal);
+    }
   }
+  // Salaried invoice staff are always paid separately: drop their portal
+  // submissions and never flag them as "not submitted".
+  for (const id of salaryById.keys()) contractUserIds.add(id);
 
-  // Contract people are paid by invoice/payslip (extra hours included there), so
-  // their portal submissions never appear as a separate timesheet line or penalty.
-  const submitted = dedupeLatest(tsRaw || []).filter(
+  // Contract people are paid by invoice/payslip, so their portal submissions
+  // never appear as a separate timesheet line or penalty. For salaried invoice
+  // staff we still read their submitted extra-hours cost to add to the contract.
+  const latestAll = dedupeLatest(tsRaw || []);
+  const extrasByUser = new Map<string, number>();
+  for (const r of latestAll) {
+    const uid = String(r.submitted_by_user_id || "");
+    if (uid && salaryById.has(uid) && r.total_cost != null) {
+      extrasByUser.set(uid, Number(r.total_cost) || 0);
+    }
+  }
+  const submitted = latestAll.filter(
     (r) =>
       !contractUserIds.has(String(r.submitted_by_user_id || "")) &&
       !excludedIds.has(String(r.submitted_by_user_id || ""))
@@ -305,6 +341,20 @@ async function aggregate(supabase: any, targetMonthIso: string) {
       isLate: false,
     });
     if (uid) importedTimesheetIds.add(uid);
+  }
+
+  // Auto-add fixed-salary invoice staff to the contract section for this month
+  // unless a manual import row already covers them (the manual row wins).
+  for (const [id, sal] of salaryById.entries()) {
+    if (excludedIds.has(id) || contractIds.has(id) || !startedByTarget(id)) continue;
+    const name = nameById.get(id) || id;
+    const role = expected.get(id) || "";
+    contracts.push({ name, role, gross: sal, contractType: FIXED_SALARY_CONTRACT_TYPE });
+    const extras = extrasByUser.get(id) || 0;
+    if (extras > 0) {
+      contracts.push({ name, role, gross: extras, contractType: "Extra hours" });
+    }
+    contractIds.add(id);
   }
 
   // On-time submissions first, late ones after, alphabetical within each group.

@@ -16,8 +16,10 @@
         }else if(exemptEarly.cancelled){
           out.cancelled = true;
         }else if(exemptEarly.feedbackDone){
-          const makeupPending = typeof portalOpenSlotMakeupOverrideForSession === 'function'
-            && portalOpenSlotMakeupOverrideForSession(s, sessionDateIso);
+          const makeupPending = (typeof portalReplaceMakeupOverrideForSession === 'function'
+            && portalReplaceMakeupOverrideForSession(s, sessionDateIso))
+            || (typeof portalOpenSlotMakeupOverrideForSession === 'function'
+            && portalOpenSlotMakeupOverrideForSession(s, sessionDateIso));
           if(!makeupPending){
             out.feedbackDone = true;
           }
@@ -61,10 +63,16 @@
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
       if(cid && typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activityMerge)){
-        tryKey(String(sessionDateIso) + '|' + cid + '|aquatic');
+        var perSlotAquatic = typeof portalStaffLeadClientNeedsPerSlotAquaticFeedback === 'function'
+          && portalStaffLeadClientNeedsPerSlotAquaticFeedback(sessionDateIso, cid, dayWord);
+        if(!perSlotAquatic){
+          tryKey(String(sessionDateIso) + '|' + cid + '|aquatic');
+        }
         if(tCanon) tryKey(String(sessionDateIso) + '|' + cid + '|' + tCanon + '|aquatic');
       }
-      if(cid && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
+      if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
+        && portalSessionNeedsPerStaffOwnFeedbackOnly(s, sessionDateIso))
+        && (typeof portalStaffLeadReviewKeyAllowsDateClientOnlyAlias !== 'function'
         || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, sessionDateIso, dayWord))){
         tryKey(String(sessionDateIso) + '||' + cid);
       }
@@ -231,7 +239,11 @@
     function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord, opts){
       opts = opts || {};
       try{
-        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
+        const isoKey = String(isoYmd || '').trim().slice(0, 10);
+        const reviewReady = typeof portalStaffFeedbackReviewUiReady === 'function'
+          ? portalStaffFeedbackReviewUiReady(isoKey)
+          : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
+        if(!reviewReady) return 0;
         if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
         if(typeof isSessionEndedForFeedback !== 'function') return 0;
         const list = portalTodayListItemsForCalendarDay(isoYmd, dayWord, opts);
@@ -281,6 +293,8 @@
 
       if(key > todayKey) return 'future';
       if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
+      if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
 
       if(relFb.length && cur){
         let allCancelled = true;
@@ -332,14 +346,12 @@
         && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
         return 'complete';
       }
-      const relPick = relFb.length ? relFb : relAll;
-      if(Array.isArray(relPick) && relPick.length
-        && typeof portalTermRosterHasRealClientSessions === 'function'
-        && portalTermRosterHasRealClientSessions(relPick, key)){
-        if(key <= todayKey || catchUpDay) return 'late';
-        return 'pending';
-      }
-      if(Array.isArray(relPick) && relPick.length) return 'complete';
+      const reviewReady = typeof portalStaffFeedbackReviewUiReady === 'function'
+        ? portalStaffFeedbackReviewUiReady(key)
+        : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
+      const overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+      if(!reviewReady || !overridesReady) return 'pending';
+      if(key <= todayKey || catchUpDay) return 'late';
       return 'pending';
     }
     /** Minimal Today-list item for one roster row (fallback when full list not built). */
@@ -523,7 +535,7 @@
     }
     try{ window.portalApplyAfterIncidentReturnFromUrl = portalApplyAfterIncidentReturnFromUrl; }catch(_){}
 
-    function portalApplyAfterSessionFeedbackReturnFromUrl(){
+    async function portalApplyAfterSessionFeedbackReturnFromUrl(){
       try{
         const u = new URL(location.href.split('#')[0]);
         if(u.searchParams.get('portalAfterFeedback') !== '1') return false;
@@ -536,6 +548,11 @@
         const qs = u.searchParams.toString();
         history.replaceState({}, '', u.pathname + (qs ? '?' + qs : '') + (location.hash || ''));
         if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
+        if(typeof portalMergeServerReviewStateForDashboard === 'function'){
+          try{
+            await portalMergeServerReviewStateForDashboard({ skipRender: true });
+          }catch(_sync){}
+        }
         const termWithLocks = origin === 'term'
           && /^\d{4}-\d{2}-\d{2}$/.test(reviewIso)
           && PORTAL_WEEK_REVIEW_VALID_DAYS.has(reviewDayParam);
@@ -964,10 +981,31 @@
       return 'portalVenue_' + kind + '_' + dateKey + '_' + slug;
     }
     function portalVenueFlagIsDone(kind){
-      try{ return localStorage.getItem(portalVenueLocalKey(kind)) === '1'; }catch(e){ return false; }
+      try{
+        if(localStorage.getItem(portalVenueLocalKey(kind)) === '1') return true;
+        /* Submitting the actual venue report (venue_review_app) clears the reminder too,
+           not just the in-sheet "Done" tap. Markers are date + kind (and date + venue + kind). */
+        const dateKey = portalViewCalendarDateKey();
+        if(localStorage.getItem('portalVenueSubmitted_' + dateKey + '_' + kind) === '1') return true;
+        const w = portalVenueTimeWindowsForUser();
+        const vslug = w && w.venue
+          ? String(w.venue).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+          : '';
+        if(vslug && localStorage.getItem('portalVenueSubmitted_' + dateKey + '_' + vslug + '_' + kind) === '1') return true;
+        return false;
+      }catch(e){ return false; }
     }
     function portalSetVenueFlag(kind){
       try{ localStorage.setItem(portalVenueLocalKey(kind), '1'); }catch(e){}
+      try{
+        const dateKey = portalViewCalendarDateKey();
+        localStorage.setItem('portalVenueSubmitted_' + dateKey + '_' + kind, '1');
+        const w = portalVenueTimeWindowsForUser();
+        const vslug = w && w.venue
+          ? String(w.venue).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+          : '';
+        if(vslug) localStorage.setItem('portalVenueSubmitted_' + dateKey + '_' + vslug + '_' + kind, '1');
+      }catch(e){}
     }
     function portalTodayShiftSessions(){
       return (dashboardData.today || []).filter(it =>
@@ -1075,7 +1113,7 @@
       }
       const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
         ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
-        : '2026-06-01';
+        : '2026-06-25';
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
       return key >= fromIso && key <= todayKey;
     }
@@ -1154,6 +1192,11 @@
             cur.setDate(cur.getDate() + 1);
             continue;
           }
+          if(typeof portalTermFeedbackAssumeComplete === 'function'
+            && portalTermFeedbackAssumeComplete(key, staffId)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
           if(typeof getTermFeedbackStateForDay === 'function'){
             const calSt = getTermFeedbackStateForDay(cur.getFullYear(), cur.getMonth(), cur.getDate());
             if(calSt === 'complete' || calSt === 'cancelled'){
@@ -1213,8 +1256,22 @@
             portalTermStaffCatchUpFeedbackDates(staffId).forEach(addPreTerm);
           }
           const fromFloor = String(fromIso || '').slice(0, 10);
+          const mainLoopStart = String(loopStart || '').slice(0, 10);
+          const mainLoopEnd = String((t && t.lastDate) || '').slice(0, 10);
           preTermKeys.forEach(function(key){
-            if(!key || (fromFloor && key >= fromFloor)) return;
+            if(!key) return;
+            /* The main worked-weekday loop above already counted in-term days on a
+               worked weekday. Extra/cover dates land here so we can ALSO count:
+               (a) pre-term catch-up days (before the reminder floor), and
+               (b) in-term cover days on a NON-worked weekday — e.g. a Sunday cover
+               like Luliya's 28th — which the main loop skips. Skip only what the
+               main loop already handled, to avoid double counting. */
+            const kd = new Date(String(key) + 'T12:00:00');
+            const kwd = kd.getDay();
+            const inMainLoop = !!mainLoopStart && !!mainLoopEnd
+              && key >= mainLoopStart && key <= mainLoopEnd
+              && worked.indexOf(kwd) >= 0;
+            if(inMainLoop) return;
             if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return;
             if(!portalFeedbackReminderDayInScope(key)) return;
             if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return;
@@ -1515,7 +1572,7 @@
         const subRaw = String(item.sub || '').trim();
         const sub = subRaw ? escapeHtml(subRaw) : '';
         const k = String(item.kind || 'other');
-        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
+        const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day' || k === 'client_moved') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
         const subHtml = sub ? ('<span class="setup-row-sub">' + sub + '</span>') : '';
         rows.push(
           '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note"' + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
@@ -1560,17 +1617,23 @@
       }
       if(st.venueOpenNeed){
         rows.push(
-          '<div class="setup-row setup-row--work-venue setup-row--portal-op" role="group">' +
+          '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="open" aria-label="Open venue opening report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report</strong><span class="setup-row-sub">Opening check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Opening</strong><span class="setup-row-sub">Opening check still incomplete (late).</span></span>' +
+          '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
+          '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
+          '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
           '<button type="button" class="portal-venue-mark-btn" data-portal-venue-mark="open">Done</button></div>'
         );
       }
       if(st.venueCloseNeed){
         rows.push(
-          '<div class="setup-row setup-row--work-venue setup-row--portal-op" role="group">' +
+          '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="close" aria-label="Open venue closing report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report</strong><span class="setup-row-sub">Closing check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Closing</strong><span class="setup-row-sub">Closing check still incomplete (late).</span></span>' +
+          '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
+          '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
+          '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
           '<button type="button" class="portal-venue-mark-btn" data-portal-venue-mark="close">Done</button></div>'
         );
       }
@@ -1648,11 +1711,25 @@
       const need = !!(st.sessionFeedbackNeed);
       const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
       const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
-      const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
-      const sub = need ? 'Complete session feedback' : 'All caught up through today';
-      const aria = need
+      let firstName = '';
+      try{
+        const nm = String((dashboardData && dashboardData.staffName) || '').trim();
+        if(nm) firstName = nm.split(/\s+/).filter(Boolean)[0] || '';
+      }catch(_){ firstName = ''; }
+      let title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
+      let sub = need ? 'Complete session feedback' : 'All caught up through today';
+      let aria = need
         ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
         : 'Outstanding feedbacks — none pending through today, tap to review sessions';
+      if(need && n === 1){
+        title = firstName
+          ? firstName + ', 1 session feedback left'
+          : '1 session feedback left';
+        sub = 'Complete your session feedback';
+        aria = firstName
+          ? firstName + ' — 1 session feedback left, tap to open'
+          : '1 session feedback left, tap to open';
+      }
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
         '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong><span class="menu-btn-sub">' + escapeHtml(sub) + '</span></div>' +
@@ -1755,7 +1832,7 @@
       if(k === 'cancelled' || k === 'shift_cancelled') return 'menu-btn--qm-ov-cancelled';
       if(k === 'slot_opened') return 'menu-btn--qm-ov-slot-opened';
       if(k === 'reverted') return 'menu-btn--qm-ov-reverted';
-      if(k === 'new_shift' || k === 'roster_day') return 'menu-btn--qm-ov-new-shift';
+      if(k === 'new_shift' || k === 'roster_day' || k === 'client_moved') return 'menu-btn--qm-ov-new-shift';
       if(k === 'new_participant') return 'menu-btn--qm-ov-new-participant';
       if(k === 'training') return 'menu-btn--qm-ov-training';
       if(k === 'shadowing') return 'menu-btn--qm-ov-shadowing';
@@ -1940,7 +2017,8 @@
       if(item.portalOverrideSuppressReviewOrange) return '';
       const isoGate = portalSessionDateIsoFromItemSessionKey(item);
       if(isoGate && typeof portalStaffFeedbackReviewUiReady === 'function' && !portalStaffFeedbackReviewUiReady(isoGate)){
-        return '';
+        const endedEarly = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
+        if(!endedEarly) return '';
       }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
@@ -2072,7 +2150,30 @@
       const cid = String(s.clientId || '').trim().toLowerCase();
       const statusLow = String(s.status || '').trim().toLowerCase();
       if(cid === 'home' || statusLow === 'home') return 'HOME';
-      if(cid === 'manager' || statusLow === 'manager') return 'MANAGER';
+      if(cid === 'manager' || statusLow === 'manager') {
+        var sk = '';
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel === 'function'
+        ){
+          sk = window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel();
+        } else {
+          sk = String(
+            (typeof dashboardData !== 'undefined' && dashboardData.staffId) ||
+            (typeof window !== 'undefined' && window.STAFF_DASHBOARD_ID) ||
+            ''
+          ).trim().toLowerCase();
+        }
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.rosterDutyLabel === 'function'
+        ){
+          return window.portalOpsAdminDisplay.rosterDutyLabel('MANAGER', sk);
+        }
+        return 'MANAGER';
+      }
       const areaUp = String(s.rosterArea || s.area || '').trim().toUpperCase();
       if(areaUp === 'HOME') return 'HOME';
       return '';
@@ -2086,7 +2187,24 @@
       const nameBlob = String((s && (s.clientName || s.client || s.name)) || '').trim().toLowerCase();
       if(statusLow === 'closed' || clientIdLow === 'closed') return 'Closed';
       if(statusLow === 'home' || clientIdLow === 'home' || nameBlob === 'home' || nameBlob === 'casa') return 'Home';
-      if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager') return 'Manager';
+      if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager'){
+        var skMgr = '';
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel === 'function'
+        ){
+          skMgr = window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel();
+        }
+        if(
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.rosterDutyLabel === 'function' &&
+          window.portalOpsAdminDisplay.rosterDutyLabel('MANAGER', skMgr) === 'Admin'
+        ){
+          return 'Admin';
+        }
+        return 'Manager';
+      }
       if(
         statusLow === 'available' || statusLow === 'no client' || statusLow === 'no_client' ||
         clientIdLow === 'available' || clientIdLow === 'no client' || clientIdLow === 'no_client' || clientIdLow === 'noclient' ||

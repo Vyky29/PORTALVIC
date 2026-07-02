@@ -321,12 +321,71 @@ export function portalCanonicalStaffRosterKey(value) {
     .replace(/[^a-z0-9]+/g, "");
   if (!k) return "";
   if (k === "luliya") return "lulia";
+  if (k === "lulya") return "lulia";
   if (k === "aida") return "lulia";
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
   if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
+}
+
+/**
+ * Human-facing staff label — Luliya (not Lulia/Lulya/Aida), Javier (not Javi),
+ * Javi Palankas for CEO (not Javier/Javi alone).
+ * @param {string | null | undefined} value
+ * @returns {string}
+ */
+export function portalStaffDisplayName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const norm = (s) =>
+    String(s || "")
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  const fromKey = (k) => {
+    if (!k) return "";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "Luliya";
+    if (k === "javier" || k === "javiermarquez" || k === "stf010") return "Javier";
+    if (
+      k === "javi" ||
+      k === "javiarranz" ||
+      k === "javiarranzescorial" ||
+      k === "palankas" ||
+      k === "palankasarranz" ||
+      k === "palankasarranzescorial" ||
+      k === "stf017"
+    ) {
+      return "Javi Palankas";
+    }
+    return "";
+  };
+  let hit = fromKey(norm(raw));
+  if (hit) return hit;
+  const firstTok = raw.split(/[,/&]|\band\b/i)[0].trim();
+  hit = fromKey(norm(firstTok));
+  if (hit) return hit;
+  const canon = portalCanonicalStaffRosterKey(raw);
+  hit = fromKey(norm(canon));
+  if (hit) return hit;
+  try {
+    if (typeof window !== "undefined") {
+      const src = window.STAFF_DASHBOARD_SOURCE;
+      const prof = src && src.staffProfiles ? src.staffProfiles[canon] : null;
+      const sn = prof && String(prof.staffName || "").trim();
+      if (sn) {
+        hit = fromKey(norm(sn));
+        if (hit) return hit;
+        if (sn.includes(" ")) return sn;
+      }
+    }
+  } catch (_) {}
+  const label = firstTok || raw;
+  if (/^[A-Z]{2,}$/.test(label)) return label.charAt(0) + label.slice(1).toLowerCase();
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
 /**

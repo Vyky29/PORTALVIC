@@ -1,6 +1,6 @@
 /**
- * Deferred dashboard chunks (help bot, achievements, induction, onboarding, …).
- * Keeps first paint off ~300KB+ of non-roster scripts on staff/lead dashboards.
+ * Deferred dashboard chunks (achievements, induction, onboarding, …).
+ * Keeps first paint off non-roster scripts on staff/lead dashboards.
  */
 (function (global) {
   "use strict";
@@ -8,14 +8,12 @@
   var STAFF_LAZY_SCRIPTS = [
     "/portal/teflon_guide_demo_data.js?v=20260604-guide-roster",
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
-    "/portal/portal_participant_achievements.js?v=20260722-achievement-rls-msg",
+    "/portal/portal_participant_achievements.js?v=20260705-ceo-gallery-topbar",
     "/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels",
     "/portal/portal_induction.js?v=20260614-induction-canonical",
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
-    "/portal/portal_guide_menu.js?v=20260614-no-menu-guide",
-    "/portal/portal-openai-assist.js?v=20260607-openai-assist-b",
-    "/portal/portal_help_bot.js?v=20260607-help-ai-b",
+    "/portal/portal_guide_menu.js?v=20260630-guide-only",
     "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
     "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
   ];

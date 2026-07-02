@@ -1,9 +1,10 @@
 /**
  * Victor, Raúl, Javi — switch Lead / Admin (ops) / CEO (insights) from Quick menu.
  */
-import { portalInferStaffKey } from "./auth-handler.js";
+import { portalInferStaffKey, portalCanAccessAdminDashboard, portalCanAccessCeoDashboard } from "./auth-handler.js";
 
 const EXEC_KEYS = new Set(["victor", "raul", "javi"]);
+const OPS_ADMIN_KEYS = new Set(["sevitha", "info"]);
 
 const ICONS = {
   staff:
@@ -31,18 +32,23 @@ function publishedUrl(filename, overrideKey) {
 
 export function portalCanExecWorkspaceSwitch(profile, authEmail) {
   const key = portalInferStaffKey(profile, authEmail);
-  return EXEC_KEYS.has(key);
+  if (EXEC_KEYS.has(key) || OPS_ADMIN_KEYS.has(key)) return true;
+  if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
+  if (portalCanAccessCeoDashboard(profile, authEmail)) return true;
+  return false;
 }
 
 /** @param {"staff"|"lead"|"ceo"|"admin"} currentMode */
-export function portalExecWorkspaceSwitchTargets(currentMode) {
+export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail) {
   const mode = String(currentMode || "").trim().toLowerCase();
+  const key = portalInferStaffKey(profile, authEmail);
+  const opsAdmin = OPS_ADMIN_KEYS.has(key);
   const all = [
     {
       mode: "staff",
       label: "Staff Portal",
       sub: "Your roster, sessions and field tools",
-      url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
+      url: publishedUrl("staff_dashboard.html?portalStayWorker=1", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "admin",
@@ -57,6 +63,9 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       url: publishedUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL"),
     },
   ];
+  if (opsAdmin) {
+    return all.filter((t) => t.mode !== mode && t.mode !== "ceo");
+  }
   return all.filter((t) => t.mode !== mode);
 }
 
@@ -81,7 +90,7 @@ export function portalMountExecWorkspaceSwitch(host, currentMode, profile, authE
   host.setAttribute("aria-hidden", "true");
   if (!portalCanExecWorkspaceSwitch(profile, authEmail)) return;
 
-  const targets = portalExecWorkspaceSwitchTargets(currentMode);
+  const targets = portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail);
   if (!targets.length) return;
 
   targets.forEach((t) => {

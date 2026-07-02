@@ -904,6 +904,8 @@
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-pill--no-participant { background: #fb923c; color: #fff; border: 1px solid rgba(15, 23, 42, 0.06); }
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .ash-pill--out { background: #fef2f2; color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.22); }
+    .ash-pill--makeup { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
     .ash-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .ash-badge--booked { background: #d1fae5; color: #065f46; }
     .ash-badge--available,

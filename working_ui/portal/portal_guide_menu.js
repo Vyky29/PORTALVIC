@@ -1,6 +1,5 @@
 /**
- * Quick menu — Guide removed from menu chrome (help bot only).
- * Top group stays for schedule overrides (logo) and onboarding promos only.
+ * Quick menu — Staff help guide lives in Settings (no chat bot).
  */
 (function (global) {
   "use strict";
@@ -8,7 +7,6 @@
   function portalSyncQuickMenuGuidePlacement() {
     try {
       var topGrp = global.document && global.document.getElementById("portalQuickMenuGuideGroup");
-      var setBtn = global.document && global.document.getElementById("quickMenuPortalGuideSettings");
       var guideGrid = global.document && global.document.getElementById("portalQuickMenuGuideGrid");
       var guideTop = global.document && global.document.getElementById("quickMenuPortalGuideTop");
       var ovHost =
@@ -30,11 +28,6 @@
       if (topGrp) {
         topGrp.hidden = !hasOv && !hasOb;
         topGrp.setAttribute("aria-hidden", topGrp.hidden ? "true" : "false");
-      }
-
-      if (setBtn) {
-        setBtn.hidden = true;
-        setBtn.setAttribute("aria-hidden", "true");
       }
 
       if (typeof global.portalInitQuickMenuAccordion === "function") {

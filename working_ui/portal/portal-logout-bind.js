@@ -53,6 +53,12 @@
   }
 
   async function runLogout(triggerBtn) {
+    if (triggerBtn && triggerBtn.getAttribute("data-portal-logout-busy") === "1") return;
+    if (triggerBtn) {
+      try {
+        triggerBtn.setAttribute("data-portal-logout-busy", "1");
+      } catch (_) {}
+    }
     if (triggerBtn && !triggerBtn.disabled) {
       try {
         triggerBtn.disabled = true;
@@ -79,9 +85,7 @@
       }
     } catch (_) {}
     try {
-      var m = await import(
-        "portal/auth-handler.js"
-      );
+      var m = await import("/portal/auth-handler.js?v=20260704-login-map-fix");
       if (m && typeof m.portalLogout === "function") {
         await Promise.race([
           m.portalLogout(),
@@ -100,7 +104,27 @@
     }
   }
 
+  function wireGlobalLogoutDelegation() {
+    if (window.__portalLogoutGlobalDelegBound) return;
+    window.__portalLogoutGlobalDelegBound = true;
+    document.addEventListener(
+      "click",
+      function (e) {
+        var btn =
+          e.target && e.target.closest
+            ? e.target.closest("[data-portal-logout]")
+            : null;
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        void runLogout(btn);
+      },
+      true
+    );
+  }
+
   function wireLogout() {
+    wireGlobalLogoutDelegation();
     var btn = document.getElementById("quickMenuLogout");
     if (btn && btn.getAttribute("data-portal-logout-wired") !== "1") {
       btn.setAttribute("data-portal-logout-wired", "1");

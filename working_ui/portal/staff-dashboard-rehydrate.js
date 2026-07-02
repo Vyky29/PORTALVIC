@@ -7,6 +7,24 @@
         }catch(_){}
         return false;
       }
+      /** Unblock halo / Outstanding feedback tile if heavy rehydrate is superseded or slow. */
+      function portalStaffScheduleFeedbackPipelineFallback(){
+        try{
+          if(typeof window.__PORTAL_FB_PIPELINE_FALLBACK__ === 'number' && window.__PORTAL_FB_PIPELINE_FALLBACK__){
+            clearTimeout(window.__PORTAL_FB_PIPELINE_FALLBACK__);
+          }
+          window.__PORTAL_FB_PIPELINE_FALLBACK__ = setTimeout(function(){
+            window.__PORTAL_FB_PIPELINE_FALLBACK__ = 0;
+            if(typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady()) return;
+            if(!dashboardData || !dashboardData.portalIdentityResolved) return;
+            if(typeof portalStaffFinishFeedbackPipelineReady === 'function'){
+              portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+            }else if(typeof syncPortalReminderChrome === 'function'){
+              syncPortalReminderChrome();
+            }
+          }, portalStaffFastBootEnabled() ? 5500 : 9000);
+        }catch(_){}
+      }
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }
       function parseTimeSortVal(start){
@@ -268,6 +286,7 @@
         try {
           window.dispatchEvent(new CustomEvent("portal:staff-identity-resolved"));
         } catch (_) {}
+        portalStaffScheduleFeedbackPipelineFallback();
         try {
           if (typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
           if (typeof renderHeader === "function") renderHeader();
@@ -601,6 +620,11 @@
         }else if(typeof portalSyncTopbarRoleTools === 'function'){
           portalSyncTopbarRoleTools({ isLead: false });
         }
+        try{
+          if(typeof portalSyncTopbarRoleTools === 'function'){
+            portalSyncTopbarRoleTools({ isLead: false });
+          }
+        }catch(_tb){}
         if(typeof portalSyncOnboardingQuickMenu === 'function'){
           if(typeof window.portalEnsureDashboardLazyScripts === 'function'){
             if(portalStaffFastBootEnabled()){
@@ -651,6 +675,11 @@
           && typeof portalStaffFinishFeedbackPipelineReady === "function"
           && typeof portalStaffFeedbackPipelineReady === "function"
           && !portalStaffFeedbackPipelineReady()
+          // Only reveal feedback chips early when the export bundle is already loaded
+          // (warm cache). Otherwise stay neutral ("Checking feedback…") and let the
+          // heavy rehydrate task reveal after exports + server sync, so completed
+          // sessions never flash orange (Pending) before turning green.
+          && window.__PORTAL_STAFF_FEEDBACK_DATA_READY__ === true
         ){
           portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
         }
@@ -744,7 +773,7 @@
           }
         }catch(_){}
 
-        function _finishStaffRehydrateUiNow(){
+        async function _finishStaffRehydrateUiNow(){
           portalStaffMarkInitialTodayScheduleSettled();
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
@@ -764,7 +793,7 @@
             window.portalApplyAfterQuickToolReturnFromUrl();
           }
           if(typeof window.portalApplyAfterSessionFeedbackReturnFromUrl === "function"){
-            window.portalApplyAfterSessionFeedbackReturnFromUrl();
+            await window.portalApplyAfterSessionFeedbackReturnFromUrl();
           }
           if(typeof window.portalApplyAfterVenueReturnFromUrl === "function"){
             window.portalApplyAfterVenueReturnFromUrl();
@@ -784,13 +813,16 @@
         function _portalStaffRebuildAfterOverridesFetch(staffId){
           if(typeof buildSelectedDayViewFromLauraModel !== "function") return;
           var sid = String(staffId || (typeof window.portalAuthStaffRosterId === 'function' ? window.portalAuthStaffRosterId() : STAFF_DASHBOARD_ID) || '').trim().toLowerCase();
+          try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
           portalSyncTodaySectionDisplay();
           if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
           if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(sid);
           dashboardData.week = buildWeekRows(sid);
           if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
+          if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
+          if (typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
           try{
             var lockDay3 = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();
             if(lockDay3 && typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== "undefined" && PORTAL_WEEK_REVIEW_VALID_DAYS.has(lockDay3)){
@@ -883,10 +915,15 @@
           }
         }
         async function portalStaffRunHeavyRehydrateNetworkTasks(){
+          var staleRun = false;
           try{
+            if (runId !== _rehydrateRun) {
+              staleRun = true;
+              return;
+            }
             if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
               try{
-                if (runId !== _rehydrateRun) return;
+                if (runId !== _rehydrateRun) { staleRun = true; return; }
                 var priorOverrideModelFast = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
                 var overrideModelFast = await window.portalApplyScheduleOverridesToSessionsModelSafe();
                 if(typeof portalStaffSessionsModelWouldDropToday === "function"
@@ -908,17 +945,26 @@
               portalMarkFeedbackReconciledFromExports(true);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
-              await portalMergeServerReviewStateForDashboard({ skipRender: true });
+              await Promise.race([
+                portalMergeServerReviewStateForDashboard({ skipRender: true }),
+                new Promise(function(r){ setTimeout(r, 4500); })
+              ]);
             }
           }catch(_preUiMerge){}
-          if(typeof portalStaffFinishFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
-            portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+          finally {
+            if(
+              !staleRun
+              && typeof portalStaffFinishFeedbackPipelineReady === 'function'
+              && !portalStaffFeedbackPipelineReady()
+            ){
+              portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+            }
           }
           try{
             if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+              if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             }
-            if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
                 window.portalRefreshScheduleOverridesCache({ termCalendar: false }),
@@ -957,8 +1003,8 @@
           try{
             if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+              if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             }
-            if(typeof portalClearNextSessionPreviewCache === 'function') portalClearNextSessionPreviewCache();
             if(typeof window.portalRefreshScheduleOverridesCache === 'function'){
               await Promise.race([
                 window.portalRefreshScheduleOverridesCache({ termCalendar: false }),

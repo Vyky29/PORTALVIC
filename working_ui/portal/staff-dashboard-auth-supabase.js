@@ -1,5 +1,5 @@
-import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260620-javi-roster-key";
-import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
+import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260705-ceo-gallery";
+import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260705-exec-switch-fix";
 import {
   portalEnforceStaffAppPilotGate,
   portalSyncStaffAppPilotBanner,
@@ -8,6 +8,7 @@ import {
 window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;
 window.portalCanonicalStaffRosterKey = portalCanonicalStaffRosterKey;
+window.portalStaffDisplayName = portalStaffDisplayName;
 window.portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
 window.portalIsStaffHomeProgrammeLead = portalIsStaffHomeProgrammeLead;
 window.portalIsProgrammeLeadUser = portalIsProgrammeLeadUser;
@@ -19,7 +20,19 @@ try {
   console.warn("staff_dashboard: Supabase bootstrap", e);
 }
 
+window.portalSyncExecWorkspaceSwitchSlot = portalSyncExecWorkspaceSwitchSlot;
+
 portalSyncExecWorkspaceSwitchSlot("staff");
+
+function portalSyncExecWorkspaceSwitchFromSession() {
+  portalSyncExecWorkspaceSwitchSlot("staff");
+}
+window.addEventListener("portal:supabase-ready", portalSyncExecWorkspaceSwitchFromSession);
+window.addEventListener("portal:staff-identity-resolved", portalSyncExecWorkspaceSwitchFromSession);
+
+if (typeof window.portalSyncOpsAdminStaffDashboardUi === "function") {
+  window.portalSyncOpsAdminStaffDashboardUi();
+}
 
 const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
 const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;

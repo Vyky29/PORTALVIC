@@ -84,11 +84,44 @@
     <header class="head">
       <img src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)" />
       <h1>Office portal</h1>
-      <p>Your personal records and a single admin entry for payroll and staff files.</p>
+      <p>Your staff portal, personal records, and office admin tools.</p>
     </header>
     <p id="whoLine" class="who" hidden></p>
     <div id="loadingState" class="loading">Checking your session…</div>
     <div id="contentHost" hidden>
+      <section class="section" aria-labelledby="staffHeading">
+        <h2 id="staffHeading">Staff portal</h2>
+        <div class="grid">
+          <a class="tile" id="goStaffPortal" href="staff_dashboard.html">
+            <span class="tile-ico" aria-hidden="true">🏠</span>
+            <span class="tile-copy">
+              <strong>Staff dashboard</strong>
+              <span>Roster, announcements, day-off requests, policies and your work tools.</span>
+            </span>
+          </a>
+          <a class="tile" id="goPolicies" href="policies_portal.html">
+            <span class="tile-ico" aria-hidden="true">📋</span>
+            <span class="tile-copy">
+              <strong>Policies</strong>
+              <span>Company policies and procedures.</span>
+            </span>
+          </a>
+          <a class="tile" id="goExpenses" href="portal-expenses.html">
+            <span class="tile-ico" aria-hidden="true">🧾</span>
+            <span class="tile-copy">
+              <strong>Expenses</strong>
+              <span>Submit and track your expense claims.</span>
+            </span>
+          </a>
+          <a class="tile" id="goDayOff" href="session_disruption_report.html?from=office">
+            <span class="tile-ico" aria-hidden="true">📅</span>
+            <span class="tile-copy">
+              <strong>Day off / time off</strong>
+              <span>Request days off or report schedule disruption.</span>
+            </span>
+          </a>
+        </div>
+      </section>
       <section class="section" aria-labelledby="personalHeading">
         <h2 id="personalHeading">My records</h2>
         <div class="grid">
@@ -131,7 +164,7 @@
       bootstrapDashboardSupabase,
       portalIsOperationsAdminUser,
       portalLogout,
-    } from "/portal/auth-handler.js?v=20260609-sevitha-full-admin";
+    } from "/portal/auth-handler.js?v=20260625-exec-single-session-exempt";
 
     const loadingEl = document.getElementById("loadingState");
     const contentHost = document.getElementById("contentHost");

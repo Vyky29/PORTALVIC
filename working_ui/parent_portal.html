@@ -12,7 +12,9 @@
   <script src="/portal-static-bootstrap.js"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260703-desktop" />
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <link rel="manifest" href="/clubsensational-family.webmanifest?v=20260703-family-pwa" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260703-ach-dl" />
   <style>
     :root {
       --blue: #2d84b3;
@@ -36,6 +38,8 @@
       --tap: 48px;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    /* The [hidden] attribute must always win so login + dashboard never show together. */
+    [hidden] { display: none !important; }
     html, body {
       margin: 0;
       padding: 0;
@@ -48,10 +52,14 @@
       background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
     }
     .pp-page {
-      max-width: var(--max);
+      width: 100%;
+      max-width: min(100%, var(--max));
       margin: 0 auto;
       padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
       min-width: 0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
     }
     .pp-brand {
       text-align: center;
@@ -161,12 +169,19 @@
     }
     .pp-notice--error { background: var(--dangerSoft); color: #8a2725; }
     .pp-notice--info { background: var(--blueSoft); color: var(--ink); }
+    #ppStepHome,
+    #ppStepParticipant {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
     .pp-home-head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 14px;
       min-width: 0;
     }
     .pp-home-head h2 {
@@ -175,6 +190,66 @@
       color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
+    }
+    .pp-home-greeting-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .pp-pax-info-icon-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pp-pax-info-icon-wrap .pp-unread-badge {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 10px;
+      box-shadow: 0 0 0 2px #fff;
+    }
+    .pp-pax-info-btn--has-unread {
+      border-color: rgba(220, 38, 38, .35);
+    }
+    .pp-pax-msg--unread {
+      box-shadow: inset 3px 0 0 #dc2626;
+    }
+    .pp-pax-msg__unread-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #dc2626;
+      margin-right: 6px;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+    .pp-pax-msg__who {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
     }
     .pp-home-actions {
       display: flex;
@@ -192,7 +267,53 @@
       font-weight: 700;
       cursor: pointer;
     }
-    .pp-child-card { padding: 14px; }
+    .pp-child-card {
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .pp-child-card:hover,
+    .pp-child-card:focus-visible {
+      border-color: rgba(45, 132, 179, .35);
+      box-shadow: 0 8px 28px rgba(23, 50, 71, .1);
+      outline: none;
+    }
+    .pp-child-card__cta {
+      margin: 12px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+      overflow-wrap: break-word;
+    }
+    #ppChildList {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    #ppStepHome > .pp-card,
+    #ppStepHome > #ppContactBlock {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+    .pp-participant-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-participant-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #ppParticipantDetail {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
     .pp-child-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 52px auto;
@@ -299,7 +420,8 @@
     }
     .pp-contact-note { margin-top: 10px; }
     .pp-legal {
-      margin-top: 20px;
+      margin-top: auto;
+      padding-top: 20px;
       text-align: center;
       font-size: 12px;
       color: var(--muted);
@@ -377,6 +499,110 @@
       text-align: center;
       overflow-wrap: break-word;
     }
+    .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
+    .pp-btn--whatsapp {
+      background: linear-gradient(180deg, #25d366 0%, #1ebe57 100%);
+      border: 1px solid #1aad4f;
+      color: #fff;
+      font-weight: 800;
+    }
+    .pp-btn--whatsapp:disabled { opacity: .65; }
+    .pp-pax-msgs-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: min(52vh, 420px);
+      overflow-y: auto;
+      padding: 4px 2px 12px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .pp-pax-msg {
+      border-radius: 14px;
+      padding: 10px 12px;
+      max-width: 92%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .pp-pax-msg--out {
+      align-self: flex-start;
+    }
+    .pp-pax-msg--in {
+      align-self: flex-end;
+    }
+    .pp-pax-msg--wa {
+      background: #e9fbf0;
+      border-color: rgba(37, 211, 102, .32);
+    }
+    .pp-pax-msg--email {
+      background: #eaf5fb;
+      border-color: rgba(45, 132, 179, .32);
+    }
+    .pp-pax-msg--app-in {
+      background: #f4f8fb;
+      border-color: rgba(23, 50, 71, .12);
+    }
+    .pp-pax-msg--other {
+      background: #fff;
+      border-color: var(--line);
+    }
+    .pp-pax-msg__channel {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-right: 6px;
+    }
+    .pp-pax-msg__channel--wa { background: #d3f5e0; color: #0d5c4a; }
+    .pp-pax-msg__channel--email { background: #d6ebf7; color: #1f6587; }
+    .pp-pax-msg__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-pax-msg__who {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .pp-pax-msg__when { font-size: 11px; flex-shrink: 0; }
+    .pp-pax-msg__child { margin: 4px 0 0; font-size: 11px; overflow-wrap: break-word; }
+    .pp-pax-msg__body {
+      margin: 6px 0 0;
+      font-size: 14px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .pp-pax-msg__meta { margin: 6px 0 0; font-size: 11px; }
+    .pp-pax-msgs-compose textarea {
+      width: 100%;
+      min-height: 88px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-width: 0;
+    }
+    .pp-pax-msgs-wa-note {
+      margin: 0 0 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-msgs-wa-note a { font-weight: 700; }
+    .pp-chip--you { background: #e9fbf0; color: #0d5c4a; }
+    .pp-msg-card--in { border-color: rgba(37, 211, 102, .22); }
     .pp-pax-hub-note { margin: 8px 0 0; font-size: 12px; }
     .pp-pax-sticky-hero {
       position: sticky;
@@ -437,6 +663,27 @@
     .pp-participant-body .pcso-kpi-grid { margin-top: 0; }
     .pp-participant-body .pcso-table-wrap { max-width: 100%; overflow-x: auto; }
     .pp-ach-view { min-width: 0; }
+    .pp-ach-aquatic-note {
+      margin: 0;
+      padding: 16px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(45, 132, 179, .22);
+      background: linear-gradient(180deg, #f3f9fd 0%, #eaf4fb 100%);
+      min-width: 0;
+    }
+    .pp-ach-aquatic-note__title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-ach-aquatic-note__body {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
 
     @media (min-width: 720px) {
       .pp-page {
@@ -445,16 +692,36 @@
         padding-right: max(24px, env(safe-area-inset-right));
       }
       .pp-brand h1 { font-size: 24px; }
+      #ppStepIdentify {
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+      }
       #ppStepHome {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
         gap: 16px;
-        align-items: start;
+        align-items: stretch;
       }
-      #ppStepHome > .pp-home-head,
-      #ppStepHome > #ppContactBlock {
+      #ppStepHome > .pp-home-head {
         grid-column: 1 / -1;
       }
+      #ppStepHome > .pp-card,
+      #ppStepHome > #ppContactBlock {
+        margin-top: 0;
+        height: 100%;
+      }
+      .pp-card + .pp-card { margin-top: 0; }
+      #ppChildList {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+      .pp-child-card { padding: 18px; }
+      .pp-child-row { grid-template-columns: minmax(0, 1fr) 64px auto; }
+      .pp-child-name { font-size: 18px; }
+      .pp-child-photo { width: 64px; height: 64px; }
+      .pp-home-head h2 { font-size: 28px; }
       .pp-pax-info-buttons {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       }
@@ -493,7 +760,7 @@
     <header class="pp-brand">
       <img id="ppBrandLogo" class="pp-brand-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="88" height="88" />
       <h1>Family portal</h1>
-      <p>View your linked participants and recent club messages.</p>
+      <p>View your linked participants, sessions and club messages.</p>
     </header>
 
     <div id="ppNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
@@ -504,15 +771,15 @@
       <form id="ppIdentifyForm">
         <div class="pp-field">
           <label for="ppParentFirstName">First name</label>
-          <input id="ppParentFirstName" name="parent_first_name" type="text" autocomplete="given-name" required placeholder="e.g. Leila" />
+          <input id="ppParentFirstName" name="parent_first_name" type="text" autocomplete="given-name" required placeholder="Your first name" />
         </div>
         <div class="pp-field">
           <label for="ppParentLastName">Last name</label>
-          <input id="ppParentLastName" name="parent_last_name" type="text" autocomplete="family-name" required placeholder="e.g. Ahmed" />
+          <input id="ppParentLastName" name="parent_last_name" type="text" autocomplete="family-name" required placeholder="Your last name" />
         </div>
         <div class="pp-field">
           <label for="ppParticipantDob">Oldest participant date of birth</label>
-          <input id="ppParticipantDob" name="login_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY e.g. 13082012" />
+          <input id="ppParticipantDob" name="login_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY" />
           <p class="pp-muted" style="margin-top:6px;font-size:12px">8 digits: day, month, year — no spaces or slashes.</p>
         </div>
         <button id="ppSignInBtn" class="pp-btn pp-btn--primary" type="submit">Sign in</button>
@@ -521,7 +788,9 @@
 
     <section id="ppStepHome" hidden>
       <div class="pp-home-head">
-        <h2 id="ppHomeGreeting">Hello</h2>
+        <div class="pp-home-greeting-wrap">
+          <h2 id="ppHomeGreeting">Hello</h2>
+        </div>
         <div class="pp-home-actions">
           <button id="ppRefresh" class="pp-icon-btn" type="button">Refresh</button>
           <button id="ppSignOut" class="pp-icon-btn" type="button">Sign out</button>
@@ -531,11 +800,6 @@
       <div class="pp-card">
         <h3 class="pp-section-title">Your participants</h3>
         <div id="ppChildList"></div>
-      </div>
-
-      <div class="pp-card">
-        <h3 class="pp-section-title">Recent messages</h3>
-        <div id="ppMessageList"></div>
       </div>
 
       <div class="pp-card" id="ppContactBlock"></div>
@@ -561,11 +825,12 @@
     </p>
   </main>
 
-  <script src="/portal/portal_participant_identity.js?v=20260703-perf"></script>
+  <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
-  <script src="/portal/portal_client_sessions_overview.js?v=20260703-perf"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260703-gen-fix"></script>
-  <script src="/portal/parent_portal_app.js?v=20260703-perf"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260704-unread-msgs"></script>
+  <script src="/portal/parent_portal_app.js?v=20260704-unread-msgs"></script>
+  <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
       void window.ParentPortalApp.bootstrap();

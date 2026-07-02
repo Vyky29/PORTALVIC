@@ -236,11 +236,29 @@
     );
   }
 
-  function infoButtonsHtml(data) {
+  function infoButtonsHtml(data, opts) {
     var g = data.general || {};
     var hasAquatics = !!g.has_aquatics;
+    var msgUnread =
+      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
+    var msgBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
+        ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
+        : "";
     return (
       '<div class="pp-pax-info-buttons">' +
+      '<div class="pp-pax-info-row">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--messages' +
+      (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : "") +
+      '" data-pp-open="messages" aria-label="Messages' +
+      (msgUnread > 0 ? " — " + msgUnread + " unread" : "") +
+      '">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<span class="pp-pax-info-icon-wrap">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+      msgBadge +
+      "</span>" +
+      '<span class="pp-pax-info-caption">Messages</span></span></button></div>' +
       '<div class="pp-pax-info-row">' +
       '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
       '<span class="pp-pax-info-btn-stack">' +
@@ -342,7 +360,7 @@
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       heroHtml(data) +
-      infoButtonsHtml(data) +
+      infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Choose a section — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
@@ -390,23 +408,93 @@
     }
   }
 
+  var AQUATIC_NO_PHOTOS_NOTE =
+    "If your child attends Aquatic Activity at Acton or Northolt, due to the Centre rules we cannot take photos during sessions.";
+
   function renderAchievements(host, data, opts) {
     var achievements = Array.isArray(data.achievements) ? data.achievements : [];
-    var gallery =
-      global.PortalClientSessionsOverview &&
-      typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
-        ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements)
-        : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
+    var aquaticOnly = !!(data.general && data.general.aquatic_only_no_photos);
+    var gallery = "";
+    if (achievements.length) {
+      gallery =
+        global.PortalClientSessionsOverview &&
+        typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          : "";
+    } else if (aquaticOnly) {
+      gallery =
+        '<div class="pp-ach-aquatic-note" role="note">' +
+        '<p class="pp-ach-aquatic-note__title">No achievement photos</p>' +
+        '<p class="pp-muted pp-ach-aquatic-note__body">' +
+        esc(AQUATIC_NO_PHOTOS_NOTE) +
+        "</p></div>";
+    } else {
+      gallery =
+        global.PortalClientSessionsOverview &&
+        typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
+    }
+    var subNote = aquaticOnly && !achievements.length
+      ? "Achievement photos are not available for Aquatic Activity at Acton or Northolt."
+      : "Photos from sessions — tap to view full size, or use Download to save to your device.";
     host.innerHTML = subviewShell(
       data,
       "achievements",
       '<h3 class="pp-pax-subview-title">Achievement photos</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Photos from sessions — tap any image to view full size.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        esc(subNote) +
+        "</p>" +
         '<div class="pp-ach-view">' +
         gallery +
         "</div>",
     );
     bindBack(host, data, opts);
+    bindAchievementDownloads(host, data, opts);
+  }
+
+  function bindAchievementDownloads(host, data, opts) {
+    if (!opts || typeof opts.downloadAchievement !== "function") return;
+    host.querySelectorAll("[data-pp-ach-download]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.disabled) return;
+        var photoId = btn.getAttribute("data-pp-ach-download") || "";
+        if (!photoId) return;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        var prevLabel = btn.textContent;
+        btn.textContent = "Saving…";
+        void opts
+          .downloadAchievement(photoId)
+          .then(function (res) {
+            if (!res || !res.download_url) throw new Error("download_failed");
+            var link = document.createElement("a");
+            link.href = res.download_url;
+            link.download = res.filename || "achievement.jpg";
+            link.rel = "noopener";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            (data.achievements || []).forEach(function (a) {
+              if (String(a.id) === photoId) {
+                a.status = "downloaded";
+                if (res.downloaded_at) a.downloaded_at = res.downloaded_at;
+              }
+            });
+            btn.textContent = "Saved";
+            btn.classList.add("pp-ach-dl-btn--saved");
+            btn.setAttribute("aria-label", "Already saved on your device");
+          })
+          .catch(function () {
+            btn.disabled = false;
+            btn.textContent = prevLabel || "Download";
+            if (typeof opts.onSectionError === "function") opts.onSectionError("achievements");
+          })
+          .finally(function () {
+            btn.removeAttribute("aria-busy");
+          });
+      });
+    });
   }
 
   function renderSwim(host, data, opts) {
@@ -438,6 +526,238 @@
     bindBack(host, data, opts);
   }
 
+  function formatMessageWhen(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function messageKindLabel(m) {
+    if (m.direction === "in") {
+      return m.source === "parent_app" ? "You (app)" : "You (WhatsApp)";
+    }
+    var k = String(m.kind || "").trim();
+    if (k === "custom" || k === "reply") return "Club message";
+    if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (!k) return "Club message";
+    return k.replace(/_/g, " ");
+  }
+
+  function messageDeliveryChannel(m) {
+    if (!m) return "other";
+    if (m.direction === "in") {
+      return m.source === "parent_app" ? "app_in" : "whatsapp_in";
+    }
+    if (
+      m.whatsapp_status === "sent" ||
+      m.whatsapp_status === "sent_sms" ||
+      m.source === "whatsapp"
+    ) {
+      return "whatsapp";
+    }
+    if (m.email_status === "sent" || m.source === "email") {
+      return "email";
+    }
+    return "other";
+  }
+
+  function messageChannelLabel(channel) {
+    if (channel === "whatsapp" || channel === "whatsapp_in") return "WhatsApp";
+    if (channel === "email") return "Email";
+    if (channel === "app_in") return "Parent app";
+    return "Club";
+  }
+
+  function messageBubbleClass(m) {
+    var ch = messageDeliveryChannel(m);
+    if (ch === "whatsapp" || ch === "whatsapp_in") return "pp-pax-msg--wa";
+    if (ch === "email") return "pp-pax-msg--email";
+    if (ch === "app_in") return "pp-pax-msg--app-in";
+    return m.direction === "in" ? "pp-pax-msg--app-in" : "pp-pax-msg--other";
+  }
+
+  function messagesThreadHtml(messages, waBiz) {
+    if (!messages || !messages.length) {
+      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates by WhatsApp and email appear here when we send them. Green = WhatsApp, blue = email.</p>';
+    }
+    return (
+      '<div class="pp-pax-msgs-thread" role="log" aria-live="polite">' +
+      messages
+        .map(function (m) {
+          var isOut = m.direction === "out";
+          var channel = messageDeliveryChannel(m);
+          var preview = String(m.body_text || m.subject || "").trim();
+          if (preview.length > 1200) preview = preview.slice(0, 1197) + "…";
+          var channelTag =
+            channel === "whatsapp" || channel === "email"
+              ? '<span class="pp-pax-msg__channel pp-pax-msg__channel--' +
+                (channel === "email" ? "email" : "wa") +
+                '">' +
+                esc(messageChannelLabel(channel)) +
+                "</span>"
+              : "";
+          var unreadMark = m.is_unread
+            ? '<span class="pp-pax-msg__unread-dot" aria-hidden="true"></span>'
+            : "";
+          return (
+            '<article class="pp-pax-msg' +
+            (isOut ? " pp-pax-msg--out" : " pp-pax-msg--in") +
+            " " +
+            messageBubbleClass(m) +
+            (m.is_unread ? " pp-pax-msg--unread" : "") +
+            '">' +
+            '<div class="pp-pax-msg__head">' +
+            '<span class="pp-pax-msg__who">' +
+            unreadMark +
+            esc(isOut ? "Club" : m.sender_name || "You") +
+            "</span>" +
+            '<span class="pp-pax-msg__when pp-muted">' +
+            esc(formatMessageWhen(m.created_at)) +
+            "</span></div>" +
+            (m.client_display && isOut
+              ? '<p class="pp-pax-msg__child pp-muted">' + esc(m.client_display) + "</p>"
+              : "") +
+            (preview ? '<p class="pp-pax-msg__body">' + esc(preview) + "</p>" : "") +
+            '<p class="pp-pax-msg__meta pp-muted">' +
+            channelTag +
+            esc(messageKindLabel(m)) +
+            (m.venue ? " · " + esc(m.venue) : "") +
+            "</p></article>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function messagesComposeHtml(waBiz) {
+    var waNote = "";
+    if (waBiz && waBiz.wa_me_url) {
+      waNote =
+        '<p class="pp-pax-msgs-wa-note">Prefer WhatsApp? <a href="' +
+        esc(waBiz.wa_me_url) +
+        '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+        (waBiz.display ? " (" + esc(waBiz.display) + ")" : "") +
+        ". Replies there appear here too.</p>";
+    } else {
+      waNote =
+        '<p class="pp-pax-msgs-wa-note pp-muted">You can also message us on WhatsApp using the club number — those messages sync with this thread.</p>';
+    }
+    return (
+      waNote +
+      '<form class="pp-pax-msgs-compose" id="ppMsgsForm">' +
+      '<label class="pp-field" for="ppMsgsInput"><span class="pp-muted">Write to the office</span></label>' +
+      '<textarea id="ppMsgsInput" name="message" rows="3" maxlength="2000" required placeholder="Type your message…"></textarea>' +
+      '<button type="submit" class="pp-btn pp-btn--primary" id="ppMsgsSendBtn">Send message</button>' +
+      "</form>" +
+      '<p id="ppMsgsNotice" class="pp-notice pp-notice--info" hidden role="status"></p>'
+    );
+  }
+
+  function renderMessages(host, data, opts) {
+    var body =
+      '<h3 class="pp-pax-subview-title">Messages</h3>' +
+      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email.</p>' +
+      '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
+      messagesComposeHtml(null);
+    host.innerHTML = subviewShell(data, "messages", body);
+    bindBack(host, data, opts);
+    bindMessages(host, data, opts);
+    if (typeof opts.loadMessages === "function") {
+      void opts
+        .loadMessages({ markRead: true })
+        .then(function (payload) {
+          var threadHost = host.querySelector("#ppMsgsThreadHost");
+          if (!threadHost) return;
+          threadHost.innerHTML = messagesThreadHtml(
+            (payload && payload.messages) || [],
+            (payload && payload.whatsapp_business) || null,
+          );
+          var waNote = host.querySelector(".pp-pax-msgs-wa-note");
+          if (waNote && payload && payload.whatsapp_business && payload.whatsapp_business.wa_me_url) {
+            var b = payload.whatsapp_business;
+            waNote.innerHTML =
+              'Prefer WhatsApp? <a href="' +
+              esc(b.wa_me_url) +
+              '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+              (b.display ? " (" + esc(b.display) + ")" : "") +
+              ". Replies there appear here too.";
+          }
+          threadHost.scrollTop = threadHost.scrollHeight;
+        })
+        .catch(function () {
+        var threadHost = host.querySelector("#ppMsgsThreadHost");
+        if (threadHost) {
+          threadHost.innerHTML =
+            '<p class="pp-muted">Could not load messages — try Refresh or go back and open again.</p>';
+        }
+      });
+    }
+  }
+
+  function bindMessages(host, data, opts) {
+    var form = host.querySelector("#ppMsgsForm");
+    if (!form || typeof opts.sendMessage !== "function") return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var input = host.querySelector("#ppMsgsInput");
+      var notice = host.querySelector("#ppMsgsNotice");
+      var sendBtn = host.querySelector("#ppMsgsSendBtn");
+      var text = input ? String(input.value || "").trim() : "";
+      if (!text) return;
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.setAttribute("aria-busy", "true");
+      }
+      if (notice) notice.hidden = true;
+      void opts
+        .sendMessage(text)
+        .then(function (payload) {
+          if (input) input.value = "";
+          if (notice) {
+            notice.hidden = false;
+            notice.className = "pp-notice pp-notice--info";
+            notice.textContent = "Message sent — the office will reply here or on WhatsApp.";
+          }
+          return typeof opts.loadMessages === "function"
+            ? opts.loadMessages({ markRead: false })
+            : payload;
+        })
+        .then(function (payload) {
+          if (!payload || !payload.messages) return;
+          var threadHost = host.querySelector("#ppMsgsThreadHost");
+          if (!threadHost) return;
+          threadHost.innerHTML = messagesThreadHtml(
+            payload.messages,
+            payload.whatsapp_business || null,
+          );
+          threadHost.scrollTop = threadHost.scrollHeight;
+        })
+        .catch(function () {
+          if (notice) {
+            notice.hidden = false;
+            notice.className = "pp-notice pp-notice--error";
+            notice.textContent = "Could not send — check your connection and try again.";
+          }
+        })
+        .finally(function () {
+          if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.removeAttribute("aria-busy");
+          }
+        });
+    });
+  }
+
   function bindBack(host, data, opts) {
     host.querySelectorAll("[data-pp-back]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -454,6 +774,7 @@
     } else if (view === "sessions") renderSessions(host, data, opts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
+    else if (view === "messages") renderMessages(host, data, opts);
   }
 
   function bindHub(host, data, opts) {

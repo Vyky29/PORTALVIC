@@ -219,13 +219,61 @@
     return mergeSubmittedFeedbackRows(staticRows, live);
   }
 
+  /** Shared Day Centre / Bespoke roster keys already confirmed via Supabase sync (RPC fan-out). */
+  function serverSyncedSharedRowsForDate(iso) {
+    const day = String(iso || "").trim().substring(0, 10);
+    const out = [];
+    try {
+      const dd = typeof window !== "undefined" && window.dashboardData;
+      const srv = dd && dd.portalServerResolvedRosterKeys;
+      if (!srv || !srv.feedback || typeof srv.feedback.forEach !== "function") return out;
+      srv.feedback.forEach(function (k) {
+        const key = String(k || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}/.test(key) || key.slice(0, 10) !== day) return;
+        const parts = key
+          .split("|")
+          .map(function (p) {
+            return String(p || "").trim().toLowerCase();
+          })
+          .filter(Boolean);
+        if (parts.length < 2) return;
+        const last = parts[parts.length - 1];
+        const isSharedUnit =
+          last === "day_centre" ||
+          last === "bespoke_shared" ||
+          (key.split("|").length >= 3 && String(key.split("|")[1] || "").trim() === "");
+        if (!isSharedUnit) return;
+        let clientSlug = "";
+        if (last === "day_centre" || last === "bespoke_shared") clientSlug = parts[1];
+        else if (parts.length >= 3) clientSlug = parts[1] === "" ? parts[2] : parts[1];
+        if (!clientSlug) return;
+        out.push({
+          clientName: clientSlug,
+          date: day,
+          service: last === "bespoke_shared" ? "Bespoke Programme" : "Day Centre",
+          portalSessionKey: key,
+          portal_session_key: key,
+          _live: true,
+          _serverResolved: true,
+        });
+      });
+    } catch (_) {}
+    return out;
+  }
+
   /** All submitted feedback on a date (any instructor) — Day Centre / shared slots. */
   function submittedRowsForDateAll(iso) {
     const day = String(iso || "").trim().substring(0, 10);
     const thru = feedbackCoverageThroughIso();
     const live = liveSubmittedRowsForDate(day);
-    if (thru && day > thru) return live;
-    return mergeSubmittedFeedbackRows(staticSubmittedRowsForDate(day), live);
+    const serverShared = serverSyncedSharedRowsForDate(day);
+    if (thru && day > thru) {
+      return mergeSubmittedFeedbackRows(live, serverShared);
+    }
+    return mergeSubmittedFeedbackRows(
+      mergeSubmittedFeedbackRows(staticSubmittedRowsForDate(day), live),
+      serverShared
+    );
   }
 
   function isDayCentreServiceLabel(label) {
@@ -239,8 +287,18 @@
     );
   }
 
+  function statusRowServiceNeedsPerStaffUnitFeedback(st) {
+    const svc = String((st && st.service) || "").toLowerCase();
+    if (/multi[-\s]?activity/.test(svc)) return true;
+    if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
+    if (svc.indexOf("physical activit") >= 0 || svc.indexOf("fitness") >= 0 || svc === "gym") return true;
+    return false;
+  }
+
   function isDayCentreStatusRow(st) {
     if (!st) return false;
+    if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return false;
     const u = String(st.feedbackUnitKey || "");
     if (u.indexOf("day_centre") >= 0) return true;
     return isDayCentreServiceLabel(st.service);
@@ -248,7 +306,9 @@
 
   /** Climbing / MA / per-slot Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / merge groups. */
   function statusRowNeedsPerStaffUnitFeedback(st) {
-    if (!st || isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
+    if (!st) return false;
+    if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return true;
+    if (isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
     if (String(st.feedbackMergeGroup || "").trim()) return false;
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
@@ -583,6 +643,7 @@
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+    if (act.indexOf("physical activit") >= 0 || act.indexOf("fitness") >= 0 || act === "gym") return true;
     void iso;
     return false;
   }
@@ -814,8 +875,15 @@
     if (!rosterTime) return true;
     const rTime = portalRowTimeTokenFromKey(pk);
     if (rTime && rosterTime && rTime !== rosterTime) return false;
+    // Day Centre / Bespoke-shared are whole-day shared units: one feedback per client
+    // per day with no per-slot time. Their submitted key (e.g. "DATE|fadi|day_centre")
+    // has no time token, so it must still cover the timed roster row.
+    const sharedUnit =
+      portalRosterKeyIsSharedFeedbackUnit(pk) ||
+      isDayCentreRosterSession(s) ||
+      isBespokeSharedRosterSession(s);
     // Submission without a time token must not blanket-match every slot for the same client that day.
-    if (!rTime && rosterTime) return false;
+    if (!rTime && rosterTime && !sharedUnit) return false;
     return true;
   }
 
@@ -917,22 +985,39 @@
     const owned = statusRowsForStaffDate(iso, staffId);
     const allDay = statusRowsForDateAll(iso);
     const matchingOwned = owned.filter(function (st) {
-      return clientMatch(st, s, clientNotesById);
+      return statusRowMatchesRosterSession(st, s, clientNotesById);
     });
     const pool = matchingOwned.length
       ? matchingOwned
       : allDay.filter(function (st) {
-          return clientMatch(st, s, clientNotesById);
+          return statusRowMatchesRosterSession(st, s, clientNotesById);
         });
     return pool.some(statusOverviewIsAbsent);
   }
 
   function reviewFlagsForResolvedSession(iso, staffId, s, clientNotesById) {
     const absent = rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById);
+    if (absent) {
+      return {
+        feedbackDone: false,
+        incident: false,
+        absent: true,
+        cancelled: false,
+      };
+    }
+    if (rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) {
+      const done = staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById);
+      return {
+        feedbackDone: done,
+        incident: false,
+        absent: false,
+        cancelled: false,
+      };
+    }
     return {
-      feedbackDone: !absent,
+      feedbackDone: true,
       incident: false,
-      absent: absent,
+      absent: false,
       cancelled: false,
     };
   }
@@ -961,6 +1046,30 @@
     });
   }
 
+  function dayCentrePeerSubmissionCoversClient(iso, clientSlug) {
+    const key = String(clientSlug || "").trim();
+    if (!key) return false;
+    const day = String(iso || "").trim().substring(0, 10);
+    const unitKey = day + "|" + key + "|day_centre";
+    try {
+      const dd = typeof window !== "undefined" && window.dashboardData;
+      const srv = dd && dd.portalServerResolvedRosterKeys;
+      if (srv && srv.feedback && typeof srv.feedback.has === "function" && srv.feedback.has(unitKey)) {
+        return true;
+      }
+    } catch (_) {}
+    return submittedRowsForDateAll(iso).some(function (r) {
+      if (submittedRowMarksAbsent(r)) return false;
+      const rKey = slug(r.clientName);
+      if (!(rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0)) return false;
+      const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+      if (pk && pk.slice(0, 10) === day) {
+        if (pk.indexOf("|day_centre") >= 0 || /day\s*centre/i.test(String(r.service || ""))) return true;
+      }
+      return /day\s*centre/i.test(String(r.service || ""));
+    });
+  }
+
   function dayCentreClientResolved(iso, staffId, clientSlug) {
     const key = String(clientSlug || "").trim();
     if (!key) return false;
@@ -975,10 +1084,7 @@
     ) {
       return true;
     }
-    return submittedRowsForDateAll(iso).some(function (r) {
-      const rKey = slug(r.clientName);
-      return rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0;
-    });
+    return dayCentrePeerSubmissionCoversClient(iso, key);
   }
 
   function feedbackCoverageThroughIso() {
@@ -1124,9 +1230,29 @@
 
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
+    if (rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) {
+      if (rec.absent || rec.cancelled) return true;
+      if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
+      return staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById);
+    }
     if (isServerTruthFeedbackDay(iso)) {
       if (rec.absent || rec.cancelled) return true;
-      return !!rec.feedbackDone;
+      if (rec.feedbackDone) return true;
+      /* Today+: live session_feedback rows (hydrated after submit) must still resolve
+         Day Centre / shared units even when status export has no row for this date yet. */
+      if (staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById)) return true;
+      const clientKey = rosterKeyForSession(s, clientNotesById);
+      if (
+        isDayCentreRosterSession(s) &&
+        clientKey &&
+        dayCentreClientResolved(iso, staffId, clientKey)
+      ) {
+        return true;
+      }
+      if (isBespokeSharedRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+        return true;
+      }
+      return false;
     }
     if (rec.feedbackDone) return true;
     if (rec.absent || rec.cancelled) return true;
@@ -1262,6 +1388,7 @@
     submittedCoversStatusRow: submittedCoversStatusRow,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
+    dayCentrePeerSubmissionCoversClient: dayCentrePeerSubmissionCoversClient,
     mergeGroupResolved: mergeGroupResolved,
     feedbackUnitKeyResolved: feedbackUnitKeyResolved,
     exportMarksDayComplete: exportMarksDayComplete,

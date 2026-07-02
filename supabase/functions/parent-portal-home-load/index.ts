@@ -13,11 +13,17 @@ import {
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
-
-function normalizePhoneDigits(raw: string): string {
-  const d = String(raw || "").replace(/\D/g, "");
-  return d.length >= 10 ? d.slice(-10) : d;
-}
+import {
+  applyUnreadFlagsToMessages,
+  countUnreadOutboundMessages,
+  fetchParentOutboundNotifyRows,
+  fetchParentWhatsappInboundRows,
+  getParentMessageReadAt,
+  markParentMessagesRead,
+  mergeParentPortalMessages,
+  parentPhoneLast10,
+  unreadOutboundCountByContact,
+} from "../_shared/parent_portal_messages.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -89,43 +95,17 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const emailNorm = String(parentMeta?.email || "").trim().toLowerCase();
-  const phone10 = normalizePhoneDigits(String(parentMeta?.mobile || ""));
+  const phone10 = parentPhoneLast10(String(parentMeta?.mobile || ""));
 
-  let messages: Record<string, unknown>[] = [];
-  const msgSelect =
-    "id, created_at, kind, channel, client_display, subject, body_text, email_status, whatsapp_status, session_date, venue";
+  const outbound = await fetchParentOutboundNotifyRows(supabase, emailNorm, phone10, 80);
+  const inbound = await fetchParentWhatsappInboundRows(supabase, phone10, 40);
 
-  if (emailNorm) {
-    const { data: byEmail } = await supabase
-      .from("portal_parent_notify_log")
-      .select(msgSelect)
-      .ilike("parent_email", emailNorm)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    messages = byEmail || [];
-  }
-
-  if (phone10) {
-    const { data: byPhone } = await supabase
-      .from("portal_parent_notify_log")
-      .select(msgSelect)
-      .like("parent_phone", `%${phone10}`)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    const merged = [...messages, ...(byPhone || [])];
-    const seen = new Set<string>();
-    messages = merged.filter((row) => {
-      const id = String(row.id || "");
-      if (!id || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-    messages.sort(
+  const messages = mergeParentPortalMessages(outbound, inbound)
+    .sort(
       (a, b) =>
         new Date(String(b.created_at || 0)).getTime() - new Date(String(a.created_at || 0)).getTime(),
-    );
-    messages = messages.slice(0, 20);
-  }
+    )
+    .slice(0, 20);
 
   const childrenOut = await Promise.all(
     (contacts || []).map(async (c) => {
@@ -153,6 +133,14 @@ Deno.serve(async (req) => {
     }),
   );
 
+  const readAt = await getParentMessageReadAt(supabase, parentPersonId);
+  const unread_messages_count = countUnreadOutboundMessages(outbound, readAt);
+  const unread_by_contact_id = unreadOutboundCountByContact(
+    outbound,
+    readAt,
+    childrenOut.map((c) => ({ contact_id: String(c.contact_id || ""), display_name: c.display_name })),
+  );
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -171,6 +159,8 @@ Deno.serve(async (req) => {
       },
       children: childrenOut,
       messages,
+      unread_messages_count,
+      unread_by_contact_id,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
   );

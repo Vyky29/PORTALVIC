@@ -209,7 +209,49 @@
     );
   }
 
-  /** kind: absence_announced — client_absence_announced override */
+  /** kind: absence_thanks — parent/carer told us first (staff reported via portal). */
+  function absenceThanks(slot, ov, meta, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var when = sessionWhen(slot);
+    var whenPart = when ? " on " + when : "";
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "Thank you for letting us know that " +
+      client +
+      " will not be attending" +
+      whenPart +
+      ".\n\n" +
+      "We have noted this on our records. We hope " +
+      client +
+      " feels better soon — please send our best wishes.\n\n" +
+      "If anything changes, just reply to this message." +
+      signOff()
+    );
+  }
+
+  /** kind: absence_followup — office recorded absent; gentle check-in with family. */
+  function absenceFollowup(slot, ov, meta, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var when = sessionWhen(slot);
+    var whenPart = when ? " on " + when : "";
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "We are writing to confirm that " +
+      client +
+      " was marked absent from today's session" +
+      whenPart +
+      ".\n\n" +
+      "We wanted to check that everything is OK at your end. " +
+      "If there is anything we should know or if you need to discuss the session, please reply and we will help." +
+      signOff()
+    );
+  }
+
+  /** kind: absence_announced — admin recorded absence (office confirming to parent). */
   function absence(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
@@ -373,6 +415,8 @@
       return "Instructor update · " + client;
     }
     if (k === "absence_announced") return "Absence · " + client;
+    if (k === "absence_thanks") return "Thank you — absence noted · " + client;
+    if (k === "absence_followup") return "Absence check-in · " + client;
     if (k === "makeup_scheduled") return "Make up · " + client;
     if (k === "trial_scheduled") return "Trial session · " + client;
     if (k === "session_cancelled") return "Session cancelled · " + client;
@@ -430,6 +474,8 @@
       return payment(slot, ov, meta, ctx.snap || { outstanding: 0, nextDue: null }, opts);
     }
     if (k === "absence_announced") return absence(slot, ov, meta, opts);
+    if (k === "absence_thanks") return absenceThanks(slot, ov, meta, opts);
+    if (k === "absence_followup") return absenceFollowup(slot, ov, meta, opts);
     if (k === "makeup_scheduled") return makeup(slot, ov, meta, opts);
     if (k === "trial_scheduled") return trial(slot, ov, meta, opts);
     if (k === "session_cancelled") return cancelled(slot, ov, meta, opts);
@@ -445,6 +491,8 @@
     payment: payment,
     instructorChange: instructorChange,
     absence: absence,
+    absenceThanks: absenceThanks,
+    absenceFollowup: absenceFollowup,
     makeup: makeup,
     trial: trial,
     cancelled: cancelled,

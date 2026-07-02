@@ -5,7 +5,7 @@ const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260616-lead-report-shell
 const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260609-autofill";
 const PORTAL_AUTOCOMPLETE_SCRIPT = "/portal-shared-js/portal_field_autocomplete.js?v=20260609-autofill";
 const PORTAL_CATALOG_SCRIPT = "/portal-shared-js/participant_services.js?v=20260609-autofill";
-const PORTAL_ROSTER_BUNDLE = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo";
+const PORTAL_ROSTER_BUNDLE = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster";
 const PORTAL_LEAD_SCOPE_MODULE = "/portal/portal_lead_session_scope.js?v=20260610-lead-report";
 
 const LEAD_SERVICES = [

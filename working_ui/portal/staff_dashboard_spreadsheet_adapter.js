@@ -215,6 +215,8 @@
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
+    eddie_mc: "eddie",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
@@ -257,6 +259,7 @@
       if (!map[canon]) map[canon] = label;
     }
     put("aadam_ah", "Adaam Ah");
+    put("eddie_mc", "Eddie Mc");
     put("eddie", "Eddie Mc");
     try {
       const rows =
@@ -627,8 +630,19 @@
 
       if (isHomeSlot || isManagerSlot) {
         const dutyId = isHomeSlot ? "home" : "manager";
-        const dutyName = isHomeSlot ? "HOME" : "MANAGER";
-        const dutyArea = isHomeSlot ? "HOME" : rosterArea || "Hub · Manager";
+        let dutyName = isHomeSlot ? "HOME" : "MANAGER";
+        if (
+          isManagerSlot &&
+          typeof window !== "undefined" &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.isOpsAdminStaffKey === "function" &&
+          window.portalOpsAdminDisplay.isOpsAdminStaffKey(staffKeyOut)
+        ) {
+          dutyName = window.portalOpsAdminDisplay.workerFacingLabel
+            ? window.portalOpsAdminDisplay.workerFacingLabel()
+            : "ADMIN";
+        }
+        const dutyArea = isHomeSlot ? "HOME" : "Hub Room";
         sessionsModel.push(
           Object.assign({}, baseSession, {
             clientId: dutyId,
@@ -728,8 +742,16 @@
 
     const isDemoAcct = rawId === "teflon";
     const effectiveRowStaffId = isDemoAcct ? "teflon" : rawId;
-    const built = buildForStaff(source, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
-    const allRows = Array.isArray(source && source.rows) ? source.rows : [];
+    let rosterSource = source;
+    if (
+      typeof window !== "undefined" &&
+      window.portalOpsAdminDutyRoster &&
+      typeof window.portalOpsAdminDutyRoster.mergeDutyRows === "function"
+    ) {
+      rosterSource = window.portalOpsAdminDutyRoster.mergeDutyRows(source, effectiveRowStaffId);
+    }
+    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
+    const allRows = Array.isArray(rosterSource && rosterSource.rows) ? rosterSource.rows : [];
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 
     let clientsInfo = (source && source.clientsInfo) || [];

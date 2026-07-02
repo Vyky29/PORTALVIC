@@ -15,10 +15,10 @@ import {
 import {
   feedbackSourceFingerprint,
   sanitizeFeedbackForParents,
+  parentSummaryModelNeedsRefresh,
 } from "../_shared/parent_feedback_sanitize.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
-  instructorFirstName,
   lookupClientsInfoSheetForParticipant,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
@@ -30,8 +30,9 @@ import {
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
-/** Read path: never block parents on live OpenAI — use cache or mark pending. */
-const SANITIZE_BATCH = 0;
+/** Max uncached feedback rows to review per parent page load (parallel batches). */
+const SANITIZE_BATCH = 30;
+const SANITIZE_CONCURRENCY = 5;
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
 
@@ -62,6 +63,68 @@ async function detectHasAquatics(
     .order("session_date", { ascending: false })
     .limit(12);
   return (data || []).some((row) => isAquaticService(row.service));
+}
+
+/** Acton / Northolt pool sites — achievement photos are not taken (centre rules). */
+function isCentreAquaticVenue(raw: unknown): boolean {
+  const v = clean(raw, 80).toLowerCase();
+  return v === "acton" || v === "northolt";
+}
+
+/**
+ * True when every active roster slot for this child is Aquatic Activity at Acton or Northolt.
+ * Parents in that programme should see an empty achievement gallery with a centre-rules note.
+ */
+async function detectAquaticOnlyNoPhotos(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
+): Promise<boolean> {
+  const names = [
+    ...new Set(
+      [...lookupNames.slice(0, 5), identityInput.displayName || ""]
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return false;
+
+  const queries = names.map((nm) =>
+    supabase
+      .from("portal_roster_rows")
+      .select("client_name, service, venue, status")
+      .eq("status", "active")
+      .ilike("client_name", nm)
+      .limit(40),
+  );
+
+  const rows: Array<{ service?: unknown; venue?: unknown; client_name?: unknown }> = [];
+  const seen = new Set<string>();
+  const results = await Promise.all(queries);
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+      const key = [
+        clean(row.client_name, 80),
+        clean(row.service, 80),
+        clean(row.venue, 80),
+      ]
+        .join("|")
+        .toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(row);
+    }
+  }
+
+  if (!rows.length) return false;
+  return rows.every((r) => isAquaticService(r.service) && isCentreAquaticVenue(r.venue));
 }
 
 function isAquaticService(raw: unknown): boolean {
@@ -112,6 +175,30 @@ function isoFromAny(raw: unknown): string {
 function independenceLabel(raw: unknown): string {
   if (Array.isArray(raw)) return raw.map((x) => clean(x, 120)).filter(Boolean).join(", ");
   return clean(raw, 400);
+}
+
+async function sanitizeFeedbackBatch(
+  items: Array<{
+    id: string;
+    contactId: string;
+    fingerprint: string;
+    input: Parameters<typeof sanitizeFeedbackForParents>[0];
+  }>,
+  limit: number,
+): Promise<Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>> {
+  const out = new Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>();
+  const queue = items.slice(0, limit);
+  for (let i = 0; i < queue.length; i += SANITIZE_CONCURRENCY) {
+    const chunk = queue.slice(i, i + SANITIZE_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async (item) => {
+        const reviewed = await sanitizeFeedbackForParents(item.input);
+        return { id: item.id, reviewed };
+      }),
+    );
+    for (const row of results) out.set(row.id, row.reviewed);
+  }
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -268,7 +355,7 @@ Deno.serve(async (req) => {
     if (feedbackIds.length) {
       const { data: cached } = await supabase
         .from("portal_parent_feedback_share")
-        .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at")
+        .select("session_feedback_id, source_fingerprint, parent_message, share_status, review_model, reviewed_at, admin_edited_at")
         .in("session_feedback_id", feedbackIds);
       for (const row of cached || []) {
         cacheById.set(String(row.session_feedback_id), row);
@@ -276,6 +363,14 @@ Deno.serve(async (req) => {
     }
 
     let sanitizeBudget = SANITIZE_BATCH;
+    const pendingSanitize: Array<{
+      id: string;
+      contactId: string;
+      fingerprint: string;
+      input: Parameters<typeof sanitizeFeedbackForParents>[0];
+      row: Record<string, unknown>;
+      patterns: unknown;
+    }> = [];
 
     for (const row of rawFeedback) {
       const id = String(row.id);
@@ -295,24 +390,89 @@ Deno.serve(async (req) => {
       };
 
       const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
-      let cache = cacheById.get(id);
-      let parentMessage: string | null = null;
-      let shareStatus = "hidden";
-      let messagePending = false;
+      const cache = cacheById.get(id);
 
-      if (cache && cache.source_fingerprint === fingerprint && cache.share_status !== "pending") {
-        shareStatus = String(cache.share_status || "hidden");
-        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+      const adminEdited = !!(cache && cache.admin_edited_at);
+      const wasStaleSummary = parentSummaryModelNeedsRefresh(cache?.review_model);
+      if (
+        cache &&
+        (adminEdited ||
+          (cache.source_fingerprint === fingerprint &&
+            cache.share_status !== "pending" &&
+            !wasStaleSummary))
+      ) {
+        const shareStatus = String(cache.share_status || "hidden");
+        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
       } else if (sanitizeBudget > 0) {
         sanitizeBudget--;
-        const reviewed = await sanitizeFeedbackForParents(sanitizeInput);
-        shareStatus = reviewed.share_status;
-        parentMessage = reviewed.parent_message || null;
+        pendingSanitize.push({
+          id,
+          contactId,
+          fingerprint,
+          input: sanitizeInput,
+          row,
+          patterns,
+        });
+      } else if (cache) {
+        const shareStatus = String(cache.share_status || "hidden");
+        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
+      } else {
+        sessionsOut.push({
+          id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: null,
+          message_pending: true,
+        });
+      }
+    }
+
+    if (pendingSanitize.length) {
+      const reviewedMap = await sanitizeFeedbackBatch(pendingSanitize, pendingSanitize.length);
+      for (const item of pendingSanitize) {
+        const row = item.row;
+        const patterns = item.patterns;
+        const reviewed = reviewedMap.get(item.id) || {
+          share_status: "hidden" as const,
+          parent_message: "",
+          review_model: "missing",
+        };
+        const shareStatus = reviewed.share_status;
+        const parentMessage = reviewed.parent_message || null;
 
         const upsertRow = {
-          session_feedback_id: id,
-          contact_id: contactId,
-          source_fingerprint: fingerprint,
+          session_feedback_id: item.id,
+          contact_id: item.contactId,
+          source_fingerprint: item.fingerprint,
           parent_message: parentMessage,
           share_status: shareStatus,
           review_model: reviewed.review_model,
@@ -324,40 +484,40 @@ Deno.serve(async (req) => {
           .from("portal_parent_feedback_share")
           .upsert(upsertRow, { onConflict: "session_feedback_id" });
         if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
-      } else if (cache) {
-        shareStatus = String(cache.share_status || "hidden");
-        parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-      } else {
-        messagePending = true;
-        shareStatus = "pending";
-      }
 
-      sessionsOut.push({
-        id,
-        session_date: isoFromAny(row.session_date),
-        service: clean(row.service, 200),
-        session_time: clean(row.session_time, 80),
-        instructor: instructorFirstName(row.completed_by_name),
-        attendance: clean(row.attendance, 40),
-        engagement_rating: row.engagement_rating,
-        client_emotions: clean(row.client_emotions, 200),
-        independence: independenceLabel(patterns),
-        parent_message: shareStatus === "approved" ? parentMessage : null,
-        message_pending: messagePending,
-      });
+        sessionsOut.push({
+          id: item.id,
+          session_date: isoFromAny(row.session_date),
+          service: clean(row.service, 200),
+          session_time: clean(row.session_time, 80),
+          attendance: clean(row.attendance, 40),
+          engagement_rating: row.engagement_rating,
+          client_emotions: clean(row.client_emotions, 200),
+          independence: independenceLabel(patterns),
+          parent_message: shareStatus === "approved" ? parentMessage : null,
+          message_pending: false,
+        });
+      }
     }
+
+    sessionsOut.sort((a, b) => {
+      const da = String(a.session_date || "");
+      const db = String(b.session_date || "");
+      if (da !== db) return db.localeCompare(da);
+      return clean(b.session_time).localeCompare(clean(a.session_time));
+    });
   }
 
   let achievements: Record<string, unknown>[] = [];
 
   if (wantAchievements) {
-    const PARENT_ACH_STATUSES = ["attached", "draft"] as const;
+    const PARENT_ACH_STATUSES = ["attached", "downloaded"] as const;
     const achQueries = [];
     if (clientSlugs.length) {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
           .in("status", [...PARENT_ACH_STATUSES])
           .in("client_id", clientSlugs)
           .order("session_date", { ascending: false })
@@ -368,7 +528,7 @@ Deno.serve(async (req) => {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
           .in("status", [...PARENT_ACH_STATUSES])
           .ilike("client_name", nm)
           .order("session_date", { ascending: false })
@@ -404,6 +564,7 @@ Deno.serve(async (req) => {
           session_date: row.session_date,
           session_feedback_id: row.session_feedback_id,
           status: clean(row.status, 40),
+          downloaded_at: row.parent_downloaded_at ? String(row.parent_downloaded_at) : null,
           url: signed.signedUrl,
         };
       }),
@@ -422,6 +583,8 @@ Deno.serve(async (req) => {
   if (!hasAquatics && (wantGeneral || wantSwim) && !wantSessions) {
     hasAquatics = await detectHasAquatics(supabase, clientSlugs);
   }
+
+  const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
 
   const swimTermReviews: Record<string, unknown>[] = [];
   if (wantSwim && hasAquatics) {
@@ -485,6 +648,7 @@ Deno.serve(async (req) => {
       general: {
         services,
         has_aquatics: hasAquatics,
+        aquatic_only_no_photos: aquaticOnlyNoPhotos,
         term_label: TERM_LABEL,
         general_info_sheet: generalInfoSheet,
         fields: generalFields,

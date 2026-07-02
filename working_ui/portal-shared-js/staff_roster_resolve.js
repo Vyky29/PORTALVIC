@@ -18,6 +18,7 @@
     stf013: "victor",
     stf014: "carlos",
     stf015: "alex",
+    stf016: "simon",
     stf017: "javi",
     stf018: "raul",
     stf019: "sevitha",
@@ -62,6 +63,7 @@
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
+    "stf016@staff.import.pending": "simon",
   };
 
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */

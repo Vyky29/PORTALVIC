@@ -8,12 +8,12 @@ const corsHeaders: Record<string, string> = {
     "authorization, x-client-info, apikey, content-type, x-portal-webhook-secret",
 };
 
+/** Push only to anchor_staff_id (slot instructor). No push for cancel / instructor change / move. */
 const ELIGIBLE = new Set([
   "client_replace_in_slot",
   "client_absence_announced",
   "slot_open",
 ]);
-
 
 function rosterKeyFromProfile(username: string, fullName: string): string {
   const raw = (username || "").trim() || (fullName || "").trim();
@@ -35,14 +35,27 @@ function normSpreadsheetKey(s: string): string {
     .replace(/[^a-z0-9]+/g, "");
 }
 
-function replacementDisplayName(record: Record<string, unknown>): string {
+function payloadObj(record: Record<string, unknown>): Record<string, unknown> {
   const raw = record.payload;
-  if (!raw || typeof raw !== "object") return "";
-  const pl = raw as Record<string, unknown>;
+  if (!raw || typeof raw !== "object") return {};
+  return raw as Record<string, unknown>;
+}
+
+function replacementDisplayName(record: Record<string, unknown>): string {
+  const pl = payloadObj(record);
   const a = String(pl.to_client_name ?? "").trim();
   if (a) return a;
   const b = String(pl.replacement_client_name ?? "").trim();
   return b;
+}
+
+function clientDisplayName(record: Record<string, unknown>): string {
+  const pl = payloadObj(record);
+  const fromPayload = String(
+    pl.to_client_name ?? pl.replacement_client_name ?? "",
+  ).trim();
+  if (fromPayload) return fromPayload;
+  return String(record.anchor_client_id ?? "").trim();
 }
 
 function pushCopy(
@@ -50,13 +63,14 @@ function pushCopy(
   record?: Record<string, unknown>,
 ): { title: string; body: string } {
   const t = String(overrideType || "").trim();
+  const who = record ? clientDisplayName(record) : "";
   if (t === "client_replace_in_slot") {
     const full = record ? replacementDisplayName(record) : "";
-    const who = full.trim();
-    if (who) {
+    const name = full.trim() || who;
+    if (name) {
       return {
-        title: `Make-up: ${who}`,
-        body: `${who} is on your roster for a make-up session.`,
+        title: `Make-up: ${name}`,
+        body: `${name} is on your roster for a make-up session.`,
       };
     }
     return {
@@ -67,7 +81,9 @@ function pushCopy(
   if (t === "client_absence_announced") {
     return {
       title: "Absent participant",
-      body: "An absence was recorded on your roster.",
+      body: who
+        ? `${who} was marked absent on your roster.`
+        : "An absence was recorded on your roster.",
     };
   }
   if (t === "slot_open") {
@@ -201,9 +217,12 @@ Deno.serve(async (req) => {
     });
   }
 
-  const anchorKey = normSpreadsheetKey(
-    String(record.anchor_staff_id ?? ""),
-  );
+  const anchorRosterKey = normSpreadsheetKey(String(record.anchor_staff_id ?? ""));
+  if (!anchorRosterKey) {
+    return new Response(JSON.stringify({ ok: true, sent: 0, targets: 0 }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const { data: profiles, error: profErr } = await admin.from("staff_profiles")
     .select("id, username, full_name, app_role")
@@ -219,12 +238,8 @@ Deno.serve(async (req) => {
 
   const targetUserIds = new Set<string>();
   for (const p of profiles as StaffProfile[]) {
-    const rk = rosterKeyFromProfile(
-      p.username ?? "",
-      p.full_name ?? "",
-    );
-    if (!rk) continue;
-    if (rk === anchorKey) targetUserIds.add(p.id);
+    const rk = rosterKeyFromProfile(p.username ?? "", p.full_name ?? "");
+    if (rk === anchorRosterKey) targetUserIds.add(p.id);
   }
 
   if (!targetUserIds.size) {
@@ -279,8 +294,8 @@ Deno.serve(async (req) => {
   }
 
   const copy = pushCopy(overrideType, record as Record<string, unknown>);
-  const body = `${copy.body} Date: ${sessionDate}.`;
   const notifyUrl = `${openBase}?portalOpen=alerts`;
+  const body = `${copy.body} Date: ${sessionDate}.`;
   const pushPayload = JSON.stringify({
     title: copy.title,
     body,
@@ -290,7 +305,9 @@ Deno.serve(async (req) => {
 
   let sent = 0;
   const rows = subs ?? [];
+
   for (const row of rows) {
+    const userId = String(row.user_id ?? "");
     const raw = row.subscription_json;
     if (!raw || typeof raw !== "object") continue;
     try {
@@ -308,7 +325,7 @@ Deno.serve(async (req) => {
         if (ep) {
           await admin.from("portal_push_subscriptions").delete().eq(
             "user_id",
-            row.user_id as string,
+            userId,
           ).eq("endpoint", ep);
         }
       }

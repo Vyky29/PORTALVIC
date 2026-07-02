@@ -31,6 +31,19 @@ const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
   chaitanya_trial_28_06: "chaitanya",
 };
 
+/**
+ * Portal participant display-name → roster/feedback short client_id.
+ * Use only when the parent-portal record stores a fuller name than the roster
+ * (e.g. "Fadi Abu daud" in portal_participants vs client_id "fadi" in the roster).
+ * Scoped per participant to avoid first-name collisions across distinct children.
+ */
+const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
+  fadi_abu_daud: "fadi",
+  fadi_ab: "fadi",
+  cyrus_mahdavi: "cyrus",
+  cyrus_ma: "cyrus",
+};
+
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
   rayan_tapa: "rayan_ta",
   aadam_ah: "adaam_ah",
@@ -39,7 +52,8 @@ const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
 export function rosterParticipantSlugAlias(slug: string): string {
   const s = slugifyParticipantKey(slug);
   if (!s) return s;
-  return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] || CLIENT_INFO_SHEET_ALIASES[s] || s;
+  return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] ||
+    CLIENT_INFO_SHEET_ALIASES[s] || PORTAL_PARTICIPANT_SLUG_ALIASES[s] || s;
 }
 
 export function canonicalParticipantClientId(nameRaw: string): string {
@@ -86,6 +100,7 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
   if (input.firstName || input.lastName) {
     add(`${input.firstName || ""} ${input.lastName || ""}`.trim());
     add(workerShortName(input.firstName || "", input.lastName || ""));
+    if (input.firstName) add(input.firstName);
   }
 
   return [...out].filter(Boolean);
@@ -102,6 +117,7 @@ export function resolveParticipantLookupNames(input: ParticipantIdentityInput): 
   if (input.firstName || input.lastName) {
     add(`${input.firstName || ""} ${input.lastName || ""}`.trim());
     add(workerShortName(input.firstName || "", input.lastName || ""));
+    if (input.firstName) add(input.firstName);
   }
 
   return [...names];
@@ -124,6 +140,18 @@ export function participantIdentityMatches(
   const wantSlug = canonicalParticipantClientId(input.displayName || "");
   const gotSlug = canonicalParticipantClientId(rowName || rowClientId);
   if (wantSlug && gotSlug && wantSlug === gotSlug) return true;
+
+  const first = normalizeParticipantLookupName(input.firstName || "");
+  if (first) {
+    const gotParts = normalizeParticipantLookupName(rowName).split(" ").filter(Boolean);
+    if (gotParts.length === 1 && gotParts[0] === first) {
+      const rowSlug = slugifyParticipantKey(rowClientId || rowName);
+      const firstSlug = slugifyParticipantKey(input.firstName || "");
+      if (rowSlug === firstSlug || slugs.some((s) => s === rowSlug || s === rosterParticipantSlugAlias(rowSlug))) {
+        return true;
+      }
+    }
+  }
 
   return false;
 }

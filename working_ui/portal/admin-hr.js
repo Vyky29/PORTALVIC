@@ -191,6 +191,25 @@
       ".hr-contract-row .hr-contract-pdf:hover{background:#eff6ff}",
       ".hr-contract-empty{padding:0 16px 6px;color:#64748b;font-size:13px}",
       ".hr-contract-loading{padding:0 16px 6px;color:#64748b;font-size:13px}",
+      ".hr-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}",
+      ".hr-card-h .btn--sm{font:inherit;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#0f172a}",
+      ".hr-card-h .btn--sm:hover{background:#f8fafc;border-color:#2d84b3;color:#2d84b3}",
+      ".hr-tbl .btn--sm{font:inherit;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#0f172a;white-space:nowrap}",
+      ".hr-tbl .btn--sm:hover{background:#f0f7fb;border-color:#2d84b3;color:#2d84b3}",
+      ".hr-tbl tbody tr[data-hr-profile-row]{cursor:default}",
+      ".hr-tbl tbody tr[data-hr-profile-row]:hover{background:#fff}",
+      ".hr-profile-kv{display:grid;gap:12px;margin:0}",
+      ".hr-profile-kv__block{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;min-width:0}",
+      ".hr-profile-kv__block h4{margin:0 0 8px;font-size:13px;color:#0f172a;display:flex;align-items:center;gap:8px}",
+      ".hr-profile-kv__row{display:grid;gap:4px;margin:0 0 10px}",
+      ".hr-profile-kv__row:last-child{margin-bottom:0}",
+      ".hr-profile-kv__label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
+      ".hr-profile-kv__value{margin:0;font-size:14px;line-height:1.45;color:#0f172a;overflow-wrap:break-word;white-space:pre-wrap}",
+      ".hr-profile-kv__value--muted{color:#64748b}",
+      ".hr-profile-avail-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#eff6ff;color:#1d4ed8}",
+      ".hr-profile-avail-pill--reduce{background:#fff7ed;color:#c2410c}",
+      ".hr-profile-avail-pill--increase{background:#ecfdf5;color:#047857}",
+      ".hr-profile-avail-pill--unsure{background:#f5f3ff;color:#6d28d9}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminHrStyle";
@@ -487,6 +506,192 @@
     }
   }
 
+  function profileRowById(staffId) {
+    var id = String(staffId || "");
+    if (!id) return null;
+    var rows = state.profileConfirmRows || [];
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].id || "") === id) return rows[i];
+    }
+    return null;
+  }
+
+  function availabilityStatusLabel(code) {
+    var k = String(code || "").trim().toLowerCase();
+    if (k === "continue") return "Continue current availability";
+    if (k === "reduce") return "Reduce availability";
+    if (k === "increase") return "Increase availability";
+    if (k === "unsure") return "Unsure / needs discussion";
+    return "";
+  }
+
+  function availabilityStatusPill(code) {
+    var label = availabilityStatusLabel(code);
+    if (!label) return '<span class="muted">—</span>';
+    var k = String(code || "").trim().toLowerCase();
+    var cls = "hr-profile-avail-pill";
+    if (k === "reduce") cls += " hr-profile-avail-pill--reduce";
+    else if (k === "increase") cls += " hr-profile-avail-pill--increase";
+    else if (k === "unsure") cls += " hr-profile-avail-pill--unsure";
+    return '<span class="' + cls + '">' + esc(label) + "</span>";
+  }
+
+  function availabilitySummaryText(r) {
+    if (!r) return "";
+    return String(r.availability_summary || r.availability_changes || "").trim();
+  }
+
+  function otherWorkStatusLabel(code) {
+    var k = String(code || "").trim().toLowerCase();
+    if (k === "only_clubsensational") return "Only ClubSENsational";
+    if (k === "also_other") return "Also other organisations";
+    return String(code || "").trim();
+  }
+
+  function profileHasAvailabilityResponse(r) {
+    if (!r) return false;
+    return !!(
+      String(r.availability_status || "").trim() ||
+      availabilitySummaryText(r) ||
+      String(r.other_work_status || "").trim() ||
+      String(r.wellbeing_notes || "").trim()
+    );
+  }
+
+  function profileResponseBlock(title, ico, rowsHtml) {
+    return '<section class="hr-profile-kv__block"><h4>' + icon(ico || "field", 16) + esc(title) + '</h4>' + rowsHtml + "</section>";
+  }
+
+  function profileKvRow(label, value, emptyText) {
+    var v = String(value == null ? "" : value).trim();
+    var show = v || emptyText || "—";
+    var muted = !v && emptyText;
+    return '<div class="hr-profile-kv__row"><div class="hr-profile-kv__label">' + esc(label)
+      + '</div><p class="hr-profile-kv__value' + (muted ? " hr-profile-kv__value--muted" : "") + '">' + esc(show) + "</p></div>";
+  }
+
+  function annualProfileHasSavedResponses(r) {
+    if (!r) return false;
+    return Boolean(
+      String(r.availability_status || "").trim()
+        || String(r.availability_summary || r.availability_changes || "").trim()
+        || String(r.other_work_status || "").trim()
+        || String(r.wellbeing_notes || "").trim(),
+    );
+  }
+
+  function annualProfileResponseBody(r) {
+    if (!r) return '<p class="hr-empty">Profile not found.</p>';
+    var complete = annualProfileComplete(r.profile_last_confirmed_at);
+    var meta = profileKvRow(
+      "Check-in status",
+      complete ? "Done — " + fmtDateTime(r.profile_last_confirmed_at) : "Pending — not confirmed in 2026 yet",
+    );
+    if (r.profile_last_updated_at && r.profile_last_updated_at !== r.profile_last_confirmed_at) {
+      meta += profileKvRow("Last updated", fmtDateTime(r.profile_last_updated_at));
+    }
+    if (complete && !annualProfileHasSavedResponses(r)) {
+      meta += '<p class="hr-profile-kv__warn" style="margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#fef3c7;color:#92400e;font-size:13px;line-height:1.45;overflow-wrap:break-word">'
+        + "Marked Done but no availability answers were saved. Ask them to open <strong>Annual profile</strong> again and resubmit — a form bug previously allowed confirm without saving."
+        + "</p>";
+    }
+    var avail = profileResponseBlock(
+      "Availability",
+      "cal",
+      profileKvRow("Choice", availabilityStatusLabel(r.availability_status), "No choice recorded yet")
+        + profileKvRow("Notes / requested changes", availabilitySummaryText(r), "No notes left"),
+    );
+    var other = profileResponseBlock(
+      "Other work",
+      "field",
+      profileKvRow("Status", otherWorkStatusLabel(r.other_work_status), "Not answered")
+        + profileKvRow("Organisation", r.other_work_organisation, "—")
+        + profileKvRow("Schedule", r.other_work_schedule, "—")
+        + profileKvRow(
+          "Affects ClubSENsational availability",
+          r.other_work_affects_availability == null
+            ? ""
+            : (r.other_work_affects_availability ? "Yes — please review my availability" : "No — current shifts still work"),
+          "Not answered",
+        ),
+    );
+    var wellbeing = profileResponseBlock(
+      "Wellbeing notes",
+      "heart",
+      profileKvRow("Notes", r.wellbeing_notes, "None"),
+    );
+    return '<div class="hr-profile-kv">' + meta + avail + other + wellbeing + "</div>";
+  }
+
+  function openAnnualProfileResponse(staffId) {
+    var r = profileRowById(staffId);
+    if (!r) return;
+    var name = String(r.full_name || r.username || "Staff").trim() || "Staff";
+    var sub = availabilityStatusPill(r.availability_status);
+    if (annualProfileComplete(r.profile_last_confirmed_at)) {
+      sub += ' <span class="hr-pill hr-pill--on">Done</span>';
+    } else {
+      sub += ' <span class="hr-pill hr-pill--off">Pending</span>';
+    }
+    openScreen({
+      headIcon: icon("clipboard", 22),
+      title: name,
+      sub: sub,
+      body: annualProfileResponseBody(r),
+      foot: '<button type="button" class="btn btn--ghost" id="hrScreenClose">Close</button>',
+    });
+  }
+
+  function openAnnualProfileResponsesOverview() {
+    var rows = (state.profileConfirmRows || []).slice().sort(function (a, b) {
+      return String(a.full_name || a.username || "").localeCompare(String(b.full_name || b.username || ""));
+    });
+    var q = String(state.query || "").trim().toLowerCase();
+    var shown = rows.filter(function (r) {
+      if (!q) return true;
+      var hay = [r.full_name, r.username, availabilityStatusLabel(r.availability_status), availabilitySummaryText(r)]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      return hay.indexOf(q) >= 0;
+    });
+    var body = '<p class="muted" style="margin:0 0 12px;font-size:13px;overflow-wrap:break-word">Responses from the annual profile form (staff_profile_update). Tap <strong>View</strong> for full notes, other work and wellbeing.</p>';
+    body += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr>'
+      + "<th>Name</th><th>Availability</th><th>Notes (preview)</th><th>Status</th><th></th></tr></thead><tbody>";
+    if (!shown.length) {
+      body += '<tr><td colspan="5" class="hr-empty">No portal accounts match this filter.</td></tr>';
+    } else {
+      shown.forEach(function (r) {
+        var name = String(r.full_name || r.username || "—").trim() || "—";
+        var notes = availabilitySummaryText(r);
+        if (notes.length > 90) notes = notes.slice(0, 87) + "…";
+        var complete = annualProfileComplete(r.profile_last_confirmed_at);
+        var pill = complete
+          ? '<span class="hr-pill hr-pill--on">Done</span>'
+          : '<span class="hr-pill hr-pill--off">Pending</span>';
+        var availCell = profileHasAvailabilityResponse(r)
+          ? availabilityStatusPill(r.availability_status)
+          : '<span class="muted">Not submitted</span>';
+        body += '<tr data-hr-profile-row="1"><td class="hr-name">' + esc(name) + "</td><td>" + availCell + "</td><td>"
+          + esc(notes || "—") + "</td><td>" + pill
+          + '</td><td><button type="button" class="btn btn--sm" data-hr-profile-view="' + esc(String(r.id || "")) + '">View</button></td></tr>';
+      });
+    }
+    body += "</tbody></table></div>";
+    var screen = openScreen({
+      headIcon: icon("clipboard", 22),
+      title: "Availability responses (2026)",
+      sub: '<span>' + shown.filter(profileHasAvailabilityResponse).length + " with answers · " + shown.length + " accounts</span>",
+      body: body,
+      foot: '<button type="button" class="btn btn--ghost" id="hrScreenClose">Close</button>',
+    });
+    screen.querySelectorAll("[data-hr-profile-view]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openAnnualProfileResponse(btn.getAttribute("data-hr-profile-view"));
+      });
+    });
+  }
+
   function renderAnnualProfileCard() {
     var rows = (state.profileConfirmRows || []).slice().sort(function (a, b) {
       return String(a.full_name || a.username || "").localeCompare(String(b.full_name || b.username || ""));
@@ -504,11 +709,12 @@
       return hay.indexOf(q) >= 0;
     });
     var html = '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("clipboard", 17) + 'Annual profile check-in (2026)</h3>'
-      + '<span class="hr-multi">' + done + ' done · ' + pending + ' pending</span></div>';
+      + '<div class="hr-card-actions"><button type="button" class="btn btn--sm" id="hrProfileViewAll">Availability responses</button>'
+      + '<span class="hr-multi">' + done + ' done · ' + pending + ' pending</span></div></div>';
     html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr>'
-      + '<th>Name</th><th>Portal login</th><th>Last confirmed</th><th>Status</th></tr></thead><tbody>';
+      + '<th>Name</th><th>Portal login</th><th>Availability</th><th>Last confirmed</th><th>Status</th><th></th></tr></thead><tbody>';
     if (!shown.length) {
-      html += '<tr><td colspan="4" class="hr-empty">No active portal accounts match this filter.</td></tr>';
+      html += '<tr><td colspan="6" class="hr-empty">No active portal accounts match this filter.</td></tr>';
     } else {
       shown.forEach(function (r) {
         var name = String(r.full_name || r.username || "—").trim() || "—";
@@ -518,7 +724,12 @@
         var pill = complete
           ? '<span class="hr-pill hr-pill--on">Done</span>'
           : '<span class="hr-pill hr-pill--off">Pending</span>';
-        html += '<tr><td class="hr-name">' + esc(name) + '</td><td>' + esc(login) + '</td><td>' + esc(when) + '</td><td>' + pill + '</td></tr>';
+        var availCell = profileHasAvailabilityResponse(r)
+          ? availabilityStatusPill(r.availability_status)
+          : '<span class="muted">—</span>';
+        html += '<tr data-hr-profile-row="1"><td class="hr-name">' + esc(name) + '</td><td>' + esc(login) + '</td><td>'
+          + availCell + '</td><td>' + esc(when) + '</td><td>' + pill
+          + '</td><td><button type="button" class="btn btn--sm" data-hr-profile-view="' + esc(String(r.id || "")) + '">View</button></td></tr>';
       });
     }
     html += '</tbody></table></div></div>';
@@ -624,6 +835,14 @@
     });
     root.querySelectorAll("[data-hr-cat]").forEach(function (b) {
       b.addEventListener("click", function () { openCategory(b.getAttribute("data-hr-cat")); });
+    });
+    var viewAll = root.querySelector("#hrProfileViewAll");
+    if (viewAll) viewAll.addEventListener("click", openAnnualProfileResponsesOverview);
+    root.querySelectorAll("[data-hr-profile-view]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openAnnualProfileResponse(btn.getAttribute("data-hr-profile-view"));
+      });
     });
   }
 
@@ -1125,7 +1344,12 @@
   function loadStaffProfileConfirmations(client) {
     return client
       .from("staff_profiles")
-      .select("id, full_name, username, profile_last_confirmed_at, is_active")
+      .select(
+        "id, full_name, username, profile_last_confirmed_at, profile_last_updated_at, is_active, " +
+          "availability_status, availability_summary, availability_changes, " +
+          "other_work_status, other_work_organisation, other_work_schedule, other_work_affects_availability, " +
+          "wellbeing_notes",
+      )
       .neq("is_active", false)
       .order("full_name", { ascending: true })
       .then(function (res) {

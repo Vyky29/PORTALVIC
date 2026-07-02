@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="en" class="guide-page portal-staff-app">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260705-help-guide-v11"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Staff help guide</title>
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260630-term-day-status-fill" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
+  <style>
+    :root{
+      --guide-navy:#0a3d62;
+      --guide-blue:#2d84b3;
+      --guide-gold:#f4b740;
+      --guide-border:#d9e4ef;
+      --guide-text:#1d2b3a;
+      --guide-muted:#5f7185;
+      --guide-bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+    }
+    html.guide-page,
+    html.guide-page body{
+      height:auto !important;
+      min-height:100%;
+      max-height:none !important;
+      overflow-x:hidden !important;
+      overflow-y:auto !important;
+      position:static !important;
+      overscroll-behavior:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html.guide-page body{
+      margin:0;
+      padding:16px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:var(--guide-bg);
+      color:var(--guide-text);
+    }
+    .wrap{max-width:720px;margin:0 auto;min-width:0}
+    h1{margin:0 0 6px;font-size:clamp(22px,4vw,30px);color:var(--guide-navy);letter-spacing:-.02em}
+    .sub{margin:0 0 16px;color:var(--guide-muted);font-size:14px;line-height:1.5}
+    .nav{
+      display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding:0;list-style:none
+    }
+    .nav a{
+      display:inline-block;padding:8px 12px;border-radius:999px;
+      border:1px solid var(--guide-border);background:#fff;color:var(--guide-navy);
+      font-size:13px;font-weight:600;text-decoration:none;max-width:100%;
+      overflow-wrap:break-word
+    }
+    .card{
+      border:1px solid var(--guide-border);border-radius:18px;background:#fff;
+      padding:16px;margin:0 0 14px;box-shadow:0 12px 32px rgba(10,61,98,.08);
+      min-width:0;scroll-margin-top:12px
+    }
+    .card h2{margin:0 0 10px;font-size:18px;color:var(--guide-navy);overflow-wrap:break-word}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0;margin:0 0 10px}
+    .card-head h2{margin:0;flex:1;min-width:0}
+    .listen-btn{
+      flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+      border:1px solid var(--guide-border);background:#fff;color:var(--guide-navy);font-size:13px;
+      font-weight:700;cursor:pointer;min-width:0;max-width:100%
+    }
+    .listen-btn:hover,.listen-btn:focus-visible{background:#f4f8fc;outline:2px solid rgba(45,132,179,.35);outline-offset:1px}
+    .listen-btn.is-speaking{border-color:var(--guide-blue);background:#eaf4fb;color:var(--guide-navy)}
+    .listen-btn[disabled]{opacity:.55;cursor:not-allowed}
+    .voice-banner{
+      border:1px solid rgba(45,132,179,.35);background:#eef6fc;border-radius:14px;
+      padding:10px 14px;margin:0 0 16px;font-size:14px;line-height:1.5;color:var(--guide-text)
+    }
+    .card p,.card li{line-height:1.55;font-size:15px;overflow-wrap:break-word}
+    .card p{color:var(--guide-muted);margin:0 0 10px;white-space:pre-wrap}
+    figure{margin:12px 0 0}
+    figure img{
+      display:block;width:100%;max-width:390px;margin:0 auto;border-radius:14px;
+      border:1px solid var(--guide-border);background:#f8fafc
+    }
+    figcaption{margin-top:6px;font-size:13px;color:var(--guide-muted);text-align:center}
+    .guide-photos{margin:12px 0 0;display:grid;gap:12px}
+    .guide-login-photo{margin:0}
+    .guide-login-photo img{max-width:420px}
+    .banner{
+      border:1px solid rgba(244,183,64,.55);background:#fff9eb;border-radius:14px;
+      padding:12px 14px;margin:0 0 16px;font-size:14px;line-height:1.5
+    }
+    .banner a{color:var(--guide-blue);font-weight:600}
+    .foot{margin:18px 0 8px;font-size:13px;color:var(--guide-muted);text-align:center}
+    .loading{padding:24px;text-align:center;color:var(--guide-muted)}
+    .demos{margin:12px 0 0;display:grid;gap:12px}
+    .demo{
+      border:1px solid var(--guide-border);border-radius:14px;background:#f8fafc;
+      padding:12px;min-width:0;overflow:hidden
+    }
+    .demo-cap{margin:10px 0 0;font-size:13px;color:var(--guide-muted);text-align:center;overflow-wrap:break-word}
+
+    /* Real portal UI inside demos */
+    #guideLiveScope.guide-live-scope{min-width:0}
+    #guideLiveScope .guide-today-panel{
+      border:none;background:transparent;box-shadow:none;padding:0;margin:0
+    }
+    #guideLiveScope .guide-today-panel .section-head--today{padding:0 0 8px}
+    #guideLiveScope .guide-today-panel .today-section-title{font-size:15px}
+    #guideLiveScope .session-card{
+      pointer-events:none;cursor:default;text-align:left;width:100%;overflow:visible !important
+    }
+    #guideLiveScope .session-card .session-card-body{overflow:visible}
+    #guideLiveScope .portal-session-slot-chip{pointer-events:none}
+    #guideLiveScope .guide-halo-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px
+    }
+    #guideLiveScope .guide-halo-cell{
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      padding:12px 8px;border-radius:14px;background:#fff;
+      border:1px solid rgba(23,50,71,.08);min-width:0
+    }
+    #guideLiveScope .guide-halo-cell .avatar-wrap{margin:0;cursor:default}
+    #guideLiveScope .guide-halo-cell .avatar-wrap:hover,
+    #guideLiveScope .guide-halo-cell .avatar-wrap:active{transform:none}
+    #guideLiveScope .guide-halo-label{
+      font-size:12px;font-weight:700;text-align:center;color:var(--guide-text);
+      overflow-wrap:break-word;line-height:1.35
+    }
+    #guideLiveScope .guide-chip-row{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center
+    }
+    #guideLiveScope .guide-feedback-flow{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap
+    }
+    #guideLiveScope .guide-feedback-flow .session-card{flex:1;min-width:min(100%,200px)}
+    #guideLiveScope .guide-feedback-flow .guide-flow-arrow{
+      font-size:22px;color:var(--guide-muted);flex:none
+    }
+
+    /* Simplified mock-ups for forms / lists (not session cards) */
+    .d-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .d-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent;max-width:100%;overflow-wrap:break-word}
+    .d-chip--done{background:#e6f5ee;color:#1c7a4f;border-color:#bfe6d2}
+    .d-chip--pending{background:#fdf0e0;color:#b66416;border-color:#f6d5ac}
+    .d-chip--late{background:#fbe7e6;color:#b13a30;border-color:#f3c2bd}
+    .d-chip--absent{background:#eef2f7;color:#516175;border-color:#d9e4ef}
+    .d-chip--incident{background:#fbe7e6;color:#b13a30;border-color:#f3c2bd}
+    .d-chip--override{background:#efeafa;color:#5b46a8;border-color:#d8cdf3;text-transform:uppercase;letter-spacing:.02em}
+    .d-term{display:flex;gap:6px;flex-wrap:wrap}
+    .d-day{width:40px;height:46px;border-radius:10px;border:1px solid var(--guide-border);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--guide-navy)}
+    .d-day small{font-size:10px;font-weight:600;color:var(--guide-muted)}
+    .d-day--red{border-color:#e9b4af;background:#fdeceb;color:#b13a30}
+    .d-day--red small{color:#b13a30}
+    .d-day--green{border-color:#bfe6d2;background:#eaf7f0;color:#1c7a4f}
+    .d-rows{display:grid;gap:8px}
+    .d-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--guide-border);border-left-width:6px;border-radius:10px;padding:8px 12px;font-size:13px;min-width:0}
+    .d-row--green{border-left-color:#2e9e6b}
+    .d-row--orange{border-left-color:#ef8b3b}
+    .d-row-h{color:var(--guide-navy);font-weight:600;min-width:0;overflow-wrap:break-word}
+    .d-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .d-tile{background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--guide-navy);min-width:0;overflow-wrap:break-word}
+    .d-tile--hl{border-color:var(--guide-gold);background:#fff9eb;box-shadow:0 0 0 2px rgba(244,183,64,.3)}
+    .d-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+    .d-tab{padding:5px 9px;border-radius:999px;background:#eaf1f8;color:var(--guide-navy);font-size:12px;font-weight:700}
+    .d-tab--on{background:var(--guide-navy);color:#fff}
+    .d-list{display:grid;gap:8px}
+    .d-person{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:9px 11px;min-width:0}
+    .d-person-name{font-size:14px;font-weight:700;color:var(--guide-navy);min-width:0;overflow-wrap:break-word}
+    .d-person-note{font-size:12px;color:var(--guide-muted);min-width:0;overflow-wrap:break-word}
+    .d-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .d-action{border:1px solid var(--guide-border);background:#fff;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:700;color:var(--guide-navy)}
+    .d-card{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--guide-border);border-left-width:6px;border-radius:12px;padding:10px 12px;min-width:0}
+    .d-card-main{min-width:0;flex:1}
+    .d-card-name{font-weight:700;color:var(--guide-navy);font-size:14px;overflow-wrap:break-word}
+    .d-card-sub{font-size:12px;color:var(--guide-muted);overflow-wrap:break-word}
+    .d-card--red{border-left-color:#d8453b}
+    .d-panel{background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px;display:grid;gap:8px}
+    .d-panel-title{font-size:14px;font-weight:800;color:var(--guide-navy)}
+    .d-field{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--guide-border);padding-bottom:6px;font-size:13px;min-width:0}
+    .d-field:last-child{border-bottom:0;padding-bottom:0}
+    .d-field span:first-child{color:var(--guide-muted)}
+    .d-field span:last-child{font-weight:700;color:var(--guide-text);text-align:right;overflow-wrap:break-word;min-width:0}
+    .d-form{display:grid;gap:8px;background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px}
+    .d-input{border:1px solid var(--guide-border);border-radius:10px;background:#f8fafc;padding:8px 10px;font-size:13px;color:var(--guide-muted);min-height:34px}
+    .d-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid var(--guide-border);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--guide-navy);font-weight:700}
+    .d-switch{width:36px;height:20px;border-radius:999px;background:#2e9e6b;position:relative;flex:none}
+    .d-switch::after{content:"";position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}
+    .d-doc{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px;min-width:0}
+    .d-doc-icon{width:34px;height:42px;border-radius:6px;background:#eaf1f8;border:1px solid var(--guide-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--guide-navy);flex:none}
+    .d-doc-main{min-width:0;flex:1}
+    .d-doc-title{font-size:13px;font-weight:800;color:var(--guide-navy);overflow-wrap:break-word}
+    .d-doc-sub{font-size:12px;color:var(--guide-muted);overflow-wrap:break-word}
+    .d-icons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .d-iconbox{background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;color:var(--guide-navy);font-weight:700}
+    .d-iconbox b{display:block;font-size:24px;margin-bottom:3px}
+
+    /* Visual guide player (help page only) */
+    .guide-stage{
+      border:1px solid var(--guide-border);border-radius:16px;background:#f8fafc;
+      padding:14px;margin:0 0 10px;min-width:0
+    }
+    .guide-presenter{
+      display:flex;align-items:center;gap:12px;margin:0 0 12px;min-width:0
+    }
+    .guide-presenter-avatar{
+      width:52px;height:52px;border-radius:50%;border:2px solid var(--guide-gold);
+      background:#fff;object-fit:contain;padding:4px;flex:none;
+      box-shadow:0 4px 14px rgba(10,61,98,.12)
+    }
+    .guide-presenter.is-speaking .guide-presenter-avatar{
+      animation:guide-pulse 1.2s ease-in-out infinite
+    }
+    @keyframes guide-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.35)}
+      50%{box-shadow:0 0 0 8px rgba(45,132,179,0)}
+    }
+    .guide-presenter-status{
+      font-size:14px;line-height:1.45;color:var(--guide-text);font-weight:600;
+      min-width:0;overflow-wrap:break-word
+    }
+    .guide-stage-canvas{min-width:0}
+    .guide-stage-canvas .demo{border:none;background:transparent;padding:0;margin:0}
+    .guide-stage-canvas .demo-cap{display:none}
+    .guide-step-caption{
+      margin:10px 0 0;font-size:14px;font-weight:700;color:var(--guide-navy);
+      text-align:center;overflow-wrap:break-word
+    }
+    .guide-demos-static{display:none}
+    .guide-read-more{
+      margin:8px 0 0;border:1px dashed var(--guide-border);border-radius:12px;
+      padding:0 12px;background:#fff
+    }
+    .guide-read-more summary{
+      cursor:pointer;font-size:13px;font-weight:700;color:var(--guide-muted);
+      padding:10px 0;list-style:none
+    }
+    .guide-read-more summary::-webkit-details-marker{display:none}
+    .guide-read-more .guide-read-body{padding:0 0 12px}
+    .guide-read-more p{margin:0;font-size:14px;color:var(--guide-muted)}
+    .guide-section.is-playing .guide-read-more{opacity:.45;pointer-events:none}
+    .guide-focus-ring{
+      outline:3px solid var(--guide-gold);outline-offset:3px;border-radius:10px;
+      box-shadow:0 0 0 4px rgba(244,183,64,.25)
+    }
+    .guide-login-mock{
+      max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
+      border-radius:22px;padding:clamp(22px,4vw,32px) clamp(18px,3.5vw,28px);
+      box-shadow:0 18px 50px rgba(23,50,71,.08)
+    }
+    #guideLiveScope .guide-login-replica .login-logo-stage{
+      position:relative;width:min(200px,56vw);max-width:100%;aspect-ratio:1;
+      margin:0 auto 10px;display:grid;place-items:center
+    }
+    #guideLiveScope .guide-login-replica .login-orbit-svg{
+      position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible
+    }
+    #guideLiveScope .guide-login-replica .login-logo-shell{
+      position:relative;z-index:1;width:70%;max-width:140px;aspect-ratio:1;border-radius:50%;
+      overflow:hidden;background:#fff;display:grid;place-items:center;
+      box-shadow:0 0 0 2px rgba(249,191,46,.5),0 0 18px rgba(249,191,46,.45),
+        0 0 36px rgba(244,183,64,.32),0 0 56px rgba(249,191,46,.22),0 0 80px rgba(45,132,179,.12)
+    }
+    #guideLiveScope .guide-login-replica .login-logo-shell img{
+      width:100%;height:100%;object-fit:cover;transform:scale(1.32);transform-origin:center
+    }
+    #guideLiveScope .guide-login-replica .login-portal-text{
+      margin:0 0 16px;text-align:center;font-size:1.05rem;font-weight:700;color:var(--guide-navy);letter-spacing:-.02em
+    }
+    #guideLiveScope .guide-login-replica .field{margin:0 0 14px;min-width:0}
+    #guideLiveScope .guide-login-replica .field label{
+      display:block;font-size:12px;font-weight:600;color:var(--guide-navy);margin:0 0 6px
+    }
+    #guideLiveScope .guide-login-replica .field input{
+      width:100%;padding:11px 13px;font-size:15px;border:1px solid var(--guide-border);
+      border-radius:14px;background:#fff;color:var(--guide-text);pointer-events:none
+    }
+    #guideLiveScope .guide-login-replica .btn-login{
+      width:100%;margin-top:6px;padding:13px 16px;font-size:15px;font-weight:700;color:#fff;
+      background:linear-gradient(180deg,var(--guide-blue) 0%,#2676a0 100%);border:0;border-radius:14px;
+      box-shadow:0 4px 14px rgba(45,132,179,.28);pointer-events:none
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--cw{
+      transform-origin:0 0;animation:guide-orbit-cw 18s linear infinite
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--ccw{
+      transform-origin:0 0;animation:guide-orbit-ccw 14s linear infinite
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--slow-ccw{
+      transform-origin:0 0;animation:guide-orbit-ccw 26s linear infinite
+    }
+    @keyframes guide-orbit-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes guide-orbit-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+    @media (prefers-reduced-motion:reduce){
+      #guideLiveScope .guide-login-replica .orbit-layer--cw,
+      #guideLiveScope .guide-login-replica .orbit-layer--ccw,
+      #guideLiveScope .guide-login-replica .orbit-layer--slow-ccw{animation:none}
+    }
+    .guide-install-steps{display:grid;gap:10px;max-width:420px;margin:0 auto}
+    .guide-install-step{
+      background:#fff;border:1px solid var(--guide-border);border-radius:14px;
+      padding:12px 14px;font-size:14px;line-height:1.45;color:var(--guide-text);min-width:0
+    }
+    .guide-install-step b{display:block;font-size:12px;color:var(--guide-navy);margin:0 0 4px}
+    .guide-install-card{
+      max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
+      border-radius:22px;padding:0;box-shadow:0 18px 50px rgba(23,50,71,.08);overflow:hidden;min-width:0
+    }
+    .guide-install-card .guide-install-inner{padding:14px 16px 16px}
+    .guide-install-safari-preview{
+      background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);border-bottom:1px solid var(--guide-border);
+      padding:14px 16px 10px;text-align:center;min-width:0
+    }
+    .guide-install-safari-preview img{
+      width:52px;height:52px;border-radius:12px;margin:0 auto 8px;display:block;object-fit:cover
+    }
+    .guide-install-safari-preview strong{display:block;font-size:14px;color:var(--guide-navy);font-weight:700}
+    .guide-install-safari-preview span{display:block;font-size:11px;color:var(--guide-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .guide-install-safari-bar{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:10px 14px 12px;background:#f2f2f7;border-top:1px solid rgba(0,0,0,.06);min-width:0
+    }
+    .guide-install-safari-bar .safari-url{
+      flex:1;min-width:0;text-align:center;font-size:11px;color:var(--guide-muted);
+      background:#fff;border-radius:8px;padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .guide-install-share-btn{
+      flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+      font-size:9px;font-weight:600;color:var(--guide-blue);min-width:44px
+    }
+    .guide-install-share-btn .share-icon{
+      width:28px;height:28px;border-radius:8px;background:var(--guide-blue);color:#fff;
+      display:grid;place-items:center;font-size:16px;line-height:1
+    }
+    .guide-install-sheet-head{
+      display:flex;align-items:flex-start;gap:12px;padding:4px 2px 12px;border-bottom:1px solid rgba(0,0,0,.08);min-width:0
+    }
+    .guide-install-sheet-head img{width:48px;height:48px;border-radius:10px;flex:none;object-fit:cover}
+    .guide-install-sheet-head .meta{flex:1;min-width:0}
+    .guide-install-sheet-head .meta strong{display:block;font-size:15px;color:var(--guide-navy);font-weight:700}
+    .guide-install-sheet-head .meta span{display:block;font-size:12px;color:var(--guide-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .guide-install-sheet-head .options{font-size:12px;color:var(--guide-blue);font-weight:600;margin-top:4px}
+    .guide-install-actions{
+      display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);overflow-x:auto
+    }
+    .guide-install-actions .act{
+      flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;font-size:10px;color:var(--guide-text);text-align:center;line-height:1.2
+    }
+    .guide-install-actions .act-icon{
+      width:44px;height:44px;border-radius:50%;background:#f2f2f7;display:grid;place-items:center;font-size:18px
+    }
+    .guide-install-rows{display:grid;gap:0;margin-top:4px}
+    .guide-install-row{
+      display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid rgba(0,0,0,.06);
+      font-size:14px;color:var(--guide-navy);min-width:0
+    }
+    .guide-install-row:last-child{border-bottom:0}
+    .guide-install-row .row-icon{
+      width:28px;height:28px;flex:none;display:grid;place-items:center;font-size:15px;color:var(--guide-blue)
+    }
+    .guide-install-row .row-label{flex:1;min-width:0;overflow-wrap:break-word}
+    .guide-install-row.is-target{background:rgba(45,132,179,.08);border-radius:12px;margin:0 -4px;padding-left:8px;padding-right:8px}
+    .guide-install-android{
+      padding:4px 2px;min-width:0
+    }
+    .guide-install-android .chrome-bar{
+      display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid var(--guide-border);border-radius:14px;margin-bottom:10px
+    }
+    .guide-install-android .chrome-menu{
+      width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid var(--guide-border);
+      display:grid;place-items:center;font-size:18px;color:var(--guide-navy);font-weight:700;flex:none
+    }
+    .guide-install-android .chrome-url{
+      flex:1;min-width:0;font-size:12px;color:var(--guide-muted);background:#fff;border:1px solid var(--guide-border);
+      border-radius:999px;padding:7px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .guide-install-android .menu-panel{
+      border:1px solid var(--guide-border);border-radius:14px;overflow:hidden;background:#fff
+    }
+    .guide-install-android .menu-item{
+      padding:12px 14px;font-size:14px;color:var(--guide-navy);border-bottom:1px solid rgba(0,0,0,.06);min-width:0
+    }
+    .guide-install-android .menu-item:last-child{border-bottom:0}
+    .guide-install-android .menu-item.is-target{background:rgba(45,132,179,.08);font-weight:700;color:var(--guide-blue)}
+    .play-btn{
+      flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
+      border:0;background:var(--guide-blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer
+    }
+    .play-btn:hover,.play-btn:focus-visible{filter:brightness(1.05);outline:2px solid rgba(45,132,179,.35);outline-offset:1px}
+    .play-btn.is-speaking{background:var(--guide-navy)}
+    .play-btn[disabled]{opacity:.55;cursor:not-allowed}
+    .guide-audio-fallback{
+      margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--guide-border);
+      background:#fff;font-size:13px;line-height:1.45;color:var(--guide-muted);min-width:0
+    }
+    .guide-audio-fallback[hidden]{display:none !important}
+    .guide-audio-fallback audio{width:100%;margin-top:8px}
+    .guide-audio-fallback strong{color:var(--guide-navy)}
+  </style>
+</head>
+<body class="staff-dashboard">
+  <div class="wrap">
+    <h1>Staff help guide</h1>
+    <p class="sub" id="guideMeta">Visual walkthroughs for CS Portal — scroll the topics below in order.</p>
+    <div class="banner">
+      <strong>How to use this guide.</strong>
+      Each topic is a card with a <strong>Play</strong> button.
+      Tap Play to hear a short walkthrough while the preview shows the matching part of the app.
+      Use <strong>Read full text</strong> under a card if you prefer to read instead of listen.
+      Open this page from Quick menu → Settings → <strong>Staff help guide</strong>.
+    </div>
+    <p class="voice-banner" id="guideVoiceBanner" hidden></p>
+    <div id="guideRoot"><p class="loading">Loading guide…</p></div>
+    <p class="foot">CS Portal · Staff help guide</p>
+  </div>
+  <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v14"></script>
+  <script type="module">
+    import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
+    try {
+      await bootstrapDashboardSupabase({ page: "staff" });
+    } catch (e) {
+      console.warn("[help guide] auth bootstrap", e);
+    }
+    if (window.PortalHelpVoiceSpeak) {
+      window.PortalHelpVoiceSpeak.configure({
+        getClient: function () {
+          var box = window.__PORTAL_SUPABASE__;
+          return box && box.client ? box.client : null;
+        },
+        getSupabaseUrl: function () {
+          return window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+        },
+        getAnonKey: function () {
+          return window.SUPABASE_ANON_KEY || "";
+        },
+      });
+      window.__portalHelpGuideVoiceReady = window.PortalHelpVoiceSpeak.probe(true).catch(function () {
+        return { elevenlabs: false };
+      });
+    }
+  </script>
+  <script>
+(function () {
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v14";
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function areaNote(label) {
+    if (typeof portalAreaNoteTodayColumnHtml === "function") {
+      var html = portalAreaNoteTodayColumnHtml(label);
+      if (html) return html;
+    }
+    return '<span class="session-pool-na" aria-hidden="true">—</span>';
+  }
+
+  function slotChip(cls, label) {
+    return '<span class="portal-session-slot-chip ' + cls + '" aria-label="' + esc(label) + '"><span>' + esc(label) + "</span></span>";
+  }
+
+  function todayCardHtml(classes, time, venue, name, chipCls, chipLabel, poolLabel) {
+    var poolHtml = areaNote(poolLabel || "Teaching Pool");
+    var chips = chipCls
+      ? '<div class="session-chips-below-name"><span class="portal-session-slot-chip ' + chipCls + '" aria-label="' + esc(chipLabel) + '"><span>' + esc(chipLabel) + "</span></span></div>"
+      : "";
+    return (
+      '<div class="session-card ' + classes + '" role="listitem">' +
+      '<div class="session-card-body">' +
+      '<div class="session-line session-line--time session-line--time-stack">' +
+      '<span class="session-slot-time">' + esc(time) + "</span>" +
+      '<span class="session-line-venue">' + esc(venue) + "</span></div>" +
+      '<div class="session-line session-line--name">' +
+      '<span class="session-name-stack"><span class="session-meta-name">' + esc(name) + "</span>" + chips + "</span></div>" +
+      '<div class="session-line session-line--symbol">' +
+      '<span class="session-right-note">' + poolHtml + "</span></div>" +
+      "</div></div>"
+    );
+  }
+
+  function loginOrbitSvg(filterId) {
+    var fid = esc(filterId || "guideLoginOrb");
+    return (
+      '<svg class="login-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">' +
+      '<defs><filter id="' + fid + '" x="-40%" y="-40%" width="180%" height="180%">' +
+      '<feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>' +
+      '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+      '<g transform="translate(100,100)">' +
+      '<g class="orbit-layer orbit-layer--cw" filter="url(#' + fid + ')">' +
+      '<circle cx="0" cy="-92" r="7" fill="#2d84b3"/>' +
+      '<circle cx="79.67" cy="-46" r="6" fill="#f9bf2e"/>' +
+      '<circle cx="79.67" cy="46" r="6" fill="#173247"/>' +
+      '<circle cx="0" cy="92" r="7" fill="#f4b740"/>' +
+      '<circle cx="-79.67" cy="46" r="6" fill="#2d84b3"/>' +
+      '<circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>' +
+      "</g>" +
+      '<g class="orbit-layer orbit-layer--ccw" filter="url(#' + fid + ')">' +
+      '<circle cx="0" cy="-82" r="5" fill="#f9bf2e"/>' +
+      '<circle cx="71.01" cy="-41" r="5" fill="#2d84b3"/>' +
+      '<circle cx="71.01" cy="41" r="5" fill="#f4b740"/>' +
+      '<circle cx="0" cy="82" r="5" fill="#173247"/>' +
+      '<circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>' +
+      '<circle cx="-71.01" cy="-41" r="5" fill="#f9bf2e"/>' +
+      "</g>" +
+      '<g class="orbit-layer orbit-layer--slow-ccw" filter="url(#' + fid + ')">' +
+      '<circle cx="37.27" cy="-64" r="4" fill="#f4b740"/>' +
+      '<circle cx="74" cy="-8" r="4" fill="#2d84b3"/>' +
+      '<circle cx="37.27" cy="64" r="4" fill="#f9bf2e"/>' +
+      '<circle cx="-37.27" cy="64" r="4" fill="#173247"/>' +
+      '<circle cx="-74" cy="-8" r="4" fill="#2d84b3"/>' +
+      '<circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>' +
+      "</g></g></svg>"
+    );
+  }
+
+  function buildLoginReplica() {
+    return (
+      '<div class="guide-login-mock guide-login-replica">' +
+      '<header class="login-brand" data-guide-focus="brand">' +
+      '<div class="login-logo-stage">' +
+      loginOrbitSvg("guideLoginOrb") +
+      '<div class="login-logo-shell">' +
+      '<img src="/portal/F-02-1.png" alt="" width="140" height="140" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      "</div></div>" +
+      '<p class="login-portal-text">Portal</p></header>' +
+      '<div class="field" data-guide-focus="email">' +
+      '<label>Name or email</label>' +
+      '<input type="text" readonly value="Mary" aria-label="Name or email example" />' +
+      "</div>" +
+      '<div class="field" data-guide-focus="password">' +
+      '<label>PIN or password</label>' +
+      '<input type="password" readonly value="12345678" aria-label="PIN or password example" />' +
+      "</div>" +
+      '<button type="button" class="btn-login" data-guide-focus="submit">Login</button>' +
+      "</div>"
+    );
+  }
+
+  function buildInstallSafariMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-safari-preview">' +
+      '<img src="/portal/F-02-1.png" alt="" width="52" height="52" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      "<strong>Sign in</strong>" +
+      "<span>clubsensational-staff.vercel.app</span></div>" +
+      '<div class="guide-install-safari-bar">' +
+      '<span aria-hidden="true" style="font-size:18px;color:#8e8e93">&lt;</span>' +
+      '<span class="safari-url">clubsensational-staff.vercel.app</span>' +
+      '<span aria-hidden="true" style="font-size:18px;color:#8e8e93">&gt;</span>' +
+      '<div class="guide-install-share-btn" data-guide-focus="iphone">' +
+      '<span class="share-icon" aria-hidden="true">&#x2191;</span>Share</div>' +
+      "</div></div>"
+    );
+  }
+
+  function buildInstallShareSheetMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-inner">' +
+      '<div class="guide-install-sheet-head">' +
+      '<img src="/portal/F-02-1.png" alt="" width="48" height="48" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      '<div class="meta"><strong>Sign in</strong>' +
+      "<span>clubsensational-staff.vercel.app</span>" +
+      '<div class="options">Options &rsaquo;</div></div></div>' +
+      '<div class="guide-install-actions" aria-hidden="true">' +
+      '<div class="act"><span class="act-icon">&#x2398;</span>Copy</div>' +
+      '<div class="act"><span class="act-icon">&#x1F4D6;</span>Add Bookmark</div>' +
+      '<div class="act"><span class="act-icon">&#x1F453;</span>Reading List</div>' +
+      "</div>" +
+      '<div class="guide-install-rows">' +
+      '<div class="guide-install-row"><span class="row-icon">&#x2605;</span><span class="row-label">Add to Favourites</span></div>' +
+      '<div class="guide-install-row is-target" data-guide-focus="iphone-add">' +
+      '<span class="row-icon">&#x2295;</span><span class="row-label"><strong>Add to Home Screen</strong></span></div>' +
+      '<div class="guide-install-row"><span class="row-icon">&#x1F50D;</span><span class="row-label">Find on Page</span></div>' +
+      "</div></div></div>"
+    );
+  }
+
+  function buildInstallAndroidMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-inner guide-install-android">' +
+      '<div class="chrome-bar">' +
+      '<div class="chrome-menu" data-guide-focus="android" aria-hidden="true">&#x22EE;</div>' +
+      '<div class="chrome-url">clubsensational-staff.vercel.app</div></div>' +
+      '<div class="menu-panel">' +
+      '<div class="menu-item">New tab</div>' +
+      '<div class="menu-item">Bookmarks</div>' +
+      '<div class="menu-item is-target">Install app</div>' +
+      '<div class="menu-item">Add to Home screen</div>' +
+      "</div></div></div>"
+    );
+  }
+
+  function portalAvatarHtml(alertClass, filterId) {
+    return (
+      '<div class="avatar-wrap ' + esc(alertClass) + '" aria-hidden="true">' +
+      '<div class="avatar-aura"></div>' +
+      '<div class="avatar avatar--brand-default">' +
+      '<img src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      "</div>" +
+      '<div class="avatar-orbit">' +
+      '<svg class="avatar-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">' +
+      '<defs><filter id="' + filterId + '" x="-40%" y="-40%" width="180%" height="180%">' +
+      '<feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>' +
+      '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+      "</filter></defs>" +
+      '<g transform="translate(100,100)">' +
+      '<g class="avatar-orbit-layer avatar-orbit-layer--cw" filter="url(#' + filterId + ')">' +
+      '<circle cx="0" cy="-72" r="7" fill="var(--blue)"/>' +
+      '<circle cx="62.35" cy="-36" r="6" fill="#1d4f8f"/>' +
+      '<circle cx="62.35" cy="36" r="6" fill="#123b70"/>' +
+      '<circle cx="0" cy="72" r="7" fill="#4f8fca"/>' +
+      '<circle cx="-62.35" cy="36" r="6" fill="#2d84b3"/>' +
+      '<circle cx="-62.35" cy="-36" r="6" fill="#7fb3dc"/>' +
+      "</g>" +
+      '<g class="avatar-orbit-layer avatar-orbit-layer--ccw" filter="url(#' + filterId + ')">' +
+      '<circle cx="0" cy="-78" r="4" fill="#1d4f8f"/>' +
+      '<circle cx="67.55" cy="-39" r="4" fill="#2d84b3"/>' +
+      '<circle cx="67.55" cy="39" r="4" fill="#4f8fca"/>' +
+      '<circle cx="0" cy="78" r="4" fill="#123b70"/>' +
+      '<circle cx="-67.55" cy="39" r="4" fill="#8ebfe0"/>' +
+      '<circle cx="-67.55" cy="-39" r="4" fill="#2d84b3"/>' +
+      "</g></g></svg></div></div>"
+    );
+  }
+
+  function haloCell(alertClass, label, filterId) {
+    return (
+      '<div class="guide-halo-cell">' +
+      portalAvatarHtml(alertClass, filterId) +
+      '<p class="guide-halo-label">' + esc(label) + "</p></div>"
+    );
+  }
+
+  function liveScopeOpen() {
+    return '<div id="guideLiveScope" class="guide-live-scope">';
+  }
+
+  function liveScopeClose() {
+    return "</div>";
+  }
+
+  function buildDemo(key) {
+    var k = String(key || "").trim();
+    if (k === "session-cards") {
+      return (
+        liveScopeOpen() +
+        '<div class="section-card section-card--today guide-today-panel">' +
+        '<div class="section-head section-head--today">' +
+        '<h2 class="today-section-title"><span class="today-section-title__label">TODAY</span></h2></div>' +
+        '<div class="today-grid today-grid--session-scroll"><div class="today-grid-rows" role="list">' +
+        todayCardHtml("session-card--available", "4 to 4.30", "Acton", "Aqsa", "", "", "Teaching Pool") +
+        todayCardHtml("session-card--review-needed", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--pending", "Pending", "Big Pool") +
+        todayCardHtml("session-card--review-done", "5.30 to 6", "Acton", "Maiyar", "portal-session-slot-chip--submitted", "Submitted", "Big Pool") +
+        todayCardHtml("session-card--review-done override--absent session-card--ov-green", "6 to 6.30", "Acton", "Elijah", "portal-session-slot-chip--absent", "Absent", "Teaching Pool") +
+        todayCardHtml("session-card--ov-pink override--replace", "11 to 12", "Acton", "Cyrus", "portal-session-slot-chip--makeup", "Make up", "Hub Room") +
+        "</div></div></div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "halo") {
+      return (
+        liveScopeOpen() +
+        '<div class="guide-halo-grid">' +
+        haloCell("avatar-wrap--portal-alert-reminder", "Orange — feedback pending", "guideOrbRem") +
+        haloCell("avatar-wrap--portal-alert", "Red — sign announcement", "guideOrbRed") +
+        haloCell("avatar-wrap--portal-alert-schedule", "Gold — roster change", "guideOrbGold") +
+        haloCell("avatar-wrap--portal-alert-schedule-trial-only", "Lilac — trial / new participant", "guideOrbTrial") +
+        haloCell("avatar-wrap--portal-alert-schedule-makeup", "Pink — make-up session", "guideOrbMakeup") +
+        haloCell("avatar-wrap--portal-alert-schedule-absent", "Teal — absent marked", "guideOrbAbsent") +
+        haloCell("avatar-wrap--portal-alert-schedule-undo", "Grey — change reverted", "guideOrbUndo") +
+        haloCell("avatar-wrap--portal-alert-schedule-cancelled", "Dark — shift cancelled", "guideOrbCancel") +
+        haloCell("avatar-wrap--portal-alert-schedule-training", "Blue — training", "guideOrbTrain") +
+        haloCell("avatar-wrap--portal-alert-schedule-shadowing-only", "Sky blue — shadowing", "guideOrbShadow") +
+        haloCell("avatar-wrap--portal-orbit-idle", "Blue glow — quick menu", "guideOrbIdle") +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "status-pills") {
+      return (
+        liveScopeOpen() +
+        '<div class="guide-chip-row">' +
+        slotChip("portal-session-slot-chip--submitted", "Submitted") +
+        slotChip("portal-session-slot-chip--pending", "Pending") +
+        slotChip("portal-session-slot-chip--absent", "Absent") +
+        slotChip("portal-session-slot-chip--cancelled", "Cancelled") +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "override-chips") {
+      return (
+        liveScopeOpen() +
+        '<div class="guide-chip-row">' +
+        slotChip("portal-session-slot-chip--absent", "Absent") +
+        slotChip("portal-session-slot-chip--makeup", "Make up") +
+        slotChip("portal-session-slot-chip--updated", "Updated by admin") +
+        slotChip("portal-session-slot-chip--trial", "Trial/New Participant") +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "feedback-flow") {
+      return (
+        liveScopeOpen() +
+        '<div class="guide-feedback-flow">' +
+        '<span data-guide-focus="pending">' +
+        todayCardHtml("session-card--review-needed", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--pending", "Pending", "Teaching Pool") +
+        "</span>" +
+        '<span class="guide-flow-arrow" aria-hidden="true">&rarr;</span>' +
+        '<span data-guide-focus="done">' +
+        todayCardHtml("session-card--review-done", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--submitted", "Submitted", "Teaching Pool") +
+        "</span>" +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "login-screenshot" || k === "login-mock") {
+      return buildLoginReplica();
+    }
+    if (k === "install-safari") {
+      return buildInstallSafariMock();
+    }
+    if (k === "install-share-sheet" || k === "install-mock") {
+      return buildInstallShareSheetMock();
+    }
+    if (k === "install-android") {
+      return buildInstallAndroidMock();
+    }
+
+    var STATIC = {
+      "term-days":
+        '<div class="d-term">' +
+        '<div class="d-day">Mon<small>22</small></div>' +
+        '<div class="d-day d-day--red">Tue<small>23</small></div>' +
+        '<div class="d-day">Wed<small>24</small></div>' +
+        '<div class="d-day d-day--green">Thu<small>25</small></div>' +
+        "</div>",
+      "timesheet-rows":
+        '<div class="d-rows">' +
+        '<div class="d-row d-row--green"><span class="d-row-h">Mon 22 · 6:00 Aquatic</span><span class="d-chip d-chip--done">Ready to pay</span></div>' +
+        '<div class="d-row d-row--orange"><span class="d-row-h">Tue 23 · 6:00 Aquatic</span><span class="d-chip d-chip--pending">Feedback pending</span></div>' +
+        "</div>",
+      "quick-menu-tiles":
+        '<div class="d-tiles">' +
+        '<div class="d-tile">Session feedback</div>' +
+        '<div class="d-tile">My participants</div>' +
+        '<div class="d-tile d-tile--hl">Staff help guide</div>' +
+        '<div class="d-tile">Timesheet</div>' +
+        '<div class="d-tile">My Documents</div>' +
+        '<div class="d-tile">Settings</div>' +
+        "</div>",
+      "participants-list":
+        '<div class="d-tabs"><span class="d-tab d-tab--on">My participants</span><span class="d-tab">All participants</span></div>' +
+        '<div class="d-list">' +
+        '<div class="d-person"><div><div class="d-person-name">Hazem</div><div class="d-person-note">Aquatic · Teaching Pool</div></div><span class="d-chip d-chip--pending">Tonight</span></div>' +
+        '<div class="d-person"><div><div class="d-person-name">Aqsa</div><div class="d-person-note">Read General Info before session</div></div><span class="d-chip d-chip--done">Profile</span></div>' +
+        "</div>",
+      "participant-actions":
+        '<div class="d-actions">' +
+        '<span class="d-action">Feedback</span>' +
+        '<span class="d-action">Absence</span>' +
+        '<span class="d-action">Incident</span>' +
+        '<span class="d-action">Cancellation</span>' +
+        '<span class="d-action">General Info</span>' +
+        "</div>",
+      "announcement-card":
+        '<div class="d-card d-card--red"><div class="d-card-main"><div class="d-card-name">Announcement to sign</div><div class="d-card-sub">Read the message, then tap Sign/confirm</div></div><span class="d-chip d-chip--incident">Sign</span></div>',
+      "document-list":
+        '<div class="d-list">' +
+        '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Payslip — June</div><div class="d-doc-sub">Published by office</div></div></div>' +
+        '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Signed contract</div><div class="d-doc-sub">Saved after electronic signature</div></div></div>' +
+        '<div class="d-doc"><div class="d-doc-icon">PDF</div><div class="d-doc-main"><div class="d-doc-title">Expense receipt PDF</div><div class="d-doc-sub">Created after submit</div></div></div>' +
+        "</div>",
+      "daily-form":
+        '<div class="d-form">' +
+        '<div class="d-panel-title">Venue review</div>' +
+        '<div class="d-input">Venue: Acton</div>' +
+        '<div class="d-input">Opening checks completed</div>' +
+        '<div class="d-toggle"><span>Any issue to report?</span><span class="d-switch"></span></div>' +
+        '<div class="d-input">Notes...</div>' +
+        "</div>",
+      "pickup-form":
+        '<div class="d-form">' +
+        '<div class="d-panel-title">Pickup / handover</div>' +
+        '<div class="d-input">Search participant or tap New</div>' +
+        '<div class="d-input">Drop Off: who brought the participant?</div>' +
+        '<div class="d-input">Pick Up: who collected?</div>' +
+        "</div>",
+      "expense-form":
+        '<div class="d-form">' +
+        '<div class="d-panel-title">Expense claim</div>' +
+        '<div class="d-input">Description: Pool parking</div>' +
+        '<div class="d-input">Amount: GBP 6.50</div>' +
+        '<div class="d-input">Receipt photo attached</div>' +
+        "</div>",
+      "alerts-settings":
+        '<div class="d-list">' +
+        '<div class="d-toggle"><span>Notifications</span><span class="d-switch"></span></div>' +
+        '<div class="d-toggle"><span>Location during rota shift</span><span class="d-switch"></span></div>' +
+        '<div class="d-toggle"><span>Microphone for voice feedback</span><span class="d-switch"></span></div>' +
+        "</div>",
+      "area-icons":
+        '<div class="d-icons">' +
+        '<div class="d-iconbox"><b>🏊</b>Big Pool</div>' +
+        '<div class="d-iconbox"><b>🏊</b>Small Pool</div>' +
+        '<div class="d-iconbox"><b>🏫</b>Hub Room</div>' +
+        '<div class="d-iconbox"><b>🏁</b>Lane</div>' +
+        '<div class="d-iconbox"><b>🏋</b>Gym</div>' +
+        '<div class="d-iconbox"><b>📍</b>Venue</div>' +
+        "</div>",
+      "lead-tools":
+        '<div class="d-tiles">' +
+        '<div class="d-tile d-tile--hl">LEAD report</div>' +
+        '<div class="d-tile d-tile--hl">STATS</div>' +
+        '<div class="d-tile">Team shift</div>' +
+        '<div class="d-tile">Performance review</div>' +
+        '<div class="d-tile">Session overview</div>' +
+        '<div class="d-tile">Reports</div>' +
+        "</div>",
+      "profile-form":
+        '<div class="d-panel">' +
+        '<div class="d-panel-title">Update my profile</div>' +
+        '<div class="d-field"><span>Personal details</span><span>Confirm</span></div>' +
+        '<div class="d-field"><span>Emergency contact</span><span>Edit if changed</span></div>' +
+        '<div class="d-field"><span>Availability</span><span>Once a year</span></div>' +
+        "</div>"
+    };
+    return STATIC[k] || "";
+  }
+
+  function renderDemos(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    var inner = list.map(function (d) {
+      var key = String(d && d.demo || "").trim();
+      var html = buildDemo(key);
+      if (!html) return "";
+      var cap = String(d && d.caption || "").trim();
+      return '<div class="demo">' + html + (cap ? '<p class="demo-cap">' + esc(cap) + "</p>" : "") + "</div>";
+    }).join("");
+    return inner ? '<div class="demos">' + inner + "</div>" : "";
+  }
+
+  function renderIllustrations(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    return list.map(function (ill) {
+      var src = String(ill && ill.src || "").trim();
+      if (!src) return "";
+      var cap = String(ill && ill.caption || "").trim();
+      return (
+        "<figure>" +
+        '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" ' +
+        "onerror=\"var f=this.closest('figure'); if(f) f.remove();\" />" +
+        (cap ? "<figcaption>" + esc(cap) + "</figcaption>" : "") +
+        "</figure>"
+      );
+    }).join("");
+  }
+
+  function sectionVoiceText(s) {
+    if (s && s.voice_script) return String(s.voice_script).trim();
+    var title = String(s && s.title || "").trim();
+    var body = String(s && s.content || "").trim();
+    return title && body ? title + ". " + body : title || body;
+  }
+
+  function sectionSteps(s) {
+    if (!s || !Array.isArray(s.steps) || !s.steps.length) return [];
+    return s.steps
+      .map(function (st) {
+        return {
+          voice: String(st.voice || "").trim(),
+          demo: String(st.demo || "").trim(),
+          focus: String(st.focus || "").trim(),
+          caption: String(st.caption || "").trim(),
+          audio: String(st.audio || "").trim(),
+        };
+      })
+      .filter(function (st) {
+        return st.voice;
+      });
+  }
+
+  function renderSection(s) {
+    var id = String(s.id || "").trim();
+    var paras = String(s.content || "").trim();
+    var voiceText = sectionVoiceText(s);
+    var hasPlay = !!(voiceText || sectionSteps(s).length);
+    return (
+      '<article class="card guide-section" id="' + esc(id) + '" data-section-id="' + esc(id) + '">' +
+      '<div class="card-head">' +
+      "<h2>" + esc(s.title || id) + "</h2>" +
+      (hasPlay
+        ? '<button type="button" class="play-btn" data-guide-play="' +
+          esc(id) +
+          '" aria-label="Play guide for ' +
+          esc(s.title || id) +
+          '">Play</button>'
+        : "") +
+      "</div>" +
+      '<div class="guide-stage" data-guide-stage>' +
+      '<div class="guide-presenter" data-guide-presenter>' +
+      '<img class="guide-presenter-avatar" src="/portal/F-02-1.png" alt="" width="52" height="52" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      '<p class="guide-presenter-status" data-guide-status>Tap Play to walk through this topic.</p>' +
+      "</div>" +
+      '<div class="guide-stage-canvas" data-guide-canvas></div>' +
+      '<p class="guide-step-caption" data-guide-caption hidden></p>' +
+      '<div class="guide-audio-fallback" data-guide-audio-fallback hidden>' +
+      "<strong>No sound?</strong> Tap play on the speaker below (iPhone sometimes blocks auto-play)." +
+      '<audio controls playsinline preload="auto" data-guide-audio-el></audio>' +
+      "</div>" +
+      "</div>" +
+      (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
+      (renderIllustrations(s.illustrations) ? '<div class="guide-photos">' + renderIllustrations(s.illustrations) + "</div>" : "") +
+      (paras
+        ? '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
+          esc(paras) +
+          "</p></div></details>"
+        : "") +
+      "</article>"
+    );
+  }
+
+  var guideSectionsById = {};
+  var guidePlayingId = null;
+
+  function clearGuideFocus(root) {
+    if (!root) return;
+    root.querySelectorAll(".guide-focus-ring").forEach(function (el) {
+      el.classList.remove("guide-focus-ring");
+    });
+  }
+
+  function showGuideStep(article, step) {
+    if (!article || !step) return;
+    var canvas = article.querySelector("[data-guide-canvas]");
+    var captionEl = article.querySelector("[data-guide-caption]");
+    var statusEl = article.querySelector("[data-guide-status]");
+    if (!canvas) return;
+    clearGuideFocus(article);
+    var html = buildDemo(step.demo);
+    canvas.innerHTML = html ? '<div class="demo">' + html + "</div>" : "";
+    if (step.caption && captionEl) {
+      captionEl.textContent = step.caption;
+      captionEl.hidden = false;
+    } else if (captionEl) {
+      captionEl.hidden = true;
+    }
+    if (statusEl) statusEl.textContent = step.voice;
+    if (step.focus && canvas) {
+      var target = canvas.querySelector('[data-guide-focus="' + step.focus.replace(/"/g, "") + '"]');
+      if (target) target.classList.add("guide-focus-ring");
+    }
+  }
+
+  function hideAudioFallback(article) {
+    if (!article) return;
+    var box = article.querySelector("[data-guide-audio-fallback]");
+    var el = article.querySelector("[data-guide-audio-el]");
+    if (box) box.hidden = true;
+    if (el) {
+      try {
+        el.pause();
+        el.removeAttribute("src");
+      } catch (_h) {}
+    }
+  }
+
+  function showAudioFallback(article, src) {
+    if (!article || !src) return;
+    var box = article.querySelector("[data-guide-audio-fallback]");
+    var el = article.querySelector("[data-guide-audio-el]");
+    if (!box || !el) return;
+    box.hidden = false;
+    el.src = src;
+    try {
+      el.load();
+    } catch (_l) {}
+  }
+
+  function showGuideDefault(article, section) {
+    var steps = sectionSteps(section);
+    var canvas = article.querySelector("[data-guide-canvas]");
+    if (!canvas) return;
+    if (steps.length) {
+      showGuideStep(article, steps[0]);
+      return;
+    }
+    var demos = section.demos;
+    if (Array.isArray(demos) && demos.length) {
+      var html = buildDemo(String(demos[0].demo || "").trim());
+      canvas.innerHTML = html ? '<div class="demo">' + html + "</div>" : "";
+    }
+  }
+
+  function setPlayingBtn(id) {
+    document.querySelectorAll(".play-btn.is-speaking").forEach(function (b) {
+      b.classList.remove("is-speaking");
+      b.textContent = "Play";
+    });
+    document.querySelectorAll(".guide-section.is-playing").forEach(function (a) {
+      a.classList.remove("is-playing");
+      var p = a.querySelector("[data-guide-presenter]");
+      if (p) p.classList.remove("is-speaking");
+    });
+    guidePlayingId = id || null;
+    if (!id) return;
+    var btn = document.querySelector('.play-btn[data-guide-play="' + id + '"]');
+    var article = document.getElementById(id);
+    if (btn) {
+      btn.classList.add("is-speaking");
+      btn.textContent = "Stop";
+    }
+    if (article) {
+      article.classList.add("is-playing");
+      var pres = article.querySelector("[data-guide-presenter]");
+      if (pres) pres.classList.add("is-speaking");
+    }
+  }
+
+  async function playSectionGuide(id) {
+    var section = guideSectionsById[id];
+    var article = document.getElementById(id);
+    if (!section || !article || !window.PortalHelpVoiceSpeak) return;
+    hideAudioFallback(article);
+    setPlayingBtn(id);
+    article.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    var steps = sectionSteps(section);
+    var lines = [];
+    var stepMap = [];
+    var stepOpts = [];
+
+    if (steps.length) {
+      steps.forEach(function (st, idx) {
+        lines.push(st.voice);
+        stepMap.push(idx);
+        stepOpts.push({ fallbackBrowser: false });
+      });
+    } else {
+      var single = sectionVoiceText(section);
+      if (single) {
+        lines.push(single);
+        stepMap.push(-1);
+        stepOpts.push({ fallbackBrowser: false });
+      }
+    }
+    if (!lines.length) {
+      setPlayingBtn(null);
+      return;
+    }
+
+    var stopped = false;
+    var voiceApi = window.PortalHelpVoiceSpeak;
+    var statusEl = article.querySelector("[data-guide-status]");
+    var onStep = function (lineIdx) {
+      if (guidePlayingId !== id) {
+        stopped = true;
+        return;
+      }
+      var stepIdx = stepMap[lineIdx];
+      if (stepIdx >= 0 && steps[stepIdx]) {
+        showGuideStep(article, steps[stepIdx]);
+      } else {
+        showGuideDefault(article, section);
+      }
+      if (statusEl) {
+        statusEl.textContent = lines[lineIdx] || "Playing…";
+      }
+    };
+
+    onStep(0);
+    if (statusEl) statusEl.textContent = "Loading voice…";
+
+    var res;
+    if (voiceApi.speakSequence) {
+      res = await voiceApi.speakSequence(lines, function (i) {
+        onStep(i);
+      }, stepOpts);
+    } else {
+      res = await voiceApi.speak(lines[0], stepOpts[0] || {});
+    }
+
+    if (!stopped && guidePlayingId === id) {
+      var banner = document.getElementById("guideVoiceBanner");
+      if (!res || !res.ok) {
+        if (res && res.audioUrl) showAudioFallback(article, res.audioUrl);
+        if (banner) {
+          banner.hidden = false;
+          banner.textContent =
+            res && res.error === "session_expired"
+              ? "Club voice could not load. Tap Play again or use the speaker below."
+              : "Could not auto-play audio on this device. Use the speaker below, tap Play again, or read the topic.";
+        }
+      }
+    }
+    setPlayingBtn(null);
+    if (statusEl) statusEl.textContent = "Tap Play to walk through this topic.";
+  }
+
+  function bindGuideVoice(root) {
+    if (!root) return;
+    root.addEventListener("click", function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest("[data-guide-play]") : null;
+      if (!btn) return;
+      ev.preventDefault();
+      var id = btn.getAttribute("data-guide-play");
+      if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.unlock) {
+        window.PortalHelpVoiceSpeak.unlock();
+      }
+      if (guidePlayingId === id) {
+        if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
+          window.PortalHelpVoiceSpeak.stop();
+        }
+        setPlayingBtn(null);
+        var stopArt = document.getElementById(id);
+        if (stopArt) hideAudioFallback(stopArt);
+        return;
+      }
+      if (guidePlayingId && window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
+        window.PortalHelpVoiceSpeak.stop();
+      }
+      void playSectionGuide(id);
+    });
+  }
+
+  async function initGuideVoiceBanner() {
+    var banner = document.getElementById("guideVoiceBanner");
+    if (!banner) return;
+    banner.hidden = false;
+    banner.textContent =
+      "Play uses the club voice (Eleven Labs). On iPhone, turn off silent mode if you hear nothing.";
+  }
+
+  fetch(GUIDE_URL, { credentials: "same-origin" })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (data) {
+      var sections = Array.isArray(data.sections) ? data.sections : [];
+      var root = document.getElementById("guideRoot");
+      var meta = document.getElementById("guideMeta");
+      if (meta && data.version) {
+        meta.textContent = "Version " + data.version + " — scroll the topics below in order; tap Play on any card.";
+      }
+      if (!sections.length) {
+        root.innerHTML = "<p class=\"loading\">Guide is empty. Contact the office.</p>";
+        return;
+      }
+      root.innerHTML = sections.map(renderSection).join("");
+      guideSectionsById = {};
+      sections.forEach(function (s) {
+        var sid = String(s.id || "").trim();
+        if (sid) {
+          guideSectionsById[sid] = s;
+          var art = document.getElementById(sid);
+          if (art) showGuideDefault(art, s);
+        }
+      });
+      bindGuideVoice(root);
+      void initGuideVoiceBanner();
+    })
+    .catch(function () {
+      document.getElementById("guideRoot").innerHTML =
+        "<p class=\"loading\">Could not load the guide. Try again later or contact the office.</p>";
+    });
+})();
+  </script>
+</body>
+</html>

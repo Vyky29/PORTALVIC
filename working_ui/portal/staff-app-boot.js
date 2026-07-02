@@ -55,14 +55,10 @@
   }
 
   if (isStaffDashboard) {
-    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster");
+    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260625-lead-day-cards-nav");
-    if (!isHandheld) {
-      preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
-    }
-    preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260705-day-centre-peer");
   }
 
   if ("serviceWorker" in global.navigator) {
@@ -138,7 +134,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260624-ma-consecutive-merge",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20260704-cover-merge-feedback",
     "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
@@ -210,9 +206,9 @@
     if (global.__PORTAL_STAFF_PUSH_DEFERRED__) return;
     global.__PORTAL_STAFF_PUSH_DEFERRED__ = true;
     var urls = [
-      "/portal/portal_web_push_support.js?v=20260619-inflight-fix",
+      "/portal/portal_web_push_support.js?v=20260628-test-sw-ready",
       "/portal/portal_ensure_web_push.js?v=20260619-inflight-fix",
-      "/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix",
+      "/portal/portal_alerts_notifications_ui.js?v=20260705-ios-taps",
     ];
     var i = 0;
     function next() {
@@ -245,7 +241,7 @@
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
       loadScript("/portal/portal-ghost-view.js?v=20260624-ghost-handoff");
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
-      loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
+      loadCss("/portal/portal_achievements.css?v=20260702-lead-gallery-upload");
     };
     scheduleIdle(run, isHandheld ? 6000 : 2500);
   }

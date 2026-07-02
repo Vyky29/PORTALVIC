@@ -201,6 +201,25 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
   return [...out];
 }
 
+/** Keys for shared feedback units where co-instructor absent quick marks should propagate. */
+function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of rosterSessionKeys || []) {
+    const k = String(raw || "").trim();
+    if (!k || seen.has(k)) continue;
+    const parts = k.split("|");
+    const last = String(parts[parts.length - 1] || "")
+      .trim()
+      .toLowerCase();
+    if (last === "bespoke_shared" || last === "day_centre" || parts[1] === "") {
+      seen.add(k);
+      out.push(k);
+    }
+  }
+  return out;
+}
+
 /**
  * Unique YYYY-MM-DD values from roster session keys (term historical peer sync).
  * @param {string[]} rosterSessionKeys
@@ -252,8 +271,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const peerSessionDates = [
     ...new Set([...catchUpDates, ...portalExtractDatesFromRosterKeys(rosterSessionKeys)]),
   ].slice(0, 90);
+  const sharedUnitKeys = portalSharedFeedbackUnitKeys(rosterSessionKeys).slice(0, 400);
 
-  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
+  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, quickMarksPeer, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
@@ -296,6 +316,11 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .eq("staff_user_id", userId)
       .gte("session_date", sinceStr)
       .in("mark_type", ["absent", "feedback_done"]),
+    sharedUnitKeys.length
+      ? supabase.rpc("portal_peer_absent_quick_marks_for_sessions", {
+          p_keys: sharedUnitKeys,
+        })
+      : Promise.resolve({ data: null, error: null }),
     catchUpDates.length
       ? supabase
           .from("session_feedback")
@@ -435,7 +460,10 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       );
       for (const rk of rosterSessionKeys) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
-        if (perStaffOwnOnly.has(rk) && !portalStaffOwnsSubmittedFeedbackRow(staffIdForPeer, r)) {
+        if (
+          portalRosterKeyNeedsSubmitterOwnership(rk, perStaffOwnOnly) &&
+          !portalStaffOwnsSubmittedFeedbackRow(staffIdForPeer, r)
+        ) {
           continue;
         }
         if (isAbs) {
@@ -470,8 +498,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   for (const rk of rpcKeys) {
     const rks = String(rk || "").trim();
     if (!rks || peerParts.present.includes(rks) || peerParts.absent.includes(rks)) continue;
-    /* Substitute cover slots: RPC cannot verify submitter — own rows only. */
-    if (perStaffOwnOnly.has(rks)) continue;
+    /* Per-slot / per-instructor roster keys: RPC cannot verify submitter — own rows only. */
+    if (portalRosterKeyNeedsSubmitterOwnership(rks, perStaffOwnOnly)) continue;
     rpcPresent.push(rks);
   }
 
@@ -499,7 +527,14 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   if (quickMarks && quickMarks.error) {
     console.warn("[portal] portal_staff_session_quick_marks fetch skipped", quickMarks.error);
   }
+  if (quickMarksPeer && quickMarksPeer.error) {
+    console.warn("[portal] portal_peer_absent_quick_marks_for_sessions skipped", quickMarksPeer.error);
+  }
   const qmRows = quickMarks && !quickMarks.error && Array.isArray(quickMarks.data) ? quickMarks.data : [];
+  const peerQmRows =
+    quickMarksPeer && !quickMarksPeer.error && Array.isArray(quickMarksPeer.data)
+      ? quickMarksPeer.data
+      : [];
   const seenAbs = new Set();
   const seenQfd = new Set();
   for (const r of qmRows) {
@@ -514,6 +549,15 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       seenQfd.add(k);
       quickFeedbackDoneKeys.push(k);
     }
+  }
+  for (const r of peerQmRows) {
+    const k =
+      r && typeof r === "object"
+        ? String(/** @type {{ portal_session_key?: string }} */ (r).portal_session_key || "").trim()
+        : String(r || "").trim();
+    if (!k || seenAbs.has(k)) continue;
+    seenAbs.add(k);
+    absentKeys.push(k);
   }
 
   portalHydrateLiveSessionFeedbackCache([
@@ -640,12 +684,47 @@ function clientSlugTokensFromPortalSessionKey(key) {
   return out;
 }
 
+/** Roster client_id spellings → one canonical slug (spreadsheet vs session_feedback portal_session_key). */
+const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
+  adam_pi: "adam_p",
+  adam_p: "adam_p",
+  aadam_ah: "adaam_ah",
+  adaam_ah: "adaam_ah",
+  abodi_p: "abodi_pa",
+  abodi_pa: "abodi_pa",
+  abodi: "abodi_pa",
+  amar_rai: "amar_ra",
+  amar_ra: "amar_ra",
+  sammer: "samer",
+  samer: "samer",
+  rayan_tapa: "rayan_ta",
+  rayan_ta: "rayan_ta",
+  steven_ces: "steven",
+  steven_c: "steven",
+  steven_ce: "steven",
+  steven: "steven",
+  yusuf: "yusuf_ah",
+  yusef: "yusuf_ah",
+  yusuf_ah: "yusuf_ah",
+  eddie_mc: "eddie",
+  eddie: "eddie",
+  adam_a: "adam_ab",
+  adam_ab: "adam_ab",
+  junaid: "junaid_f",
+  junaid_f: "junaid_f",
+  khalid_ab: "khalid",
+  khalid: "khalid",
+  rayyan_fi: "rayyan_f",
+  rayyan_f: "rayyan_f",
+  chaitanya_trial_28_06: "chaitanya",
+  chaitanya: "chaitanya",
+});
+
 /** Known client_id / slug aliases (roster spreadsheet vs ClassForKids). */
 function portalCanonicalClientSlugToken(slug) {
   const s = String(slug || "").trim().toLowerCase();
   if (!s) return "";
-  if (s === "amar_rai") return "amar_ra";
-  return s;
+  return PORTAL_ROSTER_CLIENT_SLUG_CANON[s] || s;
 }
 
 /** Strict client slug match — never treat "amar" as matching "amber". */
@@ -714,7 +793,21 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
   return false;
 }
 
-/** Climbing / multi / timed aquatic: date||client must not fan-out across instructors or slots. */
+const PORTAL_PER_SLOT_AREA_TOKENS = new Set([
+  "wall",
+  "climbing_wall",
+  "climbing",
+  "big_pool",
+  "small_pool",
+  "teaching_pool",
+  "hub_room",
+  "room_2",
+  "lane_de",
+  "lane_se",
+  "bespoke",
+]);
+
+/** Climbing / multi / timed aquatic / area slots: date||client must not fan-out across instructors. */
 function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   const r = String(rosterKey || "")
     .trim()
@@ -725,7 +818,22 @@ function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   if (r.indexOf("climb") >= 0) return true;
   if (/multi[-\s]?activity/.test(r) || r.split("|").indexOf("multi") >= 0) return true;
   if (/\|aquatic$/i.test(r) || /\|\d{1,2}:\d{2}\|aquatic/i.test(r)) return true;
+  const parts = r.split("|").map((p) => String(p || "").trim().toLowerCase()).filter(Boolean);
+  if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+    const last = parts[parts.length - 1];
+    if (PORTAL_PER_SLOT_AREA_TOKENS.has(last)) return true;
+    if (last.indexOf("pool") >= 0 || last.indexOf("lane") >= 0 || last.indexOf("hub") >= 0) {
+      return true;
+    }
+  }
   return false;
+}
+
+function portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return false;
+  if (perStaffOwnOnly && perStaffOwnOnly.has(rk)) return true;
+  return portalRosterKeyIsPerSlotServiceUnit(rk);
 }
 
 function portalMergeRuleSlotStartHm(timeSlot, dayWord) {
@@ -957,7 +1065,9 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   ) {
     return portalSessionKeyClientSlugsMatch(s, r);
   }
-  if (rTime && !sTime && !portalRosterKeyIsSharedFeedbackUnit(r)) return false;
+  const sharedUnit =
+    portalRosterKeyIsSharedFeedbackUnit(r) || portalRosterKeyIsSharedFeedbackUnit(s);
+  if (rTime && !sTime && !sharedUnit) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   /* Participant slugs only — never fall back to raw pipe segment (e.g. "aquatic" on date|amber|aquatic). */
   return portalSessionKeyClientSlugsMatch(s, r);
@@ -994,7 +1104,13 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
-    if (!markAbsent && perStaffOwnOnly.has(rosterKey) && !ownOnly.has(rosterKey)) continue;
+    if (
+      !markAbsent &&
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      continue;
+    }
     for (const fk of submittedKeys || []) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
@@ -1261,9 +1377,14 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
     ownOnly.add(rk);
     feedback.add(rk);
   }
-  if (perStaffOwnOnly.size) {
-    for (const rk of perStaffOwnOnly) {
-      if (!ownOnly.has(rk)) feedback.delete(rk);
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    if (
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      feedback.delete(rosterKey);
     }
   }
   for (const fk of submittedFb) {
@@ -1343,16 +1464,32 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
     ownOnly.add(rk);
   }
   for (const rk of ownOnly) resolved.add(rk);
-  for (const rk of perStaffOwnOnly) {
-    if (!ownOnly.has(rk)) resolved.delete(rk);
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    if (
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      resolved.delete(rosterKey);
+    }
   }
 
   let changed = false;
+  const assumeThroughRaw =
+    typeof window !== "undefined" &&
+    window.PORTAL_TERM_FROM_TIMETABLE &&
+    window.PORTAL_TERM_FROM_TIMETABLE.termFeedbackAssumeCompleteThroughIso;
+  const assumeThrough = String(assumeThroughRaw || "")
+    .trim()
+    .slice(0, 10);
+  const assumeThroughOk = /^\d{4}-\d{2}-\d{2}$/.test(assumeThrough);
   for (const rk of rosterKeys) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
     const iso = portalReviewKeyDateIso(rosterKey);
     if (!iso || iso < serverTruthFromIso || catchUp.has(iso)) continue;
+    if (assumeThroughOk && iso <= assumeThrough) continue;
     if (resolved.has(rosterKey)) continue;
     const prev = memory[rosterKey] || portalReviewMemoryBase();
     if (prev.absent || prev.cancelled) continue;
@@ -1429,36 +1566,47 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
  * @returns {Promise<{ error: import("@supabase/supabase-js").AuthError | null }>}
  */
 /** Read a Supabase Auth access token from browser storage (same-origin dashboards + forms). */
-export function portalReadPersistedSupabaseAccessToken() {
-  const parseToken = (raw) => {
-    try {
-      if (!raw) return "";
-      const data = JSON.parse(raw);
-      if (data && typeof data.access_token === "string" && data.access_token) {
-        return String(data.access_token);
-      }
-      if (data?.currentSession?.access_token) {
-        return String(data.currentSession.access_token);
-      }
-    } catch {
-      /* ignore */
+function portalParsePersistedAuthJson(raw) {
+  try {
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data && typeof data.access_token === "string" && data.access_token && data.user) {
+      return data;
     }
-    return "";
-  };
-  if (typeof window === "undefined") return "";
+    if (
+      data?.currentSession &&
+      typeof data.currentSession.access_token === "string" &&
+      data.currentSession.access_token &&
+      data.currentSession.user
+    ) {
+      return data.currentSession;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+export function portalReadPersistedSupabaseSession() {
+  if (typeof window === "undefined") return null;
   for (const store of [localStorage, sessionStorage]) {
     try {
       for (let i = 0; i < store.length; i++) {
         const k = store.key(i);
         if (!k || !/^sb-.*-auth-token/i.test(k)) continue;
-        const tok = parseToken(store.getItem(k));
-        if (tok) return tok;
+        const sess = portalParsePersistedAuthJson(store.getItem(k));
+        if (sess) return sess;
       }
     } catch {
       /* ignore */
     }
   }
-  return "";
+  return null;
+}
+
+export function portalReadPersistedSupabaseAccessToken() {
+  const sess = portalReadPersistedSupabaseSession();
+  return sess && sess.access_token ? String(sess.access_token) : "";
 }
 
 /** Remove Supabase Auth tokens from browser storage (same-origin). */

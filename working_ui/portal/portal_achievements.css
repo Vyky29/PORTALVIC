@@ -35,6 +35,11 @@
   color: var(--danger, #dc2626);
 }
 
+.portal-achievements-status .btn {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
 .portal-achievements-sheet-head {
   justify-content: center;
   text-align: center;
@@ -371,6 +376,46 @@
   text-align: center;
   min-width: 0;
   overflow-wrap: break-word;
+}
+
+.portal-achievements-icon-actions--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-achievements-icon-actions--lead-inbox .portal-achievements-icon-btn--upload {
+  order: -1;
+}
+
+.portal-achievements-icon-btn--upload {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: linear-gradient(165deg, rgba(22, 163, 74, 0.1) 0%, #fff 72%);
+  box-shadow:
+    0 0 0 1px rgba(22, 163, 74, 0.1) inset,
+    0 4px 14px rgba(22, 163, 74, 0.12);
+}
+
+.portal-achievements-icon-btn--upload .portal-achievements-icon-btn__ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.portal-achievements-icon-btn--upload .portal-achievements-icon-btn__ico svg {
+  width: 34px;
+  height: 34px;
+}
+
+.portal-achievements-icon-btn--upload:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+@media (max-width: 520px) {
+  .portal-achievements-icon-actions--triple {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1218,6 +1263,28 @@ body.portal-achievements-viewer-open .dock-bar {
   user-select: none;
 }
 
+.portal-achievements-feedback-inbox-tag {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  max-width: calc(100% - 8px);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-achievements-feedback-pick--inbox .portal-achievements-feedback-thumb {
+  opacity: 0.96;
+}
+
 #menuSheet .menu-btn.menu-btn--work-achievements .menu-btn-icon {
   background: rgba(236, 72, 153, 0.12);
   color: #db2777;
@@ -1292,9 +1359,36 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 
 .portal-admin-achievement-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
   min-width: 0;
+}
+
+.portal-ach-gallery-day {
+  grid-column: 1 / -1;
+  margin: 6px 0 2px;
+  padding: 8px 2px 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--navy, #0f172a);
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-ach-gallery-day:first-child {
+  margin-top: 0;
+}
+@media (max-width: 900px) {
+  .portal-admin-achievement-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .portal-admin-achievement-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .portal-admin-achievement-thumb {
@@ -1572,6 +1666,16 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   color: var(--danger, #b91c1c);
 }
 
+.portal-ach-admin-return-inbox__btn {
+  align-self: flex-start;
+  max-width: 100%;
+  color: var(--blue, #2d84b3);
+  overflow-wrap: break-word;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.3;
+}
+
 .portal-achievements-thumb__empty {
   display: flex;
   align-items: center;
@@ -1753,9 +1857,157 @@ body.portal-achievements-viewer-open .admin-topbar {
 }
 
 .portal-ach-inbox-bulk__select {
-  flex: 1 1 180px;
+  flex: 1 1 220px;
   min-width: 0;
-  max-width: 280px;
+  max-width: min(420px, 100%);
+}
+
+.portal-ach-inbox-participant-pick {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: min(420px, 100%);
+}
+
+.portal-ach-inbox-participant-pick--multi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-ach-inbox-participant-pick__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.portal-ach-inbox-participant-pick__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: rgba(45, 132, 179, 0.12);
+  border: 1px solid rgba(45, 132, 179, 0.22);
+  color: var(--navy, #0f172a);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.portal-ach-inbox-participant-pick__chip-label {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-ach-inbox-participant-pick__chip-remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted, #64748b);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.portal-ach-inbox-participant-pick__chip-remove:hover,
+.portal-ach-inbox-participant-pick__chip-remove:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--navy, #0f172a);
+  outline: none;
+}
+
+.portal-ach-inbox-participant-pick__field {
+  position: relative;
+  min-width: 0;
+}
+
+.portal-ach-inbox-participant-pick__input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: var(--navy, #0f172a);
+  height: 36px;
+  line-height: 1.25;
+}
+
+.portal-ach-inbox-participant-pick__input::placeholder {
+  color: var(--muted, #64748b);
+  opacity: 1;
+}
+
+.portal-ach-inbox-participant-pick__input:focus {
+  outline: 2px solid rgba(45, 132, 179, 0.2);
+  border-color: var(--blue, #2d84b3);
+}
+
+.portal-ach-inbox-participant-pick__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(240px, 40vh);
+  overflow: auto;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-ach-inbox-participant-pick__list[hidden] {
+  display: none !important;
+}
+
+.portal-ach-inbox-participant-pick__opt {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy, #0f172a);
+  overflow-wrap: break-word;
+}
+
+.portal-ach-inbox-participant-pick__opt:last-child {
+  border-bottom: 0;
+}
+
+.portal-ach-inbox-participant-pick__opt:hover,
+.portal-ach-inbox-participant-pick__opt:focus-visible {
+  background: #f0f7ff;
+  outline: none;
+}
+
+.portal-ach-inbox-participant-pick__empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-ach-inbox-pick {
@@ -1767,6 +2019,25 @@ body.portal-achievements-viewer-open .admin-topbar {
   color: var(--navy, #0f172a);
   min-width: 0;
   cursor: pointer;
+}
+
+.portal-ach-inbox-bulk__select-all input[type="checkbox"],
+.portal-ach-inbox-pick__input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--blue, #2d84b3);
+  appearance: auto;
+  -webkit-appearance: checkbox;
+}
+
+.portal-ach-inbox-pick__label,
+.portal-ach-inbox-bulk__select-all span {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-ach-inbox-pick__input {

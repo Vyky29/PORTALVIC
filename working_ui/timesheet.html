@@ -69,6 +69,10 @@
       word-break:normal;
     }
     td{font-size:14px}
+    .td-service{min-width:0;text-align:center}
+    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;padding:2px 0}
+    .timesheet-service-cell__service{font-size:14px;line-height:1.25;overflow-wrap:break-word;word-break:break-word;max-width:100%}
+    .timesheet-service-cell__role{font-size:12px;line-height:1.2;max-width:100%;overflow-wrap:break-word;word-break:break-word}
     .num{text-align:center}
     .sum-row td{background:#f4f7fb;font-weight:700}
     .sum-label{text-align:center}
@@ -251,13 +255,13 @@
   <script src="portal/portal_return_and_shell.js?v=20260510-portal-admin"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260624-timesheet-roster"></script>
-  <script src="/portal/term_from_timetable.js?v=20260625-payroll-june-green4"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260625-simon-stf016"></script>
+  <script src="/portal/term_from_timetable.js?v=20260629-29jun-roster"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
-  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster"></script>
+  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260625-payroll-june"></script>
   <script src="/portal/portal_staff_shift_window.js?v=20260625-ma-bespoke-band"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
   <main class="page">
@@ -303,8 +307,10 @@
             <tr class="manual-empty"><td colspan="5" class="muted">No extra hours added yet. Use the form above to add your first block.</td></tr>
           </tbody>
           <tfoot>
-            <tr class="sum-row"><td colspan="2" class="sum-label">Total hours:</td><td class="num" id="mTotalHours">0.00</td><td colspan="2"></td></tr>
-            <tr class="sum-row"><td colspan="3" class="sum-label">Total to pay (GBP):</td><td class="num" id="mTotalCost" colspan="2">0.00</td></tr>
+            <tr class="sum-row"><td colspan="2" class="sum-label" id="mHoursLabel">Total hours:</td><td class="num" id="mTotalHours">0.00</td><td colspan="2"></td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label" id="mCostLabel">Total to pay (GBP):</td><td class="num" id="mTotalCost" colspan="2">0.00</td></tr>
+            <tr class="sum-row" id="mSalaryRow" hidden><td colspan="3" class="sum-label">Fixed monthly salary (GBP):</td><td class="num" id="mTotalSalary" colspan="2">0.00</td></tr>
+            <tr class="sum-row" id="mGrandRow" hidden><td colspan="3" class="sum-label">Total to pay (GBP):</td><td class="num" id="mGrandTotal" colspan="2">0.00</td></tr>
           </tfoot>
         </table>
       </div>
@@ -386,17 +392,31 @@
       stf013: "victor",
       stf014: "carlos",
       stf015: "alex",
+      stf016: "simon",
       stf017: "javi",
       stf018: "raul",
       stf019: "sevitha",
       stf020: "teflon",
-      stf021: "lulia"
+      stf021: "lulia",
+      stf022: "andres"
     };
     /**
      * Part-time / manual-entry staff: no roster-driven timesheet. They log extra
      * hours by hand. Everyone else keeps the automatic (roster + feedback) sheet.
      */
     const MANUAL_TIMESHEET_ROSTER_KEYS = new Set(["roberto"]);
+    /**
+     * Fixed monthly part-time salary (GBP) paid on top of any logged extra hours.
+     * Keyed by roster id. Shown as its own line in the PDF + payroll report.
+     */
+    const FIXED_MONTHLY_SALARY_BY_ROSTER_KEY = {
+      roberto: 2166.67
+    };
+    function fixedMonthlySalaryForRosterKey(key) {
+      const k = String(key || "").trim().toLowerCase();
+      const v = Number(FIXED_MONTHLY_SALARY_BY_ROSTER_KEY[k] || 0);
+      return v > 0 ? v : 0;
+    }
     /**
      * Payroll cycle is 25 -> 24. On-time deadline is the 24th of the closing
      * month (last day of the cycle). Submitting on the 25th or later is late:
@@ -414,7 +434,8 @@
       "johnnyosti37@gmail.com": "john",
       "stf012@staff.import.pending": "berta",
       "stf006@staff.import.pending": "john",
-      "stf021@staff.import.pending": "lulia"
+      "stf021@staff.import.pending": "lulia",
+      "stf016@staff.import.pending": "simon"
     };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
     const PAY_RATE_BY_ROSTER_KEY = {
@@ -516,6 +537,21 @@
       const yy = d.getFullYear();
       return `${dd}-${mm}-${yy}`;
     }
+    /** e.g. "25th May to 24th June" for document title + stored PDF name. */
+    function timesheetPeriodRangeLabel(startIso, endIso) {
+      const start = parseIsoDate(startIso);
+      const end = parseIsoDate(endIso);
+      if (!start || !end) return "";
+      const fmt = (d) =>
+        `${dayOrdinal(d.getDate())} ${d.toLocaleDateString("en-GB", { month: "long" })}`;
+      return `${fmt(start)} to ${fmt(end)}`;
+    }
+    function timesheetDocumentTitle(employeeName, periodStart, periodEnd) {
+      const name = String(employeeName || "Staff").trim() || "Staff";
+      const possessive = /s$/i.test(name) ? `${name}'` : `${name}'s`;
+      const range = timesheetPeriodRangeLabel(periodStart, periodEnd);
+      return range ? `${possessive} Timesheet (${range})` : `${possessive} Timesheet`;
+    }
     async function readImageUrlAsDataUrl(url) {
       try {
         const res = await fetch(url, { mode: "cors" });
@@ -531,25 +567,24 @@
         return "";
       }
     }
-    /** Logo PDF: `logoPDF.png` junto a la página, luego `portal/F-02-1.png`, luego `portal_crest.svg`. */
+    /** Static club logo (same as portal header) — no animated halo in PDFs. */
     async function readPdfLogoDataUrl() {
       const list = [];
-      try {
-        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
-        if (base) list.push(new URL("logoPDF.png", base).href);
-      } catch (_) {}
       try {
         if (typeof location !== "undefined" && location.href) {
           list.push(new URL("portal/F-02-1.png", location.href).href);
         }
       } catch (_) {}
       try {
+        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
+        if (base) list.push(new URL("logoPDF.png", base).href);
+      } catch (_) {}
+      try {
         if (typeof location !== "undefined" && location.href) {
           list.push(new URL("portal/portal_crest.svg", location.href).href);
         }
       } catch (_) {}
-      list.push("portal/F-02-1.png");
-      list.push("portal/portal_crest.svg");
+      list.push("portal/F-02-1.png", "logoPDF.png", "portal/portal_crest.svg");
       const seen = new Set();
       for (let i = 0; i < list.length; i++) {
         const url = list[i];
@@ -1130,6 +1165,39 @@
       ].join("|");
     }
 
+    function timesheetIsLuliaSession(s) {
+      return timesheetNormStaffKey(s && s.staffId) === "lulia";
+    }
+
+    function timesheetIsLuliaIkramMorning(s) {
+      if (!timesheetIsLuliaSession(s)) return false;
+      const client = String((s && (s.clientId || s.client_id || s.client_name || s.name)) || "").toLowerCase();
+      const svc = sessionServiceLower(s);
+      return client.indexOf("ikram") >= 0 && /day\s*centre/.test(svc);
+    }
+
+    function timesheetIsLuliaAfternoonCover(s) {
+      if (!timesheetIsLuliaSession(s)) return false;
+      const svc = sessionServiceLower(s);
+      if (!/aquatic|multi[-\s]?activity/.test(svc)) return false;
+      if (/day\s*centre/.test(svc)) return false;
+      const start = hmToMinutes(String(s && s.start || "").trim());
+      return Number.isFinite(start) && start >= 15 * 60;
+    }
+
+    function timesheetApplyLuliaIkramMorningCutoff(rows) {
+      if (!Array.isArray(rows) || !rows.some(timesheetIsLuliaAfternoonCover)) return rows;
+      return rows.map((s) => {
+        if (!timesheetIsLuliaIkramMorning(s)) return s;
+        const end = hmToMinutes(String(s.end || "").trim());
+        if (!Number.isFinite(end) || end <= 15 * 60) return s;
+        return Object.assign({}, s, {
+          end: "15:00",
+          __portalTimesheetLuliaIkramCutoff: true
+        });
+      });
+    }
+
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
@@ -1161,7 +1229,7 @@
         seen.add(k);
         rows.push(s);
       });
-      return rows;
+      return me === "lulia" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
     }
 
     /** Mirror dashboard: admin absence / slot close counts as done for timesheet pay. */
@@ -1196,6 +1264,63 @@
       }
     }
 
+    function timesheetSessionIsBespokeShared(s) {
+      const act = String((s && (s.activity || s.rosterService || s.service)) || "").toLowerCase();
+      if (!/bespoke/.test(act)) return false;
+      return /hub/.test(String(s.area || s.rosterArea || "").trim().toLowerCase());
+    }
+
+    function timesheetSessionIsSundaySwimfarmPerStaff(s, iso) {
+      if (!s) return false;
+      const day =
+        String(s.day || "").trim() ||
+        (iso
+          ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("en-GB", {
+              weekday: "long",
+            })
+          : "");
+      if (day !== "Sunday") return false;
+      if (String(s.venue || "").trim().toLowerCase() !== "swimfarm") return false;
+      const act = String(s.rosterService || s.activity || s.service || "").toLowerCase();
+      if (/multi[-\s]?activity/.test(act)) return true;
+      if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+      if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+      return false;
+    }
+
+    /** Mirror staff dashboard: Multi/Aquatic/climb = own feedback; Day Centre + Bespoke Hub = shared. */
+    function timesheetSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
+      if (s && s.__portalSundayInstructorCover) return true;
+      if (timesheetSessionIsSundaySwimfarmPerStaff(s, iso)) return true;
+      const act = String((s && (s.activity || s.rosterService || s.service)) || "").toLowerCase();
+      if (/day\s*centre/.test(act)) return false;
+      if (timesheetSessionIsBespokeShared(s)) return false;
+      if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+      if (/multi[-\s]?activity/.test(act)) return true;
+      if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
+      return false;
+    }
+
+    function timesheetCollectPerStaffOwnFeedbackOnlyKeys(sessionsModel, dates, staffKey) {
+      const keys = new Set();
+      const me = normTimesheetStaffKey(staffKey);
+      if (!me) return [];
+      for (const dateObj of dates || []) {
+        const iso = isoDate(dateObj);
+        const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
+          const st = String(s.status || "").toLowerCase();
+          if (st === "closed" || st === "available") return false;
+          return normTimesheetStaffKey(s.staffId) === me;
+        });
+        rows.forEach((s) => {
+          if (!timesheetSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) return;
+          const sk = timesheetSessionReviewKey(s, dateObj);
+          if (sk) keys.add(sk);
+        });
+      }
+      return [...keys].slice(0, 400);
+    }
+
     async function buildReviewMap(supabase, userId, sessionsModel, dates) {
       const memory = parseReviewMap();
       try {
@@ -1210,14 +1335,19 @@
           }
         })();
         const rosterKeys = collectRosterSessionKeysForPeriod(sessionsModel, dates);
+        const staffKey = String(state.staffRosterKey || "").trim().toLowerCase();
+        const perStaffOwnKeys = timesheetCollectPerStaffOwnFeedbackOnlyKeys(sessionsModel, dates, staffKey);
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(supabase, userId, {
           rosterSessionKeys: rosterKeys,
           feedbackMergeRules,
-          staffId: String(state.staffRosterKey || "").trim().toLowerCase(),
+          staffId: staffKey,
+          perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
         });
         mod.portalMergeReviewKeysIntoMemoryMap(memory, keys, {
           rosterSessionKeys: rosterKeys,
           feedbackMergeRules,
+          perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
+          ownFeedbackKeys: keys.ownFeedbackKeys || [],
         });
         const overrides = await fetchScheduleOverridesForPeriod(
           supabase,
@@ -1342,6 +1472,11 @@
         (session && (session.rosterService || session.service || session.activity)) || ""
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+      if (timesheetIsLuliaSession(session)) {
+        if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
+        if (/aquatic/.test(svc)) return "Swimming Instructor";
+        if (/multi[-\s]?activity|day\s*centre|bespoke|support|hub/.test(svc)) return "Support Worker";
+      }
       /* Day-centre aquatic hour (e.g. Emmanuel Big Pool) — swim rate before generic day-centre support. */
       if (/big pool|small pool|teaching pool|\blane\b/.test(area)) {
         return "Swimming Instructor";
@@ -1364,11 +1499,35 @@
 
     /** Weekday Multi-Activity / Bespoke: always paid 4:15–6:15 (2h) even when client slots are shorter. */
     const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
+    const WEEKDAY_MA_BESPOKE_STAFF_KEYS = new Set(["john", "giuseppe", "bismark", "godsway"]);
 
     /** Sunday SwimFarm support: 9:15–2:15 (5h); programme leads 9:00–2:30 (5.5h). */
     const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
-    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john"]);
+    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john", "michelle"]);
+
+    /** Michelle day-centre closing Mon–Wed + Fri: 10:45–16:15 (5.5h). */
+    const MICHELLE_DAY_CENTRE_PAY_HOURS = 5.5;
+    const MICHELLE_DAY_CENTRE_DOWS = new Set([1, 2, 3, 5]);
+
+    /** Programme leads: show Lead on timesheet when paid Support Worker rate. */
+    function timesheetProgrammeLeadDisplayRole(payRole, rosterKey) {
+      const pay = String(payRole || "").trim();
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      if (!SUNDAY_MA_LEAD_KEYS.has(key)) return pay;
+      if (/^support\s*worker$/i.test(pay)) return "Lead";
+      return pay;
+    }
+
+    function timesheetEntryDisplayRole(entry) {
+      const payRole = String((entry && entry.role) || "").trim();
+      return timesheetProgrammeLeadDisplayRole(
+        payRole,
+        entry && entry.rosterKey != null ? entry.rosterKey : state.staffRosterKey,
+      );
+    }
 
     function sessionServiceLower(session) {
       return String((session && (session.rosterService || session.service || session.activity)) || "").toLowerCase();
@@ -1379,17 +1538,39 @@
       return /\bbespoke\b/.test(s) || /multi[-\s]?activity/.test(s);
     }
 
-    function isWeekdayMaBespokePayBand(dayName, role, dayRows) {
+    function isWeekdayMaBespokePayBand(dayName, role, dayRows, rosterKey) {
       if (!dayName || dayName === "Sunday") return false;
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      if (!WEEKDAY_MA_BESPOKE_STAFF_KEYS.has(key)) return false;
       if (String(role || "").trim() !== "Support Worker") return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.some((s) => isMaOrBespokeService(sessionServiceLower(s)));
     }
 
-    function weekdayMaBespokePayableHours(dayName, role, computedHours, dayRows) {
-      if (!isWeekdayMaBespokePayBand(dayName, role, dayRows)) return computedHours;
+    function weekdayMaBespokePayableHours(dayName, rosterKey, role, computedHours, dayRows) {
+      if (!isWeekdayMaBespokePayBand(dayName, role, dayRows, rosterKey)) return computedHours;
       return WEEKDAY_MA_BESPOKE_PAY_HOURS;
+    }
+
+    function isMichelleDayCentrePayBand(rosterKey, dateObj, role, dayRows) {
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      if (key !== "michelle") return false;
+      if (!dateObj || typeof dateObj.getDay !== "function") return false;
+      if (!MICHELLE_DAY_CENTRE_DOWS.has(dateObj.getDay())) return false;
+      if (String(role || "").trim() !== "Support Worker") return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.some((s) => /day\s*centre/.test(sessionServiceLower(s)));
+    }
+
+    function michelleDayCentrePayableHours(rosterKey, dateObj, role, computedHours, dayRows) {
+      if (!isMichelleDayCentrePayBand(rosterKey, dateObj, role, dayRows)) return computedHours;
+      return MICHELLE_DAY_CENTRE_PAY_HOURS;
     }
 
     function isSundayMaSupportPayBand(dayName, role, service, dayRows) {
@@ -1417,7 +1598,8 @@
       return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 
-    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: sum 30' aquatic slots. */
+    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: 6h. */
+    const SUNDAY_SWIM_PAY_HOURS = 6;
     const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
 
     function isSundaySwimfarmAquaticBand(dayName, role, service, dayRows) {
@@ -1441,7 +1623,7 @@
       if (!isSundaySwimfarmAquaticBand(dayName, role, service, dayRows)) return computedHours;
       const key = String(rosterKey || "").trim().toLowerCase();
       if (key === "roberto") return SUNDAY_ROBERTO_SWIM_PAY_HOURS;
-      return computedHours;
+      return SUNDAY_SWIM_PAY_HOURS;
     }
 
     function applyRosterPayRateFallback(rosterKey) {
@@ -1595,6 +1777,9 @@
       const venueLower = venue.toLowerCase();
       const r = String(role || "").trim();
       const isPool = /big pool|small pool|teaching pool|\blane\b/.test(areaLower);
+      if (/day\s*centre/.test(svcLower) && venue) {
+        return `Day Centre (${venue})`;
+      }
       if (/day\s*centre/.test(svcLower) && r === "Swimming Instructor" && isPool) {
         return "Day Centre (Aquatic)";
       }
@@ -1608,11 +1793,15 @@
       return svc;
     }
 
-    function timesheetSupportPayGroupKey(session, role, dayName) {
+    function timesheetSupportPayGroupKey(session, role, dayName, rosterKey) {
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
       if (
         String(role || "").trim() === "Support Worker" &&
         dayName &&
         dayName !== "Sunday" &&
+        WEEKDAY_MA_BESPOKE_STAFF_KEYS.has(key) &&
         isMaOrBespokeService(sessionServiceLower(session))
       ) {
         return "__weekday_ma_bespoke__";
@@ -1622,6 +1811,76 @@
 
     function timesheetEntryServiceLabel(entry) {
       return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
+    }
+
+    function timesheetEntryRoleLabel(entry) {
+      const displayRole = timesheetEntryDisplayRole(entry);
+      if (displayRole === "Lead") return "Lead";
+      const r = String((entry && (entry.roleLabel || entry.role)) || "").trim();
+      if (!r) return "";
+      return roleDisplayLabel(r, state.roleScales && state.roleScales[r]) || r;
+    }
+
+    function timesheetEntryServiceCellHtml(entry) {
+      const serviceLabel = timesheetEntryServiceLabel(entry) || "-";
+      const roleLabel = timesheetEntryRoleLabel(entry);
+      const colorRole = timesheetEntryDisplayRole(entry) || (entry && entry.role);
+      const roleHtml = roleLabel ? timesheetRoleHtml(colorRole, roleLabel) : "";
+      return (
+        '<div class="timesheet-service-cell">' +
+        `<div class="timesheet-service-cell__service">${esc(serviceLabel)}</div>` +
+        (roleHtml ? `<div class="timesheet-service-cell__role">${roleHtml}</div>` : "") +
+        "</div>"
+      );
+    }
+
+    function pdfEntryRowHeightScale(entry) {
+      return timesheetEntryRoleLabel(entry) ? 1.38 : 1;
+    }
+
+    function timesheetRolePdfRgb(role) {
+      const hex = timesheetRoleColor(role);
+      if (!hex) return [16, 34, 56];
+      const m = hex.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+      return m
+        ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)]
+        : [16, 34, 56];
+    }
+
+    function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual) {
+      if (isManual) {
+        doc.text("-", cx, y + cellBaseline, { align: "center" });
+        return;
+      }
+      const service = String(timesheetEntryServiceLabel(entry) || "-").slice(0, 28);
+      const role = timesheetEntryRoleLabel(entry).slice(0, 24);
+      if (role) {
+        doc.setFontSize(8.5 * S);
+        doc.setTextColor(16, 34, 56);
+        doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+        doc.setFontSize(7.2 * S);
+        doc.setFont("helvetica", "bold");
+        const [rr, gg, bb] = timesheetRolePdfRgb(
+          timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
+        );
+        doc.setTextColor(rr, gg, bb);
+        doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(16, 34, 56);
+        doc.setFontSize(8.5 * S);
+      } else {
+        doc.text(service, cx, y + cellBaseline, { align: "center" });
+      }
+    }
+
+    /** Distinct pay groups within one role (e.g. Sunday Aquatic vs Multi-Activity on the same day). */
+    function timesheetDistinctServiceGroupKeys(rows, role, dayName) {
+      const keys = new Set();
+      (rows || []).forEach((s) => {
+        if (sessionPayRole(s) !== role) return;
+        keys.add(timesheetSupportPayGroupKey(s, role, dayName, rosterKey) || role);
+      });
+      return keys;
     }
 
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
@@ -1674,7 +1933,8 @@
       const mins = Math.max(0, maxEnd - minStart);
       if (timesheetDayMarkedComplete(dateKey, rosterKey)) completedAll = true;
       let hours = Number((mins / 60).toFixed(2));
-      hours = weekdayMaBespokePayableHours(dayName, dominantRole, hours, rows);
+      hours = weekdayMaBespokePayableHours(dayName, rosterKey, dominantRole, hours, rows);
+      hours = michelleDayCentrePayableHours(rosterKey, dateObj, dominantRole, hours, rows);
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       const role = dominantRole || "";
@@ -1707,7 +1967,7 @@
         const roleRows = rows.filter((s) => sessionPayRole(s) === role);
         const groups = Object.create(null);
         roleRows.forEach((s) => {
-          const label = timesheetSupportPayGroupKey(s, role, dayName);
+          const label = timesheetSupportPayGroupKey(s, role, dayName, rosterKey);
           const key = label || role;
           if (!groups[key]) {
             groups[key] = {
@@ -1768,7 +2028,8 @@
             if (shouldBuffer) mins += 2 * bufferMin;
           }
           let hours = Number((mins / 60).toFixed(2));
-          hours = weekdayMaBespokePayableHours(dayName, role, hours, groupRows);
+          hours = weekdayMaBespokePayableHours(dayName, rosterKey, role, hours, groupRows);
+          hours = michelleDayCentrePayableHours(rosterKey, dateObj, role, hours, groupRows);
           hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           if (!(hours > 0)) return;
@@ -1827,6 +2088,7 @@
         rolesSeen[role] = true;
       });
       const roleCount = Object.keys(rolesSeen).length;
+      const dayName = WEEKDAY[dateObj.getDay()];
       if (roleCount <= 1) {
         let dominantRole = "";
         let dominantService = "";
@@ -1838,6 +2100,9 @@
             dominantService = roleServices[role] || "";
           }
         });
+        if (dominantRole && timesheetDistinctServiceGroupKeys(rows, dominantRole, dayName).size > 1) {
+          return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+        }
         const single = dailyHoursSingleRoleFromSessions(
           rows,
           dateObj,
@@ -1968,6 +2233,25 @@
       return "";
     }
 
+    /** Colour + bold the pay role label in the timesheet rows. */
+    function timesheetRoleColor(role) {
+      const r = String(role || "").toLowerCase();
+      if (/swim|aquatic/.test(r)) return "#1565c0";
+      if (/climb/.test(r)) return "#ca8a04";
+      if (/\blead\b|service lead/.test(r)) return "#7c3aed";
+      if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return "#0f766e";
+      if (/support/.test(r)) return "#111827";
+      return "#111827";
+    }
+
+    function timesheetRoleHtml(role, displayLabel) {
+      const label = esc(String(displayLabel || role || "").trim());
+      if (!label) return "";
+      const color = timesheetRoleColor(role);
+      const style = color ? `font-weight:700;color:${color}` : "font-weight:700";
+      return `<span style="${style}">${label}</span>`;
+    }
+
     function renderTable() {
       const body = document.getElementById("rowsBody");
       const note = document.getElementById("statusNote");
@@ -1979,12 +2263,11 @@
         body.innerHTML = state.entries.map((e) => {
           const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.completed ? "day-row--paid" : "day-row--pending";
-          const roleTag = e.role ? ` · ${esc(e.role)}` : "";
-          const serviceLabel = timesheetEntryServiceLabel(e) || "-";
+          const statusNote = e.completed ? "completed" : "pending feedback";
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
-            <td>${esc(e.day)}${roleTag}${e.completed ? " - completed" : " - pending feedback"}</td>
-            <td>${esc(serviceLabel)}</td>
+            <td>${esc(e.day)} · ${statusNote}</td>
+            <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
             <td class="num">${money(e.hours)}</td>
             <td class="num">${money(daily)}</td>
           </tr>`;
@@ -2061,6 +2344,26 @@
       }
       document.getElementById("mTotalHours").textContent = money(state.totalHours);
       document.getElementById("mTotalCost").textContent = money(state.totalCost);
+      const fixedSalary = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+      const salaryRow = document.getElementById("mSalaryRow");
+      const grandRow = document.getElementById("mGrandRow");
+      const hoursLabel = document.getElementById("mHoursLabel");
+      const costLabel = document.getElementById("mCostLabel");
+      if (fixedSalary > 0) {
+        if (hoursLabel) hoursLabel.textContent = "Extra hours:";
+        if (costLabel) costLabel.textContent = "Extra hours pay (GBP):";
+        const salaryEl = document.getElementById("mTotalSalary");
+        const grandEl = document.getElementById("mGrandTotal");
+        if (salaryEl) salaryEl.textContent = money(fixedSalary);
+        if (grandEl) grandEl.textContent = money(Number((Number(state.totalCost || 0) + fixedSalary).toFixed(2)));
+        if (salaryRow) salaryRow.hidden = false;
+        if (grandRow) grandRow.hidden = false;
+      } else {
+        if (hoursLabel) hoursLabel.textContent = "Total hours:";
+        if (costLabel) costLabel.textContent = "Total to pay (GBP):";
+        if (salaryRow) salaryRow.hidden = true;
+        if (grandRow) grandRow.hidden = true;
+      }
       const rateTop = document.getElementById("rateTop");
       if (rateTop) rateTop.textContent = formatRateHeaderText();
       const roleEl = document.getElementById("roleLabel");
@@ -2277,107 +2580,33 @@
       const tableW = 184;
       const left = (pageW - tableW) / 2;
       const right = left + tableW;
-      let y = 12;
+      const topY = 12;
+      const bottomMargin = 10;
 
-      function line(text, size = 11, bold = false) {
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        doc.setFontSize(size);
-        doc.text(String(text), left, y);
-        y += size * 0.42 + 2;
-      }
-      function labeledLine(label, value, size = 11) {
-        const labelTxt = `${label}: `;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(size);
-        doc.text(labelTxt, left, y);
-        const x = left + doc.getTextWidth(labelTxt);
-        doc.setFont("helvetica", "normal");
-        doc.text(String(value || "-"), x, y);
-        y += size * 0.42 + 2;
-      }
-      function ensureRoom(h) {
-        if (y + h > pageH - 10) {
-          doc.addPage();
-          y = 12;
-        }
-      }
-      let logoRaw = await buildHaloLogoDataUrl();
-      if (!logoRaw) logoRaw = await readPdfLogoDataUrl();
+      // Logo first so we know whether it consumes vertical space before scaling.
+      let logoRaw = await readPdfLogoDataUrl();
       let logoData = logoRaw;
       if (logoRaw) {
         const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 480, 0.85);
         if (compact) logoData = compact;
       }
-      if (logoData) {
-        const logoW = 28;
-        const logoH = 28;
-        const logoX = (pageW - logoW) / 2;
-        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
-        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
-        y += logoH + 5;
-      }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(15);
-      doc.text("TIMESHEET", pageW / 2, y, { align: "center" });
-      y += 8;
-      labeledLine("Employee", state.employeeName || "-", 11);
-      labeledLine("Role", state.roleLabel || "-", 11);
-      labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`, 11);
-      const lpsHead = submissionLateStatus();
-      labeledLine("Submitted on", formatIsoDmy(isoDate(new Date())), 11);
-      labeledLine(
-        "Status",
-        lpsHead.isLate ? `Late - moved to ${lpsHead.lateMonth}` : `On time - ${lpsHead.onTimeMonth}`,
-        11
-      );
-      y += 1;
 
-      const colX = [left, left + 30, left + 58, left + 108, left + 132, left + 156, right];
-      const rowH = 7;
-      doc.setDrawColor(217, 227, 239);
-      doc.setFillColor(248, 251, 255);
-      doc.rect(colX[0], y, colX[6] - colX[0], rowH, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("Date", (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-      doc.text("Service", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-      doc.text("Hours", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
-      doc.text("Status", (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
-      y += rowH;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      for (let i = 0; i < state.entries.length; i++) {
-        ensureRoom(rowH + 1);
-        const e = state.entries[i];
-        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
-        doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
-        const isFlat = serviceFlatRate(e.service || e.role) != null;
-        const midCol = state.manual
-          ? String(e.note || e.day || "").slice(0, 22)
-          : (isFlat ? String(e.role || "Training") : e.day);
-        const serviceCol = state.manual
-          ? "-"
-          : String(timesheetEntryServiceLabel(e) || "-").slice(0, 30);
-        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
-        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-        doc.text(midCol, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
-        doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
-        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-        doc.text(daily, (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
-        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + 4.8, { align: "center" });
-        y += rowH;
-      }
-
-      y += 10;
+      // Summary rows are known up-front; needed for the single-page height budget.
+      const fixedSalary = state.manual ? fixedMonthlySalaryForRosterKey(state.staffRosterKey) : 0;
       const summaryRows = state.manual
-        ? [
-            { label: "Total hours", value: money(state.totalHours), tone: "neutral" },
-            { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
-            { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
-          ]
+        ? (fixedSalary > 0
+            ? [
+                { label: "Extra hours", value: money(state.totalHours), tone: "neutral" },
+                { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
+                { label: "Extra hours pay", value: `£${money(state.totalCost)}`, tone: "neutral" },
+                { label: "Fixed monthly salary", value: `£${money(fixedSalary)}`, tone: "neutral" },
+                { label: "Total to pay", value: `£${money(Number((Number(state.totalCost || 0) + fixedSalary).toFixed(2)))}`, tone: "okStrong" }
+              ]
+            : [
+                { label: "Total hours", value: money(state.totalHours), tone: "neutral" },
+                { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
+                { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
+              ])
         : [
             { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
             { label: "Rate (avg)", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
@@ -2394,18 +2623,121 @@
         });
         summaryRows.push({
           label: `Net to pay (moved to ${lpsSummary.lateMonth})`,
-          value: `£${money(Math.max(0, Number(state.totalCost || 0) - LATE_PENALTY_GBP))}`,
+          value: `£${money(Math.max(0, Number(state.totalCost || 0) + fixedSalary - LATE_PENALTY_GBP))}`,
           tone: "okStrong"
         });
       }
-      const panelPad = 4;
-      const rowHeight = 10;
+
+      // Base (scale 1) vertical metrics. The whole sheet scales by S so it always
+      // fits on a single A4 page; fonts/rows shrink automatically when it is tight.
+      const B = {
+        logoH: 28, afterLogo: 5,
+        afterTitle: 8,
+        labelSize: 11,
+        gapAfterLabels: 1,
+        headerRowH: 7,
+        rowH: 7,
+        gapBeforeSummary: 10,
+        panelPad: 4,
+        summaryRowH: 10
+      };
+      const labelGap = B.labelSize * 0.42 + 2;
+      const entriesRowH = state.entries.reduce((sum, e) => sum + B.rowH * pdfEntryRowHeightScale(e), 0);
+      const neededH =
+        (logoData ? B.logoH + B.afterLogo : 0) +
+        B.afterTitle +
+        5 * labelGap +
+        B.gapAfterLabels +
+        B.headerRowH +
+        entriesRowH +
+        B.gapBeforeSummary +
+        (B.panelPad * 2 + B.summaryRowH * summaryRows.length);
+      const availH = pageH - topY - bottomMargin;
+      const S = Math.max(0.4, Math.min(1, availH / neededH));
+
+      let y = topY;
+
+      function labeledLine(label, value) {
+        const size = B.labelSize * S;
+        const labelTxt = `${label}: `;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(size);
+        doc.text(labelTxt, left, y);
+        const x = left + doc.getTextWidth(labelTxt);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(value || "-"), x, y);
+        y += labelGap * S;
+      }
+
+      if (logoData) {
+        const logoW = B.logoH * S;
+        const logoH = B.logoH * S;
+        const logoX = (pageW - logoW) / 2;
+        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
+        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
+        y += logoH + B.afterLogo * S;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15 * S);
+      doc.text("TIMESHEET", pageW / 2, y, { align: "center" });
+      y += B.afterTitle * S;
+      labeledLine("Employee", state.employeeName || "-");
+      labeledLine("Role", state.roleLabel || "-");
+      labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`);
+      const lpsHead = submissionLateStatus();
+      labeledLine("Submitted on", formatIsoDmy(isoDate(new Date())));
+      labeledLine(
+        "Status",
+        lpsHead.isLate ? `Late - moved to ${lpsHead.lateMonth}` : `On time - ${lpsHead.onTimeMonth}`
+      );
+      y += B.gapAfterLabels * S;
+
+      const colX = [left, left + 30, left + 58, left + 108, left + 132, left + 156, right];
+      const rowH = B.rowH * S;
+      const headerRowH = B.headerRowH * S;
+      const cellBaseline = 4.8 * S;
+      doc.setDrawColor(217, 227, 239);
+      doc.setFillColor(248, 251, 255);
+      doc.rect(colX[0], y, colX[6] - colX[0], headerRowH, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9 * S);
+      doc.text("Date", (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
+      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Service", (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Hours", (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
+      doc.text("Status", (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+      y += headerRowH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5 * S);
+      for (let i = 0; i < state.entries.length; i++) {
+        const e = state.entries[i];
+        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
+        const thisRowH = rowH * pdfEntryRowHeightScale(e);
+        doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
+        const isFlat = serviceFlatRate(e.service || e.role) != null;
+        const midCol = state.manual
+          ? String(e.note || e.day || "").slice(0, 22)
+          : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day);
+        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
+        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
+        drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual);
+        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+        y += thisRowH;
+      }
+
+      y += B.gapBeforeSummary * S;
+      const panelPad = B.panelPad * S;
+      const rowHeight = B.summaryRowH * S;
       const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
-      ensureRoom(panelHeight + 2);
       doc.setDrawColor(217, 227, 239);
       doc.setFillColor(252, 253, 255);
       doc.roundedRect(left, y, right - left, panelHeight, 2, 2, "FD");
-      let sy = y + panelPad + 6.5;
+      let sy = y + panelPad + 6.5 * S;
       for (let i = 0; i < summaryRows.length; i++) {
         const r = summaryRows[i];
         if (r.tone === "okStrong") doc.setTextColor(12, 72, 43);
@@ -2414,7 +2746,7 @@
         else doc.setTextColor(16, 34, 56);
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10.5);
+        doc.setFontSize(10.5 * S);
         doc.text(`${r.label}:`, right - 34, sy, { align: "right" });
         doc.text(r.value, right - 4, sy, { align: "right" });
         doc.setTextColor(16, 34, 56);
@@ -2440,6 +2772,32 @@
         setTimeout(() => { window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href; }, 200);
       } catch (_) {
         window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href;
+      }
+    }
+
+    function timesheetMyDocumentsUrl() {
+      const path = "my_documents.html?category=finance&from=staff";
+      try {
+        if (typeof window.portalCanonicalPortalPageUrl === "function") {
+          const url = window.portalCanonicalPortalPageUrl(path);
+          if (url) return url;
+        }
+      } catch (_) {}
+      try {
+        return new URL(path, location.href).href;
+      } catch (_) {
+        return "/my_documents.html?category=finance&from=staff";
+      }
+    }
+
+    function redirectToMyDocumentsAfterSubmit() {
+      try {
+        if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+      } catch (_) {}
+      try {
+        window.location.replace(timesheetMyDocumentsUrl());
+      } catch (_) {
+        window.location.href = timesheetMyDocumentsUrl();
       }
     }
 
@@ -2489,12 +2847,16 @@
       btn.disabled = true;
       try {
         const [pdfBlob, auth] = await Promise.all([generatePdfBlob(), portalRequireUser()]);
-        const tsMonth = payrollMonthName(state.periodEnd);
+        const docTitle = timesheetDocumentTitle(
+          state.employeeName,
+          state.periodStart,
+          state.periodEnd
+        );
         await portalUploadPdfAndCreateDocument({
           blob: pdfBlob,
           document_type: "timesheet",
           category: "finance",
-          title: `${tsMonth}'s Timesheet`,
+          title: docTitle,
           related_date: state.periodEnd,
           source_page: "timesheet",
           reuseAuth: auth
@@ -2531,16 +2893,18 @@
               `A £${money(LATE_PENALTY_GBP)} late penalty is deducted (HMRC late reporting).\n\n` +
               `Gross: £${money(gross)}\n` +
               `Late penalty: -£${money(LATE_PENALTY_GBP)}\n` +
-              `Net to pay: £${money(net)}`
+              `Net to pay: £${money(net)}\n\n` +
+              "Your timesheet PDF is saved in My Documents."
           );
         } else {
           alert(
             "Timesheet submitted on time.\n\n" +
               `It will be included in ${s.onTimeMonth}'s pay.\n` +
-              `Total to pay: £${money(gross)}`
+              `Total to pay: £${money(gross)}\n\n` +
+              "Your timesheet PDF is saved in My Documents."
           );
         }
-        closeOrReturn();
+        redirectToMyDocumentsAfterSubmit();
       } catch (_) {
         const msg = _ && _.message ? String(_.message) : "Unknown error";
         console.error("[timesheet] submit failed:", _);

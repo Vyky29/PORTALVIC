@@ -127,6 +127,7 @@ export function portalVisitPageLabelFromLocation(loc) {
     "session_feedback.html": "session feedback",
     "portal-pickup.html": "pick up / drop off",
     "cancellation.html": "cancellation",
+    "session_disruption_report.html": "session_disruption",
     "portal-incident.html": "incident",
     "portal-venue-review.html": "venue review",
     "portal-lead-feedback.html": "lead report",

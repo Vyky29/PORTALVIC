@@ -56,6 +56,18 @@ body{
   font-size:13.5px;
   line-height:1.5;
 }
+.staff-notice{
+  margin:0 0 14px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid #bfdbfe;
+  background:linear-gradient(180deg,#eff6ff 0%,#fff 70%);
+  font-size:13px;
+  line-height:1.45;
+  color:#1e3a8a;
+  overflow-wrap:break-word;
+}
+.staff-notice a{color:#1d4ed8;font-weight:600}
 
 .card{
   background:#fff;
@@ -342,8 +354,9 @@ button{
 <div class="wrap">
   <div class="title-row">
     <h1>Cancellation Report</h1>
-    <p id="cancellationIntroText">Use this form to report a session that was cancelled. Session details from your roster are shown when you open this page from a client row.</p>
+    <p id="cancellationIntroText">Use this form when a <strong>participant&rsquo;s</strong> scheduled session was cancelled. Open it from a client row on your dashboard.</p>
   </div>
+  <p class="staff-notice" role="note">If <strong>you</strong> cannot work your shift, arrive late, or need a day off from the rota, use <a href="session_disruption_report.html?from=cancellation">Session disruption report</a> (Quick menu) — not this form. See <a href="policies_portal.html?policy=POL-048">POL-048</a>.</p>
 
   <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
   <div id="portalLateApprovalBanner" class="portal-late-approval-banner" hidden aria-live="polite"></div>

@@ -12,6 +12,78 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
   }
 
+  function londonYesterdayIso() {
+    try {
+      var parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date(Date.now() - 86400000));
+      var y = parts.find(function (p) {
+        return p.type === "year";
+      });
+      var m = parts.find(function (p) {
+        return p.type === "month";
+      });
+      var d = parts.find(function (p) {
+        return p.type === "day";
+      });
+      if (y && m && d) return y.value + "-" + m.value + "-" + d.value;
+    } catch (_e) {}
+    var dt = new Date(Date.now() - 86400000);
+    return (
+      dt.getFullYear() +
+      "-" +
+      String(dt.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(dt.getDate()).padStart(2, "0")
+    );
+  }
+
+  function feedbackAssumeCompleteThroughIso() {
+    var t = termCfg();
+    var fixed = normIso(t.termFeedbackAssumeCompleteThroughIso);
+    if (fixed) return fixed;
+    if (t.termFeedbackAssumeCompleteThroughYesterday) return londonYesterdayIso();
+    return "";
+  }
+
+  /** Catch-up export days stay actionable (per-client done list). */
+  function staffCatchUpFeedbackDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var t = termCfg();
+    var bypass = Array.isArray(t.termStaffLateSubmissionBypassProfileKeys)
+      ? t.termStaffLateSubmissionBypassProfileKeys
+      : [];
+    if (!id || !bypass.some(function (k) { return String(k || "").trim().toLowerCase() === id; })) {
+      return [];
+    }
+    var map = t.termStaffCatchUpFeedbackDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  /** Admin-flagged outstanding days stay actionable even inside assume-complete-through. */
+  function staffForcedPendingFeedbackDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var map = termCfg().termStaffTimesheetFeedbackPendingDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  /** True when session feedback before today is treated complete (legacy Zoho / bulk catch-up). */
+  function feedbackAssumeComplete(iso, staffId) {
+    var key = normIso(iso);
+    var through = feedbackAssumeCompleteThroughIso();
+    if (!key || !through || key > through) return false;
+    if (staffCatchUpFeedbackDates(staffId).indexOf(key) >= 0) return false;
+    if (staffForcedPendingFeedbackDates(staffId).indexOf(key) >= 0) return false;
+    return true;
+  }
+
   function fromIso() {
     var t = termCfg();
     return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-06-01";
@@ -30,8 +102,11 @@
     return true;
   }
 
-  /** Summer Term 2 feedback reminders only from term resume (e.g. 2026-06-01), not April/May roster. */
+  /** Feedback reminders from termFeedbackReminderFromIso (e.g. 2026-06-25), not the calendar view start. */
   function feedbackReminderFromIso() {
+    var t = termCfg();
+    var dedicated = normIso(t.termFeedbackReminderFromIso);
+    if (dedicated) return dedicated;
     return fromIso();
   }
 
@@ -103,6 +178,88 @@
     return [];
   }
 
+  function termStaffProfileLookupKeys(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!id) return [];
+    var keys = [id];
+    if (id === "luliya" || id === "lulia" || id === "aida" || id === "stf021") {
+      if (keys.indexOf("luliya") < 0) keys.push("luliya");
+      if (keys.indexOf("lulia") < 0) keys.push("lulia");
+    }
+    if (id === "sevitha" || id === "info") {
+      if (keys.indexOf("sevitha") < 0) keys.push("sevitha");
+      if (keys.indexOf("info") < 0) keys.push("info");
+    }
+    return keys;
+  }
+
+  function termMapMergedDates(map, staffId) {
+    if (!map || typeof map !== "object") return [];
+    var seen = Object.create(null);
+    var out = [];
+    termStaffProfileLookupKeys(staffId).forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(map, k)) return;
+      var raw = map[k];
+      if (!Array.isArray(raw)) return;
+      raw.forEach(function (d) {
+        var iso = normIso(d);
+        if (iso && !seen[iso]) {
+          seen[iso] = true;
+          out.push(iso);
+        }
+      });
+    });
+    return out.sort();
+  }
+
+  function staffBaselineShiftDates(staffId) {
+    var keys = termStaffProfileLookupKeys(staffId);
+    if (!keys.length) return null;
+    var t = termCfg();
+    var map = t.termStaffShiftDatesByProfileKey;
+    if (!map || typeof map !== "object") return null;
+    var foundAny = false;
+    keys.forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(map, k)) foundAny = true;
+    });
+    if (!foundAny) return [];
+    return termMapMergedDates(map, staffId);
+  }
+
+  function staffAwayDates(staffId) {
+    var map = termCfg().termStaffAwayDatesByProfileKey;
+    return termMapMergedDates(map, staffId);
+  }
+
+  /** Date was on the published term timetable (zero-hours availability lock). */
+  function staffHadBaselineShiftOnDate(iso, staffId) {
+    var key = normIso(iso);
+    var dates = staffBaselineShiftDates(staffId);
+    if (!key || !dates) return false;
+    return dates.indexOf(key) >= 0;
+  }
+
+  /**
+   * Intense red: removed from an original term shift (e.g. requested day off from scheduled days).
+   * Normal red only: day off that was never on the baseline (cover added later then removed).
+   */
+  function staffRemovedFromBaselineShiftOnDate(iso, staffId, opts) {
+    opts = opts || {};
+    var key = normIso(iso);
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!key || !id) return false;
+    if (!staffHadBaselineShiftOnDate(key, id)) return false;
+    if (typeof opts.hasInstructorCover === "function" && opts.hasInstructorCover(key, id)) {
+      return false;
+    }
+    if (typeof opts.rosterApplies === "function" && opts.rosterApplies(key, id)) {
+      return false;
+    }
+    if (staffAwayDates(id).indexOf(key) >= 0) return true;
+    if (typeof opts.dayIsRed === "function" && opts.dayIsRed(key, id)) return true;
+    return false;
+  }
+
   function staffOffWeekdayOnDate(iso, staffId) {
     var id = String(staffId || "").trim().toLowerCase();
     if (!iso || !id) return false;
@@ -117,6 +274,36 @@
     var wd = new Date(iso + "T12:00:00").getDay();
     var drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
     return drop.indexOf(wd) >= 0;
+  }
+
+  function rosterRowIsDayCentre(row) {
+    if (!row) return false;
+    var blob = String(
+      row.rosterService || row.service || row.activity || row.feedbackUnitKey || ""
+    );
+    return /day\s*centre/i.test(blob) || blob.indexOf("day_centre") >= 0;
+  }
+
+  /** First calendar day a staff member counts for a service (e.g. Day Centre mornings). */
+  function staffServiceStartIso(staffId, serviceKey) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var svc = String(serviceKey || "").trim().toLowerCase();
+    if (!id || !svc) return "";
+    var map = termCfg().termStaffServiceStartDatesByProfileKey;
+    var perStaff = map && map[id];
+    if (!perStaff || typeof perStaff !== "object") return "";
+    return normIso(perStaff[svc]);
+  }
+
+  /** Hide Day Centre (etc.) before staff-specific service start — e.g. Youssef from 12 Jun. */
+  function staffSessionServiceActiveOnDate(staffId, sessionRow, isoYmd) {
+    var iso = normIso(isoYmd);
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!iso || !id || !sessionRow) return true;
+    if (!rosterRowIsDayCentre(sessionRow)) return true;
+    var start = staffServiceStartIso(id, "day_centre");
+    if (start && iso < start) return false;
+    return true;
   }
 
   /** Red cell: outside view, vacation, or weekday not on this staff's Summer Term rota. */
@@ -140,9 +327,17 @@
     staffDateInView: staffDateInView,
     feedbackReminderFromIso: feedbackReminderFromIso,
     feedbackReminderDayInScope: feedbackReminderDayInScope,
+    feedbackAssumeCompleteThroughIso: feedbackAssumeCompleteThroughIso,
+    feedbackAssumeComplete: feedbackAssumeComplete,
     applyView: applyView,
     workedWeekdaysForStaff: workedWeekdaysForStaff,
+    staffBaselineShiftDates: staffBaselineShiftDates,
+    staffAwayDates: staffAwayDates,
+    staffHadBaselineShiftOnDate: staffHadBaselineShiftOnDate,
+    staffRemovedFromBaselineShiftOnDate: staffRemovedFromBaselineShiftOnDate,
     staffOffWeekdayOnDate: staffOffWeekdayOnDate,
+    staffServiceStartIso: staffServiceStartIso,
+    staffSessionServiceActiveOnDate: staffSessionServiceActiveOnDate,
     dayIsRed: dayIsRed,
   };
 })(typeof window !== "undefined" ? window : this);

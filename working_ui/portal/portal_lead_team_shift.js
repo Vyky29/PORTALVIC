@@ -8,12 +8,23 @@ import {
   portalLeadSlotInScope,
   portalLeadDayUsesProgrammeWideRoster,
   portalLeadProgrammeWideTodayForStaff,
+  portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260625-lead-day-cards-nav";
+} from "./portal_lead_session_scope.js?v=20260702-ma-lead-team-absent";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
+  "client_replace_in_slot",
+  "client_absence_announced",
+  "slot_close",
+  "slot_open",
+  "slot_clear_client",
+  "session_add",
+  "slot_update",
+]);
+/** Team-shift day cards: operational changes the lead must see (not instructor covers — team bar). */
+const LEAD_TEAM_SHIFT_ALERT_TYPES = new Set([
   "client_replace_in_slot",
   "client_absence_announced",
   "slot_close",
@@ -105,6 +116,12 @@ function teamMemberChipRole(staffKey) {
   return "default";
 }
 
+function teamMemberChipRoleForDay(staffKey, roleOverrides) {
+  const k = normKey(staffKey);
+  const override = roleOverrides && k ? roleOverrides[k] : "";
+  return override || teamMemberChipRole(k);
+}
+
 function resolvedInstructorsForRow(row, iso, source) {
   return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource());
 }
@@ -136,7 +153,7 @@ function portalLeadTeamDayKind(ctx, iso) {
       return normKey(v).indexOf("acton") >= 0;
     });
     if (wd === "Sunday" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && swimfarm) return "sunday_ma_swimfarm";
-    if (wd === "Wednesday" && leadKey === "berta" && sc.programmeWideRoster && isMulti && acton) {
+    if (wd === "Wednesday" && leadKey === "berta" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && acton) {
       return "berta_wed_acton_ma";
     }
     if (wd === "Wednesday" && leadKey === "john" && (sc.leadTeamBanner || sc.programmeWideRoster) && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {
@@ -145,7 +162,12 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Friday")) {
       return "john_bespoke_mwf";
     }
-    if (leadKey === "michelle" && sc.programmeWideRoster && sc.serviceKeys && sc.serviceKeys.indexOf("daycentre") >= 0) {
+    if (
+      leadKey === "michelle" &&
+      (sc.leadTeamBanner || sc.programmeWideRoster) &&
+      sc.serviceKeys &&
+      sc.serviceKeys.indexOf("daycentre") >= 0
+    ) {
       return "michelle_day_centre";
     }
   }
@@ -186,13 +208,15 @@ function filterProgrammeWideTeam(keys, leadKey) {
 
 function filterSundayMaTeam(keys, leadKey) {
   let pool = excludePeerProgrammeLead(keys, leadKey);
-  const supportWorkers = pool.filter(function (k) {
-    return k !== leadKey && teamMemberChipRole(k) === "support-worker";
-  });
-  const swimInstructors = pool.filter(function (k) {
-    return k !== leadKey && teamMemberChipRole(k) === "swim-instructor";
-  });
-  return dedupeKeys(supportWorkers.slice(0, 2).concat(swimInstructors.slice(0, 3)));
+  // Show everyone actually on shift in scope — do NOT force a fixed
+  // 2-support/3-swim shape. Cover instructors can come from any track (e.g. a
+  // support-track worker covering a swim lane), so slicing by role would drop
+  // them and leave the team strip short of the full team for the day.
+  return dedupeKeys(
+    pool.filter(function (k) {
+      return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+    })
+  );
 }
 
 function filterJohnBespokeTeam(keys) {
@@ -240,10 +264,10 @@ const TEAM_CHIP_ROLE_SORT = {
   default: 3,
 };
 
-function sortTeamMemberKeys(keys) {
+function sortTeamMemberKeys(keys, roleOverrides) {
   return keys.slice().sort(function (a, b) {
-    const ra = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(a)] ?? TEAM_CHIP_ROLE_SORT.default;
-    const rb = TEAM_CHIP_ROLE_SORT[teamMemberChipRole(b)] ?? TEAM_CHIP_ROLE_SORT.default;
+    const ra = TEAM_CHIP_ROLE_SORT[teamMemberChipRoleForDay(a, roleOverrides)] ?? TEAM_CHIP_ROLE_SORT.default;
+    const rb = TEAM_CHIP_ROLE_SORT[teamMemberChipRoleForDay(b, roleOverrides)] ?? TEAM_CHIP_ROLE_SORT.default;
     if (ra !== rb) return ra - rb;
     return staffDisplayName(a).localeCompare(staffDisplayName(b), "en", { sensitivity: "base" });
   });
@@ -289,6 +313,7 @@ function collectInScopeMemberKeys(iso, scopes, source) {
 }
 
 function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
+  const coverKeys = [];
   scheduleOverrideRows().forEach(function (ov) {
     if (String(ov.session_date || "").slice(0, 10) !== iso) return;
     if (String(ov.status || "active") !== "active") return;
@@ -302,13 +327,57 @@ function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
       if (ix >= 0) memberKeys.splice(ix, 1);
     }
     if (cover && memberKeys.indexOf(cover) < 0) memberKeys.push(cover);
+    if (cover && coverKeys.indexOf(cover) < 0) coverKeys.push(cover);
   });
   return memberKeys.filter(function (k) {
+    // A covering instructor added via an override is genuinely on shift even
+    // though they are not in any base roster row's instructor label — keep them
+    // (otherwise the new cover instructors are dropped from the team strip).
+    if (coverKeys.indexOf(k) >= 0) return true;
     const rows = source && Array.isArray(source.rows) ? source.rows : [];
     return rows.some(function (row) {
       return staffOnInScopeRosterRow(k, row, iso, scopes, source);
     });
   });
+}
+
+function rosterRowLooksSwimming(row) {
+  const haystack = [
+    row && row.service,
+    row && row.activity,
+    row && row.rosterService,
+    row && row.service_label,
+    row && row.category,
+    row && row.venue,
+    row && row.rosterArea,
+    row && row.area,
+  ]
+    .map(function (v) {
+      return normKey(v);
+    })
+    .join(" ");
+  return /swim|aquatic|pool/.test(haystack);
+}
+
+function coverChipRoleOverridesForIso(iso, scopes, source) {
+  const out = Object.create(null);
+  scheduleOverrideRows().forEach(function (ov) {
+    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
+    const pl = parseOverridePayload(ov);
+    const cover = canonicalStaffKey(pl.covering_staff_id);
+    if (!cover) return;
+    const anchor = canonicalStaffKey(ov.anchor_staff_id);
+    const matchedRow = matchingLeadScopedRosterRow(ov, iso, scopes, source);
+    // A cover should be styled by the slot they are covering, not by their usual
+    // staff profile track. Luliya covering Javier/Aurora pool clients on Sunday
+    // is therefore a swimming instructor for the team strip.
+    if ((anchor && teamMemberChipRole(anchor) === "swim-instructor") || rosterRowLooksSwimming(matchedRow)) {
+      out[cover] = "swim-instructor";
+    }
+  });
+  return out;
 }
 
 function staffDisplayName(staffKey) {
@@ -447,22 +516,67 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   if (!dayKind) return null;
 
   const src = rosterSource();
+  if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
+
   let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+  const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);
   memberKeys = memberKeys.filter(function (k) {
     return k !== ctx.leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
 
-  memberKeys = sortTeamMemberKeys(memberKeys);
+  memberKeys = sortTeamMemberKeys(memberKeys, roleOverrides);
 
   return {
     iso: iso,
     programmeLabel: teamProgrammeLabelForDay(ctx.scopes, iso),
     members: memberKeys.map(function (k) {
-      return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRole(k) };
+      return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRoleForDay(k, roleOverrides) };
     }),
+    absents: collectLeadScopeAbsentsForIso(iso, ctx),
   };
+}
+
+function leadAbsenceClientName(ov, pl) {
+  pl = pl || parseOverridePayload(ov);
+  const named =
+    String(pl.client_name || pl.client_display_name || pl.participant_name || pl.to_client_name || "").trim();
+  if (named) return named;
+  const slug = String(ov.anchor_client_id || "").trim();
+  if (!slug) return "";
+  return slug
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map(function (w) {
+      return w ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+    })
+    .join(" ");
+}
+
+/** Participants marked absent that day within the lead's programme scope (red chips). */
+function collectLeadScopeAbsentsForIso(iso, ctx) {
+  const out = [];
+  const seen = Object.create(null);
+  scheduleOverrideRows().forEach(function (ov) {
+    if (String(ov.override_type || "").trim() !== "client_absence_announced") return;
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+    if (!String(ov.anchor_client_id || "").trim()) return;
+    if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
+    const name = leadAbsenceClientName(ov);
+    if (!name) return;
+    const key = normKey(name);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push({ name: name });
+  });
+  out.sort(function (a, b) {
+    return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+  });
+  return out;
 }
 
 function normVenue(v) {
@@ -499,26 +613,38 @@ function leadIsOnRosterForDay(leadKey, iso, scopes, source) {
 }
 
 /** Override anchor must match a roster row in the lead's programme (service/venue/day), not another service. */
-function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
+function matchingLeadScopedRosterRow(ov, iso, scopes, source) {
   const anchor = canonicalStaffKey(ov.anchor_staff_id);
-  if (!anchor || !scopes.length) return false;
+  if (!anchor || !scopes.length) return null;
   const wantVenue = normVenue(ov.anchor_venue);
   const wantClient = String(ov.anchor_client_id || "").trim();
   const openClient = openSlotClientSlug(wantClient);
   const src = source || rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  return rows.some(function (row) {
-    if (!rosterRowMatchesIso(row, iso)) return false;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!rosterRowMatchesIso(row, iso)) continue;
     const slot = rosterRowToSlot(row, iso);
-    if (!portalLeadSlotInScope(slot, scopes)) return false;
-    const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
-    if (keys.indexOf(anchor) < 0) return false;
-    if (wantVenue && normVenue(row.venue) !== wantVenue) return false;
+    if (!portalLeadSlotInScope(slot, scopes)) continue;
+    // Match the override anchor against BOTH the resolved instructor (after any
+    // Sunday replaceInstructor, e.g. Javier→Luliya) AND the original roster
+    // instructor. An absence/make-up is recorded against the originally rostered
+    // instructor (Javier); without the raw label the cover (Luliya) would hide
+    // it from the programme lead.
+    const resolvedKeys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
+    const rawKeys = staffKeysFromInstructorLabel(row && row.instructors);
+    if (resolvedKeys.indexOf(anchor) < 0 && rawKeys.indexOf(anchor) < 0) continue;
+    if (wantVenue && normVenue(row.venue) !== wantVenue) continue;
     if (!openClient && wantClient && !rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) {
-      return false;
+      continue;
     }
-    return true;
-  });
+    return row;
+  }
+  return null;
+}
+
+function overrideMatchesLeadScopedRoster(ov, iso, scopes, source) {
+  return !!matchingLeadScopedRosterRow(ov, iso, scopes, source);
 }
 
 function overrideAnchorOnInScopeRow(ov, scopes, iso) {
@@ -590,6 +716,27 @@ export function portalLeadOverrideRowAppliesToLeadScope(row, ctx) {
   return overrideMatchesLeadScopedRoster(row, iso, ctx.scopes, rosterSource());
 }
 
+export function portalLeadTeamShiftDayDismissKey(iso) {
+  const s = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  return "lead-team-shift-day:" + s;
+}
+
+function leadTeamShiftDismissedKeys() {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalQuickMenuLoadDismissedOverrideKeys === "function") {
+      return window.portalQuickMenuLoadDismissedOverrideKeys();
+    }
+  } catch (_) {}
+  return [];
+}
+
+function isLeadTeamShiftDayDismissed(iso) {
+  const key = portalLeadTeamShiftDayDismissKey(iso);
+  if (!key) return false;
+  return leadTeamShiftDismissedKeys().indexOf(key) >= 0;
+}
+
 export function portalLeadTeamShiftChanges(ctx, opts) {
   ctx = ctx || portalLeadTeamShiftContext();
   if (!ctx) return [];
@@ -598,29 +745,22 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   const minCreated = now - (opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS);
   const out = [];
 
-  const src = rosterSource();
   const seenOverrideIds = new Set();
 
   scheduleOverrideRows().forEach(function (ov) {
     const t = String(ov.override_type || "").trim();
-    if (!LEAD_SERVICE_CHANGE_TYPES.has(t)) return;
+    if (!LEAD_TEAM_SHIFT_ALERT_TYPES.has(t)) return;
     if (String(ov.status || "active") !== "active") return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
+    if (isLeadTeamShiftDayDismissed(iso)) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
-    if (!overrideMatchesLeadScopedRoster(ov, iso, ctx.scopes, src)) return;
-    // The lead's OWN cover / personal changes already appear (navigable) in the
-    // standard "Schedule changes" quick-menu section; keep this team list to the
-    // peers they lead so the same change is not shown twice.
-    const pl = parseOverridePayload(ov);
-    const anchorKey = canonicalStaffKey(ov.anchor_staff_id);
-    const coverKey = canonicalStaffKey(pl.covering_staff_id);
-    if (anchorKey === ctx.leadKey || coverKey === ctx.leadKey) return;
+    if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
     if (ovId) seenOverrideIds.add(ovId);
     const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
     if (created && created < minCreated) return;
-    const programmeLabel = activeScopeLabelForDay(ctx.scopes, iso);
+    const pl = parseOverridePayload(ov);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;
     try {
@@ -635,7 +775,7 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
       iso: iso,
       type: t,
       title: leadOverrideChangeTitle(ov, pl),
-      sub: [programmeLabel, dateLabel].filter(Boolean).join(" · "),
+      sub: dateLabel,
       createdAt: ov.created_at || "",
     });
   });
@@ -654,9 +794,7 @@ function renderTodayStrip(team) {
       '<div class="portal-lead-team-today portal-lead-team-today--empty" role="status">' +
       '<div class="portal-lead-team-today__head">' +
       '<span class="portal-lead-team-today__title">Team on shift today</span>' +
-      '<span class="portal-lead-team-today__programme">' +
-      escHtml(team.programmeLabel || "") +
-      "</span></div>" +
+      "</div>" +
       '<p class="portal-lead-team-today__empty">No roster rows in scope for today.</p></div>'
     );
   }
@@ -673,17 +811,35 @@ function renderTodayStrip(team) {
       );
     })
     .join("");
+  const absents = Array.isArray(team.absents) ? team.absents : [];
+  let absentBlock = "";
+  if (absents.length) {
+    const absentChips = absents
+      .map(function (a) {
+        return (
+          '<span class="portal-lead-team-today__chip portal-lead-team-today__chip--absent">' +
+          escHtml(a.name) +
+          "</span>"
+        );
+      })
+      .join("");
+    absentBlock =
+      '<div class="portal-lead-team-today__absents" aria-label="Participants absent today">' +
+      '<span class="portal-lead-team-today__absents-label">Absent</span>' +
+      '<div class="portal-lead-team-today__absent-chips">' +
+      absentChips +
+      "</div></div>";
+  }
   return (
     '<div class="portal-lead-team-today" role="region" aria-label="Team on shift today">' +
     '<div class="portal-lead-team-today__head">' +
     '<span class="portal-lead-team-today__title">Team on shift today</span>' +
-    (team.programmeLabel
-      ? '<span class="portal-lead-team-today__programme">' + escHtml(team.programmeLabel) + "</span>"
-      : "") +
     "</div>" +
     '<div class="portal-lead-team-today__chips">' +
     chips +
-    "</div></div>"
+    "</div>" +
+    absentBlock +
+    "</div>"
   );
 }
 
@@ -711,14 +867,12 @@ function renderQuickMenuChanges(changes) {
   changes.forEach(function (ch) {
     const iso = String(ch.iso || "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    if (isLeadTeamShiftDayDismissed(iso)) return;
     if (!byIso[iso]) {
-      byIso[iso] = { iso: iso, count: 0, programme: "" };
+      byIso[iso] = { iso: iso, count: 0 };
       order.push(iso);
     }
     byIso[iso].count += 1;
-    if (!byIso[iso].programme) {
-      byIso[iso].programme = String(ch.sub || "").split(" · ")[0] || "";
-    }
   });
   order.sort();
 
@@ -728,11 +882,14 @@ function renderQuickMenuChanges(changes) {
       const day = byIso[iso];
       const title = escHtml(dayCardDateLabel(iso));
       const countLabel = day.count > 1 ? day.count + " changes" : "1 change";
-      const subText = [day.programme, countLabel + " · tap to view"].filter(Boolean).join(" · ");
+      const subText = countLabel + " · tap to view";
+      const dismissKey = portalLeadTeamShiftDayDismissKey(iso);
       const sub = '<span class="menu-btn-sub">' + escHtml(subText) + "</span>";
       return (
         '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--portal-pulse"' +
-        ' data-action="open-roster-override-attention" data-portal-override-nav-iso="' +
+        ' data-action="open-roster-override-attention" data-portal-override-id="' +
+        escHtml(dismissKey) +
+        '" data-portal-override-nav-iso="' +
         escHtml(iso) +
         '" aria-label="Team changes on ' +
         title +
@@ -811,8 +968,11 @@ export function portalSyncLeadTeamShiftUi() {
 
 if (typeof window !== "undefined") {
   window.portalSyncLeadTeamShiftUi = portalSyncLeadTeamShiftUi;
+  window.portalLeadTeamShiftContext = portalLeadTeamShiftContext;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
+  window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;
+  window.portalLeadTeamShiftDayDismissed = isLeadTeamShiftDayDismissed;
   window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;

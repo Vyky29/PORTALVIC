@@ -6,14 +6,14 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260624-staff-pilot";
+  var VER = "20260702-duty-hub-dedupe";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260614-aurora-makeup-off",
-    "/portal/term_calendar_dashboard_shared.js?v=20260614-term-baseline-pulse",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260625-aurora-21-roster",
+    "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
+    "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260617-staff-footer-perf",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
@@ -23,16 +23,18 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260618-no-meridiem",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260704-cover-merge-feedback",
+    "/portal/portal_participant_identity.js?v=20260702-berta-today-dedupe",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
-    "/portal/staff_roster_resolve.js?v=20260621-javi-palankas",
+    "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",
+    "/portal/portal_staff_display_names.js?v=20260630-staff-display-names",
   ];
 
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_dashboard_ui_coalesce.js?v=20260620-javi-sync-fix",
-    "/portal/portal_participant_photos.js?v=20260614-photo-repair",
-    "/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic",
+    "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
+    "/portal/portal_participant_photos.js?v=20260628-timi-smile",
+    "/portal/portal_topbar_header.js?v=20260705-ceo-gallery-topbar",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
     "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
     "/portal/portal_area_note_icons.js?v=20260610-area-note-img",
@@ -43,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260624-lead-shift-scope",
+    "/portal/portal_lead_team_shift.js?v=20260702-ma-lead-team-absent",
   ];
 
   var TIER_IDLE = [
@@ -119,7 +121,7 @@
     var run = function () {
       loadParallel(TIER_IDLE, false);
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
-      loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
+      loadCss("/portal/portal_achievements.css?v=20260702-lead-gallery-upload");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
       }

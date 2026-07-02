@@ -354,8 +354,8 @@
     /* Wrapper: same geometric centre for photo + orbiting dots (no header overflow) */
     .avatar-wrap{
       position:relative;
-      width:110px;
-      height:110px;
+      width:78px;
+      height:78px;
       flex-shrink:0;
       margin:0;
       display:flex;
@@ -375,7 +375,7 @@
     /* Halo / soft “smoke” behind the avatar */
     .avatar-aura{
       position:absolute;
-      inset:-16px;
+      inset:-11px;
       border-radius:50%;
       z-index:0;
       pointer-events:none;
@@ -394,7 +394,7 @@
     }
     .avatar-orbit{
       position:absolute;
-      inset:-22px;
+      inset:-15px;
       transform:none;
       pointer-events:none;
       z-index:2;
@@ -444,8 +444,8 @@
     .avatar{
       position:relative;
       z-index:1;
-      width:97px;
-      height:97px;
+      width:68px;
+      height:68px;
       align-self:center;
       margin-top:0;
       border-radius:50%;
@@ -455,13 +455,13 @@
       align-items:center;
       justify-content:center;
       font-weight:700;
-      font-size:24px;
+      font-size:18px;
       overflow:hidden;
       flex-shrink:0;
-      border:3px solid #fff;
+      border:2px solid #fff;
       box-shadow:
         0 0 0 1px rgba(45,132,179,.2),
-        0 10px 28px rgba(45,132,179,.3);
+        0 6px 18px rgba(45,132,179,.24);
       transition:box-shadow .2s ease;
       -webkit-tap-highlight-color:transparent;
     }
@@ -683,6 +683,38 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle{fill:#3b82f6 !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(2n){fill:#2563eb !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(3n){fill:#93c5fd !important}
+    /* Shadowing — sky blue orbit (session_add shadowing quick-menu tile) */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle{fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(2n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(3n){fill:#7dd3fc !important}
+    /* NEW SHIFT/CHANGES + shadowing — gold and sky blue alternating */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar{
+      animation:avatar-outline-schedule-gold 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    /* Outstanding feedback + shadowing — orange and sky blue */
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    /* Outstanding feedback + NEW SHIFT/CHANGES + shadowing — orange, gold, sky blue */
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar{
+      animation:avatar-outline-reminder-schedule-gold 1.15s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+1){fill:#ea580c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+2){fill:var(--sen-gold) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0ea5e9 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar{
@@ -813,7 +845,7 @@
       align-items:center;
       justify-content:center;
       font-weight:700;
-      font-size:24px;
+      font-size:18px;
       color:#fff;
       z-index:2;
       pointer-events:none;
@@ -1005,6 +1037,11 @@
       background:linear-gradient(180deg,#edf7f1,#dff0e6);
       color:#1a6b45;
       border-color:rgba(26,107,69,.22);
+    }
+    #menuSheet .menu-btn.menu-btn--exec-workspace-ceo .menu-btn-icon{
+      background:linear-gradient(180deg,#fff8e6,#ffefc7);
+      color:#8a6a12;
+      border-color:rgba(138,106,18,.24);
     }
 
     #menuSheet .menu-btn.menu-btn--settings-alerts .menu-btn-icon{
@@ -1436,6 +1473,99 @@
     .announcement-lock-card--reminder{
       border-color:rgba(244,63,94,.24);
       background:linear-gradient(180deg,#fffafa 0%,#fff1f2 100%);
+    }
+    .announcement-lock-card--calendar-info{
+      border-color:rgba(22,43,91,.2);
+      background:#fff;
+    }
+    .portal-calendar-2026-27-preview{
+      margin:12px 0 4px;
+      min-width:0;
+      max-height:min(58vh,520px);
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      border:1px solid rgba(23,50,71,.1);
+      border-radius:12px;
+      background:#fff;
+    }
+    .portal-calendar-2026-27-preview--loading{
+      min-height:120px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal{
+      max-width:none;
+      margin:0;
+      padding:12px 10px 16px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term{
+      margin-bottom:14px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term:last-child{
+      margin-bottom:0;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term__months{
+      grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));
+    }
+    .portal-calendar-2026-27-preview .dc-cal-tabs{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-tab{
+      font-size:0.72rem;
+      padding:10px 6px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal__summary{
+      gap:6px 10px;
+      padding:8px 10px;
+      font-size:0.72rem;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-panel[hidden],
+    .portal-calendar-2026-27-preview .dc-cal-panel__intro[hidden]{
+      display:none !important;
+    }
+    .portal-calendar-2026-27-preview #dcCalCrashPanel .dc-cal-term{
+      max-width:100%;
+      padding:12px 10px 14px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-crash-day{
+      min-width:48px;
+      padding:7px 8px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-crash-day__num{
+      font-size:0.95rem;
+    }
+    .portal-calendar-2026-27-iframe{
+      display:block;
+      width:100%;
+      min-height:320px;
+      height:min(52vh,480px);
+      border:0;
+      background:#fff;
+    }
+    .announcement-lock-actions--calendar{
+      margin-top:4px;
+    }
+    .announcement-download-btn{
+      border:2px solid #162B5B;
+      border-radius:12px;
+      padding:11px 12px;
+      min-height:48px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      background:#fff;
+      color:#162B5B;
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+    .announcement-download-btn:disabled{
+      opacity:.52;
+    }
+    .announcement-download-hint{
+      margin:0;
+      font-size:13px;
+      line-height:1.4;
+      color:#475569;
+      overflow-wrap:break-word;
     }
     .announcement-lock-copy{
       margin:0 0 10px;
@@ -2002,6 +2132,33 @@
       background:rgba(157,23,77,.1);
       color:#9d174d;
       border:1px solid rgba(131,24,67,.2);
+    }
+    /* Calendar 2026/27 reference tile — corporate navy */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref{
+      background:linear-gradient(180deg,#162B5B 0%,#0a3d62 100%);
+      border:1px solid rgba(255,255,255,.14);
+      color:#fff;
+      box-shadow:0 4px 16px rgba(10,61,98,.32);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .announcement-title-line--quick-menu-only{
+      color:#fff;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-sub{
+      color:rgba(255,255,255,.78);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-chev{
+      color:rgba(255,255,255,.55);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref .menu-btn-icon{
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.28);
+      color:#fff;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #portalOpenCalendar202627.menu-btn.menu-btn--calendar-ref:hover{
+      background:linear-gradient(180deg,#1a3266 0%,#0d4a75 100%);
+      border-color:rgba(255,255,255,.22);
+      box-shadow:0 6px 20px rgba(10,61,98,.38);
     }
     /* Internal chat tile: corporate blue (unread state overrides below) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
@@ -4237,6 +4394,36 @@
       background:rgba(59,130,246,.14);
       border-color:rgba(59,130,246,.32);
     }
+    .portal-lead-team-today__absents{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-top:8px;
+      padding-top:8px;
+      border-top:1px dashed rgba(220,38,38,.28);
+      min-width:0;
+    }
+    .portal-lead-team-today__absents-label{
+      flex:0 0 auto;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#b91c1c;
+    }
+    .portal-lead-team-today__absent-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      min-width:0;
+    }
+    .portal-lead-team-today__chip--absent{
+      color:#b91c1c;
+      background:rgba(220,38,38,.12);
+      border-color:rgba(220,38,38,.34);
+      text-decoration:line-through;
+      text-decoration-thickness:1.5px;
+    }
     .portal-lead-team-today__empty{
       margin:0;
       font-size:12px;
@@ -4488,6 +4675,24 @@
       font-weight:600;
       color:var(--muted);
       line-height:1.35;
+    }
+    .today-day-panel__off-action{
+      margin:8px 0 0;
+      min-width:0;
+    }
+    .today-day-panel__off-link{
+      display:inline-block;
+      max-width:100%;
+      font-size:12px;
+      font-weight:800;
+      color:var(--blue);
+      text-decoration:none;
+      overflow-wrap:break-word;
+    }
+    .today-day-panel__off-link:hover,
+    .today-day-panel__off-link:focus-visible{
+      text-decoration:underline;
+      outline:none;
     }
     .today-day-panel__next{
       flex:1 1 auto;
@@ -5387,23 +5592,50 @@
     .session-card:active{transform:translateY(0)}
     .session-card.session-card--home,
     .section-card--today .session-card.session-card--home{
-      background:#ff8f00;
-      color:#111;
-      border-color:rgba(255,143,0,.72);
+      background:var(--reviewGreenBg);
+      color:var(--ink);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
-    .session-card.session-card--home:hover{transform:none;box-shadow:none}
-    .session-card.session-card--home .session-meta-name{
+    .session-card.session-card--home:hover{transform:none;box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);border-color:rgba(21,115,71,.45)}
+    .session-card.session-card--home .session-meta-name,
+    .session-card.session-card--home .session-line--duty-full .session-meta-name{
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;
     }
+    .session-card.session-card--home .session-card-body--duty-home{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:52px;
+      padding:12px 14px;
+    }
+    .session-card.session-card--home .session-line--duty-full{
+      width:100%;
+      min-width:0;
+      justify-content:center;
+      text-align:center;
+    }
+    .session-card.session-card--home .session-line--time-stack,
+    .session-card.session-card--home .session-line--symbol{
+      display:none !important;
+    }
     .session-card.session-card--manager,
     .section-card--today .session-card.session-card--manager{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
+    .session-card.session-card--admin,
+    .section-card--today .session-card.session-card--admin{
       background:#fff3e0;
       border-color:rgba(255,152,0,.45);
     }
-    .session-card.session-card--manager:hover{transform:none;box-shadow:none}
-    .session-card.session-card--manager .session-meta-name{
+    .session-card.session-card--manager:hover{transform:none;box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);border-color:rgba(21,115,71,.45)}
+    .session-card.session-card--admin:hover{transform:none;box-shadow:none}
+    .session-card.session-card--manager .session-meta-name,
+    .session-card.session-card--admin .session-meta-name{
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;
@@ -6945,15 +7177,9 @@
       0%,100%{box-shadow:0 0 0 2px rgba(185,28,28,.52),0 8px 22px rgba(185,28,28,.28);border-color:rgba(185,28,28,.72)}
       50%{box-shadow:0 0 0 3px rgba(220,38,38,.82),0 12px 28px rgba(220,38,38,.42);border-color:rgba(220,38,38,.92)}
     }
-    .term-cal-day.active.term-cal-day--ov-pulse-admin-shift,
-    .term-cal-day.active.term-cal-day--ov-pulse-updated{
-      background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 48%,var(--blueSoft) 100%);
-      color:#92400e;
-    }
-    .term-cal-day.term-feedback-complete.term-cal-day--ov-pulse-admin-shift,
-    .term-cal-day.term-feedback-complete.term-cal-day--ov-pulse-updated{
-      background:linear-gradient(180deg,#fffbeb 0%,var(--successSoft) 100%);
-    }
+    /* Schedule-change overrides (admin-shift / updated) pulse only the OUTLINE.
+       The cell keeps its status fill + number colour: blue (not passed yet),
+       orange (outstanding), green (complete). No diffuse yellow wash over the button. */
     .term-cal-day.term-cal-day--ov-pulse-makeup{
       animation:termMakeUpPulse 1.6s ease-in-out infinite;
     }
@@ -9418,9 +9644,11 @@
       padding:0 2px;
     }
 
-    /* Quick menu (full): hide alerts/profile groups */
-    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
-    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
+    /* Quick menu (full): hide alerts group; annual profile shows when pending */
+    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup{
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup:not(.portal-annual-profile--pending){
       display:none !important;
     }
 

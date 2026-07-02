@@ -28,9 +28,26 @@ CARLOS_WEEKDAY_OFF_END = "2026-07-31"
 
 # Michelle off Ikram day-centre cover on these Wednesdays (Luliya only).
 MICHELLE_IKRAM_WEDNESDAY_OFF = frozenset({"2026-06-10", "2026-06-17"})
+MONDAY_2026_06_29_DAY_CENTRE_ROWS = (
+    ("ACAT", "ROBERTO", "Aquatic Activity", "Big Pool", "11 to 12"),
+    ("Ikram", "YOUSSEF, CARLOS", "Day Centre", "Hub Room", "11 to 12"),
+    ("Emmanuel", "MICHELLE", "Day Centre", "Hub Room", "11 to 12"),
+    ("Timi", "VICTOR", "Day Centre", "Hub Room", "11 to 1"),
+    ("Ikram", "MICHELLE, CARLOS", "Day Centre", "Hub Room", "12 to 4"),
+    ("Emmanuel", "YOUSSEF", "Aquatic Activity", "Big Pool", "12 to 1"),
+    ("Timi", "ROBERTO", "Aquatic Activity", "Big Pool", "12 to 12.30"),
+    ("Fadi", "ROBERTO", "Day Centre", "Hub Room", "12.30 to 3"),
+    ("Fadi", "YOUSSEF", "Day Centre", "Hub Room", "1 to 3"),
+    ("Emmanuel", "VICTOR", "Day Centre", "Hub Room", "1 to 4"),
+    ("HOME", "RAUL", "Day Centre", "HOME", "11 to 1"),
+    ("MANAGER", "RAUL", "Manager", "Manager", "1 to 4"),
+)
 
 EMMANUEL_ROSTER_START = "2026-06-12"
 TIMI_ROSTER_START = "2026-06-15"
+# Timi Day Centre Mon/Fri 11–13 with Victor (was RAUL 13–15; Victor was on HOME mornings).
+TIMI_VICTOR_MF_SLOT = "11 to 1"
+TIMI_WED_RAUL_SLOT = "1 to 3"
 SUMMER_TERM_END = "2026-07-17"
 _WEEKDAY_NAMES = (
     "Monday",
@@ -87,6 +104,26 @@ def patch_michelle_ikram_wednesday_off(rows: list[dict]) -> int:
         row["instructors"] = ", ".join(kept) if kept else "LULIA"
         n += 1
     return n
+
+
+def patch_day_centre_2026_06_29(rows: list[dict]) -> dict[str, int]:
+    """Special Monday 29 Jun day-centre rota after pool access moved 30 min earlier."""
+    kept: list[dict] = []
+    removed = 0
+    managed_clients = {"acat", "ikram", "emmanuel", "timi", "fadi", "home", "manager"}
+    for row in rows:
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if sd == "2026-06-29" and _client_slug(row.get("client_name")) in managed_clients:
+            removed += 1
+            continue
+        kept.append(row)
+    for client, instructors, service, area, time_slot in MONDAY_2026_06_29_DAY_CENTRE_ROWS:
+        row = r(client, "Monday", instructors, time_slot, service=service, area=area, venue="SwimFarm")
+        row["session_date"] = "2026-06-29"
+        kept.append(row)
+    rows.clear()
+    rows.extend(kept)
+    return {"removed": removed, "added": len(MONDAY_2026_06_29_DAY_CENTRE_ROWS)}
 
 
 def patch_legacy_sunday_morning_pool(rows: list[dict]) -> int:
@@ -218,7 +255,8 @@ def morning_day_centre() -> list[dict]:
         r("Fadi", "Thursday", "RAUL", "12.30 to 3", service=dc, area=hub, venue=sf)
     )
 
-    # Timi is NOT a weekday template: confirmed start 2026-06-15 — dated rows only (see patch_emmanuel_timi_roster).
+    # Timi is NOT a weekday template: Mon/Fri 11–13 Victor, Wed 13–15 Raul — dated rows only
+    # (see patch_emmanuel_timi_roster).
 
     return rows
 
@@ -487,6 +525,54 @@ def _iter_iso_weekdays(start_iso: str, end_iso: str, weekday_indexes: tuple[int,
         d += timedelta(days=1)
 
 
+def _timi_victor_monday_friday_dates() -> set[str]:
+    return {
+        iso
+        for iso, _ in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, (0, 4))
+    }
+
+
+# Dated HOME visits (Victor/Raul) — Victor Mon/Fri morning omitted when Timi uses that block.
+_HOME_DATED_SPECS: tuple[tuple[str, str, str, str], ...] = (
+    ("2026-06-15", "Monday", "VICTOR", "11 to 4"),
+    ("2026-06-16", "Tuesday", "RAUL", "11 to 4"),
+    ("2026-06-19", "Friday", "VICTOR", "11 to 4"),
+    ("2026-06-22", "Monday", "VICTOR", "11 to 1"),
+    ("2026-06-23", "Tuesday", "RAUL", "11 to 4"),
+    ("2026-06-25", "Thursday", "VICTOR", "11 to 3.30"),
+    ("2026-06-26", "Friday", "RAUL", "1.30 to 3"),
+    ("2026-06-29", "Monday", "VICTOR", "11 to 1"),
+    ("2026-06-30", "Tuesday", "RAUL", "11 to 4"),
+    ("2026-07-03", "Friday", "VICTOR", "11 to 4"),
+    ("2026-07-06", "Monday", "VICTOR", "11 to 1"),
+    ("2026-07-08", "Wednesday", "VICTOR", "11 to 4"),
+    ("2026-07-09", "Thursday", "VICTOR", "11 to 4"),
+    ("2026-07-10", "Friday", "RAUL", "11 to 4"),
+    ("2026-07-13", "Monday", "VICTOR", "11 to 1"),
+    ("2026-07-14", "Tuesday", "RAUL", "11 to 4"),
+    ("2026-07-17", "Friday", "VICTOR", "11 to 4"),
+)
+
+
+def generate_home_dated_rows() -> list[dict]:
+    """HOME day-centre placeholder slots; skip Victor Mon/Fri when Timi 11–13 is active."""
+    dc = "Day Centre"
+    sf = "SwimFarm"
+    skip = _timi_victor_monday_friday_dates()
+    out: list[dict] = []
+    for iso, day, instr, slot in _HOME_DATED_SPECS:
+        if (
+            instr.upper() == "VICTOR"
+            and day in ("Monday", "Friday")
+            and iso in skip
+        ):
+            continue
+        row = r("HOME", day, instr, slot, service=dc, area="HOME", venue=sf)
+        row["session_date"] = iso
+        out.append(row)
+    return out
+
+
 def generate_emmanuel_timi_dated_rows() -> list[dict]:
     """Mon/Wed/Fri day-centre dated rows from each client's real start through term end."""
     dc = "Day Centre"
@@ -498,8 +584,12 @@ def generate_emmanuel_timi_dated_rows() -> list[dict]:
         row = r("Emmanuel", day, "YOUSSEF, VICTOR", "11 to 4", service=dc, area=hub, venue=sf)
         row["session_date"] = iso
         out.append(row)
-    for iso, day in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, mwf):
-        row = r("Timi", day, "RAUL", "1 to 3", service=dc, area=hub, venue=sf)
+    for iso, day in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, (0, 4)):
+        row = r("Timi", day, "VICTOR", TIMI_VICTOR_MF_SLOT, service=dc, area=hub, venue=sf)
+        row["session_date"] = iso
+        out.append(row)
+    for iso, day in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, (2,)):
+        row = r("Timi", day, "RAUL", TIMI_WED_RAUL_SLOT, service=dc, area=hub, venue=sf)
         row["session_date"] = iso
         out.append(row)
     return out
@@ -539,6 +629,24 @@ def patch_emmanuel_timi_roster(rows: list[dict]) -> dict[str, int]:
     }
 
 
+def patch_home_roster(rows: list[dict]) -> dict[str, int]:
+    """Replace term HOME dated rows (Victor/Raul home visits) with Timi-aware schedule."""
+    kept: list[dict] = []
+    dropped = 0
+    for row in rows:
+        client = _client_slug(row.get("client_name"))
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if client == "home" and sd >= TIMI_ROSTER_START and sd <= SUMMER_TERM_END:
+            dropped += 1
+            continue
+        kept.append(row)
+    generated = generate_home_dated_rows()
+    kept.extend(generated)
+    rows.clear()
+    rows.extend(kept)
+    return {"dated_dropped": dropped, "dated_generated": len(generated)}
+
+
 def build_template() -> list[dict]:
     out: list[dict] = []
     for part in (
@@ -568,6 +676,8 @@ def main() -> None:
     carlos_off = patch_carlos_weekday_roster_off(merged)
     michelle_off = patch_michelle_ikram_wednesday_off(merged)
     emmanuel_timi = patch_emmanuel_timi_roster(merged)
+    home_patch = patch_home_roster(merged)
+    day_centre_29 = patch_day_centre_2026_06_29(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -597,7 +707,19 @@ def main() -> None:
             f"{emmanuel_timi['templates_removed']} template row(s), dropped "
             f"{emmanuel_timi['dated_dropped']} dated row(s), wrote "
             f"{emmanuel_timi['dated_generated']} dated row(s) "
-            f"(Emmanuel from {EMMANUEL_ROSTER_START}, Timi from {TIMI_ROSTER_START})"
+            f"(Emmanuel from {EMMANUEL_ROSTER_START}, Timi Mon/Fri {TIMI_VICTOR_MF_SLOT} Victor + Wed {TIMI_WED_RAUL_SLOT} Raul from {TIMI_ROSTER_START})"
+        )
+    if home_patch["dated_dropped"] or home_patch["dated_generated"]:
+        print(
+            "HOME roster: dropped "
+            f"{home_patch['dated_dropped']} dated row(s), wrote "
+            f"{home_patch['dated_generated']} dated row(s) "
+            f"(Victor Mon/Fri HOME omitted while Timi active through {SUMMER_TERM_END})"
+        )
+    if day_centre_29["removed"] or day_centre_29["added"]:
+        print(
+            "29 Jun Day Centre roster: removed "
+            f"{day_centre_29['removed']} old row(s), wrote {day_centre_29['added']} row(s)"
         )
 
 

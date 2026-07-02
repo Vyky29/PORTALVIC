@@ -10,6 +10,7 @@
     step: "identify",
     session: { token: "", expiresAt: 0 },
     home: null,
+    messaging: { unreadTotal: 0, unreadByContact: {} },
     participant: { contactId: "", data: null, loaded: {} },
   };
 
@@ -51,6 +52,40 @@
     return body;
   }
 
+  function applyMessagingCounts(payload) {
+    var total = payload && payload.unread_messages_count != null
+      ? Number(payload.unread_messages_count) || 0
+      : 0;
+    var byContact = (payload && payload.unread_by_contact_id) || {};
+    state.messaging.unreadTotal = total;
+    state.messaging.unreadByContact = Object.assign({}, byContact);
+  }
+
+  function clearMessagingCounts() {
+    state.messaging.unreadTotal = 0;
+    state.messaging.unreadByContact = {};
+  }
+
+  function unreadCountForContact(contactId) {
+    var id = String(contactId || "");
+    if (!id) return 0;
+    return Number(state.messaging.unreadByContact[id]) || 0;
+  }
+
+  function unreadBadgeHtml(count, labelPrefix) {
+    var n = Number(count) || 0;
+    if (n <= 0) return "";
+    var text = n > 99 ? "99+" : String(n);
+    var aria = (labelPrefix || "Unread messages") + ": " + text;
+    return (
+      '<span class="pp-unread-badge" aria-label="' +
+      esc(aria) +
+      '">' +
+      esc(text) +
+      "</span>"
+    );
+  }
+
   function participantRenderOpts(contactId) {
     return {
       saveGeneralInfo: function (fields) {
@@ -66,6 +101,23 @@
         }).then(function (res) {
           return res.json().then(function (j) {
             if (!res.ok || !j.ok) throw new Error("save_failed");
+            return j;
+          });
+        });
+      },
+      downloadAchievement: function (photoId) {
+        return fetch(fn("parent-portal-achievement-download"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, photo_id: photoId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("download_failed");
             return j;
           });
         });
@@ -96,6 +148,56 @@
           "error",
           "Could not load this section — please try again.",
         );
+      },
+      loadMessages: function (opts) {
+        opts = opts && typeof opts === "object" ? opts : {};
+        return fetch(fn("parent-portal-messages-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            mark_read: !!opts.markRead,
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("messages_load_failed");
+            if (opts.markRead || j.unread_messages_count === 0) {
+              clearMessagingCounts();
+            } else {
+              applyMessagingCounts(j);
+            }
+            return j;
+          });
+        });
+      },
+      unreadMessagesTotal: function () {
+        return state.messaging.unreadTotal || 0;
+      },
+      unreadForContact: function (cid) {
+        return unreadCountForContact(cid);
+      },
+      unreadBadgeHtml: unreadBadgeHtml,
+      sendMessage: function (message) {
+        return fetch(fn("parent-portal-message-send"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, message: message }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("message_send_failed");
+            return j;
+          });
+        });
       },
     };
   }
@@ -197,25 +299,10 @@
     state.session.token = "";
     state.session.expiresAt = 0;
     state.home = null;
+    clearMessagingCounts();
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch (_e) {}
-  }
-
-  function formatWhen(iso) {
-    if (!iso) return "";
-    try {
-      var d = new Date(iso);
-      return d.toLocaleString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (_e) {
-      return String(iso);
-    }
   }
 
   function formatDob(iso) {
@@ -226,18 +313,6 @@
     } catch (_e) {
       return String(iso);
     }
-  }
-
-  function kindLabel(kind) {
-    var map = {
-      instructor_change: "Instructor update",
-      payment_due: "Payment",
-      makeup_scheduled: "Make-up session",
-      absence: "Absence",
-      booking: "Booking",
-      general: "Message",
-    };
-    return map[String(kind || "").trim()] || "Club message";
   }
 
   function childAvatarHtml(c) {
@@ -278,13 +353,25 @@
 
   function renderHome(data) {
     state.home = data;
+    applyMessagingCounts(data);
     var parent = (data && data.parent) || {};
     var children = (data && data.children) || [];
-    var messages = (data && data.messages) || [];
+    var unreadTotal = state.messaging.unreadTotal || 0;
 
-    $("ppHomeGreeting").textContent = parent.display_name
-      ? "Hello, " + parent.display_name.split(" ")[0]
-      : "Hello";
+    var firstName = parent.display_name ? parent.display_name.split(" ")[0] : "";
+    var greetEl = $("ppHomeGreeting");
+    if (greetEl) {
+      greetEl.textContent = firstName ? "Hello, " + firstName : "Hello";
+      var wrap = greetEl.parentElement;
+      if (wrap) {
+        wrap.querySelectorAll(".pp-unread-badge").forEach(function (el) {
+          el.remove();
+        });
+        if (unreadTotal > 0) {
+          wrap.insertAdjacentHTML("beforeend", unreadBadgeHtml(unreadTotal, "New club messages"));
+        }
+      }
+    }
 
     var childList = $("ppChildList");
     if (childList) {
@@ -300,6 +387,10 @@
             var chips = [];
             if (c.in_class) chips.push('<span class="pp-chip pp-chip--ok">In class</span>');
             if (c.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
+            var childUnread = unreadCountForContact(c.contact_id);
+            if (childUnread > 0) {
+              chips.push(unreadBadgeHtml(childUnread, "New messages for " + (c.display_name || "participant")));
+            }
             var meta = [];
             if (c.dob_iso) meta.push("DOB " + esc(formatDob(c.dob_iso)));
             if (c.city && c.city !== "—") meta.push(esc(c.city));
@@ -321,48 +412,7 @@
               chips.join("") +
               "</div>" +
               "</div>" +
-              '<p class="pp-child-card__cta">Sessions &amp; achievements →</p>' +
-              "</article>"
-            );
-          })
-          .join("");
-      }
-    }
-
-    var msgList = $("ppMessageList");
-    if (msgList) {
-      if (!messages.length) {
-        msgList.innerHTML =
-          '<p class="pp-muted">No recent messages yet. When the club contacts you by email or WhatsApp, copies may appear here.</p>';
-      } else {
-        msgList.innerHTML = messages
-          .map(function (m) {
-            var sent =
-              m.whatsapp_status === "sent" || m.whatsapp_status === "sent_sms"
-                ? "WhatsApp"
-                : m.email_status === "sent"
-                  ? "Email"
-                  : "Sent";
-            var preview = String(m.body_text || m.subject || "").trim();
-            if (preview.length > 220) preview = preview.slice(0, 217) + "…";
-            return (
-              '<article class="pp-card pp-msg-card">' +
-              '<div class="pp-msg-head">' +
-              '<span class="pp-chip">' +
-              esc(kindLabel(m.kind)) +
-              "</span>" +
-              '<span class="pp-msg-when">' +
-              esc(formatWhen(m.created_at)) +
-              "</span>" +
-              "</div>" +
-              (m.client_display
-                ? '<p class="pp-msg-client"><strong>' + esc(m.client_display) + "</strong></p>"
-                : "") +
-              (preview ? '<p class="pp-msg-body">' + esc(preview) + "</p>" : "") +
-              '<p class="pp-muted pp-msg-channel">' +
-              esc(sent) +
-              (m.venue ? " · " + esc(m.venue) : "") +
-              "</p>" +
+              '<p class="pp-child-card__cta">Sessions, messages &amp; achievements →</p>' +
               "</article>"
             );
           })
@@ -557,6 +607,14 @@
       back.addEventListener("click", function () {
         hideNotice($("ppParticipantNotice"));
         setStep("home");
+        if (state.home) {
+          renderHome(
+            Object.assign({}, state.home, {
+              unread_messages_count: state.messaging.unreadTotal,
+              unread_by_contact_id: Object.assign({}, state.messaging.unreadByContact),
+            }),
+          );
+        }
       });
     }
 
@@ -580,10 +638,11 @@
     initBrand();
     bindEvents();
     bindChildCards();
-    setStep("identify");
     if (loadStoredSession()) {
       var ok = await loadHome();
       if (!ok) setStep("identify");
+    } else {
+      setStep("identify");
     }
   }
 

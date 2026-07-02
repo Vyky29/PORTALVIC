@@ -33,7 +33,7 @@
     fadi: "portal/participants/fadi.png",
     scott: "portal/participants/scott.png",
     stephanie: "portal/participants/stephanie.png",
-    timi: "portal/participants/timi.png",
+    timi: "portal/participants/timi.png?v=20260628-timi-smile",
     ikram: "portal/participants/ikram.png",
     rodin: "portal/participants/rodin.png",
     zaid: "portal/participants/zaid.png",
@@ -47,6 +47,7 @@
     yassir: "portal/participants/yassir.png",
     faris: "portal/participants/faris.png",
     eiji: "portal/participants/eiji.png",
+    emmanuel: "portal/participants/emmanuel.png?v=20260628-emmanuel-smile",
     hazem: "portal/participants/hazem.png",
     samer: "portal/participants/samer.png",
     kate: "portal/participants/kate.png",
@@ -71,6 +72,7 @@
     "/portal/participants/ayden-w.png": true,
     "/portal/participants/cyrus.png": true,
     "/portal/participants/eiji.png": true,
+    "/portal/participants/emmanuel.png": true,
     "/portal/participants/erik.png": true,
     "/portal/participants/fadi.png": true,
     "/portal/participants/faris.png": true,
@@ -185,7 +187,9 @@
   /** File names use hyphens (adam-ab.png), not spaces — see participantPhotoPathCandidates. */
   function participantPhotoPathOnDisk(relative) {
     var p = normalizePhotoUrl(String(relative || "").trim());
-    return p && PARTICIPANT_PHOTO_FILES_ON_DISK[p] ? p : "";
+    var qi = p.indexOf("?");
+    var path = qi >= 0 ? p.slice(0, qi) : p;
+    return p && PARTICIPANT_PHOTO_FILES_ON_DISK[path] ? p : "";
   }
 
   function participantPhotoPathCandidates(name, avatarOverride, contactId) {

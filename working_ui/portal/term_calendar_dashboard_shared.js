@@ -65,12 +65,22 @@
     return raw.map(normIso).filter(Boolean);
   }
 
+  /** Admin-flagged outstanding days stay actionable even inside assume-complete-through. */
+  function staffForcedPendingFeedbackDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var map = termCfg().termStaffTimesheetFeedbackPendingDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
   /** True when session feedback before today is treated complete (legacy Zoho / bulk catch-up). */
   function feedbackAssumeComplete(iso, staffId) {
     var key = normIso(iso);
     var through = feedbackAssumeCompleteThroughIso();
     if (!key || !through || key > through) return false;
     if (staffCatchUpFeedbackDates(staffId).indexOf(key) >= 0) return false;
+    if (staffForcedPendingFeedbackDates(staffId).indexOf(key) >= 0) return false;
     return true;
   }
 
@@ -92,8 +102,11 @@
     return true;
   }
 
-  /** Summer Term 2 feedback reminders only from term resume (e.g. 2026-06-01), not April/May roster. */
+  /** Feedback reminders from termFeedbackReminderFromIso (e.g. 2026-06-25), not the calendar view start. */
   function feedbackReminderFromIso() {
+    var t = termCfg();
+    var dedicated = normIso(t.termFeedbackReminderFromIso);
+    if (dedicated) return dedicated;
     return fromIso();
   }
 
@@ -165,23 +178,57 @@
     return [];
   }
 
-  function staffBaselineShiftDates(staffId) {
+  function termStaffProfileLookupKeys(staffId) {
     var id = String(staffId || "").trim().toLowerCase();
+    if (!id) return [];
+    var keys = [id];
+    if (id === "luliya" || id === "lulia" || id === "aida" || id === "stf021") {
+      if (keys.indexOf("luliya") < 0) keys.push("luliya");
+      if (keys.indexOf("lulia") < 0) keys.push("lulia");
+    }
+    if (id === "sevitha" || id === "info") {
+      if (keys.indexOf("sevitha") < 0) keys.push("sevitha");
+      if (keys.indexOf("info") < 0) keys.push("info");
+    }
+    return keys;
+  }
+
+  function termMapMergedDates(map, staffId) {
+    if (!map || typeof map !== "object") return [];
+    var seen = Object.create(null);
+    var out = [];
+    termStaffProfileLookupKeys(staffId).forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(map, k)) return;
+      var raw = map[k];
+      if (!Array.isArray(raw)) return;
+      raw.forEach(function (d) {
+        var iso = normIso(d);
+        if (iso && !seen[iso]) {
+          seen[iso] = true;
+          out.push(iso);
+        }
+      });
+    });
+    return out.sort();
+  }
+
+  function staffBaselineShiftDates(staffId) {
+    var keys = termStaffProfileLookupKeys(staffId);
+    if (!keys.length) return null;
     var t = termCfg();
     var map = t.termStaffShiftDatesByProfileKey;
-    if (!map || typeof map !== "object" || !id) return null;
-    if (!Object.prototype.hasOwnProperty.call(map, id)) return [];
-    var raw = map[id];
-    if (!Array.isArray(raw)) return [];
-    return raw.map(normIso).filter(Boolean);
+    if (!map || typeof map !== "object") return null;
+    var foundAny = false;
+    keys.forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(map, k)) foundAny = true;
+    });
+    if (!foundAny) return [];
+    return termMapMergedDates(map, staffId);
   }
 
   function staffAwayDates(staffId) {
-    var id = String(staffId || "").trim().toLowerCase();
     var map = termCfg().termStaffAwayDatesByProfileKey;
-    var raw = map && map[id];
-    if (!Array.isArray(raw)) return [];
-    return raw.map(normIso).filter(Boolean);
+    return termMapMergedDates(map, staffId);
   }
 
   /** Date was on the published term timetable (zero-hours availability lock). */

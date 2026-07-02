@@ -19,6 +19,7 @@
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Job application</h1>
       <p>Sections in order. Pick from lists where shown; type to filter suggestions on other fields.</p>
+      <p class="ob-form-hint">Save draft stores progress on your portal account so you can continue on another phone or computer.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
     </header>
     <form id="jobForm" class="ob-form-stack">
@@ -171,6 +172,9 @@
         try {
           var res = await portalOnboardingFormLoadJob();
           if (res && res.draft && res.draft.payload) portalJobFormFill(form, res.draft.payload);
+          if (res && res.migrated_from_local) {
+            showStatus("Draft from this device synced to your account.");
+          }
         } catch (e) {
           console.warn("[job application] draft load", e);
         }
@@ -178,8 +182,12 @@
       document.getElementById("jobSaveDraft").addEventListener("click", async function () {
         showStatus("Saving…");
         try {
-          await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: false });
-          showStatus("Draft saved.");
+          var saved = await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: false });
+          showStatus(
+            typeof portalOnboardingFormSaveStatusMessage === "function"
+              ? portalOnboardingFormSaveStatusMessage(saved && saved.source, "draft")
+              : "Draft saved."
+          );
         } catch (e) {
           showStatus("Save failed. Try again.", true);
         }
@@ -193,8 +201,12 @@
         }
         showStatus("Submitting…");
         try {
-          await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: true });
-          showStatus("Application submitted. You can close this page.");
+          var submitted = await portalOnboardingFormSaveJob(portalJobFormReadPayload(form), { submit: true });
+          showStatus(
+            typeof portalOnboardingFormSaveStatusMessage === "function"
+              ? portalOnboardingFormSaveStatusMessage(submitted && submitted.source, "submit")
+              : "Application submitted. You can close this page."
+          );
         } catch (e) {
           showStatus("Submit failed. Try again.", true);
         }
