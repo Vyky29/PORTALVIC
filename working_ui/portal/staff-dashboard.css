@@ -5587,11 +5587,12 @@
     .session-card:active{transform:translateY(0)}
     .session-card.session-card--home,
     .section-card--today .session-card.session-card--home{
-      background:#ff8f00;
-      color:#111;
-      border-color:rgba(255,143,0,.72);
+      background:var(--reviewGreenBg);
+      color:var(--ink);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
-    .session-card.session-card--home:hover{transform:none;box-shadow:none}
+    .session-card.session-card--home:hover{transform:none;box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);border-color:rgba(21,115,71,.45)}
     .session-card.session-card--home .session-meta-name,
     .session-card.session-card--home .session-line--duty-full .session-meta-name{
       font-weight:700;
@@ -5616,13 +5617,17 @@
       display:none !important;
     }
     .session-card.session-card--manager,
-    .section-card--today .session-card.session-card--manager,
+    .section-card--today .session-card.session-card--manager{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
     .session-card.session-card--admin,
     .section-card--today .session-card.session-card--admin{
       background:#fff3e0;
       border-color:rgba(255,152,0,.45);
     }
-    .session-card.session-card--manager:hover{transform:none;box-shadow:none}
+    .session-card.session-card--manager:hover{transform:none;box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);border-color:rgba(21,115,71,.45)}
     .session-card.session-card--admin:hover{transform:none;box-shadow:none}
     .session-card.session-card--manager .session-meta-name,
     .session-card.session-card--admin .session-meta-name{
