@@ -19365,7 +19365,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
-    var OPS_HUB_CARDS = [
+    var OPS_HUB_CARD_ICON_IDS = {
+      operator: 'operator',
+      services: 'g_c4k',
+      staffhr: 'staffhr',
+      documents: 'portal_documents',
+      finance: 'g_xero'
+    };
+    function opsHubCardIconHtml(card){
+      if(!card) return '';
+      var iconId = OPS_HUB_CARD_ICON_IDS[card.id] || 'nav_hub';
+      var svg = adminNavIconHtml(iconId);
+      return svg || adminNavIconHtml('nav_hub');
+    }
       {
         id:'operator',
         icon:'⚡',
@@ -19530,7 +19542,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<article class="ops-hub-card" data-ops-hub-card="'+esc(card.id)+'" aria-labelledby="ops-hub-title-'+esc(card.id)+'">' +
         '<header class="ops-hub-card__header">' +
-        '<span class="ops-hub-card__badge" aria-hidden="true">'+esc(card.icon || '')+'</span>' +
+        '<span class="ops-hub-card__badge" aria-hidden="true">'+opsHubCardIconHtml(card)+'</span>' +
         '<div class="ops-hub-card__headings">' +
         '<h2 class="ops-hub-card__title" id="ops-hub-title-'+esc(card.id)+'">'+esc(card.title)+'</h2>' +
         '<p class="ops-hub-card__description">'+esc(card.description)+'</p>' +
@@ -24284,7 +24296,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       $('adminNav').innerHTML = navHtml;
       var bottomEl = $('adminBottomNav');
-      if(bottomEl) bottomEl.innerHTML = '';
+      if(bottomEl){
+        if(adminTouchCompactLayoutActive()){
+          var curView = state.view;
+          bottomEl.innerHTML = MOBILE_BOTTOM_NAV_IDS.map(function(nid){
+            var item = navGetItem(nid);
+            if(!item) return '';
+            var active = curView === nid ? ' is-active' : '';
+            var label = esc(item.label || '');
+            if(item.navAction === 'fullnav'){
+              return '<button type="button" class="'+active.trim()+'" data-admin-nav-action="fullnav" aria-label="'+label+'">'+label+'</button>';
+            }
+            return '<button type="button" class="'+active.trim()+'" data-view="'+esc(nid)+'" aria-label="'+label+'">'+label+'</button>';
+          }).join('');
+        }else{
+          bottomEl.innerHTML = '';
+        }
+      }
       var cur = state.view;
       document.querySelectorAll('#adminNav button').forEach(function(b){
         var v = b.getAttribute('data-view');
@@ -25539,7 +25567,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var surfHash = String((location.hash || '').replace(/^#/, '')).trim();
               var surfHasRoute = !!(surfParams.get('view') || surfHash);
               if(surf && !surfHasRoute && surf.layout === 'mobile_compact' && state.view === 'nav_hub'){
-                setView(surf.mobile.defaultView || 'staff_live_map');
+                setView(surf.mobile.defaultView || 'nav_hub');
               }
             }catch(_surfBoot){}
           }

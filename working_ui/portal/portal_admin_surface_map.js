@@ -111,12 +111,11 @@
     var mobile = isMobileLayout();
     var cohort = ceo ? "ceo_exec" : ops ? "ops_admin" : "other_admin";
 
-    var mobileDefaultView = ceo ? "staff_live_map" : ops ? "nav_hub" : "dashboard";
-    var desktopDefaultView = ceo ? "staff_live_map" : ops ? "operations_admin" : "dashboard";
-    var mobileBottomNav = ceo
-      ? ["staff_live_map", "fullnav"]
-      : ops
-        ? ["nav_hub", "operations_admin", "settings"]
+    var mobileDefaultView = ceo || ops ? "nav_hub" : "dashboard";
+    var desktopDefaultView = ceo ? "nav_hub" : ops ? "operations_admin" : "dashboard";
+    var mobileBottomNav =
+      ceo || ops
+        ? ["nav_hub", "dashboard", "operations_admin", "nav_all_menu"]
         : ["nav_hub", "fullnav"];
 
     return {

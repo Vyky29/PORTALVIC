@@ -186,6 +186,10 @@
       if (keys.indexOf("luliya") < 0) keys.push("luliya");
       if (keys.indexOf("lulia") < 0) keys.push("lulia");
     }
+    if (id === "sevitha" || id === "info") {
+      if (keys.indexOf("sevitha") < 0) keys.push("sevitha");
+      if (keys.indexOf("info") < 0) keys.push("info");
+    }
     return keys;
   }
 

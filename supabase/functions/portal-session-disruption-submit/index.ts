@@ -58,6 +58,21 @@ function nameKeyFromText(name: string): string {
     .trim();
 }
 
+function isOpsAdminProfile(profile: {
+  username?: string | null;
+  app_role?: string | null;
+}): boolean {
+  const role = clean(profile.app_role).toLowerCase();
+  const user = clean(profile.username).toLowerCase();
+  return role === "admin" && (user === "sevitha" || user === "info");
+}
+
+function normalizeOpsAdminNameKey(key: string): string {
+  const k = clean(key).toLowerCase();
+  if (k === "info") return "sevitha";
+  return k;
+}
+
 async function resolveNameKey(
   admin: ReturnType<typeof createClient>,
   userId: string,
@@ -78,9 +93,9 @@ async function resolveNameKey(
     .eq("id", userId)
     .maybeSingle();
   const name = clean(prof?.full_name || fullName || prof?.username || "", 120);
-  const key = nameKeyFromText(name);
+  const key = normalizeOpsAdminNameKey(nameKeyFromText(name));
   if (key) return key;
-  return nameKeyFromText(clean(prof?.username || "", 80));
+  return normalizeOpsAdminNameKey(nameKeyFromText(clean(prof?.username || "", 80)));
 }
 
 Deno.serve(async (req) => {
@@ -115,7 +130,7 @@ Deno.serve(async (req) => {
     return json(403, { ok: false, error: "profile_missing" });
   }
   const role = clean(profile.app_role).toLowerCase();
-  if (role !== "staff" && role !== "lead") {
+  if (role !== "staff" && role !== "lead" && !isOpsAdminProfile(profile)) {
     return json(403, { ok: false, error: "role_not_allowed" });
   }
 
