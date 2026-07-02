@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260704-feedback-edge-list" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260707-admin-alerts-fix" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -24705,6 +24705,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(e){ return 'New'; }
     }
 
+    function portalAdminAuthEmailForAlerts(){
+      try{
+        var box = window.__PORTAL_SUPABASE__ || {};
+        var em = String(box.session && box.session.user && box.session.user.email || '').trim().toLowerCase();
+        if(em) return em;
+        if(typeof window.portalAdminReadStoredAuthSession === 'function'){
+          var sess = window.portalAdminReadStoredAuthSession();
+          em = String(sess && sess.user && sess.user.email || '').trim().toLowerCase();
+          if(em) return em;
+        }
+      }catch(_em){}
+      return '';
+    }
+
+    function portalAdminCanBootstrapAlerts(profile){
+      var role = String(profile && profile.app_role || '').toLowerCase();
+      if(role === 'admin' || role === 'ceo') return true;
+      var em = portalAdminAuthEmailForAlerts();
+      return (
+        em === 'victor@clubsensational.org' ||
+        em === 'raul@clubsensational.org' ||
+        em === 'javier@clubsensational.org' ||
+        em === 'javi@clubsensational.org' ||
+        em === 'javier@clbusensational.org' ||
+        em === 'sevitha@clubsensational.org' ||
+        em === 'info@clubsensational.org'
+      );
+    }
+
+    async function portalAdminFetchActivityAlertsBundle(client, sinceIso){
+      try{
+        var edge = await adminEdgePost('portal-admin-activity-alerts-list', { since: sinceIso, days: 3 });
+        if(!edge.error && edge.data){
+          return {
+            cancellations: edge.data.cancellations || [],
+            incidents: edge.data.incidents || [],
+            absents: edge.data.absents || [],
+            late_requests: edge.data.late_requests || []
+          };
+        }
+        if(edge.error && edge.error !== 'session_expired'){
+          console.warn('[admin] activity alerts edge', edge.error);
+        }
+      }catch(eEdge){
+        console.warn('[admin] activity alerts edge fetch', eEdge);
+      }
+      if(!client || !client.from) return null;
+      var results = await Promise.all([
+        client.from('cancellation_reports').select('id,created_at,client_name,session_date,submitted_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
+        client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
+        client.from('portal_staff_session_quick_marks').select('id,created_at,session_date,portal_session_key,staff_user_id,mark_type').eq('mark_type','absent').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
+      ]);
+      return {
+        cancellations: (results[0].error ? [] : (results[0].data || [])),
+        incidents: (results[1].error ? [] : (results[1].data || [])),
+        absents: (results[2].error ? [] : (results[2].data || [])),
+        late_requests: null
+      };
+    }
+
     function portalAdminActivityFromCancellation(row){
       if(!row || !row.id) return null;
       var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
@@ -25002,11 +25062,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     async function portalAdminBootstrapActivityAlerts(){
       try{
-        var box = window.__PORTAL_SUPABASE__;
-        var client = box && box.client;
-        var profile = box && box.staff_profile;
-        var role = String(profile && profile.app_role || '').toLowerCase();
-        if(!client || !client.from || (role !== 'admin' && role !== 'ceo')) return;
+        var box = window.__PORTAL_SUPABASE__ || {};
+        var profile = box.staff_profile;
+        if(!portalAdminCanBootstrapAlerts(profile)) return;
+        var client = await adminEnsureSupabaseClient();
+        if(!client || !client.from) return;
         if(typeof window.portalAdminBellSetBootstrapSilent === 'function'){
           window.portalAdminBellSetBootstrapSilent(true);
         }
@@ -25020,41 +25080,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSyncLateFromServer === 'function'){
           await window.portalAdminBellSyncLateFromServer(client, { silent: true });
         }
-        var results = await Promise.all([
-          client.from('cancellation_reports').select('id,created_at,client_name,session_date,submitted_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
-          client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
-          client.from('portal_staff_session_quick_marks').select('id,created_at,session_date,portal_session_key,staff_user_id,mark_type').eq('mark_type','absent').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
-        ]);
-        (results[0].data || []).forEach(function(r){
-          var a = portalAdminActivityFromCancellation(r);
-          if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-            window.portalAdminPushActivityAlert(a, { silent: true });
-          }
-        });
-        (results[1].data || []).forEach(function(r){
-          var a = portalAdminActivityFromIncident(r);
-          if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-            window.portalAdminPushActivityAlert(a, { silent: true });
-          }
-        });
-        var absentRows = results[2].error ? [] : (results[2].data || []);
-        if(results[2].error){
-          console.warn('[admin] absent quick marks bootstrap', results[2].error);
-        }else if(absentRows.length){
-          var absentStaffIds = [];
-          var absentStaffSeen = {};
-          absentRows.forEach(function(r){
-            var sid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-            if(sid && !absentStaffSeen[sid]){ absentStaffSeen[sid] = true; absentStaffIds.push(sid); }
-          });
-          var absentNameByStaff = await portalAdminStaffNamesById(client, absentStaffIds);
-          absentRows.forEach(function(r){
-            var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-            var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
+        var bundle = await portalAdminFetchActivityAlertsBundle(client, sinceIso);
+        if(bundle){
+          (bundle.cancellations || []).forEach(function(r){
+            var a = portalAdminActivityFromCancellation(r);
             if(a && typeof window.portalAdminPushActivityAlert === 'function'){
               window.portalAdminPushActivityAlert(a, { silent: true });
             }
           });
+          (bundle.incidents || []).forEach(function(r){
+            var a = portalAdminActivityFromIncident(r);
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a, { silent: true });
+            }
+          });
+          var absentRows = bundle.absents || [];
+          if(absentRows.length){
+            var absentStaffIds = [];
+            var absentStaffSeen = {};
+            absentRows.forEach(function(r){
+              var sid = r && r.staff_user_id ? String(r.staff_user_id) : '';
+              if(sid && !absentStaffSeen[sid]){ absentStaffSeen[sid] = true; absentStaffIds.push(sid); }
+            });
+            var absentNameByStaff = await portalAdminStaffNamesById(client, absentStaffIds);
+            absentRows.forEach(function(r){
+              var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
+              var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
+              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+                window.portalAdminPushActivityAlert(a, { silent: true });
+              }
+            });
+          }
+          if(bundle.late_requests && bundle.late_requests.length && typeof window.portalAdminBellSyncLateFromServer === 'function'){
+            await window.portalAdminBellSyncLateFromServer(client, { silent: true });
+          }
         }
         try{
           if(window.PortalAdminLateSubmissions){
@@ -25084,11 +25143,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminEnsureActivityRealtime(){
       if(portalAdminActivityRtBound) return;
       try{
-        var box = window.__PORTAL_SUPABASE__;
-        var client = box && box.client;
-        var profile = box && box.staff_profile;
-        var role = String(profile && profile.app_role || '').toLowerCase();
-        if(!client || typeof client.channel !== 'function' || (role !== 'admin' && role !== 'ceo')) return;
+        var box = window.__PORTAL_SUPABASE__ || {};
+        var profile = box.staff_profile;
+        var client = box.client;
+        if(!client || typeof client.channel !== 'function' || !portalAdminCanBootstrapAlerts(profile)) return;
         portalAdminActivityRtBound = true;
         var debounce = null;
         function scheduleRefresh(){
@@ -25306,23 +25364,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
       try{
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-        var role = String(p && p.app_role || '').toLowerCase();
-        if(role !== 'admin' && role !== 'ceo') return;
-        var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
-        if(!client || !client.from) return;
-        portalAdminFetchVenueReviewAlerts(client);
-        void portalAdminBootstrapActivityAlerts();
-        portalAdminEnsureActivityRealtime();
-        void portalLateAdminRefreshNavBadge({ allowSound: false });
-        if(!window.__portalAdminBellPollIv){
-          window.__portalAdminBellPollIv = setInterval(function(){
-            if(document.hidden) return;
-            void portalLateAdminRefreshNavBadge({ allowSound: true });
-            if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
-              void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
-            }
-          }, 90000);
-        }
+        if(!portalAdminCanBootstrapAlerts(p)) return;
+        var clientPromise = adminEnsureSupabaseClient();
+        void clientPromise.then(function(client){
+          if(!client || !client.from) return;
+          portalAdminFetchVenueReviewAlerts(client);
+          void portalAdminBootstrapActivityAlerts();
+          portalAdminEnsureActivityRealtime();
+          void portalLateAdminRefreshNavBadge({ allowSound: false });
+          if(!window.__portalAdminBellPollIv){
+            window.__portalAdminBellPollIv = setInterval(function(){
+              if(document.hidden) return;
+              void portalLateAdminRefreshNavBadge({ allowSound: true });
+              if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
+                void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+              }
+            }, 90000);
+          }
+        });
       }catch(err){ console.warn(err); }
     });
 
