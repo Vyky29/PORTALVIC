@@ -47,7 +47,39 @@ function serviceFlatRate(service) {
 }
 
 function entryServiceLabel(entry) {
-  return String((entry && (entry.serviceLabel || entry.service)) || "-").slice(0, 30);
+  return String((entry && (entry.serviceLabel || entry.service)) || "-").trim();
+}
+
+function entryRoleLabel(entry) {
+  const r = String((entry && (entry.roleLabel || entry.role)) || "").trim();
+  if (!r) return "";
+  const scale = String((entry && entry.roleScale) || "").trim();
+  const m = scale.match(/Scale\s*(\d+)/i) || (scale && /^\d+$/.test(scale) ? [scale, scale] : null);
+  return m ? `${r} ${m[1]}` : r;
+}
+
+function pdfEntryRowHeightScale(entry) {
+  return entryRoleLabel(entry) ? 1.38 : 1;
+}
+
+function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual) {
+  if (manual) {
+    doc.text("-", cx, y + cellBaseline, { align: "center" });
+    return;
+  }
+  const service = entryServiceLabel(entry).slice(0, 28);
+  const role = entryRoleLabel(entry).slice(0, 24);
+  if (role) {
+    doc.setFontSize(8.5 * S);
+    doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+    doc.setFontSize(7.2 * S);
+    doc.setFont("helvetica", "bold");
+    doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5 * S);
+  } else {
+    doc.text(service.slice(0, 30), cx, y + cellBaseline, { align: "center" });
+  }
 }
 
 export function loadTimesheetLogoDataUrl(rootDir) {
@@ -138,13 +170,14 @@ export function buildFormattedTimesheetPdfBytes(opts) {
     summaryRowH: 10,
   };
   const labelGap = B.labelSize * 0.42 + 2;
+  const entriesRowH = entries.reduce((sum, e) => sum + B.rowH * pdfEntryRowHeightScale(e), 0);
   const neededH =
     (logoData ? B.logoH + B.afterLogo : 0) +
     B.afterTitle +
     5 * labelGap +
     B.gapAfterLabels +
     B.headerRowH +
-    B.rowH * entries.length +
+    entriesRowH +
     B.gapBeforeSummary +
     (B.panelPad * 2 + B.summaryRowH * summaryRows.length);
   const availH = pageH - topY - bottomMargin;
@@ -210,14 +243,14 @@ export function buildFormattedTimesheetPdfBytes(opts) {
     const e = entries[i];
     const rate = e.rate != null ? Number(e.rate) : hourlyRate;
     const daily = money(Number(e.hours || 0) * rate);
-    doc.rect(colX[0], y, colX[6] - colX[0], rowH, "S");
+    const thisRowH = rowH * pdfEntryRowHeightScale(e);
+    doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
     const isFlat = serviceFlatRate(e.service || e.role) != null;
     const midCol = manual
       ? String(e.note || e.day || "").slice(0, 22)
       : isFlat
-        ? String(e.role || "Training").slice(0, 22)
+        ? String(entryRoleLabel(e) || e.role || "Training").slice(0, 22)
         : String(e.day || "").slice(0, 22);
-    const serviceCol = manual ? "-" : entryServiceLabel(e);
     const statusTxt = manual
       ? "Manual"
       : isFlat
@@ -227,11 +260,11 @@ export function buildFormattedTimesheetPdfBytes(opts) {
           : "Completed";
     doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
     doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
-    doc.text(serviceCol, (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+    drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, manual);
     doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
     doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
     doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
-    y += rowH;
+    y += thisRowH;
   }
 
   y += B.gapBeforeSummary * S;

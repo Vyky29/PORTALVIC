@@ -91,6 +91,7 @@ function computeTimetableShiftEntries(staffLabel, rosterKey, periodStart, period
       summary: `${r.time_range} ${r.venue}`.trim(),
       service: "Support shift",
       serviceLabel: "Support shift",
+      role: "Support Worker",
       completed: true,
     };
   });
