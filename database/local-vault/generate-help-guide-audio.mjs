@@ -136,6 +136,32 @@ async function synthesize(text) {
   return ttsViaPortal(text);
 }
 
+async function ensureAudio({ fileName, text, target, key }) {
+  const voice = String(text || "").trim();
+  if (!voice) return;
+  const rel = `/portal/help-audio/${fileName}`;
+  const abs = path.join(outDir, fileName);
+
+  if (fs.existsSync(abs) && !process.argv.includes("--force")) {
+    target[key] = rel;
+    skipped++;
+    return;
+  }
+
+  process.stdout.write(`Generating ${fileName}… `);
+  try {
+    const buf = await synthesize(voice);
+    fs.writeFileSync(abs, buf);
+    target[key] = rel;
+    generated++;
+    console.log(`OK (${buf.length} bytes)`);
+  } catch (e) {
+    console.log("FAIL");
+    console.error(e.message || e);
+    process.exitCode = 1;
+  }
+}
+
 for (const section of guide.sections || []) {
   const sid = String(section.id || "").trim();
   if (!sid) continue;
@@ -144,33 +170,28 @@ for (const section of guide.sections || []) {
   const steps = Array.isArray(section.steps) ? section.steps : [];
   for (let i = 0; i < steps.length; i++) {
     const st = steps[i];
-    const voice = String(st.voice || "").trim();
-    if (!voice) continue;
     const fileName = `${sid}-${String(i + 1).padStart(2, "0")}-${slug(st.focus || st.caption || "step")}.mp3`;
-    const rel = `/portal/help-audio/${fileName}`;
-    const abs = path.join(outDir, fileName);
+    await ensureAudio({
+      fileName,
+      text: st.voice,
+      target: st,
+      key: "audio",
+    });
+  }
 
-    if (fs.existsSync(abs) && !process.argv.includes("--force")) {
-      st.audio = rel;
-      skipped++;
-      continue;
-    }
-
-    process.stdout.write(`Generating ${fileName}… `);
-    try {
-      const buf = await synthesize(voice);
-      fs.writeFileSync(abs, buf);
-      st.audio = rel;
-      generated++;
-      console.log(`OK (${buf.length} bytes)`);
-    } catch (e) {
-      console.log("FAIL");
-      console.error(e.message || e);
-      process.exitCode = 1;
-    }
+  if (!steps.length) {
+    const fileName = `${sid}-overview.mp3`;
+    await ensureAudio({
+      fileName,
+      text: section.voice_script,
+      target: section,
+      key: "audio",
+    });
   }
 }
 
-guide.version = "2026-06-help-guide-v8";
+guide.version = "2026-06-help-guide-v11";
+guide.description =
+  "Staff help guide — visual demos + club voice (Eleven Labs MP3s, no device voice).";
 fs.writeFileSync(guidePath, JSON.stringify(guide, null, 2) + "\n");
 console.log(`Done (${useDirect ? "ElevenLabs direct" : "Portal edge"}). generated=${generated} skipped=${skipped}`);

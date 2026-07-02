@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260705-help-guide-v10"></script>
+  <script src="/portal-static-bootstrap.js?v=20260705-help-guide-v11"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -290,7 +290,7 @@
     <p class="foot">CS Portal · Staff help guide</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v10"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v11"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -318,7 +318,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v10";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v11";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -812,14 +812,22 @@
       steps.forEach(function (st, idx) {
         lines.push(st.voice);
         stepMap.push(idx);
-        stepOpts.push(st.audio ? { staticUrl: st.audio } : {});
+        stepOpts.push(
+          st.audio
+            ? { staticUrl: st.audio, fallbackBrowser: false }
+            : { fallbackBrowser: false }
+        );
       });
     } else {
       var single = sectionVoiceText(section);
       if (single) {
         lines.push(single);
         stepMap.push(-1);
-        stepOpts.push(section.audio ? { staticUrl: section.audio } : {});
+        stepOpts.push(
+          section.audio
+            ? { staticUrl: section.audio, fallbackBrowser: false }
+            : { fallbackBrowser: false }
+        );
       }
     }
     if (!lines.length) {
@@ -866,7 +874,7 @@
           banner.hidden = false;
           banner.textContent =
             res && res.error === "session_expired"
-              ? "Sign in to the portal for the club voice — or use the speaker below / read the topic."
+              ? "Club voice could not load. Tap Play again or use the speaker below."
               : "Could not auto-play audio on this device. Use the speaker below, tap Play again, or read the topic.";
         }
       }
@@ -903,29 +911,10 @@
 
   async function initGuideVoiceBanner() {
     var banner = document.getElementById("guideVoiceBanner");
-    if (!banner || !window.PortalHelpVoiceSpeak) return;
-    try {
-      if (window.__portalHelpGuideVoiceReady) await window.__portalHelpGuideVoiceReady;
-      var avail = await window.PortalHelpVoiceSpeak.probe(true);
-      var tokenOk = false;
-      try {
-        var box = window.__PORTAL_SUPABASE__;
-        if (box && box.client && box.client.auth) {
-          var sess = await box.client.auth.getSession();
-          tokenOk = !!(sess && sess.data && sess.data.session);
-        }
-      } catch (_t) {}
-      banner.hidden = false;
-      if (avail && avail.elevenlabs && tokenOk) {
-        banner.textContent =
-          "Signed in — Play uses the club voice. On iPhone, turn off silent mode if you hear nothing.";
-      } else if (avail && avail.elevenlabs) {
-        banner.textContent =
-          "Sign in to the portal on this device for the club voice. On iPhone, check silent mode and volume.";
-      } else {
-        banner.textContent = "Play uses your device voice until the club voice is available.";
-      }
-    } catch (_) {}
+    if (!banner) return;
+    banner.hidden = false;
+    banner.textContent =
+      "Play uses the club voice (Eleven Labs). On iPhone, turn off silent mode if you hear nothing.";
   }
 
   fetch(GUIDE_URL, { credentials: "same-origin" })

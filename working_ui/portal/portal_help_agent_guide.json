@@ -1,6 +1,6 @@
 {
-  "version": "2026-06-help-guide-v10",
-  "description": "Staff help guide — visual demos + step-by-step voice (Eleven Labs when signed in).",
+  "version": "2026-06-help-guide-v11",
+  "description": "Staff help guide — visual demos + club voice (Eleven Labs MP3s, no device voice).",
   "sections": [
     {
       "id": "getting-started",
@@ -20,12 +20,14 @@
         {
           "voice": "Each day, open Today on your dashboard. Orange cards mean feedback is still waiting.",
           "demo": "session-cards",
-          "caption": "Today — tap orange cards for feedback"
+          "caption": "Today — tap orange cards for feedback",
+          "audio": "/portal/help-audio/getting-started-01-today-tap-orange-cards-for-feedback.mp3"
         },
         {
           "voice": "CS Portal runs on your phone — before, during and after sessions. Daily tools live in Quick menu.",
           "demo": "quick-menu-tiles",
-          "caption": "Quick menu — your daily tools"
+          "caption": "Quick menu — your daily tools",
+          "audio": "/portal/help-audio/getting-started-02-quick-menu-your-daily-tools.mp3"
         }
       ],
       "demos": [
@@ -55,25 +57,29 @@
         {
           "voice": "Open the portal link your manager sent you. This is the sign-in screen.",
           "demo": "login-screenshot",
-          "caption": "Foto 1 — Log in"
+          "caption": "Foto 1 — Log in",
+          "audio": "/portal/help-audio/login-01-foto-1-log-in.mp3"
         },
         {
           "voice": "Tap Name or email and enter your first name or club email address.",
           "demo": "login-mock",
           "focus": "email",
-          "caption": "Name or email"
+          "caption": "Name or email",
+          "audio": "/portal/help-audio/login-02-email.mp3"
         },
         {
           "voice": "Enter your PIN or password.",
           "demo": "login-mock",
           "focus": "password",
-          "caption": "PIN or password"
+          "caption": "PIN or password",
+          "audio": "/portal/help-audio/login-03-password.mp3"
         },
         {
           "voice": "Tap Login. You land on your dashboard with Today’s sessions.",
           "demo": "login-mock",
           "focus": "submit",
-          "caption": "Login"
+          "caption": "Login",
+          "audio": "/portal/help-audio/login-04-submit.mp3"
         }
       ],
       "demos": [
@@ -105,19 +111,22 @@
           "voice": "On iPhone, open the portal in Safari. Tap Share at the bottom.",
           "demo": "install-mock",
           "focus": "iphone",
-          "caption": "iPhone — Share button"
+          "caption": "iPhone — Share button",
+          "audio": "/portal/help-audio/install-01-iphone.mp3"
         },
         {
           "voice": "Choose Add to Home Screen, then Add. The CS Portal icon appears on your home screen.",
           "demo": "install-mock",
           "focus": "iphone-add",
-          "caption": "Add to Home Screen"
+          "caption": "Add to Home Screen",
+          "audio": "/portal/help-audio/install-02-iphone-add.mp3"
         },
         {
           "voice": "On Android, open the portal in Chrome. Tap the menu, then Install app or Add to Home screen.",
           "demo": "install-mock",
           "focus": "android",
-          "caption": "Android — Install app"
+          "caption": "Android — Install app",
+          "audio": "/portal/help-audio/install-03-android.mp3"
         }
       ],
       "demos": [
@@ -145,12 +154,14 @@
         {
           "voice": "Today lists your sessions. Each card shows time, venue, participant and status.",
           "demo": "session-cards",
-          "caption": "Today session cards"
+          "caption": "Today session cards",
+          "audio": "/portal/help-audio/dashboard-01-today-session-cards.mp3"
         },
         {
           "voice": "Coloured dots around the logo mean something is waiting. Tap the logo to see reminders.",
           "demo": "halo",
-          "caption": "Logo halo — tap when dots show"
+          "caption": "Logo halo — tap when dots show",
+          "audio": "/portal/help-audio/dashboard-02-logo-halo-tap-when-dots-show.mp3"
         }
       ],
       "demos": [
@@ -198,7 +209,8 @@
           "caption": "Override chips when the office changed a session."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/colours-overview.mp3"
     },
     {
       "id": "logo-halo",
@@ -224,7 +236,8 @@
           "caption": "Term view — red days still have outstanding feedback; green is done."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/logo-halo-overview.mp3"
     },
     {
       "id": "feedback",
@@ -245,13 +258,15 @@
           "voice": "When feedback is pending, the session card is orange with a Pending pill.",
           "demo": "feedback-flow",
           "focus": "pending",
-          "caption": "Orange — feedback waiting"
+          "caption": "Orange — feedback waiting",
+          "audio": "/portal/help-audio/feedback-01-pending.mp3"
         },
         {
           "voice": "Tap the card, complete the feedback form, and submit. The card turns green.",
           "demo": "feedback-flow",
           "focus": "done",
-          "caption": "Green — feedback submitted"
+          "caption": "Green — feedback submitted",
+          "audio": "/portal/help-audio/feedback-02-done.mp3"
         }
       ],
       "demos": [
@@ -286,7 +301,8 @@
           "caption": "Quick actions on each participant card."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/participants-overview.mp3"
     },
     {
       "id": "quick-menu",
@@ -307,7 +323,8 @@
           "caption": "Quick menu — Staff help guide is in Settings."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/quick-menu-overview.mp3"
     },
     {
       "id": "announcements",
@@ -334,7 +351,8 @@
           "caption": "Signed PDFs are saved in My Documents."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/announcements-overview.mp3"
     },
     {
       "id": "daily-forms",
@@ -361,7 +379,8 @@
           "caption": "Pickup/handover — record drop-off and collection."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/daily-forms-overview.mp3"
     },
     {
       "id": "finance",
@@ -389,7 +408,8 @@
           "caption": "Expenses — add description, amount and receipt."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/finance-overview.mp3"
     },
     {
       "id": "session-disruption",
@@ -408,7 +428,8 @@
       ],
       "voice_script": "If you cannot work a rota session, submit Session disruption report in Quick menu. Still call or email admin as soon as you can.",
       "content": "If you cannot attend a session on the day, or you need a planned day off from the rota, complete the Session Disruption Report (POL-048).\n\nQuick menu → Session disruption report — same form for same-day absence and planned absence (section 3.3 of the procedure).\n\nFill in the affected date, venue and reason, then submit. Admin receives the report and your day off is recorded for cover.\n\nStill notify admin by phone or email as soon as possible — the form is the follow-up within 24 hours.\n\nClient session cancellations (participant did not attend) use a different form: Cancellation from the participant card.",
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/session-disruption-overview.mp3"
     },
     {
       "id": "documents",
@@ -429,7 +450,8 @@
           "caption": "My Documents — payslips, signed documents and PDFs."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/documents-overview.mp3"
     },
     {
       "id": "alerts-settings",
@@ -452,7 +474,8 @@
           "caption": "Settings toggles — notifications, location and microphone."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/alerts-settings-overview.mp3"
     },
     {
       "id": "area-notes",
@@ -476,7 +499,8 @@
           "caption": "Common pool, room and venue icons."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/area-notes-overview.mp3"
     },
     {
       "id": "lead-tools",
@@ -496,7 +520,8 @@
           "caption": "Lead-only tiles appear only for lead/admin roles."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/lead-tools-overview.mp3"
     },
     {
       "id": "profile-update",
@@ -516,7 +541,8 @@
           "caption": "Annual profile check — confirm each section."
         }
       ],
-      "illustrations": []
+      "illustrations": [],
+      "audio": "/portal/help-audio/profile-update-overview.mp3"
     }
   ]
 }

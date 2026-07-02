@@ -373,6 +373,9 @@
 
     var token = await authToken();
     if (!token) {
+      if (opts.fallbackBrowser === false) {
+        return { ok: false, error: "session_expired" };
+      }
       return speakWithBrowser(t);
     }
 
@@ -385,6 +388,9 @@
       }
     } catch (_fetch) {}
 
+    if (opts.fallbackBrowser === false) {
+      return { ok: false, error: "elevenlabs_unavailable" };
+    }
     return speakWithBrowser(t);
   }
 
