@@ -1812,22 +1812,78 @@ body.portal-achievements-viewer-open .admin-topbar {
 }
 
 .portal-ach-inbox-bulk__select {
-  flex: 1 1 180px;
+  flex: 1 1 220px;
   min-width: 0;
-  max-width: 280px;
-}
-
-.portal-ach-inbox-bulk__select {
-  flex: 1 1 180px;
-  min-width: 0;
-  max-width: 280px;
+  max-width: min(420px, 100%);
 }
 
 .portal-ach-inbox-participant-pick {
   position: relative;
-  flex: 1 1 200px;
+  flex: 1 1 220px;
   min-width: 0;
-  max-width: 280px;
+  max-width: min(420px, 100%);
+}
+
+.portal-ach-inbox-participant-pick--multi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-ach-inbox-participant-pick__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.portal-ach-inbox-participant-pick__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: rgba(45, 132, 179, 0.12);
+  border: 1px solid rgba(45, 132, 179, 0.22);
+  color: var(--navy, #0f172a);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.portal-ach-inbox-participant-pick__chip-label {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-ach-inbox-participant-pick__chip-remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted, #64748b);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.portal-ach-inbox-participant-pick__chip-remove:hover,
+.portal-ach-inbox-participant-pick__chip-remove:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--navy, #0f172a);
+  outline: none;
+}
+
+.portal-ach-inbox-participant-pick__field {
+  position: relative;
+  min-width: 0;
 }
 
 .portal-ach-inbox-participant-pick__input {

@@ -3238,6 +3238,37 @@
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
   }
 
+  /** One display label per instructor for filter dropdowns (roster may mix LULIYA / Luliya). */
+  function canonicalInstructorFilterName(name) {
+    var n = clean(name);
+    if (!n) return "";
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      return window.portalStaffDisplayName(n);
+    }
+    if (/^[A-Z]{2,}$/.test(n)) {
+      return n.charAt(0) + n.slice(1).toLowerCase();
+    }
+    return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+  }
+
+  function uniqueInstructorFilterNames(rawLabels) {
+    var byKey = Object.create(null);
+    var list = rawLabels || [];
+    for (var i = 0; i < list.length; i++) {
+      var raw = clean(list[i]);
+      if (!raw) continue;
+      var key = raw.toLowerCase();
+      if (!byKey[key]) byKey[key] = canonicalInstructorFilterName(raw);
+    }
+    return Object.keys(byKey)
+      .map(function (k) {
+        return byKey[k];
+      })
+      .sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      });
+  }
+
   function emotionDotClass(emotionsText) {
     var t = clean(emotionsText).toLowerCase();
     if (!t) return "";
@@ -4927,20 +4958,18 @@
   };
 
   AdminSessionsHub.prototype.instructorFilterOptionsForDay = function (dayIso) {
-    var map = {};
+    var raw = [];
     var rows = this.feedbackLogRowsForDay(dayIso);
     for (var i = 0; i < rows.length; i++) {
       var n = clean(rows[i].completed_by_name);
-      if (n) map[n] = true;
+      if (n) raw.push(n);
     }
-    return Object.keys(map).sort(function (a, b) {
-      return a.localeCompare(b, "en", { sensitivity: "base" });
-    });
+    return uniqueInstructorFilterNames(raw);
   };
 
   AdminSessionsHub.prototype.overviewFilterOptionsForDay = function (dayIso) {
     var hub = this;
-    var instMap = {};
+    var instRaw = [];
     var svcMap = {};
     var slots = this.expandSlotsForDate(dayIso);
     for (var i = 0; i < slots.length; i++) {
@@ -4955,12 +4984,10 @@
           return clean(x);
         })
         .filter(Boolean);
-      for (var j = 0; j < labels.length; j++) instMap[labels[j]] = true;
+      for (var j = 0; j < labels.length; j++) instRaw.push(labels[j]);
     }
     return {
-      instructors: Object.keys(instMap).sort(function (a, b) {
-        return a.localeCompare(b, "en", { sensitivity: "base" });
-      }),
+      instructors: uniqueInstructorFilterNames(instRaw),
       services: Object.keys(svcMap).sort(function (a, b) {
         return a.localeCompare(b, "en", { sensitivity: "base" });
       }),
