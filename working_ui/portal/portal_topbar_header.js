@@ -357,10 +357,9 @@
       var profile = box.staff_profile;
       var email = (box.session && box.session.user && box.session.user.email) || "";
       if (typeof global.portalCanAccessCeoDashboard === "function") {
-        return !!global.portalCanAccessCeoDashboard(profile, email);
-      }
-      if (typeof global.__portalCanAccessCeoDashboard === "function") {
-        return !!global.__portalCanAccessCeoDashboard(profile, email);
+        if (global.portalCanAccessCeoDashboard(profile, email)) return true;
+      } else if (typeof global.__portalCanAccessCeoDashboard === "function") {
+        if (global.__portalCanAccessCeoDashboard(profile, email)) return true;
       }
       var key = "";
       if (typeof global.portalInferStaffKey === "function") {

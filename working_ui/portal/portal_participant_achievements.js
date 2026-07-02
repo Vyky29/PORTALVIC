@@ -263,6 +263,35 @@
     return isLeadInboxMode();
   }
 
+  /** Victor / Raúl / Javi — gallery + inbox mode (email works before staff_profile hydrates). */
+  function resolveExecGalleryAccess() {
+    try {
+      if (
+        typeof global.portalStaffHasLeadPhotoInboxAccess === "function" &&
+        global.portalStaffHasLeadPhotoInboxAccess()
+      ) {
+        return true;
+      }
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var prof = box.staff_profile;
+      var em = String((box.session && box.session.user && box.session.user.email) || "").trim();
+      if (typeof global.portalCanAccessCeoDashboard === "function") {
+        if (global.portalCanAccessCeoDashboard(prof, em)) return true;
+      }
+      if (typeof global.__portalCanAccessCeoDashboard === "function") {
+        if (global.__portalCanAccessCeoDashboard(prof, em)) return true;
+      }
+      if (typeof global.portalInferStaffKey === "function") {
+        var k = String(global.portalInferStaffKey(prof, em) || "")
+          .trim()
+          .toLowerCase();
+        if (k === "victor" || k === "javi" || k === "raul") return true;
+      }
+      if (String((prof && prof.app_role) || "").trim().toLowerCase() === "ceo") return true;
+    } catch (_e) {}
+    return false;
+  }
+
   /** Programme leads when profile hydration is still pending (Berta/John/Michelle). */
   function resolveProgrammeLeadGalleryAccess() {
     if (canUploadFromDeviceGallery()) return true;
@@ -299,11 +328,19 @@
   }
 
   function canUploadFromDeviceGalleryResolved() {
-    return canUploadFromDeviceGallery() || resolveProgrammeLeadGalleryAccess();
+    return (
+      canUploadFromDeviceGallery() ||
+      resolveProgrammeLeadGalleryAccess() ||
+      resolveExecGalleryAccess()
+    );
   }
 
   function isLeadSessionPhotosMode() {
-    return isLeadInboxMode() || resolveProgrammeLeadGalleryAccess();
+    return (
+      isLeadInboxMode() ||
+      resolveProgrammeLeadGalleryAccess() ||
+      resolveExecGalleryAccess()
+    );
   }
 
   function handleCameraRetryTap() {
@@ -1827,6 +1864,23 @@
     if (galBtn) galBtn.classList.toggle("is-active", isGallery);
   }
 
+  function refreshLeadInboxUi(opts) {
+    opts = opts || {};
+    syncLeadInboxUi();
+    var titleEl = document.getElementById("achievementsSheetTitle");
+    if (titleEl) {
+      titleEl.textContent = isLeadSessionPhotosMode() ? "Session photos" : "Participant achievements";
+    }
+    var backBtn = document.getElementById("portalAchievementsBackParticipants");
+    if (backBtn) {
+      backBtn.textContent = isLeadSessionPhotosMode() ? "Change" : "Participants";
+    }
+    if (opts.full) {
+      var pick = document.getElementById("portalAchievementsStepPick");
+      if (pick && !pick.hidden) renderParticipantPicker();
+    }
+  }
+
   function syncLeadInboxUi() {
     var note = document.getElementById("portalAchievementsIntroNote");
     if (note) {
@@ -2676,7 +2730,7 @@
     getSelectedFeedbackPhotoIds: getSelectedFeedbackPhotoIds,
     finalizeOnFeedbackSubmit: finalizeOnFeedbackSubmit,
     syncScreenshotGuard: syncAchievementScreenshotGuard,
-    refreshLeadInboxUi: syncLeadInboxUi,
+    refreshLeadInboxUi: refreshLeadInboxUi,
     MAX_PHOTOS: MAX_PHOTOS,
   };
 })(typeof window !== "undefined" ? window : globalThis);

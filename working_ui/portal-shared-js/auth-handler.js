@@ -198,16 +198,17 @@ const PORTAL_CEO_DASHBOARD_DENIED_EMAILS = new Set([
 ]);
 
 export function portalCanAccessCeoDashboard(profile, authEmail) {
-  if (!profile) return false;
   const email = String(resolveCorporateAuthEmail(authEmail) || authEmail || "")
     .trim()
     .toLowerCase();
   if (email && PORTAL_CEO_DASHBOARD_DENIED_EMAILS.has(email)) return false;
-  const app = String(profile.app_role || "").toLowerCase();
-  if (app === "admin") return false;
   const staffKey = portalInferStaffKey(profile, authEmail);
   if (!staffKey || PORTAL_CEO_DASHBOARD_DENIED_KEYS.has(staffKey)) return false;
-  return PORTAL_CEO_DASHBOARD_ALLOWED_KEYS.has(staffKey);
+  if (PORTAL_CEO_DASHBOARD_ALLOWED_KEYS.has(staffKey)) return true;
+  if (!profile) return false;
+  const app = String(profile.app_role || "").toLowerCase();
+  if (app === "admin") return false;
+  return false;
 }
 
 /** Victor, Raúl, Javi — home shell is Lead Portal (staff & leads chat + Directors). */
