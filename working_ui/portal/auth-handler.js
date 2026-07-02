@@ -31,7 +31,39 @@ import {
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
+  PORTAL_EXECUTIVE_AUTH_EMAILS,
 } from "./auth-map.js";
+
+function portalLoginPromiseTimeout(promise, ms, message) {
+  const waitMs = Math.max(1000, Number(ms) || 15000);
+  return Promise.race([
+    promise,
+    new Promise(function (_resolve, reject) {
+      setTimeout(function () {
+        reject(new Error(message || "Request timed out. Check your connection and try again."));
+      }, waitMs);
+    }),
+  ]);
+}
+
+function portalEmergencyRedirectUrl(loginEmail) {
+  const em = resolveCorporateAuthEmail(String(loginEmail || "").trim()).toLowerCase();
+  if (!em) return null;
+  if (PORTAL_EXECUTIVE_AUTH_EMAILS.indexOf(em) >= 0) {
+    return portalPublishedAdminUrl();
+  }
+  if (
+    em === "johnnyosti37@gmail.com" ||
+    em === "b.traperocasado@gmail.com" ||
+    em === "michelle@youtimecounselling.com"
+  ) {
+    return portalPublishedStaffUrl();
+  }
+  if (em === "sevitha@clubsensational.org") {
+    return portalPublishedOfficeUrl();
+  }
+  return null;
+}
 
 export {
   portalLogout,
@@ -819,14 +851,15 @@ function bindLogin() {
   async function portalEnsureSupabaseSession(supabase, session) {
     if (!session || !session.access_token) return;
     try {
-      const {
-        data: { session: cur },
-      } = await supabase.auth.getSession();
-      if (cur && cur.access_token === session.access_token) return;
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token || "",
-      });
+      // Avoid getSession() here — it can block on Supabase auth lock while sign-in finishes.
+      await portalLoginPromiseTimeout(
+        supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token || "",
+        }),
+        8000,
+        "Could not save your session. Try again."
+      );
     } catch (sessErr) {
       console.warn("[portal] setSession after sign-in failed", sessErr);
     }
@@ -1053,6 +1086,7 @@ function bindLogin() {
   }
 
   async function tryRedirectIfSession() {
+    if (window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__) return;
     if (tryRedirectLegacyPortalAuthHost()) return;
     if (showAuthCallbackErrorFromHash()) return;
     hideError();
@@ -1099,23 +1133,25 @@ function bindLogin() {
     e.preventDefault();
     e.stopImmediatePropagation();
 
+    if (window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__) return;
+
     await tryMergeStaffLoginMapFromSiblingJson();
 
     hideError();
     const username = nameInput.value.trim();
     const password = passwordInput.value;
     const loginBtn = document.getElementById("btn-login");
-    const loginBtnLabel = loginBtn ? loginBtn.textContent : "";
-    if (loginBtn) {
-      loginBtn.disabled = true;
-      loginBtn.textContent = "Signing in…";
-    }
-    const email = resolveDemoEmail(username);
-    if (!email) {
+    const loginBtnLabel = loginBtn ? loginBtn.textContent : "Login";
+
+    function resetLoginBtn() {
       if (loginBtn) {
         loginBtn.disabled = false;
         loginBtn.textContent = loginBtnLabel || "Login";
       }
+    }
+
+    const email = resolveDemoEmail(username);
+    if (!email) {
       showError(PORTAL_LOGIN_UNKNOWN_NAME_HELP);
       return;
     }
@@ -1123,58 +1159,66 @@ function bindLogin() {
     try {
       supabase = getSupabaseClient();
     } catch (err) {
-      if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.textContent = loginBtnLabel || "Login";
-      }
       showError(err instanceof Error ? err.message : "Configuration error");
       return;
     }
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error || !data?.user?.id) {
-      if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.textContent = loginBtnLabel || "Login";
-      }
-      showError(portalLoginFailureMessage(email));
-      return;
+
+    window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__ = true;
+    if (loginBtn) {
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Signing in…";
     }
-    if (data.session) {
-      await portalEnsureSupabaseSession(supabase, data.session);
-    }
+
+    var navigated = false;
     try {
-      await portalBumpAuthSessionGeneration(supabase);
-    } catch (bumpErr) {
-      console.warn(
-        "[portal] portal_bump_auth_session_generation failed — apply migration 20260420_portal_auth_generation_and_review_select.sql?",
-        bumpErr
+      const signInWrap = await portalLoginPromiseTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        25000,
+        "Sign-in timed out. Check your connection and tap Login again."
       );
-    }
-    try {
-      portalPersistLoginRedirectIntent();
-      const url = await redirectUrlForUser(supabase, data.user.id, {
-        email,
-        registeredLogin: true,
-      });
-      if (!url) {
-        if (loginBtn) {
-          loginBtn.disabled = false;
-          loginBtn.textContent = loginBtnLabel || "Login";
-        }
+      const data = signInWrap && signInWrap.data;
+      const error = signInWrap && signInWrap.error;
+      if (error || !data?.user?.id) {
+        showError(portalLoginFailureMessage(email));
         return;
       }
+      if (data.session) {
+        await portalEnsureSupabaseSession(supabase, data.session);
+      }
+      void portalBumpAuthSessionGeneration(supabase).catch(function (bumpErr) {
+        console.warn(
+          "[portal] portal_bump_auth_session_generation failed — apply migration 20260420_portal_auth_generation_and_review_select.sql?",
+          bumpErr
+        );
+      });
+      portalPersistLoginRedirectIntent();
+      let url = null;
+      try {
+        url = await portalLoginPromiseTimeout(
+          redirectUrlForUser(supabase, data.user.id, {
+            email,
+            registeredLogin: true,
+          }),
+          15000,
+          "Loading your profile timed out."
+        );
+      } catch (profileErr) {
+        url = portalEmergencyRedirectUrl(email);
+        if (!url) throw profileErr;
+        console.warn("[portal] profile redirect fallback after timeout", profileErr);
+      }
+      if (!url) return;
       if (loginBtn) loginBtn.textContent = "Opening…";
+      navigated = true;
       window.location.href = url;
     } catch (err) {
-      if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.textContent = loginBtnLabel || "Login";
-      }
       clearPortalStaffContext();
-      showError(errorMessage(err, "Could not load your profile"));
+      showError(errorMessage(err, "Could not sign in"));
+    } finally {
+      window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__ = false;
+      if (!navigated && loginBtn && loginBtn.disabled) {
+        resetLoginBtn();
+      }
     }
   }
 
