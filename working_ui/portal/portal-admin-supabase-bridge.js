@@ -115,7 +115,7 @@
     if (global.portalAdminGetSupabaseClient()) return;
     if (global.__PORTAL_ADMIN_BOOTSTRAP_KICKED__) return;
     global.__PORTAL_ADMIN_BOOTSTRAP_KICKED__ = true;
-    import("/portal/auth-handler.js?v=20260703-session-bridge")
+    import("/portal/auth-handler.js?v=20260704-login-exec-stub")
       .then(function (mod) {
         if (typeof mod.bootstrapDashboardSupabase === "function") {
           return mod.bootstrapDashboardSupabase({ page: "admin" });

@@ -67,6 +67,33 @@ function portalEmergencyRedirectUrl(loginEmail) {
   return null;
 }
 
+/** Minimal staff_profiles row when DB link lags but corporate exec email is known. */
+function portalExecutiveBootstrapProfileStub(session, authEmail) {
+  const em = String(
+    resolveCorporateAuthEmail(authEmail || session?.user?.email || "") || "",
+  )
+    .trim()
+    .toLowerCase();
+  if (!em) return null;
+  const key = resolveStaffKeyFromAuthEmail(em);
+  if (!key) return null;
+  const isExec = PORTAL_EXECUTIVE_AUTH_EMAILS.indexOf(em) >= 0;
+  const isOpsAdmin = em === "sevitha@clubsensational.org" || em === "info@clubsensational.org";
+  if (!isExec && !isOpsAdmin) return null;
+  const displayNames = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
+  const userId = session?.user?.id ? String(session.user.id) : "";
+  if (!userId) return null;
+  return {
+    id: userId,
+    username: key,
+    full_name: displayNames[key] || key.charAt(0).toUpperCase() + key.slice(1),
+    app_role: isOpsAdmin ? "admin" : "ceo",
+    staff_role: isOpsAdmin ? "admin" : "ceo",
+    dashboard_route: isOpsAdmin ? "admin" : "ceo",
+    is_active: true,
+  };
+}
+
 export {
   portalLogout,
   getSupabaseClient,
@@ -975,7 +1002,16 @@ function bindLogin() {
     } catch {
       /* ignore */
     }
-    return fetchStaffProfileByUsernameAliases(supabase, authEmail);
+    const aliasProfile = await fetchStaffProfileByUsernameAliases(supabase, authEmail);
+    if (aliasProfile) return aliasProfile;
+    let sessionUser = { id: userId, email: authEmail };
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user?.id) sessionUser = userData.user;
+    } catch {
+      /* ignore */
+    }
+    return portalExecutiveBootstrapProfileStub({ user: sessionUser }, authEmail);
   }
 
   async function portalLogoutAfterProfileFailure() {
@@ -1015,7 +1051,32 @@ function bindLogin() {
 
   async function redirectUrlForUser(supabase, userId, loginOpts) {
     loginOpts = loginOpts || {};
-    const profile = await fetchStaffProfile(supabase, userId);
+    let profile = await fetchStaffProfile(supabase, userId);
+    if (!profile) {
+      let authEmail = String(loginOpts.email || "").trim();
+      if (!authEmail) {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          authEmail = String(userData?.user?.email || "").trim();
+        } catch {
+          /* ignore */
+        }
+      }
+      const emergency = portalEmergencyRedirectUrl(authEmail);
+      if (emergency) {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          profile =
+            portalExecutiveBootstrapProfileStub(userData, authEmail) ||
+            portalExecutiveBootstrapProfileStub({ user: { id: userId, email: authEmail } }, authEmail);
+        } catch {
+          profile = portalExecutiveBootstrapProfileStub(
+            { user: { id: userId, email: authEmail } },
+            authEmail,
+          );
+        }
+      }
+    }
     if (!profile) {
       await portalLogoutAfterProfileFailure();
       showError(portalStaffProfileMissingMessage(loginOpts));
@@ -1490,9 +1551,10 @@ async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate)
     .limit(1);
   if (aliasErr) {
     console.warn("[portal] staff_profiles alias lookup:", aliasErr);
-    return null;
+    return portalExecutiveBootstrapProfileStub(session, authEmailGate);
   }
-  return Array.isArray(data) && data.length ? data[0] : null;
+  const row = Array.isArray(data) && data.length ? data[0] : null;
+  return row || portalExecutiveBootstrapProfileStub(session, authEmailGate);
 }
 
 export async function bootstrapDashboardSupabase(_opts) {
