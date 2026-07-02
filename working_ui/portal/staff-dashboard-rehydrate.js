@@ -789,13 +789,16 @@
         function _portalStaffRebuildAfterOverridesFetch(staffId){
           if(typeof buildSelectedDayViewFromLauraModel !== "function") return;
           var sid = String(staffId || (typeof window.portalAuthStaffRosterId === 'function' ? window.portalAuthStaffRosterId() : STAFF_DASHBOARD_ID) || '').trim().toLowerCase();
+          try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
           portalSyncTodaySectionDisplay();
           if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
           if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(sid);
           dashboardData.week = buildWeekRows(sid);
           if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
+          if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
+          if (typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
           try{
             var lockDay3 = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();
             if(lockDay3 && typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== "undefined" && PORTAL_WEEK_REVIEW_VALID_DAYS.has(lockDay3)){

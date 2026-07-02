@@ -1831,7 +1831,10 @@
               generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: ''
             };
             const showSpec = !isBespokeActivity(activity);
-            const skAbs = `${sessionDateKey}|${s.start}|${String(s.clientId || '').toLowerCase()}`;
+            const effCidAbs = String(s.clientId || '').trim().toLowerCase();
+            const skAbs = typeof portalBuildSessionReviewKey === 'function'
+              ? portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effCidAbs)
+              : `${sessionDateKey}|${s.start}|${effCidAbs}`;
             let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activity, cAbs, viewDay);
             if(supportHidePoolNote) poolLocationAbs = null;
             const areaAbs = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
@@ -5209,6 +5212,9 @@
         dashboardData.termFeedbackByDate = {};
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_re){}
+        }
       }
       const extraDates = (id === 'javier' || id === 'youssef') ? [] : portalTermStaffExtraCalendarDates(id);
       if(extraDates.length){

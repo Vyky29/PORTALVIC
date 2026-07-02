@@ -2367,12 +2367,17 @@
         const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
         if(srv && srv.feedback) srvPart += ':' + srv.feedback.size;
       }catch(_){}
+      let ovHydrated = '0';
+      try{
+        if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) ovHydrated = '1';
+      }catch(_){}
       return [
         sid,
         String((sessionsModel || []).length),
         ovPart,
         revPart,
         srvPart,
+        ovHydrated,
         String(dashboardData.termDashboardCalendarFrom || ''),
         String(dashboardData.termDashboardCalendarTo || '')
       ].join('\0');

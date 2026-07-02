@@ -2971,6 +2971,17 @@
         return empty;
       }
     }
+    function portalScheduleOverrideAbsentLooseMatchesSession(r, s, iso){
+      if(!r || !s || !iso) return false;
+      if(String(r.status || 'active') !== 'active') return false;
+      if(String(r.override_type || '').trim() !== 'client_absence_announced') return false;
+      const rowIso = normaliseIsoDate(r.session_date);
+      if(!rowIso || rowIso !== iso) return false;
+      if(!portalOverrideAnchorStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
+      if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
+      if(portalScheduleOverrideAnchorTimesMatchSession(r, s, 'client_absence_announced')) return true;
+      return portalOverrideSlotLabelMatchesRow(r, s);
+    }
     function portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType){
       if(!s) return [];
       const iso = normaliseIsoDate(sessionDateIso);
@@ -2999,6 +3010,14 @@
         else if(loose.length > 1){
           loose.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
           rows = [loose[0]];
+        }
+      }
+      if(!rows.length && wantType === 'client_absence_announced'){
+        const absentLoose = all.filter(function(r){ return portalScheduleOverrideAbsentLooseMatchesSession(r, s, iso); });
+        if(absentLoose.length === 1) rows = absentLoose;
+        else if(absentLoose.length > 1){
+          absentLoose.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+          rows = [absentLoose[0]];
         }
       }
       rows.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });

@@ -239,7 +239,11 @@
     function portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord, opts){
       opts = opts || {};
       try{
-        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
+        const isoKey = String(isoYmd || '').trim().slice(0, 10);
+        const reviewReady = typeof portalStaffFeedbackReviewUiReady === 'function'
+          ? portalStaffFeedbackReviewUiReady(isoKey)
+          : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
+        if(!reviewReady) return 0;
         if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return 0;
         if(typeof isSessionEndedForFeedback !== 'function') return 0;
         const list = portalTodayListItemsForCalendarDay(isoYmd, dayWord, opts);
@@ -342,29 +346,12 @@
         && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
         return 'complete';
       }
-      const relPick = relFb.length ? relFb : relAll;
-      if(Array.isArray(relPick) && relPick.length
-        && typeof portalTermRosterHasRealClientSessions === 'function'
-        && portalTermRosterHasRealClientSessions(relPick, key)){
-        let anyAccountable = false;
-        for(let ri = 0; ri < relPick.length; ri++){
-          const rs = relPick[ri];
-          if(typeof portalRosterSessionFeedbackExempt === 'function'
-            && portalRosterSessionFeedbackExempt(rs, key, staffId)) continue;
-          if(typeof portalScheduleOverrideForSessionByType === 'function'){
-            const absOv = portalScheduleOverrideForSessionByType(rs, key, 'client_absence_announced');
-            const repOv = portalScheduleOverrideForSessionByType(rs, key, 'client_replace_in_slot');
-            if(absOv && !repOv) continue;
-          }
-          anyAccountable = true;
-          break;
-        }
-        if(anyAccountable){
-          if(key <= todayKey || catchUpDay) return 'late';
-          return 'pending';
-        }
-      }
-      if(Array.isArray(relPick) && relPick.length) return 'complete';
+      const reviewReady = typeof portalStaffFeedbackReviewUiReady === 'function'
+        ? portalStaffFeedbackReviewUiReady(key)
+        : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
+      const overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+      if(!reviewReady || !overridesReady) return 'pending';
+      if(key <= todayKey || catchUpDay) return 'late';
       return 'pending';
     }
     /** Minimal Today-list item for one roster row (fallback when full list not built). */
