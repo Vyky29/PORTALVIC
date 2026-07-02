@@ -149,7 +149,7 @@
     return true;
   }
 
-  /** Ops admin uses the worker portal (payslips, policies, days off, announcements). CEOs may preview with ?portalPreviewWorker=1 */
+  /** Ops admin may use staff dashboard (shifts, term, invoices); no redirect to admin only. */
   function shouldRedirectFromWorkerPortal(prof, pathname) {
     if (previewWorkerPortalActive()) return false;
     return false;

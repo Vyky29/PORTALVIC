@@ -2150,7 +2150,21 @@
       const cid = String(s.clientId || '').trim().toLowerCase();
       const statusLow = String(s.status || '').trim().toLowerCase();
       if(cid === 'home' || statusLow === 'home') return 'HOME';
-      if(cid === 'manager' || statusLow === 'manager') return 'MANAGER';
+      if(cid === 'manager' || statusLow === 'manager') {
+        var sk = String(
+          (typeof dashboardData !== 'undefined' && dashboardData.staffId) ||
+          (typeof window !== 'undefined' && window.STAFF_DASHBOARD_ID) ||
+          ''
+        ).trim().toLowerCase();
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.rosterDutyLabel === 'function'
+        ){
+          return window.portalOpsAdminDisplay.rosterDutyLabel('MANAGER', sk);
+        }
+        return 'MANAGER';
+      }
       const areaUp = String(s.rosterArea || s.area || '').trim().toUpperCase();
       if(areaUp === 'HOME') return 'HOME';
       return '';

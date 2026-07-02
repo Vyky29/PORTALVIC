@@ -938,7 +938,7 @@
       ) {
         return true;
       }
-      if (categoryKey === "payslips" && t === "payslip") return true;
+      if (categoryKey === "payslips" && (t === "payslip" || t === "contractor_invoice")) return true;
       return false;
     }
 

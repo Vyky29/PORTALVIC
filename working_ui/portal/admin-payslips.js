@@ -202,7 +202,7 @@
     if (!sb) throw new Error("Supabase client not available.");
     var resp = await sb
       .from("documents")
-      .select("id, user_id, title, related_date, created_at, file_url")
+      .select("id, user_id, title, related_date, created_at, file_url, document_type")
       .eq("category", "payslips")
       .order("related_date", { ascending: false })
       .order("created_at", { ascending: false })
@@ -279,7 +279,7 @@
       '<span class="portal-payslips-statcard-num">' +
       esc(String(state.uploads.length)) +
       "</span>" +
-      '<span class="portal-payslips-statcard-label">All payslips</span></button>';
+      '<span class="portal-payslips-statcard-label">All payroll docs</span></button>';
     months.forEach(function (mk) {
       html +=
         '<button type="button" class="portal-payslips-statcard' +
@@ -480,6 +480,12 @@
     return res.data;
   }
 
+  function docKindLabel(row) {
+    var dt = String((row && row.document_type) || "").toLowerCase();
+    if (dt === "contractor_invoice") return "Invoice";
+    return "Payslip";
+  }
+
   function renderUploadsTable() {
     var tbody = document.getElementById("portalPayslipsTbody");
     if (!tbody) return;
@@ -495,6 +501,7 @@
         var title = row.title || monthLabelFromIso(monthKeyFromRow(row) + "-01") + " Payslip";
         var worker = staffNameById(row.user_id);
         var path = String(row.file_url || "");
+        var kind = docKindLabel(row);
         return (
           '<tr class="portal-payslips-data-row" data-payslip-idx="' +
           idx +
@@ -511,7 +518,9 @@
           '<td style="white-space:nowrap">' +
           esc(formatDateTime(row.created_at)) +
           "</td>" +
-          '<td style="white-space:nowrap">PDF</td>' +
+          '<td style="white-space:nowrap">' +
+          esc(kind) +
+          "</td>" +
           '<td style="white-space:nowrap">' +
           '<button type="button" class="portal-forms-view-btn" data-payslip-view="' +
           idx +

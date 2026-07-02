@@ -5616,12 +5616,16 @@
       display:none !important;
     }
     .session-card.session-card--manager,
-    .section-card--today .session-card.session-card--manager{
+    .section-card--today .session-card.session-card--manager,
+    .session-card.session-card--admin,
+    .section-card--today .session-card.session-card--admin{
       background:#fff3e0;
       border-color:rgba(255,152,0,.45);
     }
     .session-card.session-card--manager:hover{transform:none;box-shadow:none}
-    .session-card.session-card--manager .session-meta-name{
+    .session-card.session-card--admin:hover{transform:none;box-shadow:none}
+    .session-card.session-card--manager .session-meta-name,
+    .session-card.session-card--admin .session-meta-name{
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;

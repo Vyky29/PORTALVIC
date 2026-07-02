@@ -731,8 +731,16 @@
 
     const isDemoAcct = rawId === "teflon";
     const effectiveRowStaffId = isDemoAcct ? "teflon" : rawId;
-    const built = buildForStaff(source, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
-    const allRows = Array.isArray(source && source.rows) ? source.rows : [];
+    let rosterSource = source;
+    if (
+      typeof window !== "undefined" &&
+      window.portalOpsAdminDutyRoster &&
+      typeof window.portalOpsAdminDutyRoster.mergeDutyRows === "function"
+    ) {
+      rosterSource = window.portalOpsAdminDutyRoster.mergeDutyRows(source, effectiveRowStaffId);
+    }
+    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
+    const allRows = Array.isArray(rosterSource && rosterSource.rows) ? rosterSource.rows : [];
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 
     let clientsInfo = (source && source.clientsInfo) || [];

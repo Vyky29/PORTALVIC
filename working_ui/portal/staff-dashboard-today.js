@@ -1691,8 +1691,9 @@
           const sessionEndTs = _rowTs.sessionEndTs;
           const dutyLabel = portalRosterDutySlotLabel(s);
           if(dutyLabel){
-            const dutyKind = dutyLabel === 'HOME' ? 'home' : 'manager';
-            const isHomeDuty = dutyKind === 'home';
+            const isHomeDuty = dutyLabel === 'HOME';
+            const isAdminDuty = !isHomeDuty && String(dutyLabel).toUpperCase() === 'ADMIN';
+            const dutyKind = isHomeDuty ? 'home' : (isAdminDuty ? 'admin' : 'manager');
             const hubRoom = 'Hub Room';
             return Object.assign({
               time: isHomeDuty ? '' : time,
@@ -1707,7 +1708,7 @@
               showSpecialty: false,
               specialtyLabel: '',
               portalDutyFullCard: isHomeDuty,
-              general: isHomeDuty ? 'Working from home.' : 'Manager on duty.',
+              general: isHomeDuty ? 'Working from home.' : (isAdminDuty ? 'Admin on duty.' : 'Manager on duty.'),
               specialty: '—',
               openSheet: false,
               sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || dutyKind).toLowerCase()}`,

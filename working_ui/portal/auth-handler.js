@@ -793,12 +793,12 @@ function inferDashboardRoute(profile, authEmail) {
   }
   if (fromWorkingUi) {
     if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return "admin_dashboard.html";
-    if (portalIsOperationsAdminUser(profile, authEmail)) return "staff_dashboard.html";
+    if (portalIsOperationsAdminUser(profile, authEmail)) return "admin_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     return "staff_dashboard.html";
   }
   if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return portalPublishedAdminUrl();
-  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedStaffUrl();
+  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedAdminUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedStaffUrl();
   return portalPublishedStaffUrl();

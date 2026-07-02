@@ -806,7 +806,7 @@
         const ovTone = typeof portalTodaySessionOverrideCardClass === 'function' ? portalTodaySessionOverrideCardClass(item) : '';
         const ovTypeCls = typeof portalTodayItemOverrideClass === 'function' ? portalTodayItemOverrideClass(item) : '';
         const adminAdjCls = typeof portalTodayItemUsesAdminShiftCardStyle === 'function' && portalTodayItemUsesAdminShiftCardStyle(item) ? ' session-card--admin-adjusted' : '';
-        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.openSheet === false){
+        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin' || item.openSheet === false){
           const row = document.createElement('div');
           const rowKindCls = item.kind === 'closed'
             ? 'session-card--closed'
@@ -814,7 +814,9 @@
               ? 'session-card--available'
               : (item.kind === 'home'
                 ? 'session-card--home'
-                : (item.kind === 'manager' ? 'session-card--manager' : '')));
+                : (item.kind === 'admin'
+                  ? 'session-card--admin'
+                  : (item.kind === 'manager' ? 'session-card--manager' : ''))));
           row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '');
           row.setAttribute('role', 'listitem');
           row.innerHTML = todaySessionCardInnerHtml(item);
@@ -2282,7 +2284,7 @@
       for(let i = 0; i < list.length; i++){
         const item = list[i];
         if(!item || !item.sessionKey) continue;
-        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager') continue;
+        if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin') continue;
         if(item.noSessionFeedbackRequired) continue;
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
