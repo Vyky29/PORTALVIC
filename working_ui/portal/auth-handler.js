@@ -794,6 +794,9 @@ function bindLogin() {
   function showError(message) {
     errorEl.textContent = message || "Invalid login details";
     errorEl.classList.add("visible");
+    try {
+      errorEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (_scroll) {}
   }
 
   function errorMessage(err, fallback) {
@@ -1101,8 +1104,18 @@ function bindLogin() {
     hideError();
     const username = nameInput.value.trim();
     const password = passwordInput.value;
+    const loginBtn = document.getElementById("btn-login");
+    const loginBtnLabel = loginBtn ? loginBtn.textContent : "";
+    if (loginBtn) {
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Signing in…";
+    }
     const email = resolveDemoEmail(username);
     if (!email) {
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = loginBtnLabel || "Login";
+      }
       showError(PORTAL_LOGIN_UNKNOWN_NAME_HELP);
       return;
     }
@@ -1110,6 +1123,10 @@ function bindLogin() {
     try {
       supabase = getSupabaseClient();
     } catch (err) {
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = loginBtnLabel || "Login";
+      }
       showError(err instanceof Error ? err.message : "Configuration error");
       return;
     }
@@ -1118,6 +1135,10 @@ function bindLogin() {
       password,
     });
     if (error || !data?.user?.id) {
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = loginBtnLabel || "Login";
+      }
       showError(portalLoginFailureMessage(email));
       return;
     }
@@ -1138,15 +1159,27 @@ function bindLogin() {
         email,
         registeredLogin: true,
       });
-      if (!url) return;
+      if (!url) {
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = loginBtnLabel || "Login";
+        }
+        return;
+      }
+      if (loginBtn) loginBtn.textContent = "Opening…";
       window.location.href = url;
     } catch (err) {
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = loginBtnLabel || "Login";
+      }
       clearPortalStaffContext();
       showError(errorMessage(err, "Could not load your profile"));
     }
   }
 
   form.addEventListener("submit", onSupabaseSubmit, true);
+  window.__PORTAL_LOGIN_HANDLER_READY__ = true;
 
   [nameInput, passwordInput].forEach(function (el) {
     el.addEventListener("input", hideError);

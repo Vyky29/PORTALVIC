@@ -3,6 +3,7 @@
 <head>
   <!-- PORTALVIC · Vercel static deploy (working_ui/) -->
   <meta charset="UTF-8" />
+  <script src="/portal-static-bootstrap.js?v=20260630-login-bootstrap"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
@@ -205,9 +206,10 @@
     }
     .btn-login:hover{filter:brightness(1.03)}
     .btn-login:active{transform:scale(.985)}
-    .btn-login:focus-visible{
-      outline:2px solid var(--sen-gold);
-      outline-offset:2px;
+    .btn-login:disabled{
+      opacity:.65;
+      cursor:wait;
+      transform:none;
     }
 
     .error-msg{
@@ -430,7 +432,7 @@
       <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
       <p id="loginActiveSessionBar" class="login-active-session" hidden role="status" aria-live="polite"></p>
 
-      <form id="login-form" novalidate method="post" action="">
+      <form id="login-form" novalidate>
         <input type="hidden" id="portalLoginApp" name="portal_login_app" value="" />
         <div class="field">
           <label for="name">Name or email</label>
@@ -438,7 +440,7 @@
         </div>
         <div class="field">
           <label for="password">PIN or password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" inputmode="numeric" placeholder="4-digit PIN" />
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="PIN or password" />
         </div>
         <button type="submit" class="btn-login" id="btn-login">Login</button>
       </form>
@@ -446,6 +448,26 @@
       </div>
     </div>
   </div>
+  <script>
+    (function () {
+      var form = document.getElementById("login-form");
+      if (!form) return;
+      form.addEventListener(
+        "submit",
+        function (e) {
+          if (window.__PORTAL_LOGIN_HANDLER_READY__) return;
+          e.preventDefault();
+          e.stopPropagation();
+          var err = document.getElementById("error-msg");
+          if (err) {
+            err.textContent = "Loading sign-in… wait a moment and tap Login again.";
+            err.classList.add("visible");
+          }
+        },
+        true
+      );
+    })();
+  </script>
 
   <script>
     (function () {
@@ -574,7 +596,7 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260704-login-profile-fix";
+      var portalJsVer = "20260630-login-submit-fix";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");
