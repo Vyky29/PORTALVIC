@@ -1046,6 +1046,30 @@
     });
   }
 
+  function dayCentrePeerSubmissionCoversClient(iso, clientSlug) {
+    const key = String(clientSlug || "").trim();
+    if (!key) return false;
+    const day = String(iso || "").trim().substring(0, 10);
+    const unitKey = day + "|" + key + "|day_centre";
+    try {
+      const dd = typeof window !== "undefined" && window.dashboardData;
+      const srv = dd && dd.portalServerResolvedRosterKeys;
+      if (srv && srv.feedback && typeof srv.feedback.has === "function" && srv.feedback.has(unitKey)) {
+        return true;
+      }
+    } catch (_) {}
+    return submittedRowsForDateAll(iso).some(function (r) {
+      if (submittedRowMarksAbsent(r)) return false;
+      const rKey = slug(r.clientName);
+      if (!(rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0)) return false;
+      const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+      if (pk && pk.slice(0, 10) === day) {
+        if (pk.indexOf("|day_centre") >= 0 || /day\s*centre/i.test(String(r.service || ""))) return true;
+      }
+      return /day\s*centre/i.test(String(r.service || ""));
+    });
+  }
+
   function dayCentreClientResolved(iso, staffId, clientSlug) {
     const key = String(clientSlug || "").trim();
     if (!key) return false;
@@ -1060,10 +1084,7 @@
     ) {
       return true;
     }
-    return submittedRowsForDateAll(iso).some(function (r) {
-      const rKey = slug(r.clientName);
-      return rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0;
-    });
+    return dayCentrePeerSubmissionCoversClient(iso, key);
   }
 
   function feedbackCoverageThroughIso() {
@@ -1367,6 +1388,7 @@
     submittedCoversStatusRow: submittedCoversStatusRow,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
+    dayCentrePeerSubmissionCoversClient: dayCentrePeerSubmissionCoversClient,
     mergeGroupResolved: mergeGroupResolved,
     feedbackUnitKeyResolved: feedbackUnitKeyResolved,
     exportMarksDayComplete: exportMarksDayComplete,

@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260704-peer-shared-feedback';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260705-day-centre-peer';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -524,6 +524,12 @@
               || portalStaffLeadReviewKeyAllowsDateClientOnlyAlias(s, iso, dayWord))){
               tryK(iso + '||' + cid);
             }
+            if(cid && typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)){
+              tryK(iso + '|' + cid + '|day_centre');
+            }
+            if(cid && typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)){
+              tryK(iso + '|' + cid + '|bespoke_shared');
+            }
             return o;
           })();
           if(memOnly.absent || memOnly.cancelled){
@@ -576,6 +582,24 @@
             }
           } else if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
             return portalReviewFlagsForResolvedSession(iso, sid, s);
+          }
+          const clientKeyPeer = portalRosterClientLabelForMatch(s);
+          if(clientKeyPeer && typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
+            && typeof bridge.dayCentrePeerSubmissionCoversClient === 'function'
+            && bridge.dayCentrePeerSubmissionCoversClient(iso, clientKeyPeer)){
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
+          }
+          if(clientKeyPeer && typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)
+            && typeof bridge.submittedRowsForDateAll === 'function'){
+            const bespokePeer = bridge.submittedRowsForDateAll(iso).find(function(r){
+              const rKey = portalSlugifyClientKey(r.clientName);
+              if(rKey !== clientKeyPeer && rKey.indexOf(clientKeyPeer) < 0 && clientKeyPeer.indexOf(rKey) < 0) return false;
+              if(bridge.submittedRowMarksAbsent && bridge.submittedRowMarksAbsent(r)) return false;
+              const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || '').trim();
+              if(pk.indexOf('|bespoke_shared') >= 0) return true;
+              return /bespoke/i.test(String(r.service || ''));
+            });
+            if(bespokePeer) return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
           if(src && Array.isArray(src.rows)){
@@ -639,19 +663,15 @@
         if(dayCentre && clientKey){
           const allDay = src.rows.filter(function(st){
             return String(st.date || '').trim().substring(0, 10) === iso
-              && portalStaffOwnsFeedbackStatusRow(sid, st)
               && portalSlugifyClientKey(st.client) === clientKey
               && (String(st.feedbackUnitKey || '').indexOf('day_centre') >= 0 || /day\s*centre/i.test(String(st.service || '')));
           });
           if(allDay.some(portalStatusRowIsDoneForCalendar)) {
             return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
-          if(typeof window !== 'undefined' && window.SESSION_FEEDBACK_PORTAL_SOURCE && Array.isArray(window.SESSION_FEEDBACK_PORTAL_SOURCE.rows)){
-            const fbHit = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.find(function(r){
-              return String(r.date || '').trim().substring(0, 10) === iso
-                && portalSlugifyClientKey(r.clientName) === clientKey;
-            });
-            if(fbHit) return portalReviewFlagsForResolvedSession(iso, sid, s);
+          if(bridge && typeof bridge.dayCentrePeerSubmissionCoversClient === 'function'
+            && bridge.dayCentrePeerSubmissionCoversClient(iso, clientKey)){
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
         }
         const bespokeShared = portalRosterSessionIsBespokeShared(s) || matches.some(function(st){
@@ -659,13 +679,13 @@
           return u.indexOf('bespoke_shared') >= 0;
         });
         if(bespokeShared && clientKey){
-          if(typeof window !== 'undefined' && window.SESSION_FEEDBACK_PORTAL_SOURCE && Array.isArray(window.SESSION_FEEDBACK_PORTAL_SOURCE.rows)){
-            const fbShared = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.find(function(r){
-              if(String(r.date || '').trim().substring(0, 10) !== iso) return false;
+          if(bridge && typeof bridge.submittedRowsForDateAll === 'function'){
+            const fbShared = bridge.submittedRowsForDateAll(iso).find(function(r){
               const rKey = portalSlugifyClientKey(r.clientName);
               if(rKey !== clientKey && rKey.indexOf(clientKey) < 0 && clientKey.indexOf(rKey) < 0) return false;
-              const att = String(r.attendance != null ? r.attendance : '').trim().toLowerCase();
-              if(att === 'no' || att === 'n') return false;
+              if(bridge.submittedRowMarksAbsent && bridge.submittedRowMarksAbsent(r)) return false;
+              const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || '').trim();
+              if(pk.indexOf('|bespoke_shared') >= 0) return true;
               return /bespoke/i.test(String(r.service || ''));
             });
             if(fbShared) return portalReviewFlagsForResolvedSession(iso, sid, s);
@@ -1062,6 +1082,30 @@
       if(srv && srv.feedback){
         for(let i = 0; i < aliases.length; i++){
           if(srv.feedback.has(aliases[i])) return true;
+        }
+      }
+      const liveRows = typeof window !== 'undefined' && window.__PORTAL_LIVE_SESSION_FEEDBACK_ROWS__;
+      if(Array.isArray(liveRows) && liveRows.length){
+        const matcher = typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === 'function'
+          ? window.__PORTAL_REVIEW_KEY_MATCHER__
+          : null;
+        for(let li = 0; li < liveRows.length; li++){
+          const row = liveRows[li];
+          const pk = String((row && (row.portalSessionKey || row.portal_session_key)) || '').trim();
+          if(!pk) continue;
+          for(let i = 0; i < aliases.length; i++){
+            const alias = aliases[i];
+            if(alias && pk === alias) return true;
+            if(matcher){
+              try{
+                if(matcher(pk, alias)) return true;
+              }catch(_lm){}
+            }
+            if(typeof portalReviewStoredAbsentMatchesSessionKey === 'function'
+              && portalReviewStoredAbsentMatchesSessionKey(pk, alias)){
+              return true;
+            }
+          }
         }
       }
       return false;
