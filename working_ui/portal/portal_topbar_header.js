@@ -7,6 +7,38 @@
   /** Programme leads — 6-icon grid on staff or lead shell (not CEOs on staff). */
   var PROGRAMME_LEAD_TOPBAR_KEYS = { berta: true, john: true, michelle: true };
 
+  /** Victor, Raúl, Javi/Palankas — full topbar on staff shell. */
+  var CEO_TOPBAR_KEYS = { victor: true, raul: true, javi: true };
+
+  /** Gallery upload from phone (not just in-app camera). */
+  var GALLERY_UPLOAD_STAFF_KEYS = {
+    victor: true,
+    raul: true,
+    javi: true,
+    berta: true,
+    john: true,
+    michelle: true,
+  };
+
+  var CEO_INLINE_TOPBAR_IDS = [
+    "topbarToolCellAchievements",
+    "topbarToolAchievements",
+    "topbarToolCellTermReview",
+    "topbarToolTermReview",
+    "topbarToolCellLeadTermReview",
+    "topbarToolLeadTermReview",
+    "topbarToolCellVenue",
+    "topbarToolVenue",
+    "topbarToolCellPickup",
+    "topbarToolPickup",
+    "topbarToolCellSessionPlanner",
+    "topbarToolSessionPlanner",
+    "topbarToolCellLeadReport",
+    "topbarToolLeadReport",
+    "topbarToolCellSessionsOverview",
+    "topbarToolSessionsOverview",
+  ];
+
   var LEAD_TOPBAR_CELL_IDS = [
     "topbarToolCellLeadTermReview",
     "topbarToolCellLeadReport",
@@ -285,6 +317,8 @@
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
+    if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+    if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     return k;
   }
 
@@ -353,6 +387,8 @@
 
   function portalStaffIsCeoTopbarFullAccess() {
     try {
+      var key = resolveTopbarStaffKey();
+      if (CEO_TOPBAR_KEYS[key]) return true;
       var box = global.__PORTAL_SUPABASE__ || {};
       var profile = box.staff_profile;
       var email = (box.session && box.session.user && box.session.user.email) || "";
@@ -361,17 +397,61 @@
       } else if (typeof global.__portalCanAccessCeoDashboard === "function") {
         if (global.__portalCanAccessCeoDashboard(profile, email)) return true;
       }
-      var key = "";
       if (typeof global.portalInferStaffKey === "function") {
-        key = String(global.portalInferStaffKey(profile, email) || "")
-          .trim()
-          .toLowerCase();
+        key = canonicalTopbarStaffKey(global.portalInferStaffKey(profile, email));
+        if (CEO_TOPBAR_KEYS[key]) return true;
       }
-      return key === "victor" || key === "javi" || key === "raul";
-    } catch (_) {
-      return false;
+      var em = String(email || "")
+        .trim()
+        .toLowerCase();
+      if (em.indexOf("victor@") >= 0 || em.indexOf("raul@") >= 0) return true;
+      if (em.indexOf("javier@") >= 0 || em.indexOf("javi@") >= 0) return true;
+    } catch (_) {}
+    return false;
+  }
+
+  /** Victor, Raúl, Javi/Palankas, Berta, John, Michelle — upload from device gallery. */
+  global.portalStaffCanUploadAchievementFromGallery = function portalStaffCanUploadAchievementFromGallery() {
+    try {
+      if (portalStaffIsAppRoleLead()) return true;
+      var profile = (global.__PORTAL_SUPABASE__ || {}).staff_profile;
+      var app = String((profile && profile.app_role) || "")
+        .trim()
+        .toLowerCase();
+      if (app === "lead" || app === "ceo") return true;
+      var key = resolveTopbarStaffKey();
+      if (GALLERY_UPLOAD_STAFF_KEYS[key]) return true;
+      if (portalStaffIsProgrammeLeadTopbar()) return true;
+      if (portalStaffIsCeoTopbarFullAccess()) return true;
+    } catch (_) {}
+    return false;
+  };
+
+  function portalApplyInlineCeoTopbarTools() {
+    CEO_INLINE_TOPBAR_IDS.forEach(function (id) {
+      setElementVisible(id, true);
+    });
+    global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = false;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = true;
+    var grid = document.getElementById("topbarToolsGrid");
+    if (grid) {
+      grid.classList.add("topbar-tools-grid--ceo-full");
+      grid.classList.add("topbar-tools-grid--lead");
+      grid.classList.remove("topbar-tools-grid--eight");
+    }
+    var leadRow = document.querySelector(".topbar-lead");
+    if (leadRow) {
+      leadRow.classList.add("topbar-lead--tools-6");
+      leadRow.classList.remove("topbar-lead--tools-4", "topbar-lead--tools-8");
+    }
+    if (typeof global.portalEnableRoutinesPlannerUi === "function") {
+      try {
+        global.portalEnableRoutinesPlannerUi();
+      } catch (_) {}
     }
   }
+
+  global.portalStaffIsCeoTopbarFullAccess = portalStaffIsCeoTopbarFullAccess;
 
   global.portalSyncTopbarStaffPhoto = function portalSyncTopbarStaffPhoto() {
     portalSyncTopbarProfileCard();
@@ -446,6 +526,11 @@
   /** Any app_role lead + programme leads + Victor/Raúl/Javi — inbox photos without picking a participant. */
   global.portalStaffHasLeadPhotoInboxAccess = function portalStaffHasLeadPhotoInboxAccess() {
     if (portalStaffIsAppRoleLead()) return true;
+    if (typeof global.portalStaffCanUploadAchievementFromGallery === "function") {
+      try {
+        if (global.portalStaffCanUploadAchievementFromGallery()) return true;
+      } catch (_) {}
+    }
     if (portalStaffIsProgrammeLeadTopbar()) return true;
     return portalStaffIsCeoTopbarFullAccess();
   };
@@ -461,41 +546,46 @@
     var isLeadShell = !!opts.isLead;
     global.__PORTAL_TOPBAR_IS_LEAD__ = isLeadShell;
 
-    var isProgrammeLead = !isLeadShell && portalStaffHasLeadFieldToolsOnStaffShell();
+    var isCeo = !isLeadShell && portalStaffIsCeoTopbarFullAccess();
+    var isProgrammeLead = !isLeadShell && !isCeo && portalStaffIsProgrammeLeadTopbar();
     var swimmingSixGrid =
-      !isLeadShell && !isProgrammeLead && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
+      !isLeadShell && !isProgrammeLead && !isCeo && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
     var showLeadExtras =
       isLeadShell ||
       isProgrammeLead ||
+      isCeo ||
       (swimmingSixGrid && !!global.__PORTAL_TOPBAR_LEAD_EXTRAS__);
 
-    LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
-      setElementVisible(id, showLeadExtras);
-    });
-    LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
-      setElementVisible(id, showLeadExtras);
-    });
+    if (isCeo) {
+      portalApplyInlineCeoTopbarTools();
+    } else {
+      LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
+        setElementVisible(id, showLeadExtras);
+      });
+      LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
+        setElementVisible(id, showLeadExtras);
+      });
+    }
 
     var visibleToolCount = countVisibleTopbarToolCells();
-    var useEightGrid = visibleToolCount >= 7;
-    var useSixGrid = !useEightGrid && (showLeadExtras || visibleToolCount > 3);
+    var useEightGrid = !isCeo && visibleToolCount >= 7;
+    var useSixGrid = !isCeo && !useEightGrid && (showLeadExtras || visibleToolCount > 3);
 
     var grid = document.getElementById("topbarToolsGrid");
-    if (grid) {
+    if (grid && !isCeo) {
       grid.classList.toggle("topbar-tools-grid--eight", useEightGrid);
       grid.classList.toggle("topbar-tools-grid--lead", useSixGrid);
       grid.classList.toggle("topbar-tools-grid--dense", useSixGrid && visibleToolCount >= 4);
       grid.classList.remove("topbar-tools-grid--ceo-full");
     }
     var leadRow = document.querySelector(".topbar-lead");
-    if (leadRow) {
+    if (leadRow && !isCeo) {
       leadRow.classList.toggle("topbar-lead--tools-8", useEightGrid);
       leadRow.classList.toggle("topbar-lead--tools-6", useSixGrid);
       leadRow.classList.toggle("topbar-lead--tools-4", !useSixGrid && !useEightGrid);
     }
 
-    var isCeo = portalStaffIsCeoTopbarFullAccess();
-    if (isCeo && !isLeadShell && !isProgrammeLead && typeof global.portalSyncCeoFullTopbarTools === "function") {
+    if (isCeo && typeof global.portalSyncCeoFullTopbarTools === "function") {
       global.portalSyncCeoFullTopbarTools();
     }
     portalSyncTopbarToolsGridLayout();
@@ -630,6 +720,14 @@
     );
   };
 
+  function portalResyncTopbarAfterIdentity() {
+    try {
+      if (typeof global.portalSyncTopbarRoleTools === "function") {
+        global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });
+      }
+    } catch (_) {}
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       global.portalSyncTopbarStaffPhoto();
@@ -639,4 +737,7 @@
     global.portalSyncTopbarStaffPhoto();
     global.portalInitTopbarStaffPhotoChange();
   }
+
+  global.addEventListener("portal:supabase-ready", portalResyncTopbarAfterIdentity);
+  global.addEventListener("portal:staff-deferred-dashboard-ready", portalResyncTopbarAfterIdentity);
 })(typeof window !== "undefined" ? window : globalThis);

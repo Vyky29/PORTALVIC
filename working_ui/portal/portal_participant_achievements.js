@@ -328,6 +328,11 @@
   }
 
   function canUploadFromDeviceGalleryResolved() {
+    if (typeof global.portalStaffCanUploadAchievementFromGallery === "function") {
+      try {
+        if (global.portalStaffCanUploadAchievementFromGallery()) return true;
+      } catch (_e) {}
+    }
     return (
       canUploadFromDeviceGallery() ||
       resolveProgrammeLeadGalleryAccess() ||
@@ -336,6 +341,11 @@
   }
 
   function isLeadSessionPhotosMode() {
+    if (typeof global.portalStaffCanUploadAchievementFromGallery === "function") {
+      try {
+        if (global.portalStaffCanUploadAchievementFromGallery()) return true;
+      } catch (_e) {}
+    }
     return (
       isLeadInboxMode() ||
       resolveProgrammeLeadGalleryAccess() ||

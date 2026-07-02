@@ -601,6 +601,11 @@
         }else if(typeof portalSyncTopbarRoleTools === 'function'){
           portalSyncTopbarRoleTools({ isLead: false });
         }
+        try{
+          if(typeof portalSyncTopbarRoleTools === 'function'){
+            portalSyncTopbarRoleTools({ isLead: false });
+          }
+        }catch(_tb){}
         if(typeof portalSyncOnboardingQuickMenu === 'function'){
           if(typeof window.portalEnsureDashboardLazyScripts === 'function'){
             if(portalStaffFastBootEnabled()){
