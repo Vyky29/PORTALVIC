@@ -335,6 +335,8 @@
     yusef: "yusuf_ah",
     rayyan: "rayyan_fi",
     rayyan_f: "rayyan_fi",
+    eddie: "eddie_mc",
+    chaitanya_trial_28_06: "chaitanya",
     junaid: "junaid_f",
   };
 
@@ -1289,6 +1291,20 @@
     return staffIdMatchesInstructor(staffId, instructors);
   }
 
+  function inferOverrideSlotService(ov, p) {
+    var fromPayload = clean(p.service || p.roster_service || p.rosterService);
+    if (fromPayload) return fromPayload;
+    var venue = clean(ov && ov.anchor_venue).toLowerCase();
+    var staff = clean(ov && ov.anchor_staff_id).toLowerCase();
+    if (staff === "carlos") {
+      if (venue === "westway") return "Climbing Activity";
+      if (venue === "swimfarm") return "Day Centre";
+      return "Climbing Activity";
+    }
+    if (venue === "westway" || overrideIsTrialType(ov)) return "Climbing Activity";
+    return "Aquatic Activity";
+  }
+
   function slotFromMakeupOverride(isoDate, wd, ov) {
     if (!ov || !overrideIsReplaceType(ov)) return null;
     if (clean(ov.session_date) !== isoDate) return null;
@@ -1309,7 +1325,10 @@
       rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
     var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
     var instructors = staffLabel ? [staffLabel] : [];
-    var service = clean(p.service || p.roster_service || p.rosterService) || "Aquatic Activity";
+    var service = inferOverrideSlotService(ov, p);
+    var area =
+      clean(p.area || p.pool_note || "") ||
+      (serviceKey(service).indexOf("climbing") >= 0 ? "Wall" : "");
     var slotRow = {
       session_date: isoDate,
       day: wd,
@@ -1319,7 +1338,7 @@
       time_start: startHm,
       time_end: endHm,
       venue: clean(ov.anchor_venue),
-      area: clean(p.area || p.pool_note || ""),
+      area: area,
       instructors: instructors,
       instructor_label: instructors.join(", "),
       anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
@@ -1328,7 +1347,7 @@
         service: service,
         time_slot: timeLabel,
         venue: clean(ov.anchor_venue),
-        area: clean(p.area || ""),
+        area: area,
         instructors: staffLabel,
       }),
       portalOverrideMakeUpTag: !overrideIsTrialType(ov),
@@ -1837,6 +1856,10 @@
     if (isPhysicalActivityService(slot.service)) {
       keys.push(slot.session_date + "|" + cid);
       keys.push(feedbackUnitKey(slot));
+    }
+    if (cid === "eddie_mc" && t) {
+      keys.push(slot.session_date + "|" + t + "|eddie");
+      keys.push(slot.session_date + "|" + cid + "|aquatic");
     }
     return keys;
   }
@@ -2763,7 +2786,7 @@
     var pk = clean(fb.portal_session_key).toLowerCase();
     if (pk.indexOf("hub_room") >= 0 || pk.indexOf("|hub") >= 0) return "hub";
     if (pk.indexOf("big_pool") >= 0) return "pool";
-    if (pk.indexOf("climbing") >= 0 || pk.indexOf("climb") >= 0) return "climb";
+    if (pk.indexOf("|wall") >= 0 || pk.indexOf("climbing") >= 0 || pk.indexOf("climb") >= 0) return "climb";
     if (pk.indexOf("small_pool") >= 0) return "aquatic";
     if (isClimbingService(fb.service)) return "climb";
     if (isAquaticService(fb.service)) return "aquatic";
@@ -3070,6 +3093,27 @@
     return !!(st && st >= "16:00");
   }
 
+  /** Day Centre split blocks (e.g. Roberto 12.30–3 + Youssef 1–3): union instructors for overview/filter. */
+  function mergeDayCentreInstructorLabels(slots) {
+    var seen = Object.create(null);
+    var out = [];
+    for (var i = 0; i < slots.length; i++) {
+      String(slots[i].instructors || "")
+        .split(/,|\/|&|\band\b/gi)
+        .map(function (s) {
+          return clean(s);
+        })
+        .filter(Boolean)
+        .forEach(function (name) {
+          var key = name.toLowerCase();
+          if (seen[key]) return;
+          seen[key] = true;
+          out.push(name);
+        });
+    }
+    return out.join(", ");
+  }
+
   /** One overview row per feedback unit (Day Centre blocks collapse to one row per client). */
   function pickRepresentativeSlotForUnit(unit) {
     var slots = unit.slots;
@@ -3084,17 +3128,20 @@
     for (si = 0; si < slots.length; si++) {
       if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
     }
-    if (last === rep) return rep;
     var merged = Object.assign({}, rep);
-    var a = clean(rep.time_slot);
-    var b = clean(last.time_slot);
-    if (a && b && a !== b) {
-      var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
-      var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
-      merged.time_slot = startPart + " to " + endPart;
-      var pt = parseTimeSlot(merged.time_slot, rep.day);
-      merged.time_start = pt.start;
+    if (last !== rep) {
+      var a = clean(rep.time_slot);
+      var b = clean(last.time_slot);
+      if (a && b && a !== b) {
+        var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
+        var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
+        merged.time_slot = startPart + " to " + endPart;
+        var pt = parseTimeSlot(merged.time_slot, rep.day);
+        merged.time_start = pt.start;
+      }
     }
+    var allInst = mergeDayCentreInstructorLabels(slots);
+    if (allInst) merged.instructors = allInst;
     return merged;
   }
 
@@ -4470,6 +4517,25 @@
   AdminSessionsHub.prototype.findFeedbackForSlot = function (slot) {
     if (this.acatGroupCoversSlot(slot)) {
       return this.findAcatGroupFeedbackForDate(slot.session_date);
+    }
+    if (isAcatGroupClient(slot.client_name)) {
+      var acatFb = this.findAcatGroupFeedbackForDate(slot.session_date);
+      if (acatFb) return acatFb;
+    }
+    if (
+      slot.portalOverrideTrialTag &&
+      canonicalClientSlug(slot.client_name) === "chaitanya" &&
+      isClimbingService(slot.service)
+    ) {
+      var trialList = this.payload.session_feedback || [];
+      for (var ti = 0; ti < trialList.length; ti++) {
+        var tfb = trialList[ti];
+        if (canonicalClientSlug(tfb.client_name) !== "chaitanya") continue;
+        if (feedbackSessionDate(tfb) !== slot.session_date) continue;
+        if (isAbsentFeedbackRow(tfb)) continue;
+        if (!isClimbingService(tfb.service)) continue;
+        if (feedbackFitsSlot(tfb, slot) || sundayWestwayClimbDayCovers(tfb, slot)) return tfb;
+      }
     }
     if (isDayCentreService(slot.service)) {
       var dkDc = slot.session_date + "|" + canonicalClientSlug(slot.client_name);

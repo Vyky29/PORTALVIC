@@ -259,6 +259,7 @@
       if (!map[canon]) map[canon] = label;
     }
     put("aadam_ah", "Adaam Ah");
+    put("eddie_mc", "Eddie Mc");
     put("eddie", "Eddie Mc");
     try {
       const rows =

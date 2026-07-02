@@ -610,11 +610,13 @@
 
   function hubMountOpts(extra) {
     extra = extra || {};
+    var mode = extra.mode || 'tracking';
     return {
       escapeHtml: esc,
-      mode: extra.mode || 'tracking',
+      mode: mode,
       externalTabs: true,
       payload: payload,
+      feedbackMixAwaitingSlots: mode === 'feedback',
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
       showFullWeekDayStrip: cfg.showFullWeekDayStrip,

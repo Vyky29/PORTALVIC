@@ -245,7 +245,7 @@
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
       loadScript("/portal/portal-ghost-view.js?v=20260624-ghost-handoff");
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
-      loadCss("/portal/portal_achievements.css?v=20260614-ios-camera-fix");
+      loadCss("/portal/portal_achievements.css?v=20260702-lead-gallery-upload");
     };
     scheduleIdle(run, isHandheld ? 6000 : 2500);
   }

@@ -61,6 +61,8 @@
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
   var ICON_GALLERY =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+  var ICON_UPLOAD =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   var ICON_FLIP =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="M15 2l3 3-3 3"/><path d="M9 22l-3-3 3-3"/></svg>';
   var ICON_PREV =
@@ -348,6 +350,8 @@
     if (opts.openCamera) {
       setCaptureMode("camera");
       void captureFromCamera();
+    } else {
+      setCaptureMode("hub");
     }
   }
 
@@ -771,7 +775,7 @@
       inp.value = "";
       if (!file || !state.participant) return;
       setStatus("Saving…");
-      void uploadPhotoBlob(file)
+      void uploadGalleryFile(file)
         .then(function () {
           setStatus("Photo saved.");
           setCaptureMode("gallery");
@@ -783,6 +787,117 @@
     });
     document.body.appendChild(inp);
     return inp;
+  }
+
+  function ensureGalleryUploadInput() {
+    var inp = document.getElementById("portalAchievementsGalleryUploadInput");
+    if (inp) return inp;
+    inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "image/*,video/*,.heic,.heif";
+    inp.multiple = true;
+    inp.id = "portalAchievementsGalleryUploadInput";
+    inp.hidden = true;
+    inp.addEventListener("change", function () {
+      var files = inp.files;
+      inp.value = "";
+      if (!files || !files.length || !state.participant) return;
+      void uploadGalleryFiles(files);
+    });
+    document.body.appendChild(inp);
+    return inp;
+  }
+
+  function openGalleryUploadPicker() {
+    if (!state.participant) {
+      setStatus("Choose a participant first.", true);
+      return;
+    }
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
+      return;
+    }
+    ensureGalleryUploadInput().click();
+  }
+
+  function loadVideoFileMetadata(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var video = document.createElement("video");
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+      video.onloadedmetadata = function () {
+        var out = {
+          durationMs: Math.max(0, Math.round(Number(video.duration || 0) * 1000)),
+          width: video.videoWidth || null,
+          height: video.videoHeight || null,
+        };
+        URL.revokeObjectURL(url);
+        resolve(out);
+      };
+      video.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("video_load_failed"));
+      };
+      video.src = url;
+    });
+  }
+
+  function isGalleryUploadVideoFile(file) {
+    var type = String((file && file.type) || "").toLowerCase();
+    if (type.indexOf("video/") === 0) return true;
+    var name = String((file && file.name) || "").toLowerCase();
+    return /\.(webm|mp4|mov|m4v)$/i.test(name);
+  }
+
+  async function uploadGalleryFile(file) {
+    if (!file) return;
+    if (isGalleryUploadVideoFile(file)) {
+      var meta = await loadVideoFileMetadata(file);
+      var fakeEl = { videoWidth: meta.width, videoHeight: meta.height };
+      await uploadVideoBlob(file, file.type || "video/mp4", meta.durationMs, fakeEl);
+      return;
+    }
+    await uploadPhotoBlob(file);
+  }
+
+  async function uploadGalleryFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
+    if (uploadBtn) uploadBtn.disabled = true;
+    var ok = 0;
+    var lastErr = null;
+    for (var i = 0; i < files.length; i++) {
+      setStatus("Uploading " + (i + 1) + " of " + files.length + "…");
+      try {
+        await uploadGalleryFile(files[i]);
+        ok++;
+      } catch (e) {
+        console.error(e);
+        lastErr = e;
+      }
+    }
+    if (uploadBtn) uploadBtn.disabled = false;
+    if (ok === files.length) {
+      var dest = isInboxParticipant(state.participant) ? "Inbox" : "portal";
+      setStatus(
+        ok === 1
+          ? "1 item saved to " + dest + "."
+          : ok + " items saved to " + dest + ".",
+        false
+      );
+    } else if (ok > 0) {
+      setStatus(
+        ok + " of " + files.length + " saved. " + esc(uploadErrorMessage(lastErr)),
+        true
+      );
+    } else {
+      setStatus(esc(uploadErrorMessage(lastErr)), true);
+    }
+    setCaptureMode("gallery");
+    await refreshGallery();
   }
 
   function openNativePhotoPicker() {
@@ -1454,7 +1569,7 @@
     }
     if (hintEl) {
       hintEl.textContent = isLeadInboxMode()
-        ? "Take photos for the admin inbox (no participant), or pick anyone with a session today."
+        ? "Upload old photos from your phone into Inbox (unassigned). Admin downloads them and assigns each child. You can also take new photos or pick a participant from today."
         : "Same participants as your Today list (A–Z). Photos and videos are shared with co-workers on that participant today.";
     }
     if (!host) return;
@@ -1524,11 +1639,11 @@
     void refreshGallery();
   }
 
-  /** Topbar camera: lead inbox, or auto-start when exactly one Today participant. */
+  /** Topbar photo tool: lead inbox hub (upload or camera), or auto-start when one Today participant. */
   function openCameraDirect() {
     bindSheet();
     if (isLeadInboxMode()) {
-      selectInboxParticipant({ openCamera: true });
+      selectInboxParticipant({ openCamera: false });
       return;
     }
     var list = getTodayParticipantList();
@@ -1552,6 +1667,32 @@
     if (galPanel) galPanel.hidden = !isGallery;
     if (camBtn) camBtn.classList.toggle("is-active", isCamera);
     if (galBtn) galBtn.classList.toggle("is-active", isGallery);
+  }
+
+  function syncLeadInboxUi() {
+    var note = document.getElementById("portalAchievementsIntroNote");
+    if (note) {
+      note.textContent = isLeadInboxMode()
+        ? "Upload photos or videos from your phone into Inbox (unassigned). Admin downloads them, assigns each child, and you can delete them from your phone once they are safe in the portal."
+        : "Photos and short videos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view them here.";
+    }
+    var actions = document.getElementById("portalAchievementsIconActions");
+    if (actions) {
+      actions.classList.toggle("portal-achievements-icon-actions--triple", true);
+      actions.classList.toggle(
+        "portal-achievements-icon-actions--lead-inbox",
+        !!(state.participant && isInboxParticipant(state.participant))
+      );
+    }
+    var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
+    if (uploadBtn) {
+      uploadBtn.hidden = false;
+      if (state.participant && isInboxParticipant(state.participant)) {
+        uploadBtn.querySelector(".portal-achievements-icon-btn__label").textContent = "Upload";
+      } else {
+        uploadBtn.querySelector(".portal-achievements-icon-btn__label").textContent = "Upload";
+      }
+    }
   }
 
   function showStep(step) {
@@ -1593,6 +1734,7 @@
           ? state.photos.length + " item" + (state.photos.length === 1 ? "" : "s") + " (high quality, in-app only)"
           : state.photos.length + " / " + max + " photos/videos (high quality, in-app only)";
     }
+    syncLeadInboxUi();
   }
 
   function closeGalleryViewer() {
@@ -1965,6 +2107,13 @@
       });
     }
 
+    var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
+    if (uploadBtn) {
+      uploadBtn.addEventListener("click", function () {
+        openGalleryUploadPicker();
+      });
+    }
+
     if (!global.__portalAchievementsGallerySyncBound) {
       global.__portalAchievementsGallerySyncBound = true;
       document.addEventListener("visibilitychange", function () {
@@ -1991,8 +2140,9 @@
     if (titleEl) {
       titleEl.textContent = isLeadInboxMode() ? "Session photos" : "Participant achievements";
     }
+    syncLeadInboxUi();
     if (isLeadInboxMode() && opts.inboxMode !== false) {
-      selectInboxParticipant({ openCamera: opts.openCamera !== false });
+      selectInboxParticipant({ openCamera: opts.openCamera === true });
       return;
     }
     renderParticipantPicker();
@@ -2011,7 +2161,7 @@
       '<h3 id="achievementsSheetTitle">Participant achievements</h3>' +
       "</div>" +
       '<div class="sheet-body portal-achievements-sheet-body">' +
-      '<p class="portal-achievements-note">Photos and short videos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view them here.</p>' +
+      '<p class="portal-achievements-note" id="portalAchievementsIntroNote">Photos and short videos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view them here.</p>' +
       '<div id="portalAchievementsStatus" class="portal-achievements-status" role="status"></div>' +
       '<div id="portalAchievementsStepPick">' +
       '<p class="portal-achievements-step-title">Today — <span id="portalAchievementsDayLabel"></span></p>' +
@@ -2024,17 +2174,22 @@
       '<div class="portal-achievements-selected-name" id="portalAchievementsSelectedName"></div>' +
       "</div>" +
       '<p class="muted portal-achievements-count" id="portalAchievementsCount"></p>' +
-      '<div class="portal-achievements-icon-actions">' +
+      '<div class="portal-achievements-icon-actions" id="portalAchievementsIconActions">' +
+      '<button type="button" class="portal-achievements-icon-btn portal-achievements-icon-btn--upload" id="portalAchievementsUploadFromPhone" aria-label="Upload from phone gallery">' +
+      '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
+      ICON_UPLOAD +
+      "</span>" +
+      '<span class="portal-achievements-icon-btn__label">Upload</span></button>' +
       '<button type="button" class="portal-achievements-icon-btn portal-achievements-icon-btn--camera" id="portalAchievementsOpenCamera" aria-label="Take photo">' +
       '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
       ICON_CAMERA +
       "</span>" +
       '<span class="portal-achievements-icon-btn__label">Take photo</span></button>' +
-      '<button type="button" class="portal-achievements-icon-btn" id="portalAchievementsShowGallery" aria-label="Gallery of the day">' +
+      '<button type="button" class="portal-achievements-icon-btn" id="portalAchievementsShowGallery" aria-label="Saved in portal today">' +
       '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
       ICON_GALLERY +
       "</span>" +
-      '<span class="portal-achievements-icon-btn__label">Gallery</span></button>' +
+      '<span class="portal-achievements-icon-btn__label">Saved today</span></button>' +
       "</div>" +
       '<div id="portalAchievementsGalleryPanel">' +
       '<div id="portalAchievementsGallery" class="portal-achievements-gallery portal-achievement-protected"></div>' +

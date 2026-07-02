@@ -343,6 +343,62 @@
     return fallback.data || [];
   }
 
+  function currentDetailStayKey(fallbackKey) {
+    var key = normalizeClientId(
+      fallbackKey ||
+        directoryState.activeKey ||
+        (directoryState.lastDetailView && directoryState.lastDetailView.key) ||
+        ""
+    );
+    return key;
+  }
+
+  function removePhotosFromDirectoryState(photoIds) {
+    var idSet = Object.create(null);
+    (photoIds || []).forEach(function (id) {
+      idSet[String(id)] = true;
+    });
+    if (!Object.keys(idSet).length) return;
+    directoryState.groups.forEach(function (g) {
+      g.photos = g.photos.filter(function (p) {
+        return !idSet[String(p.id)];
+      });
+      directoryState.byKey[g.key] = g;
+    });
+  }
+
+  function setAchievementsStatus(message, isError) {
+    var statusEl = document.getElementById("portalAdminAchievementsStatus");
+    if (!statusEl) return;
+    statusEl.textContent = String(message || "");
+    statusEl.className = isError ? "portal-forms-status is-error" : "portal-forms-status";
+  }
+
+  async function refreshDetailInPlace(stayOnKey, opts) {
+    opts = opts || {};
+    stayOnKey = currentDetailStayKey(stayOnKey);
+    if (!stayOnKey) {
+      return refresh({ resetView: true });
+    }
+    directoryState.activeKey = stayOnKey;
+    var scrollY = typeof window.scrollY === "number" ? window.scrollY : 0;
+    await renderParticipantDetail(stayOnKey);
+    if (!opts.skipScrollRestore) {
+      window.scrollTo(0, scrollY);
+    }
+  }
+
+  async function afterPhotosDeleted(stayOnKey, photoIds, statusMessage) {
+    stayOnKey = currentDetailStayKey(stayOnKey);
+    removePhotosFromDirectoryState(photoIds);
+    if (statusMessage) setAchievementsStatus(statusMessage, false);
+    if (stayOnKey) {
+      await refreshDetailInPlace(stayOnKey);
+      return;
+    }
+    await refresh({ resetView: true });
+  }
+
   function resolveStayOnKey(stayOnKey, byKey) {
     stayOnKey = normalizeClientId(stayOnKey);
     if (!stayOnKey) return "";
@@ -382,7 +438,10 @@
       var detailKey = resolveStayOnKey(stayOnKey, directoryState.byKey);
       if (!directoryState.byKey[detailKey]) {
         var stub = stubGroupForStayKey(stayOnKey);
-        if (stub) directoryState.byKey[detailKey] = stub;
+        if (stub) {
+          stub.key = detailKey;
+          directoryState.byKey[detailKey] = stub;
+        }
       }
       if (directoryState.byKey[detailKey]) {
         directoryState.activeKey = detailKey;
@@ -1231,27 +1290,30 @@
     if (viewerState.index < 0 || !viewerState.photos.length || viewerState.busy) return;
     var row = viewerState.photos[viewerState.index];
     if (!global.confirm("Delete this photo permanently? This cannot be undone.")) return;
-    var stayKey = directoryState.activeKey;
+    var stayKey = currentDetailStayKey();
     var removedIdx = viewerState.index;
+    var removedId = row.id;
     setViewerBusy(true);
     try {
       await deletePhoto(row.id, row.storage_path);
-      closeViewer();
-      await refresh({ stayOnKey: stayKey });
-      var statusEl = document.getElementById("portalAdminAchievementsStatus");
-      if (statusEl) {
-        statusEl.textContent = "Photo deleted.";
-        statusEl.className = "portal-forms-status";
+      removePhotosFromDirectoryState([removedId]);
+      viewerState.photos = viewerState.photos.filter(function (p) {
+        return String(p.id) !== String(removedId);
+      });
+      if (!viewerState.photos.length) {
+        closeViewer();
+        await refreshDetailInPlace(stayKey);
+        setAchievementsStatus("Photo deleted.", false);
+        return;
       }
-      void removedIdx;
+      var nextIdx = Math.min(removedIdx, viewerState.photos.length - 1);
+      await openViewer(viewerState.photos, nextIdx);
+      void refreshDetailInPlace(stayKey, { skipScrollRestore: true });
+      setAchievementsStatus("Photo deleted.", false);
     } catch (err) {
       console.error(err);
       showViewerToast((err && err.message) || "Could not delete photo.", true);
-      var statusEl2 = document.getElementById("portalAdminAchievementsStatus");
-      if (statusEl2) {
-        statusEl2.textContent = (err && err.message) || "Could not delete photo.";
-        statusEl2.className = "portal-forms-status is-error";
-      }
+      setAchievementsStatus((err && err.message) || "Could not delete photo.", true);
     } finally {
       setViewerBusy(false);
     }
@@ -1641,19 +1703,12 @@
           void chain
             .then(function () {
               clearInboxSelection();
-              void refresh({ stayOnKey: key });
-              if (statusEl) {
-                statusEl.textContent = "Selected photos deleted.";
-                statusEl.className = "portal-forms-status";
-              }
+              return afterPhotosDeleted(key, ids, "Selected photos deleted.");
             })
             .catch(function (err) {
               console.error(err);
               bulkDeleteBtn.disabled = false;
-              if (statusEl) {
-                statusEl.textContent = (err && err.message) || "Could not delete selected photos.";
-                statusEl.className = "portal-forms-status is-error";
-              }
+              setAchievementsStatus((err && err.message) || "Could not delete selected photos.", true);
             });
         });
       }
@@ -1779,19 +1834,12 @@
             deleteBtn.disabled = true;
             void deletePhoto(row.id, row.storage_path)
               .then(function () {
-                void refresh({ stayOnKey: key });
-                if (statusEl) {
-                  statusEl.textContent = "Photo deleted.";
-                  statusEl.className = "portal-forms-status";
-                }
+                return afterPhotosDeleted(key, [row.id], "Photo deleted.");
               })
               .catch(function (err) {
                 console.error(err);
                 deleteBtn.disabled = false;
-                if (statusEl) {
-                  statusEl.textContent = (err && err.message) || "Could not delete photo.";
-                  statusEl.className = "portal-forms-status is-error";
-                }
+                setAchievementsStatus((err && err.message) || "Could not delete photo.", true);
               });
           });
           actionBar.appendChild(deleteBtn);
@@ -1817,9 +1865,9 @@
         ? String(opts.stayOnKey).trim()
         : opts.resetView
           ? ""
-          : String(directoryState.activeKey || "").trim();
+          : currentDetailStayKey();
     stayOnKey = normalizeClientId(stayOnKey);
-    var repairStayKey = stayOnKey || normalizeClientId(directoryState.activeKey);
+    var repairStayKey = stayOnKey || currentDetailStayKey();
     var skipRepair = !!opts.skipRepair;
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
@@ -1945,7 +1993,7 @@
         }
       });
     }
-    void refresh({ resetView: true });
+    void refresh({ stayOnKey: currentDetailStayKey() });
   }
 
   function viewHtml() {

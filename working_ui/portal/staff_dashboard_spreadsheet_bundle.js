@@ -1316,7 +1316,7 @@
     "session_date": "2026-05-18"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -2186,7 +2186,7 @@
     "session_date": "2026-06-01"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -2339,8 +2339,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-01"
@@ -3716,7 +3716,7 @@
     "session_date": "2026-06-08"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -3869,8 +3869,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-08"
@@ -5246,7 +5246,7 @@
     "session_date": "2026-06-15"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -5399,8 +5399,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-15"
@@ -6776,7 +6776,7 @@
     "session_date": "2026-06-22"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -6929,8 +6929,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-22"
@@ -8336,7 +8336,7 @@
     "session_date": "2026-06-29"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -9926,7 +9926,7 @@
     "session_date": "2026-07-06"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -10079,8 +10079,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-07-06"
@@ -11456,7 +11456,7 @@
     "session_date": "2026-07-13"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -11609,8 +11609,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-07-13"
@@ -12705,7 +12705,7 @@
     "venue": "Acton"
   },
   {
-    "client_name": "Eddie",
+    "client_name": "Eddie Mc",
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
@@ -13455,8 +13455,8 @@
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
+    "service": "Aquatic Activity",
+    "area": "Big Pool",
     "time_slot": "11 to 12",
     "venue": "SwimFarm"
   },

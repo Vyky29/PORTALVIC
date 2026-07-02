@@ -373,6 +373,46 @@
   overflow-wrap: break-word;
 }
 
+.portal-achievements-icon-actions--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-achievements-icon-actions--lead-inbox .portal-achievements-icon-btn--upload {
+  order: -1;
+}
+
+.portal-achievements-icon-btn--upload {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: linear-gradient(165deg, rgba(22, 163, 74, 0.1) 0%, #fff 72%);
+  box-shadow:
+    0 0 0 1px rgba(22, 163, 74, 0.1) inset,
+    0 4px 14px rgba(22, 163, 74, 0.12);
+}
+
+.portal-achievements-icon-btn--upload .portal-achievements-icon-btn__ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.portal-achievements-icon-btn--upload .portal-achievements-icon-btn__ico svg {
+  width: 34px;
+  height: 34px;
+}
+
+.portal-achievements-icon-btn--upload:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+@media (max-width: 520px) {
+  .portal-achievements-icon-actions--triple {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 360px) {
   .portal-achievements-icon-actions {
     grid-template-columns: 1fr;
