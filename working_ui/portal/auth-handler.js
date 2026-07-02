@@ -808,14 +808,22 @@ function inferDashboardRoute(profile, authEmail) {
 }
 
 function bindLogin() {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) {
+    window.__PORTAL_LOGIN_BOOT_FAILED__ =
+      "Portal sign-in is not configured on this page. Please refresh or contact the office.";
+    return;
+  }
   portalPersistLoginRedirectIntent();
 
   const errorEl = document.getElementById("error-msg");
   const nameInput = document.getElementById("name");
   const passwordInput = document.getElementById("password");
   const form = document.getElementById("login-form");
-  if (!errorEl || !nameInput || !passwordInput || !form) return;
+  if (!errorEl || !nameInput || !passwordInput || !form) {
+    window.__PORTAL_LOGIN_BOOT_FAILED__ =
+      "Login form did not load correctly. Please refresh and try again.";
+    return;
+  }
 
   function hideError() {
     errorEl.textContent = "";
@@ -1153,9 +1161,18 @@ function bindLogin() {
     } catch {
       return;
     }
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    let session = null;
+    try {
+      const sessionWrap = await portalLoginPromiseTimeout(
+        supabase.auth.getSession(),
+        8000,
+        "Session check timed out"
+      );
+      session = sessionWrap && sessionWrap.data ? sessionWrap.data.session : null;
+    } catch (sessionErr) {
+      console.warn("[portal] login session check skipped:", sessionErr);
+      return;
+    }
     if (!session?.user?.id) return;
     try {
       if (window.PORTAL_STAFF_APP === true) {
@@ -1915,7 +1932,22 @@ export async function uploadStaffAvatar(file, opts = {}) {
 }
 
 if (isLoginPage()) {
-  enforceAppVersion();
-  portalShowLoginUpdatedBannerIfNeeded();
-  bindLogin();
+  try {
+    enforceAppVersion();
+    portalShowLoginUpdatedBannerIfNeeded();
+    bindLogin();
+  } catch (loginBootErr) {
+    console.error("[portal] login bootstrap failed", loginBootErr);
+    window.__PORTAL_LOGIN_BOOT_FAILED__ =
+      "Could not start sign-in. Please refresh and try again.";
+    try {
+      const bootErrEl = document.getElementById("error-msg");
+      if (bootErrEl) {
+        bootErrEl.textContent = window.__PORTAL_LOGIN_BOOT_FAILED__;
+        bootErrEl.classList.add("visible");
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 }

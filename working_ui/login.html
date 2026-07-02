@@ -17,6 +17,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/login.webmanifest?v=20260625-manifest-fix" />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://cklpnwhlqsulpmkipmqb.supabase.co" crossorigin />
   <!-- PWA · login.html · dashboards: admin_dashboard, staff_dashboard, ceo_dashboard -->
   <title>clubSENsational Portal — Sign in</title>
   <style>
@@ -452,17 +455,82 @@
     (function () {
       var form = document.getElementById("login-form");
       if (!form) return;
+      var btn = document.getElementById("btn-login");
+      var err = document.getElementById("error-msg");
+      var waitPoll = null;
+
+      function resetLoginBtn() {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Login";
+        }
+      }
+
+      function showLoginWait() {
+        if (err) {
+          err.textContent = "Preparing sign-in…";
+          err.classList.add("visible");
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Preparing…";
+        }
+      }
+
+      function showLoginBootError(message) {
+        resetLoginBtn();
+        if (err) {
+          err.textContent =
+            message ||
+            "Sign-in could not start. Check your connection, refresh the page, and try again.";
+          err.classList.add("visible");
+        }
+      }
+
       form.addEventListener(
         "submit",
         function (e) {
           if (window.__PORTAL_LOGIN_HANDLER_READY__) return;
           e.preventDefault();
           e.stopPropagation();
-          var err = document.getElementById("error-msg");
-          if (err) {
-            err.textContent = "Loading sign-in… wait a moment and tap Login again.";
-            err.classList.add("visible");
+          if (window.__PORTAL_LOGIN_BOOT_FAILED__) {
+            showLoginBootError(window.__PORTAL_LOGIN_BOOT_FAILED__);
+            return;
           }
+          showLoginWait();
+          if (waitPoll) return;
+          var attempts = 0;
+          waitPoll = window.setInterval(function () {
+            attempts += 1;
+            if (window.__PORTAL_LOGIN_HANDLER_READY__) {
+              window.clearInterval(waitPoll);
+              waitPoll = null;
+              if (err) {
+                err.textContent = "";
+                err.classList.remove("visible");
+              }
+              resetLoginBtn();
+              try {
+                form.requestSubmit();
+              } catch (_rs) {
+                form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+              }
+              return;
+            }
+            if (window.__PORTAL_LOGIN_BOOT_FAILED__) {
+              window.clearInterval(waitPoll);
+              waitPoll = null;
+              showLoginBootError(window.__PORTAL_LOGIN_BOOT_FAILED__);
+              return;
+            }
+            if (attempts >= 150) {
+              window.clearInterval(waitPoll);
+              waitPoll = null;
+              showLoginBootError(
+                "Sign-in is taking too long. Check your connection, refresh the page, and try again."
+              );
+            }
+          }, 100);
         },
         true
       );
@@ -596,19 +664,22 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260704-login-map-fix";
-      /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
+      var portalJsVer = "20260704-login-boot-fix";
       var portalJsBase = new URL("portal/", window.location.href).href;
-      var s = document.createElement("script");
-      s.type = "module";
-      s.src = portalJsBase + "auth-handler.js?v=" + portalJsVer;
-      s.onerror = function () {
-        var errorEl = document.getElementById("error-msg");
-        if (!errorEl) return;
-        errorEl.textContent = "Could not load login module. Please refresh and try again.";
-        errorEl.classList.add("visible");
-      };
-      document.body.appendChild(s);
+      var portalAuthModuleUrl = portalJsBase + "auth-handler.js?v=" + portalJsVer;
+      void (async function bootPortalLoginModule() {
+        try {
+          await import(/* webpackIgnore: true */ portalAuthModuleUrl);
+        } catch (bootErr) {
+          console.error("[portal] login module import failed", bootErr);
+          window.__PORTAL_LOGIN_BOOT_FAILED__ =
+            "Could not load sign-in. Please refresh and try again.";
+        }
+        if (!window.__PORTAL_LOGIN_HANDLER_READY__ && !window.__PORTAL_LOGIN_BOOT_FAILED__) {
+          window.__PORTAL_LOGIN_BOOT_FAILED__ =
+            "Could not start sign-in. Please refresh and try again.";
+        }
+      })();
     })();
   </script>
 </body>
