@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260707-admin-alerts-fix" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260707-admin-data-fix" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260625-recent-actions" />
   <script src="/portal/hr-contract-embed-html.js?v=20260625-recent-actions"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260704-login-exec-stub"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260707-admin-data-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -53,7 +53,7 @@
   <script src="/portal/admin-hr.js?v=20260704-profile-save-fix"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
-  <script src="/portal/portal-admin-settings-hub.js?v=20260622-parent-notify-wa-test"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260707-admin-data-fix"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session"></script>
@@ -11340,30 +11340,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         cfkSync: 'Programme payments'
       };
     }
-    var __portalLivePaySource = { loaded:false, loading:false };
+    var __portalLivePaySource = { loaded:false, loading:false, waiters:[] };
     function portalLoadLivePaymentsSource(cb, force){
       cb = typeof cb === 'function' ? cb : function(){};
+      function flushWaiters(ok){
+        var w = __portalLivePaySource.waiters || [];
+        __portalLivePaySource.waiters = [];
+        w.forEach(function(fn){
+          try{ fn(ok); }catch(_w){}
+        });
+      }
+      function finish(ok){
+        __portalLivePaySource.loading = false;
+        cb(ok);
+        flushWaiters(ok);
+      }
       if(force){ __portalLivePaySource.loaded = false; }
-      if(__portalLivePaySource.loaded){ cb(false); return; }
-      if(__portalLivePaySource.loading){ return; }
+      if(__portalLivePaySource.loaded){ finish(false); return; }
+      if(__portalLivePaySource.loading){
+        __portalLivePaySource.waiters.push(cb);
+        return;
+      }
       var client = getSchedSupabaseClient();
-      if(!client || !client.from){ cb(false); return; }
+      if(!client || !client.from){ finish(false); return; }
       __portalLivePaySource.loading = true;
       try{
         client.from('client_payments').select('*').then(function(res){
-          __portalLivePaySource.loading = false;
-          if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); cb(false); return; }
+          if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); finish(false); return; }
           var rows = (res && res.data) || [];
-          if(!rows.length){ cb(false); return; }
+          if(!rows.length){ finish(false); return; }
           window.CLIENTS_PAYMENTS_PORTAL_SOURCE = {
             meta: { source: 'client_payments', live: true, exportedAt: new Date().toISOString(), rowCount: rows.length },
             rows: rows.map(portalLivePayRowToExport)
           };
           try{ __portalEmailToParentDisplay = null; }catch(_e){}
           __portalLivePaySource.loaded = true;
-          cb(true);
-        }, function(err){ __portalLivePaySource.loading = false; console.warn('[orders] client_payments load error:', err); cb(false); });
-      }catch(e){ __portalLivePaySource.loading = false; console.warn('[orders] client_payments load threw:', e); cb(false); }
+          finish(true);
+        }, function(err){ console.warn('[orders] client_payments load error:', err); finish(false); });
+      }catch(e){ console.warn('[orders] client_payments load threw:', e); finish(false); }
     }
     function closeSchedDrawer(){
       if(sched._schedDrawerFormCleanup){
@@ -17754,7 +17768,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var start = function(){
           runHubRefresh();
         };
-        if(getSchedSupabaseClient() || (typeof window.portalAdminResolveAccessToken === 'function' && window.portalAdminResolveAccessToken())){
+        if(getSchedSupabaseClient()){
           start();
           return;
         }
@@ -17762,7 +17776,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         function go(){
           if(started) return;
           started = true;
-          start();
+          adminEnsureSupabaseClient().finally(start);
         }
         window.addEventListener('portal:supabase-ready', go, { once: true });
         setTimeout(go, 12000);
@@ -17919,9 +17933,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
         if(!edge.error && edge.data && Array.isArray(edge.data.rows)){
-          return (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+          var mapped = (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+          if(mapped.length) return mapped;
         }
-        if(edge.error && edge.error !== 'session_expired'){
+        if(edge.error){
           console.warn('[admin] session_feedback edge', edge.error);
         }
       }catch(eEdge){
@@ -17929,6 +17944,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var client = await adminEnsureSupabaseClient();
       if(!client) return [];
+      try{
+        var stored = typeof window.portalAdminReadStoredAuthSession === 'function'
+          ? window.portalAdminReadStoredAuthSession()
+          : null;
+        if(stored && stored.access_token){
+          await client.auth.setSession({
+            access_token: stored.access_token,
+            refresh_token: stored.refresh_token || ''
+          });
+        }
+      }catch(_sess){}
       try{
         var res = await client
           .from('session_feedback')
@@ -17939,7 +17965,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .order('session_date', { ascending: false })
           .limit(2500);
         if(res.error) throw res.error;
-        return (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        var rows = (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        if(!rows.length){
+          console.warn('[admin] session_feedback empty after live fetch');
+        }
+        return rows;
       }catch(e){
         console.warn('[admin] session_feedback fetch', e);
         return [];
@@ -20677,10 +20707,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       root.innerHTML = window.PortalAdminSettingsHub.renderLoading();
-      window.PortalAdminSettingsHub.collect({
-        getClient: getSchedSupabaseClient,
-        refreshKpis: refreshKpisFromDemo,
-        getOpsKpis: function(){ return MOCK.kpi; }
+      adminEnsureSupabaseClient().then(function(client){
+        if(client && window.__PORTAL_SUPABASE__ && !window.__PORTAL_SUPABASE__.client){
+          window.__PORTAL_SUPABASE__.client = client;
+        }
+        return window.PortalAdminSettingsHub.collect({
+          getClient: function(){ return client || getSchedSupabaseClient(); },
+          refreshKpis: refreshKpisFromDemo,
+          getOpsKpis: function(){ return MOCK.kpi; }
+        });
       }).then(function(snap){
         state.settingsHubSnapshot = snap;
         if(state.view !== 'settings') return;
@@ -25368,7 +25403,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var clientPromise = adminEnsureSupabaseClient();
         void clientPromise.then(function(client){
           if(!client || !client.from) return;
-          portalAdminFetchVenueReviewAlerts(client);
+          portalDayOpsConfigureOnce();
+        if(window.PortalDayOps && typeof window.PortalDayOps.refreshSessionFeedback === 'function'){
+          void window.PortalDayOps.refreshSessionFeedback();
+        }
+        portalAdminFetchVenueReviewAlerts(client);
           void portalAdminBootstrapActivityAlerts();
           portalAdminEnsureActivityRealtime();
           void portalLateAdminRefreshNavBadge({ allowSound: false });

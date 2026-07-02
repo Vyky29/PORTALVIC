@@ -193,16 +193,25 @@
 
   function loadLivePayments(getClient) {
     return new Promise(function (resolve) {
+      var settled = false;
+      function finish(v) {
+        if (settled) return;
+        settled = true;
+        resolve(!!v);
+      }
+      setTimeout(function () {
+        finish(false);
+      }, 8000);
       if (typeof global.portalLoadLivePaymentsSource !== "function") {
-        resolve(false);
+        finish(false);
         return;
       }
       try {
         global.portalLoadLivePaymentsSource(function (ok) {
-          resolve(!!ok);
+          finish(!!ok);
         }, false);
       } catch (_e) {
-        resolve(false);
+        finish(false);
       }
     });
   }

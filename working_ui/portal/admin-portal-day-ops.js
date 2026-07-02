@@ -311,7 +311,7 @@
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
-      console.debug('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+      console.warn('[PortalDayOps] refreshSessionFeedbackLive', eFb);
     }
   }
 
@@ -1259,6 +1259,16 @@
           window.portalInvalidateAdminFeedbackStatusCache();
         }
       } catch (_e) {}
+    },
+    refreshSessionFeedback: function () {
+      return refreshSessionFeedbackLive();
     }
   };
+
+  if (typeof global.addEventListener === 'function') {
+    global.addEventListener('portal:supabase-ready', function () {
+      if (!cfg.fetchSessionFeedback) return;
+      void refreshSessionFeedbackLive();
+    });
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
