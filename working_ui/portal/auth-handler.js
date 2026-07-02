@@ -32,7 +32,6 @@ import {
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
-  resolveStaffKeyFromAuthEmail,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
 } from "./auth-map.js";
 
