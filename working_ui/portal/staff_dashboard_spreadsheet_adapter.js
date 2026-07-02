@@ -633,12 +633,13 @@
         let dutyName = isHomeSlot ? "HOME" : "MANAGER";
         if (
           isManagerSlot &&
-          global.portalOpsAdminDisplay &&
-          typeof global.portalOpsAdminDisplay.isOpsAdminStaffKey === "function" &&
-          global.portalOpsAdminDisplay.isOpsAdminStaffKey(staffKeyOut)
+          typeof window !== "undefined" &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.isOpsAdminStaffKey === "function" &&
+          window.portalOpsAdminDisplay.isOpsAdminStaffKey(staffKeyOut)
         ) {
-          dutyName = global.portalOpsAdminDisplay.workerFacingLabel
-            ? global.portalOpsAdminDisplay.workerFacingLabel()
+          dutyName = window.portalOpsAdminDisplay.workerFacingLabel
+            ? window.portalOpsAdminDisplay.workerFacingLabel()
             : "ADMIN";
         }
         const dutyArea = isHomeSlot ? "HOME" : "Hub Room";

@@ -92,8 +92,13 @@
   }
 
   function resolvePhotoCandidates(profile, authEmail, session) {
-    var urls = [];
-    function push(raw) {
+    var rosterUrls = [];
+    var remoteUrls = [];
+    function pushRoster(raw) {
+      var u = normalizePhotoUrl(raw);
+      if (u && rosterUrls.indexOf(u) < 0) rosterUrls.push(u);
+    }
+    function pushRemote(raw) {
       var u = normalizePhotoUrl(raw);
       if (
         global.portalSanitizeRemoteAvatarUrl &&
@@ -101,26 +106,8 @@
       ) {
         u = global.portalSanitizeRemoteAvatarUrl(u) || u;
       }
-      if (u && urls.indexOf(u) < 0) urls.push(u);
+      if (u && remoteUrls.indexOf(u) < 0) remoteUrls.push(u);
     }
-    try {
-      var user = session && session.user ? session.user : null;
-      var authMeta =
-        user && user.user_metadata && typeof user.user_metadata === "object"
-          ? user.user_metadata
-          : {};
-      if (authMeta.avatar_url) push(authMeta.avatar_url);
-    } catch (_) {}
-    try {
-      var meta =
-        profile &&
-        profile.user_metadata &&
-        typeof profile.user_metadata === "object"
-          ? profile.user_metadata
-          : {};
-      if (meta.avatar_url) push(meta.avatar_url);
-      if (profile && profile.avatar_url) push(profile.avatar_url);
-    } catch (_) {}
     var key = inferStaffKey(profile, authEmail);
     var displayName = resolveDisplayName(profile, authEmail, session);
     if (
@@ -130,7 +117,7 @@
       try {
         (global.portalResolveStaffPhotoCandidates(key || displayName, {
           username: (profile && profile.username) || key || "",
-        }) || []).forEach(push);
+        }) || []).forEach(pushRoster);
       } catch (_) {}
     }
     try {
@@ -138,21 +125,39 @@
       if (key && src && src.staffProfiles && src.staffProfiles[key]) {
         var af = src.staffProfiles[key].avatarFile;
         if (af) {
-          push(af);
-          push(swapPhotoExt(af, "png"));
-          push(swapPhotoExt(af, "jpg"));
+          pushRoster(af);
+          pushRoster(swapPhotoExt(af, "png"));
+          pushRoster(swapPhotoExt(af, "jpg"));
         }
       }
       if (key) {
         var base = staffPhotosBase();
         if (base.charAt(base.length - 1) !== "/") base += "/";
-        push(base + key + ".png");
-        push(base + key + ".jpg");
-        push(base + key + ".jpeg");
-        push(base + key + ".webp");
+        pushRoster(base + key + ".png");
+        pushRoster(base + key + ".jpg");
+        pushRoster(base + key + ".jpeg");
+        pushRoster(base + key + ".webp");
       }
     } catch (_) {}
-    return urls;
+    try {
+      var user = session && session.user ? session.user : null;
+      var authMeta =
+        user && user.user_metadata && typeof user.user_metadata === "object"
+          ? user.user_metadata
+          : {};
+      if (authMeta.avatar_url) pushRemote(authMeta.avatar_url);
+    } catch (_) {}
+    try {
+      var meta =
+        profile &&
+        profile.user_metadata &&
+        typeof profile.user_metadata === "object"
+          ? profile.user_metadata
+          : {};
+      if (meta.avatar_url) pushRemote(meta.avatar_url);
+      if (profile && profile.avatar_url) pushRemote(profile.avatar_url);
+    } catch (_) {}
+    return rosterUrls.concat(remoteUrls);
   }
 
   function photoInitials(name) {
@@ -166,6 +171,13 @@
   }
 
   function showInitials(initialsEl, avWrap, letter) {
+    var img = document.getElementById("miniAvImg");
+    if (img) {
+      img.removeAttribute("src");
+      img.hidden = true;
+      img.onerror = null;
+      img.onload = null;
+    }
     if (initialsEl) {
       initialsEl.textContent = letter || "·";
       initialsEl.hidden = false;

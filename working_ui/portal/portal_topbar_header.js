@@ -50,10 +50,11 @@
 
   /** Admin roster photo paths (spreadsheet boot / staffProfiles) — not user-uploaded auth metadata. */
   function resolveStaffPhotoCandidates() {
-    var urls = [];
-    function push(raw) {
+    var rosterUrls = [];
+    var remoteUrls = [];
+    function pushRoster(raw) {
       var u = normalizeStaffPhotoUrl(raw);
-      if (u && urls.indexOf(u) < 0) urls.push(u);
+      if (u && rosterUrls.indexOf(u) < 0) rosterUrls.push(u);
     }
     function pushRemote(raw) {
       var u = raw;
@@ -62,30 +63,24 @@
           u = global.portalSanitizeRemoteAvatarUrl(raw);
         }
       } catch (_) {}
-      push(u);
+      u = normalizeStaffPhotoUrl(u);
+      if (u && remoteUrls.indexOf(u) < 0) remoteUrls.push(u);
     }
-    try {
-      if (global.__PORTAL_STAFF_SELF_AVATAR_URL__) pushRemote(global.__PORTAL_STAFF_SELF_AVATAR_URL__);
-      var box = global.__PORTAL_SUPABASE__ || {};
-      var user = box.session && box.session.user;
-      var meta = user && user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
-      if (meta.avatar_url) pushRemote(meta.avatar_url);
-    } catch (_) {}
     try {
       var dd = global.dashboardData;
       if (dd && dd.avatarFile && !isRemoteStaffPhotoUrl(dd.avatarFile)) {
-        push(dd.avatarFile);
-        push(swapStaffPhotoExtension(dd.avatarFile, "png"));
-        push(swapStaffPhotoExtension(dd.avatarFile, "jpg"));
+        pushRoster(dd.avatarFile);
+        pushRoster(swapStaffPhotoExtension(dd.avatarFile, "png"));
+        pushRoster(swapStaffPhotoExtension(dd.avatarFile, "jpg"));
       }
       var key = resolveTopbarStaffKey();
       var src = global.STAFF_DASHBOARD_SOURCE;
       if (key && src && src.staffProfiles && src.staffProfiles[key]) {
         var af = src.staffProfiles[key].avatarFile;
         if (af) {
-          push(af);
-          push(swapStaffPhotoExtension(af, "png"));
-          push(swapStaffPhotoExtension(af, "jpg"));
+          pushRoster(af);
+          pushRoster(swapStaffPhotoExtension(af, "png"));
+          pushRoster(swapStaffPhotoExtension(af, "jpg"));
         }
       }
       if (
@@ -94,13 +89,20 @@
       ) {
         var base = staffPhotosBaseFromSource();
         if (base.charAt(base.length - 1) !== "/") base += "/";
-        push(base + key + ".png");
-        push(base + key + ".jpg");
-        push(base + key + ".jpeg");
-        push(base + key + ".webp");
+        pushRoster(base + key + ".png");
+        pushRoster(base + key + ".jpg");
+        pushRoster(base + key + ".jpeg");
+        pushRoster(base + key + ".webp");
       }
     } catch (_) {}
-    return urls;
+    try {
+      if (global.__PORTAL_STAFF_SELF_AVATAR_URL__) pushRemote(global.__PORTAL_STAFF_SELF_AVATAR_URL__);
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var user = box.session && box.session.user;
+      var meta = user && user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+      if (meta.avatar_url) pushRemote(meta.avatar_url);
+    } catch (_) {}
+    return rosterUrls.concat(remoteUrls);
   }
 
   function showStaffPhotoInitials(img, ini, pending, name) {
@@ -288,6 +290,22 @@
 
   function resolveTopbarStaffKey() {
     try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var profile = box.staff_profile;
+      var user = box.session && box.session.user;
+      var email = user && user.email ? String(user.email) : "";
+      if (typeof global.portalRosterKeyFromAuthEmail === "function") {
+        var fromEmail = canonicalTopbarStaffKey(global.portalRosterKeyFromAuthEmail(email));
+        if (fromEmail) return fromEmail;
+      }
+      if (typeof global.portalInferStaffKey === "function") {
+        var inferred = canonicalTopbarStaffKey(
+          global.portalInferStaffKey(profile, email),
+        );
+        if (inferred) return inferred;
+      }
+    } catch (_) {}
+    try {
       var sid = global.STAFF_DASHBOARD_ID;
       if (sid) {
         var fromDashId = canonicalTopbarStaffKey(sid);
@@ -302,16 +320,10 @@
       }
     } catch (_) {}
     try {
-      var box = global.__PORTAL_SUPABASE__ || {};
-      var profile = box.staff_profile;
-      var user = box.session && box.session.user;
-      if (typeof global.portalInferStaffKey === "function") {
-        return canonicalTopbarStaffKey(
-          global.portalInferStaffKey(profile, user && user.email),
-        );
-      }
-      if (profile && profile.username) {
-        return canonicalTopbarStaffKey(profile.username);
+      var box2 = global.__PORTAL_SUPABASE__ || {};
+      var profile2 = box2.staff_profile;
+      if (profile2 && profile2.username) {
+        return canonicalTopbarStaffKey(profile2.username);
       }
     } catch (_) {}
     return "";
