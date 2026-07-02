@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260702-ma-lead-team-absent";
+  var VER = "20260630-today-no-dayoff-link";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
