@@ -258,6 +258,11 @@
     }
   }
 
+  /** Leaders only — pick existing photos/videos from phone or computer gallery. */
+  function canUploadFromDeviceGallery() {
+    return isLeadInboxMode();
+  }
+
   /** Unlimited capture per participant/day; feedback submit caps attachments separately. */
   function maxPhotosForCurrentParticipant() {
     return null;
@@ -802,6 +807,10 @@
       var files = inp.files;
       inp.value = "";
       if (!files || !files.length || !state.participant) return;
+      if (!canUploadFromDeviceGallery()) {
+        setStatus("Only leaders can upload from your photo gallery.", true);
+        return;
+      }
       void uploadGalleryFiles(files);
     });
     document.body.appendChild(inp);
@@ -809,6 +818,10 @@
   }
 
   function openGalleryUploadPicker() {
+    if (!canUploadFromDeviceGallery()) {
+      setStatus("Only leaders can upload from your photo gallery.", true);
+      return;
+    }
     if (!state.participant) {
       setStatus("Choose a participant first.", true);
       return;
@@ -863,6 +876,10 @@
   }
 
   async function uploadGalleryFiles(fileList) {
+    if (!canUploadFromDeviceGallery()) {
+      setStatus("Only leaders can upload from your photo gallery.", true);
+      return;
+    }
     var files = Array.prototype.slice.call(fileList || []);
     if (!files.length) return;
     var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
@@ -1570,7 +1587,7 @@
     if (hintEl) {
       hintEl.textContent = isLeadInboxMode()
         ? "Upload old photos from your phone into Inbox (unassigned). Admin downloads them and assigns each child. You can also take new photos or pick a participant from today."
-        : "Same participants as your Today list (A–Z). Photos and videos are shared with co-workers on that participant today.";
+        : "Same participants as your Today list (A–Z). Take photos in-app with the camera — gallery upload is for leaders only.";
     }
     if (!host) return;
     var uniq = getTodayParticipantList();
@@ -1674,11 +1691,12 @@
     if (note) {
       note.textContent = isLeadInboxMode()
         ? "Upload photos or videos from your phone into Inbox (unassigned). Admin downloads them, assigns each child, and you can delete them from your phone once they are safe in the portal."
-        : "Photos and short videos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view them here.";
+        : "Photos and short videos stay in the portal only (not your phone gallery). Use Take photo — gallery upload is for leaders only.";
     }
     var actions = document.getElementById("portalAchievementsIconActions");
     if (actions) {
-      actions.classList.toggle("portal-achievements-icon-actions--triple", true);
+      var showUpload = canUploadFromDeviceGallery();
+      actions.classList.toggle("portal-achievements-icon-actions--triple", showUpload);
       actions.classList.toggle(
         "portal-achievements-icon-actions--lead-inbox",
         !!(state.participant && isInboxParticipant(state.participant))
@@ -1686,10 +1704,8 @@
     }
     var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
     if (uploadBtn) {
-      uploadBtn.hidden = false;
-      if (state.participant && isInboxParticipant(state.participant)) {
-        uploadBtn.querySelector(".portal-achievements-icon-btn__label").textContent = "Upload";
-      } else {
+      uploadBtn.hidden = !canUploadFromDeviceGallery();
+      if (canUploadFromDeviceGallery()) {
         uploadBtn.querySelector(".portal-achievements-icon-btn__label").textContent = "Upload";
       }
     }
