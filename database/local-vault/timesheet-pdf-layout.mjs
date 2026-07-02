@@ -51,11 +51,19 @@ function entryServiceLabel(entry) {
 }
 
 function entryRoleLabel(entry) {
-  const r = String((entry && (entry.roleLabel || entry.role)) || "").trim();
+  const r = String(
+    (entry && (entry.displayRole || entry.roleLabel || entry.role)) || "",
+  ).trim();
   if (!r) return "";
   const scale = String((entry && entry.roleScale) || "").trim();
   const m = scale.match(/Scale\s*(\d+)/i) || (scale && /^\d+$/.test(scale) ? [scale, scale] : null);
   return m ? `${r} ${m[1]}` : r;
+}
+
+function entryColorRole(entry) {
+  return String(
+    (entry && (entry.displayRole || entry.roleLabel || entry.role)) || "",
+  ).trim();
 }
 
 /** Pay-role colours for the second line under Service (RGB 0–255 for jsPDF). */
@@ -63,10 +71,10 @@ export function timesheetRolePdfRgb(role) {
   const r = String(role || "").toLowerCase();
   if (/swim|aquatic/.test(r)) return [21, 101, 192];
   if (/climb/.test(r)) return [202, 138, 4];
-  if (/support/.test(r)) return [234, 88, 12];
-  if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return [27, 127, 59];
-  if (/lead/.test(r)) return [124, 58, 237];
-  return [16, 34, 56];
+  if (/\blead\b|service lead/.test(r)) return [124, 58, 237];
+  if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return [15, 118, 110];
+  if (/support/.test(r)) return [17, 24, 39];
+  return [17, 24, 39];
 }
 
 function pdfEntryRowHeightScale(entry) {
@@ -86,7 +94,7 @@ function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual) {
     doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
     doc.setFontSize(7.2 * S);
     doc.setFont("helvetica", "bold");
-    const [rr, gg, bb] = timesheetRolePdfRgb(entry && (entry.role || entry.roleLabel));
+    const [rr, gg, bb] = timesheetRolePdfRgb(entryColorRole(entry));
     doc.setTextColor(rr, gg, bb);
     doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
     doc.setFont("helvetica", "normal");

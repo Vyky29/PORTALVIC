@@ -1503,7 +1503,26 @@
     /** Sunday SwimFarm support: 9:15–2:15 (5h); programme leads 9:00–2:30 (5.5h). */
     const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
-    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john"]);
+    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john", "michelle"]);
+
+    /** Programme leads: show Lead on timesheet when paid Support Worker rate. */
+    function timesheetProgrammeLeadDisplayRole(payRole, rosterKey) {
+      const pay = String(payRole || "").trim();
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      if (!SUNDAY_MA_LEAD_KEYS.has(key)) return pay;
+      if (/^support\s*worker$/i.test(pay)) return "Lead";
+      return pay;
+    }
+
+    function timesheetEntryDisplayRole(entry) {
+      const payRole = String((entry && entry.role) || "").trim();
+      return timesheetProgrammeLeadDisplayRole(
+        payRole,
+        entry && entry.rosterKey != null ? entry.rosterKey : state.staffRosterKey,
+      );
+    }
 
     function sessionServiceLower(session) {
       return String((session && (session.rosterService || session.service || session.activity)) || "").toLowerCase();
@@ -1763,6 +1782,8 @@
     }
 
     function timesheetEntryRoleLabel(entry) {
+      const displayRole = timesheetEntryDisplayRole(entry);
+      if (displayRole === "Lead") return "Lead";
       const r = String((entry && (entry.roleLabel || entry.role)) || "").trim();
       if (!r) return "";
       return roleDisplayLabel(r, state.roleScales && state.roleScales[r]) || r;
@@ -1771,7 +1792,8 @@
     function timesheetEntryServiceCellHtml(entry) {
       const serviceLabel = timesheetEntryServiceLabel(entry) || "-";
       const roleLabel = timesheetEntryRoleLabel(entry);
-      const roleHtml = roleLabel ? timesheetRoleHtml(entry.role, roleLabel) : "";
+      const colorRole = timesheetEntryDisplayRole(entry) || (entry && entry.role);
+      const roleHtml = roleLabel ? timesheetRoleHtml(colorRole, roleLabel) : "";
       return (
         '<div class="timesheet-service-cell">' +
         `<div class="timesheet-service-cell__service">${esc(serviceLabel)}</div>` +
@@ -1806,7 +1828,9 @@
         doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
         doc.setFontSize(7.2 * S);
         doc.setFont("helvetica", "bold");
-        const [rr, gg, bb] = timesheetRolePdfRgb(entry && (entry.role || entry.roleLabel));
+        const [rr, gg, bb] = timesheetRolePdfRgb(
+          timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
+        );
         doc.setTextColor(rr, gg, bb);
         doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
@@ -2180,10 +2204,10 @@
       const r = String(role || "").toLowerCase();
       if (/swim|aquatic/.test(r)) return "#1565c0";
       if (/climb/.test(r)) return "#ca8a04";
-      if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return "#1b7f3b";
-      if (/support/.test(r)) return "#ea580c";
-      if (/lead/.test(r)) return "#7c3aed";
-      return "";
+      if (/\blead\b|service lead/.test(r)) return "#7c3aed";
+      if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return "#0f766e";
+      if (/support/.test(r)) return "#111827";
+      return "#111827";
     }
 
     function timesheetRoleHtml(role, displayLabel) {

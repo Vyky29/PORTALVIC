@@ -284,6 +284,19 @@ function sessionPayRole(session) {
   return serviceToRole(svc);
 }
 
+const PROGRAMME_LEAD_TIMESHEET_KEYS = new Set(["berta", "john", "michelle"]);
+
+/** Programme leads show Lead on timesheet even when paid Support Worker rate. */
+function timesheetProgrammeLeadDisplayRole(payRole, rosterKey) {
+  const pay = String(payRole || "").trim();
+  const key = String(rosterKey || "")
+    .trim()
+    .toLowerCase();
+  if (!PROGRAMME_LEAD_TIMESHEET_KEYS.has(key)) return pay;
+  if (/^support\s*worker$/i.test(pay)) return "Lead";
+  return pay;
+}
+
 function formatEntryRoleLabel(payRole, workerRoleLabel) {
   const base = String(payRole || "").trim();
   if (!base) return "";
@@ -335,15 +348,18 @@ function inferRoleFromService(service, workerRoleLabel) {
   return wr.split(/\s+\d/)[0].trim() || "";
 }
 
-function enrichTimesheetEntry(entry, workerRoleLabel) {
-  const role =
+function enrichTimesheetEntry(entry, workerRoleLabel, rosterKey) {
+  const payRole =
     String(entry.role || "").trim() ||
     inferRoleFromService(entry.service || entry.serviceLabel, workerRoleLabel);
-  const roleLabel = formatEntryRoleLabel(role, workerRoleLabel);
+  const displayRole = timesheetProgrammeLeadDisplayRole(payRole, rosterKey);
+  const roleLabel =
+    displayRole === "Lead" ? "Lead" : formatEntryRoleLabel(payRole, workerRoleLabel);
   return Object.assign({}, entry, {
-    role,
+    role: payRole,
+    displayRole,
     roleLabel,
-    serviceLabel: String(entry.serviceLabel || entry.service || role || "Shift").trim() || "Shift",
+    serviceLabel: String(entry.serviceLabel || entry.service || payRole || "Shift").trim() || "Shift",
   });
 }
 
@@ -383,9 +399,11 @@ function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd, work
             hours,
             service: svc,
             serviceLabel: svc,
+            role,
             completed: true,
           },
           workerRoleLabel,
+          rosterKey,
         ),
       );
       continue;
@@ -405,9 +423,11 @@ function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd, work
             hours,
             service: svc,
             serviceLabel: svc,
+            role,
             completed: true,
           },
           workerRoleLabel,
+          rosterKey,
         ),
       );
     }
@@ -493,7 +513,7 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     worker.role_label || "",
   );
 
-  let entries = roster.entries.map((e) => enrichTimesheetEntry(e, worker.role_label || ""));
+  let entries = roster.entries.map((e) => enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey));
   if (ts && Array.isArray(ts.entries) && ts.entries.length) {
     entries = ts.entries.map((e) =>
       enrichTimesheetEntry(
@@ -508,6 +528,7 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
           completed: e.completed !== false,
         },
         worker.role_label || "",
+        worker.rosterKey,
       ),
     );
   }
@@ -540,7 +561,7 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     );
     if (timetable.entries.length) {
       entries = reconcileEntriesToImportHours(timetable.entries, totalHours).map((e) =>
-        enrichTimesheetEntry(e, worker.role_label || ""),
+        enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey),
       );
     }
   }
