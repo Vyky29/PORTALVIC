@@ -9,8 +9,9 @@
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260614-admin-perf"></script>
   <script type="module">
-    import { bootstrapDashboardSupabase, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260704-login-exec-stub";
+    import { bootstrapDashboardSupabase, portalCanAccessCeoDashboard, portalCanAccessAdminDashboard } from "/portal/auth-handler.js?v=20260704-login-exec-stub";
     window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
+    window.portalCanAccessAdminDashboard = portalCanAccessAdminDashboard;
     bootstrapDashboardSupabase({ page: "admin" });
   </script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
@@ -25,8 +26,8 @@
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260607-ops-hub-kpi-center" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
-  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260625-recent-actions" />
-  <script src="/portal/hr-contract-embed-html.js?v=20260625-recent-actions"></script>
+  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
+  <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260707-admin-data-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
@@ -19468,7 +19469,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
-        staffhr_contracts:'Employment contracts (zero-hours and fixed term) — create, send and track staff signatures.',
+        staffhr_contracts:'Employment contracts (zero-hours, fixed-term and permanent part-time term-time) — create, send and track staff signatures.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
@@ -20349,8 +20350,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         document.body.appendChild(s);
       }
       window.__HR_CONTRACT_DEFER_INIT__ = true;
-      loadScript('portal/contract-core.js?v=20260628-app-submit-fix', function(){
-        loadScript('portal/hr-contract-app.js?v=20260625-recent-actions', function(){
+      loadScript('portal/contract-core.js?v=20260702-permanent-part-time', function(){
+        loadScript('portal/hr-contract-app.js?v=20260702-permanent-part-time', function(){
           delete window.__HR_CONTRACT_DEFER_INIT__;
           finish();
         });
@@ -24755,9 +24756,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function portalAdminCanBootstrapAlerts(profile){
+      var em = portalAdminAuthEmailForAlerts();
+      try{
+        if(typeof window.portalCanAccessAdminDashboard === 'function'){
+          if(window.portalCanAccessAdminDashboard(profile, em)) return true;
+        }
+      }catch(_admGate){}
       var role = String(profile && profile.app_role || '').toLowerCase();
       if(role === 'admin' || role === 'ceo') return true;
-      var em = portalAdminAuthEmailForAlerts();
+      var staff = String(profile && profile.staff_role || '').toLowerCase();
+      if(staff === 'manager' || staff === 'admin') return true;
       return (
         em === 'victor@clubsensational.org' ||
         em === 'raul@clubsensational.org' ||
@@ -24767,6 +24775,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         em === 'sevitha@clubsensational.org' ||
         em === 'info@clubsensational.org'
       );
+    }
+
+    function portalAdminSupabaseReadyNow(){
+      return !!(
+        window.__PORTAL_SUPABASE__ &&
+        window.__PORTAL_SUPABASE__.client &&
+        document.documentElement &&
+        document.documentElement.classList.contains('portal-auth-ready')
+      );
+    }
+
+    function portalAdminWhenSupabaseReady(fn){
+      if(typeof fn !== 'function') return;
+      if(portalAdminSupabaseReadyNow()){
+        try{ fn(); }catch(err){ console.warn('[admin] supabase-ready callback', err); }
+      }
+      window.addEventListener('portal:supabase-ready', fn);
+    }
+
+    function portalAdminMountLivePresenceBar(){
+      if(window.__portalAdminPresenceBarMounted) return;
+      var host = document.getElementById('portalLivePresenceBar');
+      if(!host) return;
+      window.__portalAdminPresenceBarMounted = true;
+      import('/portal/portal_live_presence.js?v=20260707-admin-online-fix')
+        .then(function(mod){
+          if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
+          mod.mountPortalLivePresenceBar('portalLivePresenceBar');
+        })
+        .catch(function(err){
+          console.warn('[admin] live presence mount', err);
+        });
     }
 
     async function portalAdminFetchActivityAlertsBundle(client, sinceIso){
@@ -25396,18 +25436,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
       });
     }
-    window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
+    function portalAdminBootstrapAlertsAndPresence(){
       try{
+        portalAdminMountLivePresenceBar();
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         if(!portalAdminCanBootstrapAlerts(p)) return;
         var clientPromise = adminEnsureSupabaseClient();
         void clientPromise.then(function(client){
           if(!client || !client.from) return;
           portalDayOpsConfigureOnce();
-        if(window.PortalDayOps && typeof window.PortalDayOps.refreshSessionFeedback === 'function'){
-          void window.PortalDayOps.refreshSessionFeedback();
-        }
-        portalAdminFetchVenueReviewAlerts(client);
+          if(window.PortalDayOps && typeof window.PortalDayOps.refreshSessionFeedback === 'function'){
+            void window.PortalDayOps.refreshSessionFeedback();
+          }
+          portalAdminFetchVenueReviewAlerts(client);
           void portalAdminBootstrapActivityAlerts();
           portalAdminEnsureActivityRealtime();
           void portalLateAdminRefreshNavBadge({ allowSound: false });
@@ -25421,8 +25462,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }, 90000);
           }
         });
-      }catch(err){ console.warn(err); }
-    });
+      }catch(err){ console.warn('[admin] alerts bootstrap', err); }
+    }
+    portalAdminWhenSupabaseReady(portalAdminBootstrapAlertsAndPresence);
 
     function toggleAlerts(){
       var p = $('alertsPop');
@@ -26042,12 +26084,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalInferStaffKey, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260704-login-exec-stub";
+        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalCanAccessAdminDashboard, portalInferStaffKey, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260704-login-exec-stub";
         import { portalCanExecWorkspaceSwitch } from "/portal/portal_exec_workspace_switch.js?v=20260630-ops-admin-switch";
         window.portalLogout = portalLogout;
         window.__PORTAL_LOGOUT_FN__ = portalLogout;
         window.portalCanWriteScheduleOverrides = portalCanWriteScheduleOverrides;
         window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
+        window.portalCanAccessAdminDashboard = portalCanAccessAdminDashboard;
         window.portalInferStaffKey = portalInferStaffKey;
         window.portalCanExecWorkspaceSwitch = portalCanExecWorkspaceSwitch;
         try {

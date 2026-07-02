@@ -150,6 +150,12 @@
     if (!client || !client.auth) return null;
     var sessResp = await client.auth.getSession();
     var session = sessResp && sessResp.data && sessResp.data.session;
+    if (!session || !session.access_token) {
+      try {
+        var refreshResp = await client.auth.refreshSession();
+        session = refreshResp && refreshResp.data && refreshResp.data.session;
+      } catch (_rf) {}
+    }
     return session && session.access_token ? session.access_token : null;
   }
 
@@ -345,9 +351,11 @@
     } catch (_e) {
       j = null;
     }
-    if (!res.ok || !j || !j.ok || !j.audioBase64) return null;
+    if (!res.ok || !j || !j.ok || !j.audioBase64) {
+      return { error: (j && j.error) || "elevenlabs_failed", status: res.status };
+    }
     var mime = j.mime ? String(j.mime) : "audio/mpeg";
-    return base64ToBlobUrl(j.audioBase64, mime);
+    return { url: base64ToBlobUrl(j.audioBase64, mime) };
   }
 
   async function speakStaticUrl(url) {
@@ -362,17 +370,20 @@
   async function speak(text, opts) {
     opts = opts || {};
     var t = String(text || "").trim();
-    if (!t) return { ok: false, error: "missing_text" };
-
-    if (opts.staticUrl) {
-      return speakStaticUrl(opts.staticUrl);
-    }
+    if (!t && !opts.staticUrl) return { ok: false, error: "missing_text" };
 
     stopPlayback();
     unlockAudio();
 
+    var staticUrl = String(opts.staticUrl || "").trim();
+    if (staticUrl && opts.preferStatic) {
+      var staticFirst = await speakStaticUrl(staticUrl);
+      if (staticFirst.ok) return staticFirst;
+    }
+
     var token = await authToken();
     if (!token) {
+      if (staticUrl) return speakStaticUrl(staticUrl);
       if (opts.fallbackBrowser === false) {
         return { ok: false, error: "session_expired" };
       }
@@ -380,13 +391,30 @@
     }
 
     try {
-      var blobUrl = await fetchElevenLabsAudio(t);
+      var fetched = await fetchElevenLabsAudio(t);
+      var blobUrl = fetched && fetched.url ? fetched.url : null;
       if (blobUrl) {
         var played = await playAudioSrc(blobUrl);
         if (played) return { ok: true, source: "elevenlabs" };
+        if (staticUrl) {
+          var afterPlayFail = await speakStaticUrl(staticUrl);
+          if (afterPlayFail.ok) return afterPlayFail;
+        }
         return { ok: false, error: "elevenlabs_play_failed", audioUrl: blobUrl };
       }
-    } catch (_fetch) {}
+      if (staticUrl) {
+        var afterFetchFail = await speakStaticUrl(staticUrl);
+        if (afterFetchFail.ok) return afterFetchFail;
+      }
+      if (fetched && fetched.error) {
+        return { ok: false, error: fetched.error };
+      }
+    } catch (_fetch) {
+      if (staticUrl) {
+        var afterErr = await speakStaticUrl(staticUrl);
+        if (afterErr.ok) return afterErr;
+      }
+    }
 
     if (opts.fallbackBrowser === false) {
       return { ok: false, error: "elevenlabs_unavailable" };

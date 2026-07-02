@@ -35,6 +35,14 @@
     "climbing-wall": { label: "Wall", cls: "session-area-note-icon--climbing-wall" },
     "day-center": { label: "Day Centre", cls: "session-area-note-icon--day-center" },
     bespoke: { label: "Bespoke", cls: "session-area-note-icon--bespoke" },
+    home: {
+      label: "Home",
+      cls: "session-area-note-icon--home",
+      svg:
+        SVG_HEAD +
+        '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>' +
+        '<path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>',
+    },
   };
 
   function portalAreaNoteIconMarkup(key, opts) {
@@ -80,6 +88,7 @@
     if (s === "wall" || s.indexOf("climbing") >= 0) return "climbing-wall";
     if (s.indexOf("day centre") >= 0 || s.indexOf("day center") >= 0) return "day-center";
     if (s === "bespoke") return "bespoke";
+    if (s === "home" || s === "casa" || /client'?s?\s*home/.test(s)) return "home";
     if (s === "swimming" || s === "swimming activity" || s === "aquatic activity") return "";
     return "";
   }

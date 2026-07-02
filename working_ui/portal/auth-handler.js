@@ -25,7 +25,7 @@ import {
   portalReadPersistedSupabaseAccessToken,
   portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js";
+} from "./supabase-client.js?v=20260707-login-cache";
 import {
   resolveDemoEmail,
   resolveCorporateAuthEmail,
@@ -37,7 +37,7 @@ import {
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js";
+} from "./auth-map.js?v=20260707-login-cache";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -103,7 +103,7 @@ export {
   portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js";
+} from "./supabase-client.js?v=20260707-login-cache";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
 export const APP_VERSION = "2026-06-08-global-refresh-feedback-cache";
@@ -1419,7 +1419,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_presence_on_lead_overview");
     }
     const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-      "./portal_live_presence.js?v=20260610-offline-quiet"
+      "./portal_live_presence.js?v=20260707-admin-online-fix"
     );
     await startPortalLivePresence({ page, profile, session });
     if (document.getElementById("portalLivePresenceBar")) {
@@ -1692,6 +1692,16 @@ export async function bootstrapDashboardSupabase(_opts) {
           window.location.replace(authFailureRedirect);
         } catch {
           window.location.href = authFailureRedirect;
+        }
+      } else if (page === "staff") {
+        /** Help guide / staff surfaces: expose client so voice can refresh session on Play. */
+        window.__PORTAL_SUPABASE_SINGLETON__ = supabase;
+        window.__PORTAL_SUPABASE__ = { client: supabase, session: null, staff_profile: null };
+        try {
+          window.SUPABASE_URL = getSupabaseUrl();
+          window.SUPABASE_ANON_KEY = getSupabaseAnonKey();
+        } catch {
+          /* ignore */
         }
       }
       return;

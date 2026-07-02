@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260630-term-day-status-fill" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260702-home-icon" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
   <style>
     :root{
@@ -97,7 +97,23 @@
     /* Real portal UI inside demos */
     #guideLiveScope.guide-live-scope{min-width:0}
     #guideLiveScope .guide-today-panel{
-      border:none;background:transparent;box-shadow:none;padding:0;margin:0
+      border:none;background:transparent;box-shadow:none;padding:0;margin:0;
+      display:block;height:auto;min-height:0;max-height:none;flex:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid{
+      flex:none;min-height:auto;max-height:none;overflow:visible;padding:0 0 6px
+    }
+    #guideLiveScope .guide-today-panel .today-grid.today-grid--session-scroll{
+      overflow:visible;max-height:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows{
+      flex:none;height:auto;min-height:auto;max-height:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows > .session-card{
+      flex:0 0 auto;min-height:58px;max-height:none;margin:0 0 6px
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows > .session-card:last-child{
+      margin-bottom:0
     }
     #guideLiveScope .guide-today-panel .section-head--today{padding:0 0 8px}
     #guideLiveScope .guide-today-panel .today-section-title{font-size:15px}
@@ -402,13 +418,16 @@
       Tap Play to hear a short walkthrough while the preview shows the matching part of the app.
       Use <strong>Read full text</strong> under a card if you prefer to read instead of listen.
       Open this page from Quick menu → Settings → <strong>Staff help guide</strong>.
+      For screenshot walkthroughs with fake sessions (outstanding, submitted, absent, halos), use the
+      <a href="/teflon_guide_shots.html"><strong>Teflon demo account</strong></a>
+      (login <strong>Teflon</strong> · PIN <strong>1111</strong>) — nothing counts in payroll or admin stats.
     </div>
     <p class="voice-banner" id="guideVoiceBanner" hidden></p>
     <div id="guideRoot"><p class="loading">Loading guide…</p></div>
     <p class="foot">CS Portal · Staff help guide</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v14"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260630-voice-mp3-fallback"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -1035,14 +1054,22 @@
       steps.forEach(function (st, idx) {
         lines.push(st.voice);
         stepMap.push(idx);
-        stepOpts.push({ fallbackBrowser: false });
+        stepOpts.push({
+          staticUrl: st.audio || "",
+          preferStatic: true,
+          fallbackBrowser: false,
+        });
       });
     } else {
       var single = sectionVoiceText(section);
       if (single) {
         lines.push(single);
         stepMap.push(-1);
-        stepOpts.push({ fallbackBrowser: false });
+        stepOpts.push({
+          staticUrl: String(section.audio || "").trim(),
+          preferStatic: true,
+          fallbackBrowser: false,
+        });
       }
     }
     if (!lines.length) {

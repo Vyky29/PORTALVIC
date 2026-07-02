@@ -323,3 +323,6 @@
 .session-area-note-inline:has(.session-area-note-icon--day-center){ --area-note-accent:#e8742a; }
 .session-area-note-stack:has(.session-area-note-icon--bespoke),
 .session-area-note-inline:has(.session-area-note-icon--bespoke){ --area-note-accent:#ec6644; }
+.session-area-note-stack:has(.session-area-note-icon--home),
+.session-area-note-inline:has(.session-area-note-icon--home){ --area-note-accent:#158747; }
+.session-area-note-icon--home .session-area-note-svg{ color:#158747; }

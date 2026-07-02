@@ -5604,22 +5604,27 @@
       letter-spacing:.08em;
       text-transform:uppercase;
     }
-    .session-card.session-card--home .session-card-body--duty-home{
-      display:flex;
+    .session-card.session-card--home .session-meta-name--home{
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:52px;
-      padding:12px 14px;
-    }
-    .session-card.session-card--home .session-line--duty-full{
-      width:100%;
+      gap:6px;
       min-width:0;
+      max-width:100%;
+    }
+    .session-card.session-card--home .session-meta-name--home .session-home-name-icon{
+      flex:0 0 auto;
+    }
+    .session-card.session-card--home .session-meta-name--home > span{
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .session-card.session-card--home .session-line--time-stack{
+      display:none;
+    }
+    .session-card.session-card--home .session-line--name{
       justify-content:center;
       text-align:center;
-    }
-    .session-card.session-card--home .session-line--time-stack,
-    .session-card.session-card--home .session-line--symbol{
-      display:none !important;
     }
     .session-card.session-card--manager,
     .section-card--today .session-card.session-card--manager{
