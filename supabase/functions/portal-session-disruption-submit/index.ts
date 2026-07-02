@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
   const { data: profile, error: profileErr } = await admin
     .from("staff_profiles")
-    .select("id, full_name, username, staff_role, job_title, app_role")
+    .select("id, full_name, username, staff_role, app_role")
     .eq("id", userId)
     .maybeSingle();
   if (profileErr || !profile) {
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
   const originRaw = clean(r.origin, 40);
   const origin = ORIGINS.has(originRaw) ? originRaw : "direct";
   const submittedByName = clean(profile.full_name || profile.username, 200);
-  const roleLabel = clean(r.role_label || profile.staff_role || profile.job_title, 200);
+  const roleLabel = clean(r.role_label || profile.staff_role, 200);
 
   const row = {
     submitted_by_user_id: userId,
