@@ -58,11 +58,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260704-cover-merge-feedback");
-    if (!isHandheld) {
-      preloadScript("/portal/clients_info_embed.js?v=20260608-anas-ismail");
-    }
-    preloadScript("/portal/portal_topbar_header.js?v=20260622-sandra-visual-vic");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260705-feedback-halo-fix");
   }
 
   if ("serviceWorker" in global.navigator) {

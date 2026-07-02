@@ -7,6 +7,24 @@
         }catch(_){}
         return false;
       }
+      /** Unblock halo / Outstanding feedback tile if heavy rehydrate is superseded or slow. */
+      function portalStaffScheduleFeedbackPipelineFallback(){
+        try{
+          if(typeof window.__PORTAL_FB_PIPELINE_FALLBACK__ === 'number' && window.__PORTAL_FB_PIPELINE_FALLBACK__){
+            clearTimeout(window.__PORTAL_FB_PIPELINE_FALLBACK__);
+          }
+          window.__PORTAL_FB_PIPELINE_FALLBACK__ = setTimeout(function(){
+            window.__PORTAL_FB_PIPELINE_FALLBACK__ = 0;
+            if(typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady()) return;
+            if(!dashboardData || !dashboardData.portalIdentityResolved) return;
+            if(typeof portalStaffFinishFeedbackPipelineReady === 'function'){
+              portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+            }else if(typeof syncPortalReminderChrome === 'function'){
+              syncPortalReminderChrome();
+            }
+          }, portalStaffFastBootEnabled() ? 5500 : 9000);
+        }catch(_){}
+      }
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }
       function parseTimeSortVal(start){
@@ -268,6 +286,7 @@
         try {
           window.dispatchEvent(new CustomEvent("portal:staff-identity-resolved"));
         } catch (_) {}
+        portalStaffScheduleFeedbackPipelineFallback();
         try {
           if (typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay();
           if (typeof renderHeader === "function") renderHeader();
@@ -896,10 +915,15 @@
           }
         }
         async function portalStaffRunHeavyRehydrateNetworkTasks(){
+          var staleRun = false;
           try{
+            if (runId !== _rehydrateRun) {
+              staleRun = true;
+              return;
+            }
             if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
               try{
-                if (runId !== _rehydrateRun) return;
+                if (runId !== _rehydrateRun) { staleRun = true; return; }
                 var priorOverrideModelFast = Array.isArray(sessionsModel) ? sessionsModel.slice() : [];
                 var overrideModelFast = await window.portalApplyScheduleOverridesToSessionsModelSafe();
                 if(typeof portalStaffSessionsModelWouldDropToday === "function"
@@ -921,11 +945,20 @@
               portalMarkFeedbackReconciledFromExports(true);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
-              await portalMergeServerReviewStateForDashboard({ skipRender: true });
+              await Promise.race([
+                portalMergeServerReviewStateForDashboard({ skipRender: true }),
+                new Promise(function(r){ setTimeout(r, 4500); })
+              ]);
             }
           }catch(_preUiMerge){}
-          if(typeof portalStaffFinishFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
-            portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+          finally {
+            if(
+              !staleRun
+              && typeof portalStaffFinishFeedbackPipelineReady === 'function'
+              && !portalStaffFeedbackPipelineReady()
+            ){
+              portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+            }
           }
           try{
             if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){

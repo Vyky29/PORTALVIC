@@ -753,6 +753,8 @@
           document.body.classList.remove('staff-dashboard-feedback-syncing');
         }
         if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        else if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       }catch(_){}
     }
     function portalStaffRefreshFeedbackDependentUi(){
