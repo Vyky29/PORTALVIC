@@ -87,7 +87,7 @@ SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
     "2026-06-14": "Berta",
     "2026-06-21": "John",
     "2026-06-28": "John",
-    "2026-07-05": "John",
+    "2026-07-05": "Berta",
     "2026-07-12": "Berta",
 }
 
@@ -282,7 +282,7 @@ def sunday_assignments() -> list[dict]:
             ("Alex", "10-3", "Westway"),
         ],
         "2026-07-05": [
-            ("John", "9.15-2.15", "SwimFarm"),
+            ("Berta", "9.15-2.15", "SwimFarm"),
             ("Giuseppe", "9.15-2.15", "SwimFarm"),
             ("Godsway", "9.15-2.15", "SwimFarm"),
             ("Aurora", "9-3", "SwimFarm"),
