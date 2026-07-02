@@ -14,6 +14,7 @@ import path from "path";
 import vm from "vm";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
+import { applyRosterEntryPayBands } from "./timesheet-pay-hours.mjs";
 import { buildFormattedTimesheetPdfBytes, formatIsoDmy, loadTimesheetLogoDataUrl } from "./timesheet-pdf-layout.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -387,10 +388,21 @@ function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd, work
 
     const roleKeys = Object.keys(byRole).filter(Boolean);
     if (!roleKeys.length) {
-      const hours = dayRosterHours(dayRows, dateObj);
+      let hours = dayRosterHours(dayRows, dateObj);
       if (hours <= 0) continue;
       const svc = primaryServiceLabelForRows(dayRows);
       const role = inferRoleFromService(svc, workerRoleLabel);
+      const dayName = WEEKDAY[dateObj.getDay()];
+      hours = applyRosterEntryPayBands({
+        hours,
+        dayName,
+        rosterKey,
+        role,
+        service: svc,
+        dateObj,
+        dayRows,
+      });
+      if (hours <= 0) continue;
       entries.push(
         enrichTimesheetEntry(
           {
@@ -415,6 +427,17 @@ function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd, work
       if (hours <= 0) continue;
       if (roleKeys.length === 1) hours = dayRosterHours(rows, dateObj);
       const svc = primaryServiceLabelForRows(rows);
+      const dayName = WEEKDAY[dateObj.getDay()];
+      hours = applyRosterEntryPayBands({
+        hours,
+        dayName,
+        rosterKey,
+        role,
+        service: svc,
+        dateObj,
+        dayRows: rows,
+      });
+      if (hours <= 0) continue;
       entries.push(
         enrichTimesheetEntry(
           {
@@ -513,27 +536,48 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     worker.role_label || "",
   );
 
+  const rosterByKey = new Map();
+  for (const e of roster.entries) {
+    rosterByKey.set(`${e.date}|${String(e.role || "").trim()}`, e);
+  }
+
   let entries = roster.entries.map((e) => enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey));
   if (ts && Array.isArray(ts.entries) && ts.entries.length) {
-    entries = ts.entries.map((e) =>
-      enrichTimesheetEntry(
+    entries = ts.entries.map((e) => {
+      const date = String(e.date || "").slice(0, 10);
+      const role = String(e.role || "").trim();
+      const rosterMatch = rosterByKey.get(`${date}|${role}`);
+      const serviceFromTs = String(e.service || e.service_label || "").trim();
+      const hours =
+        rosterMatch && rosterMatch.hours != null ? Number(rosterMatch.hours) : Number(e.hours || 0);
+      return enrichTimesheetEntry(
         {
-          date: String(e.date || "").slice(0, 10),
-          day: String(e.day || ""),
-          hours: Number(e.hours || 0),
-          service: String(e.service || e.service_label || e.role || "Shift"),
-          serviceLabel: String(e.service_label || e.service || e.role || "Shift"),
-          role: String(e.role || ""),
+          date,
+          day: String(e.day || rosterMatch?.day || ""),
+          hours,
+          service: serviceFromTs || rosterMatch?.service || rosterMatch?.serviceLabel || role || "Shift",
+          serviceLabel: String(
+            e.service_label ||
+              e.service ||
+              rosterMatch?.serviceLabel ||
+              rosterMatch?.service ||
+              role ||
+              "Shift",
+          ),
+          role: role || rosterMatch?.role || "",
           note: String(e.note || ""),
           completed: e.completed !== false,
         },
         worker.role_label || "",
         worker.rosterKey,
-      ),
-    );
+      );
+    });
+  } else if (roster.entries.length) {
+    entries = roster.entries.map((e) => enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey));
   }
 
-  let totalHours = roster.totalHours;
+  let totalHours = Number(entries.reduce((a, e) => a + Number(e.hours || 0), 0).toFixed(2));
+  if (!totalHours) totalHours = roster.totalHours;
   let gross = worker.hourly_rate != null ? Number((totalHours * worker.hourly_rate).toFixed(2)) : null;
 
   if (ts && ts.total_hours != null && Number(ts.total_hours) > 0) {
@@ -561,6 +605,13 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     );
     if (timetable.entries.length) {
       entries = reconcileEntriesToImportHours(timetable.entries, totalHours).map((e) =>
+        enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey),
+      );
+    }
+  } else if (entries.length && totalHours > 0) {
+    const entrySum = Number(entries.reduce((a, e) => a + Number(e.hours || 0), 0).toFixed(2));
+    if (Math.abs(entrySum - totalHours) >= 0.01) {
+      entries = reconcileEntriesToImportHours(entries, totalHours).map((e) =>
         enrichTimesheetEntry(e, worker.role_label || "", worker.rosterKey),
       );
     }
