@@ -28,7 +28,7 @@ function readSecrets() {
 }
 
 function loadHub() {
-  const bundlePath = path.join(ROOT, "working_ui/staff_dashboard_spreadsheet_bundle.js");
+  const bundlePath = path.join(ROOT, "working_ui/portal/staff_dashboard_spreadsheet_bundle.js");
   const hubPath = path.join(ROOT, "working_ui/portal/admin-sessions-hub.js");
   const sandbox = {
     window: {},

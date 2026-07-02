@@ -28,7 +28,9 @@
     "2026-06-28": {
       "leadOnDuty": "John",
       "replaceInstructor": {
-        "JOHN, BERTA": "JOHN"
+        "JOHN, BERTA": "JOHN",
+        "AURORA": "YOUSSEF",
+        "JAVIER": "LULIYA"
       }
     },
     "2026-07-05": {
@@ -268,6 +270,14 @@
           "service": "Aquatic Activity"
         },
         {
+          "time_slot": "4.30 to 5.15",
+          "service": "Multi-Activity"
+        },
+        {
+          "time_slot": "4 to 5.15",
+          "service": "Multi-Activity"
+        },
+        {
           "time_slot": "4.15 to 5.15",
           "service": "Multi-Activity"
         }
@@ -284,7 +294,15 @@
           "service": "Aquatic Activity"
         },
         {
+          "time_slot": "9 to 10.15",
+          "service": "Aquatic Activity"
+        },
+        {
           "time_slot": "9.15 to 10",
+          "service": "Multi-Activity"
+        },
+        {
+          "time_slot": "9.30 to 10.15",
           "service": "Multi-Activity"
         }
       ]
@@ -301,6 +319,12 @@
       "weekday": "Sunday",
       "client_slug": "yusuf_ah",
       "time_slot": "9 to 9.30",
+      "service": "Aquatic Activity"
+    },
+    {
+      "weekday": "Sunday",
+      "client_slug": "yusuf_ah",
+      "time_slot": "9 to 10.15",
       "service": "Aquatic Activity"
     }
   ],
@@ -7768,7 +7792,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "1.15 to 2",
@@ -7778,7 +7802,7 @@
   {
     "client_name": "Haneef",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "1.15 to 2",
@@ -7808,7 +7832,7 @@
   {
     "client_name": "Max",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
@@ -7838,7 +7862,7 @@
   {
     "client_name": "Zakariya",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
@@ -7848,7 +7872,7 @@
   {
     "client_name": "Faris",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
@@ -7858,7 +7882,7 @@
   {
     "client_name": "Shaan",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
@@ -7878,7 +7902,7 @@
   {
     "client_name": "Shire",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Aquatic Activity",
     "area": "Small Pool",
     "time_slot": "9 to 9.30",
@@ -7888,7 +7912,7 @@
   {
     "client_name": "Simon",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Small Pool",
     "time_slot": "9 to 9.30",
@@ -7908,7 +7932,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "9.30 to 10.15",
@@ -7938,7 +7962,7 @@
   {
     "client_name": "Samer",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "9.30 to 10.15",
@@ -8018,7 +8042,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "10.15 to 11",
@@ -8048,7 +8072,7 @@
   {
     "client_name": "Zaid",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "10.15 to 11",
@@ -8058,7 +8082,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "11 to 11.45",
@@ -8108,7 +8132,7 @@
   {
     "client_name": "Hazem",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "11 to 11.45",
@@ -8158,7 +8182,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
@@ -8168,7 +8192,7 @@
   {
     "client_name": "Eiji",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
@@ -8238,7 +8262,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "AURORA",
+    "instructors": "YOUSSEF",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "12.30 to 1.15",
@@ -8268,7 +8292,7 @@
   {
     "client_name": "Rayyan Fi",
     "day": "Sunday",
-    "instructors": "JAVIER",
+    "instructors": "LULIYA",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "12.30 to 1.15",

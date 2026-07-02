@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-28jun-covers-swim-merge";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -1918,6 +1918,7 @@
     for (var oi = 0; oi < omitRules.length; oi++) {
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
+    if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
     return false;
   }
 
@@ -1989,6 +1990,161 @@
     return false;
   }
 
+  /** Aquatic + consecutive MA pool block with the same swim instructor → one feedback (Roberto/Yusuf, Javier/Cyrus). */
+  function isSwimInstructorPoolAreaKind(kind) {
+    return kind === "pool" || kind === "aquatic" || kind === "teaching_pool" || kind === "small_pool" || kind === "big_pool";
+  }
+
+  function isConsecutiveSwimMergeableSlot(slot) {
+    if (!slot) return false;
+    if (isAquaticService(slot.service)) return true;
+    if (isMultiActivityService(slot.service)) {
+      return isSwimInstructorPoolAreaKind(slotAreaKind(slot));
+    }
+    return false;
+  }
+
+  function rosterRowToSlotLite(isoDate, wd, r) {
+    var pt = parseTimeSlot(r.time_slot, wd);
+    var instructors = parseInstructors(applySundayInstructorOverride(isoDate, r.instructors));
+    return {
+      session_date: isoDate,
+      day: wd,
+      client_name: clean(r.client_name),
+      service: clean(r.service),
+      time_slot: clean(r.time_slot),
+      time_start: pt.start,
+      time_end: pt.end,
+      venue: clean(r.venue),
+      area: clean(r.area),
+      instructors: instructors,
+      instructor_label: instructors.join(", ") || clean(r.instructors),
+    };
+  }
+
+  function rosterSlotsForDate(iso) {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var wd = weekdayLongFromIso(iso);
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (!isRosterClient(r.client_name)) continue;
+      out.push(rosterRowToSlotLite(iso, wd, r));
+    }
+    return out;
+  }
+
+  function rosterSlotIdentity(s) {
+    return (
+      canonicalClientSlug(s.client_name) +
+      "|" +
+      (s.time_start || normTimeKey(s.time_slot, s.day)) +
+      "|" +
+      serviceKey(s.service) +
+      "|" +
+      primaryInstructorKey(s)
+    );
+  }
+
+  function slotsShareSwimInstructor(a, b) {
+    if (primaryInstructorKey(a) !== primaryInstructorKey(b)) return false;
+    var ai = a.instructors || [];
+    var bi = b.instructors || [];
+    if (ai.length > 1 || bi.length > 1) {
+      if (ai.length !== bi.length) return false;
+      for (var i = 0; i < ai.length; i++) {
+        if (!instructorRuleMatches(ai[i], bi)) return false;
+      }
+    }
+    return true;
+  }
+
+  function swimBlocksOverlapOrTouch(a, b) {
+    var aStart = a.time_start || "";
+    var aEnd = a.time_end || aStart;
+    var bStart = b.time_start || "";
+    var bEnd = b.time_end || bStart;
+    if (!aStart || !bStart) return false;
+    return aStart < bEnd && bStart < aEnd;
+  }
+
+  function autoConsecutiveSwimInstructorMergeKey(slot) {
+    if (!isConsecutiveSwimMergeableSlot(slot)) return "";
+    if (isTeflonDemoRosterSlot(slot)) return "";
+    var iso = slot.session_date;
+    var cid = canonicalClientSlug(slot.client_name);
+    if (!iso || !cid) return "";
+    var candidates = rosterSlotsForDate(iso).filter(function (s) {
+      if (canonicalClientSlug(s.client_name) !== cid) return false;
+      if (!isConsecutiveSwimMergeableSlot(s)) return false;
+      return slotsShareSwimInstructor(slot, s);
+    });
+    if (candidates.length < 2) return "";
+    var id = rosterSlotIdentity(slot);
+    var parent = {};
+    var rank = {};
+    for (var ci = 0; ci < candidates.length; ci++) {
+      var ck = rosterSlotIdentity(candidates[ci]);
+      parent[ck] = ck;
+      rank[ck] = 0;
+    }
+    function find(k) {
+      while (parent[k] !== k) {
+        parent[k] = parent[parent[k]];
+        k = parent[k];
+      }
+      return k;
+    }
+    function unite(a, b) {
+      var ra = find(a);
+      var rb = find(b);
+      if (ra === rb) return;
+      if (rank[ra] < rank[rb]) parent[ra] = rb;
+      else if (rank[ra] > rank[rb]) parent[rb] = ra;
+      else {
+        parent[rb] = ra;
+        rank[ra]++;
+      }
+    }
+    for (var i = 0; i < candidates.length; i++) {
+      for (var j = i + 1; j < candidates.length; j++) {
+        if (swimBlocksOverlapOrTouch(candidates[i], candidates[j])) {
+          unite(rosterSlotIdentity(candidates[i]), rosterSlotIdentity(candidates[j]));
+        }
+      }
+    }
+    var root = find(id);
+    var componentSize = 0;
+    for (var k in parent) {
+      if (Object.prototype.hasOwnProperty.call(parent, k) && find(k) === root) componentSize++;
+    }
+    if (componentSize < 2) return "";
+    return "consec_swim|" + cid + "|" + primaryInstructorKey(slot);
+  }
+
+  function shouldOmitAutoMergedSwimDuplicate(slot) {
+    if (!slot || !isAquaticService(slot.service)) return false;
+    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot);
+    if (!mg) return false;
+    var iso = slot.session_date;
+    if (!iso) return false;
+    var slots = rosterSlotsForDate(iso);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (isAquaticService(s.service)) continue;
+      if (!isMultiActivityService(s.service)) continue;
+      var kind = slotAreaKind(s);
+      if (!isSwimInstructorPoolAreaKind(kind)) continue;
+      if (canonicalClientSlug(s.client_name) !== canonicalClientSlug(slot.client_name)) continue;
+      if (!slotsShareSwimInstructor(slot, s)) continue;
+      var sMg = feedbackMergeGroupForSlot(s);
+      if (sMg === mg) return true;
+    }
+    return false;
+  }
+
   function feedbackMergeGroupForSlot(slot) {
     var rules = feedbackMergeRules();
     var wd = slot.day || weekdayLongFromIso(slot.session_date);
@@ -2010,6 +2166,8 @@
         }
       }
     }
+    var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot);
+    if (autoSwim) return autoSwim;
     if (
       wd === "Sunday" &&
       isMultiActivityService(slot.service) &&
@@ -2285,7 +2443,31 @@
         ? slot.instructors
         : parseInstructors(slot.instructor_label || "");
     if (!insts.length) return false;
-    if (insts.length === 1) return clean(insts[0]).toUpperCase() === "TEFLON";
+    if (insts.length === 1) return isTeflonDemoInstructor(insts[0]);
+    return false;
+  }
+
+  function isTeflonDemoInstructor(name) {
+    return clean(name).toUpperCase() === "TEFLON";
+  }
+
+  /** Submitted feedback or awaiting row tied to the Teflon demo account / roster slot. */
+  function isTeflonDemoFeedbackRow(hub, row) {
+    if (!row) return false;
+    if (row._ashAwaitingSlot) return isTeflonDemoRosterSlot(row.slot);
+    if (isTeflonDemoInstructor(row.completed_by_name) || isTeflonDemoInstructor(row.submitted_by_name)) {
+      return true;
+    }
+    if (!hub || typeof hub.expandSlotsForDate !== "function") return false;
+    var day = hub.feedbackRowDate(row) || feedbackSessionDate(row);
+    if (!day) return false;
+    var cid = canonicalClientSlug(row.client_name);
+    if (!cid) return false;
+    var slots = hub.expandSlotsForDate(day);
+    for (var i = 0; i < slots.length; i++) {
+      if (canonicalClientSlug(slots[i].client_name) !== cid) continue;
+      if (isTeflonDemoRosterSlot(slots[i])) return true;
+    }
     return false;
   }
 
@@ -3739,6 +3921,7 @@
       var fb = list[i];
       if (feedbackSessionDate(fb) !== iso) continue;
       if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      if (isTeflonDemoFeedbackRow(hub, fb)) continue;
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
       n++;
     }
@@ -4535,6 +4718,7 @@
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
+      if (isTeflonDemoFeedbackRow(hub, fb)) return false;
       if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
         if (!hub.opts.feedbackRowScopeFilter(fb)) return false;
       }
@@ -4999,6 +5183,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     function pushRow(row) {
       if (isMislabeledRosterAreaClientName(row.client_name)) return;
+      if (isTeflonDemoFeedbackRow(hub, row)) return;
       if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
         if (!hub.opts.feedbackRowScopeFilter(row)) return;
       }
@@ -5122,6 +5307,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     function scopedSlots(unit) {
       return unit.slots.filter(function (s) {
         if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (isTeflonDemoRosterSlot(s)) return false;
         if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
         return true;
       });
@@ -5200,6 +5386,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var displaySlots = hub.sortOverviewSlotsForDisplay(
       slots.filter(function (s) {
         if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (isTeflonDemoRosterSlot(s)) return false;
         if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
         return true;
       }),
@@ -5606,6 +5793,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var d = dayList[di];
       var slots = hub.expandSlotsForDate(d);
       for (var i = 0; i < slots.length; i++) {
+        if (isTeflonDemoRosterSlot(slots[i])) continue;
         out.push({ date_iso: d, slot: slots[i] });
       }
     }
@@ -6074,7 +6262,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlRosterSessionsBreakdown = function (iso) {
     var esc = this.escapeHtml;
     var hub = this;
-    var slots = this.expandSlotsForDate(iso);
+    var slots = this.expandSlotsForDate(iso).filter(function (s) {
+      return !isTeflonDemoRosterSlot(s);
+    });
     if (!slots.length) return "";
     var rows = slots
       .map(function (slot) {
