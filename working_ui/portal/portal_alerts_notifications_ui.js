@@ -179,6 +179,7 @@
       global.__PORTAL_WPS_SKIP__ = false;
     } catch (_s) {}
     var statusEl = qNotify("portalNotifyStatus");
+    var btn = qNotify("portalNotifyEnableBtn");
     if (Notification.permission === "denied") {
       if (typeof global.portalShowNotificationDeniedHelp === "function") {
         global.portalShowNotificationDeniedHelp({ scroll: true });
@@ -190,6 +191,12 @@
             notifyContextHint("denied");
         }
       }
+      if (statusEl) {
+        statusEl.textContent =
+          "Tapped — on iPhone/iPad open Settings → Safari → portalvic.vercel.app → Notifications → Allow, then refresh this page." +
+          notifyContextHint("denied");
+      }
+      flashAlertsButton(btn);
       void Notification.requestPermission().then(function (r) {
         if (r === "granted" && typeof global.portalRegisterPushAfterGrant === "function") {
           return global.portalRegisterPushAfterGrant(statusEl);
@@ -343,9 +350,10 @@
       }
       if (statusEl) {
         statusEl.textContent =
-          "Notifications blocked — follow the steps above, then tap Send test alert again." +
+          "Tapped — on iPhone/iPad open Settings → Safari → portalvic.vercel.app → Notifications → Allow, then refresh this page." +
           notifyContextHint("denied");
       }
+      flashAlertsButton(qNotify("portalNotifyTestBtn"));
       return;
     }
   }
@@ -372,28 +380,46 @@
     refresh();
   }
 
+  function flashAlertsButton(btn) {
+    if (!btn) return;
+    btn.classList.add("portal-alerts-action-btn--tapped");
+    global.setTimeout(function () {
+      btn.classList.remove("portal-alerts-action-btn--tapped");
+    }, 700);
+  }
+
+  function handleAlertsSheetTap(e) {
+    var t = e.target && e.target.closest ? e.target.closest("button") : null;
+    if (!t) return;
+    var alertsSheet = alertsSheetEl();
+    if (!alertsSheet || !alertsSheet.contains(t) || t.disabled) return;
+    if (t.id === "portalEnableAllBtn") {
+      e.preventDefault();
+      flashAlertsButton(t);
+      onContinueClick(t);
+    } else if (t.id === "portalNotifyEnableBtn") {
+      e.preventDefault();
+      flashAlertsButton(t);
+      onEnableClick();
+    } else if (t.id === "portalNotifyTestBtn") {
+      e.preventDefault();
+      flashAlertsButton(t);
+      onTestClick();
+    } else if (t.id === "portalMicEnableBtn") {
+      e.preventDefault();
+      flashAlertsButton(t);
+      if (typeof global.portalRequestMicrophonePermission === "function") {
+        void global.portalRequestMicrophonePermission();
+      }
+    }
+  }
+
   function bindAlertsSheetUi() {
     var alertsSheet = alertsSheetEl();
     if (!alertsSheet || bound) return;
     bound = true;
-    alertsSheet.addEventListener(
-      "click",
-      function (e) {
-        var t = e.target && e.target.closest ? e.target.closest("button") : null;
-        if (!t || !alertsSheet.contains(t) || t.disabled) return;
-        if (t.id === "portalEnableAllBtn") {
-          e.preventDefault();
-          onContinueClick(t);
-        } else if (t.id === "portalNotifyEnableBtn") {
-          e.preventDefault();
-          onEnableClick();
-        } else if (t.id === "portalNotifyTestBtn") {
-          e.preventDefault();
-          onTestClick();
-        }
-      },
-      true
-    );
+    alertsSheet.addEventListener("click", handleAlertsSheetTap, true);
+    alertsSheet.addEventListener("touchend", handleAlertsSheetTap, { capture: true, passive: false });
   }
 
   function init() {

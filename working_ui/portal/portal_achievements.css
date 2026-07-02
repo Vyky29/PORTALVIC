@@ -35,6 +35,11 @@
   color: var(--danger, #dc2626);
 }
 
+.portal-achievements-status .btn {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
 .portal-achievements-sheet-head {
   justify-content: center;
   text-align: center;

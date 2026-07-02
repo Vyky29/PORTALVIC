@@ -263,6 +263,86 @@
     return isLeadInboxMode();
   }
 
+  /** Programme leads when profile hydration is still pending (Berta/John/Michelle). */
+  function resolveProgrammeLeadGalleryAccess() {
+    if (canUploadFromDeviceGallery()) return true;
+    try {
+      var keys = { berta: 1, john: 1, michelle: 1 };
+      var sid = String(
+        (global.STAFF_DASHBOARD_ID ||
+          (global.dashboardData && global.dashboardData.staffId) ||
+          "") + "",
+      )
+        .trim()
+        .toLowerCase();
+      if (keys[sid]) return true;
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var prof = box.staff_profile;
+      var em = String((box.session && box.session.user && box.session.user.email) || "")
+        .trim()
+        .toLowerCase();
+      if (em.indexOf("traperocasado") >= 0) return true;
+      if (em.indexOf("johnnyosti") >= 0 || em.indexOf("john.osti") >= 0) return true;
+      if (em.indexOf("michelle@youtimecounselling") >= 0) return true;
+      if (typeof global.portalInferStaffKey === "function") {
+        var rk = String(global.portalInferStaffKey(prof, em) || "")
+          .trim()
+          .toLowerCase();
+        if (keys[rk]) return true;
+      }
+      var un = String((prof && prof.username) || "")
+        .trim()
+        .toLowerCase();
+      if (keys[un] || un === "stf012" || un === "stf006") return true;
+    } catch (_e) {}
+    return false;
+  }
+
+  function canUploadFromDeviceGalleryResolved() {
+    return canUploadFromDeviceGallery() || resolveProgrammeLeadGalleryAccess();
+  }
+
+  function isLeadSessionPhotosMode() {
+    return isLeadInboxMode() || resolveProgrammeLeadGalleryAccess();
+  }
+
+  function handleCameraRetryTap() {
+    var req =
+      global.portalRequestCameraPermission ||
+      (global.window && global.window.portalRequestCameraPermission);
+    if (typeof req !== "function") {
+      openNativePhotoPicker();
+      return;
+    }
+    setStatus("Waiting for camera permission…");
+    void req().then(function (st) {
+      if (st === "granted") void captureFromCamera();
+      else showCameraFailure({ name: "NotAllowedError" });
+    });
+  }
+
+  function bindAchievementStatusActions() {
+    var statusEl = document.getElementById("portalAchievementsStatus");
+    if (!statusEl || statusEl.getAttribute("data-portal-status-actions-bound") === "1") return;
+    statusEl.setAttribute("data-portal-status-actions-bound", "1");
+    function onStatusAction(e) {
+      var btn = e.target && e.target.closest ? e.target.closest("button") : null;
+      if (!btn || !statusEl.contains(btn)) return;
+      if (btn.id === "portalAchievementsCamRetryBtn") {
+        e.preventDefault();
+        handleCameraRetryTap();
+      } else if (btn.id === "portalAchievementsGalleryUploadBtn") {
+        e.preventDefault();
+        openGalleryUploadPicker();
+      } else if (btn.id === "portalAchievementsNativeCamBtn") {
+        e.preventDefault();
+        openNativePhotoPicker();
+      }
+    }
+    statusEl.addEventListener("click", onStatusAction);
+    statusEl.addEventListener("touchend", onStatusAction, { passive: false });
+  }
+
   /** Unlimited capture per participant/day; feedback submit caps attachments separately. */
   function maxPhotosForCurrentParticipant() {
     return null;
@@ -807,7 +887,7 @@
       var files = inp.files;
       inp.value = "";
       if (!files || !files.length || !state.participant) return;
-      if (!canUploadFromDeviceGallery()) {
+      if (!canUploadFromDeviceGalleryResolved()) {
         setStatus("Only leaders can upload from your photo gallery.", true);
         return;
       }
@@ -818,7 +898,7 @@
   }
 
   function openGalleryUploadPicker() {
-    if (!canUploadFromDeviceGallery()) {
+    if (!canUploadFromDeviceGalleryResolved()) {
       setStatus("Only leaders can upload from your photo gallery.", true);
       return;
     }
@@ -876,7 +956,7 @@
   }
 
   async function uploadGalleryFiles(fileList) {
-    if (!canUploadFromDeviceGallery()) {
+    if (!canUploadFromDeviceGalleryResolved()) {
       setStatus("Only leaders can upload from your photo gallery.", true);
       return;
     }
@@ -934,34 +1014,22 @@
     var msg = esc(cameraErrorMessage(err));
     var html = msg;
     if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+      html += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;min-width:0">';
       html +=
-        '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;min-width:0">' +
-        '<button type="button" class="btn btn--pri btn--sm" id="portalAchievementsCamRetryBtn">Allow camera now</button>' +
-        '<button type="button" class="btn btn--sec btn--sm" id="portalAchievementsNativeCamBtn">Use phone camera</button>' +
-        "</div>";
+        '<button type="button" class="btn btn--pri btn--sm" id="portalAchievementsCamRetryBtn">Allow camera now</button>';
+      if (canUploadFromDeviceGalleryResolved()) {
+        html +=
+          '<button type="button" class="btn btn--sec btn--sm" id="portalAchievementsGalleryUploadBtn">Upload from gallery</button>';
+      }
+      html +=
+        '<button type="button" class="btn btn--sec btn--sm" id="portalAchievementsNativeCamBtn">Use phone camera</button>';
+      html += "</div>";
+      if (canUploadFromDeviceGalleryResolved()) {
+        html +=
+          '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.4">Camera blocked — tap <strong>Upload from gallery</strong> to add photos from your phone or computer.</p>';
+      }
     }
     setStatus(html, true);
-    var retry = document.getElementById("portalAchievementsCamRetryBtn");
-    if (retry) {
-      retry.onclick = function () {
-        var req =
-          global.portalRequestCameraPermission ||
-          (global.window && global.window.portalRequestCameraPermission);
-        if (typeof req !== "function") {
-          openNativePhotoPicker();
-          return;
-        }
-        setStatus("Waiting for camera permission…");
-        void req().then(function (st) {
-          if (st === "granted") void captureFromCamera();
-          else showCameraFailure({ name: "NotAllowedError" });
-        });
-      };
-    }
-    var nat = document.getElementById("portalAchievementsNativeCamBtn");
-    if (nat) nat.onclick = function () {
-      openNativePhotoPicker();
-    };
     if (global.portalMarkCameraDenied) global.portalMarkCameraDenied();
   }
 
@@ -1585,14 +1653,14 @@
       dayEl.textContent = formatWorkingDayLabel();
     }
     if (hintEl) {
-      hintEl.textContent = isLeadInboxMode()
+      hintEl.textContent = isLeadSessionPhotosMode()
         ? "Upload old photos from your phone into Inbox (unassigned). Admin downloads them and assigns each child. You can also take new photos or pick a participant from today."
         : "Same participants as your Today list (A–Z). Take photos in-app with the camera — gallery upload is for leaders only.";
     }
     if (!host) return;
     var uniq = getTodayParticipantList();
     var html = "";
-    if (isLeadInboxMode()) {
+    if (isLeadSessionPhotosMode()) {
       html +=
         '<button type="button" class="portal-achievements-participant portal-achievements-participant--inbox" data-ach-inbox="1" aria-label="Inbox — no participant. Admin assigns to the right client later">' +
         '<span class="portal-achievements-participant__text">' +
@@ -1601,7 +1669,7 @@
         "</span>" +
         '<span class="portal-achievements-participant__chev" aria-hidden="true">›</span></button>';
     }
-    if (!uniq.length && !isLeadInboxMode()) {
+    if (!uniq.length && !isLeadSessionPhotosMode()) {
       host.innerHTML =
         '<p class="muted portal-achievements-empty">No participants on your <strong>Today</strong> list for this day. Open the dashboard for that day first, or check your rota.</p>';
       return;
@@ -1659,7 +1727,7 @@
   /** Topbar photo tool: lead inbox hub (upload or camera), or auto-start when one Today participant. */
   function openCameraDirect() {
     bindSheet();
-    if (isLeadInboxMode()) {
+    if (isLeadSessionPhotosMode()) {
       selectInboxParticipant({ openCamera: false });
       return;
     }
@@ -1689,13 +1757,14 @@
   function syncLeadInboxUi() {
     var note = document.getElementById("portalAchievementsIntroNote");
     if (note) {
-      note.textContent = isLeadInboxMode()
+      var leadGallery = canUploadFromDeviceGalleryResolved();
+      note.textContent = leadGallery
         ? "Upload photos or videos from your phone into Inbox (unassigned). Admin downloads them, assigns each child, and you can delete them from your phone once they are safe in the portal."
         : "Photos and short videos stay in the portal only (not your phone gallery). Use Take photo — gallery upload is for leaders only.";
     }
     var actions = document.getElementById("portalAchievementsIconActions");
     if (actions) {
-      var showUpload = canUploadFromDeviceGallery();
+      var showUpload = canUploadFromDeviceGalleryResolved();
       actions.classList.toggle("portal-achievements-icon-actions--triple", showUpload);
       actions.classList.toggle(
         "portal-achievements-icon-actions--lead-inbox",
@@ -1704,8 +1773,8 @@
     }
     var uploadBtn = document.getElementById("portalAchievementsUploadFromPhone");
     if (uploadBtn) {
-      uploadBtn.hidden = !canUploadFromDeviceGallery();
-      if (canUploadFromDeviceGallery()) {
+      uploadBtn.hidden = !canUploadFromDeviceGalleryResolved();
+      if (canUploadFromDeviceGalleryResolved()) {
         uploadBtn.querySelector(".portal-achievements-icon-btn__label").textContent = "Upload";
       }
     }
@@ -1740,7 +1809,7 @@
     }
     var backBtn = document.getElementById("portalAchievementsBackParticipants");
     if (backBtn) {
-      backBtn.textContent = isLeadInboxMode() ? "Change" : "Participants";
+      backBtn.textContent = isLeadSessionPhotosMode() ? "Change" : "Participants";
     }
     var countEl = document.getElementById("portalAchievementsCount");
     if (countEl) {
@@ -1985,6 +2054,7 @@
     var root = document.getElementById("achievementsSheet");
     if (!root || root.getAttribute("data-portal-achievements-bound") === "1") return;
     root.setAttribute("data-portal-achievements-bound", "1");
+    bindAchievementStatusActions();
     ensureCaptureGuard();
     if (!global.__portalAchievementsCamLayoutBound) {
       global.__portalAchievementsCamLayoutBound = true;
@@ -2154,10 +2224,10 @@
     setStatus("");
     var titleEl = document.getElementById("achievementsSheetTitle");
     if (titleEl) {
-      titleEl.textContent = isLeadInboxMode() ? "Session photos" : "Participant achievements";
+      titleEl.textContent = isLeadSessionPhotosMode() ? "Session photos" : "Participant achievements";
     }
     syncLeadInboxUi();
-    if (isLeadInboxMode() && opts.inboxMode !== false) {
+    if (isLeadSessionPhotosMode() && opts.inboxMode !== false) {
       selectInboxParticipant({ openCamera: opts.openCamera === true });
       return;
     }
@@ -2529,6 +2599,7 @@
     getSelectedFeedbackPhotoIds: getSelectedFeedbackPhotoIds,
     finalizeOnFeedbackSubmit: finalizeOnFeedbackSubmit,
     syncScreenshotGuard: syncAchievementScreenshotGuard,
+    refreshLeadInboxUi: syncLeadInboxUi,
     MAX_PHOTOS: MAX_PHOTOS,
   };
 })(typeof window !== "undefined" ? window : globalThis);

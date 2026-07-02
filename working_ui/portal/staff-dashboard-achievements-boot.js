@@ -38,7 +38,19 @@
             }catch(_){ return new Date().toISOString().slice(0,10); }
           },
           isLeadInboxMode: function(){
-            return typeof portalStaffHasLeadPhotoInboxAccess === 'function' && portalStaffHasLeadPhotoInboxAccess();
+            if (typeof portalStaffHasLeadPhotoInboxAccess === 'function' && portalStaffHasLeadPhotoInboxAccess()) {
+              return true;
+            }
+            try {
+              var keys = { berta: 1, john: 1, michelle: 1 };
+              var sid = String(window.STAFF_DASHBOARD_ID || (window.dashboardData && window.dashboardData.staffId) || '').trim().toLowerCase();
+              if (keys[sid]) return true;
+              var box = window.__PORTAL_SUPABASE__ || {};
+              var em = String((box.session && box.session.user && box.session.user.email) || '').trim().toLowerCase();
+              if (em.indexOf('traperocasado') >= 0 || em.indexOf('johnnyosti') >= 0 || em.indexOf('john.osti') >= 0) return true;
+              if (em.indexOf('michelle@youtimecounselling') >= 0) return true;
+            } catch (_) {}
+            return false;
           },
           resolveParticipantPhotoUrl: function(name, clientId){
             if(typeof resolveParticipantPhotoUrl === 'function') return resolveParticipantPhotoUrl(name, clientId) || '';
@@ -74,5 +86,13 @@
         if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
         });
       }
-      window.addEventListener('portal:supabase-ready', function(){ configure(); });
+      window.addEventListener('portal:supabase-ready', function(){
+        configure();
+        if (window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.refreshLeadInboxUi === 'function') {
+          var sheet = document.getElementById('achievementsSheet');
+          if (sheet && sheet.classList.contains('open')) {
+            window.PortalParticipantAchievements.refreshLeadInboxUi();
+          }
+        }
+      });
     })();
