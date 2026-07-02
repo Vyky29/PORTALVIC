@@ -32,6 +32,8 @@ import {
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
+  resolveStaffKeyFromAuthEmail,
+  PORTAL_STAFF_CODE_TO_ROSTER_KEY,
 } from "./auth-map.js";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
@@ -880,6 +882,55 @@ function bindLogin() {
     return null;
   }
 
+  function portalStaffProfileUsernameCandidates(authEmail) {
+    const email = String(authEmail || "")
+      .trim()
+      .toLowerCase();
+    const names = new Set();
+    const rosterKey = resolveStaffKeyFromAuthEmail(email);
+    if (rosterKey) {
+      names.add(rosterKey);
+      if (rosterKey === "lulia") {
+        ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+      } else if (rosterKey === "javier") {
+        ["javier", "Javier", "javi", "Javi"].forEach((n) => names.add(n));
+      } else if (rosterKey === "javi") {
+        ["javi", "Javi", "javier", "Javier"].forEach((n) => names.add(n));
+      } else if (rosterKey === "youssef") {
+        ["youssef", "Youssef", "yousef", "yusef"].forEach((n) => names.add(n));
+      } else {
+        const cap = rosterKey.charAt(0).toUpperCase() + rosterKey.slice(1);
+        names.add(cap);
+      }
+    }
+    const local = email.split("@")[0] || "";
+    if (local && PORTAL_STAFF_CODE_TO_ROSTER_KEY[local]) {
+      const codeKey = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
+      names.add(codeKey);
+      if (codeKey === "lulia") {
+        ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+      }
+    }
+    return [...names].filter(Boolean);
+  }
+
+  async function fetchStaffProfileByUsernameAliases(supabase, authEmail) {
+    const selectCols =
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+    const candidates = portalStaffProfileUsernameCandidates(authEmail);
+    if (!candidates.length) return null;
+    const { data, error } = await supabase
+      .from("staff_profiles")
+      .select(selectCols)
+      .in("username", candidates)
+      .limit(1);
+    if (error) {
+      console.warn("[portal] staff_profiles alias lookup:", error);
+      return null;
+    }
+    return Array.isArray(data) && data.length ? data[0] : null;
+  }
+
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
       "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
@@ -905,7 +956,15 @@ function bindLogin() {
       .eq("id", userId)
       .maybeSingle();
     if (byId.error) throw byId.error;
-    return byId.data;
+    if (byId.data) return byId.data;
+    let authEmail = "";
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      authEmail = String(userData?.user?.email || "").trim();
+    } catch {
+      /* ignore */
+    }
+    return fetchStaffProfileByUsernameAliases(supabase, authEmail);
   }
 
   async function portalLogoutAfterProfileFailure() {

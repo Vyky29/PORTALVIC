@@ -167,7 +167,7 @@
     surface = surface || resolve();
     try {
       var u = new URL("admin_dashboard.html", global.location.href);
-      var view = String(opts.view || surface.mobile.defaultView || "staff_live_map").trim();
+      var view = String(opts.view || surface.mobile.defaultView || "nav_hub").trim();
       if (view) {
         u.searchParams.set("view", view);
         u.hash = view;

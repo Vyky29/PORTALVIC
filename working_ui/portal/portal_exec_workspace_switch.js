@@ -45,7 +45,7 @@ export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail
       mode: "staff",
       label: "Staff Portal",
       sub: "Your roster, sessions and field tools",
-      url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
+      url: publishedUrl("staff_dashboard.html?portalStayWorker=1", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "admin",

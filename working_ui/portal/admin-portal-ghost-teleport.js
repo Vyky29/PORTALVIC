@@ -334,6 +334,7 @@
       '<h1 class="page-title">Dashboard teleport</h1>' +
       '<div class="portal-staff-map-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalGhostTeleportRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="nav_hub">Operations hub</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Staff live map</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_activity">Portal activity</button>' +
       "</div></div>" +
