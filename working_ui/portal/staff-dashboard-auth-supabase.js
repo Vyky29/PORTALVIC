@@ -1,5 +1,5 @@
 import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260705-ceo-gallery";
-import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260630-ops-admin-switch";
+import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260705-exec-switch-fix";
 import {
   portalEnforceStaffAppPilotGate,
   portalSyncStaffAppPilotBanner,
@@ -20,7 +20,15 @@ try {
   console.warn("staff_dashboard: Supabase bootstrap", e);
 }
 
+window.portalSyncExecWorkspaceSwitchSlot = portalSyncExecWorkspaceSwitchSlot;
+
 portalSyncExecWorkspaceSwitchSlot("staff");
+
+function portalSyncExecWorkspaceSwitchFromSession() {
+  portalSyncExecWorkspaceSwitchSlot("staff");
+}
+window.addEventListener("portal:supabase-ready", portalSyncExecWorkspaceSwitchFromSession);
+window.addEventListener("portal:staff-identity-resolved", portalSyncExecWorkspaceSwitchFromSession);
 
 if (typeof window.portalSyncOpsAdminStaffDashboardUi === "function") {
   window.portalSyncOpsAdminStaffDashboardUi();

@@ -6,7 +6,7 @@
   "use strict";
 
   var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260625-help-guide-v2";
-  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v9";
+  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v14";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;
@@ -760,7 +760,7 @@
         }
       } catch (_u) {}
       setVoiceStatus("Speaking...");
-      return global.PortalHelpVoiceSpeak.speak(text)
+      return global.PortalHelpVoiceSpeak.speak(text, { fallbackBrowser: false })
         .then(function (r) {
           setVoiceStatus(
             r && r.ok ? "Tap the microphone to speak again." : "Tap Listen again to hear the answer."
@@ -812,7 +812,7 @@
       };
       if (global.PortalHelpVoiceSpeak) {
         configureAssistOnce();
-        void global.PortalHelpVoiceSpeak.speak(text)
+        void global.PortalHelpVoiceSpeak.speak(text, { fallbackBrowser: false })
           .then(function (r) {
             done();
             if (activeVoiceStatus) {

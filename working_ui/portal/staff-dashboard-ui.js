@@ -224,10 +224,17 @@
       var run = function(){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+        if(typeof renderNotices === 'function') renderNotices();
+        if(typeof portalSyncExecWorkspaceSwitchSlot === 'function'){
+          portalSyncExecWorkspaceSwitchSlot('staff');
+        }
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
           void portalHydrateAnnouncementsFromSupabase().then(function(){
             if(typeof window.portalSyncAnnualProfileQuickMenuGroup === 'function'){
               window.portalSyncAnnualProfileQuickMenuGroup();
+            }
+            if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
+              portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
             }
           });
         }
@@ -422,7 +429,8 @@
         ? portalSignedMessageHistoryRows().length
         : (typeof portalAnnouncementHistoryRows === 'function' ? portalAnnouncementHistoryRows().length : 0);
       const merged = dashboardData && dashboardData.portalAnnouncementAcksMerged ? '1' : '0';
-      return String(active) + '|' + String(signed) + '|' + merged;
+      const cal = typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem() ? '1' : '0';
+      return String(active) + '|' + String(signed) + '|' + merged + '|' + cal;
     }
     function portalSyncAnnouncementsAndRemindersUi(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
@@ -461,8 +469,9 @@
         if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
         if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
       }
-      if(!fpUnchanged){
-        _portalAnnUiLastFp = fp;
+      const shouldRenderNotices = !fpUnchanged || !!opts.force;
+      if(shouldRenderNotices){
+        if(!fpUnchanged) _portalAnnUiLastFp = fp;
         if(typeof renderNotices === 'function') renderNotices();
         else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();

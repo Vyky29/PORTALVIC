@@ -217,6 +217,13 @@
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === ON_ACK_ACTION;
   };
 
+  global.portalAnnouncementRowIsCalendar202627 = function portalAnnouncementRowIsCalendar202627(row) {
+    if (!row) return false;
+    var annId = String(row.id || row.portalAnnouncementId || "").trim();
+    if (annId && annId === CALENDAR_ANNOUNCEMENT_ID) return true;
+    return String(row.on_ack_action || row.onAckAction || "").trim() === ON_ACK_ACTION;
+  };
+
   /** Live calendar announcement row from dashboard notices (informational — no signature). */
   global.portalCalendar202627NoticeItem = function portalCalendar202627NoticeItem() {
     try {
@@ -225,6 +232,20 @@
       for (var i = 0; i < raw.length; i++) {
         var n = raw[i];
         if (n && global.portalSignableItemIsCalendar202627(n)) return n;
+      }
+      var live = dd && dd.portalLiveAnnouncementIdSet;
+      if (live && live[CALENDAR_ANNOUNCEMENT_ID]) {
+        var cached = dd.portalCalendar202627LiveNotice;
+        if (cached && global.portalSignableItemIsCalendar202627(cached)) return cached;
+        return {
+          type: "announcement",
+          title: "Calendar 2026/27",
+          text: "Term dates — Day Centre, after-schools & crash courses",
+          href: "#portal-ann-" + CALENDAR_ANNOUNCEMENT_ID,
+          portalAnnouncementId: CALENDAR_ANNOUNCEMENT_ID,
+          onAckAction: ON_ACK_ACTION,
+          requiresSignature: false,
+        };
       }
     } catch (_) {}
     return null;

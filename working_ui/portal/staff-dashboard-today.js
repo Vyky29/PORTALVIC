@@ -4018,6 +4018,27 @@
           }
           if(existing[id]) return;
           if(
+            typeof portalAnnouncementRowIsCalendar202627 === 'function' &&
+            portalAnnouncementRowIsCalendar202627(row)
+          ){
+            existing[id] = true;
+            const calNotice = {
+              type: 'announcement',
+              title: String(row.title || 'Calendar 2026/27').trim() || 'Calendar 2026/27',
+              text: String(row.body || '').trim(),
+              href: '#portal-ann-' + id,
+              portalAnnouncementId: id,
+              hideAfterAckAmount: row.hide_after_ack_amount,
+              hideAfterAckUnit: row.hide_after_ack_unit,
+              onAckAction: 'calendar_2026_27',
+              requiresSignature: false,
+              created_at: row.created_at
+            };
+            dashboardData.portalCalendar202627LiveNotice = calNotice;
+            annInjected.push(calNotice);
+            return;
+          }
+          if(
             typeof portalStaffAnnouncementRowRequiresSignature === 'function' &&
             !portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
           ){
@@ -4045,7 +4066,7 @@
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
         dashboardData.portalRemindersFromAdmin = remList;
-        if(annInjected.length){
+        if(annInjected.length || dashboardData.portalCalendar202627LiveNotice){
           dashboardData.notices = annInjected.concat(preserved);
         }
         if(typeof portalReconcileAnnouncementAckKeys === 'function'){
@@ -4305,7 +4326,6 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
-      if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
       const annAck = portalAnnouncementAckMapLoad();
       const remAck = portalReminderAckMapLoad();
       const items = [];
@@ -4748,7 +4768,9 @@
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
-        announcement: portalActiveAnnouncementItems().length > 0,
+        announcement: portalActiveAnnouncementItems().length > 0 || !!(
+          typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem()
+        ),
         feedback: hasFeedback || hasReminderOther,
         schedule: !!scheduleMode,
         scheduleMode: scheduleMode,

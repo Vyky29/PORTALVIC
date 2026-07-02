@@ -6,8 +6,10 @@
  *   node database/local-vault/generate-help-guide-audio.mjs
  *   node database/local-vault/generate-help-guide-audio.mjs --section login
  *   node database/local-vault/generate-help-guide-audio.mjs --force
+ *   node database/local-vault/generate-help-guide-audio.mjs --force --via-portal
  *
- * Uses ELEVENLABS_API_KEY if set; otherwise Portal edge function + service role.
+ * Uses ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID locally when set (unless --via-portal).
+ * --via-portal uses portal-help-voice-speak + Supabase secrets (production club voice).
  */
 import fs from "fs";
 import path from "path";
@@ -122,7 +124,8 @@ function sectionFilter() {
 
 const apiKey = readEnv("ELEVENLABS_API_KEY");
 const voiceId = readEnv("ELEVENLABS_VOICE_ID") || DEFAULT_VOICE;
-const useDirect = Boolean(apiKey);
+const viaPortal = process.argv.includes("--via-portal");
+const useDirect = Boolean(apiKey) && !viaPortal;
 
 const guide = JSON.parse(fs.readFileSync(guidePath, "utf8"));
 const onlySection = sectionFilter();
@@ -190,8 +193,10 @@ for (const section of guide.sections || []) {
   }
 }
 
-guide.version = "2026-06-help-guide-v11";
+guide.version = "2026-06-help-guide-v12";
 guide.description =
-  "Staff help guide — visual demos + club voice (Eleven Labs MP3s, no device voice).";
+  "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).";
 fs.writeFileSync(guidePath, JSON.stringify(guide, null, 2) + "\n");
-console.log(`Done (${useDirect ? "ElevenLabs direct" : "Portal edge"}). generated=${generated} skipped=${skipped}`);
+console.log(
+  `Done (${useDirect ? "ElevenLabs direct, voice " + voiceId : "Portal edge / Supabase secrets"}). generated=${generated} skipped=${skipped}`
+);

@@ -1,6 +1,6 @@
 {
-  "version": "2026-06-help-guide-v11",
-  "description": "Staff help guide — visual demos + club voice (Eleven Labs MP3s, no device voice).",
+  "version": "2026-06-help-guide-v14",
+  "description": "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).",
   "sections": [
     {
       "id": "getting-started",
@@ -56,8 +56,8 @@
       "steps": [
         {
           "voice": "Open the portal link your manager sent you. This is the sign-in screen.",
-          "demo": "login-screenshot",
-          "caption": "Foto 1 — Log in",
+          "demo": "login-mock",
+          "caption": "Log in",
           "audio": "/portal/help-audio/login-01-foto-1-log-in.mp3"
         },
         {
@@ -85,7 +85,7 @@
       "demos": [
         {
           "demo": "login-mock",
-          "caption": "Fields highlighted step by step when you tap Play."
+          "caption": "Same sign-in screen as login.html — fields highlight step by step when you tap Play."
         }
       ],
       "illustrations": []
@@ -105,25 +105,25 @@
         "instalar"
       ],
       "voice_script": "Add CS Portal to your home screen so it opens full screen like an app. On iPhone use Share, then Add to Home Screen. On Android use the browser menu, then Install app.",
-      "content": "Add the portal to your home screen as CS Portal with the club icon, full-screen.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out.",
+      "content": "Add the portal to your home screen as CS Portal with the club icon, full-screen.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nYour iPhone may show the menu in Spanish (Añadir a pantalla de inicio) — it is the same option as Add to Home Screen in the guide.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out.",
       "steps": [
         {
           "voice": "On iPhone, open the portal in Safari. Tap Share at the bottom.",
-          "demo": "install-mock",
+          "demo": "install-safari",
           "focus": "iphone",
           "caption": "iPhone — Share button",
           "audio": "/portal/help-audio/install-01-iphone.mp3"
         },
         {
           "voice": "Choose Add to Home Screen, then Add. The CS Portal icon appears on your home screen.",
-          "demo": "install-mock",
+          "demo": "install-share-sheet",
           "focus": "iphone-add",
           "caption": "Add to Home Screen",
           "audio": "/portal/help-audio/install-02-iphone-add.mp3"
         },
         {
           "voice": "On Android, open the portal in Chrome. Tap the menu, then Install app or Add to Home screen.",
-          "demo": "install-mock",
+          "demo": "install-android",
           "focus": "android",
           "caption": "Android — Install app",
           "audio": "/portal/help-audio/install-03-android.mp3"
@@ -131,8 +131,8 @@
       ],
       "demos": [
         {
-          "demo": "install-mock",
-          "caption": "Install once — then open CS Portal from your home screen."
+          "demo": "install-share-sheet",
+          "caption": "English labels — same menu on every iPhone, even if your phone language is Spanish."
         }
       ],
       "illustrations": []
@@ -224,8 +224,8 @@
         "notificaciones",
         "reminders"
       ],
-      "voice_script": "Tap the club logo when dots appear. Orange is outstanding feedback. Red is an announcement or document to sign. The notification centre lists everything in one place.",
-      "content": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nBlue idle — open the quick menu when nothing is waiting.\nMultiple colours — more than one type waiting.\n\nUnder Reminders, Outstanding feedbacks (orange) jumps to the pending session.\nTerm view on the dashboard shows days in red when feedback is still outstanding.",
+      "voice_script": "Tap the club logo when coloured dots appear. Orange is feedback pending. Red is an announcement to sign. Gold, lilac, pink and the other colours are schedule alerts from the office. If more than one applies, the dots mix those colours. Blue glow means open the quick menu.",
+      "content": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nHalo colours (one dot colour = one meaning):\nOrange — feedback or venue reminder still pending.\nRed — announcement or document to sign.\nGold — roster / schedule change (new shift or update).\nLilac — trial or new participant on your shift.\nPink — make-up session.\nTeal — client marked absent.\nGrey — admin change reverted.\nDark — shift cancelled.\nBlue — training on your roster.\nSky blue — shadowing on your shift.\nBlue glow (no dots) — nothing waiting; tap for the quick menu.\n\nIf two or more apply at once, the halo mixes those dot colours — tap the logo to see the full list.\n\nUnder Reminders, Outstanding feedbacks (orange) jumps to the pending session.\nTerm view on the dashboard shows days in red when feedback is still outstanding.",
       "demos": [
         {
           "demo": "halo",

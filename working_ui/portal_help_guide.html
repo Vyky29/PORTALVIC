@@ -107,7 +107,7 @@
     #guideLiveScope .session-card .session-card-body{overflow:visible}
     #guideLiveScope .portal-session-slot-chip{pointer-events:none}
     #guideLiveScope .guide-halo-grid{
-      display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px
     }
     #guideLiveScope .guide-halo-cell{
       display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -238,26 +238,144 @@
       box-shadow:0 0 0 4px rgba(244,183,64,.25)
     }
     .guide-login-mock{
-      max-width:340px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
-      border-radius:18px;padding:18px 16px;box-shadow:0 12px 28px rgba(10,61,98,.08)
+      max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
+      border-radius:22px;padding:clamp(22px,4vw,32px) clamp(18px,3.5vw,28px);
+      box-shadow:0 18px 50px rgba(23,50,71,.08)
     }
-    .guide-login-brand{text-align:center;margin:0 0 14px;font-size:15px;font-weight:800;color:var(--guide-navy)}
-    .guide-login-brand img{width:56px;height:56px;display:block;margin:0 auto 8px}
-    .guide-login-field{
-      border:1px solid var(--guide-border);border-radius:12px;background:#f8fafc;
-      padding:10px 12px;margin:0 0 10px;font-size:13px;color:var(--guide-muted);min-width:0
+    #guideLiveScope .guide-login-replica .login-logo-stage{
+      position:relative;width:min(200px,56vw);max-width:100%;aspect-ratio:1;
+      margin:0 auto 10px;display:grid;place-items:center
     }
-    .guide-login-field strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--guide-navy);margin:0 0 4px}
-    .guide-login-submit{
-      width:100%;border:0;border-radius:12px;padding:12px;font-size:14px;font-weight:800;
-      background:var(--guide-blue);color:#fff;margin-top:4px
+    #guideLiveScope .guide-login-replica .login-orbit-svg{
+      position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible
     }
-    .guide-install-steps{display:grid;gap:10px;max-width:380px;margin:0 auto}
+    #guideLiveScope .guide-login-replica .login-logo-shell{
+      position:relative;z-index:1;width:70%;max-width:140px;aspect-ratio:1;border-radius:50%;
+      overflow:hidden;background:#fff;display:grid;place-items:center;
+      box-shadow:0 0 0 2px rgba(249,191,46,.5),0 0 18px rgba(249,191,46,.45),
+        0 0 36px rgba(244,183,64,.32),0 0 56px rgba(249,191,46,.22),0 0 80px rgba(45,132,179,.12)
+    }
+    #guideLiveScope .guide-login-replica .login-logo-shell img{
+      width:100%;height:100%;object-fit:cover;transform:scale(1.32);transform-origin:center
+    }
+    #guideLiveScope .guide-login-replica .login-portal-text{
+      margin:0 0 16px;text-align:center;font-size:1.05rem;font-weight:700;color:var(--guide-navy);letter-spacing:-.02em
+    }
+    #guideLiveScope .guide-login-replica .field{margin:0 0 14px;min-width:0}
+    #guideLiveScope .guide-login-replica .field label{
+      display:block;font-size:12px;font-weight:600;color:var(--guide-navy);margin:0 0 6px
+    }
+    #guideLiveScope .guide-login-replica .field input{
+      width:100%;padding:11px 13px;font-size:15px;border:1px solid var(--guide-border);
+      border-radius:14px;background:#fff;color:var(--guide-text);pointer-events:none
+    }
+    #guideLiveScope .guide-login-replica .btn-login{
+      width:100%;margin-top:6px;padding:13px 16px;font-size:15px;font-weight:700;color:#fff;
+      background:linear-gradient(180deg,var(--guide-blue) 0%,#2676a0 100%);border:0;border-radius:14px;
+      box-shadow:0 4px 14px rgba(45,132,179,.28);pointer-events:none
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--cw{
+      transform-origin:0 0;animation:guide-orbit-cw 18s linear infinite
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--ccw{
+      transform-origin:0 0;animation:guide-orbit-ccw 14s linear infinite
+    }
+    #guideLiveScope .guide-login-replica .orbit-layer--slow-ccw{
+      transform-origin:0 0;animation:guide-orbit-ccw 26s linear infinite
+    }
+    @keyframes guide-orbit-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes guide-orbit-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+    @media (prefers-reduced-motion:reduce){
+      #guideLiveScope .guide-login-replica .orbit-layer--cw,
+      #guideLiveScope .guide-login-replica .orbit-layer--ccw,
+      #guideLiveScope .guide-login-replica .orbit-layer--slow-ccw{animation:none}
+    }
+    .guide-install-steps{display:grid;gap:10px;max-width:420px;margin:0 auto}
     .guide-install-step{
       background:#fff;border:1px solid var(--guide-border);border-radius:14px;
       padding:12px 14px;font-size:14px;line-height:1.45;color:var(--guide-text);min-width:0
     }
     .guide-install-step b{display:block;font-size:12px;color:var(--guide-navy);margin:0 0 4px}
+    .guide-install-card{
+      max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
+      border-radius:22px;padding:0;box-shadow:0 18px 50px rgba(23,50,71,.08);overflow:hidden;min-width:0
+    }
+    .guide-install-card .guide-install-inner{padding:14px 16px 16px}
+    .guide-install-safari-preview{
+      background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);border-bottom:1px solid var(--guide-border);
+      padding:14px 16px 10px;text-align:center;min-width:0
+    }
+    .guide-install-safari-preview img{
+      width:52px;height:52px;border-radius:12px;margin:0 auto 8px;display:block;object-fit:cover
+    }
+    .guide-install-safari-preview strong{display:block;font-size:14px;color:var(--guide-navy);font-weight:700}
+    .guide-install-safari-preview span{display:block;font-size:11px;color:var(--guide-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .guide-install-safari-bar{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:10px 14px 12px;background:#f2f2f7;border-top:1px solid rgba(0,0,0,.06);min-width:0
+    }
+    .guide-install-safari-bar .safari-url{
+      flex:1;min-width:0;text-align:center;font-size:11px;color:var(--guide-muted);
+      background:#fff;border-radius:8px;padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .guide-install-share-btn{
+      flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+      font-size:9px;font-weight:600;color:var(--guide-blue);min-width:44px
+    }
+    .guide-install-share-btn .share-icon{
+      width:28px;height:28px;border-radius:8px;background:var(--guide-blue);color:#fff;
+      display:grid;place-items:center;font-size:16px;line-height:1
+    }
+    .guide-install-sheet-head{
+      display:flex;align-items:flex-start;gap:12px;padding:4px 2px 12px;border-bottom:1px solid rgba(0,0,0,.08);min-width:0
+    }
+    .guide-install-sheet-head img{width:48px;height:48px;border-radius:10px;flex:none;object-fit:cover}
+    .guide-install-sheet-head .meta{flex:1;min-width:0}
+    .guide-install-sheet-head .meta strong{display:block;font-size:15px;color:var(--guide-navy);font-weight:700}
+    .guide-install-sheet-head .meta span{display:block;font-size:12px;color:var(--guide-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .guide-install-sheet-head .options{font-size:12px;color:var(--guide-blue);font-weight:600;margin-top:4px}
+    .guide-install-actions{
+      display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);overflow-x:auto
+    }
+    .guide-install-actions .act{
+      flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;font-size:10px;color:var(--guide-text);text-align:center;line-height:1.2
+    }
+    .guide-install-actions .act-icon{
+      width:44px;height:44px;border-radius:50%;background:#f2f2f7;display:grid;place-items:center;font-size:18px
+    }
+    .guide-install-rows{display:grid;gap:0;margin-top:4px}
+    .guide-install-row{
+      display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid rgba(0,0,0,.06);
+      font-size:14px;color:var(--guide-navy);min-width:0
+    }
+    .guide-install-row:last-child{border-bottom:0}
+    .guide-install-row .row-icon{
+      width:28px;height:28px;flex:none;display:grid;place-items:center;font-size:15px;color:var(--guide-blue)
+    }
+    .guide-install-row .row-label{flex:1;min-width:0;overflow-wrap:break-word}
+    .guide-install-row.is-target{background:rgba(45,132,179,.08);border-radius:12px;margin:0 -4px;padding-left:8px;padding-right:8px}
+    .guide-install-android{
+      padding:4px 2px;min-width:0
+    }
+    .guide-install-android .chrome-bar{
+      display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid var(--guide-border);border-radius:14px;margin-bottom:10px
+    }
+    .guide-install-android .chrome-menu{
+      width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid var(--guide-border);
+      display:grid;place-items:center;font-size:18px;color:var(--guide-navy);font-weight:700;flex:none
+    }
+    .guide-install-android .chrome-url{
+      flex:1;min-width:0;font-size:12px;color:var(--guide-muted);background:#fff;border:1px solid var(--guide-border);
+      border-radius:999px;padding:7px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .guide-install-android .menu-panel{
+      border:1px solid var(--guide-border);border-radius:14px;overflow:hidden;background:#fff
+    }
+    .guide-install-android .menu-item{
+      padding:12px 14px;font-size:14px;color:var(--guide-navy);border-bottom:1px solid rgba(0,0,0,.06);min-width:0
+    }
+    .guide-install-android .menu-item:last-child{border-bottom:0}
+    .guide-install-android .menu-item.is-target{background:rgba(45,132,179,.08);font-weight:700;color:var(--guide-blue)}
     .play-btn{
       flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
       border:0;background:var(--guide-blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer
@@ -290,7 +408,7 @@
     <p class="foot">CS Portal · Staff help guide</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v11"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v14"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -318,7 +436,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v11";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v14";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -355,6 +473,120 @@
       '<div class="session-line session-line--symbol">' +
       '<span class="session-right-note">' + poolHtml + "</span></div>" +
       "</div></div>"
+    );
+  }
+
+  function loginOrbitSvg(filterId) {
+    var fid = esc(filterId || "guideLoginOrb");
+    return (
+      '<svg class="login-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">' +
+      '<defs><filter id="' + fid + '" x="-40%" y="-40%" width="180%" height="180%">' +
+      '<feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>' +
+      '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+      '<g transform="translate(100,100)">' +
+      '<g class="orbit-layer orbit-layer--cw" filter="url(#' + fid + ')">' +
+      '<circle cx="0" cy="-92" r="7" fill="#2d84b3"/>' +
+      '<circle cx="79.67" cy="-46" r="6" fill="#f9bf2e"/>' +
+      '<circle cx="79.67" cy="46" r="6" fill="#173247"/>' +
+      '<circle cx="0" cy="92" r="7" fill="#f4b740"/>' +
+      '<circle cx="-79.67" cy="46" r="6" fill="#2d84b3"/>' +
+      '<circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>' +
+      "</g>" +
+      '<g class="orbit-layer orbit-layer--ccw" filter="url(#' + fid + ')">' +
+      '<circle cx="0" cy="-82" r="5" fill="#f9bf2e"/>' +
+      '<circle cx="71.01" cy="-41" r="5" fill="#2d84b3"/>' +
+      '<circle cx="71.01" cy="41" r="5" fill="#f4b740"/>' +
+      '<circle cx="0" cy="82" r="5" fill="#173247"/>' +
+      '<circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>' +
+      '<circle cx="-71.01" cy="-41" r="5" fill="#f9bf2e"/>' +
+      "</g>" +
+      '<g class="orbit-layer orbit-layer--slow-ccw" filter="url(#' + fid + ')">' +
+      '<circle cx="37.27" cy="-64" r="4" fill="#f4b740"/>' +
+      '<circle cx="74" cy="-8" r="4" fill="#2d84b3"/>' +
+      '<circle cx="37.27" cy="64" r="4" fill="#f9bf2e"/>' +
+      '<circle cx="-37.27" cy="64" r="4" fill="#173247"/>' +
+      '<circle cx="-74" cy="-8" r="4" fill="#2d84b3"/>' +
+      '<circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>' +
+      "</g></g></svg>"
+    );
+  }
+
+  function buildLoginReplica() {
+    return (
+      '<div class="guide-login-mock guide-login-replica">' +
+      '<header class="login-brand" data-guide-focus="brand">' +
+      '<div class="login-logo-stage">' +
+      loginOrbitSvg("guideLoginOrb") +
+      '<div class="login-logo-shell">' +
+      '<img src="/portal/F-02-1.png" alt="" width="140" height="140" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      "</div></div>" +
+      '<p class="login-portal-text">Portal</p></header>' +
+      '<div class="field" data-guide-focus="email">' +
+      '<label>Name or email</label>' +
+      '<input type="text" readonly value="Mary" aria-label="Name or email example" />' +
+      "</div>" +
+      '<div class="field" data-guide-focus="password">' +
+      '<label>PIN or password</label>' +
+      '<input type="password" readonly value="12345678" aria-label="PIN or password example" />' +
+      "</div>" +
+      '<button type="button" class="btn-login" data-guide-focus="submit">Login</button>' +
+      "</div>"
+    );
+  }
+
+  function buildInstallSafariMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-safari-preview">' +
+      '<img src="/portal/F-02-1.png" alt="" width="52" height="52" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      "<strong>Sign in</strong>" +
+      "<span>clubsensational-staff.vercel.app</span></div>" +
+      '<div class="guide-install-safari-bar">' +
+      '<span aria-hidden="true" style="font-size:18px;color:#8e8e93">&lt;</span>' +
+      '<span class="safari-url">clubsensational-staff.vercel.app</span>' +
+      '<span aria-hidden="true" style="font-size:18px;color:#8e8e93">&gt;</span>' +
+      '<div class="guide-install-share-btn" data-guide-focus="iphone">' +
+      '<span class="share-icon" aria-hidden="true">&#x2191;</span>Share</div>' +
+      "</div></div>"
+    );
+  }
+
+  function buildInstallShareSheetMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-inner">' +
+      '<div class="guide-install-sheet-head">' +
+      '<img src="/portal/F-02-1.png" alt="" width="48" height="48" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      '<div class="meta"><strong>Sign in</strong>' +
+      "<span>clubsensational-staff.vercel.app</span>" +
+      '<div class="options">Options &rsaquo;</div></div></div>' +
+      '<div class="guide-install-actions" aria-hidden="true">' +
+      '<div class="act"><span class="act-icon">&#x2398;</span>Copy</div>' +
+      '<div class="act"><span class="act-icon">&#x1F4D6;</span>Add Bookmark</div>' +
+      '<div class="act"><span class="act-icon">&#x1F453;</span>Reading List</div>' +
+      "</div>" +
+      '<div class="guide-install-rows">' +
+      '<div class="guide-install-row"><span class="row-icon">&#x2605;</span><span class="row-label">Add to Favourites</span></div>' +
+      '<div class="guide-install-row is-target" data-guide-focus="iphone-add">' +
+      '<span class="row-icon">&#x2295;</span><span class="row-label"><strong>Add to Home Screen</strong></span></div>' +
+      '<div class="guide-install-row"><span class="row-icon">&#x1F50D;</span><span class="row-label">Find on Page</span></div>' +
+      "</div></div></div>"
+    );
+  }
+
+  function buildInstallAndroidMock() {
+    return (
+      '<div class="guide-install-card">' +
+      '<div class="guide-install-inner guide-install-android">' +
+      '<div class="chrome-bar">' +
+      '<div class="chrome-menu" data-guide-focus="android" aria-hidden="true">&#x22EE;</div>' +
+      '<div class="chrome-url">clubsensational-staff.vercel.app</div></div>' +
+      '<div class="menu-panel">' +
+      '<div class="menu-item">New tab</div>' +
+      '<div class="menu-item">Bookmarks</div>' +
+      '<div class="menu-item is-target">Install app</div>' +
+      '<div class="menu-item">Add to Home screen</div>' +
+      "</div></div></div>"
     );
   }
 
@@ -429,10 +661,17 @@
       return (
         liveScopeOpen() +
         '<div class="guide-halo-grid">' +
-        haloCell("avatar-wrap--portal-alert-reminder", "Orange — outstanding feedback", "guideOrbRem") +
-        haloCell("avatar-wrap--portal-alert", "Red — announcement to sign", "guideOrbRed") +
-        haloCell("avatar-wrap--portal-alert-both", "Orange + red — both waiting", "guideOrbBoth") +
-        haloCell("avatar-wrap--portal-orbit-idle", "Blue idle — open quick menu", "guideOrbIdle") +
+        haloCell("avatar-wrap--portal-alert-reminder", "Orange — feedback pending", "guideOrbRem") +
+        haloCell("avatar-wrap--portal-alert", "Red — sign announcement", "guideOrbRed") +
+        haloCell("avatar-wrap--portal-alert-schedule", "Gold — roster change", "guideOrbGold") +
+        haloCell("avatar-wrap--portal-alert-schedule-trial-only", "Lilac — trial / new participant", "guideOrbTrial") +
+        haloCell("avatar-wrap--portal-alert-schedule-makeup", "Pink — make-up session", "guideOrbMakeup") +
+        haloCell("avatar-wrap--portal-alert-schedule-absent", "Teal — absent marked", "guideOrbAbsent") +
+        haloCell("avatar-wrap--portal-alert-schedule-undo", "Grey — change reverted", "guideOrbUndo") +
+        haloCell("avatar-wrap--portal-alert-schedule-cancelled", "Dark — shift cancelled", "guideOrbCancel") +
+        haloCell("avatar-wrap--portal-alert-schedule-training", "Blue — training", "guideOrbTrain") +
+        haloCell("avatar-wrap--portal-alert-schedule-shadowing-only", "Sky blue — shadowing", "guideOrbShadow") +
+        haloCell("avatar-wrap--portal-orbit-idle", "Blue glow — quick menu", "guideOrbIdle") +
         "</div>" +
         liveScopeClose()
       );
@@ -476,33 +715,17 @@
         liveScopeClose()
       );
     }
-    if (k === "login-screenshot") {
-      return (
-        '<figure class="guide-login-photo">' +
-        '<img src="/portal/guide-shots/01-login.png" alt="Portal log in screen" loading="lazy" decoding="async" />' +
-        '<figcaption>Foto 1 — Log in</figcaption></figure>'
-      );
+    if (k === "login-screenshot" || k === "login-mock") {
+      return buildLoginReplica();
     }
-    if (k === "login-mock") {
-      return (
-        '<div class="guide-login-mock">' +
-        '<div class="guide-login-brand" data-guide-focus="brand">' +
-        '<img src="/portal/F-02-1.png" alt="" width="56" height="56" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
-        "Portal</div>" +
-        '<div class="guide-login-field" data-guide-focus="email"><strong>Name or email</strong>First name or email</div>' +
-        '<div class="guide-login-field" data-guide-focus="password"><strong>PIN or password</strong>••••••••</div>' +
-        '<button type="button" class="guide-login-submit" data-guide-focus="submit">Login</button>' +
-        "</div>"
-      );
+    if (k === "install-safari") {
+      return buildInstallSafariMock();
     }
-    if (k === "install-mock") {
-      return (
-        '<div class="guide-install-steps">' +
-        '<div class="guide-install-step" data-guide-focus="iphone"><b>iPhone · Safari</b>Tap Share at the bottom of the browser.</div>' +
-        '<div class="guide-install-step" data-guide-focus="iphone-add"><b>Add to Home Screen</b>Choose Add, then open CS Portal from your home screen.</div>' +
-        '<div class="guide-install-step" data-guide-focus="android"><b>Android · Chrome</b>Tap ⋮ menu → Install app or Add to Home screen.</div>' +
-        "</div>"
-      );
+    if (k === "install-share-sheet" || k === "install-mock") {
+      return buildInstallShareSheetMock();
+    }
+    if (k === "install-android") {
+      return buildInstallAndroidMock();
     }
 
     var STATIC = {
@@ -812,22 +1035,14 @@
       steps.forEach(function (st, idx) {
         lines.push(st.voice);
         stepMap.push(idx);
-        stepOpts.push(
-          st.audio
-            ? { staticUrl: st.audio, fallbackBrowser: false }
-            : { fallbackBrowser: false }
-        );
+        stepOpts.push({ fallbackBrowser: false });
       });
     } else {
       var single = sectionVoiceText(section);
       if (single) {
         lines.push(single);
         stepMap.push(-1);
-        stepOpts.push(
-          section.audio
-            ? { staticUrl: section.audio, fallbackBrowser: false }
-            : { fallbackBrowser: false }
-        );
+        stepOpts.push({ fallbackBrowser: false });
       }
     }
     if (!lines.length) {

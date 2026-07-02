@@ -1,7 +1,7 @@
 /**
  * Victor, Raúl, Javi — switch Lead / Admin (ops) / CEO (insights) from Quick menu.
  */
-import { portalInferStaffKey } from "./auth-handler.js";
+import { portalInferStaffKey, portalCanAccessAdminDashboard, portalCanAccessCeoDashboard } from "./auth-handler.js";
 
 const EXEC_KEYS = new Set(["victor", "raul", "javi"]);
 const OPS_ADMIN_KEYS = new Set(["sevitha", "info"]);
@@ -32,7 +32,10 @@ function publishedUrl(filename, overrideKey) {
 
 export function portalCanExecWorkspaceSwitch(profile, authEmail) {
   const key = portalInferStaffKey(profile, authEmail);
-  return EXEC_KEYS.has(key) || OPS_ADMIN_KEYS.has(key);
+  if (EXEC_KEYS.has(key) || OPS_ADMIN_KEYS.has(key)) return true;
+  if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
+  if (portalCanAccessCeoDashboard(profile, authEmail)) return true;
+  return false;
 }
 
 /** @param {"staff"|"lead"|"ceo"|"admin"} currentMode */

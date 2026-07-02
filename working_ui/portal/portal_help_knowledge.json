@@ -29,7 +29,7 @@
       "id": "logo-halo",
       "title": "Logo halo and notification centre",
       "keywords": ["logo", "halo", "dot", "notification centre", "notifications", "tap logo", "halos", "punto", "notificaciones"],
-      "answer": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nGreen — all up to date.\nMultiple dots — more than one type waiting."
+      "answer": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — feedback pending. Red — sign announcement. Gold — roster change. Lilac — trial. Pink — make-up. Teal — absent. Grey — reverted. Dark — cancelled. Blue — training. Sky blue — shadowing. Blue glow — quick menu when idle.\n\nIf more than one applies, dots mix those colours."
     },
     {
       "id": "feedback",

@@ -1038,6 +1038,11 @@
       color:#1a6b45;
       border-color:rgba(26,107,69,.22);
     }
+    #menuSheet .menu-btn.menu-btn--exec-workspace-ceo .menu-btn-icon{
+      background:linear-gradient(180deg,#fff8e6,#ffefc7);
+      color:#8a6a12;
+      border-color:rgba(138,106,18,.24);
+    }
 
     #menuSheet .menu-btn.menu-btn--settings-alerts .menu-btn-icon{
       background:linear-gradient(180deg,#f0f4ff,#e4ebfc);
