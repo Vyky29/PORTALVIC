@@ -1566,36 +1566,47 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
  * @returns {Promise<{ error: import("@supabase/supabase-js").AuthError | null }>}
  */
 /** Read a Supabase Auth access token from browser storage (same-origin dashboards + forms). */
-export function portalReadPersistedSupabaseAccessToken() {
-  const parseToken = (raw) => {
-    try {
-      if (!raw) return "";
-      const data = JSON.parse(raw);
-      if (data && typeof data.access_token === "string" && data.access_token) {
-        return String(data.access_token);
-      }
-      if (data?.currentSession?.access_token) {
-        return String(data.currentSession.access_token);
-      }
-    } catch {
-      /* ignore */
+function portalParsePersistedAuthJson(raw) {
+  try {
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data && typeof data.access_token === "string" && data.access_token && data.user) {
+      return data;
     }
-    return "";
-  };
-  if (typeof window === "undefined") return "";
+    if (
+      data?.currentSession &&
+      typeof data.currentSession.access_token === "string" &&
+      data.currentSession.access_token &&
+      data.currentSession.user
+    ) {
+      return data.currentSession;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+export function portalReadPersistedSupabaseSession() {
+  if (typeof window === "undefined") return null;
   for (const store of [localStorage, sessionStorage]) {
     try {
       for (let i = 0; i < store.length; i++) {
         const k = store.key(i);
         if (!k || !/^sb-.*-auth-token/i.test(k)) continue;
-        const tok = parseToken(store.getItem(k));
-        if (tok) return tok;
+        const sess = portalParsePersistedAuthJson(store.getItem(k));
+        if (sess) return sess;
       }
     } catch {
       /* ignore */
     }
   }
-  return "";
+  return null;
+}
+
+export function portalReadPersistedSupabaseAccessToken() {
+  const sess = portalReadPersistedSupabaseSession();
+  return sess && sess.access_token ? String(sess.access_token) : "";
 }
 
 /** Remove Supabase Auth tokens from browser storage (same-origin). */

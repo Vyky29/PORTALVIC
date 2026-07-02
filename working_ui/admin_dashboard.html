@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260520" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260703-session-bridge" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
   <meta charset="UTF-8" />
   <script src="/portal-static-bootstrap.js?v=20260703-supabase-globals"></script>
+  <script src="/portal/portal-admin-supabase-bridge.js?v=20260703-session-bridge"></script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260614-admin-perf"></script>
   <script type="module">
-    import { bootstrapDashboardSupabase, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260703-auth-globals";
+    import { bootstrapDashboardSupabase, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260703-session-bridge";
     window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
     bootstrapDashboardSupabase({ page: "admin" });
   </script>
@@ -27,7 +28,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260625-recent-actions" />
   <script src="/portal/hr-contract-embed-html.js?v=20260625-recent-actions"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-auth-token-fix"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-session-bridge"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -11263,8 +11264,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '';
     }
     function getSchedSupabaseClient(){
+      if(typeof window.portalAdminGetSupabaseClient === 'function'){
+        var bridged = window.portalAdminGetSupabaseClient();
+        if(bridged) return bridged;
+      }
       var box = window.__PORTAL_SUPABASE__;
       return box && box.client ? box.client : null;
+    }
+    async function adminEnsureSupabaseClient(){
+      var client = getSchedSupabaseClient();
+      if(client) return client;
+      if(window.__PORTAL_SUPABASE_BOOT_INFLIGHT__){
+        try{ await window.__PORTAL_SUPABASE_BOOT_INFLIGHT__; }catch(_bootWait){}
+        client = getSchedSupabaseClient();
+        if(client) return client;
+      }
+      try{
+        var mod = await import('/portal/auth-handler.js?v=20260703-session-bridge');
+        if(mod && typeof mod.bootstrapDashboardSupabase === 'function'){
+          await mod.bootstrapDashboardSupabase({ page: 'admin' });
+        }
+      }catch(_bootImport){}
+      return getSchedSupabaseClient();
     }
     /**
      * Bridge the live Programme payments table (public.client_payments — the rows
@@ -17730,15 +17751,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       function runHubRefreshWhenReady(){
-        if(getSchedSupabaseClient()){
+        var start = function(){
           runHubRefresh();
+        };
+        if(getSchedSupabaseClient() || (typeof window.portalAdminResolveAccessToken === 'function' && window.portalAdminResolveAccessToken())){
+          start();
           return;
         }
         var started = false;
         function go(){
           if(started) return;
           started = true;
-          runHubRefresh();
+          start();
         }
         window.addEventListener('portal:supabase-ready', go, { once: true });
         setTimeout(go, 12000);
@@ -17889,7 +17913,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     }
     async function adminFetchSessionFeedbackForHub(){
-      var client = getSchedSupabaseClient();
+      var client = await adminEnsureSupabaseClient();
       if(!client) return [];
       var since = new Date();
       since.setDate(since.getDate() - 150);
@@ -17914,12 +17938,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       function tokenFromSession(session){
         return session && session.access_token ? String(session.access_token) : null;
       }
+      if(typeof window.portalAdminResolveAccessToken === 'function'){
+        var bridged = String(window.portalAdminResolveAccessToken() || '').trim();
+        if(bridged) return bridged;
+      }
+      try{
+        var direct = portalReadPersistedSupabaseAccessTokenFromStorage();
+        if(direct) return direct;
+      }catch(_directTok){}
       try{
         var box = window.__PORTAL_SUPABASE__ || {};
         var cached = tokenFromSession(box.session);
         if(cached) return cached;
       }catch(_cached){}
-      var client = getSchedSupabaseClient();
+      var client = await adminEnsureSupabaseClient();
       if(!client || !client.auth) return null;
       try{
         var sessResp = await client.auth.getSession();
@@ -17949,6 +17981,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return null;
       }
       return null;
+    }
+    function portalReadPersistedSupabaseAccessTokenFromStorage(){
+      if(typeof window.portalAdminReadStoredAuthSession === 'function'){
+        var sess = window.portalAdminReadStoredAuthSession();
+        if(sess && sess.access_token) return String(sess.access_token);
+      }
+      return '';
     }
     function adminPortalAnonKey(){
       var k = typeof window.SUPABASE_ANON_KEY === 'string' ? String(window.SUPABASE_ANON_KEY).trim() : '';
@@ -25894,7 +25933,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalInferStaffKey, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260703-auth-globals";
+        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard, portalInferStaffKey, portalIsOperationsAdminUser } from "/portal/auth-handler.js?v=20260703-session-bridge";
         import { portalCanExecWorkspaceSwitch } from "/portal/portal_exec_workspace_switch.js?v=20260630-ops-admin-switch";
         window.portalLogout = portalLogout;
         window.__PORTAL_LOGOUT_FN__ = portalLogout;

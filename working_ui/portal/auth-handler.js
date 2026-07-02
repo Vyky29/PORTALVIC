@@ -22,6 +22,8 @@ import {
   portalGetCachedAuthSessionGeneration,
   portalSetCachedAuthSessionGeneration,
   portalClearCachedAuthSessionGeneration,
+  portalReadPersistedSupabaseAccessToken,
+  portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
 } from "./supabase-client.js";
 import {
@@ -1446,6 +1448,53 @@ async function runPortalDashboardAuthSideEffects(ctx) {
  * Optional: dashboards may import this; does not change DOM.
  * @param {{ page?: string }} _opts
  */
+function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
+  const email = String(authEmail || "").trim().toLowerCase();
+  const names = new Set();
+  const rosterKey = resolveStaffKeyFromAuthEmail(email);
+  if (rosterKey) {
+    names.add(rosterKey);
+    if (rosterKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+    else if (rosterKey === "javier") ["javier", "Javier", "javi", "Javi"].forEach((n) => names.add(n));
+    else if (rosterKey === "javi") ["javi", "Javi", "javier", "Javier"].forEach((n) => names.add(n));
+    else if (rosterKey === "youssef") ["youssef", "Youssef", "yousef", "yusef"].forEach((n) => names.add(n));
+    else names.add(rosterKey.charAt(0).toUpperCase() + rosterKey.slice(1));
+  }
+  const local = email.split("@")[0] || "";
+  if (local && PORTAL_STAFF_CODE_TO_ROSTER_KEY[local]) {
+    const codeKey = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
+    names.add(codeKey);
+    if (codeKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+  }
+  return [...names].filter(Boolean);
+}
+
+async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate) {
+  const selectCols =
+    "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+  const rpc = await supabase.rpc("portal_get_session_staff_profile");
+  if (!rpc.error && rpc.data && typeof rpc.data === "object") return rpc.data;
+  const { data: profileRow, error } = await supabase
+    .from("staff_profiles")
+    .select(selectCols)
+    .eq("id", session.user.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (profileRow) return profileRow;
+  const candidates = portalBootstrapStaffProfileUsernameCandidates(authEmailGate);
+  if (!candidates.length) return null;
+  const { data, error: aliasErr } = await supabase
+    .from("staff_profiles")
+    .select(selectCols)
+    .in("username", candidates)
+    .limit(1);
+  if (aliasErr) {
+    console.warn("[portal] staff_profiles alias lookup:", aliasErr);
+    return null;
+  }
+  return Array.isArray(data) && data.length ? data[0] : null;
+}
+
 export async function bootstrapDashboardSupabase(_opts) {
   if (typeof window !== "undefined") {
     if (window.__PORTAL_SUPABASE__?.client) return;
@@ -1518,9 +1567,28 @@ export async function bootstrapDashboardSupabase(_opts) {
   }
   try {
     const supabase = getSupabaseClient();
+    if (typeof window !== "undefined") {
+      window.__PORTAL_SUPABASE_SINGLETON__ = supabase;
+    }
     let {
       data: { session },
     } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      const persisted = portalReadPersistedSupabaseSession();
+      if (persisted?.access_token) {
+        try {
+          await supabase.auth.setSession({
+            access_token: persisted.access_token,
+            refresh_token: persisted.refresh_token || "",
+          });
+        } catch {
+          /* ignore */
+        }
+        ({
+          data: { session },
+        } = await supabase.auth.getSession());
+      }
+    }
     /** After a full navigation (e.g. return from session feedback), storage session can lag behind getSession(); recover before giving up. */
     if (!session?.user?.id) {
       const { data: ud, error: guErr } = await supabase.auth.getUser();
@@ -1565,19 +1633,17 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
       return;
     }
-    let profile = null;
-    const rpc = await supabase.rpc("portal_get_session_staff_profile");
-    if (!rpc.error && rpc.data && typeof rpc.data === "object") {
-      profile = rpc.data;
-    } else {
-      const { data: profileRow, error } = await supabase
-        .from("staff_profiles")
-        .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (error) throw error;
-      profile = profileRow;
+    let authEmailGate = String(session.user?.email || "").trim();
+    if (!authEmailGate) {
+      try {
+        const { data: udata } = await supabase.auth.getUser();
+        authEmailGate = String(udata?.user?.email || "").trim();
+      } catch {
+        /* ignore */
+      }
     }
+
+    let profile = await portalBootstrapLoadStaffProfile(supabase, session, authEmailGate);
 
     if (profile && profile.is_active === false) {
       try {
@@ -1596,16 +1662,6 @@ export async function bootstrapDashboardSupabase(_opts) {
         window.location.href = inactiveRedirect;
       }
       return;
-    }
-
-    let authEmailGate = String(session.user?.email || "").trim();
-    if (!authEmailGate) {
-      try {
-        const { data: udata } = await supabase.auth.getUser();
-        authEmailGate = String(udata?.user?.email || "").trim();
-      } catch {
-        /* ignore */
-      }
     }
 
     if (portalDashboardRequiresStrictGate(page) && !profile) {
@@ -1825,18 +1881,13 @@ export async function bootstrapDashboardSupabase(_opts) {
         } = await supabase.auth.getSession();
         if (session?.user?.id && !(window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client)) {
           let profile = null;
+          let authEmail = String(session.user?.email || "").trim();
           try {
-            const { data } = await supabase
-              .from("staff_profiles")
-              .select(
-                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality"
-              )
-              .eq("id", session.user.id)
-              .maybeSingle();
-            profile = data || null;
+            profile = await portalBootstrapLoadStaffProfile(supabase, session, authEmail);
           } catch {
             /* profile optional in recovery path */
           }
+          window.__PORTAL_SUPABASE_SINGLETON__ = supabase;
           window.__PORTAL_SUPABASE__ = {
             client: supabase,
             session,
