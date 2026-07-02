@@ -5,7 +5,7 @@
       "id": "login",
       "title": "Logging in",
       "keywords": ["login", "log in", "sign in", "password", "email", "link", "signed out", "iniciar sesion", "contraseña", "entrar", "acceder"],
-      "answer": "Open the portal link you were given and sign in with your club email and password.\n\nIf CS Portal does not recognise you after installing the app, log out and sign in again in Safari or Chrome first, then reopen the home-screen icon.\n\nForgotten password: use the reset option on the login page or contact the office."
+      "answer": "Open the portal link you were given. Enter your first name or club email under Name or email, then your PIN or password, and tap Login.\n\nIf CS Portal on your home screen does not recognise you, sign in once in Safari or Chrome first, then reopen the app.\n\nForgotten PIN or password: contact the office. See Staff help guide → Logging in (Foto 1)."
     },
     {
       "id": "install",

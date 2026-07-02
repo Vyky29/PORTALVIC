@@ -4,6 +4,7 @@
 import { portalInferStaffKey } from "./auth-handler.js";
 
 const EXEC_KEYS = new Set(["victor", "raul", "javi"]);
+const OPS_ADMIN_KEYS = new Set(["sevitha", "info"]);
 
 const ICONS = {
   staff:
@@ -31,12 +32,14 @@ function publishedUrl(filename, overrideKey) {
 
 export function portalCanExecWorkspaceSwitch(profile, authEmail) {
   const key = portalInferStaffKey(profile, authEmail);
-  return EXEC_KEYS.has(key);
+  return EXEC_KEYS.has(key) || OPS_ADMIN_KEYS.has(key);
 }
 
 /** @param {"staff"|"lead"|"ceo"|"admin"} currentMode */
-export function portalExecWorkspaceSwitchTargets(currentMode) {
+export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail) {
   const mode = String(currentMode || "").trim().toLowerCase();
+  const key = portalInferStaffKey(profile, authEmail);
+  const opsAdmin = OPS_ADMIN_KEYS.has(key);
   const all = [
     {
       mode: "staff",
@@ -57,6 +60,9 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       url: publishedUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL"),
     },
   ];
+  if (opsAdmin) {
+    return all.filter((t) => t.mode !== mode && t.mode !== "ceo");
+  }
   return all.filter((t) => t.mode !== mode);
 }
 
@@ -81,7 +87,7 @@ export function portalMountExecWorkspaceSwitch(host, currentMode, profile, authE
   host.setAttribute("aria-hidden", "true");
   if (!portalCanExecWorkspaceSwitch(profile, authEmail)) return;
 
-  const targets = portalExecWorkspaceSwitchTargets(currentMode);
+  const targets = portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail);
   if (!targets.length) return;
 
   targets.forEach((t) => {

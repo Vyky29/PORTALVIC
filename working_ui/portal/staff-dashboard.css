@@ -5592,10 +5592,28 @@
       border-color:rgba(255,143,0,.72);
     }
     .session-card.session-card--home:hover{transform:none;box-shadow:none}
-    .session-card.session-card--home .session-meta-name{
+    .session-card.session-card--home .session-meta-name,
+    .session-card.session-card--home .session-line--duty-full .session-meta-name{
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;
+    }
+    .session-card.session-card--home .session-card-body--duty-home{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:52px;
+      padding:12px 14px;
+    }
+    .session-card.session-card--home .session-line--duty-full{
+      width:100%;
+      min-width:0;
+      justify-content:center;
+      text-align:center;
+    }
+    .session-card.session-card--home .session-line--time-stack,
+    .session-card.session-card--home .session-line--symbol{
+      display:none !important;
     }
     .session-card.session-card--manager,
     .section-card--today .session-card.session-card--manager{

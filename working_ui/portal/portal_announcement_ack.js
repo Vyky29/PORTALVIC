@@ -25,6 +25,28 @@
     return "";
   };
 
+  /** CEO / admin / Sevitha — always see staff announcements for team awareness (even role- or user-targeted). */
+  global.portalStaffAnnouncementLeadershipMirrorUser = function portalStaffAnnouncementLeadershipMirrorUser(
+    ctx
+  ) {
+    ctx = ctx || {};
+    var appRole = String(ctx.appRole || "")
+      .trim()
+      .toLowerCase();
+    if (appRole === "ceo" || appRole === "admin") return true;
+    var staffKey = String(ctx.staffKey || ctx.staffUsername || "")
+      .trim()
+      .toLowerCase();
+    return staffKey === "sevitha" || staffKey === "info";
+  };
+
+  function portalAnnouncementLeadershipMirrorMessage(row) {
+    var typ = String((row && row.message_type) || "")
+      .trim()
+      .toLowerCase();
+    return typ === "announcement" || typ === "reminder" || typ === "urgent";
+  }
+
   /**
    * Worker inbox visibility on staff/lead dashboards (ignores admin/ceo SELECT bypass in RLS).
    * @param {object} row portal_staff_announcements row
@@ -48,6 +70,17 @@
     var targetUser = String(row.target_user_id || "").trim();
     var targetRole = String(row.target_staff_role || "").trim();
     var targetRoleBlank = !targetRole;
+
+    if (
+      global.portalStaffAnnouncementLeadershipMirrorUser(ctx) &&
+      portalAnnouncementLeadershipMirrorMessage(row)
+    ) {
+      var typ = String(row.message_type || "").trim().toLowerCase();
+      if (typ === "contract_signing" && delivery === "single_user") {
+        return !!uid && targetUser === uid;
+      }
+      return true;
+    }
 
     if (delivery === "single_user") {
       return !!uid && targetUser === uid;

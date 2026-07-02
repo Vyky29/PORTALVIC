@@ -6,7 +6,7 @@
   "use strict";
 
   var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260625-help-guide-v2";
-  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260625-help-guide-v4";
+  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v9";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;

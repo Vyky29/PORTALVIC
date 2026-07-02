@@ -1232,9 +1232,20 @@
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
 
+    function portalManagerDutyAreaLabel(item){
+      if(!item || item.kind !== 'manager') return '';
+      return 'Hub Room';
+    }
     /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
-      if(item.kind === 'closed' || item.kind === 'home' || item.kind === 'manager') return '<span class="session-pool-na" aria-hidden="true">—</span>';
+      if(item.kind === 'closed' || item.kind === 'home') return '';
+      if(item.kind === 'manager'){
+        return todaySessionPoolColumnHtml(Object.assign({}, item, {
+          areaLabel: portalManagerDutyAreaLabel(item),
+          poolLocationLabel: portalManagerDutyAreaLabel(item),
+          showPoolSymbol: true
+        }));
+      }
       return todaySessionPoolColumnHtml(item);
     }
     function todaySessionSingleLineNoteText(item){
@@ -1271,6 +1282,14 @@
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
     function todaySessionCardInnerHtml(item){
+      if(item && (item.kind === 'home' || item.portalDutyFullCard)){
+        const homeName = escapeHtml(String(item.name || 'HOME').trim() || 'HOME');
+        return (
+          '<div class="session-card-body session-card-body--duty-home">' +
+          '<div class="session-line session-line--name session-line--duty-full">' +
+          '<span class="session-meta-name">' + homeName + '</span></div></div>'
+        );
+      }
       const timeRaw = String(item.time || '').trim();
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));

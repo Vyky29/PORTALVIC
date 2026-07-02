@@ -631,7 +631,7 @@
       if (isHomeSlot || isManagerSlot) {
         const dutyId = isHomeSlot ? "home" : "manager";
         const dutyName = isHomeSlot ? "HOME" : "MANAGER";
-        const dutyArea = isHomeSlot ? "HOME" : rosterArea || "Hub · Manager";
+        const dutyArea = isHomeSlot ? "HOME" : "Hub Room";
         sessionsModel.push(
           Object.assign({}, baseSession, {
             clientId: dutyId,

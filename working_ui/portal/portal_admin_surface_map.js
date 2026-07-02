@@ -149,13 +149,9 @@
     return true;
   }
 
-  /** Ops admin (Sevitha) should not stay on worker shells; CEOs may preview with ?portalPreviewWorker=1 */
+  /** Ops admin uses the worker portal (payslips, policies, days off, announcements). CEOs may preview with ?portalPreviewWorker=1 */
   function shouldRedirectFromWorkerPortal(prof, pathname) {
     if (previewWorkerPortalActive()) return false;
-    prof = profileRow(prof);
-    pathname = String(pathname || (global.location && global.location.pathname) || "");
-    if (!/staff_dashboard/i.test(pathname)) return false;
-    if (isOpsAdmin(prof)) return true;
     return false;
   }
 

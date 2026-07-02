@@ -122,6 +122,15 @@ Deno.serve(async (req) => {
   const targetStaffRole = String(record.target_staff_role ?? "").trim();
   const targetUserId = String(record.target_user_id ?? "").trim();
 
+  const messageType = String(record.message_type ?? "announcement")
+    .trim()
+    .toLowerCase();
+  const leadershipMirrorTypes = new Set([
+    "announcement",
+    "reminder",
+    "urgent",
+  ]);
+
   const admin = createClient(supabaseUrl, serviceKey);
 
   // Resolve recipient auth user ids, mirroring the table's SELECT RLS.
@@ -157,6 +166,26 @@ Deno.serve(async (req) => {
       } else {
         // all_staff → staff + leads
         targetUserIds.add(p.id);
+      }
+    }
+  }
+
+  // CEO + admin always receive staff announcements/reminders (team awareness).
+  if (
+    leadershipMirrorTypes.has(messageType) &&
+    !(messageType === "contract_signing" && deliveryScope === "single_user")
+  ) {
+    const { data: leadership, error: leadErr } = await admin
+      .from("staff_profiles")
+      .select("id")
+      .in("app_role", ["ceo", "admin"]);
+
+    if (leadErr) {
+      console.error("[portal-push-announcement] leadership profiles", leadErr);
+    } else {
+      for (const p of leadership ?? []) {
+        const id = String((p as { id?: string }).id ?? "").trim();
+        if (id) targetUserIds.add(id);
       }
     }
   }

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v8"></script>
+  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v9"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -77,6 +77,9 @@
       border:1px solid var(--guide-border);background:#f8fafc
     }
     figcaption{margin-top:6px;font-size:13px;color:var(--guide-muted);text-align:center}
+    .guide-photos{margin:12px 0 0;display:grid;gap:12px}
+    .guide-login-photo{margin:0}
+    .guide-login-photo img{max-width:420px}
     .banner{
       border:1px solid rgba(244,183,64,.55);background:#fff9eb;border-radius:14px;
       padding:12px 14px;margin:0 0 16px;font-size:14px;line-height:1.5
@@ -286,7 +289,7 @@
     <p class="foot">Bookmark this page or open it from Quick menu → Settings → <strong>Staff help guide</strong>.</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-v8"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-v9"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -314,7 +317,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v8";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v9";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -472,15 +475,22 @@
         liveScopeClose()
       );
     }
+    if (k === "login-screenshot") {
+      return (
+        '<figure class="guide-login-photo">' +
+        '<img src="/portal/guide-shots/01-login.png" alt="Portal log in screen" loading="lazy" decoding="async" />' +
+        '<figcaption>Foto 1 — Log in</figcaption></figure>'
+      );
+    }
     if (k === "login-mock") {
       return (
         '<div class="guide-login-mock">' +
         '<div class="guide-login-brand" data-guide-focus="brand">' +
         '<img src="/portal/F-02-1.png" alt="" width="56" height="56" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
-        "clubSENsational Portal</div>" +
-        '<div class="guide-login-field" data-guide-focus="email"><strong>Email</strong>your.name@clubsensational.org</div>' +
-        '<div class="guide-login-field" data-guide-focus="password"><strong>Password</strong>••••••••</div>' +
-        '<button type="button" class="guide-login-submit" data-guide-focus="submit">Sign in</button>' +
+        "Portal</div>" +
+        '<div class="guide-login-field" data-guide-focus="email"><strong>Name or email</strong>First name or email</div>' +
+        '<div class="guide-login-field" data-guide-focus="password"><strong>PIN or password</strong>••••••••</div>' +
+        '<button type="button" class="guide-login-submit" data-guide-focus="submit">Login</button>' +
         "</div>"
       );
     }
@@ -677,6 +687,7 @@
       "</div>" +
       "</div>" +
       (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
+      (renderIllustrations(s.illustrations) ? '<div class="guide-photos">' + renderIllustrations(s.illustrations) + "</div>" : "") +
       (paras
         ? '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
           esc(paras) +

@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-help-guide-v8",
+  "version": "2026-06-help-guide-v9",
   "description": "Staff help guide — visual demos + step-by-step voice (Eleven Labs when signed in).",
   "sections": [
     {
@@ -49,38 +49,37 @@
         "iniciar sesion",
         "contraseña"
       ],
-      "voice_script": "Open the portal link, enter your club email and password, then tap Sign in. If the home-screen app does not recognise you, sign in once in Safari or Chrome first, then reopen CS Portal.",
-      "content": "Open the portal link and sign in with your club email and password.\n\nIf CS Portal does not recognise you after installing the app, log out and sign in again in Safari or Chrome first, then reopen the home-screen icon.\n\nForgotten password: use reset on the login page or contact the office.",
+      "voice_script": "Open the portal link. Enter your first name or club email, then your PIN or password, and tap Login. If the home-screen app does not recognise you, sign in once in Safari or Chrome first, then reopen CS Portal.",
+      "content": "Open the portal link and sign in.\n\nName or email — your first name (as on the roster) or your club email address.\n\nPIN or password — the PIN or password the office gave you.\n\nTap Login. You land on your dashboard with Today’s sessions.\n\nIf CS Portal on your home screen does not recognise you, sign in once in Safari or Chrome, then reopen the app.\n\nForgotten PIN or password: contact the office.",
       "steps": [
         {
-          "voice": "Open the portal link your manager sent you. You will see the club sign-in screen.",
-          "demo": "login-mock",
-          "focus": "brand",
-          "caption": "Portal sign-in screen"
+          "voice": "Open the portal link your manager sent you. This is the sign-in screen.",
+          "demo": "login-screenshot",
+          "caption": "Foto 1 — Log in"
         },
         {
-          "voice": "Enter your club email address — the one the office registered for you.",
+          "voice": "Tap Name or email and enter your first name or club email address.",
           "demo": "login-mock",
           "focus": "email",
-          "caption": "Club email"
+          "caption": "Name or email"
         },
         {
-          "voice": "Enter your password, then tap Sign in.",
+          "voice": "Enter your PIN or password.",
           "demo": "login-mock",
           "focus": "password",
-          "caption": "Password"
+          "caption": "PIN or password"
         },
         {
-          "voice": "Tap Sign in. You land on your dashboard with Today’s sessions.",
+          "voice": "Tap Login. You land on your dashboard with Today’s sessions.",
           "demo": "login-mock",
           "focus": "submit",
-          "caption": "Sign in"
+          "caption": "Login"
         }
       ],
       "demos": [
         {
           "demo": "login-mock",
-          "caption": "Same layout as the real login page."
+          "caption": "Fields highlighted step by step when you tap Play."
         }
       ],
       "illustrations": []

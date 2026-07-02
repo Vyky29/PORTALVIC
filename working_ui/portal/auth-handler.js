@@ -59,9 +59,6 @@ function portalEmergencyRedirectUrl(loginEmail) {
   ) {
     return portalPublishedStaffUrl();
   }
-  if (em === "sevitha@clubsensational.org") {
-    return portalPublishedOfficeUrl();
-  }
   return null;
 }
 
@@ -466,7 +463,6 @@ export function portalIsLeadDashboardShellPage() {
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
   if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
-  if (portalIsOperationsAdminUser(profile, authEmail)) return false;
   if (portalIsProgrammeLeadUser(profile, authEmail)) return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
@@ -797,12 +793,12 @@ function inferDashboardRoute(profile, authEmail) {
   }
   if (fromWorkingUi) {
     if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return "admin_dashboard.html";
-    if (portalIsOperationsAdminUser(profile, authEmail)) return "office_portal.html";
+    if (portalIsOperationsAdminUser(profile, authEmail)) return "staff_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     return "staff_dashboard.html";
   }
   if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return portalPublishedAdminUrl();
-  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedOfficeUrl();
+  if (portalIsOperationsAdminUser(profile, authEmail)) return portalPublishedStaffUrl();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedStaffUrl();
   return portalPublishedStaffUrl();

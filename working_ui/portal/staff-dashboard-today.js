@@ -1457,6 +1457,35 @@
       const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
       return [start, end, staff, venue].join('|');
     }
+    function portalTodayItemFeedbackPriority(it){
+      if(!it || it.kind !== 'client') return 0;
+      const r = typeof getEffectiveSessionReviewRecord === 'function'
+        ? (getEffectiveSessionReviewRecord(it) || {})
+        : {};
+      if(r.feedbackDone || r.absent || r.cancelled) return 3;
+      if(r.incident) return 2;
+      if(typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(it)) return 1;
+      return 0;
+    }
+    function portalMergeDuplicateTodayClientCard(existing, incoming){
+      if(!existing || !incoming) return existing || incoming;
+      const keep = portalTodayItemFeedbackPriority(incoming) > portalTodayItemFeedbackPriority(existing)
+        ? incoming
+        : existing;
+      const drop = keep === incoming ? existing : incoming;
+      if(keep === drop) return keep;
+      if(drop && drop.sessionKey && keep.sessionKey && drop.sessionKey !== keep.sessionKey){
+        const mem = typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(drop) : null;
+        if(mem && typeof sessionReviewMapMemory === 'object' && sessionReviewMapMemory){
+          sessionReviewMapMemory[keep.sessionKey] = Object.assign(
+            {},
+            sessionReviewMapMemory[keep.sessionKey] || {},
+            mem
+          );
+        }
+      }
+      return keep;
+    }
     function portalDedupeTodayScheduleViewCards(items){
       if(!Array.isArray(items) || !items.length) return items || [];
       const makeupSlotKeys = Object.create(null);
@@ -1478,8 +1507,11 @@
         }
         const k = portalTodayScheduleViewCardDedupeKey(it);
         if(k){
-          if(seen[k]) return;
-          seen[k] = true;
+          if(Object.prototype.hasOwnProperty.call(seen, k)){
+            out[seen[k]] = portalMergeDuplicateTodayClientCard(out[seen[k]], it);
+            return;
+          }
+          seen[k] = out.length;
         }
         out.push(it);
       });
@@ -1660,22 +1692,22 @@
           const dutyLabel = portalRosterDutySlotLabel(s);
           if(dutyLabel){
             const dutyKind = dutyLabel === 'HOME' ? 'home' : 'manager';
-            const dutyArea = dutyLabel === 'HOME'
-              ? 'HOME'
-              : String(s.rosterArea || s.area || 'Hub · Manager').trim();
+            const isHomeDuty = dutyKind === 'home';
+            const hubRoom = 'Hub Room';
             return Object.assign({
-              time,
+              time: isHomeDuty ? '' : time,
               kind: dutyKind,
               clientId: String(s.clientId || '').trim().toLowerCase() || dutyKind,
               name: dutyLabel,
               activity,
-              areaLabel: dutyArea,
-              poolLocationLabel: null,
+              areaLabel: isHomeDuty ? '' : hubRoom,
+              poolLocationLabel: isHomeDuty ? null : hubRoom,
               poolTier: null,
-              showPoolSymbol: false,
+              showPoolSymbol: !isHomeDuty,
               showSpecialty: false,
               specialtyLabel: '',
-              general: dutyLabel === 'HOME' ? 'Working from home.' : 'Manager on duty.',
+              portalDutyFullCard: isHomeDuty,
+              general: isHomeDuty ? 'Working from home.' : 'Manager on duty.',
               specialty: '—',
               openSheet: false,
               sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || dutyKind).toLowerCase()}`,
@@ -3849,7 +3881,12 @@
         const workerInboxCtx = {
           authUserId: (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '',
           appRole: prof && prof.app_role,
-          staffRole: prof && prof.staff_role
+          staffRole: prof && prof.staff_role,
+          staffUsername: prof && prof.username,
+          staffKey:
+            typeof portalInferStaffKey === 'function'
+              ? portalInferStaffKey(prof, (box.session && box.session.user && box.session.user.email) || '')
+              : (prof && prof.username) || ''
         };
         if(typeof portalWorkerHasPortalPushSubscription === 'function'){
           workerInboxCtx.hasPortalPushSubscription = await portalWorkerHasPortalPushSubscription(client, workerInboxCtx.authUserId);
