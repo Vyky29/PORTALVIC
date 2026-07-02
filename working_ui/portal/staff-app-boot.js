@@ -55,7 +55,7 @@
   }
 
   if (isStaffDashboard) {
-    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster");
+    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-feedback.js?v=20260704-cover-merge-feedback");

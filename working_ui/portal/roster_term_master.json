@@ -24810,11 +24810,11 @@
       {
         "session_date": "2026-07-05",
         "day": "Sunday",
-        "staff_key": "john",
-        "staff_name": "John",
+        "staff_key": "berta",
+        "staff_name": "Berta",
         "venue": "SwimFarm",
         "time_range": "9.15-2.15",
-        "raw_assignment": "John 9.15-2.15"
+        "raw_assignment": "Berta 9.15-2.15"
       },
       {
         "session_date": "2026-07-05",

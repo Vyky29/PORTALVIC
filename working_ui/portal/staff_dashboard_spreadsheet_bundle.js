@@ -4,48 +4,48 @@
   "staffPhotosBaseUrl": "portal/staff_photos/",
   "staffPhotoExtension": "png",
   "sundayDateOverrides": {
-  "2026-06-07": {
-    "leadOnDuty": "John",
-    "replaceInstructor": {
-      "JOHN, BERTA": "JOHN"
+    "2026-06-07": {
+      "leadOnDuty": "John",
+      "replaceInstructor": {
+        "JOHN, BERTA": "JOHN"
+      }
+    },
+    "2026-06-14": {
+      "leadOnDuty": "Berta",
+      "replaceInstructor": {
+        "JOHN, BERTA": "BERTA"
+      }
+    },
+    "2026-06-21": {
+      "leadOnDuty": "John",
+      "replaceInstructor": {
+        "JOHN, BERTA": "JOHN",
+        "ALEX": "BISMARK",
+        "CARLOS": "JAVI"
+      }
+    },
+    "2026-06-28": {
+      "leadOnDuty": "John",
+      "replaceInstructor": {
+        "JOHN, BERTA": "JOHN",
+        "AURORA": "YOUSSEF",
+        "JAVIER": "LULIYA"
+      }
+    },
+    "2026-07-05": {
+      "leadOnDuty": "Berta",
+      "replaceInstructor": {
+        "JOHN, BERTA": "BERTA",
+        "CARLOS": "BISMARK"
+      }
+    },
+    "2026-07-12": {
+      "leadOnDuty": "Berta",
+      "replaceInstructor": {
+        "JOHN, BERTA": "BERTA"
+      }
     }
   },
-  "2026-06-14": {
-    "leadOnDuty": "Berta",
-    "replaceInstructor": {
-      "JOHN, BERTA": "BERTA"
-    }
-  },
-  "2026-06-21": {
-    "leadOnDuty": "John",
-    "replaceInstructor": {
-      "JOHN, BERTA": "JOHN",
-      "ALEX": "BISMARK",
-      "CARLOS": "JAVI"
-    }
-  },
-  "2026-06-28": {
-    "leadOnDuty": "John",
-    "replaceInstructor": {
-      "JOHN, BERTA": "JOHN",
-      "AURORA": "YOUSSEF",
-      "JAVIER": "LULIYA"
-    }
-  },
-  "2026-07-05": {
-    "leadOnDuty": "Berta",
-    "replaceInstructor": {
-      "JOHN, BERTA": "BERTA",
-      "CARLOS": "BISMARK"
-    }
-  },
-  "2026-07-12": {
-    "leadOnDuty": "Berta",
-    "replaceInstructor": {
-      "JOHN, BERTA": "BERTA"
-    }
-  }
-},
   "staffProfiles": {
     "sandra": {
       "staffId": "sandra",
@@ -13027,7 +13027,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-02T11:46:56Z",
+    "rosterMadreSyncedAt": "2026-07-02T12:08:55Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
