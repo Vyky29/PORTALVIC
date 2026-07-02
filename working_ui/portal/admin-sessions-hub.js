@@ -579,7 +579,8 @@
 
   function slotAnchorStaffKey(slot) {
     var raw = "";
-    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    var insts = slotInstructors(slot);
+    if (insts.length) raw = insts[0];
     else if (slot.instructor_label) {
       raw = String(slot.instructor_label).split(/[,/&+]+|\s+and\s+/gi)[0];
     }
@@ -1150,10 +1151,7 @@
     if (!slot || !overrideIsShadowingSessionAdd(ov)) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     var p = overridePayloadObj(ov);
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
+    var insts = slotInstructors(slot);
     if (!trainerMatchesSlotInstructors(p.trainer, insts)) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
@@ -1191,8 +1189,8 @@
       var observerName = resolveStaffDisplayName(ov.anchor_staff_id);
       var origInst =
         slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
-          ? slot.portalOriginalInstructors.slice()
-          : (slot.instructors || []).slice();
+          ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
+          : slotInstructors(slot).slice();
       return Object.assign({}, slot, {
         instructors: origInst,
         instructor_label: origInst.join(", "),
@@ -1273,10 +1271,11 @@
   function staffIdMatchesInstructor(staffId, instructors) {
     var sid = clean(staffId).toLowerCase();
     if (!sid) return true;
-    if (!instructors || !instructors.length) return true;
+    var list = normalizeInstructorList(instructors);
+    if (!list.length) return true;
     var canonSid = canonicalStaffMatchKey(sid);
-    for (var i = 0; i < instructors.length; i++) {
-      var inst = clean(instructors[i]).toLowerCase();
+    for (var i = 0; i < list.length; i++) {
+      var inst = clean(list[i]).toLowerCase();
       if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
       if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
     }
@@ -1537,7 +1536,7 @@
       if (!coverId && !coverName) return slot;
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
       if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
-      var origInst = (slot.instructors || []).slice();
+      var origInst = slotInstructors(slot).slice();
       var effective = coverName ? [coverName] : coverId ? [coverId] : origInst.slice();
       var reassigned = Object.assign({}, slot, {
         instructors: effective,
@@ -1556,7 +1555,7 @@
   function hubInstructorCellHtml(slot, slotOv) {
     if (!slot) return "\u2014";
     if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
-      var origInstSh = slot.portalOriginalInstructors || slot.instructors || [];
+      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
       var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
       var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
       return (
@@ -1568,8 +1567,8 @@
       );
     }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
-      var origHtml = slot.portalOriginalInstructors.map(formatInstructorPillOut).join("");
-      var coverHtml = (slot.instructors || []).map(formatInstructorPill).join("");
+      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
+      var coverHtml = slotInstructors(slot).map(formatInstructorPill).join("");
       return (
         '<span class="ash-instructor-reassign">' +
         origHtml +
@@ -1578,7 +1577,7 @@
         "</span>"
       );
     }
-    return (slot.instructors || []).map(formatInstructorPill).join(" ") || "\u2014";
+    return slotInstructors(slot).map(formatInstructorPill).join(" ") || "\u2014";
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
@@ -2159,6 +2158,23 @@
       .filter(Boolean);
   }
 
+  /** Roster bundles may expose instructors as a string ("JOHN, BERTA") or an array. */
+  function normalizeInstructorList(raw) {
+    if (raw == null || raw === "") return [];
+    if (Array.isArray(raw)) {
+      return raw.map(function (x) { return clean(x); }).filter(Boolean);
+    }
+    if (typeof raw === "string") return parseInstructors(raw);
+    return [];
+  }
+
+  function slotInstructors(slot) {
+    if (!slot) return [];
+    var fromField = normalizeInstructorList(slot.instructors);
+    if (fromField.length) return fromField;
+    return parseInstructors(slot.instructor_label || "");
+  }
+
   function serviceKey(service) {
     return clean(service).toLowerCase();
   }
@@ -2173,11 +2189,7 @@
   }
 
   function slotInstructorCount(slot) {
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
-    return insts.length;
+    return slotInstructors(slot).length;
   }
 
   /** 2:1 / 3:1 Bespoke at SwimFarm Hub — one feedback per client per day for the whole team (e.g. Tinashe). */
@@ -2374,9 +2386,9 @@
     return false;
   }
 
-  function instructorRuleMatches(ruleRaw, slotInstructors) {
+  function instructorRuleMatches(ruleRaw, slotInstructorsRaw) {
     var want = clean(ruleRaw).toUpperCase();
-    var list = slotInstructors || [];
+    var list = normalizeInstructorList(slotInstructorsRaw);
     for (var i = 0; i < list.length; i++) {
       if (clean(list[i]).toUpperCase() === want) return true;
     }
@@ -2443,8 +2455,8 @@
 
   function slotsShareSwimInstructor(a, b) {
     if (primaryInstructorKey(a) !== primaryInstructorKey(b)) return false;
-    var ai = a.instructors || [];
-    var bi = b.instructors || [];
+    var ai = slotInstructors(a);
+    var bi = slotInstructors(b);
     if (ai.length > 1 || bi.length > 1) {
       if (ai.length !== bi.length) return false;
       for (var i = 0; i < ai.length; i++) {
@@ -2643,13 +2655,7 @@
   }
 
   function slotInstructorLabels(slot) {
-    if (!slot) return [];
-    return (slot.instructors || [])
-      .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
-      .map(function (x) {
-        return clean(x);
-      })
-      .filter(Boolean);
+    return slotInstructors(slot);
   }
 
   /** Shared units (e.g. Tinashe John+Bismark+Giuseppe): peer submitter still visible for co-instructors. */
@@ -2783,7 +2789,7 @@
     if (slot.portalCoveringStaffName && completedByMatchesInstructor(completedBy, slot.portalCoveringStaffName)) {
       return true;
     }
-    var insts = slot.instructors || [];
+    var insts = slotInstructors(slot);
     if (!insts.length) return true;
     for (var i = 0; i < insts.length; i++) {
       if (completedByMatchesInstructor(completedBy, insts[i])) return true;
@@ -2794,10 +2800,7 @@
   function completedByFitsSlotArea(completedBy, slot) {
     var by = clean(completedBy).toLowerCase();
     if (!by) return true;
-    var insts = slot.instructors || [];
-    if (!insts.length && slot.instructor_label) {
-      insts = parseInstructors(slot.instructor_label);
-    }
+    var insts = slotInstructors(slot);
     if (insts.length) {
       for (var i = 0; i < insts.length; i++) {
         if (completedByMatchesInstructor(completedBy, insts[i])) return true;
@@ -2913,10 +2916,7 @@
   /** Portal guide (Teflon) demo roster — visible in roster but excluded from session totals. */
   function isTeflonDemoRosterSlot(slot) {
     if (!slot) return false;
-    var insts =
-      slot.instructors && slot.instructors.length
-        ? slot.instructors
-        : parseInstructors(slot.instructor_label || "");
+    var insts = slotInstructors(slot);
     if (!insts.length) return false;
     if (insts.length === 1) return isTeflonDemoInstructor(insts[0]);
     return false;
@@ -3143,7 +3143,8 @@
   /** Support vs swim instructor on the same MA block are separate feedback units. */
   function primaryInstructorKey(slot) {
     var raw = "";
-    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    var insts = slotInstructors(slot);
+    if (insts.length) raw = insts[0];
     else if (slot.instructor_label) {
       raw = String(slot.instructor_label).split(/[,/&]+|\s+and\s+/gi)[0];
     }
@@ -5269,12 +5270,7 @@
       if (isTeflonDemoRosterSlot(s)) continue;
       var svc = clean(s.service);
       if (svc) svcMap[svc] = true;
-      var labels = (s.instructors || [])
-        .concat(String(s.instructor_label || "").split(/,|\/|&|\band\b/gi))
-        .map(function (x) {
-          return clean(x);
-        })
-        .filter(Boolean);
+      var labels = slotInstructors(s);
       for (var j = 0; j < labels.length; j++) instRaw.push(labels[j]);
     }
     return {
@@ -5290,12 +5286,7 @@
     if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
     var inst = clean(this.instructorFilter);
     if (inst) {
-      var labels = (slot.instructors || [])
-        .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
-        .map(function (x) {
-          return clean(x);
-        })
-        .filter(Boolean);
+      var labels = slotInstructors(slot);
       var hit = false;
       for (var li = 0; li < labels.length; li++) {
         if (completedByMatchesInstructor(labels[li], inst)) {
@@ -8327,7 +8318,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         time: slot.time_slot,
         area: slot.area,
         merge: slot.feedback_merge_group || "",
-        instructors: slot.instructor_label || (slot.instructors || []).join(", ")
+        instructors: slot.instructor_label || slotInstructors(slot).join(", ")
       };
       if (hub.slotIsAbsent(slot)) {
         row.status = "absent";
