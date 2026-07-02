@@ -96,6 +96,10 @@
     function fromSession(session) {
       return session && session.access_token ? String(session.access_token) : '';
     }
+    if (typeof global.portalAdminResolveAccessToken === 'function') {
+      var bridged = String(global.portalAdminResolveAccessToken() || '').trim();
+      if (bridged) return bridged;
+    }
     try {
       var box = global.__PORTAL_SUPABASE__ || {};
       var cached = fromSession(box.session);
