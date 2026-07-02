@@ -43,6 +43,13 @@
   }
 
   var EXEC_DISPLAY_NAMES = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
+
+  function isGenericDisplayName(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase();
+    return !n || n === "admin" || n === "staff" || n === "user" || n === "member" || n === "guest";
+  }
   var CORPORATE_AUTH_EMAIL_TO_KEY = {
     "victor@clubsensational.org": "victor",
     "raul@clubsensational.org": "raul",
@@ -200,6 +207,10 @@
   }
 
   function resolveDisplayName(profile, email, session) {
+    if (email) {
+      var emailKey = staffKeyFromEmail(email);
+      if (emailKey && EXEC_DISPLAY_NAMES[emailKey]) return EXEC_DISPLAY_NAMES[emailKey];
+    }
     try {
       var user = session && session.user ? session.user : null;
       var authMeta =
@@ -207,14 +218,14 @@
           ? user.user_metadata
           : {};
       var metaName = String(authMeta.full_name || authMeta.name || "").trim();
-      if (metaName) return metaName;
+      if (metaName && !isGenericDisplayName(metaName)) return metaName;
     } catch (_) {}
     if (
       global.portalChatActorIdentity &&
       typeof global.portalChatActorIdentity.displayName === "function"
     ) {
       var chatNm = String(global.portalChatActorIdentity.displayName(profile) || "").trim();
-      if (chatNm && chatNm !== "Staff") return chatNm;
+      if (chatNm && !isGenericDisplayName(chatNm)) return chatNm;
     }
     if (
       global.portalChatActorIdentity &&
@@ -222,10 +233,10 @@
       profile
     ) {
       var profNm = String(global.portalChatActorIdentity.profileDisplayName(profile) || "").trim();
-      if (profNm) return profNm;
+      if (profNm && !isGenericDisplayName(profNm)) return profNm;
     }
     var fromProfile = String((profile && (profile.full_name || profile.username)) || "").trim();
-    if (fromProfile && fromProfile.toLowerCase() !== "admin") return fromProfile;
+    if (fromProfile && !isGenericDisplayName(fromProfile)) return fromProfile;
     var key = inferStaffKey(profile, email);
     if (key && EXEC_DISPLAY_NAMES[key]) return EXEC_DISPLAY_NAMES[key];
     if (key) return key.charAt(0).toUpperCase() + key.slice(1);
@@ -240,6 +251,23 @@
       }
     }
     return "";
+  }
+
+  function topbarSyncOptsFromCtx(extra) {
+    extra = extra || {};
+    var ctx = global.__PORTAL_SUPABASE__ || {};
+    return {
+      client: extra.client || ctx.client || null,
+      session: extra.session || ctx.session || null,
+      profile: extra.profile || ctx.staff_profile || null,
+      email: String(
+        extra.email ||
+          (extra.session && extra.session.user && extra.session.user.email) ||
+          (ctx.session && ctx.session.user && ctx.session.user.email) ||
+          "",
+      ).trim(),
+      displayName: extra.displayName,
+    };
   }
 
   global.portalSyncAdminTopbarProfile = function portalSyncAdminTopbarProfile(opts) {
@@ -274,11 +302,20 @@
   };
 
   global.portalSyncAdminTopbarProfileAsync = async function portalSyncAdminTopbarProfileAsync(opts) {
-    opts = opts || {};
-    var ctx = global.__PORTAL_SUPABASE__ || {};
-    var client = opts.client || ctx.client;
-    var session = opts.session || ctx.session || null;
-    var profile = opts.profile || ctx.staff_profile || null;
+    opts = topbarSyncOptsFromCtx(opts || {});
+    var client = opts.client;
+    var session = opts.session;
+    var profile = opts.profile;
+    var email = opts.email;
+    if (client && !session) {
+      try {
+        var sessRes = await client.auth.getSession();
+        session = (sessRes && sessRes.data && sessRes.data.session) || session;
+      } catch (_) {}
+    }
+    if (!email && session && session.user && session.user.email) {
+      email = String(session.user.email).trim();
+    }
     if (
       client &&
       global.portalChatActorIdentity &&
@@ -288,7 +325,7 @@
     }
     global.portalSyncAdminTopbarProfile({
       profile: profile,
-      email: opts.email,
+      email: email,
       displayName: opts.displayName,
       session: session,
     });
@@ -360,19 +397,19 @@
   };
 
   function syncFromPortalSession() {
-    var ctx = global.__PORTAL_SUPABASE__ || {};
-    if (!ctx.session && !ctx.staff_profile) return;
+    var syncOpts = topbarSyncOptsFromCtx();
+    if (!syncOpts.session && !syncOpts.profile && !syncOpts.email) return;
     var run = function () {
       global.portalMountAdminPortalSwitch();
     };
     if (typeof global.portalSyncAdminTopbarProfileAsync === "function") {
-      void global.portalSyncAdminTopbarProfileAsync().then(run).catch(function () {
-        global.portalSyncAdminTopbarProfile();
+      void global.portalSyncAdminTopbarProfileAsync(syncOpts).then(run).catch(function () {
+        global.portalSyncAdminTopbarProfile(syncOpts);
         run();
       });
       return;
     }
-    global.portalSyncAdminTopbarProfile();
+    global.portalSyncAdminTopbarProfile(syncOpts);
     run();
   }
 

@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260702-chrono-gallery" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
-<script src="/portal/portal_admin_topbar.js?v=20260704-victor-topbar-photo"></script>
+<script src="/portal/portal_admin_topbar.js?v=20260630-admin-name-fix"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
@@ -188,9 +188,9 @@
 <button type="button" class="admin-profile" id="btnProfileMini">
             <span class="admin-av" id="miniAv">
               <img id="miniAvImg" alt="" hidden decoding="async" />
-              <span id="miniAvInitials">A</span>
+              <span id="miniAvInitials">·</span>
             </span>
-            <span id="miniName">Admin</span>
+            <span id="miniName"></span>
           </button>
         </div>
       </header>
@@ -25367,15 +25367,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function portalAdminSessionDisplayName(){
       try{
+        var ctx = window.__PORTAL_SUPABASE__ || {};
+        var em = ctx.session && ctx.session.user && ctx.session.user.email;
+        em = em ? String(em).trim().toLowerCase() : '';
+        if(em === 'victor@clubsensational.org') return 'Victor';
+        if(em === 'raul@clubsensational.org') return 'Raúl';
+        if(em === 'javi@clubsensational.org' || em === 'javier@clubsensational.org') return 'Javi';
+        if(em === 'sevitha@clubsensational.org' || em === 'info@clubsensational.org') return 'Sevitha';
         if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.displayName === 'function'){
           var chatNm = String(window.portalChatActorIdentity.displayName() || '').trim();
-          if(chatNm && chatNm !== 'Staff') return chatNm;
+          if(chatNm && chatNm.toLowerCase() !== 'staff' && chatNm.toLowerCase() !== 'admin') return chatNm;
         }
-        var ctx = window.__PORTAL_SUPABASE__ || {};
         var p = ctx.staff_profile;
         var n = p && String(p.full_name || p.username || '').trim();
-        if(n) return n;
-        var em = ctx.session && ctx.session.user && ctx.session.user.email;
+        if(n && n.toLowerCase() !== 'admin') return n;
         if(em){
           var local = String(em).split('@')[0].replace(/[._+-]+/g, ' ').trim();
           var word = local.split(/\s+/).filter(Boolean)[0] || '';
@@ -25791,9 +25796,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.portalCeoGodModeAdmin.applyAfterBootstrap();
         }
         if (typeof window.portalSyncAdminTopbarProfileAsync === "function") {
-          try { await window.portalSyncAdminTopbarProfileAsync(); } catch (_sync) {
+          var topbarSyncOpts = {
+            profile: (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || null,
+            session: (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session) || null,
+            email: String(
+              (window.__PORTAL_SUPABASE__ &&
+                window.__PORTAL_SUPABASE__.session &&
+                window.__PORTAL_SUPABASE__.session.user &&
+                window.__PORTAL_SUPABASE__.session.user.email) ||
+                "",
+            ).trim(),
+            client: window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client,
+          };
+          try { await window.portalSyncAdminTopbarProfileAsync(topbarSyncOpts); } catch (_sync) {
             if (typeof window.portalSyncAdminTopbarProfile === "function") {
-              window.portalSyncAdminTopbarProfile();
+              window.portalSyncAdminTopbarProfile(topbarSyncOpts);
             }
           }
         } else if (typeof window.portalSyncAdminTopbarProfile === "function") {
