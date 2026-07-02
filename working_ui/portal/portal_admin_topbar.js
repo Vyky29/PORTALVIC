@@ -199,6 +199,10 @@
       applyPhoto(img, initialsEl, avWrap, candidates, idx + 1, name);
     };
     img.onload = function () {
+      if (!img.naturalWidth) {
+        applyPhoto(img, initialsEl, avWrap, candidates, idx + 1, name);
+        return;
+      }
       if (initialsEl) initialsEl.hidden = true;
       img.hidden = false;
       img.alt = name ? name + " profile photo" : "Profile photo";

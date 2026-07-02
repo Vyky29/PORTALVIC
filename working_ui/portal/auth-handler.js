@@ -11,6 +11,8 @@
 
 import {
   getSupabaseClient,
+  getSupabaseUrl,
+  getSupabaseAnonKey,
   isSupabaseConfigured,
   setPortalStaffContext,
   clearPortalStaffContext,
@@ -1785,6 +1787,12 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     window.__PORTAL_SUPABASE__ = { client: supabase, session, staff_profile: profile || null };
+    try {
+      window.SUPABASE_URL = getSupabaseUrl();
+      window.SUPABASE_ANON_KEY = getSupabaseAnonKey();
+    } catch {
+      /* ignore */
+    }
     if (typeof document !== "undefined" && document.documentElement) {
       document.documentElement.classList.add("portal-auth-ready");
     }
@@ -1834,6 +1842,12 @@ export async function bootstrapDashboardSupabase(_opts) {
             session,
             staff_profile: profile,
           };
+          try {
+            window.SUPABASE_URL = getSupabaseUrl();
+            window.SUPABASE_ANON_KEY = getSupabaseAnonKey();
+          } catch {
+            /* ignore */
+          }
           if (typeof document !== "undefined" && document.documentElement) {
             document.documentElement.classList.add("portal-auth-ready");
           }

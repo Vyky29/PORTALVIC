@@ -87,7 +87,47 @@
   }
 
   function supabaseAnon() {
-    return (cfg.getAnonKey && cfg.getAnonKey()) || '';
+    var k = cfg.getAnonKey && cfg.getAnonKey();
+    if (k) return String(k);
+    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE';
+  }
+
+  async function resolvePortalAccessToken(client) {
+    function fromSession(session) {
+      return session && session.access_token ? String(session.access_token) : '';
+    }
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var cached = fromSession(box.session);
+      if (cached) return cached;
+    } catch (_) {}
+    if (!client || !client.auth) return '';
+    try {
+      var sessResp = await client.auth.getSession();
+      var session = sessResp && sessResp.data && sessResp.data.session;
+      var tok = fromSession(session);
+      if (tok) {
+        try {
+          var b = global.__PORTAL_SUPABASE__ || {};
+          if (b) b.session = session;
+        } catch (_) {}
+        return tok;
+      }
+      var gu = await client.auth.getUser();
+      if (!gu.error && gu.data && gu.data.user) {
+        sessResp = await client.auth.getSession();
+        session = sessResp && sessResp.data && sessResp.data.session;
+        tok = fromSession(session);
+        if (tok) {
+          try {
+            var b2 = global.__PORTAL_SUPABASE__ || {};
+            if (b2) b2.session = session;
+          } catch (_) {}
+          return tok;
+        }
+      }
+    } catch (_) {}
+    return '';
   }
 
   function emptyPayload() {
@@ -361,9 +401,7 @@
   async function fetchEdgePayload() {
     var client = cfg.getClient && cfg.getClient();
     if (!client || !client.auth) return null;
-    var sessResp = await client.auth.getSession();
-    var session = sessResp && sessResp.data && sessResp.data.session;
-    var at = session && session.access_token;
+    var at = await resolvePortalAccessToken(client);
     if (!at) return { error: 'session_expired' };
     var res = await fetchWithTimeout(
       supabaseBase() + '/functions/v1/portal-admin-forms-list',
