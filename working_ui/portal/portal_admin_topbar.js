@@ -332,12 +332,30 @@
     if (!email && session && session.user && session.user.email) {
       email = String(session.user.email).trim();
     }
+    var execKey = staffKeyFromEmail(email);
+    if (execKey && EXEC_DISPLAY_NAMES[execKey]) {
+      global.portalSyncAdminTopbarProfile({
+        profile: profile,
+        email: email,
+        displayName: EXEC_DISPLAY_NAMES[execKey],
+        session: session,
+      });
+    }
     if (
       client &&
       global.portalChatActorIdentity &&
       typeof global.portalChatActorIdentity.ensureSessionProfile === "function"
     ) {
-      profile = (await global.portalChatActorIdentity.ensureSessionProfile(client)) || profile;
+      try {
+        profile = await Promise.race([
+          global.portalChatActorIdentity.ensureSessionProfile(client),
+          new Promise(function (resolve) {
+            setTimeout(function () {
+              resolve(profile);
+            }, 2500);
+          }),
+        ]);
+      } catch (_) {}
     }
     global.portalSyncAdminTopbarProfile({
       profile: profile,

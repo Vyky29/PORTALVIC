@@ -1,7 +1,7 @@
 /**
  * Victor, Raúl, Javi — switch Lead / Admin (ops) / CEO (insights) from Quick menu.
  */
-import { portalInferStaffKey, portalCanAccessAdminDashboard, portalCanAccessCeoDashboard } from "./auth-handler.js";
+import { portalInferStaffKey, portalCanAccessAdminDashboard, portalCanAccessCeoDashboard } from "./auth-handler.js?v=20260707-login-cache";
 
 const EXEC_KEYS = new Set(["victor", "raul", "javi"]);
 const OPS_ADMIN_KEYS = new Set(["sevitha", "info"]);
