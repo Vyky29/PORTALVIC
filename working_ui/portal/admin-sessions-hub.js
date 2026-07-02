@@ -1368,11 +1368,9 @@
       var s = out[i];
       var ov0 = s && s.__portalScheduleOverride;
       if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
-      if (s && (s.portalOverrideMakeUpTag || s.portalOverrideTrialTag)) {
-        var rid = canonicalClientSlug(s.client_name);
-        var st = s.time_start || normTimeKey(s.time_slot, wd);
-        if (rid && st) seenRepKeys[rid + "|" + st] = true;
-      }
+      var rid0 = canonicalClientSlug(s && s.client_name);
+      var st0 = s && (s.time_start || normTimeKey(s.time_slot, wd));
+      if (rid0 && st0) seenRepKeys[rid0 + "|" + st0] = true;
     }
     var added = [];
     for (var j = 0; j < ovs.length; j++) {
@@ -3327,6 +3325,50 @@
     return merged;
   }
 
+  function overviewSlotDedupeKey(slot) {
+    var cid = canonicalClientSlug(slot && slot.client_name);
+    var day = clean(slot && slot.session_date);
+    if (!cid || !day) return "";
+    var wd = slot.day || weekdayLongFromIso(day);
+    var t = slot.time_start || normTimeKey(slot.time_slot, wd);
+    return t ? day + "|" + cid + "|" + t : "";
+  }
+
+  function overviewSlotRichnessScore(slot) {
+    var score = 0;
+    if (clean(slot.service)) score += 4;
+    if (clean(slot.area)) score += 2;
+    if (clean(slot.venue)) score += 1;
+    if (!slot.portalOverrideMakeUpTag && !slot.portalOverrideTrialTag) score += 2;
+    var resolved = resolveRosterClientName(slot.client_name);
+    if (resolved && clean(slot.client_name) === resolved) score += 1;
+    return score;
+  }
+
+  /** Same client+time must not appear twice (roster + orphan makeup override). */
+  function dedupeOverviewDisplaySlots(slots) {
+    var map = {};
+    var order = [];
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      var key = overviewSlotDedupeKey(slot);
+      if (!key) {
+        order.push({ key: "__row-" + i, slot: slot });
+        continue;
+      }
+      if (!map[key]) {
+        map[key] = { slot: slot, idx: order.length };
+        order.push({ key: key, slot: slot });
+      } else if (overviewSlotRichnessScore(slot) > overviewSlotRichnessScore(map[key].slot)) {
+        map[key].slot = slot;
+        order[map[key].idx].slot = slot;
+      }
+    }
+    return order.map(function (o) {
+      return o.slot;
+    });
+  }
+
   function overviewDisplaySlotsFromUnits(hub, slots) {
     var units = groupSlotsForFeedback(slots);
     var out = [];
@@ -3335,7 +3377,7 @@
       if (!rep) continue;
       out.push(rep);
     }
-    return out;
+    return dedupeOverviewDisplaySlots(out);
   }
 
   /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
@@ -6190,12 +6232,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
     var displaySlots = hub.sortOverviewSlotsForDisplay(
-      slots.filter(function (s) {
-        if (shouldOmitOverviewSlot(hub, s)) return false;
-        if (isTeflonDemoRosterSlot(s)) return false;
-        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
-        return true;
-      }),
+      overviewDisplaySlotsFromUnits(
+        hub,
+        slots.filter(function (s) {
+          if (shouldOmitOverviewSlot(hub, s)) return false;
+          if (isTeflonDemoRosterSlot(s)) return false;
+          if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+          return true;
+        })
+      ),
       unitComplete,
       unitAbsent
     );
@@ -6254,10 +6299,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       out.push({ _ashAwaitingSlot: true, slot: slot });
     }
     for (var j = 0; j < submitted.length; j++) {
-      if (!isUsed(submitted[j])) {
-        out.push(submitted[j]);
-        markUsed(submitted[j]);
+      if (isUsed(submitted[j])) continue;
+      if (isAbsentFeedbackRow(submitted[j])) {
+        var orphanDup = false;
+        var oc = canonicalClientSlug(submitted[j].client_name);
+        var ot = normTimeKey(submitted[j].session_time);
+        for (var oi = 0; oi < out.length; oi++) {
+          var shown = out[oi];
+          if (!isAbsentFeedbackRow(shown)) continue;
+          if (canonicalClientSlug(shown.client_name) !== oc) continue;
+          var st = normTimeKey(shown.session_time);
+          if (!ot || !st || ot === st) {
+            orphanDup = true;
+            break;
+          }
+        }
+        if (orphanDup) continue;
       }
+      out.push(submitted[j]);
+      markUsed(submitted[j]);
     }
     return out;
   };
@@ -7133,8 +7193,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
                   esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
                   "</span>"
                 : '<span class="ash-badge ash-badge--booked">Booked</span>';
+        var svcLabel =
+          clean(slot.service) ||
+          (hubSlotIsMakeup(slot) ? inferOverrideSlotService(slot.__portalScheduleOverride, overridePayloadObj(slot.__portalScheduleOverride)) : "") ||
+          "\u2014";
         var svc =
-          esc(slot.service) +
+          esc(svcLabel) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "");
         var inst = hubInstructorCellHtml(slot, slotOv);
         var venue = clean(slot.venue) || "\u2014";
