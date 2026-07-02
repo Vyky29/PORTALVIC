@@ -1068,6 +1068,11 @@
       color: #e65100;
       border: 1px solid rgba(255, 152, 0, 0.45);
     }
+    .ash-pill--admin {
+      background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+      color: #5b21b6;
+      border: 1px solid rgba(91, 33, 182, 0.35);
+    }
     .ash-pill--no-participant {
       background: #fb923c;
       color: #fff;

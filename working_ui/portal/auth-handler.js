@@ -464,6 +464,7 @@ export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
   if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
   if (portalIsProgrammeLeadUser(profile, authEmail)) return false;
+  if (portalIsOperationsAdminUser(profile, authEmail)) return false;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
   if (portalCanAccessAdminDashboard(profile, authEmail)) return true;

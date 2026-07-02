@@ -17,7 +17,7 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260704-search-combo" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260630-sevitha-admin-fix" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
@@ -42,9 +42,9 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260702-chrono-gallery" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
-<script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
+<script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
-  <script src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>
+  <script src="/portal/portal_admin_surface_map.js?v=20260630-sevitha-admin-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
@@ -13400,6 +13400,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tone === 'trial') return 'sched-pax-pill--trial';
       if(tone === 'home') return 'sched-pax-pill--home';
       if(tone === 'manager') return 'sched-pax-pill--manager';
+      if(tone === 'admin') return 'sched-pax-pill--admin';
       return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
     }
     function schedStaffDisplayName(slug, hint){
@@ -13587,7 +13588,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return schedParticipantPillHtml(homeLab, slot.demoId, 'home', 'demo');
       }
       if(schedIsManagerDutyParticipant(slot)){
-        return schedParticipantPillHtml('MANAGER', slot.demoId, 'manager', 'demo');
+        var mgrLab = 'MANAGER';
+        if(window.portalOpsAdminDisplay && typeof window.portalOpsAdminDisplay.rosterDutyLabel === 'function'){
+          var mgrSk = String(slot.staffRosterId || slot.instructorRosterId || '').trim().toLowerCase();
+          mgrLab = window.portalOpsAdminDisplay.rosterDutyLabel('MANAGER', mgrSk);
+        }
+        var mgrTone = String(mgrLab).toUpperCase() === 'ADMIN' ? 'admin' : 'manager';
+        return schedParticipantPillHtml(mgrLab, slot.demoId, mgrTone, 'demo');
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
       return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');
@@ -17619,7 +17626,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260704-search-combo";
+      "/portal/admin-sessions-hub.js?v=20260630-sevitha-admin-fix";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

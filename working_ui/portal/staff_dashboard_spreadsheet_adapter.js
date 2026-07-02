@@ -630,7 +630,17 @@
 
       if (isHomeSlot || isManagerSlot) {
         const dutyId = isHomeSlot ? "home" : "manager";
-        const dutyName = isHomeSlot ? "HOME" : "MANAGER";
+        let dutyName = isHomeSlot ? "HOME" : "MANAGER";
+        if (
+          isManagerSlot &&
+          global.portalOpsAdminDisplay &&
+          typeof global.portalOpsAdminDisplay.isOpsAdminStaffKey === "function" &&
+          global.portalOpsAdminDisplay.isOpsAdminStaffKey(staffKeyOut)
+        ) {
+          dutyName = global.portalOpsAdminDisplay.workerFacingLabel
+            ? global.portalOpsAdminDisplay.workerFacingLabel()
+            : "ADMIN";
+        }
         const dutyArea = isHomeSlot ? "HOME" : "Hub Room";
         sessionsModel.push(
           Object.assign({}, baseSession, {

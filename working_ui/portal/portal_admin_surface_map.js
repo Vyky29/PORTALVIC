@@ -111,6 +111,14 @@
     var mobile = isMobileLayout();
     var cohort = ceo ? "ceo_exec" : ops ? "ops_admin" : "other_admin";
 
+    var mobileDefaultView = ceo ? "staff_live_map" : ops ? "nav_hub" : "dashboard";
+    var desktopDefaultView = ceo ? "staff_live_map" : ops ? "operations_admin" : "dashboard";
+    var mobileBottomNav = ceo
+      ? ["staff_live_map", "fullnav"]
+      : ops
+        ? ["nav_hub", "operations_admin", "settings"]
+        : ["nav_hub", "fullnav"];
+
     return {
       profileKey: key,
       cohort: cohort,
@@ -126,12 +134,12 @@
         ceoExecLabel: "Executive messages",
       },
       mobile: {
-        bottomNavViews: ["staff_live_map", "fullnav"],
-        defaultView: "staff_live_map",
+        bottomNavViews: mobileBottomNav,
+        defaultView: mobileDefaultView,
         csCliqStartPane: "list",
       },
       desktop: {
-        defaultView: "staff_live_map",
+        defaultView: desktopDefaultView,
         csCliqStartPane: "channels",
       },
     };

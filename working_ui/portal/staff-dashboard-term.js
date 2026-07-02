@@ -2151,11 +2151,20 @@
       const statusLow = String(s.status || '').trim().toLowerCase();
       if(cid === 'home' || statusLow === 'home') return 'HOME';
       if(cid === 'manager' || statusLow === 'manager') {
-        var sk = String(
-          (typeof dashboardData !== 'undefined' && dashboardData.staffId) ||
-          (typeof window !== 'undefined' && window.STAFF_DASHBOARD_ID) ||
-          ''
-        ).trim().toLowerCase();
+        var sk = '';
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel === 'function'
+        ){
+          sk = window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel();
+        } else {
+          sk = String(
+            (typeof dashboardData !== 'undefined' && dashboardData.staffId) ||
+            (typeof window !== 'undefined' && window.STAFF_DASHBOARD_ID) ||
+            ''
+          ).trim().toLowerCase();
+        }
         if(
           typeof window !== 'undefined' &&
           window.portalOpsAdminDisplay &&
@@ -2178,7 +2187,24 @@
       const nameBlob = String((s && (s.clientName || s.client || s.name)) || '').trim().toLowerCase();
       if(statusLow === 'closed' || clientIdLow === 'closed') return 'Closed';
       if(statusLow === 'home' || clientIdLow === 'home' || nameBlob === 'home' || nameBlob === 'casa') return 'Home';
-      if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager') return 'Manager';
+      if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager'){
+        var skMgr = '';
+        if(
+          typeof window !== 'undefined' &&
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel === 'function'
+        ){
+          skMgr = window.portalOpsAdminDisplay.resolveStaffKeyForDutyLabel();
+        }
+        if(
+          window.portalOpsAdminDisplay &&
+          typeof window.portalOpsAdminDisplay.rosterDutyLabel === 'function' &&
+          window.portalOpsAdminDisplay.rosterDutyLabel('MANAGER', skMgr) === 'Admin'
+        ){
+          return 'Admin';
+        }
+        return 'Manager';
+      }
       if(
         statusLow === 'available' || statusLow === 'no client' || statusLow === 'no_client' ||
         clientIdLow === 'available' || clientIdLow === 'no client' || clientIdLow === 'no_client' || clientIdLow === 'noclient' ||

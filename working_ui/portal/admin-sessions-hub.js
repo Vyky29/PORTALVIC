@@ -2137,7 +2137,29 @@
       return '<span class="ash-pill ash-pill--home">' + esc(homeLab) + "</span>";
     }
     if (kind === "manager") {
-      return '<span class="ash-pill ash-pill--manager">' + esc("MANAGER") + "</span>";
+      var mgrLab = "MANAGER";
+      if (
+        global.portalOpsAdminDisplay &&
+        typeof global.portalOpsAdminDisplay.rosterDutyLabel === "function"
+      ) {
+        var staffKey = "";
+        if (slotOpt) {
+          staffKey = clean(slotOpt.anchor_staff_id || slotOpt.staff_id || "").toLowerCase();
+          if (!staffKey && slotOpt.instructors && slotOpt.instructors.length) {
+            for (var mi = 0; mi < slotOpt.instructors.length; mi++) {
+              var instKey = clean(slotOpt.instructors[mi]).toLowerCase();
+              if (global.portalOpsAdminDisplay.isOpsAdminStaffKey(instKey)) {
+                staffKey = instKey;
+                break;
+              }
+            }
+          }
+        }
+        mgrLab = global.portalOpsAdminDisplay.rosterDutyLabel("MANAGER", staffKey);
+      }
+      var mgrCls =
+        String(mgrLab).toUpperCase() === "ADMIN" ? "ash-pill--admin" : "ash-pill--manager";
+      return '<span class="ash-pill ' + mgrCls + '">' + esc(mgrLab) + "</span>";
     }
     return '<span class="ash-pill ash-pill--client">' + esc(name) + "</span>";
   }
