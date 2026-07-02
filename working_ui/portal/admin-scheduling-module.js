@@ -64,9 +64,13 @@
       '" value="' +
       deps.esc(today) +
       '" />' +
-      '<select class="sel" id="schedVenueFilter" style="max-width:200px" aria-label="Venue filter"><option value="">All venues</option></select>' +
-      '<select class="sel" id="schedStaffFilter" style="max-width:220px" aria-label="Instructor filter"><option value="">All instructors</option></select>' +
-      '<select class="sel" id="schedParticipantFilter" style="max-width:220px" aria-label="Participant filter"><option value="">All participants</option></select>' +
+      (global.PortalAdminSearchCombo && global.PortalAdminSearchCombo.comboHtml
+        ? global.PortalAdminSearchCombo.comboHtml("schedVenueFilter", "All venues", "200px") +
+          global.PortalAdminSearchCombo.comboHtml("schedStaffFilter", "All instructors", "220px") +
+          global.PortalAdminSearchCombo.comboHtml("schedParticipantFilter", "All participants", "220px")
+        : '<select class="sel" id="schedVenueFilter" style="max-width:200px" aria-label="Venue filter"><option value="">All venues</option></select>' +
+          '<select class="sel" id="schedStaffFilter" style="max-width:220px" aria-label="Instructor filter"><option value="">All instructors</option></select>' +
+          '<select class="sel" id="schedParticipantFilter" style="max-width:220px" aria-label="Participant filter"><option value="">All participants</option></select>') +
       '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);min-width:0"><input type="checkbox" id="schedOnlyOverride" /> Overrides only</label>' +
       '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot</button></div>' +

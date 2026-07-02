@@ -2406,7 +2406,21 @@
       100%{box-shadow:none}
     }
 
-    .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;overflow:visible}
+    /* Searchable filter combos — native <select> breaks with long option lists in admin layout */
+    .portal-search-combo{position:relative;min-width:0;flex:0 1 auto}
+    .portal-search-combo__inp{width:100%;max-width:100%;min-width:0;box-sizing:border-box;color:var(--text,#243447);background:#fff}
+    .portal-search-combo__list,.sched-filter-combo .sched-suggest{
+      position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:80;margin-top:0;
+    }
+    .portal-search-combo__opt{
+      display:block;width:100%;min-width:0;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line);
+      background:#fff;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--text,#243447);overflow-wrap:break-word;
+    }
+    .portal-search-combo__opt:last-child{border-bottom:0}
+    .portal-search-combo__opt:hover,.portal-search-combo__opt:focus-visible{background:#f0f7ff;outline:none}
+    .portal-search-combo__opt--all{font-weight:700;color:var(--muted,#64748b)}
+    .portal-search-combo__empty{padding:10px 12px;font-size:12px;min-width:0;overflow-wrap:break-word;color:var(--muted,#64748b)}
     .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
     .subtab-btn{
       border:1px solid var(--btnSecBorder);background:var(--btnSecBg);color:var(--ink);

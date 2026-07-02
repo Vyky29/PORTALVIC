@@ -17,7 +17,7 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260704-ash-filter-combo" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260704-search-combo" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
@@ -63,7 +63,8 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
   <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260614-scheduling"></script>
+  <script src="/portal/portal-admin-search-combo.js?v=20260704-search-combo"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -82,7 +83,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260703-sched-ov-picker" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-search-combo" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -6522,17 +6523,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var demoId = String(fs.demoId || '').trim();
       var venueWant = String(fs.venue || '').trim();
       state.pendingBookingsSlotFocus = null;
-      var vf = $('schedVenueFilter');
-      if(venueWant && vf){
-        var found = false;
-        for(var oi = 0; oi < vf.options.length; oi++){
-          if(String(vf.options[oi].value) === venueWant){ vf.selectedIndex = oi; found = true; break; }
-        }
-        if(found) applySchedTableFilters();
+      if(venueWant && window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.setValue('schedVenueFilter', venueWant, venueWant);
+        applySchedTableFilters();
+      }else if(venueWant){
+        var vf = $('schedVenueFilter');
+        if(vf) vf.value = venueWant;
+        applySchedTableFilters();
       }
       var tr = portalFindSchedRowByDemoId(demoId);
-      if(!tr && venueWant && vf){
-        vf.value = '';
+      if(!tr && venueWant){
+        if(window.PortalAdminSearchCombo) PortalAdminSearchCombo.setValue('schedVenueFilter', '', '');
+        else { var vf2 = $('schedVenueFilter'); if(vf2) vf2.value = ''; }
         applySchedTableFilters();
         tr = portalFindSchedRowByDemoId(demoId);
       }
@@ -9852,11 +9854,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return bits.join('');
     }
     function ordersPortalSyncClientFilterSelect(){
-      var el = $('bookingOrdersClientFilter');
-      if(!el) return;
       var names = ordersPortalDistinctChildNamesInRange();
       var cur = String(booking.ordersClientFilter || '').trim();
       if(cur && !names.some(function(n){ return n.localeCompare(cur, undefined, { sensitivity: 'base' }) === 0; })) booking.ordersClientFilter = '';
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.ensure({
+          id: 'bookingOrdersClientFilter',
+          placeholder: 'All clients',
+          allLabel: 'All clients',
+          maxVisible: 20,
+          onChange: function(val){
+            booking.ordersClientFilter = String(val || '').trim();
+            booking.portalOrdersPage = 1;
+            ordersPortalRefreshTable();
+          }
+        });
+        PortalAdminSearchCombo.setOptions('bookingOrdersClientFilter', names.map(function(n){ return { value: n, label: n }; }), { keepValue: true });
+        if(booking.ordersClientFilter) PortalAdminSearchCombo.setValue('bookingOrdersClientFilter', booking.ordersClientFilter);
+        return;
+      }
+      var el = $('bookingOrdersClientFilter');
+      if(!el) return;
       el.innerHTML = ordersPortalClientFilterSelectHtml(booking.ordersClientFilter);
     }
     function ordersPortalFamilyKeyFromPortalPp(pp){
@@ -10367,11 +10385,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ocf = $('bookingOrdersClientFilter');
       if(ocf){
         ordersPortalSyncClientFilterSelect();
-        ocf.onchange = function(){
-          booking.ordersClientFilter = String(ocf.value || '').trim();
-          booking.portalOrdersPage = 1;
-          ordersPortalRefreshTable();
-        };
+        if(!window.PortalAdminSearchCombo){
+          ocf.onchange = function(){
+            booking.ordersClientFilter = String(ocf.value || '').trim();
+            booking.portalOrdersPage = 1;
+            ordersPortalRefreshTable();
+          };
+        }
       }
       var pTbl = $('bookingPortalOrdersTable');
       if(pTbl) pTbl.onclick = ordersPortalTableClick;
@@ -10638,7 +10658,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Adds an extra session (not on the roster) for one staff member. It shows on their dashboard and is paid at <strong>&pound;13.50/h</strong> on the timesheet.</p>'+
         '<div class="filter-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end">'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Staff'+
-          '<select class="sel" id="schedAddStaff" style="max-width:220px"></select></label>'+
+          (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddStaff', 'Select staff…', '220px') :
+          '<select class="sel" id="schedAddStaff" style="max-width:220px"></select>')+'</label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Type'+
           '<select class="sel" id="schedAddKind" style="max-width:160px"><option value="training">Training</option><option value="shadowing">Shadowing</option></select></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Date'+
@@ -10663,10 +10684,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div></div></details>';
     }
     function schedFillAddStaffSelect(){
+      var list = schedBuildInstructorPickList();
+      var cur = ($('schedAddStaff') && $('schedAddStaff').value) || '';
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.ensure({
+          id: 'schedAddStaff',
+          placeholder: 'Select staff…',
+          allLabel: 'Select staff…',
+          showAllOnEmptyFocus: true,
+          maxVisible: 24
+        });
+        PortalAdminSearchCombo.setOptions('schedAddStaff', list.map(function(it){
+          return { value: it.slug, label: it.display };
+        }), { keepValue: true });
+        if(cur) PortalAdminSearchCombo.setValue('schedAddStaff', cur);
+        return;
+      }
       var sel = $('schedAddStaff');
       if(!sel) return;
-      var list = schedBuildInstructorPickList();
-      var cur = sel.value;
       sel.innerHTML = '<option value="">Select staff...</option>' + list.map(function(it){
         return '<option value="'+esc(it.slug)+'">'+esc(it.display)+'</option>';
       }).join('');
@@ -13209,29 +13244,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function fillSchedFilterSelects(slots){
-      var vSel = $('schedVenueFilter');
-      var sSel = $('schedStaffFilter');
-      var pSel = $('schedParticipantFilter');
-      if(!vSel || !sSel) return;
+      var combo = window.PortalAdminSearchCombo;
+      var vVal = combo ? combo.get('schedVenueFilter') && combo.get('schedVenueFilter').getValue() : (($('schedVenueFilter')||{}).value || '');
+      var sVal = combo ? combo.get('schedStaffFilter') && combo.get('schedStaffFilter').getValue() : (($('schedStaffFilter')||{}).value || '');
+      var pVal = combo ? combo.get('schedParticipantFilter') && combo.get('schedParticipantFilter').getValue() : (($('schedParticipantFilter')||{}).value || '');
+      if(!combo && (!$('schedVenueFilter') || !$('schedStaffFilter'))) return;
       var venues = adminSchedAllVenuesUnion(slots);
-      var vVal = vSel.value;
-      var sVal = sSel.value;
-      var pVal = pSel ? pSel.value : '';
-      vSel.innerHTML = '<option value="">All venues</option>'+venues.map(function(v){
-        return '<option value="'+esc(v)+'">'+esc(v)+'</option>';
-      }).join('');
-      vSel.value = vVal && venues.indexOf(vVal) >= 0 ? vVal : '';
-      var venueChosen = String(vSel.value || '').trim();
+      var venueChosen = String(vVal || '').trim();
       var filteredSlots = (slots || []).filter(function(s){
         return !venueChosen || String(s.venue || '') === venueChosen;
       });
       var staffMap = {};
       filteredSlots.forEach(function(s){
-        function addStaff(id, label){
-          var k = String(id || '').trim().toLowerCase();
-          if(!k) return;
-          staffMap[k] = String(label || s.staffName || k).trim() || k;
-        }
         var ov = findOverrideForSlot(s);
         schedStaffFilterKeysForSlot(s, ov).forEach(function(k){
           if(!staffMap[k]) staffMap[k] = schedStaffDisplayName(k, k);
@@ -13247,31 +13271,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sKeys = Object.keys(staffMap).sort(function(a, b){
         return String(staffMap[a] || '').localeCompare(String(staffMap[b] || ''), undefined, { sensitivity:'base' });
       });
+      var pOpts = [];
+      var seenP = {};
+      filteredSlots.forEach(function(s){
+        function addPax(slug, label){
+          var u = String(slug || '').trim().toLowerCase();
+          if(!bookingIsBookedClientSlug(u) || seenP[u]) return;
+          seenP[u] = true;
+          pOpts.push({ value: u, label: String(label || '').trim() || u });
+        }
+        var slug = String(s.clientSlug || '').trim().toLowerCase();
+        addPax(slug, String(s.clientDisplay || '').trim() || slug);
+        var ovP = findOverrideForSlot(s);
+        if(ovP && String(ovP.override_type || '').trim() === 'client_replace_in_slot'){
+          var rs = String(ovP.payload && (ovP.payload.to_client_id || ovP.payload.replacement_client_id) || '').trim().toLowerCase();
+          var rlab = String(ovP.payload && (ovP.payload.to_client_name || ovP.payload.replacement_client_name) || '').trim();
+          addPax(rs, rlab || rs);
+        }
+      });
+      if(combo){
+        combo.setOptions('schedVenueFilter', venues.map(function(v){ return { value: v, label: v }; }), { keepValue: true });
+        combo.setOptions('schedStaffFilter', sKeys.map(function(id){ return { value: id, label: staffMap[id] }; }), { keepValue: true });
+        combo.setOptions('schedParticipantFilter', pOpts, { keepValue: true });
+        if(vVal && venues.indexOf(vVal) < 0) combo.setValue('schedVenueFilter', '', '');
+        if(sVal && !staffMap[sVal]) combo.setValue('schedStaffFilter', '', '');
+        if(pVal && !seenP[pVal]) combo.setValue('schedParticipantFilter', '', '');
+        return;
+      }
+      var vSel = $('schedVenueFilter');
+      var sSel = $('schedStaffFilter');
+      var pSel = $('schedParticipantFilter');
+      vSel.innerHTML = '<option value="">All venues</option>'+venues.map(function(v){
+        return '<option value="'+esc(v)+'">'+esc(v)+'</option>';
+      }).join('');
+      vSel.value = vVal && venues.indexOf(vVal) >= 0 ? vVal : '';
       sSel.innerHTML = '<option value="">All instructors</option>'+sKeys.map(function(id){
         return '<option value="'+esc(id)+'">'+esc(staffMap[id])+'</option>';
       }).join('');
       sSel.value = sVal && staffMap[sVal] ? sVal : '';
       if(pSel){
-        var seenP = {};
-        var pOpts = ['<option value="">All participants</option>'];
-        filteredSlots.forEach(function(s){
-          function addPax(slug, label){
-            var u = String(slug || '').trim().toLowerCase();
-            if(!bookingIsBookedClientSlug(u) || seenP[u]) return;
-            seenP[u] = true;
-            var lab = String(label || '').trim() || u;
-            pOpts.push('<option value="'+esc(u)+'">'+esc(lab)+'</option>');
-          }
-          var slug = String(s.clientSlug || '').trim().toLowerCase();
-          addPax(slug, String(s.clientDisplay || '').trim() || slug);
-          var ovP = findOverrideForSlot(s);
-          if(ovP && String(ovP.override_type || '').trim() === 'client_replace_in_slot'){
-            var rs = String(ovP.payload && (ovP.payload.to_client_id || ovP.payload.replacement_client_id) || '').trim().toLowerCase();
-            var rlab = String(ovP.payload && (ovP.payload.to_client_name || ovP.payload.replacement_client_name) || '').trim();
-            addPax(rs, rlab || rs);
-          }
-        });
-        pSel.innerHTML = pOpts.join('');
+        pOpts.unshift({ value: '', label: 'All participants' });
+        pSel.innerHTML = pOpts.map(function(o){
+          return '<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>';
+        }).join('');
         pSel.value = pVal && seenP[pVal] ? pVal : '';
       }
     }
@@ -14054,16 +14096,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(btn) btn.onclick = function(){ void refreshSchedulingModule(); };
       if(dateEl) dateEl.onchange = function(){ void refreshSchedulingModule(); };
       bindSchedAddSessionForm();
-      var vSel = $('schedVenueFilter');
-      var sSel = $('schedStaffFilter');
-      var pSel = $('schedParticipantFilter');
+      if(window.PortalAdminSearchCombo){
+        ['schedVenueFilter','schedStaffFilter','schedParticipantFilter'].forEach(function(fid){
+          PortalAdminSearchCombo.ensure({
+            id: fid,
+            placeholder: fid === 'schedVenueFilter' ? 'All venues' : fid === 'schedStaffFilter' ? 'All instructors' : 'All participants',
+            allLabel: fid === 'schedVenueFilter' ? 'All venues' : fid === 'schedStaffFilter' ? 'All instructors' : 'All participants',
+            onChange: function(){
+              if(fid === 'schedVenueFilter' && sched.cachedDaySlots && sched.cachedDaySlots.length){
+                fillSchedFilterSelects(sched.cachedDaySlots);
+              }
+              applySchedTableFilters();
+            }
+          });
+        });
+      }else{
+        var vSel = $('schedVenueFilter');
+        var sSel = $('schedStaffFilter');
+        var pSel = $('schedParticipantFilter');
+        if(vSel) vSel.onchange = function(){
+          if(sched.cachedDaySlots && sched.cachedDaySlots.length) fillSchedFilterSelects(sched.cachedDaySlots);
+          applySchedTableFilters();
+        };
+        if(sSel) sSel.onchange = applySchedTableFilters;
+        if(pSel) pSel.onchange = applySchedTableFilters;
+      }
       var only = $('schedOnlyOverride');
-      if(vSel) vSel.onchange = function(){
-        if(sched.cachedDaySlots && sched.cachedDaySlots.length) fillSchedFilterSelects(sched.cachedDaySlots);
-        applySchedTableFilters();
-      };
-      if(sSel) sSel.onchange = applySchedTableFilters;
-      if(pSel) pSel.onchange = applySchedTableFilters;
       if(only) only.onchange = applySchedTableFilters;
       var tbl = $('schedBaseTable');
       if(tbl){
@@ -14203,8 +14261,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="year"'+(preset==='year'?' selected':'')+'>This year</option>'+
         '<option value="all"'+(preset==='all'?' selected':'')+'>All orders</option>'+
         '</select> '+
-        '<label class="muted" for="bookingOrdersClientFilter" style="white-space:nowrap">Client:</label> '+
-        '<select class="sel" id="bookingOrdersClientFilter" style="max-width:280px" aria-label="Filter by participant">'+clientSel+'</select> '+
+        '<label class="muted" for="bookingOrdersClientFilterInput" style="white-space:nowrap">Client:</label> '+
+        (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('bookingOrdersClientFilter', 'All clients', '280px') :
+        '<select class="sel" id="bookingOrdersClientFilter" style="max-width:280px" aria-label="Filter by participant">'+clientSel+'</select>')+' '+
         '<label class="booking-orders-outstanding-toggle" for="bookingOrdersOutstandingOnly" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;margin:0;min-width:0">'+
         '<input type="checkbox" id="bookingOrdersOutstandingOnly"'+(booking.ordersScope==='outstanding'?' checked':'')+' aria-label="Show outstanding orders only" />'+
         '<span class="muted">Outstanding only</span></label></div>'+
@@ -17560,7 +17619,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260704-instructors-normalize";
+      "/portal/admin-sessions-hub.js?v=20260704-search-combo";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -23449,7 +23508,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="modal-h"><h2 id="modalTitle">Report generation</h2></div><div class="modal-b">'+
         '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Draft reports for families and files. With <strong>OpenAI</strong> configured on Supabase, Generate uses AI from your notes; otherwise a simple template is used.</p>'+
         '<div class="filter-row" style="margin-bottom:12px">'+
-        '<select class="sel" id="repClient" style="max-width:100%">'+opts+'</select>'+
+        (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('repClient', 'General / operations', '100%') :
+        '<select class="sel" id="repClient" style="max-width:100%">'+opts+'</select>')+
         '<select class="sel" id="repType"><option value="progress">Progress report</option><option value="parent_summary">Parent summary</option><option value="term">Term review draft</option><option value="trial">Trial summary</option><option value="ehcp">EHCP contribution</option><option value="observation">Observation</option></select></div>'+
         '<label class="muted" for="repContext" style="display:block;margin-bottom:6px">Notes for AI (optional)</label>'+
         '<textarea class="txa" id="repContext" placeholder="Bullet points, session highlights, things to mention…" style="min-height:88px;max-width:100%;margin-bottom:12px"></textarea>'+
@@ -23463,11 +23523,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--sec" id="btnAiImprove">Improve with AI</button>'+
         '<button type="button" class="btn btn--pri" id="btnGenRep">Generate draft</button></div>'
       );
-      if(cid) $('repClient').value = cid;
+      var repClientOpts = Object.keys(MOCK.clientsById).map(function(k){
+        var c = MOCK.clientsById[k];
+        return { value: c.id, label: c.name };
+      });
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.ensure({
+          id: 'repClient',
+          placeholder: 'General / operations',
+          allLabel: 'General / operations',
+          maxVisible: 20
+        });
+        PortalAdminSearchCombo.setOptions('repClient', repClientOpts);
+      }
+      if(cid){
+        if(window.PortalAdminSearchCombo) PortalAdminSearchCombo.setValue('repClient', cid);
+        else if($('repClient')) $('repClient').value = cid;
+      }
       if(repItemId){
         var r = MOCK.reportItems.find(function(x){ return x.id===repItemId; });
         if(r){
-          if(r.clientId) $('repClient').value = r.clientId;
+          if(r.clientId){
+            if(window.PortalAdminSearchCombo) PortalAdminSearchCombo.setValue('repClient', r.clientId);
+            else if($('repClient')) $('repClient').value = r.clientId;
+          }
           var typeMap = { 'Term review':'term', 'Parent summary':'parent_summary', 'Session feedback':'progress', 'Observation':'observation', 'Trial summary':'trial', 'EHCP contribution':'ehcp' };
           var rt = $('repType');
           var want = typeMap[r.type] || 'progress';

@@ -1368,15 +1368,21 @@
       -webkit-overflow-scrolling: touch;
     }
     .ash-filter-suggest[hidden] { display: none !important; }
+    .ash-filter-suggest .portal-search-combo__opt,
     .ash-filter-suggest__btn {
       display: block; width: 100%; min-width: 0; text-align: left; padding: 9px 11px;
       border: 0; border-bottom: 1px solid var(--border); background: #fff; cursor: pointer;
       font: inherit; font-size: 13px; font-weight: 600; color: var(--text, #243447);
       overflow-wrap: break-word;
     }
+    .ash-filter-suggest .portal-search-combo__opt:last-child,
     .ash-filter-suggest__btn:last-child { border-bottom: 0; }
+    .ash-filter-suggest .portal-search-combo__opt:hover,
+    .ash-filter-suggest .portal-search-combo__opt:focus-visible,
     .ash-filter-suggest__btn:hover, .ash-filter-suggest__btn:focus-visible { background: #f0f7ff; outline: none; }
+    .ash-filter-suggest .portal-search-combo__opt--all,
     .ash-filter-suggest__btn--all { font-weight: 700; color: var(--muted); }
+    .ash-filter-suggest .portal-search-combo__empty { padding: 9px 11px; font-size: 12px; color: var(--muted); overflow-wrap: break-word; }
     .ash-feedback-filter-hint {
       margin: 0 0 10px;
       padding: 10px 14px;

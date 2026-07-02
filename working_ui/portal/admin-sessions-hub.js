@@ -6936,13 +6936,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.prototype.bindAshFilterCombos = function () {
     var hub = this;
+    var comboApi = global.PortalAdminSearchCombo;
     ["ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
-      var hid = document.getElementById(baseId);
-      var inp = document.getElementById(baseId + "Input");
-      var sug = document.getElementById(baseId + "Suggest");
-      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
-      inp.setAttribute("data-ash-filter-bound", "1");
-
       function optionsForCombo() {
         if (baseId === "ashInstructorFilter") {
           if (hub.tab === "feedback" || hub.mode === "feedback") {
@@ -6952,6 +6947,30 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
       }
+
+      if (comboApi) {
+        comboApi.ensure({
+          id: baseId,
+          placeholder: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
+          allLabel: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
+          maxVisible: 24,
+          onChange: function (val) {
+            if (baseId === "ashInstructorFilter") hub.instructorFilter = val || "";
+            else hub.serviceFilter = val || "";
+            hub.refreshClientFilterView();
+          },
+        });
+        comboApi.setOptions(baseId, optionsForCombo(), { keepValue: true });
+        var cur = baseId === "ashInstructorFilter" ? hub.instructorFilter : hub.serviceFilter;
+        if (cur) comboApi.setValue(baseId, cur, cur);
+        return;
+      }
+
+      var hid = document.getElementById(baseId);
+      var inp = document.getElementById(baseId + "Input");
+      var sug = document.getElementById(baseId + "Suggest");
+      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
+      inp.setAttribute("data-ash-filter-bound", "1");
 
       function renderSuggest(query) {
         sug.replaceChildren();
@@ -6995,9 +7014,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           });
           sug.appendChild(btn);
         });
-        sug.hidden = !matches.length && !qt;
-        if (!matches.length && !qt) sug.hidden = true;
-        else sug.hidden = false;
+        if (!matches.length && !qt) {
+          var empty = document.createElement("div");
+          empty.className = "portal-search-combo__empty muted";
+          empty.textContent = opts.length ? "Type to search" : "No options loaded";
+          sug.appendChild(empty);
+        }
+        sug.hidden = false;
       }
 
       inp.addEventListener("input", function () {
