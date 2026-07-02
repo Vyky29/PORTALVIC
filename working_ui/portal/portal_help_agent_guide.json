@@ -1,12 +1,17 @@
 {
-  "version": "2026-06-help-guide-v6",
-  "description": "Single source of truth for portal_help_guide.html. Sections may include inline 'demos' (real portal UI: session-cards, status-pills, override-chips, halo, term-days, feedback-flow, timesheet-rows, quick-menu-tiles, participants-list, participant-actions, announcement-card, document-list, daily-form, pickup-form, expense-form, alerts-settings, area-icons, lead-tools, profile-form).",
+  "version": "2026-06-help-guide-v7",
+  "description": "Staff help guide — visual demos + step-by-step voice (Eleven Labs when signed in).",
   "sections": [
     {
       "id": "getting-started",
       "title": "Getting started on your phone",
       "keywords": ["start", "first", "daily", "phone", "empezar", "primeros pasos", "resumen"],
+      "voice_script": "CS Portal is your phone app for sessions, feedback and forms. Log in once, add the app to your home screen, then open Quick menu for everything else. Check Today before sessions — orange cards need feedback.",
       "content": "The portal is designed for your phone — before, during and after sessions.\n\nFirst steps: log in with the link provided; install CS Portal on your home screen; turn on Notifications/Alerts in Quick menu → Settings.\n\nDaily use: check the dashboard before sessions; tap orange session cards for feedback; tap the logo if the halo shows notifications; use My participants for client info; use Quick menu for forms, finance, documents and settings.\n\nYou only need two company apps going forward: CS Portal (operations) and Zoho Cliq (team messaging). You may delete Zoho People — payslips are in My Documents.",
+      "steps": [
+        { "voice": "CS Portal runs on your phone — before, during and after sessions.", "demo": "quick-menu-tiles", "caption": "Quick menu — your daily tools" },
+        { "voice": "Each day, open Today on your dashboard. Orange cards mean feedback is still waiting.", "demo": "session-cards", "caption": "Today — tap orange cards for feedback" }
+      ],
       "demos": [
         { "demo": "quick-menu-tiles", "caption": "Daily tools live in Quick menu — Staff help guide is in Settings." }
       ],
@@ -16,21 +21,45 @@
       "id": "login",
       "title": "Logging in",
       "keywords": ["login", "log in", "sign in", "password", "email", "signed out", "iniciar sesion", "contraseña"],
+      "voice_script": "Open the portal link, enter your club email and password, then tap Sign in. If the home-screen app does not recognise you, sign in once in Safari or Chrome first, then reopen CS Portal.",
       "content": "Open the portal link and sign in with your club email and password.\n\nIf CS Portal does not recognise you after installing the app, log out and sign in again in Safari or Chrome first, then reopen the home-screen icon.\n\nForgotten password: use reset on the login page or contact the office.",
+      "steps": [
+        { "voice": "Open the portal link your manager sent you. You will see the club sign-in screen.", "demo": "login-mock", "focus": "brand", "caption": "Portal sign-in screen" },
+        { "voice": "Enter your club email address — the one the office registered for you.", "demo": "login-mock", "focus": "email", "caption": "Club email" },
+        { "voice": "Enter your password, then tap Sign in.", "demo": "login-mock", "focus": "password", "caption": "Password" },
+        { "voice": "Tap Sign in. You land on your dashboard with Today’s sessions.", "demo": "login-mock", "focus": "submit", "caption": "Sign in" }
+      ],
+      "demos": [
+        { "demo": "login-mock", "caption": "Same layout as the real login page." }
+      ],
       "illustrations": []
     },
     {
       "id": "install",
       "title": "Install CS Portal on your phone",
       "keywords": ["install", "home screen", "pwa", "app", "iphone", "android", "safari", "chrome", "instalar"],
+      "voice_script": "Add CS Portal to your home screen so it opens full screen like an app. On iPhone use Share, then Add to Home Screen. On Android use the browser menu, then Install app.",
       "content": "Add the portal to your home screen as CS Portal with the club icon, full-screen.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out.",
+      "steps": [
+        { "voice": "On iPhone, open the portal in Safari. Tap Share at the bottom.", "demo": "install-mock", "focus": "iphone", "caption": "iPhone — Share button" },
+        { "voice": "Choose Add to Home Screen, then Add. The CS Portal icon appears on your home screen.", "demo": "install-mock", "focus": "iphone-add", "caption": "Add to Home Screen" },
+        { "voice": "On Android, open the portal in Chrome. Tap the menu, then Install app or Add to Home screen.", "demo": "install-mock", "focus": "android", "caption": "Android — Install app" }
+      ],
+      "demos": [
+        { "demo": "install-mock", "caption": "Install once — then open CS Portal from your home screen." }
+      ],
       "illustrations": []
     },
     {
       "id": "dashboard",
       "title": "Understanding your dashboard",
       "keywords": ["dashboard", "today", "main screen", "home", "panel", "pantalla principal"],
+      "voice_script": "Your dashboard shows Today’s session cards. Orange means feedback pending — tap the card. The logo halo shows reminders — tap the logo to open the notification centre.",
       "content": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today's participants and what still needs doing — orange means feedback is waiting.\n\nThe logo halo shows feedback, announcements or documents needing attention.\n\nTap the logo for the notification centre. Use session cards, My participants, or Quick menu for forms.\n\nUnder the cards: Next session, Week and Term for planning.",
+      "steps": [
+        { "voice": "Today lists your sessions. Each card shows time, venue, participant and status.", "demo": "session-cards", "caption": "Today session cards" },
+        { "voice": "Coloured dots around the logo mean something is waiting. Tap the logo to see reminders.", "demo": "halo", "caption": "Logo halo — tap when dots show" }
+      ],
       "demos": [
         { "demo": "session-cards", "caption": "Real Today cards — colours match your dashboard." },
         { "demo": "halo", "caption": "Real logo halo — tap it when coloured dots show." }
@@ -41,6 +70,7 @@
       "id": "colours",
       "title": "Session card colours and pills",
       "keywords": ["colour", "color", "orange", "green", "blue", "red", "purple", "lilac", "pill", "pending", "done", "colores"],
+      "voice_script": "Blue cards are scheduled with nothing to do yet. Orange means feedback pending — tap to submit. Green means done or absent recorded. Red is urgent. Purple is a schedule change.",
       "content": "Session card colours:\nBlue — scheduled, nothing to do yet.\nOrange — feedback still pending; tap the card to submit.\nGreen — feedback submitted or absence recorded.\nRed — incident or urgent item.\nPurple — schedule change (cancellation or roster change).\n\nStatus pills: Done = submitted; Pending = needs feedback; Late = after deadline; Absent = did not attend; Incident = report attached.\n\nOverride chips (ABSENT, MAKE UP, Changed by Admin) appear on the right when the office changed a session — pool/room icon may be hidden on those rows.",
       "demos": [
         { "demo": "session-cards", "caption": "Card colours — tap an orange card to add feedback." },
@@ -53,6 +83,7 @@
       "id": "logo-halo",
       "title": "Logo halo and notification centre",
       "keywords": ["logo", "halo", "dot", "notification centre", "notifications", "notificaciones", "reminders"],
+      "voice_script": "Tap the club logo when dots appear. Orange is outstanding feedback. Red is an announcement or document to sign. The notification centre lists everything in one place.",
       "content": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nRed — announcement or document to sign.\nBlue idle — open the quick menu when nothing is waiting.\nMultiple colours — more than one type waiting.\n\nUnder Reminders, Outstanding feedbacks (orange) jumps to the pending session.\nTerm view on the dashboard shows days in red when feedback is still outstanding.",
       "demos": [
         { "demo": "halo", "caption": "Real halo states — tap the logo to open the notification centre." },
@@ -64,7 +95,12 @@
       "id": "feedback",
       "title": "Sessions and feedback",
       "keywords": ["feedback", "outstanding", "orange card", "submit", "session card", "voice feedback", "comentarios"],
+      "voice_script": "Always open feedback from the orange session card — it pre-fills the participant. Complete the form and submit. The card turns green. Mark Absent from the participant card if they did not attend.",
       "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nComplete engagement, regulation, independence and notes, then submit.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nWho needs their own feedback:\n• Day Centre and shared Bespoke (e.g. Ikram, Emmanuel, Fadi, Timi with co-instructors): if a colleague already submitted for that client during the shared block, your card can show green — you do not need a second report.\n• Multi-Activity, Aquatic/Teaching pool and Climbing: each instructor submits their own feedback for their slot (often 45 minutes). A colleague's submission does not complete yours — e.g. afternoon MA at Acton when you and another staff split the hour.\n• Linked services (e.g. Aquatic then Multi-Activity): each worker who ran their part of the session submits for their time only.\n\nMicrophone in Settings is optional for voice feedback or voice typing.",
+      "steps": [
+        { "voice": "When feedback is pending, the session card is orange with a Pending pill.", "demo": "feedback-flow", "focus": "pending", "caption": "Orange — feedback waiting" },
+        { "voice": "Tap the card, complete the feedback form, and submit. The card turns green.", "demo": "feedback-flow", "focus": "done", "caption": "Green — feedback submitted" }
+      ],
       "demos": [
         { "demo": "feedback-flow", "caption": "Orange (pending) → submit → green (done)." }
       ],
@@ -74,6 +110,7 @@
       "id": "participants",
       "title": "My participants",
       "keywords": ["participants", "clients", "roster", "my participants", "all participants", "clientes", "general info"],
+      "voice_script": "Open My participants from the bottom bar or Quick menu. Tap a name for Feedback, Absence, Incident, or General Info with medical and support notes.",
       "content": "Open My participants from the bottom bar (CLIENTS) or Quick menu.\n\nMy participants — your roster. All participants — search anyone at the club.\n\nTap a name for quick actions: Feedback, Absence, Incident, Cancellation and General Info.\n\nGeneral Info has age, medical notes, triggers, support level and communication preferences — read before community or home sessions.",
       "demos": [
         { "demo": "participants-list", "caption": "My participants shows your roster; All participants is searchable." },
@@ -85,6 +122,7 @@
       "id": "quick-menu",
       "title": "Quick menu",
       "keywords": ["quick menu", "menu", "forms", "hamburger", "menu rapido", "formularios"],
+      "voice_script": "Open Quick menu from your dashboard for all forms — feedback, timesheet, documents, settings and more. Staff help guide is under Settings.",
       "content": "Open Quick menu from your dashboard (☰) for all forms. Tiles hidden for your role won't show.\n\nIncludes: Session feedback, Incident, Cancellation, Expenses, Timesheet, Venue review, Pickup/handover, Update my profile, My Documents, Training, Compliance, Settings (Staff help guide, Alerts, Logout).\n\nTop bar shortcuts when shown: PHOTO, CLIENTS, VENUE, PICKUP, REVIEW (swimming), PLAN, LEAD/STATS (leads only).",
       "demos": [
         { "demo": "quick-menu-tiles", "caption": "Quick menu — Staff help guide is in Settings." }
@@ -95,6 +133,7 @@
       "id": "announcements",
       "title": "Announcements and documents to sign",
       "keywords": ["announcement", "sign", "confirm", "contract", "document", "anuncio", "firmar", "contrato"],
+      "voice_script": "When the logo halo turns red, open the notification centre. Read announcements and tap Sign. Signed PDFs save to My Documents.",
       "content": "Tap the club logo for the notification centre — reminders, announcements and documents.\n\nWhen the office posts an announcement, the halo may turn red. Read and tap Sign/confirm.\n\nSigned items move to Signed announcements log.\n\nEmployment contracts appear for electronic signature; signed PDFs save to My Documents.\n\nFor quick messages with the office use Zoho Cliq — in-portal messaging is not available yet.",
       "demos": [
         { "demo": "announcement-card", "caption": "Red reminder — read, then sign/confirm." },
@@ -106,6 +145,7 @@
       "id": "daily-forms",
       "title": "Venue review, pickup, incident, cancellation",
       "keywords": ["venue review", "pickup", "handover", "drop off", "incident", "cancellation", "recogida", "incidente"],
+      "voice_script": "Venue review is for opening and closing checks. Pickup records drop-off and collection. Use Incident or Cancellation from Quick menu or the participant card when needed.",
       "content": "Venue review (Quick menu or top bar VENUE): opening/closing checks — confirm venue, date, time, report issues yes/no.\n\nPickup/handover (Quick menu or PICKUP): search participant or tap New; complete Drop Off on arrival and Pick Up when collected.\n\nIncident report: Quick menu or participant card — safeguarding/safety; submit ASAP.\n\nCancellation: Quick menu or participant card when a session cannot go ahead.",
       "demos": [
         { "demo": "daily-form", "caption": "Venue review — confirm checks and report issues." },
@@ -117,6 +157,7 @@
       "id": "finance",
       "title": "Timesheet and expenses",
       "keywords": ["timesheet", "expenses", "hours", "pay", "24th", "receipt", "gastos", "nomina", "horas"],
+      "voice_script": "Submit your timesheet by the 24th. Green rows are ready to pay. Orange rows still need feedback on the dashboard first.",
       "content": "Both under Quick menu → Finance.\n\nTimesheet: submit by the 24th of the month for that month's pay. Green rows = feedback complete, ready to pay. Orange rows = feedback pending — complete from dashboard session card. Submitting on the 25th+ may move to next month.\n\nExpenses: Description, Amount (GBP), receipt photo per line; + Add row for multiple items. PDF saves to My Documents on submit.",
       "demos": [
         { "demo": "timesheet-rows", "caption": "Timesheet — green ready to pay, orange waiting on feedback." },
@@ -128,6 +169,7 @@
       "id": "session-disruption",
       "title": "Absence and day off requests",
       "keywords": ["absence", "day off", "time off", "disruption", "planned absence", "same day", "sick", "leave", "ausencia", "dia libre"],
+      "voice_script": "If you cannot work a rota session, submit Session disruption report in Quick menu. Still call or email admin as soon as you can.",
       "content": "If you cannot attend a session on the day, or you need a planned day off from the rota, complete the Session Disruption Report (POL-048).\n\nQuick menu → Session disruption report — same form for same-day absence and planned absence (section 3.3 of the procedure).\n\nFill in the affected date, venue and reason, then submit. Admin receives the report and your day off is recorded for cover.\n\nStill notify admin by phone or email as soon as possible — the form is the follow-up within 24 hours.\n\nClient session cancellations (participant did not attend) use a different form: Cancellation from the participant card.",
       "illustrations": []
     },
@@ -135,6 +177,7 @@
       "id": "documents",
       "title": "My Documents",
       "keywords": ["documents", "payslip", "payslips", "pdf", "my documents", "documentos"],
+      "voice_script": "My Documents holds payslips, signed contracts and expense PDFs. Open it from Quick menu.",
       "content": "Quick menu → My Documents for payslips, signed contracts, signed announcements and expense PDFs.\n\nPayslips appear when published. You may delete Zoho People; keep Zoho Cliq.",
       "demos": [
         { "demo": "document-list", "caption": "My Documents — payslips, signed documents and PDFs." }
@@ -145,6 +188,7 @@
       "id": "alerts-settings",
       "title": "Alerts, location and microphone",
       "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "gps", "alertas"],
+      "voice_script": "In Settings, turn on notifications once per device. Location is only for Bespoke and Day Centre during your shift. Microphone is optional for voice feedback.",
       "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nLocation — only Bespoke Programme and Day Centre staff during rota shift (community support live map for leads/admins; buffer before first and after last session).\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nFor illustrated help topics, open Staff help guide from Quick menu → Settings.",
       "demos": [
         { "demo": "alerts-settings", "caption": "Settings toggles — notifications, location and microphone." }
@@ -155,6 +199,7 @@
       "id": "area-notes",
       "title": "Pool and room icons on session cards",
       "keywords": ["pool", "room", "hub room", "big pool", "lane", "gym", "area", "piscina", "sala"],
+      "voice_script": "The icon on the right of a session card shows the pool or room — Big Pool, Teaching Pool, Hub Room, lanes, Gym and more.",
       "content": "On TODAY session cards, the right column shows a pool or room icon (Big Pool, Small Pool, Hub Room, lanes, Gym, etc.). Venue name appears under the time on the left. In Next session, the icon appears beside the area name.",
       "demos": [
         { "demo": "area-icons", "caption": "Common pool, room and venue icons." }
@@ -165,6 +210,7 @@
       "id": "lead-tools",
       "title": "Lead-only tools",
       "keywords": ["lead", "programme lead", "stats", "lead report", "session overview"],
+      "voice_script": "Programme leads see extra tiles — LEAD report, STATS, and session overview. Contact the office if you should have access but do not.",
       "content": "Programme leads see extra items: LEAD feedback report, STATS (sessions overview), performance/term review tools, Lead session report in Quick menu.\n\nLead session report rolls up who was on shift, how the session ran, and issues for the office.\n\nIf you should have lead access but don't see these, contact the office.",
       "demos": [
         { "demo": "lead-tools", "caption": "Lead-only tiles appear only for lead/admin roles." }
@@ -175,6 +221,7 @@
       "id": "profile-update",
       "title": "Update my profile",
       "keywords": ["profile", "annual", "personal details", "emergency contact", "perfil"],
+      "voice_script": "Update my profile is your annual check-in for personal and emergency details. Open it from Quick menu when prompted.",
       "content": "Quick menu → Update my profile for annual check-in of personal and emergency details. Complete once a year when prompted or any time from Quick menu.",
       "demos": [
         { "demo": "profile-form", "caption": "Annual profile check — confirm each section." }

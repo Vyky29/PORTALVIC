@@ -124,22 +124,16 @@
   }
 
   async function probe(force) {
-    var token = await authToken();
-    if (!token) {
-      if (!force && availability.checked) return availability;
-      availability = { checked: true, elevenlabs: false, voiceId: "" };
-      return availability;
-    }
     if (availability.checked && !force && availability.elevenlabs) {
       return availability;
     }
     try {
+      var headers = { apikey: cfg.getAnonKey() };
+      var token = await authToken();
+      if (token) headers.Authorization = "Bearer " + token;
       var res = await fetch(baseUrl() + "/functions/v1/portal-help-voice-speak", {
         method: "GET",
-        headers: {
-          Authorization: "Bearer " + token,
-          apikey: cfg.getAnonKey(),
-        },
+        headers: headers,
       });
       var j = null;
       try {
@@ -163,17 +157,30 @@
   }
 
   function speakWithBrowser(text) {
-    if (!global.speechSynthesis) return false;
-    var t = String(text || "").trim();
-    if (!t) return false;
-    var utt = new global.SpeechSynthesisUtterance(t);
-    utt.lang = /[áéíóúñ¿¡]/i.test(t) ? "es-ES" : "en-GB";
-    try {
-      global.speechSynthesis.speak(utt);
-      return true;
-    } catch (_e) {
-      return false;
-    }
+    return new Promise(function (resolve) {
+      if (!global.speechSynthesis) {
+        resolve(false);
+        return;
+      }
+      var t = String(text || "").trim();
+      if (!t) {
+        resolve(false);
+        return;
+      }
+      var utt = new global.SpeechSynthesisUtterance(t);
+      utt.lang = /[áéíóúñ¿¡]/i.test(t) ? "es-ES" : "en-GB";
+      utt.onend = function () {
+        resolve(true);
+      };
+      utt.onerror = function () {
+        resolve(false);
+      };
+      try {
+        global.speechSynthesis.speak(utt);
+      } catch (_e) {
+        resolve(false);
+      }
+    });
   }
 
   async function speak(text) {
@@ -184,7 +191,8 @@
 
     var token = await authToken();
     if (!token) {
-      return speakWithBrowser(t) ? { ok: true, source: "browser" } : { ok: false, error: "session_expired" };
+      var spoke = await speakWithBrowser(t);
+      return spoke ? { ok: true, source: "browser" } : { ok: false, error: "session_expired" };
     }
 
     try {
@@ -210,22 +218,47 @@
         audio.muted = false;
         audio.src = src;
         activeAudio = audio;
-        audio.onended = function () {
-          if (activeAudio === audio) activeAudio = null;
-        };
-        try {
-          await audio.play();
-          return { ok: true, source: "elevenlabs" };
-        } catch (_play) {
-          // Autoplay blocked (no gesture yet) — fall back to browser speech.
-        }
+        var played = await new Promise(function (resolvePlay) {
+          audio.onended = function () {
+            if (activeAudio === audio) activeAudio = null;
+            resolvePlay(true);
+          };
+          audio.onerror = function () {
+            resolvePlay(false);
+          };
+          var p = audio.play();
+          if (p && typeof p.then === "function") {
+            p.catch(function () {
+              resolvePlay(false);
+            });
+          }
+        });
+        if (played) return { ok: true, source: "elevenlabs" };
       }
     } catch (_fetch) {}
 
-    if (speakWithBrowser(t)) {
+    var browserOk = await speakWithBrowser(t);
+    if (browserOk) {
       return { ok: true, source: "browser" };
     }
     return { ok: false, error: "speak_failed" };
+  }
+
+  async function speakSequence(lines, onStep) {
+    var list = Array.isArray(lines) ? lines : [];
+    if (!list.length) return { ok: false, error: "missing_text" };
+    for (var i = 0; i < list.length; i++) {
+      var line = String(list[i] || "").trim();
+      if (!line) continue;
+      if (typeof onStep === "function") {
+        try {
+          onStep(i, line);
+        } catch (_s) {}
+      }
+      var res = await speak(line);
+      if (!res || !res.ok) return res || { ok: false, error: "speak_failed" };
+    }
+    return { ok: true };
   }
 
   function extForMime(mime) {
@@ -277,6 +310,7 @@
     probe: probe,
     isAvailable: isAvailable,
     speak: speak,
+    speakSequence: speakSequence,
     stop: stopPlayback,
     unlock: unlockAudio,
     transcribe: transcribe,

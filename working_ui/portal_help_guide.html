@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v5"></script>
+  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v7"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -185,16 +185,93 @@
     .d-icons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .d-iconbox{background:#fff;border:1px solid var(--guide-border);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;color:var(--guide-navy);font-weight:700}
     .d-iconbox b{display:block;font-size:24px;margin-bottom:3px}
+
+    /* Visual guide player (help page only) */
+    .guide-stage{
+      border:1px solid var(--guide-border);border-radius:16px;background:#f8fafc;
+      padding:14px;margin:0 0 10px;min-width:0
+    }
+    .guide-presenter{
+      display:flex;align-items:center;gap:12px;margin:0 0 12px;min-width:0
+    }
+    .guide-presenter-avatar{
+      width:52px;height:52px;border-radius:50%;border:2px solid var(--guide-gold);
+      background:#fff;object-fit:contain;padding:4px;flex:none;
+      box-shadow:0 4px 14px rgba(10,61,98,.12)
+    }
+    .guide-presenter.is-speaking .guide-presenter-avatar{
+      animation:guide-pulse 1.2s ease-in-out infinite
+    }
+    @keyframes guide-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.35)}
+      50%{box-shadow:0 0 0 8px rgba(45,132,179,0)}
+    }
+    .guide-presenter-status{
+      font-size:14px;line-height:1.45;color:var(--guide-text);font-weight:600;
+      min-width:0;overflow-wrap:break-word
+    }
+    .guide-stage-canvas{min-width:0}
+    .guide-stage-canvas .demo{border:none;background:transparent;padding:0;margin:0}
+    .guide-stage-canvas .demo-cap{display:none}
+    .guide-step-caption{
+      margin:10px 0 0;font-size:14px;font-weight:700;color:var(--guide-navy);
+      text-align:center;overflow-wrap:break-word
+    }
+    .guide-demos-static{display:none}
+    .guide-read-more{
+      margin:8px 0 0;border:1px dashed var(--guide-border);border-radius:12px;
+      padding:0 12px;background:#fff
+    }
+    .guide-read-more summary{
+      cursor:pointer;font-size:13px;font-weight:700;color:var(--guide-muted);
+      padding:10px 0;list-style:none
+    }
+    .guide-read-more summary::-webkit-details-marker{display:none}
+    .guide-read-more .guide-read-body{padding:0 0 12px}
+    .guide-read-more p{margin:0;font-size:14px;color:var(--guide-muted)}
+    .guide-section.is-playing .guide-read-more{opacity:.45;pointer-events:none}
+    .guide-focus-ring{
+      outline:3px solid var(--guide-gold);outline-offset:3px;border-radius:10px;
+      box-shadow:0 0 0 4px rgba(244,183,64,.25)
+    }
+    .guide-login-mock{
+      max-width:340px;margin:0 auto;background:#fff;border:1px solid var(--guide-border);
+      border-radius:18px;padding:18px 16px;box-shadow:0 12px 28px rgba(10,61,98,.08)
+    }
+    .guide-login-brand{text-align:center;margin:0 0 14px;font-size:15px;font-weight:800;color:var(--guide-navy)}
+    .guide-login-brand img{width:56px;height:56px;display:block;margin:0 auto 8px}
+    .guide-login-field{
+      border:1px solid var(--guide-border);border-radius:12px;background:#f8fafc;
+      padding:10px 12px;margin:0 0 10px;font-size:13px;color:var(--guide-muted);min-width:0
+    }
+    .guide-login-field strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--guide-navy);margin:0 0 4px}
+    .guide-login-submit{
+      width:100%;border:0;border-radius:12px;padding:12px;font-size:14px;font-weight:800;
+      background:var(--guide-blue);color:#fff;margin-top:4px
+    }
+    .guide-install-steps{display:grid;gap:10px;max-width:380px;margin:0 auto}
+    .guide-install-step{
+      background:#fff;border:1px solid var(--guide-border);border-radius:14px;
+      padding:12px 14px;font-size:14px;line-height:1.45;color:var(--guide-text);min-width:0
+    }
+    .guide-install-step b{display:block;font-size:12px;color:var(--guide-navy);margin:0 0 4px}
+    .play-btn{
+      flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
+      border:0;background:var(--guide-blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer
+    }
+    .play-btn:hover,.play-btn:focus-visible{filter:brightness(1.05);outline:2px solid rgba(45,132,179,.35);outline-offset:1px}
+    .play-btn.is-speaking{background:var(--guide-navy)}
+    .play-btn[disabled]{opacity:.55;cursor:not-allowed}
   </style>
 </head>
 <body class="staff-dashboard">
   <div class="wrap">
     <h1>Staff help guide</h1>
-    <p class="sub" id="guideMeta">Illustrated topics for CS Portal — real session cards and logo halo, same as your dashboard.</p>
+    <p class="sub" id="guideMeta">Visual walkthroughs for CS Portal — tap Play on any topic.</p>
     <div class="banner">
-      <strong>Visual guide.</strong> Session cards and halo use the same styles as the live portal.
-      Open this page any time from Quick menu → Settings → <strong>Staff help guide</strong>.
-      Tap <strong>Listen</strong> on any section to hear it read aloud (no chat — section by section).
+      <strong>How to use this guide.</strong> Tap <strong>Play</strong> on a topic — you will hear a short explanation while the screen shows the matching part of the app.
+      Open from Quick menu → Settings → <strong>Staff help guide</strong>.
+      Sign in to the portal first for the club voice (Eleven Labs).
     </div>
     <p class="voice-banner" id="guideVoiceBanner" hidden></p>
     <ul class="nav" id="guideNav" hidden></ul>
@@ -202,7 +279,7 @@
     <p class="foot">Bookmark this page or open it from Quick menu → Settings → <strong>Staff help guide</strong>.</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-voice"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-v7"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -230,7 +307,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v6";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v7";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -377,11 +454,36 @@
       return (
         liveScopeOpen() +
         '<div class="guide-feedback-flow">' +
+        '<span data-guide-focus="pending">' +
         todayCardHtml("session-card--review-needed", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--pending", "Pending", "Teaching Pool") +
+        "</span>" +
         '<span class="guide-flow-arrow" aria-hidden="true">&rarr;</span>' +
+        '<span data-guide-focus="done">' +
         todayCardHtml("session-card--review-done", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--submitted", "Submitted", "Teaching Pool") +
+        "</span>" +
         "</div>" +
         liveScopeClose()
+      );
+    }
+    if (k === "login-mock") {
+      return (
+        '<div class="guide-login-mock">' +
+        '<div class="guide-login-brand" data-guide-focus="brand">' +
+        '<img src="/portal/F-02-1.png" alt="" width="56" height="56" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+        "clubSENsational Portal</div>" +
+        '<div class="guide-login-field" data-guide-focus="email"><strong>Email</strong>your.name@clubsensational.org</div>' +
+        '<div class="guide-login-field" data-guide-focus="password"><strong>Password</strong>••••••••</div>' +
+        '<button type="button" class="guide-login-submit" data-guide-focus="submit">Sign in</button>' +
+        "</div>"
+      );
+    }
+    if (k === "install-mock") {
+      return (
+        '<div class="guide-install-steps">' +
+        '<div class="guide-install-step" data-guide-focus="iphone"><b>iPhone · Safari</b>Tap Share at the bottom of the browser.</div>' +
+        '<div class="guide-install-step" data-guide-focus="iphone-add"><b>Add to Home Screen</b>Choose Add, then open CS Portal from your home screen.</div>' +
+        '<div class="guide-install-step" data-guide-focus="android"><b>Android · Chrome</b>Tap ⋮ menu → Install app or Add to Home screen.</div>' +
+        "</div>"
       );
     }
 
@@ -515,87 +617,223 @@
   }
 
   function sectionVoiceText(s) {
+    if (s && s.voice_script) return String(s.voice_script).trim();
     var title = String(s && s.title || "").trim();
     var body = String(s && s.content || "").trim();
-    if (s && s.voice_script) return String(s.voice_script).trim();
     return title && body ? title + ". " + body : title || body;
+  }
+
+  function sectionSteps(s) {
+    if (!s || !Array.isArray(s.steps) || !s.steps.length) return [];
+    return s.steps
+      .map(function (st) {
+        return {
+          voice: String(st.voice || "").trim(),
+          demo: String(st.demo || "").trim(),
+          focus: String(st.focus || "").trim(),
+          caption: String(st.caption || "").trim(),
+        };
+      })
+      .filter(function (st) {
+        return st.voice;
+      });
   }
 
   function renderSection(s) {
     var id = String(s.id || "").trim();
     var paras = String(s.content || "").trim();
     var voiceText = sectionVoiceText(s);
+    var hasPlay = !!(voiceText || sectionSteps(s).length);
     return (
-      '<article class="card" id="' + esc(id) + '">' +
+      '<article class="card guide-section" id="' + esc(id) + '" data-section-id="' + esc(id) + '">' +
       '<div class="card-head">' +
       "<h2>" + esc(s.title || id) + "</h2>" +
-      (voiceText
-        ? '<button type="button" class="listen-btn" data-guide-listen="' +
+      (hasPlay
+        ? '<button type="button" class="play-btn" data-guide-play="' +
           esc(id) +
-          '" aria-label="Listen to ' +
+          '" aria-label="Play guide for ' +
           esc(s.title || id) +
-          '">Listen</button>'
+          '">Play</button>'
         : "") +
       "</div>" +
-      "<p>" + esc(paras) + "</p>" +
-      renderDemos(s.demos) +
-      renderIllustrations(s.illustrations) +
+      '<div class="guide-stage" data-guide-stage>' +
+      '<div class="guide-presenter" data-guide-presenter>' +
+      '<img class="guide-presenter-avatar" src="/portal/F-02-1.png" alt="" width="52" height="52" decoding="async" onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'"/>' +
+      '<p class="guide-presenter-status" data-guide-status>Tap Play to walk through this topic.</p>' +
+      "</div>" +
+      '<div class="guide-stage-canvas" data-guide-canvas></div>' +
+      '<p class="guide-step-caption" data-guide-caption hidden></p>' +
+      "</div>" +
+      (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
+      (paras
+        ? '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
+          esc(paras) +
+          "</p></div></details>"
+        : "") +
       "</article>"
     );
   }
 
-  var guideVoiceTexts = {};
+  var guideSectionsById = {};
+  var guidePlayingId = null;
 
-  function setSpeakingBtn(id) {
-    document.querySelectorAll(".listen-btn.is-speaking").forEach(function (b) {
-      b.classList.remove("is-speaking");
-      b.textContent = "Listen";
+  function clearGuideFocus(root) {
+    if (!root) return;
+    root.querySelectorAll(".guide-focus-ring").forEach(function (el) {
+      el.classList.remove("guide-focus-ring");
     });
-    if (!id) return;
-    var btn = document.querySelector('.listen-btn[data-guide-listen="' + id + '"]');
-    if (btn) {
-      btn.classList.add("is-speaking");
-      btn.textContent = "Playing…";
+  }
+
+  function showGuideStep(article, step) {
+    if (!article || !step) return;
+    var canvas = article.querySelector("[data-guide-canvas]");
+    var captionEl = article.querySelector("[data-guide-caption]");
+    var statusEl = article.querySelector("[data-guide-status]");
+    if (!canvas) return;
+    clearGuideFocus(article);
+    var html = buildDemo(step.demo);
+    canvas.innerHTML = html ? '<div class="demo">' + html + "</div>" : "";
+    if (step.caption && captionEl) {
+      captionEl.textContent = step.caption;
+      captionEl.hidden = false;
+    } else if (captionEl) {
+      captionEl.hidden = true;
+    }
+    if (statusEl) statusEl.textContent = step.voice;
+    if (step.focus && canvas) {
+      var target = canvas.querySelector('[data-guide-focus="' + step.focus.replace(/"/g, "") + '"]');
+      if (target) target.classList.add("guide-focus-ring");
     }
   }
 
-  async function playSectionVoice(id) {
-    var text = guideVoiceTexts[id];
-    if (!text || !window.PortalHelpVoiceSpeak) return;
-    if (window.PortalHelpVoiceSpeak.unlock) window.PortalHelpVoiceSpeak.unlock();
-    setSpeakingBtn(id);
-    try {
-      var res = await window.PortalHelpVoiceSpeak.speak(text);
-      if (!res || !res.ok) {
-        var banner = document.getElementById("guideVoiceBanner");
-        if (banner) {
-          banner.hidden = false;
-          banner.textContent =
-            res && res.error === "session_expired"
-              ? "Sign in to the portal to hear the guide with the club voice."
-              : "Could not play audio. Try again or read the section on screen.";
-        }
-      }
-    } finally {
-      setSpeakingBtn(null);
+  function showGuideDefault(article, section) {
+    var steps = sectionSteps(section);
+    var canvas = article.querySelector("[data-guide-canvas]");
+    if (!canvas) return;
+    if (steps.length) {
+      showGuideStep(article, steps[0]);
+      return;
     }
+    var demos = section.demos;
+    if (Array.isArray(demos) && demos.length) {
+      var html = buildDemo(String(demos[0].demo || "").trim());
+      canvas.innerHTML = html ? '<div class="demo">' + html + "</div>" : "";
+    }
+  }
+
+  function setPlayingBtn(id) {
+    document.querySelectorAll(".play-btn.is-speaking").forEach(function (b) {
+      b.classList.remove("is-speaking");
+      b.textContent = "Play";
+    });
+    document.querySelectorAll(".guide-section.is-playing").forEach(function (a) {
+      a.classList.remove("is-playing");
+      var p = a.querySelector("[data-guide-presenter]");
+      if (p) p.classList.remove("is-speaking");
+    });
+    guidePlayingId = id || null;
+    if (!id) return;
+    var btn = document.querySelector('.play-btn[data-guide-play="' + id + '"]');
+    var article = document.getElementById(id);
+    if (btn) {
+      btn.classList.add("is-speaking");
+      btn.textContent = "Stop";
+    }
+    if (article) {
+      article.classList.add("is-playing");
+      var pres = article.querySelector("[data-guide-presenter]");
+      if (pres) pres.classList.add("is-speaking");
+    }
+  }
+
+  async function playSectionGuide(id) {
+    var section = guideSectionsById[id];
+    var article = document.getElementById(id);
+    if (!section || !article || !window.PortalHelpVoiceSpeak) return;
+    if (window.PortalHelpVoiceSpeak.unlock) window.PortalHelpVoiceSpeak.unlock();
+    setPlayingBtn(id);
+    article.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    var steps = sectionSteps(section);
+    var lines = [];
+    var stepMap = [];
+
+    if (steps.length) {
+      steps.forEach(function (st, idx) {
+        lines.push(st.voice);
+        stepMap.push(idx);
+      });
+    } else {
+      var single = sectionVoiceText(section);
+      if (single) {
+        lines.push(single);
+        stepMap.push(-1);
+      }
+    }
+    if (!lines.length) {
+      setPlayingBtn(null);
+      return;
+    }
+
+    var stopped = false;
+    var voiceApi = window.PortalHelpVoiceSpeak;
+    var onStep = function (lineIdx) {
+      if (guidePlayingId !== id) {
+        stopped = true;
+        return;
+      }
+      var stepIdx = stepMap[lineIdx];
+      if (stepIdx >= 0 && steps[stepIdx]) {
+        showGuideStep(article, steps[stepIdx]);
+      } else {
+        showGuideDefault(article, section);
+      }
+    };
+
+    onStep(0);
+    var res;
+    if (voiceApi.speakSequence && lines.length > 1) {
+      res = await voiceApi.speakSequence(lines, function (i) {
+        onStep(i);
+      });
+    } else {
+      onStep(0);
+      res = await voiceApi.speak(lines[0]);
+    }
+
+    if (!stopped && guidePlayingId === id) {
+      var banner = document.getElementById("guideVoiceBanner");
+      if ((!res || !res.ok) && banner) {
+        banner.hidden = false;
+        banner.textContent =
+          res && res.error === "session_expired"
+            ? "Sign in to the portal for the club voice — or allow speech in your browser settings."
+            : "Could not play audio. Tap Play again or read the topic below.";
+      }
+    }
+    setPlayingBtn(null);
+    var statusEl = article.querySelector("[data-guide-status]");
+    if (statusEl) statusEl.textContent = "Tap Play to walk through this topic.";
   }
 
   function bindGuideVoice(root) {
     if (!root) return;
     root.addEventListener("click", function (ev) {
-      var btn = ev.target && ev.target.closest ? ev.target.closest("[data-guide-listen]") : null;
+      var btn = ev.target && ev.target.closest ? ev.target.closest("[data-guide-play]") : null;
       if (!btn) return;
       ev.preventDefault();
-      var id = btn.getAttribute("data-guide-listen");
-      if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
-        if (btn.classList.contains("is-speaking")) {
+      var id = btn.getAttribute("data-guide-play");
+      if (guidePlayingId === id) {
+        if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
           window.PortalHelpVoiceSpeak.stop();
-          setSpeakingBtn(null);
-          return;
         }
+        setPlayingBtn(null);
+        return;
       }
-      void playSectionVoice(id);
+      if (guidePlayingId && window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
+        window.PortalHelpVoiceSpeak.stop();
+      }
+      void playSectionGuide(id);
     });
   }
 
@@ -605,14 +843,21 @@
     try {
       if (window.__portalHelpGuideVoiceReady) await window.__portalHelpGuideVoiceReady;
       var avail = await window.PortalHelpVoiceSpeak.probe(true);
-      if (avail && avail.elevenlabs) {
-        banner.hidden = false;
-        banner.textContent =
-          "Tap Listen on any section — read aloud with the club voice (Eleven Labs). No chat; one section at a time.";
+      var tokenOk = false;
+      try {
+        var box = window.__PORTAL_SUPABASE__;
+        if (box && box.client && box.client.auth) {
+          var sess = await box.client.auth.getSession();
+          tokenOk = !!(sess && sess.data && sess.data.session);
+        }
+      } catch (_t) {}
+      banner.hidden = false;
+      if (avail && avail.elevenlabs && tokenOk) {
+        banner.textContent = "Signed in — Play uses the club voice (Eleven Labs) with on-screen walkthroughs.";
+      } else if (avail && avail.elevenlabs) {
+        banner.textContent = "Sign in to the portal first, then Play uses the club Eleven Labs voice. Otherwise your device voice is used.";
       } else {
-        banner.hidden = false;
-        banner.textContent =
-          "Listen uses your device voice if you are not signed in. Sign in for the club Eleven Labs voice.";
+        banner.textContent = "Play uses your device voice. Sign in when the club voice is enabled.";
       }
     } catch (_) {}
   }
@@ -625,8 +870,7 @@
       var nav = document.getElementById("guideNav");
       var meta = document.getElementById("guideMeta");
       if (meta && data.version) {
-        meta.textContent =
-          "Version " + data.version + ". Illustrated topics with real portal session cards. Tap Listen on each section.";
+        meta.textContent = "Version " + data.version + ". Tap Play on any topic for a voiced walkthrough.";
       }
       if (!sections.length) {
         root.innerHTML = "<p class=\"loading\">Guide is empty. Contact the office.</p>";
@@ -640,10 +884,14 @@
           : "";
       }).join("");
       root.innerHTML = sections.map(renderSection).join("");
-      guideVoiceTexts = {};
+      guideSectionsById = {};
       sections.forEach(function (s) {
-        var id = String(s.id || "").trim();
-        if (id) guideVoiceTexts[id] = sectionVoiceText(s);
+        var sid = String(s.id || "").trim();
+        if (sid) {
+          guideSectionsById[sid] = s;
+          var art = document.getElementById(sid);
+          if (art) showGuideDefault(art, s);
+        }
       });
       bindGuideVoice(root);
       void initGuideVoiceBanner();
