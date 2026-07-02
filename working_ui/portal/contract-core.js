@@ -307,16 +307,139 @@
     'I confirm that I have read, understood and agree to the terms of this employment contract.'
   ].join('\n');
 
+  const PERMANENT_PART_TIME_MASTER_TEMPLATE = [
+    'PERMANENT PART-TIME (TERM-TIME ONLY) EMPLOYMENT CONTRACT', '',
+    'THIS EMPLOYMENT CONTRACT dated {{CONTRACT_DATE}}', '',
+    'BETWEEN:', '',
+    'EMPLOYEE DETAILS:',
+    'Full Name: {{EMPLOYEE_FULL_NAME}}',
+    'Address: {{EMPLOYEE_ADDRESS}}',
+    'Email: {{EMPLOYEE_EMAIL}}', '',
+    'EMPLOYER DETAILS:',
+    COMPANY_LEGAL_NAME,
+    COMPANY_REGISTERED_ADDRESS,
+    'Registered Company No. ' + COMPANY_NUMBER, '',
+    'BACKGROUND:',
+    'The Employer is of the opinion that the Employee has the necessary qualifications, experience and abilities to assist and benefit the Employer in its business.',
+    'The Employer desires to employ the Employee and the Employee has agreed to accept and enter such employment upon the terms and conditions set out in this Agreement.',
+    'IN CONSIDERATION OF the matters described above and of the mutual benefits and obligations set forth in this Agreement, the receipt and sufficiency of which consideration is hereby acknowledged, the parties agree as follows:', '',
+    'PARTICULARS OF EMPLOYMENT',
+    "As required by section 1 of the Employment Rights Act 1996, the particulars of the Employee's employment are set out in this Agreement.", '',
+    'COMMENCEMENT DATE AND TERM',
+    'The Employee will commence employment with the Employer on {{COMMENCEMENT_DATE}} (the "Commencement Date").',
+    "The Employee's schedule of employment will be as follows:",
+    '{{CONTRACT_TYPE}}',
+    'This employment is permanent and will continue until terminated in accordance with this Agreement or by mutual written agreement.', '',
+    'JOB TITLE AND DESCRIPTION',
+    'The initial job title of the Employee will be:',
+    '{{JOB_TITLE}}',
+    'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
+    'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
+    'The Employee will perform all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer.',
+    "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
+    'The Employee delivers structured, autism-informed sessions (PixtoLearn Swimming model; TEACCH/PECS/sensory-informed strategies), attends planning/supervision, and completes session records. Duties may reasonably vary with service needs. Follow all Company policies, including Equipment & Uniform Policy.',
+    "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
+    "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
+    'The Employee warrants that they are legally allowed to work in England.', '',
+    'EMPLOYEE REMUNERATION',
+    'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
+    '{{ANNUAL_SALARY}} per year (inclusive of statutory holiday pay for a part-year worker), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made. Holiday pay is calculated and paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice.',
+    'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work and term-time pattern, provided the Employee remains available for work in accordance with this Agreement.',
+    'This remuneration will be payable once per month while this Agreement is in force.',
+    "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
+    "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time.", '',
+    'PENSION',
+    "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. Where required by law, eligible employees will be automatically enrolled into the Employer's qualifying workplace pension scheme (or a scheme nominated by the Employer). Eligibility is assessed on earnings paid by this Employer only. Further details will be provided separately and are available on request.", '',
+    'PLACE OF WORK',
+    "The Employee's place of work will be at the following locations:",
+    '{{PLACE_OF_WORK}}',
+    'Travel between sites may be required.', '',
+    'TIME OF WORK',
+    'The Employee\'s normal hours of work, excluding breaks ("Normal Hours of Work"), are as follows:',
+    '{{WEEKLY_HOURS}} hours per week (term-time).',
+    '{{NORMAL_HOURS_OF_WORK}}',
+    'The Employer will issue weekly rota details by email. These set out operational scheduling within the Normal Hours of Work and place(s) of work in this Agreement. They do not amend this Agreement unless agreed in writing by both parties.',
+    "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law.",
+    'The employee must deliver 12 hours of sessions during one selected half-term or holiday period (October, February, Easter, or May). These hours are usually scheduled in consecutive morning slots (e.g., 9:00-13:00) across the chosen week.', '',
+    'PROBATION PERIOD',
+    "The Employee's employment will be subject to a probationary period of up to six (6) months commencing from the Commencement Date, or such shorter period as is proportionate to the length of this fixed-term contract.",
+    "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
+    "The Employer reserves the right to extend the probationary period if additional time is needed to assess the Employee's performance, subject to the overall fixed term.", '',
+    'SICKNESS AND DISABILITY',
+    'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than 7:00 am on the day of the absence.',
+    'Subject to compliance with this Agreement and our Sickness Policy, the Employee shall receive sick pay in accordance with our Sickness Policy, which may be amended from time to time. Qualifying days for SSP purposes are Monday to Friday.', '',
+    'HOLIDAY ENTITLEMENT',
+    "The Business' holiday year runs between 1 January and 31 December.",
+    'Statutory entitlement is included within the total pay; ordinarily taken outside term-time.', '',
+    'DISCIPLINARY PROCEDURE',
+    "The Employer's disciplinary procedure, as amended from time to time, applies to the Employee.",
+    'The disciplinary procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.', '',
+    'GRIEVANCE PROCEDURE',
+    "The Employer's grievance procedure, as amended from time to time, applies to the Employee.",
+    'The grievance procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.', '',
+    'CONFIDENTIAL INFORMATION',
+    'The Employee acknowledges that, during employment, they may access confidential information belonging to the Employer.',
+    'The Employee agrees to keep all confidential information strictly confidential and not to disclose, use or share such information except as required for the proper performance of their duties or as authorised by the Employer.',
+    'This obligation will continue after the end of employment.', '',
+    'OWNERSHIP OF CONFIDENTIAL INFORMATION',
+    'All confidential information, documents, materials, systems, resources and work related information remain the property of the Employer.', '',
+    'RETURN OF CONFIDENTIAL INFORMATION',
+    'Upon request, or upon termination of employment, the Employee must return all confidential information, documents, equipment, materials and records belonging to the Employer.', '',
+    'CONTRACT BINDING AUTHORITY',
+    'The Employee does not have authority to enter into contracts or commitments on behalf of the Employer without prior written consent.', '',
+    'TERMINATION OF EMPLOYMENT',
+    "The Employer may terminate the Employee's employment by giving not less than two weeks' written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+    'If the Employee wishes to terminate their employment, they must provide not less than two weeks\' written notice, or such longer period of notice as required by statute.',
+    'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.', '',
+    'GOVERNING LAW',
+    'This Agreement will be construed in accordance with and governed by the laws of England.', '',
+    'GENERAL PROVISIONS',
+    'This Agreement constitutes the entire agreement between the parties.',
+    'Any amendment or modification to this Agreement will only be binding if evidenced in writing and signed by both parties or their authorised representatives.',
+    'This Agreement supersedes any previous employment agreement between the Employer and the Employee.', '',
+    'WRITTEN PARTICULARS (ERA 1996, s.1)',
+    'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+    'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+    'Job Title: {{JOB_TITLE}}',
+    'Start Date: {{COMMENCEMENT_DATE}} (permanent part-time, term-time only)',
+    'Salary: {{ANNUAL_SALARY}} per annum (inclusive of statutory holiday pay for a part-year worker)',
+    'Hours: {{WEEKLY_HOURS}} hours/week (term-time).',
+    'Place of Work: {{PLACE_OF_WORK}}',
+    'Holiday: Statutory entitlement included within total pay; ordinarily taken outside term-time.',
+    'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+    'Probation: Up to six months, or shorter if proportionate to contract length.',
+    'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection.', '',
+    'SIGNATURES',
+    'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract.', '',
+    'EMPLOYEE SIGNATURE',
+    'Name: {{EMPLOYEE_FULL_NAME}}',
+    'Date: {{EMPLOYEE_SIGNATURE_DATE}}',
+    'Signature: {{EMPLOYEE_SIGNATURE}}', '',
+    'DIRECTOR SIGNATURE',
+    'Name: {{DIRECTOR_NAME}}',
+    'Date: {{DIRECTOR_SIGNATURE_DATE}}',
+    'Signature: {{DIRECTOR_SIGNATURE}}', '',
+    'ACKNOWLEDGEMENT',
+    'I confirm that I have read, understood and agree to the terms of this employment contract.'
+  ].join('\n');
+
   let logoDataUrl = '';
 
+  function isTermTimePartTimeKind(kind) {
+    return kind === 'fixed_term' || kind === 'permanent_part_time';
+  }
+
   function normalizeContractKind(kind) {
-    return kind === 'fixed_term' ? 'fixed_term' : 'zero_hours';
+    if (kind === 'fixed_term') return 'fixed_term';
+    if (kind === 'permanent_part_time') return 'permanent_part_time';
+    return 'zero_hours';
   }
 
   function getMasterTemplate(kind) {
-    return normalizeContractKind(kind) === 'fixed_term'
-      ? FIXED_TERM_MASTER_TEMPLATE
-      : ZERO_HOURS_MASTER_TEMPLATE;
+    const k = normalizeContractKind(kind);
+    if (k === 'fixed_term') return FIXED_TERM_MASTER_TEMPLATE;
+    if (k === 'permanent_part_time') return PERMANENT_PART_TIME_MASTER_TEMPLATE;
+    return ZERO_HOURS_MASTER_TEMPLATE;
   }
 
   function formatUKDate(d) {
@@ -347,7 +470,8 @@
   }
 
   function generateReference(employeeName, kind, dateIso) {
-    const prefix = normalizeContractKind(kind) === 'fixed_term' ? 'FT' : 'ZH';
+    const k = normalizeContractKind(kind);
+    const prefix = k === 'fixed_term' ? 'FT' : (k === 'permanent_part_time' ? 'PP' : 'ZH');
     const raw = String(employeeName || '').trim();
     const first = raw.split(/\s+/).filter(Boolean)[0] || 'Staff';
     const namePart = first.replace(/[^a-zA-Z]/g, '');
@@ -481,7 +605,7 @@
       COMMENCEMENT_DATE: formatUKDate(o.commencementDate),
       JOB_TITLE: jobTitle,
       PLACE_OF_WORK: o.placeOfWork || EM,
-      NORMAL_HOURS_OF_WORK: o.normalHoursOfWork || (kind === 'fixed_term' ? EM : 'Variable hours'),
+      NORMAL_HOURS_OF_WORK: o.normalHoursOfWork || (isTermTimePartTimeKind(kind) ? EM : 'Variable hours'),
       DIRECTOR_NAME: o.directorName || EM,
       EMPLOYEE_SIGNATURE_DATE: o.employeeSignatureDate || formatUKDate(today),
       EMPLOYEE_SIGNATURE: employeeSig,
@@ -491,18 +615,26 @@
       SIGNED_TIMESTAMP: o.signedTimestamp || EM
     };
 
-    if (kind === 'fixed_term') {
-      return Object.assign(shared, {
-        CONTRACT_TYPE: 'Fixed Term ' + EM + ' from ' + formatShortUKDate(o.commencementDate) + ' to ' + formatShortUKDate(o.termEndDate),
-        TERM_END_DATE: formatUKDate(o.termEndDate),
+    if (isTermTimePartTimeKind(kind)) {
+      const termTimeData = {
         TERM_START_SHORT: formatShortUKDate(o.commencementDate),
-        TERM_END_SHORT: formatShortUKDate(o.termEndDate),
+        TERM_END_SHORT: kind === 'fixed_term' ? formatShortUKDate(o.termEndDate) : EM,
         ANNUAL_SALARY: formatSalary(o.annualSalary),
         WEEKLY_HOURS: o.weeklyHours != null && o.weeklyHours !== '' ? String(o.weeklyHours) : EM,
         ROLE_SCALE: EM,
         DELIVERY_RATE: EM,
         DELIVERY_REMUNERATION: EM,
         ADMIN_RATE: EM
+      };
+      if (kind === 'fixed_term') {
+        return Object.assign(shared, termTimeData, {
+          CONTRACT_TYPE: 'Fixed Term ' + EM + ' from ' + formatShortUKDate(o.commencementDate) + ' to ' + formatShortUKDate(o.termEndDate),
+          TERM_END_DATE: formatUKDate(o.termEndDate)
+        });
+      }
+      return Object.assign(shared, termTimeData, {
+        CONTRACT_TYPE: 'Permanent Part-Time (Term-Time Only)',
+        TERM_END_DATE: EM
       });
     }
 
@@ -522,9 +654,10 @@
   }
 
   function contractDocTitle(kind) {
-    return normalizeContractKind(kind) === 'fixed_term'
-      ? 'Fixed Term Employment Contract'
-      : 'Zero Hours Employment Contract';
+    const k = normalizeContractKind(kind);
+    if (k === 'fixed_term') return 'Fixed Term Employment Contract';
+    if (k === 'permanent_part_time') return 'Permanent Part-Time (Term-Time Only) Employment Contract';
+    return 'Zero Hours Employment Contract';
   }
 
   function renderContractHtml(filledText, forPdf, sigs, kind) {
@@ -536,7 +669,7 @@
     let body = '';
     let employeeDone = false, directorDone = false;
     blocks.forEach((block) => {
-      if (block.startsWith('ZERO HOURS') || block.startsWith('FIXED TERM')) return;
+      if (block.startsWith('ZERO HOURS') || block.startsWith('FIXED TERM') || block.startsWith('PERMANENT PART-TIME')) return;
       if (block.startsWith('THIS EMPLOYMENT CONTRACT')) {
         body += '<p class="contract-opening">' + block + '</p>';
         return;
@@ -622,7 +755,7 @@
     const kind = normalizeContractKind(templateData && templateData.CONTRACT_KIND);
     const name = (templateData.EMPLOYEE_FULL_NAME || 'Employee').replace(/\s+/g, '_');
     const role = (templateData.JOB_TITLE || 'Role').replace(/\s+/g, '_');
-    const variant = kind === 'fixed_term' ? 'FixedTerm' : (templateData.ROLE_SCALE || 'Scale').replace(/\s+/g, '_');
+    const variant = kind === 'fixed_term' ? 'FixedTerm' : (kind === 'permanent_part_time' ? 'PermanentPartTime' : (templateData.ROLE_SCALE || 'Scale').replace(/\s+/g, '_'));
     const date = templateData._contractDateRaw || new Date().toISOString().slice(0, 10);
     return 'ClubSENsational_Employment_Contract_' + name + '_' + role + '_' + variant + '_' + date + '.pdf';
   }

@@ -490,7 +490,7 @@
     /* Tablet: 640px+ */
     @media (min-width: 640px) {
       .container { padding: 1.5rem 1.75rem 2.5rem; }
-      .contract-types { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .contract-types { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
       .checkbox-group { grid-template-columns: 1fr 1fr; }
       .progress-bar { flex-wrap: wrap; }
       .progress-step { flex: 1 1 calc(33.333% - 0.25rem); min-width: 120px; }
@@ -637,8 +637,13 @@
         <span class="badge badge-active">Active</span>
       </div>
       <div class="type-card" id="typeFixed" data-contract-kind="fixed_term" tabindex="0" aria-pressed="false">
-        <h3>Fixed Term Contract</h3>
+        <h3>Fixed-Term Part-Time</h3>
         <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Fixed-term employment with set end date</p>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="type-card" id="typePermanent" data-contract-kind="permanent_part_time" tabindex="0" aria-pressed="false">
+        <h3>Permanent Part-Time (Term-Time Only)</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Permanent term-time employment</p>
         <span class="badge badge-active">Active</span>
       </div>
     </div>
@@ -699,7 +704,7 @@
               <input type="date" id="commencementDate" name="commencementDate" required>
               <span class="error-msg">Commencement date is required.</span>
             </div>
-            <div class="form-group fixed-term-field hidden" id="fgTermEnd">
+            <div class="form-group fixed-term-field fixed-term-only-field hidden" id="fgTermEnd">
               <label for="termEndDate">Term end date <span aria-hidden="true">*</span></label>
               <input type="date" id="termEndDate" name="termEndDate">
               <span class="error-msg">Term end date is required.</span>

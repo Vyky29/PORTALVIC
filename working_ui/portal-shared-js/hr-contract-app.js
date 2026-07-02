@@ -21,6 +21,20 @@
   let portalLinkVerified = false;
   let selectedPortalLogin = "";
 
+  function isTermTimeKind() {
+    return contractKind === "fixed_term" || contractKind === "permanent_part_time";
+  }
+
+  function isFixedTermOnly() {
+    return contractKind === "fixed_term";
+  }
+
+  function contractKindLabel() {
+    if (contractKind === "fixed_term") return "Fixed-Term Part-Time";
+    if (contractKind === "permanent_part_time") return "Permanent Part-Time (Term-Time Only)";
+    return "Zero hours";
+  }
+
   function contractRefDateIso() {
     const el = $("contractDate");
     return el && el.value ? String(el.value).trim().slice(0, 10) : "";
@@ -36,26 +50,31 @@
   }
 
   function syncContractTypeFields() {
-    const fixed = contractKind === "fixed_term";
-    document.querySelectorAll(".zero-hours-field").forEach((el) => el.classList.toggle("hidden", fixed));
-    document.querySelectorAll(".fixed-term-field").forEach((el) => el.classList.toggle("hidden", !fixed));
+    const termTime = isTermTimeKind();
+    const fixed = isFixedTermOnly();
+    document.querySelectorAll(".zero-hours-field").forEach((el) => el.classList.toggle("hidden", termTime));
+    document.querySelectorAll(".fixed-term-field").forEach((el) => el.classList.toggle("hidden", !termTime));
+    document.querySelectorAll(".fixed-term-only-field").forEach((el) => el.classList.toggle("hidden", !fixed));
     if ($("roleScalesContainer")) {
       syncScaleFromRoles();
     }
-    ["termEndDate", "annualSalary", "weeklyHours"].forEach((id) => {
+    ["annualSalary", "weeklyHours"].forEach((id) => {
       const el = $(id);
-      if (el) el.required = fixed;
+      if (el) el.required = termTime;
     });
+    const termEndEl = $("termEndDate");
+    if (termEndEl) termEndEl.required = fixed;
   }
 
   function selectContractType(kind) {
-    contractKind = kind === "fixed_term" ? "fixed_term" : "zero_hours";
+    contractKind =
+      kind === "fixed_term" || kind === "permanent_part_time" ? kind : "zero_hours";
     document.querySelectorAll("[data-contract-kind]").forEach((card) => {
       const active = card.dataset.contractKind === contractKind;
       card.classList.toggle("active", active);
       card.setAttribute("aria-pressed", active ? "true" : "false");
     });
-    if (contractKind === "fixed_term") {
+    if (isTermTimeKind()) {
       Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
     }
     syncContractTypeFields();
@@ -215,7 +234,7 @@
     if (!container) return;
     syncRoleScaleStoreFromInputs();
     const roles = getSelectedRoles();
-    if (contractKind === "fixed_term" || !roles.length) {
+    if (isTermTimeKind() || !roles.length) {
       container.innerHTML = "";
       container.closest(".form-group")?.classList.add("hidden");
       return;
@@ -354,7 +373,7 @@
       roles: getSelectedRoles(),
       role: formatRoleLabel(getSelectedRoles()),
       roleScales: getRoleScales(),
-      scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
+      scale: isTermTimeKind() ? "" : formatRoleScaleLabel(),
       portalStaffLogin: getPortalStaffLogin(),
       portalAuthEmail: getPortalAuthEmail(),
       places: getPlaces(),
@@ -381,7 +400,7 @@
       roles: getSelectedRoles(),
       role: formatRoleLabel(getSelectedRoles()),
       roleScales: getRoleScales(),
-      scale: contractKind === "fixed_term" ? "" : formatRoleScaleLabel(),
+      scale: isTermTimeKind() ? "" : formatRoleScaleLabel(),
       portalStaffLogin: getPortalStaffLogin(),
       portalAuthEmail: getPortalAuthEmail(),
       placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
@@ -402,7 +421,7 @@
     $("livePreview").innerHTML = C.renderContractHtml(C.fillTemplate(data, kind), false, {
       directorSignatureDataUrl: directorSignatureDataUrl
     }, kind);
-    if (contractKind === "fixed_term") {
+    if (isTermTimeKind()) {
       const salary = $("annualSalary") ? $("annualSalary").value : "";
       const hours = $("weeklyHours") ? $("weeklyHours").value : "";
       const msg = salary
@@ -451,8 +470,10 @@
       const roles = getSelectedRoles();
       $("fgRole").classList.toggle("invalid", !roles.length);
       if (!roles.length) valid = false;
-      if (contractKind === "fixed_term") {
-        show("fgTermEnd", $("termEndDate") && !!$("termEndDate").value);
+      if (isTermTimeKind()) {
+        if (isFixedTermOnly()) {
+          show("fgTermEnd", $("termEndDate") && !!$("termEndDate").value);
+        }
         show("fgAnnualSalary", $("annualSalary") && !!$("annualSalary").value && Number($("annualSalary").value) > 0);
         show("fgWeeklyHours", $("weeklyHours") && !!$("weeklyHours").value && Number($("weeklyHours").value) > 0);
       } else {
@@ -499,10 +520,10 @@
         ")" +
         (login ? " · Portal: " + login : "") +
         " — " +
-        (contractKind === "fixed_term" ? "Fixed term" : "Zero hours") +
+        contractKindLabel() +
         " — " +
         formatRoleLabel(getSelectedRoles()) +
-        (contractKind === "fixed_term" ? "" : " — " + formatRoleScaleLabel());
+        (isTermTimeKind() ? "" : " — " + formatRoleScaleLabel());
       $("sendContractBtn").disabled = !canSendContract();
     }
   }
