@@ -1255,7 +1255,8 @@ function bindLogin() {
         return;
       }
       if (data.session) {
-        await portalEnsureSupabaseSession(supabase, data.session);
+        /* signInWithPassword already stores the session; awaiting setSession can deadlock on GoTrue lock. */
+        void portalEnsureSupabaseSession(supabase, data.session);
       }
       void portalBumpAuthSessionGeneration(supabase).catch(function (bumpErr) {
         console.warn(
@@ -1264,20 +1265,22 @@ function bindLogin() {
         );
       });
       portalPersistLoginRedirectIntent();
-      let url = null;
-      try {
-        url = await portalLoginPromiseTimeout(
-          redirectUrlForUser(supabase, data.user.id, {
-            email,
-            registeredLogin: true,
-          }),
-          15000,
-          "Loading your profile timed out."
-        );
-      } catch (profileErr) {
-        url = portalEmergencyRedirectUrl(email);
-        if (!url) throw profileErr;
-        console.warn("[portal] profile redirect fallback after timeout", profileErr);
+      let url = portalEmergencyRedirectUrl(email);
+      if (!url) {
+        try {
+          url = await portalLoginPromiseTimeout(
+            redirectUrlForUser(supabase, data.user.id, {
+              email,
+              registeredLogin: true,
+            }),
+            12000,
+            "Loading your profile timed out."
+          );
+        } catch (profileErr) {
+          url = portalEmergencyRedirectUrl(email);
+          if (!url) throw profileErr;
+          console.warn("[portal] profile redirect fallback after timeout", profileErr);
+        }
       }
       if (!url) return;
       if (loginBtn) loginBtn.textContent = "Opening…";
