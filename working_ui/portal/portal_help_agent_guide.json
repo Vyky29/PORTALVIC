@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-help-guide-v9",
+  "version": "2026-06-help-guide-v10",
   "description": "Staff help guide — visual demos + step-by-step voice (Eleven Labs when signed in).",
   "sections": [
     {
@@ -18,14 +18,14 @@
       "content": "The portal is designed for your phone — before, during and after sessions.\n\nFirst steps: log in with the link provided; install CS Portal on your home screen; turn on Notifications/Alerts in Quick menu → Settings.\n\nDaily use: check the dashboard before sessions; tap orange session cards for feedback; tap the logo if the halo shows notifications; use My participants for client info; use Quick menu for forms, finance, documents and settings.\n\nYou only need two company apps going forward: CS Portal (operations) and Zoho Cliq (team messaging). You may delete Zoho People — payslips are in My Documents.",
       "steps": [
         {
-          "voice": "CS Portal runs on your phone — before, during and after sessions.",
-          "demo": "quick-menu-tiles",
-          "caption": "Quick menu — your daily tools"
-        },
-        {
           "voice": "Each day, open Today on your dashboard. Orange cards mean feedback is still waiting.",
           "demo": "session-cards",
           "caption": "Today — tap orange cards for feedback"
+        },
+        {
+          "voice": "CS Portal runs on your phone — before, during and after sessions. Daily tools live in Quick menu.",
+          "demo": "quick-menu-tiles",
+          "caption": "Quick menu — your daily tools"
         }
       ],
       "demos": [
