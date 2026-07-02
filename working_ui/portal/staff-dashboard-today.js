@@ -4017,6 +4017,12 @@
             return;
           }
           if(existing[id]) return;
+          if(
+            typeof portalStaffAnnouncementRowRequiresSignature === 'function' &&
+            !portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
+          ){
+            return;
+          }
           if(String(row.on_ack_action || '').trim() === 'annual_profile'){
             if(
               typeof portalAnnualProfileCampaignComplete === 'function' &&
@@ -4304,6 +4310,7 @@
       const remAck = portalReminderAckMapLoad();
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
+        if(n && n.requiresSignature === false) return;
         if(
           typeof portalSignableItemIsCalendar202627 === 'function' &&
           portalSignableItemIsCalendar202627(n)

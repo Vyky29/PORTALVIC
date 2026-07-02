@@ -48,6 +48,59 @@
   }
 
   /**
+   * Whether this viewer must sign the announcement (matches portal_staff_announcement_acks INSERT RLS).
+   * Leadership mirror can see team-targeted rows for awareness but must not enter the sign lock.
+   * @param {object} row portal_staff_announcements row
+   * @param {{authUserId?:string,userId?:string,appRole?:string,staffRole?:string}} ctx
+   */
+  global.portalStaffAnnouncementRowRequiresSignature = function portalStaffAnnouncementRowRequiresSignature(
+    row,
+    ctx
+  ) {
+    ctx = ctx || {};
+    if (!row || !row.id) return false;
+
+    var uid = String(ctx.authUserId || ctx.userId || "").trim();
+    var appRole = String(ctx.appRole || "")
+      .trim()
+      .toLowerCase();
+    var staffRole = String(ctx.staffRole || "").trim();
+
+    var audience = String(row.audience_scope || "all_staff").trim();
+    var delivery = String(row.delivery_scope || "everyone").trim();
+    var targetUser = String(row.target_user_id || "").trim();
+    var targetRole = String(row.target_staff_role || "").trim();
+    var targetRoleBlank = !targetRole;
+
+    if (delivery === "single_user") {
+      return !!uid && targetUser === uid;
+    }
+
+    if (
+      delivery === "everyone" &&
+      audience === "all_staff" &&
+      !targetUser &&
+      targetRoleBlank
+    ) {
+      return !!uid;
+    }
+
+    if (delivery === "everyone" && audience === "leads") {
+      return appRole === "lead" || appRole === "ceo" || appRole === "admin";
+    }
+
+    if (
+      delivery === "staff_role" &&
+      audience === "all_staff" &&
+      targetRole
+    ) {
+      return !!uid && staffRole === targetRole;
+    }
+
+    return false;
+  };
+
+  /**
    * Worker inbox visibility on staff/lead dashboards (ignores admin/ceo SELECT bypass in RLS).
    * @param {object} row portal_staff_announcements row
    * @param {{authUserId?:string,userId?:string,appRole?:string,staffRole?:string}} ctx
