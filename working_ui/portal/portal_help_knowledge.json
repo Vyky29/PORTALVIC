@@ -1,5 +1,5 @@
 {
-  "version": "2026-06",
+  "version": "2026-06-30",
   "topics": [
     {
       "id": "login",
@@ -59,7 +59,7 @@
       "id": "quick-menu",
       "title": "Quick menu",
       "keywords": ["quick menu", "menu", "forms", "hamburger", "menu rapido", "formularios"],
-      "answer": "Open Quick menu from your dashboard (☰) for all forms: feedback, incident, cancellation, timesheet, expenses, venue review, pickup, documents, training and settings.\n\nTiles you do not need are hidden for your role."
+      "answer": "Open Quick menu from your dashboard (☰) for all forms: feedback, incident, session disruption report (your absence or day off), timesheet, expenses, venue review, pickup, documents, training and settings.\n\nTiles you do not need are hidden for your role."
     },
     {
       "id": "announcements",
@@ -117,9 +117,15 @@
     },
     {
       "id": "cancellation",
-      "title": "Cancellation",
-      "keywords": ["cancellation", "cancel", "session cancelled", "cancelacion", "cancelar"],
-      "answer": "Quick menu → Cancellation when a session cannot go ahead.\n\nYou can also start from a participant card if you already know which child it affects."
+      "title": "Cancellation (participant session)",
+      "keywords": ["cancellation", "cancel", "session cancelled", "cancelacion", "cancelar", "participant cancelled"],
+      "answer": "Cancellation is only when a participant's session did not go ahead — open it from the participant card (not Quick menu).\n\nIf you cannot work your shift, arrive late, or need a day off from the rota, use Quick menu → Session disruption report (POL-048) instead."
+    },
+    {
+      "id": "session-disruption",
+      "title": "Session disruption report (staff absence / day off)",
+      "keywords": ["disruption", "day off", "absence", "late", "late arrival", "planned absence", "sick", "cannot attend", "dia libre", "falta", "retraso", "POL-048"],
+      "answer": "Quick menu → Session disruption report.\n\nUse this when you cannot attend a rota session (same day or planned), or to follow up after a late arrival — POL-048.\n\nStill call or email admin as soon as possible; submit the form within 24 hours.\n\nParticipant session cancellations use a different form on the client card."
     },
     {
       "id": "alerts-settings",
@@ -191,7 +197,7 @@
       "id": "day-off-next",
       "title": "Next session on a day off",
       "keywords": ["day off", "off day", "no sessions today", "next session", "participants tomorrow", "dia libre", "sin sesiones"],
-      "answer": "When you have no sessions today, the dashboard shows Next session with upcoming slots.\n\nOn a full day off you may also see participant circles for who is on your roster that day — tap a name for quick actions.\n\nUse Week or Term for the full picture."
+      "answer": "When you have no sessions today, the dashboard shows Next session with upcoming slots.\n\nTo request a day off or report that you cannot work a rota session, use Quick menu → Session disruption report (POL-048) — not Cancellation on a client card.\n\nUse Week or Term for the full picture."
     },
     {
       "id": "schedule-change",

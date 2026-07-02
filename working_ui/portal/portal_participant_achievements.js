@@ -78,7 +78,7 @@
     participant: null,
     photos: [],
     stream: null,
-    captureMode: "gallery",
+    captureMode: "hub",
     cameraMode: "photo",
     viewerIndex: -1,
     facingMode: "environment",
@@ -862,9 +862,11 @@
       setStatus("Saving…");
       void uploadGalleryFile(file)
         .then(function () {
+          return loadGalleryPhotos();
+        })
+        .then(function () {
           setStatus("Photo saved.");
-          setCaptureMode("gallery");
-          void refreshGallery();
+          syncGalleryUiAfterPhotosChanged();
         })
         .catch(function (e) {
           setStatus(esc(uploadErrorMessage(e)), true);
@@ -993,8 +995,8 @@
     } else {
       setStatus(esc(uploadErrorMessage(lastErr)), true);
     }
-    setCaptureMode("gallery");
-    await refreshGallery();
+    await loadGalleryPhotos();
+    syncGalleryUiAfterPhotosChanged();
   }
 
   function openNativePhotoPicker() {
@@ -1039,37 +1041,67 @@
     }
   }
 
+  function encodeCanvasToJpeg(canvas) {
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(
+        function (out) {
+          if (!out) {
+            reject(new Error("encode_failed"));
+            return;
+          }
+          resolve({ blob: out, width: canvas.width, height: canvas.height });
+        },
+        "image/jpeg",
+        JPEG_QUALITY
+      );
+    });
+  }
+
+  function drawSourceToJpegCanvas(source, srcW, srcH) {
+    var w = Number(srcW) || 0;
+    var h = Number(srcH) || 0;
+    if (!(w > 0 && h > 0)) throw new Error("image_load_failed");
+    var scale = 1;
+    if (Math.max(w, h) > MAX_EDGE_PX) scale = MAX_EDGE_PX / Math.max(w, h);
+    var cw = Math.max(1, Math.round(w * scale));
+    var ch = Math.max(1, Math.round(h * scale));
+    var canvas = document.createElement("canvas");
+    canvas.width = cw;
+    canvas.height = ch;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(source, 0, 0, cw, ch);
+    return encodeCanvasToJpeg(canvas);
+  }
+
   function resizeBlobToJpeg(blob) {
+    if (typeof createImageBitmap === "function") {
+      return createImageBitmap(blob)
+        .then(function (bitmap) {
+          return drawSourceToJpegCanvas(bitmap, bitmap.width, bitmap.height).finally(function () {
+            try {
+              bitmap.close();
+            } catch (_close) {}
+          });
+        })
+        .catch(function () {
+          return resizeBlobToJpegViaImage(blob);
+        });
+    }
+    return resizeBlobToJpegViaImage(blob);
+  }
+
+  function resizeBlobToJpegViaImage(blob) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
       var url = URL.createObjectURL(blob);
       img.onload = function () {
         try {
-          var w = img.naturalWidth || img.width;
-          var h = img.naturalHeight || img.height;
-          var scale = 1;
-          if (Math.max(w, h) > MAX_EDGE_PX) {
-            scale = MAX_EDGE_PX / Math.max(w, h);
-          }
-          var cw = Math.max(1, Math.round(w * scale));
-          var ch = Math.max(1, Math.round(h * scale));
-          var canvas = document.createElement("canvas");
-          canvas.width = cw;
-          canvas.height = ch;
-          var ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, cw, ch);
-          canvas.toBlob(
-            function (out) {
+          drawSourceToJpegCanvas(img, img.naturalWidth || img.width, img.naturalHeight || img.height)
+            .then(resolve)
+            .catch(reject)
+            .finally(function () {
               URL.revokeObjectURL(url);
-              if (!out) {
-                reject(new Error("encode_failed"));
-                return;
-              }
-              resolve({ blob: out, width: cw, height: ch });
-            },
-            "image/jpeg",
-            JPEG_QUALITY
-          );
+            });
         } catch (err) {
           URL.revokeObjectURL(url);
           reject(err);
@@ -1276,6 +1308,7 @@
       setStatus("Saving…");
       await uploadPhotoBlob(blob);
       setStatus("Photo saved.");
+      syncGalleryUiAfterPhotosChanged();
       revokeFooterThumbObjectUrl();
       void updateFooterGalleryThumb();
       showCameraLiveUi();
@@ -1339,22 +1372,25 @@
       staffName = String((prof.data && (prof.data.full_name || prof.data.username)) || "").trim();
     } catch (_e) {}
 
-    var ins = await client.from("portal_participant_achievement_photos").insert([
-      {
-        staff_user_id: user.id,
-        staff_display_name: staffName,
-        client_id: cid,
-        client_name: String(p.clientName || "").trim() || cid,
-        session_date: day,
-        portal_session_key: p.portalSessionKey || null,
-        storage_path: path,
-        status: "draft",
-        media_type: "photo",
-        width: encoded.width,
-        height: encoded.height,
-        byte_size: encoded.blob.size,
-      },
-    ]);
+    var ins = await client
+      .from("portal_participant_achievement_photos")
+      .insert([
+        {
+          staff_user_id: user.id,
+          staff_display_name: staffName,
+          client_id: cid,
+          client_name: String(p.clientName || "").trim() || cid,
+          session_date: day,
+          portal_session_key: p.portalSessionKey || null,
+          storage_path: path,
+          status: "draft",
+          media_type: "photo",
+          width: encoded.width,
+          height: encoded.height,
+          byte_size: encoded.blob.size,
+        },
+      ])
+      .select(DRAFT_PHOTO_SELECT);
     if (ins.error) {
       try {
         await client.storage.from(BUCKET).remove([path]);
@@ -1362,8 +1398,9 @@
       throw ins.error;
     }
 
+    if (ins.data && ins.data[0]) mergeUploadedPhotoRow(ins.data[0]);
+    else await loadGalleryPhotos();
     setStatus("");
-    await refreshGallery();
   }
 
   async function uploadVideoBlob(blob, mime, durationMs, videoEl) {
@@ -1409,23 +1446,26 @@
     var vw = videoEl && videoEl.videoWidth ? videoEl.videoWidth : null;
     var vh = videoEl && videoEl.videoHeight ? videoEl.videoHeight : null;
 
-    var ins = await client.from("portal_participant_achievement_photos").insert([
-      {
-        staff_user_id: user.id,
-        staff_display_name: staffName,
-        client_id: cid,
-        client_name: String(p.clientName || "").trim() || cid,
-        session_date: day,
-        portal_session_key: p.portalSessionKey || null,
-        storage_path: path,
-        status: "draft",
-        media_type: "video",
-        duration_ms: Math.max(0, Math.round(Number(durationMs || 0))),
-        width: vw,
-        height: vh,
-        byte_size: blob.size,
-      },
-    ]);
+    var ins = await client
+      .from("portal_participant_achievement_photos")
+      .insert([
+        {
+          staff_user_id: user.id,
+          staff_display_name: staffName,
+          client_id: cid,
+          client_name: String(p.clientName || "").trim() || cid,
+          session_date: day,
+          portal_session_key: p.portalSessionKey || null,
+          storage_path: path,
+          status: "draft",
+          media_type: "video",
+          duration_ms: Math.max(0, Math.round(Number(durationMs || 0))),
+          width: vw,
+          height: vh,
+          byte_size: blob.size,
+        },
+      ])
+      .select(DRAFT_PHOTO_SELECT);
     if (ins.error) {
       try {
         await client.storage.from(BUCKET).remove([path]);
@@ -1433,8 +1473,9 @@
       throw ins.error;
     }
 
+    if (ins.data && ins.data[0]) mergeUploadedPhotoRow(ins.data[0]);
+    else await loadGalleryPhotos();
     setStatus("");
-    await refreshGallery();
   }
 
   async function signedUrlFor(path) {
@@ -1572,15 +1613,24 @@
     return res.data || [];
   }
 
-  async function refreshGallery() {
+  function mergeUploadedPhotoRow(row) {
+    if (!row || !row.id) return;
+    var exists = state.photos.some(function (p) {
+      return p.id === row.id;
+    });
+    if (!exists) state.photos.push(row);
+    state.photos.sort(function (a, b) {
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    });
+  }
+
+  async function loadGalleryPhotos() {
     if (!state.participant) {
       state.photos = [];
-      renderGallery();
       return;
     }
     try {
       state.photos = await fetchDraftPhotosForParticipant(state.participant, londonTodayIso());
-      setStatus("");
     } catch (e) {
       console.error(e);
       state.photos = [];
@@ -1590,7 +1640,26 @@
         setStatus(esc(e.message || "Could not load photos"), true);
       }
     }
-    renderGallery();
+  }
+
+  function syncGalleryUiAfterPhotosChanged() {
+    showStep(state.participant ? "capture" : "pick");
+    if (state.captureMode === "gallery") {
+      renderGallery();
+    } else {
+      var host = document.getElementById("portalAchievementsGallery");
+      if (host) host.innerHTML = "";
+    }
+    if (isAchievementCameraOpen()) void updateFooterGalleryThumb();
+    syncAchievementScreenshotGuard();
+  }
+
+  async function refreshGallery() {
+    await loadGalleryPhotos();
+    if (state.captureMode === "gallery") {
+      setStatus("");
+    }
+    syncGalleryUiAfterPhotosChanged();
   }
 
   function formatWorkingDayLabel() {
@@ -1721,7 +1790,7 @@
     closeCameraFullscreen();
     showStep("capture");
     setCaptureMode("hub");
-    void refreshGallery();
+    void loadGalleryPhotos().then(syncGalleryUiAfterPhotosChanged);
   }
 
   /** Topbar photo tool: lead inbox hub (upload or camera), or auto-start when one Today participant. */
@@ -1750,6 +1819,10 @@
       closeCameraFullscreen();
     }
     if (galPanel) galPanel.hidden = !isGallery;
+    if (!isGallery) {
+      var host = document.getElementById("portalAchievementsGallery");
+      if (host) host.innerHTML = "";
+    }
     if (camBtn) camBtn.classList.toggle("is-active", isCamera);
     if (galBtn) galBtn.classList.toggle("is-active", isGallery);
   }
@@ -2188,6 +2261,10 @@
     var galBtn = document.getElementById("portalAchievementsShowGallery");
     if (galBtn) {
       galBtn.addEventListener("click", function () {
+        if (state.captureMode === "gallery") {
+          setCaptureMode("hub");
+          return;
+        }
         setCaptureMode("gallery");
         void refreshGallery();
       });
@@ -2277,7 +2354,7 @@
       "</span>" +
       '<span class="portal-achievements-icon-btn__label">Saved today</span></button>' +
       "</div>" +
-      '<div id="portalAchievementsGalleryPanel">' +
+      '<div id="portalAchievementsGalleryPanel" hidden>' +
       '<div id="portalAchievementsGallery" class="portal-achievements-gallery portal-achievement-protected"></div>' +
       "</div></div></div>" +
       '<div id="portalAchievementsGalleryViewer" class="portal-achievements-viewer" hidden aria-hidden="true">' +

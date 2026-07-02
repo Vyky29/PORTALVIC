@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v7"></script>
+  <script src="/portal-static-bootstrap.js?v=20260630-help-guide-v8"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -262,6 +262,13 @@
     .play-btn:hover,.play-btn:focus-visible{filter:brightness(1.05);outline:2px solid rgba(45,132,179,.35);outline-offset:1px}
     .play-btn.is-speaking{background:var(--guide-navy)}
     .play-btn[disabled]{opacity:.55;cursor:not-allowed}
+    .guide-audio-fallback{
+      margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--guide-border);
+      background:#fff;font-size:13px;line-height:1.45;color:var(--guide-muted);min-width:0
+    }
+    .guide-audio-fallback[hidden]{display:none !important}
+    .guide-audio-fallback audio{width:100%;margin-top:8px}
+    .guide-audio-fallback strong{color:var(--guide-navy)}
   </style>
 </head>
 <body class="staff-dashboard">
@@ -279,7 +286,7 @@
     <p class="foot">Bookmark this page or open it from Quick menu → Settings → <strong>Staff help guide</strong>.</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-v7"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260630-help-guide-v8"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -307,7 +314,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v7";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260630-help-guide-v8";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -632,6 +639,7 @@
           demo: String(st.demo || "").trim(),
           focus: String(st.focus || "").trim(),
           caption: String(st.caption || "").trim(),
+          audio: String(st.audio || "").trim(),
         };
       })
       .filter(function (st) {
@@ -663,6 +671,10 @@
       "</div>" +
       '<div class="guide-stage-canvas" data-guide-canvas></div>' +
       '<p class="guide-step-caption" data-guide-caption hidden></p>' +
+      '<div class="guide-audio-fallback" data-guide-audio-fallback hidden>' +
+      "<strong>No sound?</strong> Tap play on the speaker below (iPhone sometimes blocks auto-play)." +
+      '<audio controls playsinline preload="auto" data-guide-audio-el></audio>' +
+      "</div>" +
       "</div>" +
       (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
       (paras
@@ -704,6 +716,31 @@
       var target = canvas.querySelector('[data-guide-focus="' + step.focus.replace(/"/g, "") + '"]');
       if (target) target.classList.add("guide-focus-ring");
     }
+  }
+
+  function hideAudioFallback(article) {
+    if (!article) return;
+    var box = article.querySelector("[data-guide-audio-fallback]");
+    var el = article.querySelector("[data-guide-audio-el]");
+    if (box) box.hidden = true;
+    if (el) {
+      try {
+        el.pause();
+        el.removeAttribute("src");
+      } catch (_h) {}
+    }
+  }
+
+  function showAudioFallback(article, src) {
+    if (!article || !src) return;
+    var box = article.querySelector("[data-guide-audio-fallback]");
+    var el = article.querySelector("[data-guide-audio-el]");
+    if (!box || !el) return;
+    box.hidden = false;
+    el.src = src;
+    try {
+      el.load();
+    } catch (_l) {}
   }
 
   function showGuideDefault(article, section) {
@@ -750,24 +787,27 @@
     var section = guideSectionsById[id];
     var article = document.getElementById(id);
     if (!section || !article || !window.PortalHelpVoiceSpeak) return;
-    if (window.PortalHelpVoiceSpeak.unlock) window.PortalHelpVoiceSpeak.unlock();
+    hideAudioFallback(article);
     setPlayingBtn(id);
     article.scrollIntoView({ behavior: "smooth", block: "start" });
 
     var steps = sectionSteps(section);
     var lines = [];
     var stepMap = [];
+    var stepOpts = [];
 
     if (steps.length) {
       steps.forEach(function (st, idx) {
         lines.push(st.voice);
         stepMap.push(idx);
+        stepOpts.push(st.audio ? { staticUrl: st.audio } : {});
       });
     } else {
       var single = sectionVoiceText(section);
       if (single) {
         lines.push(single);
         stepMap.push(-1);
+        stepOpts.push(section.audio ? { staticUrl: section.audio } : {});
       }
     }
     if (!lines.length) {
@@ -777,6 +817,7 @@
 
     var stopped = false;
     var voiceApi = window.PortalHelpVoiceSpeak;
+    var statusEl = article.querySelector("[data-guide-status]");
     var onStep = function (lineIdx) {
       if (guidePlayingId !== id) {
         stopped = true;
@@ -788,31 +829,37 @@
       } else {
         showGuideDefault(article, section);
       }
+      if (statusEl) {
+        statusEl.textContent = lines[lineIdx] || "Playing…";
+      }
     };
 
     onStep(0);
+    if (statusEl) statusEl.textContent = "Loading voice…";
+
     var res;
-    if (voiceApi.speakSequence && lines.length > 1) {
+    if (voiceApi.speakSequence) {
       res = await voiceApi.speakSequence(lines, function (i) {
         onStep(i);
-      });
+      }, stepOpts);
     } else {
-      onStep(0);
-      res = await voiceApi.speak(lines[0]);
+      res = await voiceApi.speak(lines[0], stepOpts[0] || {});
     }
 
     if (!stopped && guidePlayingId === id) {
       var banner = document.getElementById("guideVoiceBanner");
-      if ((!res || !res.ok) && banner) {
-        banner.hidden = false;
-        banner.textContent =
-          res && res.error === "session_expired"
-            ? "Sign in to the portal for the club voice — or allow speech in your browser settings."
-            : "Could not play audio. Tap Play again or read the topic below.";
+      if (!res || !res.ok) {
+        if (res && res.audioUrl) showAudioFallback(article, res.audioUrl);
+        if (banner) {
+          banner.hidden = false;
+          banner.textContent =
+            res && res.error === "session_expired"
+              ? "Sign in to the portal for the club voice — or use the speaker below / read the topic."
+              : "Could not auto-play audio on this device. Use the speaker below, tap Play again, or read the topic.";
+        }
       }
     }
     setPlayingBtn(null);
-    var statusEl = article.querySelector("[data-guide-status]");
     if (statusEl) statusEl.textContent = "Tap Play to walk through this topic.";
   }
 
@@ -823,11 +870,16 @@
       if (!btn) return;
       ev.preventDefault();
       var id = btn.getAttribute("data-guide-play");
+      if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.unlock) {
+        window.PortalHelpVoiceSpeak.unlock();
+      }
       if (guidePlayingId === id) {
         if (window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
           window.PortalHelpVoiceSpeak.stop();
         }
         setPlayingBtn(null);
+        var stopArt = document.getElementById(id);
+        if (stopArt) hideAudioFallback(stopArt);
         return;
       }
       if (guidePlayingId && window.PortalHelpVoiceSpeak && window.PortalHelpVoiceSpeak.stop) {
@@ -853,9 +905,11 @@
       } catch (_t) {}
       banner.hidden = false;
       if (avail && avail.elevenlabs && tokenOk) {
-        banner.textContent = "Signed in — Play uses the club voice (Eleven Labs) with on-screen walkthroughs.";
+        banner.textContent =
+          "Signed in — Play uses the club voice with on-screen walkthroughs. On iPhone, turn off silent mode and allow sound if you hear nothing.";
       } else if (avail && avail.elevenlabs) {
-        banner.textContent = "Sign in to the portal first, then Play uses the club Eleven Labs voice. Otherwise your device voice is used.";
+        banner.textContent =
+          "Sign in to the portal first for the club voice. On iPhone, check silent mode and volume if Play shows no sound.";
       } else {
         banner.textContent = "Play uses your device voice. Sign in when the club voice is enabled.";
       }
