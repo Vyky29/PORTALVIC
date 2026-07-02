@@ -1981,7 +1981,16 @@
               nameFromReplace = portalOverrideReplacementClientName(ov.payload);
             }
           }
-          const c = clientNotesById[effClientId] || (nameFromReplace ? { name: nameFromReplace, generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' } : null);
+          const c = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(effClientId) : null)
+            || clientNotesById[effClientId]
+            || (nameFromReplace || effClientId ? {
+              name: nameFromReplace || effClientId,
+              generalLead: '',
+              specialty: '',
+              specialtyClimbing: '',
+              specialtyFitness: '',
+              generalInfoSheet: ''
+            } : null);
           if(!c) return null;
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
           const anchorNotesForMakeup = hasReplaceOv

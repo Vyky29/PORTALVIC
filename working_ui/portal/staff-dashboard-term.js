@@ -16,8 +16,10 @@
         }else if(exemptEarly.cancelled){
           out.cancelled = true;
         }else if(exemptEarly.feedbackDone){
-          const makeupPending = typeof portalOpenSlotMakeupOverrideForSession === 'function'
-            && portalOpenSlotMakeupOverrideForSession(s, sessionDateIso);
+          const makeupPending = (typeof portalReplaceMakeupOverrideForSession === 'function'
+            && portalReplaceMakeupOverrideForSession(s, sessionDateIso))
+            || (typeof portalOpenSlotMakeupOverrideForSession === 'function'
+            && portalOpenSlotMakeupOverrideForSession(s, sessionDateIso));
           if(!makeupPending){
             out.feedbackDone = true;
           }

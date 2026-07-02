@@ -1516,7 +1516,7 @@
     }
     function portalScheduleOverrideAnchorTimesMatchSession(r, s, overrideType){
       const ot = overrideType ? String(overrideType || '').trim() : String(r && r.override_type || '').trim();
-      if(ot === 'client_absence_announced'){
+      if(ot === 'client_absence_announced' || ot === 'client_replace_in_slot'){
         if(portalTimeAnchorsMatch(r.anchor_start, s.start) && portalTimeAnchorsMatch(r.anchor_end, s.end)) return true;
         if(portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)) return true;
         return portalOverrideSlotLabelMatchesRow(r, s);

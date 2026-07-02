@@ -4269,7 +4269,7 @@
     var absentMap = this._absentFbByDateClient || {};
     var dk = slot.session_date + "|" + cid;
     var afb = absentMap[dk] || absentMap[dk + "|" + serviceKey(clean(slot.service))];
-    if (afb) return true;
+    if (afb && absentFeedbackFitsSlot(afb, slot)) return true;
     if (this.findAbsentFeedbackForSlot(slot)) return true;
     var slotAliases = feedbackAliasKeysForSlot(slot);
     for (var sa = 0; sa < slotAliases.length; sa++) {

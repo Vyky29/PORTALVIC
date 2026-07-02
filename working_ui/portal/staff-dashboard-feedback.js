@@ -844,6 +844,27 @@
       const p = String(key || '').trim().split('|')[0] || '';
       return /^\d{4}-\d{2}-\d{2}$/.test(p) ? p : '';
     }
+    function portalReviewKeyTimeTokenFromSessionKey(key){
+      const parts = String(key || '').trim().split('|').map(function(p){
+        return String(p || '').trim();
+      });
+      for(let i = 0; i < parts.length; i++){
+        const p = parts[i];
+        if(/^\d{1,2}:\d{2}$/.test(p)){
+          const m = p.match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) continue;
+          return String(parseInt(m[1], 10)).padStart(2, '0') + ':' + m[2];
+        }
+      }
+      return '';
+    }
+    function portalReviewStoredAbsentKeyIsSharedDayUnit(storedKey){
+      const s = String(storedKey || '').trim();
+      if(!s) return false;
+      if(/\|\|/.test(s)) return true;
+      const low = s.toLowerCase();
+      return low.indexOf('|day_centre') >= 0 || low.indexOf('|bespoke_shared') >= 0;
+    }
     function portalReviewKeyParticipantSlugFromSessionKey(key){
       const parts = String(key || '').trim().split('|').map(function(p){
         return String(p || '').trim().toLowerCase();
@@ -873,7 +894,13 @@
         : null;
       if(matcher){
         try{
-          if(matcher(s, t)) return true;
+          if(matcher(s, t)){
+            const stTimeM = portalReviewKeyTimeTokenFromSessionKey(s);
+            const ttTimeM = portalReviewKeyTimeTokenFromSessionKey(t);
+            if(stTimeM && ttTimeM) return stTimeM === ttTimeM;
+            if(!stTimeM && ttTimeM) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
+            return true;
+          }
         }catch(_m){}
       }
       const sd = portalReviewKeyDateIsoFromSessionKey(s);
@@ -882,16 +909,23 @@
       const ss = portalReviewKeyParticipantSlugFromSessionKey(s);
       const ts = portalReviewKeyParticipantSlugFromSessionKey(t);
       if(!ss || !ts) return false;
-      if(ss === ts) return true;
-      const slugEq = typeof window.__PORTAL_CLIENT_SLUG_EQUIV__ === 'function'
-        ? window.__PORTAL_CLIENT_SLUG_EQUIV__
-        : null;
-      if(slugEq){
-        try{
-          if(slugEq(ss, ts)) return true;
-        }catch(_eq){}
+      let slugMatch = ss === ts;
+      if(!slugMatch){
+        const slugEq = typeof window.__PORTAL_CLIENT_SLUG_EQUIV__ === 'function'
+          ? window.__PORTAL_CLIENT_SLUG_EQUIV__
+          : null;
+        if(slugEq){
+          try{
+            slugMatch = slugEq(ss, ts);
+          }catch(_eq){}
+        }
       }
-      return false;
+      if(!slugMatch) return false;
+      const stTime = portalReviewKeyTimeTokenFromSessionKey(s);
+      const ttTime = portalReviewKeyTimeTokenFromSessionKey(t);
+      if(stTime && ttTime) return stTime === ttTime;
+      if(!stTime && ttTime) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
+      return true;
     }
     function portalReviewAbsentInMemoryForAliases(aliases){
       if(!Array.isArray(aliases) || !aliases.length) return false;

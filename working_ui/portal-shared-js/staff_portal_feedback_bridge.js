@@ -930,12 +930,12 @@
     const owned = statusRowsForStaffDate(iso, staffId);
     const allDay = statusRowsForDateAll(iso);
     const matchingOwned = owned.filter(function (st) {
-      return clientMatch(st, s, clientNotesById);
+      return statusRowMatchesRosterSession(st, s, clientNotesById);
     });
     const pool = matchingOwned.length
       ? matchingOwned
       : allDay.filter(function (st) {
-          return clientMatch(st, s, clientNotesById);
+          return statusRowMatchesRosterSession(st, s, clientNotesById);
         });
     return pool.some(statusOverviewIsAbsent);
   }
