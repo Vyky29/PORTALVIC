@@ -42,10 +42,34 @@
     return k;
   }
 
+  var EXEC_DISPLAY_NAMES = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
+  var CORPORATE_AUTH_EMAIL_TO_KEY = {
+    "victor@clubsensational.org": "victor",
+    "raul@clubsensational.org": "raul",
+    "javi@clubsensational.org": "javi",
+    "javier@clubsensational.org": "javi",
+    "sevitha@clubsensational.org": "sevitha",
+    "info@clubsensational.org": "sevitha",
+  };
+
+  function staffKeyFromEmail(authEmail) {
+    var e = String(authEmail || "")
+      .trim()
+      .toLowerCase();
+    if (!e) return "";
+    if (CORPORATE_AUTH_EMAIL_TO_KEY[e]) return CORPORATE_AUTH_EMAIL_TO_KEY[e];
+    var local = e.split("@")[0] || "";
+    if (CORPORATE_AUTH_EMAIL_TO_KEY[local]) return CORPORATE_AUTH_EMAIL_TO_KEY[local];
+    return canonicalStaffKey(local);
+  }
+
   function inferStaffKey(profile, authEmail) {
     if (typeof global.portalInferStaffKey === "function") {
-      return canonicalStaffKey(global.portalInferStaffKey(profile, authEmail));
+      var inferred = canonicalStaffKey(global.portalInferStaffKey(profile, authEmail));
+      if (inferred) return inferred;
     }
+    var fromEmail = staffKeyFromEmail(authEmail);
+    if (fromEmail) return fromEmail;
     if (profile && profile.username) return canonicalStaffKey(profile.username);
     return "";
   }
@@ -60,12 +84,26 @@
     }
   }
 
-  function resolvePhotoCandidates(profile, authEmail) {
+  function resolvePhotoCandidates(profile, authEmail, session) {
     var urls = [];
     function push(raw) {
       var u = normalizePhotoUrl(raw);
+      if (
+        global.portalSanitizeRemoteAvatarUrl &&
+        typeof global.portalSanitizeRemoteAvatarUrl === "function"
+      ) {
+        u = global.portalSanitizeRemoteAvatarUrl(u) || u;
+      }
       if (u && urls.indexOf(u) < 0) urls.push(u);
     }
+    try {
+      var user = session && session.user ? session.user : null;
+      var authMeta =
+        user && user.user_metadata && typeof user.user_metadata === "object"
+          ? user.user_metadata
+          : {};
+      if (authMeta.avatar_url) push(authMeta.avatar_url);
+    } catch (_) {}
     try {
       var meta =
         profile &&
@@ -77,6 +115,17 @@
       if (profile && profile.avatar_url) push(profile.avatar_url);
     } catch (_) {}
     var key = inferStaffKey(profile, authEmail);
+    var displayName = resolveDisplayName(profile, authEmail, session);
+    if (
+      global.portalResolveStaffPhotoCandidates &&
+      typeof global.portalResolveStaffPhotoCandidates === "function"
+    ) {
+      try {
+        (global.portalResolveStaffPhotoCandidates(key || displayName, {
+          username: (profile && profile.username) || key || "",
+        }) || []).forEach(push);
+      } catch (_) {}
+    }
     try {
       var src = global.STAFF_DASHBOARD_SOURCE;
       if (key && src && src.staffProfiles && src.staffProfiles[key]) {
@@ -150,9 +199,16 @@
     return filename;
   }
 
-  var EXEC_DISPLAY_NAMES = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
-
-  function resolveDisplayName(profile, email) {
+  function resolveDisplayName(profile, email, session) {
+    try {
+      var user = session && session.user ? session.user : null;
+      var authMeta =
+        user && user.user_metadata && typeof user.user_metadata === "object"
+          ? user.user_metadata
+          : {};
+      var metaName = String(authMeta.full_name || authMeta.name || "").trim();
+      if (metaName) return metaName;
+    } catch (_) {}
     if (
       global.portalChatActorIdentity &&
       typeof global.portalChatActorIdentity.displayName === "function"
@@ -169,11 +225,13 @@
       if (profNm) return profNm;
     }
     var fromProfile = String((profile && (profile.full_name || profile.username)) || "").trim();
-    if (fromProfile) return fromProfile;
+    if (fromProfile && fromProfile.toLowerCase() !== "admin") return fromProfile;
     var key = inferStaffKey(profile, email);
     if (key && EXEC_DISPLAY_NAMES[key]) return EXEC_DISPLAY_NAMES[key];
     if (key) return key.charAt(0).toUpperCase() + key.slice(1);
     if (email) {
+      var mapped = staffKeyFromEmail(email);
+      if (mapped && EXEC_DISPLAY_NAMES[mapped]) return EXEC_DISPLAY_NAMES[mapped];
       var local = String(email).split("@")[0].replace(/[._+-]+/g, " ").trim();
       var word = local.split(/\s+/).filter(Boolean)[0] || "";
       if (word) {
@@ -187,15 +245,16 @@
   global.portalSyncAdminTopbarProfile = function portalSyncAdminTopbarProfile(opts) {
     opts = opts || {};
     var ctx = global.__PORTAL_SUPABASE__ || {};
+    var session = opts.session || ctx.session || null;
     var profile = opts.profile || ctx.staff_profile || null;
     var email = String(
       opts.email ||
-        (ctx.session && ctx.session.user && ctx.session.user.email) ||
+        (session && session.user && session.user.email) ||
         "",
     ).trim();
-    var displayName = String(opts.displayName || resolveDisplayName(profile, email) || "").trim();
+    var displayName = String(opts.displayName || resolveDisplayName(profile, email, session) || "").trim();
     if (!displayName && email) {
-      displayName = resolveDisplayName(null, email);
+      displayName = resolveDisplayName(null, email, session);
     }
 
     var nameEl = document.getElementById("miniName");
@@ -206,7 +265,7 @@
     var avWrap = document.getElementById("miniAv");
     if (!img && !initialsEl) return;
 
-    var candidates = resolvePhotoCandidates(profile, email);
+    var candidates = resolvePhotoCandidates(profile, email, session);
     if (!candidates.length) {
       showInitials(initialsEl, avWrap, photoInitials(displayName));
       return;
@@ -218,6 +277,7 @@
     opts = opts || {};
     var ctx = global.__PORTAL_SUPABASE__ || {};
     var client = opts.client || ctx.client;
+    var session = opts.session || ctx.session || null;
     var profile = opts.profile || ctx.staff_profile || null;
     if (
       client &&
@@ -230,6 +290,7 @@
       profile: profile,
       email: opts.email,
       displayName: opts.displayName,
+      session: session,
     });
   };
 
