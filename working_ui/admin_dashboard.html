@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260704-login-exec-stub" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260704-feedback-edge-list" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -17913,11 +17913,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     }
     async function adminFetchSessionFeedbackForHub(){
-      var client = await adminEnsureSupabaseClient();
-      if(!client) return [];
       var since = new Date();
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
+      try{
+        var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
+        if(!edge.error && edge.data && Array.isArray(edge.data.rows)){
+          return (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        }
+        if(edge.error && edge.error !== 'session_expired'){
+          console.warn('[admin] session_feedback edge', edge.error);
+        }
+      }catch(eEdge){
+        console.warn('[admin] session_feedback edge fetch', eEdge);
+      }
+      var client = await adminEnsureSupabaseClient();
+      if(!client) return [];
       try{
         var res = await client
           .from('session_feedback')
