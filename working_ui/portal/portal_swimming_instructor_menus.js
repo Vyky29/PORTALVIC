@@ -439,6 +439,14 @@
   }
 
   function portalTopbarPhotoVisibleForProfile(profile, referenceDate) {
+    try {
+      if (
+        typeof global.portalStaffHasLeadPhotoInboxAccess === "function" &&
+        global.portalStaffHasLeadPhotoInboxAccess()
+      ) {
+        return true;
+      }
+    } catch (_) {}
     profile = profile || DEFAULT_TOPBAR_PROFILE;
     if (profile.photo) return true;
     var days = profile.photoDays;

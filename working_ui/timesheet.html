@@ -1763,7 +1763,7 @@
     }
 
     function timesheetEntryRoleLabel(entry) {
-      const r = String((entry && entry.role) || "").trim();
+      const r = String((entry && (entry.roleLabel || entry.role)) || "").trim();
       if (!r) return "";
       return roleDisplayLabel(r, state.roleScales && state.roleScales[r]) || r;
     }
@@ -1784,6 +1784,15 @@
       return timesheetEntryRoleLabel(entry) ? 1.38 : 1;
     }
 
+    function timesheetRolePdfRgb(role) {
+      const hex = timesheetRoleColor(role);
+      if (!hex) return [16, 34, 56];
+      const m = hex.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+      return m
+        ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)]
+        : [16, 34, 56];
+    }
+
     function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual) {
       if (isManual) {
         doc.text("-", cx, y + cellBaseline, { align: "center" });
@@ -1793,11 +1802,15 @@
       const role = timesheetEntryRoleLabel(entry).slice(0, 24);
       if (role) {
         doc.setFontSize(8.5 * S);
+        doc.setTextColor(16, 34, 56);
         doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
         doc.setFontSize(7.2 * S);
         doc.setFont("helvetica", "bold");
+        const [rr, gg, bb] = timesheetRolePdfRgb(entry && (entry.role || entry.roleLabel));
+        doc.setTextColor(rr, gg, bb);
         doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
+        doc.setTextColor(16, 34, 56);
         doc.setFontSize(8.5 * S);
       } else {
         doc.text(service, cx, y + cellBaseline, { align: "center" });
@@ -2166,9 +2179,10 @@
     function timesheetRoleColor(role) {
       const r = String(role || "").toLowerCase();
       if (/swim|aquatic/.test(r)) return "#1565c0";
-      if (/climb/.test(r)) return "#b8860b";
-      if (/fitness|physical|gym/.test(r)) return "#1b7f3b";
-      if (/support/.test(r)) return "#000000";
+      if (/climb/.test(r)) return "#ca8a04";
+      if (/fitness|physical|gym|\bpt\b|personal\s*train/.test(r)) return "#1b7f3b";
+      if (/support/.test(r)) return "#ea580c";
+      if (/lead/.test(r)) return "#7c3aed";
       return "";
     }
 

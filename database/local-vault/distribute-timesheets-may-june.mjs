@@ -260,7 +260,94 @@ function dayRosterHours(rows, dateObj) {
   return Number((Math.max(0, maxEnd - minStart) / 60).toFixed(2));
 }
 
-function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd) {
+function serviceToRole(service) {
+  const s = String(service || "").toLowerCase();
+  if (!s) return "";
+  if (/climb/.test(s)) return "Climbing Instructor";
+  if (/swim|aquatic/.test(s)) return "Swimming Instructor";
+  if (/physical|fitness|gym|\bpt\b|personal\s*train/.test(s)) return "Fitness Instructor";
+  if (/multi|bespoke|day ?cent|support|hub/.test(s)) return "Support Worker";
+  if (/lead|programme|program|service lead/.test(s)) return "Service Lead";
+  return "";
+}
+
+function sessionPayRole(session) {
+  const svc = String(
+    (session && (session.rosterService || session.service || session.activity)) || "",
+  ).toLowerCase();
+  const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+  if (/big pool|small pool|teaching pool|\blane\b/.test(area)) return "Swimming Instructor";
+  if (/day\s*centre/.test(svc)) return "Support Worker";
+  if (/aquatic/.test(svc) && /big pool|small pool|teaching pool|\blane\b/.test(area)) {
+    return "Swimming Instructor";
+  }
+  return serviceToRole(svc);
+}
+
+function formatEntryRoleLabel(payRole, workerRoleLabel) {
+  const base = String(payRole || "").trim();
+  if (!base) return "";
+  const wr = String(workerRoleLabel || "").trim();
+  if (wr.toLowerCase().startsWith(base.toLowerCase())) return wr;
+  const m = wr.match(/(\d+)\s*$/);
+  return m ? `${base} ${m[1]}` : base;
+}
+
+function slotMinutes(session) {
+  const a = hmToMinutes(session && session.start);
+  let b = hmToMinutes(session && session.end);
+  if (b < a) b += 24 * 60;
+  return Math.max(0, b - a);
+}
+
+function roleHoursForSessions(rows) {
+  let mins = 0;
+  for (const s of rows || []) mins += slotMinutes(s);
+  return Number((mins / 60).toFixed(2));
+}
+
+function primaryServiceLabelForRows(rows) {
+  const counts = Object.create(null);
+  for (const s of rows || []) {
+    const label = String(s.rosterService || s.service || s.activity || "Shift").trim() || "Shift";
+    counts[label] = (counts[label] || 0) + 1;
+  }
+  let best = "Shift";
+  let bestN = 0;
+  for (const k of Object.keys(counts)) {
+    if (counts[k] > bestN) {
+      best = k;
+      bestN = counts[k];
+    }
+  }
+  return best;
+}
+
+function inferRoleFromService(service, workerRoleLabel) {
+  const fromSvc = serviceToRole(service);
+  if (fromSvc) return fromSvc;
+  const wr = String(workerRoleLabel || "").trim();
+  if (/swim|aquatic/i.test(wr)) return "Swimming Instructor";
+  if (/climb/i.test(wr)) return "Climbing Instructor";
+  if (/support/i.test(wr)) return "Support Worker";
+  if (/fitness|physical|pt/i.test(wr)) return "Fitness Instructor";
+  if (/lead/i.test(wr)) return "Service Lead";
+  return wr.split(/\s+\d/)[0].trim() || "";
+}
+
+function enrichTimesheetEntry(entry, workerRoleLabel) {
+  const role =
+    String(entry.role || "").trim() ||
+    inferRoleFromService(entry.service || entry.serviceLabel, workerRoleLabel);
+  const roleLabel = formatEntryRoleLabel(role, workerRoleLabel);
+  return Object.assign({}, entry, {
+    role,
+    roleLabel,
+    serviceLabel: String(entry.serviceLabel || entry.service || role || "Shift").trim() || "Shift",
+  });
+}
+
+function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd, workerRoleLabel) {
   const boot = rosterWin.StaffDashboardSpreadsheetAdapter.bootstrap({
     staffId: rosterKey,
     source: rosterWin.STAFF_DASHBOARD_SOURCE,
@@ -274,28 +361,56 @@ function computeRosterEntries(rosterWin, rosterKey, periodStart, periodEnd) {
       return normStaff(s.staffId) === normStaff(rosterKey);
     });
     if (!dayRows.length) continue;
-    const hours = dayRosterHours(dayRows, dateObj);
-    if (hours <= 0) continue;
-    const summary = dayRows
-      .map((s) => {
-        const client = s.clientId || s.client || "";
-        const area = s.area || s.venue || "";
-        return `${s.start || ""}-${s.end || ""} ${client}${area ? " @" + area : ""}`.trim();
-      })
-      .join("; ");
-    const svc =
-      String(
-        dayRows[0]?.rosterService || dayRows[0]?.service || dayRows[0]?.activity || "Shift",
-      ).trim() || "Shift";
-    entries.push({
-      date: isoDate(dateObj),
-      day: WEEKDAY[dateObj.getDay()],
-      hours,
-      summary,
-      service: svc,
-      serviceLabel: svc,
-      completed: true,
-    });
+
+    const byRole = Object.create(null);
+    for (const s of dayRows) {
+      const role = sessionPayRole(s) || inferRoleFromService(s.rosterService || s.service, workerRoleLabel);
+      if (!byRole[role]) byRole[role] = [];
+      byRole[role].push(s);
+    }
+
+    const roleKeys = Object.keys(byRole).filter(Boolean);
+    if (!roleKeys.length) {
+      const hours = dayRosterHours(dayRows, dateObj);
+      if (hours <= 0) continue;
+      const svc = primaryServiceLabelForRows(dayRows);
+      const role = inferRoleFromService(svc, workerRoleLabel);
+      entries.push(
+        enrichTimesheetEntry(
+          {
+            date: isoDate(dateObj),
+            day: WEEKDAY[dateObj.getDay()],
+            hours,
+            service: svc,
+            serviceLabel: svc,
+            completed: true,
+          },
+          workerRoleLabel,
+        ),
+      );
+      continue;
+    }
+
+    for (const role of roleKeys) {
+      const rows = byRole[role];
+      let hours = roleHoursForSessions(rows);
+      if (hours <= 0) continue;
+      if (roleKeys.length === 1) hours = dayRosterHours(rows, dateObj);
+      const svc = primaryServiceLabelForRows(rows);
+      entries.push(
+        enrichTimesheetEntry(
+          {
+            date: isoDate(dateObj),
+            day: WEEKDAY[dateObj.getDay()],
+            hours,
+            service: svc,
+            serviceLabel: svc,
+            completed: true,
+          },
+          workerRoleLabel,
+        ),
+      );
+    }
   }
   const totalHours = Number(entries.reduce((a, e) => a + e.hours, 0).toFixed(2));
   return { entries, totalHours, staffName: boot.staffName || rosterKey };
@@ -375,20 +490,26 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
     worker.rosterKey,
     month.periodStart,
     month.periodEnd,
+    worker.role_label || "",
   );
 
-  let entries = roster.entries;
+  let entries = roster.entries.map((e) => enrichTimesheetEntry(e, worker.role_label || ""));
   if (ts && Array.isArray(ts.entries) && ts.entries.length) {
-    entries = ts.entries.map((e) => ({
-      date: String(e.date || "").slice(0, 10),
-      day: String(e.day || ""),
-      hours: Number(e.hours || 0),
-      service: String(e.service || e.service_label || e.role || "Shift"),
-      serviceLabel: String(e.service_label || e.service || e.role || "Shift"),
-      role: String(e.role || ""),
-      note: String(e.note || ""),
-      completed: e.completed !== false,
-    }));
+    entries = ts.entries.map((e) =>
+      enrichTimesheetEntry(
+        {
+          date: String(e.date || "").slice(0, 10),
+          day: String(e.day || ""),
+          hours: Number(e.hours || 0),
+          service: String(e.service || e.service_label || e.role || "Shift"),
+          serviceLabel: String(e.service_label || e.service || e.role || "Shift"),
+          role: String(e.role || ""),
+          note: String(e.note || ""),
+          completed: e.completed !== false,
+        },
+        worker.role_label || "",
+      ),
+    );
   }
 
   let totalHours = roster.totalHours;
@@ -418,7 +539,9 @@ async function resolveMonthFigures(admin, worker, month, rosterWin) {
       month.periodEnd,
     );
     if (timetable.entries.length) {
-      entries = reconcileEntriesToImportHours(timetable.entries, totalHours);
+      entries = reconcileEntriesToImportHours(timetable.entries, totalHours).map((e) =>
+        enrichTimesheetEntry(e, worker.role_label || ""),
+      );
     }
   }
 
