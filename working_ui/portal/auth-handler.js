@@ -813,13 +813,59 @@ function bindLogin() {
     return fallback;
   }
 
+  async function portalEnsureSupabaseSession(supabase, session) {
+    if (!session || !session.access_token) return;
+    try {
+      const {
+        data: { session: cur },
+      } = await supabase.auth.getSession();
+      if (cur && cur.access_token === session.access_token) return;
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token || "",
+      });
+    } catch (sessErr) {
+      console.warn("[portal] setSession after sign-in failed", sessErr);
+    }
+  }
+
+  function portalParseStaffProfileRpcPayload(data) {
+    if (data == null) return null;
+    if (typeof data === "object" && !Array.isArray(data)) {
+      const id = data.id != null ? String(data.id).trim() : "";
+      if (id) return data;
+      return null;
+    }
+    if (typeof data === "string") {
+      try {
+        const parsed = JSON.parse(data);
+        return portalParseStaffProfileRpcPayload(parsed);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
       "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
-    const rpc = await supabase.rpc("portal_get_session_staff_profile");
-    if (!rpc.error && rpc.data && typeof rpc.data === "object") {
-      return rpc.data;
+    async function loadViaRpc() {
+      const rpc = await supabase.rpc("portal_get_session_staff_profile");
+      if (rpc.error) {
+        console.warn("[portal] portal_get_session_staff_profile:", rpc.error);
+        return null;
+      }
+      return portalParseStaffProfileRpcPayload(rpc.data);
     }
+    let fromRpc = await loadViaRpc();
+    if (!fromRpc) {
+      await new Promise(function (r) {
+        setTimeout(r, 120);
+      });
+      fromRpc = await loadViaRpc();
+    }
+    if (fromRpc) return fromRpc;
     const byId = await supabase
       .from("staff_profiles")
       .select(selectCols)
@@ -1074,6 +1120,9 @@ function bindLogin() {
     if (error || !data?.user?.id) {
       showError(portalLoginFailureMessage(email));
       return;
+    }
+    if (data.session) {
+      await portalEnsureSupabaseSession(supabase, data.session);
     }
     try {
       await portalBumpAuthSessionGeneration(supabase);
