@@ -91,6 +91,13 @@ SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
     "2026-07-12": "Berta",
 }
 
+# Dated Sunday instructor swaps (covers) merged into bundle sundayDateOverrides.
+SUNDAY_EXTRA_REPLACE: dict[str, dict[str, str]] = {
+    "2026-06-21": {"ALEX": "BISMARK", "CARLOS": "JAVI"},
+    "2026-06-28": {"AURORA": "YOUSSEF", "JAVIER": "LULIYA"},
+    "2026-07-05": {"CARLOS": "BISMARK"},
+}
+
 # Michelle off these Wednesday day-centre shifts (Ikram cover = Luliya only).
 MICHELLE_OFF_WEDNESDAYS = frozenset({"2026-06-10", "2026-06-17"})
 MONDAY_2026_06_29_STAFF_OVERRIDES = (
@@ -572,13 +579,11 @@ def patch_bundle_sunday_lead_overrides() -> None:
         patch_bundle_rows_from_json,
     )
 
-    overrides = {
-        iso: {
-            "leadOnDuty": lead,
-            "replaceInstructor": {"JOHN, BERTA": lead.upper()},
-        }
-        for iso, lead in SUNDAY_LEAD_ON_DUTY.items()
-    }
+    overrides = {}
+    for iso, lead in SUNDAY_LEAD_ON_DUTY.items():
+        replace = {"JOHN, BERTA": lead.upper()}
+        replace.update(SUNDAY_EXTRA_REPLACE.get(iso, {}))
+        overrides[iso] = {"leadOnDuty": lead, "replaceInstructor": replace}
     bundle_path = OUT / "staff_dashboard_spreadsheet_bundle.js"
     if not bundle_path.exists():
         return

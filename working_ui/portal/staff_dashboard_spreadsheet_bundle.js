@@ -19,19 +19,24 @@
   "2026-06-21": {
     "leadOnDuty": "John",
     "replaceInstructor": {
-      "JOHN, BERTA": "JOHN"
+      "JOHN, BERTA": "JOHN",
+      "ALEX": "BISMARK",
+      "CARLOS": "JAVI"
     }
   },
   "2026-06-28": {
     "leadOnDuty": "John",
     "replaceInstructor": {
-      "JOHN, BERTA": "JOHN"
+      "JOHN, BERTA": "JOHN",
+      "AURORA": "YOUSSEF",
+      "JAVIER": "LULIYA"
     }
   },
   "2026-07-05": {
     "leadOnDuty": "Berta",
     "replaceInstructor": {
-      "JOHN, BERTA": "BERTA"
+      "JOHN, BERTA": "BERTA",
+      "CARLOS": "BISMARK"
     }
   },
   "2026-07-12": {
@@ -9745,7 +9750,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -9805,7 +9810,7 @@
     {
       "client_name": "Amaar Ah",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "1 to 2.45",
@@ -9833,9 +9838,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Yusuf Ah",
+      "client_name": "Samer",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10 to 10.45",
@@ -9843,9 +9848,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Yusuf Ah",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10 to 10.45",
@@ -9885,7 +9890,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -9913,9 +9918,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Arthur Mo",
+      "client_name": "Eiji",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10.45 to 11.30",
@@ -9923,9 +9928,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Eiji",
+      "client_name": "Arthur Mo",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10.45 to 11.30",
@@ -9965,7 +9970,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -9993,9 +9998,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Gabriel",
+      "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "11.30 to 12.15",
@@ -10003,9 +10008,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Hazem",
+      "client_name": "Gabriel",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "11.30 to 12.15",
@@ -10045,7 +10050,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -10073,9 +10078,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Adaam Ah",
+      "client_name": "Haneef",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "12.15 to 1",
@@ -10083,9 +10088,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Haneef",
+      "client_name": "Adaam Ah",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "12.15 to 1",
@@ -10155,7 +10160,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -10243,9 +10248,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.15 to 10",
@@ -10253,9 +10258,9 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Zaid",
+      "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.15 to 10",
@@ -13022,7 +13027,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-02T11:43:43Z",
+    "rosterMadreSyncedAt": "2026-07-02T11:46:56Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

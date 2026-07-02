@@ -106,10 +106,10 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-04,Saturday,NO CLIENT,Aquatic Activity,12.30 to 1,YOUSSEF,Acton,Teaching Pool
 2026-07-04,Saturday,NO CLIENT,Aquatic Activity,9.30 to 10,YOUSSEF,Acton,Teaching Pool
 2026-07-05,Sunday,Rodin,Climbing Activity,1 to 2,ALEX,Westway,Wall
-2026-07-05,Sunday,Zakariya,Climbing Activity,1 to 2,CARLOS,Westway,Wall
+2026-07-05,Sunday,Zakariya,Climbing Activity,1 to 2,BISMARK,Westway,Wall
 2026-07-05,Sunday,Adaam Ah,Aquatic Activity,1.15 to 2,ROBERTO,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Adaam Ah,Multi-Activity,1.15 to 2,ROBERTO,SwimFarm,Big Pool
-2026-07-05,Sunday,Amaar Ah,Multi-Activity,1.15 to 2,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Amaar Ah,Multi-Activity,1.15 to 2,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Aydaan Ah,Multi-Activity,1.15 to 2,BERTA,SwimFarm,Hub Room
 2026-07-05,Sunday,Erik,Aquatic Activity,1.15 to 2,AURORA,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Erik,Multi-Activity,1.15 to 2,AURORA,SwimFarm,Big Pool
@@ -117,7 +117,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Haneef,Multi-Activity,1.15 to 2,JAVIER,SwimFarm,Small Pool
 2026-07-05,Sunday,Rayyan Fi,Multi-Activity,1.15 to 2,GIUSEPPE,SwimFarm,Hub Room
 2026-07-05,Sunday,Eiji,Climbing Activity,10 to 11,ALEX,Westway,Wall
-2026-07-05,Sunday,Hazem,Climbing Activity,10 to 11,CARLOS,Westway,Wall
+2026-07-05,Sunday,Hazem,Climbing Activity,10 to 11,BISMARK,Westway,Wall
 2026-07-05,Sunday,Jordan,Aquatic Activity,10 to 11,TEFLON,Northolt,Teaching Pool
 2026-07-05,Sunday,Adam Ab,Multi-Activity,10.15 to 11,BERTA,SwimFarm,Hub Room
 2026-07-05,Sunday,Jack S,Aquatic Activity,10.15 to 11,ROBERTO,SwimFarm,Teaching Pool
@@ -125,19 +125,19 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Jack W,Aquatic Activity,10.15 to 11,AURORA,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Jack W,Multi-Activity,10.15 to 11,AURORA,SwimFarm,Big Pool
 2026-07-05,Sunday,Samer,Multi-Activity,10.15 to 11,GIUSEPPE,SwimFarm,Hub Room
-2026-07-05,Sunday,Yusuf Ah,Multi-Activity,10.15 to 11,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Yusuf Ah,Multi-Activity,10.15 to 11,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Zaid,Aquatic Activity,10.15 to 11,JAVIER,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Zaid,Multi-Activity,10.15 to 11,JAVIER,SwimFarm,Small Pool
 2026-07-05,Sunday,Arthur Ma,Aquatic Activity,11 to 11.45,AURORA,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Arthur Ma,Multi-Activity,11 to 11.45,AURORA,SwimFarm,Small Pool
-2026-07-05,Sunday,Arthur Mo,Multi-Activity,11 to 11.45,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Arthur Mo,Multi-Activity,11 to 11.45,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Cyrus,Multi-Activity,11 to 11.45,BERTA,SwimFarm,Hub Room
 2026-07-05,Sunday,Eiji,Multi-Activity,11 to 11.45,GIUSEPPE,SwimFarm,Hub Room
 2026-07-05,Sunday,Gabriel,Aquatic Activity,11 to 11.45,ROBERTO,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Gabriel,Multi-Activity,11 to 11.45,ROBERTO,SwimFarm,Big Pool
 2026-07-05,Sunday,Hazem,Multi-Activity,11 to 11.45,JAVIER,SwimFarm,Big Pool
 2026-07-05,Sunday,Yusef,Climbing Activity,11 to 12,ALEX,Westway,Wall
-2026-07-05,Sunday,Zaid,Climbing Activity,11 to 12,CARLOS,Westway,Wall
+2026-07-05,Sunday,Zaid,Climbing Activity,11 to 12,BISMARK,Westway,Wall
 2026-07-05,Sunday,Arthur Ma,Multi-Activity,11.45 to 12.30,BERTA,SwimFarm,Hub Room
 2026-07-05,Sunday,Arthur Mo,Aquatic Activity,11.45 to 12.30,ROBERTO,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Arthur Mo,Multi-Activity,11.45 to 12.30,ROBERTO,SwimFarm,Big Pool
@@ -145,11 +145,11 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Cyrus,Multi-Activity,11.45 to 12.30,AURORA,SwimFarm,Small Pool
 2026-07-05,Sunday,Eiji,Aquatic Activity,11.45 to 12.30,JAVIER,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Eiji,Multi-Activity,11.45 to 12.30,JAVIER,SwimFarm,Big Pool
-2026-07-05,Sunday,Gabriel,Multi-Activity,11.45 to 12.30,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Gabriel,Multi-Activity,11.45 to 12.30,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Hazem,Multi-Activity,11.45 to 12.30,GIUSEPPE,SwimFarm,Hub Room
 2026-07-05,Sunday,Scott,Climbing Activity,12 to 1,ALEX,Westway,Wall
-2026-07-05,Sunday,Serine,Climbing Activity,12 to 1,CARLOS,Westway,Wall
-2026-07-05,Sunday,Adaam Ah,Multi-Activity,12.30 to 1.15,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Serine,Climbing Activity,12 to 1,BISMARK,Westway,Wall
+2026-07-05,Sunday,Adaam Ah,Multi-Activity,12.30 to 1.15,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Amaar Ah,Aquatic Activity,12.30 to 1.15,ROBERTO,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Amaar Ah,Multi-Activity,12.30 to 1.15,ROBERTO,SwimFarm,Big Pool
 2026-07-05,Sunday,Aydaan Ah,Aquatic Activity,12.30 to 1.15,AURORA,SwimFarm,Teaching Pool
@@ -162,7 +162,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Rodin,Aquatic Activity,2 to 2.30,ROBERTO,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Zakariya,Aquatic Activity,2 to 2.30,AURORA,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Ayden W,Climbing Activity,2 to 3,ALEX,Westway,Wall
-2026-07-05,Sunday,Patrick,Climbing Activity,2 to 3,CARLOS,Westway,Wall
+2026-07-05,Sunday,Patrick,Climbing Activity,2 to 3,BISMARK,Westway,Wall
 2026-07-05,Sunday,Faris,Aquatic Activity,2.30 to 3,AURORA,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Teaching Pool
 2026-07-05,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Teaching Pool
@@ -170,7 +170,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool
 2026-07-05,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Small Pool
 2026-07-05,Sunday,Adam Ab,Multi-Activity,9.30 to 10.15,AURORA,SwimFarm,Small Pool
-2026-07-05,Sunday,Jack S,Multi-Activity,9.30 to 10.15,BISMARK,SwimFarm,Hub Room
+2026-07-05,Sunday,Jack S,Multi-Activity,9.30 to 10.15,GODSWAY,SwimFarm,Hub Room
 2026-07-05,Sunday,Jack W,Multi-Activity,9.30 to 10.15,BERTA,SwimFarm,Hub Room
 2026-07-05,Sunday,Samer,Multi-Activity,9.30 to 10.15,JAVIER,SwimFarm,Big Pool
 2026-07-05,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
