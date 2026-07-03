@@ -1022,20 +1022,26 @@
       const ak = portalSlugifyAreaKey(area);
       return ak ? '|' + ak : '';
     }
+    function portalNormalizeSessionReviewKey(key){
+      if(typeof window !== 'undefined' && window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === 'function'){
+        return window.PortalSessionKey.normalizePortalSessionKey(key) || key;
+      }
+      return key;
+    }
     function portalBuildSessionReviewKey(sessionDateIso, s, viewDayWord, clientId){
       if(!s || !sessionDateIso) return '';
       const cid = String(clientId != null ? clientId : '').trim().toLowerCase();
       if(!cid) return '';
-      if(portalRosterSessionIsDayCentre(s)) return String(sessionDateIso) + '|' + cid + '|day_centre';
-      if(portalRosterSessionIsBespokeShared(s)) return String(sessionDateIso) + '|' + cid + '|bespoke_shared';
+      if(portalRosterSessionIsDayCentre(s)) return portalNormalizeSessionReviewKey(String(sessionDateIso) + '|' + cid + '|day_centre');
+      if(portalRosterSessionIsBespokeShared(s)) return portalNormalizeSessionReviewKey(String(sessionDateIso) + '|' + cid + '|bespoke_shared');
       const activity = String(s.activity || s.rosterService || 'Swimming').trim();
       if(typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activity)){
         if(typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
-          return portalStaffLeadAquaticSessionReviewKey(sessionDateIso, cid, s, viewDayWord);
+          return portalNormalizeSessionReviewKey(portalStaffLeadAquaticSessionReviewKey(sessionDateIso, cid, s, viewDayWord));
         }
       }
       const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
-      return String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix;
+      return portalNormalizeSessionReviewKey(String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix);
     }
     function portalSessionReviewKeyForModelRow(s, viewDayWord, sessionDateIso){
       if(!portalSessionContributesToReviewKeys(s, viewDayWord, sessionDateIso)) return '';

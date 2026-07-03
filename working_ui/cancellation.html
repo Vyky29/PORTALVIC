@@ -5,6 +5,7 @@
   cancellation.html — Cancellation report (staff/lead portal session + Supabase).
 -->
 <script src="/portal-static-bootstrap.js?v=20260610-portal-voice-auto"></script>
+<script type="module" src="/portal-shared-js/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -1322,7 +1323,16 @@ button{
         service: serviceVal,
         reason_category: reasonCategory,
         notes: notesVal || null,
-        portal_session_key: clean(context.portalSessionKey) || null,
+        portal_session_key: (function(){
+          var raw = clean(context.portalSessionKey);
+          if(!raw) return null;
+          try{
+            if(window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === 'function'){
+              return window.PortalSessionKey.normalizePortalSessionKey(raw) || raw;
+            }
+          }catch(_){}
+          return raw;
+        })(),
         origin: inferOrigin()
       };
 
