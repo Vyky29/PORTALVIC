@@ -2,6 +2,7 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist/deploy",
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
     { "source": "/lead-dashboard.webmanifest", "destination": "/staff-dashboard.webmanifest" },
     { "source": "/", "destination": "/login.html" },
@@ -69,6 +70,18 @@
     },
     {
       "source": "/staff_dashboard.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/portal-session-feedback.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/session_feedback.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
