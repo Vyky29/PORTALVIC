@@ -439,18 +439,6 @@ const onlyDb = dbFiles.filter((f) => !supaSet.has(f));
 const onlySupa = files.filter((f) => !dbSet.has(f));
 const reviewItems = items.filter((i) => i.auto.rec === "review");
 
-const stats = {
-  total: items.length,
-  essential: items.filter((i) => i.auto.rec === "essential").length,
-  chain: items.filter((i) => i.auto.rec === "chain").length,
-  archive: items.filter((i) => i.auto.rec === "archive").length,
-  review: reviewItems.length,
-  dbMirror: items.filter((i) => i.hasDbCopy).length,
-  onlySupa: onlySupa.length,
-  onlyDb: onlyDb.length,
-  manualTotal: reviewItems.length + onlyDb.length,
-};
-
 function expertFor(file) {
   return (
     EXPERT_52[file] || {
@@ -461,6 +449,21 @@ function expertFor(file) {
     }
   );
 }
+
+const step2Count = onlyDb.filter((f) => expertFor(f).rec === "copy").length;
+
+const stats = {
+  total: items.length,
+  essential: items.filter((i) => i.auto.rec === "essential").length,
+  chain: items.filter((i) => i.auto.rec === "chain").length,
+  archive: items.filter((i) => i.auto.rec === "archive").length,
+  review: reviewItems.length,
+  dbMirror: items.filter((i) => i.hasDbCopy).length,
+  onlySupa: onlySupa.length,
+  onlyDb: onlyDb.length,
+  manualTotal: reviewItems.length + onlyDb.length,
+  step2Count,
+};
 
 const manualReview = {
   inCliMixed: reviewItems.map((i) => {
@@ -486,6 +489,19 @@ const manualReview = {
       affects: ex.affects,
     };
   }),
+  step2Copy: onlyDb
+    .filter((f) => expertFor(f).rec === "copy")
+    .map((f) => {
+      const ex = expertFor(f);
+      return {
+        file: f,
+        path: `database/migrations/${f}`,
+        verdict: ex.verdict,
+        rec: ex.rec,
+        context: ex.context,
+        affects: ex.affects,
+      };
+    }),
 };
 
 const expertSummary = {
@@ -551,6 +567,10 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 .act--keep{background:var(--essential);color:#fff}.act--defer{background:var(--archive-bg);color:var(--archive);border:1px solid #fdba74}
 .act.is-on{outline:2px solid var(--ink)}
 .sticky{position:fixed;bottom:0;left:0;right:0;background:rgba(21,32,48,.94);color:#fff;padding:10px 16px;font-size:13px;z-index:20}
+.hidden{display:none!important}
+.panel--step2{border-color:#2563eb;background:linear-gradient(180deg,#eef4ff 0%,#fff 48px)}
+.view-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.view-tabs .btn.is-active{outline:3px solid var(--ink);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -561,9 +581,14 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <strong>${stats.essential + stats.chain}</strong> Keep auto · 
 <strong>${stats.archive}</strong> Guardar sin usar auto · 
 <strong>${stats.manualTotal}</strong> para decidir tú (${stats.review} en CLI + ${stats.onlyDb} solo en database/)</p>
-<div class="callout"><strong>Recomendación experta aplicada:</strong> CLI ${expertSummary.cliKeep} Keep + ${expertSummary.cliDefer} defer · database/ ${expertSummary.dbCopy} copiar a supabase + ${expertSummary.dbDelete} borrar espejo. Los <strong>39</strong> no van al CLI; <strong>~22 son bootstrap crítico</strong> que falta en supabase/migrations.</div>
+<div class="callout"><strong>Recomendación experta:</strong> CLI ${expertSummary.cliKeep} Keep + ${expertSummary.cliDefer} defer · database/ <strong>${step2Count} pendientes paso 2</strong> (copiar bootstrap a supabase/). Espejos borrados: ${expertSummary.dbDelete}.</div>
+<div class="view-tabs">
+<button type="button" class="btn btn--primary is-active" id="viewAll">Ver todo (${stats.manualTotal} manual)</button>
+<button type="button" class="btn" id="viewStep2">Paso 2 pendientes (${step2Count})</button>
+<button type="button" class="btn" id="viewCli13">Solo CLI revisar (${stats.review})</button>
+</div>
 <div class="stats" id="stats"></div>
-<div class="toolbar">
+<div class="toolbar hidden" id="mainToolbar">
 <input type="search" id="q" placeholder="Buscar…"/>
 <select id="fRec"><option value="">Todas</option><option value="essential">Esencial</option><option value="chain">Cadena</option><option value="archive">One-shot</option><option value="review">Revisar (${stats.review})</option></select>
 <select id="fUser"><option value="">Tu decisión</option><option value="keep">Keep</option><option value="defer">Sin usar</option><option value="unset">Sin marcar</option></select>
@@ -572,13 +597,19 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 </div>
 </header>
 
+<section class="panel panel--step2" id="step2Panel">
+<h2>Paso 2 — copiar a <code>supabase/migrations/</code> (${step2Count})</h2>
+<p class="lead">Bootstrap que falta en la cadena CLI. <strong>Portal prod ya lo tiene</strong> (aplicado a mano); esto es para git + Supabase vacío. No hagas <code>db push</code> ciego en prod linked.</p>
+<ul class="manual-list" id="step2List"></ul>
+</section>
+
 <section class="panel callout-warn" id="manualPanel">
 <h2>Decidir tú (${stats.manualTotal} archivos)</h2>
-<p class="lead" style="margin-bottom:12px">Solo estas listas requieren decisión manual antes de limpiar el repo. El resto ya tiene Keep/Defer automático.</p>
-<h3 style="font-size:14px;margin:16px 0 8px">A) En CLI — revisar (${stats.review})</h3>
+<p class="lead" style="margin-bottom:12px">Lista completa manual. Usa el botón <strong>Paso 2 pendientes</strong> arriba para ver solo los ${step2Count} de bootstrap.</p>
+<h3 style="font-size:14px;margin:16px 0 8px" id="sectionCli">A) En CLI — revisar (${stats.review})</h3>
 <ul class="manual-list" id="reviewList"></ul>
-<h3 style="font-size:14px;margin:16px 0 8px">B) Solo en database/ — NO en CLI (${stats.onlyDb})</h3>
-<p class="lead" style="font-size:12px;margin-bottom:8px">Probablemente ya absorbidas por migraciones con otro nombre en supabase/. Opciones: borrar espejo, o archivar en local-vault.</p>
+<h3 style="font-size:14px;margin:16px 0 8px" id="sectionDb">B) Solo en database/ — NO en CLI (${stats.onlyDb})</h3>
+<p class="lead" style="font-size:12px;margin-bottom:8px" id="sectionDbHint">Los marcados «Copiar a supabase/» son el paso 2. El resto ya se borró del repo.</p>
 <ul class="manual-list" id="onlyDbList"></ul>
 </section>
 
@@ -588,11 +619,43 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <script>
 var DATA=${JSON.stringify(data)};
 var KEY='portalMigrationReview_v4';
+var viewMode='all';
 var decisions=Object.assign({}, DATA.defaultDecisions);
 try{
   var saved=localStorage.getItem(KEY);
   if(saved) decisions=JSON.parse(saved);
 }catch(e){}
+if(location.hash==='#paso2') viewMode='step2';
+else if(location.hash==='#cli13') viewMode='cli13';
+
+function setViewMode(mode){
+  viewMode=mode;
+  location.hash=mode==='step2'?'paso2':mode==='cli13'?'cli13':'';
+  document.getElementById('viewAll').classList.toggle('is-active',mode==='all');
+  document.getElementById('viewStep2').classList.toggle('is-active',mode==='step2');
+  document.getElementById('viewCli13').classList.toggle('is-active',mode==='cli13');
+  document.getElementById('step2Panel').classList.toggle('hidden',mode==='cli13');
+  document.getElementById('manualPanel').classList.toggle('hidden',mode==='step2');
+  document.getElementById('root').classList.toggle('hidden',mode!=='all');
+  document.getElementById('mainToolbar').classList.toggle('hidden',mode!=='all');
+  if(mode==='step2'){
+    document.getElementById('sectionCli').classList.add('hidden');
+    document.getElementById('reviewList').classList.add('hidden');
+  }else{
+    document.getElementById('sectionCli').classList.remove('hidden');
+    document.getElementById('reviewList').classList.remove('hidden');
+  }
+  if(mode==='cli13'){
+    document.getElementById('sectionDb').classList.add('hidden');
+    document.getElementById('sectionDbHint').classList.add('hidden');
+    document.getElementById('onlyDbList').classList.add('hidden');
+  }else if(mode!=='step2'){
+    document.getElementById('sectionDb').classList.remove('hidden');
+    document.getElementById('sectionDbHint').classList.remove('hidden');
+    document.getElementById('onlyDbList').classList.remove('hidden');
+  }
+  render();
+}
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function save(){localStorage.setItem(KEY,JSON.stringify(decisions))}
@@ -609,11 +672,14 @@ function renderManual(){
   function row(r){
     var cls=r.rec==='keep'?'essential':r.rec==='defer'?'archive':r.rec==='copy'?'chain':r.rec==='delete'?'archive':'review';
     return '<li><code>'+esc(r.file)+'</code> <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
+      (r.path?'<div class="sub"><strong>Ruta:</strong> '+esc(r.path)+'</div>':'')+
       '<div class="sub"><strong>Contexto:</strong> '+esc(r.context)+'</div>'+
       '<div class="sub"><strong>Afecta:</strong> '+esc(r.affects)+'</div></li>';
   }
+  document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.map(row).join('');
   document.getElementById('reviewList').innerHTML=DATA.manualReview.inCliMixed.map(row).join('');
-  document.getElementById('onlyDbList').innerHTML=DATA.manualReview.onlyDatabaseFolder.map(row).join('');
+  var dbList=viewMode==='step2'?DATA.manualReview.step2Copy:DATA.manualReview.onlyDatabaseFolder;
+  document.getElementById('onlyDbList').innerHTML=dbList.map(row).join('');
 }
 
 function renderStats(){
@@ -639,6 +705,10 @@ function match(it){
 
 function render(){
   renderStats(); renderManual();
+  if(viewMode!=='all'){
+    document.getElementById('root').innerHTML='';
+    return;
+  }
   var html='';
   DATA.clusters.forEach(function(cl){
     var vis=cl.items.filter(match);
@@ -678,10 +748,13 @@ document.getElementById('resetAuto').onclick=function(){
 };
 document.getElementById('export').onclick=function(){
   var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify({decisions:decisions,manualReview:DATA.manualReview,stats:DATA.stats},null,2)],{type:'application/json'}));
-  a.download='portal-migration-decisions-v3.json'; a.click();
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({decisions:decisions,manualReview:DATA.manualReview,step2Copy:DATA.manualReview.step2Copy,stats:DATA.stats},null,2)],{type:'application/json'}));
+  a.download='portal-migration-decisions-v4.json'; a.click();
 };
-render();
+document.getElementById('viewAll').onclick=function(){ setViewMode('all'); };
+document.getElementById('viewStep2').onclick=function(){ setViewMode('step2'); };
+document.getElementById('viewCli13').onclick=function(){ setViewMode('cli13'); };
+setViewMode(viewMode);
 </script>
 </body>
 </html>`;
