@@ -14,6 +14,7 @@
 // Env: OPENAI_API_KEY (optional — when missing, POST returns 503 + fallback webspeech)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { logSessionFeedbackNarrativeAudit } from "../_shared/session_feedback_narrative_audit.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -167,6 +168,14 @@ Deno.serve(async (req) => {
     if (!english) {
       return json({ ok: false, error: "empty_transcript", fallback: "webspeech" }, 422);
     }
+    await logSessionFeedbackNarrativeAudit({
+      source: "voice_transcribe",
+      staffUserId: staff.userId,
+      staffDisplayName: String(staff.profile.full_name || staff.profile.username || "").trim(),
+      narrativeEn: english,
+      voiceLanguage: language,
+      filterStatus: "ok",
+    });
     return json({ ok: true, english, language });
   } catch (_) {
     return json({ ok: false, error: "transcribe_failed", fallback: "webspeech" }, 502);

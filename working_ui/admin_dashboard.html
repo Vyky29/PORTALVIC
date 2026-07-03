@@ -28,7 +28,8 @@
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
-  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-incident-notify"></script>
+  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-narrative-audit"></script>
+  <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260703-v17-incident-view-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
@@ -9582,6 +9583,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.adminParentNotifyPrefillFromDirectory = adminParentNotifyPrefillFromDirectory;
     window.portalParentNotifyConfigureOnce = portalParentNotifyConfigureOnce;
     window.portalIncidentParentNotifyConfigureOnce = portalIncidentParentNotifyConfigureOnce;
+    function portalSessionFeedbackNarrativeAuditConfigureOnce(){
+      if(window.__portalSessionFeedbackNarrativeAuditConfigured || !window.PortalSessionFeedbackNarrativeAudit) return;
+      window.__portalSessionFeedbackNarrativeAuditConfigured = true;
+      window.PortalSessionFeedbackNarrativeAudit.configure({
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    window.portalSessionFeedbackNarrativeAuditConfigureOnce = portalSessionFeedbackNarrativeAuditConfigureOnce;
     function applyBookingTableFilters(){
       var v = ($('bookingVenueFilter') && $('bookingVenueFilter').value) || '';
       var st = ($('bookingStaffFilter') && $('bookingStaffFilter').value) || '';

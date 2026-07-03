@@ -13,6 +13,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { verifyPortalStaff } from "../_shared/portal_staff_auth.ts";
+import { logSessionFeedbackNarrativeAudit } from "../_shared/session_feedback_narrative_audit.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -261,8 +262,25 @@ Deno.serve(async (req) => {
 
   const participantName = str(body.participant_name, 200);
 
+  async function auditFilter(status: string, positive?: string, relevant?: string) {
+    await logSessionFeedbackNarrativeAudit({
+      source: "narrative_filter",
+      staffUserId: staff.userId,
+      staffDisplayName: staff.fullName,
+      participantName,
+      participantGender: str(body.participant_gender, 8),
+      sessionDate: str(body.session_date, 10),
+      service: str(body.service, 200),
+      narrativeEn: narrative,
+      filterPositive: positive,
+      filterRelevant: relevant,
+      filterStatus: status,
+    });
+  }
+
   let result = await callOpenAi(apiKey, buildMessages(body, false));
   if (!result.ok) {
+    await auditFilter(String(result.error));
     return json({ ok: false, error: result.error }, 502);
   }
 
@@ -291,8 +309,15 @@ Deno.serve(async (req) => {
   }
 
   if (validationError) {
+    await auditFilter(
+      validationError,
+      result.positive_feedback,
+      result.relevant_information,
+    );
     return json({ ok: false, error: validationError }, 422);
   }
+
+  await auditFilter("ok", result.positive_feedback, result.relevant_information);
 
   return json({
     ok: true,

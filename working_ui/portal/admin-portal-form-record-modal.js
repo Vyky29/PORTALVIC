@@ -482,6 +482,59 @@
     bindModalEvents(kind, row);
     var closeBtn = backdropEl.querySelector(".pfrm-modal__close");
     if (closeBtn) closeBtn.focus();
+    if (kind === "feedback" && !clean(row.session_narrative)) {
+      injectRecoveredNarrativeAudit(row);
+    }
+  }
+
+  function injectRecoveredNarrativeAudit(row) {
+    if (typeof global.portalSessionFeedbackNarrativeAuditConfigureOnce === "function") {
+      global.portalSessionFeedbackNarrativeAuditConfigureOnce();
+    }
+    var audit = global.PortalSessionFeedbackNarrativeAudit;
+    if (!audit || typeof audit.fetchLatestForFeedbackRow !== "function") return;
+    void audit.fetchLatestForFeedbackRow(row).then(function (res) {
+      if (!res || !res.ok || !res.row || !backdropEl) return;
+      var narrative = clean(res.row.narrative_en);
+      if (!narrative) return;
+      var body = backdropEl.querySelector(".pfrm-modal__body");
+      if (!body || body.querySelector("[data-pfrm-audit-narrative]")) return;
+      var src = clean(res.row.source) || "audit";
+      var when = formatWhen(res.row.created_at);
+      var staff = clean(res.row.staff_display_name);
+      var note =
+        "Recovered from narrative audit (" +
+        esc(src.replace(/_/g, " ")) +
+        (when !== "—" ? " · " + esc(when) : "") +
+        (staff ? " · " + esc(staff) : "") +
+        "). Not stored on the feedback row when submitted.";
+      var html =
+        '<div class="pfrm-qa__row" data-pfrm-audit-narrative style="margin-top:12px;padding:10px 12px;border:1px solid #93c5fd;border-radius:10px;background:#eff6ff">' +
+        '<div class="pfrm-qa__label">Session narrative (audit recovery)</div>' +
+        '<p class="muted" style="margin:0 0 8px;font-size:12px;overflow-wrap:break-word">' +
+        note +
+        "</p>" +
+        '<div class="pfrm-qa__value pfrm-qa__value--block">' +
+        esc(narrative).replace(/\n/g, "<br>") +
+        "</div></div>";
+      var posRow = body.querySelector(".pfrm-qa__row .pfrm-qa__label");
+      var insertBefore = null;
+      var labels = body.querySelectorAll(".pfrm-qa__label");
+      for (var i = 0; i < labels.length; i++) {
+        if (clean(labels[i].textContent) === "Positive feedback") {
+          insertBefore = labels[i].closest(".pfrm-qa__row");
+          break;
+        }
+      }
+      var wrap = document.createElement("div");
+      wrap.innerHTML = html;
+      var block = wrap.firstElementChild;
+      if (insertBefore && insertBefore.parentNode) {
+        insertBefore.parentNode.insertBefore(block, insertBefore);
+      } else {
+        body.appendChild(block);
+      }
+    });
   }
 
   function open(kind, idx) {

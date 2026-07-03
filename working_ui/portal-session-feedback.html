@@ -33,6 +33,7 @@
 <script src="/portal/portal_feedback_voice_input.js?v=20260703-narrative-v1"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/portal_feedback_narrative.js?v=20260703-live-filter-only"></script>
+<script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -2059,6 +2060,33 @@ button{
     });
   }
 
+  function logFeedbackNarrativeAudit(ctx2, row, formFields, feedbackId){
+    if(!window.PortalSessionFeedbackNarrativeAudit ||
+      typeof window.PortalSessionFeedbackNarrativeAudit.logSubmitAudit !== "function"){
+      return Promise.resolve();
+    }
+    var narrative = clean(formFields && formFields.sessionNarrative);
+    if(!narrative) return Promise.resolve();
+    var gender = "";
+    try{
+      if(window.PortalFeedbackNarrative &&
+        typeof window.PortalFeedbackNarrative.participantGender === "function"){
+        gender = window.PortalFeedbackNarrative.participantGender(ctx2.client_name);
+      }
+    }catch(_){}
+    return window.PortalSessionFeedbackNarrativeAudit.logSubmitAudit({
+      narrative_en: narrative,
+      participant_name: ctx2.client_name,
+      participant_gender: gender,
+      session_date: ctx2.session_date,
+      service: ctx2.service,
+      portal_session_key: row && row.portal_session_key ? row.portal_session_key : null,
+      session_feedback_id: feedbackId || null,
+      filter_positive: formFields.positiveFeedback || null,
+      filter_relevant: formFields.relevantInformation || null,
+    }).catch(function(){ return null; });
+  }
+
   /** Fallback instructor name from URL only if signed-in profile did not supply one. */
   function resolveInstructorFromUrl(){
     if(clean(instructorDisplayName)) return;
@@ -2931,6 +2959,7 @@ button{
 
       let row = null;
       let profileRow = null;
+      let savedFeedbackId = null;
 
       if (authUser && authUser.id) {
         profileRow = await lookupStaffProfileForAuth(supabase, authUser);
@@ -2964,6 +2993,7 @@ button{
         sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
         row = buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx2, formFields);
         var feedbackId = await insertFeedbackViaSupabase(supabase, row);
+        savedFeedbackId = feedbackId;
         await portalFinalizeAchievementPhotosAfterSubmit({
           feedbackId: feedbackId,
           clientId: ctx2.client_id,
@@ -2997,6 +3027,7 @@ button{
           full_name: row.completed_by_name,
           username: pinName,
         };
+        savedFeedbackId = pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null;
         await portalFinalizeAchievementPhotosAfterSubmit({
           feedbackId: pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null,
           clientId: ctx2.client_id,
@@ -3020,6 +3051,7 @@ button{
         row,
       );
       await postSessionFeedbackWebhook(webhookPayload);
+      void logFeedbackNarrativeAudit(ctx2, row, formFields, savedFeedbackId);
 
       try {
         if (typeof window.portalRecordFormSubmit === "function") {
@@ -3210,6 +3242,13 @@ button{
         getAnonKey: getSupabaseAnonKey,
         getForm: function(){ return form; },
       });
+      if(window.PortalSessionFeedbackNarrativeAudit){
+        window.PortalSessionFeedbackNarrativeAudit.configure({
+          getClient: function(){ return getSupabaseClient(); },
+          getSupabaseUrl: getSupabaseUrl,
+          getAnonKey: getSupabaseAnonKey,
+        });
+      }
     }catch(_){}
     window.PortalFeedbackNarrative.init({
       getForm: function(){ return form; },
