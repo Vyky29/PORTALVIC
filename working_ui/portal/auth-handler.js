@@ -25,7 +25,7 @@ import {
   portalReadPersistedSupabaseAccessToken,
   portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js";
+} from "./supabase-client.js?v=20260707-login-cache";
 import {
   resolveDemoEmail,
   resolveCorporateAuthEmail,
@@ -37,7 +37,7 @@ import {
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js";
+} from "./auth-map.js?v=20260707-login-cache";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -103,7 +103,7 @@ export {
   portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js";
+} from "./supabase-client.js?v=20260707-login-cache";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
 export const APP_VERSION = "2026-06-08-global-refresh-feedback-cache";
@@ -1419,7 +1419,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_presence_on_lead_overview");
     }
     const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-      "./portal_live_presence.js?v=20260610-offline-quiet"
+      "./portal_live_presence.js?v=20260707-admin-online-fix"
     );
     await startPortalLivePresence({ page, profile, session });
     if (document.getElementById("portalLivePresenceBar")) {
@@ -1534,28 +1534,42 @@ function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
 async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate) {
   const selectCols =
     "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
-  const rpc = await supabase.rpc("portal_get_session_staff_profile");
-  if (!rpc.error && rpc.data && typeof rpc.data === "object") return rpc.data;
-  const { data: profileRow, error } = await supabase
-    .from("staff_profiles")
-    .select(selectCols)
-    .eq("id", session.user.id)
-    .maybeSingle();
-  if (error) throw error;
-  if (profileRow) return profileRow;
-  const candidates = portalBootstrapStaffProfileUsernameCandidates(authEmailGate);
-  if (!candidates.length) return null;
-  const { data, error: aliasErr } = await supabase
-    .from("staff_profiles")
-    .select(selectCols)
-    .in("username", candidates)
-    .limit(1);
-  if (aliasErr) {
-    console.warn("[portal] staff_profiles alias lookup:", aliasErr);
-    return portalExecutiveBootstrapProfileStub(session, authEmailGate);
+  const execStub = portalExecutiveBootstrapProfileStub(session, authEmailGate);
+  const load = async function loadProfile() {
+    const rpc = await supabase.rpc("portal_get_session_staff_profile");
+    if (!rpc.error && rpc.data && typeof rpc.data === "object") return rpc.data;
+    const { data: profileRow, error } = await supabase
+      .from("staff_profiles")
+      .select(selectCols)
+      .eq("id", session.user.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (profileRow) return profileRow;
+    const candidates = portalBootstrapStaffProfileUsernameCandidates(authEmailGate);
+    if (!candidates.length) return null;
+    const { data, error: aliasErr } = await supabase
+      .from("staff_profiles")
+      .select(selectCols)
+      .in("username", candidates)
+      .limit(1);
+    if (aliasErr) {
+      console.warn("[portal] staff_profiles alias lookup:", aliasErr);
+      return execStub;
+    }
+    const row = Array.isArray(data) && data.length ? data[0] : null;
+    return row || execStub;
+  };
+  if (execStub) {
+    return Promise.race([
+      load(),
+      new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve(execStub);
+        }, 3500);
+      }),
+    ]);
   }
-  const row = Array.isArray(data) && data.length ? data[0] : null;
-  return row || portalExecutiveBootstrapProfileStub(session, authEmailGate);
+  return load();
 }
 
 export async function bootstrapDashboardSupabase(_opts) {
@@ -1602,7 +1616,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     page === "ceo" ||
     page === "lead" ||
     page === "choose"
-      ? 7000
+      ? 4500
       : 2800;
 
   /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */
@@ -1692,6 +1706,16 @@ export async function bootstrapDashboardSupabase(_opts) {
           window.location.replace(authFailureRedirect);
         } catch {
           window.location.href = authFailureRedirect;
+        }
+      } else if (page === "staff") {
+        /** Help guide / staff surfaces: expose client so voice can refresh session on Play. */
+        window.__PORTAL_SUPABASE_SINGLETON__ = supabase;
+        window.__PORTAL_SUPABASE__ = { client: supabase, session: null, staff_profile: null };
+        try {
+          window.SUPABASE_URL = getSupabaseUrl();
+          window.SUPABASE_ANON_KEY = getSupabaseAnonKey();
+        } catch {
+          /* ignore */
         }
       }
       return;

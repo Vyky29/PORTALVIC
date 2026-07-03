@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function portalFeedbackLocalPreviewBootstrap(){
+  try{
+    var host = String(location.hostname || "").toLowerCase();
+    if(host !== "localhost" && host !== "127.0.0.1") return;
+    var qs = new URLSearchParams(location.search);
+    if(qs.get("sessionKey") || qs.get("clientName") || qs.get("client") || qs.get("allowManualContext") === "1") return;
+    var p = new URLSearchParams(location.search);
+    p.set("sessionKey", "2026-07-02|17:00|local_preview");
+    p.set("clientName", "Demo Participant");
+    p.set("date", "2026-07-02");
+    p.set("service", "Aquatic · Teaching Pool");
+    p.set("time", "5:00–5:30 pm");
+    p.set("from_portal", "dashboard");
+    p.set("localPreview", "1");
+    location.replace(location.pathname + "?" + p.toString());
+  }catch(_){}
+})();
+</script>
 <script src="/portal-static-bootstrap.js?v=20260601-luliya-mic"></script>
 <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
 <!-- Session feedback: Supabase when signed in; optional webhook: window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL -->
@@ -9,9 +28,11 @@
 <title>Session Feedback (Staff)</title>
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
-<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260705-inbox-feedback" />
-<script src="/portal/portal_participant_achievements.js?v=20260705-inbox-feedback"></script>
-<script src="/portal/portal_feedback_voice_input.js?v=20260628-voice-whisper-first-es-it"></script>
+<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-achievements-unlimited" />
+<script src="/portal/portal_participant_achievements.js?v=20260703-achievements-unlimited"></script>
+<script src="/portal/portal_feedback_voice_input.js?v=20260703-narrative-v1"></script>
+<script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260703-live-filter-only"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -879,6 +900,84 @@ button{
   font-size:11.5px;
   line-height:1.35;
 }
+.fb-narrative-guide{
+  margin:0 0 10px;
+  padding-left:18px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45;
+}
+.fb-narrative-guide li{
+  margin:4px 0;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-filter-row{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  margin-top:12px;
+  min-width:0;
+}
+.btnFilterAi{
+  background:linear-gradient(135deg,#f0c04a,#d69820);
+  color:#1a1004;
+  box-shadow:0 6px 16px rgba(200, 145, 40, 0.28);
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.btnFilterAi:hover:not(:disabled){ transform:translateY(-1px); }
+.btnFilterAi:disabled{
+  opacity:0.55;
+  cursor:not-allowed;
+  transform:none;
+}
+.fb-filter-status{
+  margin:0;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-ai-output{
+  margin-top:4px;
+}
+.fb-ai-output[hidden]{
+  display:none!important;
+}
+.fb-ai-output textarea{
+  background:rgba(255,251,235,.88);
+  border-color:rgba(180,145,90,.38);
+  color:var(--text);
+}
+.portal-feedback-local-preview{
+  margin:0 0 12px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(180,145,90,.35);
+  background:rgba(255,251,235,.92);
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  line-height:1.4;
+  overflow-wrap:break-word;
+}
+.portal-feedback-local-preview[hidden]{
+  display:none!important;
+}
+  flex:1 1 100%;
+  margin:0 0 4px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  text-align:right;
+  min-width:0;
+  overflow-wrap:break-word;
+}
 
 .req{ color:#b91c1c; font-weight:900; margin-left:4px; }
 
@@ -933,6 +1032,8 @@ button{
       <img class="cancel-login-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
     </div>
   </div>
+
+  <div id="portalFeedbackLocalPreviewBanner" class="portal-feedback-local-preview" hidden>Local preview — session context is pre-filled like when you open <strong>Feedback</strong> from the staff dashboard. Staff only fill in from Engagement onwards.</div>
 
   <div class="title-row">
     <h1>Session feedback</h1>
@@ -1019,25 +1120,43 @@ button{
 
         <div class="field">
           <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span> Independence <span class="req">*</span></label>
-          <p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Pick the level that fits this session.</p>
-          <div class="options options--independence" role="radiogroup" aria-label="Independence level">
-            <label class="pill independence" data-kind="independence" data-value="Independent"><input type="radio" name="independenceLevel" value="Independent" required><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></span></label>
-            <label class="pill independence" data-kind="independence" data-value="Independent with prompts"><input type="radio" name="independenceLevel" value="Independent with prompts"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></span></label>
-            <label class="pill independence" data-kind="independence" data-value="Required regular support"><input type="radio" name="independenceLevel" value="Required regular support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></span></label>
-            <label class="pill independence" data-kind="independence" data-value="Required full support"><input type="radio" name="independenceLevel" value="Required full support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout the session</span></span></span></label>
+          <p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>
+          <div class="options options--independence" role="group" aria-label="Independence level">
+            <label class="pill independence" data-kind="independence" data-value="Independent"><input type="checkbox" name="independenceLevel" value="Independent"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Independent with prompts"><input type="checkbox" name="independenceLevel" value="Independent with prompts"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Required regular support"><input type="checkbox" name="independenceLevel" value="Required regular support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Required full support"><input type="checkbox" name="independenceLevel" value="Required full support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout the session</span></span></span></label>
           </div>
         </div>
 
-        <div class="field">
-          <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
-          <textarea id="fbPositiveFeedback" name="positiveFeedback" placeholder="e.g. Practised turn-taking; stayed with the activity longer than last week" required></textarea>
-          <p class="small field-note">Shared with parents after we review.</p>
+        <div class="field field--session-narrative">
+          <label for="fbSessionNarrative"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Session narrative <span class="req">*</span></label>
+          <p class="small field-note" style="margin-top:0">Cover <strong>Reception</strong>, <strong>Session</strong> and <strong>Handover</strong>. Speak in English, Spanish or Italian — text here is always saved in <strong>English</strong>.</p>
+          <ul class="fb-narrative-guide">
+            <li><strong>Reception</strong> — arrival, parent handover.</li>
+            <li><strong>Session</strong> — plan, strategies, challenges, what worked.</li>
+            <li><strong>Handover</strong> — what you told the family.</li>
+          </ul>
+          <p class="small field-note" style="margin:0 0 8px">Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
+          <textarea id="fbSessionNarrative" name="sessionNarrative" rows="10" required placeholder="Reception: how they arrived…&#10;&#10;Session: plan, strategies, challenges, what worked…&#10;&#10;Handover: what you told the family…"></textarea>
+          <div class="fb-filter-row">
+            <button type="button" class="btnFilterAi" id="btnFilterFeedbackAi" disabled>Filter with AI</button>
+            <p id="filterAiStatus" class="small field-note fb-filter-status" role="status" aria-live="polite"></p>
+          </div>
         </div>
 
-        <div class="field">
-          <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Relevant information <span class="req">*</span></label>
-          <textarea id="fbRelevantInformation" name="relevantInformation" placeholder="e.g. Session notes, follow-up, anything parents should or shouldn't hear" required></textarea>
-          <p class="small field-note">We filter what is shared with parents.</p>
+        <div id="fbAiOutputSection" class="fb-ai-output" hidden>
+          <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, run Filter again.</p>
+          <div class="field field--ai-positive">
+            <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
+            <textarea id="fbPositiveFeedback" name="positiveFeedback" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
+            <p class="small field-note">Goes to the <strong>family app</strong> when you submit — no admin rewrite.</p>
+          </div>
+          <div class="field field--ai-relevant">
+            <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Relevant information <span class="req">*</span></label>
+            <textarea id="fbRelevantInformation" name="relevantInformation" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
+            <p class="small field-note">Internal only — admin tables, not shown to families as session feedback.</p>
+          </div>
         </div>
 
         </div>
@@ -1050,8 +1169,9 @@ button{
             Back
           </a>
           <div class="actions-right">
+            <p class="fb-submit-hint" id="fbSubmitHint">Run Filter with AI before submitting.</p>
             <button type="button" class="btnGhost" id="clearBtn">Clear</button>
-            <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+            <button type="submit" class="btnPrimary" id="submitBtn" disabled>Submit</button>
           </div>
         </div>
 
@@ -1223,28 +1343,35 @@ button{
       if(isRequired && idx === 0) inp.setAttribute("required", "");
       else inp.removeAttribute("required");
     });
-    feedbackExtendedSection.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp, idx){
-      if(isRequired && idx === 0) inp.setAttribute("required", "");
-      else inp.removeAttribute("required");
+    feedbackExtendedSection.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp){
+      inp.removeAttribute("required");
     });
+    const narrative = document.getElementById("fbSessionNarrative");
     const pos = document.getElementById("fbPositiveFeedback");
     const rel = document.getElementById("fbRelevantInformation");
+    if(narrative){
+      if(isRequired) narrative.setAttribute("required", "");
+      else narrative.removeAttribute("required");
+    }
     if(pos){
-      if(isRequired) pos.setAttribute("required", "");
-      else pos.removeAttribute("required");
+      pos.removeAttribute("required");
     }
     if(rel){
-      if(isRequired) rel.setAttribute("required", "");
-      else rel.removeAttribute("required");
+      rel.removeAttribute("required");
     }
   }
 
   function clearExtendedFeedbackFields(){
     clearPhase2RadiosOnly();
+    const narrative = form.querySelector('textarea[name="sessionNarrative"]');
     const pos = form.querySelector('textarea[name="positiveFeedback"]');
     const rel = form.querySelector('textarea[name="relevantInformation"]');
+    if(narrative) narrative.value = "";
     if(pos) pos.value = "";
     if(rel) rel.value = "";
+    if(typeof window.PortalFeedbackNarrative !== "undefined"){
+      window.PortalFeedbackNarrative.reset();
+    }
   }
 
   function formatSessionTimeLabel(raw){
@@ -1285,12 +1412,18 @@ button{
 
   function applyFeedbackSessionContextUi(){
     syncFeedbackManualFields();
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+      typeof window.PortalFeedbackNarrative.onSessionContextChange === "function"){
+      window.PortalFeedbackNarrative.onSessionContextChange();
+    }
     const ctx = buildResolvedContext();
     renderPortalSessionContextCard(ctx);
     const locked = feedbackContextLockedFromDashboard();
     if(sessionDetailsEditable) sessionDetailsEditable.hidden = !!locked;
     var dateShell = document.getElementById("feedbackSessionDateShell");
     if(dateShell) dateShell.hidden = !!locked;
+    var localBanner = document.getElementById("portalFeedbackLocalPreviewBanner");
+    if(localBanner) localBanner.hidden = qs.get("localPreview") !== "1";
     if(feedbackExtendedSection){
       feedbackExtendedSection.hidden = false;
       setExtendedFieldsRequired(true);
@@ -1534,6 +1667,10 @@ button{
     const svc = document.getElementById("fbService");
     if(svc){
       try{ svc.focus(); }catch(_){}
+    }
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+      typeof window.PortalFeedbackNarrative.onSessionContextChange === "function"){
+      window.PortalFeedbackNarrative.onSessionContextChange();
     }
   }
 
@@ -2455,6 +2592,7 @@ button{
       engagement_rating: fields.engagementRating,
       engagement_patterns: Array.isArray(fields.independenceLevels) ? fields.independenceLevels : [],
       positive_feedback: fields.positiveFeedback || null,
+      session_narrative: fields.sessionNarrative || null,
       client_emotions: fields.clientEmotionsVal || null,
       relevant_information: fields.relevantInformation || null,
       exceptional_challenges: null,
@@ -2485,6 +2623,11 @@ button{
       delete payload.late_session_feedback;
       ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     }
+    if(insertErr && String(insertErr.message || "").toLowerCase().includes("session_narrative")){
+      payload = Object.assign({}, payload);
+      delete payload.session_narrative;
+      ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
+    }
     if(insertErr) throw insertErr;
     return data && data.id ? String(data.id) : null;
   }
@@ -2493,6 +2636,8 @@ button{
     if(!window.PortalParticipantAchievements) return;
     try{
       const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      const ctx = buildResolvedContext();
+      const sessionDateIso = String(ctx.session_date || "").trim().slice(0, 10);
       window.PortalParticipantAchievements.configure({
         esc: function(s){
           return String(s == null ? "" : s)
@@ -2502,6 +2647,10 @@ button{
             .replace(/"/g, "&quot;");
         },
         getClient: function(){ return getSupabaseClient(); },
+        getWorkingDateIso: function(){
+          if(/^\d{4}-\d{2}-\d{2}$/.test(sessionDateIso)) return sessionDateIso;
+          return portalResolvedSessionDateIso() || "";
+        },
       });
     }catch(_){}
   }
@@ -2518,8 +2667,13 @@ button{
       panel.innerHTML = "";
       return;
     }
-    const sessionKey = String(ctx.portal_session_key || ctx.portalSessionKey || "").trim();
-    await window.PortalParticipantAchievements.renderFeedbackAttachPanel(cid, sd, sessionKey || null);
+    const sessionKey = String(ctx.portal_session_key || ctx.portalSessionKey || portalSessionKeyFromUrl || "").trim();
+    const renderFn =
+      typeof window.PortalParticipantAchievements.renderFeedbackPhotoSummary === "function"
+        ? window.PortalParticipantAchievements.renderFeedbackPhotoSummary
+        : window.PortalParticipantAchievements.renderFeedbackAttachPanel;
+    if(typeof renderFn !== "function") return;
+    await renderFn(cid, sd, sessionKey || null, ctx.client_name || "");
   }
 
   async function portalFinalizeAchievementPhotosAfterSubmit(opts){
@@ -2590,6 +2744,7 @@ button{
       engagement_rating: row.engagement_rating,
       engagement_patterns: row.engagement_patterns,
       positive_feedback: row.positive_feedback,
+      session_narrative: row.session_narrative,
       client_emotions: row.client_emotions,
       relevant_information: row.relevant_information,
       exceptional_challenges: row.exceptional_challenges,
@@ -2615,7 +2770,7 @@ button{
       p.classList.toggle("isFilled", Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum);
     });
     form.querySelectorAll('.pill[data-kind="independence"]').forEach(p => {
-      const inp = p.querySelector('input[type="radio"][name="independenceLevel"]');
+      const inp = p.querySelector('input[type="checkbox"][name="independenceLevel"]');
       p.classList.toggle("isSelected", !!(inp && inp.checked));
     });
     form.querySelectorAll('.pill[data-kind="emotion"]').forEach(p => {
@@ -2635,6 +2790,9 @@ button{
   clearBtn.addEventListener("click", () => {
     form.reset();
     clearPhase2RadiosOnly();
+    if(typeof window.PortalFeedbackNarrative !== "undefined"){
+      window.PortalFeedbackNarrative.reset();
+    }
     applyFeedbackSessionContextUi();
     closeSessionDateEditPanel();
     syncFeedbackManualFields();
@@ -2677,14 +2835,19 @@ button{
       alert("Please select at least one option under Participant Emotions / Regulation.");
       return;
     }
+    if(typeof window.PortalFeedbackNarrative !== "undefined"){
+      if(!window.PortalFeedbackNarrative.validateBeforeSubmit()){
+        return;
+      }
+    }
     let positiveFeedback = (data.get("positiveFeedback") || "").toString();
     let relevantInformation = (data.get("relevantInformation") || "").toString();
     if(!clean(positiveFeedback)){
-      alert("Please complete Positive feedback (what went well).");
+      alert("Please run Filter with AI to fill Positive feedback.");
       return;
     }
     if(!clean(relevantInformation)){
-      alert("Please complete Relevant information.");
+      alert("Please run Filter with AI to fill Relevant information.");
       return;
     }
     const engagementRatingRaw = (data.get("engagementRating") || "").toString();
@@ -2698,7 +2861,7 @@ button{
     const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
     const independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);
     if(!independenceLevels.length){
-      alert("Please pick an independence level for this session.");
+      alert("Please select at least one option under Independence.");
       return;
     }
     const notifyFlag = false;
@@ -2710,6 +2873,11 @@ button{
     const formFields = {
       positiveFeedback,
       relevantInformation,
+      sessionNarrative:
+        typeof window.PortalFeedbackNarrative !== "undefined" &&
+        typeof window.PortalFeedbackNarrative.getSessionNarrativeForSubmit === "function"
+          ? window.PortalFeedbackNarrative.getSessionNarrativeForSubmit()
+          : clean((data.get("sessionNarrative") || "").toString()),
       hasPositiveFeedback,
       hasRelevantInformation,
       attendanceVal,
@@ -2897,8 +3065,12 @@ button{
       const hint = err && err.code ? " (" + err.code + ")" : "";
       alert("Submission failed. Please try again." + (msg ? "\n" + msg + hint : ""));
     }finally{
-      submitBtn.disabled = false;
       submitBtn.textContent = "Submit";
+      if(typeof window.PortalFeedbackNarrative !== "undefined"){
+        window.PortalFeedbackNarrative.syncSubmitGate();
+      }else{
+        submitBtn.disabled = false;
+      }
     }
   });
 
@@ -2923,6 +3095,15 @@ button{
   refreshFeedbackParticipantAndServicePickers().catch(function(){}).then(function(){
     applyFeedbackSessionContextUi();
     return portalSyncFeedbackAchievementsPicker().catch(function(){});
+  });
+
+  window.addEventListener("portal:feedback-photo-summary-changed", function(){
+    portalSyncFeedbackAchievementsPicker().catch(function(){});
+  });
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden){
+      portalSyncFeedbackAchievementsPicker().catch(function(){});
+    }
   });
 
   (function wireFeedbackReturnNav(){
@@ -3018,11 +3199,31 @@ button{
 
   syncPillSelection();
 
+  (async function initFeedbackNarrativeModule(){
+    if(typeof window.PortalFeedbackNarrative === "undefined") return;
+    try{
+      const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      const { getSupabaseUrl, getSupabaseAnonKey } = await import(PORTAL_SUPABASE_MODULE);
+      window.PortalFeedbackNarrative.configure({
+        getClient: function(){ return getSupabaseClient(); },
+        getSupabaseUrl: getSupabaseUrl,
+        getAnonKey: getSupabaseAnonKey,
+        getForm: function(){ return form; },
+      });
+    }catch(_){}
+    window.PortalFeedbackNarrative.init({
+      getForm: function(){ return form; },
+    });
+  })();
+
   if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
     window.PortalFeedbackVoiceInput.init({
-      fields: ["fbPositiveFeedback", "fbRelevantInformation"],
+      fields: ["fbSessionNarrative"],
       staffName: readPinIdentityName() || clean(instructorDisplayName) || "",
     });
+    if (typeof window.PortalFeedbackVoiceInput.prefetch === "function") {
+      window.PortalFeedbackVoiceInput.prefetch();
+    }
   }
 })();
 </script>

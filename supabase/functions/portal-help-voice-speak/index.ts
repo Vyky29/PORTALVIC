@@ -6,7 +6,7 @@
 // POST JSON: { text: string, voiceId?: string }
 //   → { ok: true, audioBase64: string, mime: "audio/mpeg" }
 //
-// Env: ELEVENLABS_API_KEY, optional ELEVENLABS_VOICE_ID (default Rachel)
+// Env: ELEVENLABS_API_KEY, optional ELEVENLABS_VOICE_ID (club default below)
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {
@@ -15,7 +15,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 import { verifyPortalStaff } from "../_shared/portal_staff_auth.ts";
 
-const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const DEFAULT_VOICE_ID = "3WqHLnw80rOZqJzW9YRB";
 const MAX_SPEAK_CHARS = 1200;
 
 function str(v: unknown, max = 4000): string {

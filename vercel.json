@@ -2,6 +2,7 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist/deploy",
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
     { "source": "/lead-dashboard.webmanifest", "destination": "/staff-dashboard.webmanifest" },
     { "source": "/", "destination": "/login.html" },
@@ -30,6 +31,8 @@
     { "source": "/ra_portal.html", "destination": "/risk_assessment.html" },
     { "source": "/staff-wellbeing-review", "destination": "/staff_wellbeing_review.html" },
     { "source": "/wellbeing-review", "destination": "/staff_wellbeing_review.html" },
+    { "source": "/ld-funding", "destination": "/staff_ld_funding_apply.html" },
+    { "source": "/ld-funding-apply", "destination": "/staff_ld_funding_apply.html" },
     { "source": "/timesheet", "destination": "/timesheet.html" },
     { "source": "/general-induction", "destination": "/general-induction/index.html" },
     { "source": "/induction", "destination": "/general-induction/index.html" },
@@ -69,6 +72,24 @@
     },
     {
       "source": "/staff_dashboard.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/portal-session-feedback.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/portal_help_guide.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/session_feedback.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]

@@ -1238,7 +1238,14 @@
     }
     /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
-      if(item.kind === 'closed' || item.kind === 'home') return '';
+      if(item.kind === 'closed') return '';
+      if(item.kind === 'home'){
+        return todaySessionPoolColumnHtml(Object.assign({}, item, {
+          areaLabel: 'Home',
+          poolLocationLabel: 'Home',
+          showPoolSymbol: true
+        }));
+      }
       if(item.kind === 'manager'){
         return todaySessionPoolColumnHtml(Object.assign({}, item, {
           areaLabel: portalManagerDutyAreaLabel(item),
@@ -1282,21 +1289,19 @@
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
     function todaySessionCardInnerHtml(item){
-      if(item && (item.kind === 'home' || item.portalDutyFullCard)){
-        const homeName = escapeHtml(String(item.name || 'HOME').trim() || 'HOME');
-        return (
-          '<div class="session-card-body session-card-body--duty-home">' +
-          '<div class="session-line session-line--name session-line--duty-full">' +
-          '<span class="session-meta-name">' + homeName + '</span></div></div>'
-        );
-      }
       const timeRaw = String(item.time || '').trim();
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
-        : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
+        : (item.kind === 'home'
+          ? '<span class="session-meta-name session-meta-name--home">' +
+            (typeof portalAreaNoteIconHtml === 'function'
+              ? portalAreaNoteIconHtml('Home', { showLabel: false, size: 'sm', className: 'session-home-name-icon' })
+              : '') +
+            `<span>${escapeHtml(item.name)}</span></span>`
+          : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;

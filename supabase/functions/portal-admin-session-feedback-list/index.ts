@@ -1,7 +1,8 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-session-feedback-list
-// Returns session_feedback rows for admin Sessions hub (service role bypasses RLS).
+// Legacy edge list — admin_dashboard Sessions hub uses RPC portal_admin_session_feedback_list instead.
+// Kept for external callers / rollback only.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -11,7 +12,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 
 const SELECT_COLS =
-  "id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at";
+  "id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,session_narrative,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });

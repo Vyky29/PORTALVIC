@@ -8,8 +8,11 @@
  var MAX_TRANSLATE_CHUNK = 450;
  var SILENCE_STOP_MS = 2800;
  var SILENCE_STOP_TRANSLATE_MS = 3600;
- var MAX_RECORD_MS = 90000;
+ var RECORD_WARN_MS = 90000;
+ var MAX_RECORD_MS = 120000;
  var TRANSLATE_DEBOUNCE_MS = 450;
+ var RECORD_HINT = "Recording — aim for ~1 min (max 2 min). Tap mic when done.";
+ var RECORD_WARN_MSG = "~30 seconds left — include handover if you haven't yet.";
 
  var ALL_LANGS = [
  { value: "en-GB", label: "English", translate: false, whisperCode: "en" },
@@ -107,7 +110,11 @@
  ".portal-fb-voice-mic:disabled{opacity:.5;cursor:not-allowed}" +
  ".portal-fb-voice-mic--rec{background:#fee2e2;border-color:#fca5a5;color:#b91c1c;animation:portal-fb-voice-pulse 1s ease infinite}" +
  "@keyframes portal-fb-voice-pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.35)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}" +
- ".portal-fb-voice-status{flex:1;min-width:0;font-size:12px;line-height:1.4;color:#5b6473;overflow-wrap:break-word}";
+ ".portal-fb-voice-status{flex:1;min-width:0;font-size:12px;line-height:1.4;color:#5b6473;overflow-wrap:break-word}" +
+ ".portal-fb-voice-timer{height:5px;border-radius:999px;background:#e8edf2;overflow:hidden;margin-top:4px}" +
+ ".portal-fb-voice-timer[hidden]{display:none!important}" +
+ ".portal-fb-voice-timer__fill{height:100%;width:0;background:#2d84b3;border-radius:999px;transition:width .2s linear,background .2s ease}" +
+ ".portal-fb-voice-timer__fill--warn{background:#f59e0b}";
  document.head.appendChild(st);
  }
 
@@ -311,13 +318,44 @@
  return "feedback.webm";
  }
 
+ function isAppleMediaRecorder() {
+ if (typeof navigator === "undefined") return false;
+ var ua = String(navigator.userAgent || "");
+ var touchMac = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+ return (
+ /iPad|iPhone|iPod/.test(ua) ||
+ touchMac ||
+ (/Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua))
+ );
+ }
+
  function pickMime() {
  if (typeof MediaRecorder === "undefined") return "";
- var types = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4", "audio/ogg"];
+ var types = isAppleMediaRecorder()
+ ? ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/ogg"]
+ : ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4", "audio/ogg"];
  for (var i = 0; i < types.length; i++) {
  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) return types[i];
  }
  return "";
+ }
+
+ function createMediaRecorder(stream, preferredMime) {
+ if (typeof MediaRecorder === "undefined" || !stream) return null;
+ if (preferredMime) {
+ try {
+ return new MediaRecorder(stream, { mimeType: preferredMime });
+ } catch (_typed) {}
+ }
+ try {
+ return new MediaRecorder(stream);
+ } catch (_plain) {
+ return null;
+ }
+ }
+
+ function whisperBlobTooSmall(blob) {
+ return !blob || !blob.size || blob.size < 96;
  }
 
  function chunkText(text, maxLen) {
@@ -397,6 +435,56 @@
  clearTimeout(s.translateTimer);
  s.translateTimer = null;
  }
+ if (s.warnTimer) {
+ clearTimeout(s.warnTimer);
+ s.warnTimer = null;
+ }
+ if (s.tickTimer) {
+ clearInterval(s.tickTimer);
+ s.tickTimer = null;
+ }
+ }
+
+ function hideRecordTimerBar(textarea) {
+ var wrap = textarea && textarea.closest(".portal-fb-voice-wrap");
+ if (!wrap) return;
+ var track = wrap.querySelector(".portal-fb-voice-timer");
+ if (track) track.hidden = true;
+ var fill = wrap.querySelector(".portal-fb-voice-timer__fill");
+ if (fill) {
+ fill.style.width = "0%";
+ fill.classList.remove("portal-fb-voice-timer__fill--warn");
+ }
+ }
+
+ function updateRecordTimerBar(s, elapsedMs) {
+ var wrap = s.textarea && s.textarea.closest(".portal-fb-voice-wrap");
+ if (!wrap) return;
+ var fill = wrap.querySelector(".portal-fb-voice-timer__fill");
+ var track = wrap.querySelector(".portal-fb-voice-timer");
+ if (!fill || !track) return;
+ track.hidden = false;
+ var pct = Math.min(100, (elapsedMs / MAX_RECORD_MS) * 100);
+ fill.style.width = pct + "%";
+ fill.classList.toggle("portal-fb-voice-timer__fill--warn", elapsedMs >= RECORD_WARN_MS);
+ }
+
+ function scheduleRecordTimers(s) {
+ if (!s) return;
+ if (s.warnTimer) clearTimeout(s.warnTimer);
+ if (s.maxTimer) clearTimeout(s.maxTimer);
+ if (s.tickTimer) clearInterval(s.tickTimer);
+ s.warnTimer = setTimeout(function () {
+ if (session !== s || s.stopRequested) return;
+ setVoiceStatus(s.statusEl, RECORD_WARN_MSG);
+ }, RECORD_WARN_MS);
+ s.maxTimer = setTimeout(function () {
+ requestStop(s, "max");
+ }, MAX_RECORD_MS);
+ s.tickTimer = setInterval(function () {
+ if (session !== s || s.stopRequested) return;
+ updateRecordTimerBar(s, Date.now() - (s.startedAt || Date.now()));
+ }, 200);
  }
 
  function pickBestTranscript(result) {
@@ -444,16 +532,26 @@
  dispatchInput(s.textarea);
  }
 
+ function isLongNarrativeField(textarea) {
+ if (!textarea) return false;
+ var id = String(textarea.id || "");
+ var name = String(textarea.name || "");
+ return id === "fbSessionNarrative" || name === "sessionNarrative";
+ }
+
  function silenceMsFor(s) {
+ if (isLongNarrativeField(s && s.textarea)) return 0;
  return s && s.needsTranslate ? SILENCE_STOP_TRANSLATE_MS : SILENCE_STOP_MS;
  }
 
  function bumpSilenceTimer(s) {
  if (!s || s.stopRequested) return;
+ var ms = silenceMsFor(s);
+ if (!ms) return;
  if (s.silenceTimer) clearTimeout(s.silenceTimer);
  s.silenceTimer = setTimeout(function () {
  requestStop(s, "pause");
- }, silenceMsFor(s));
+ }, ms);
  }
 
  function scheduleLiveTranslate(s) {
@@ -516,20 +614,40 @@
 
  function requestStop(s, reason) {
  if (!s || s.stopRequested) return;
+
+ if (s.mode === "whisper" && !s.recorderReady) {
+ s.pendingStop = true;
+ s.pendingStopReason = reason || "manual";
+ if (s.statusEl) {
+ s.statusEl.textContent =
+ reason === "max"
+ ? "Stopping… (microphone starting)"
+ : "Stopping… (wait for mic)";
+ }
+ return;
+ }
+
  s.stopRequested = true;
  clearSessionTimers(s);
  if (s.statusEl) {
  s.statusEl.textContent =
- reason === "pause" ? "Stopped - paused." : "Stopping...";
+ reason === "max"
+ ? "2-minute limit reached — processing…"
+ : reason === "pause"
+ ? "Stopped - paused."
+ : "Stopping...";
  }
 
  if (s.mode === "whisper") {
  if (s.recorder && s.recorder.state === "recording") {
  try {
+ if (typeof s.recorder.requestData === "function") s.recorder.requestData();
  s.recorder.stop();
  } catch (_) {
  finishWhisperSession(s);
  }
+ } else if (s.recorder && s.recorder.state === "inactive") {
+ finishWhisperSession(s);
  } else {
  finishWhisperSession(s);
  }
@@ -568,6 +686,7 @@
  });
  }
  resetMicButton(s.btn);
+ hideRecordTimerBar(s.textarea);
  if (activeRec === s.rec) activeRec = null;
  if (session === s) session = null;
  }
@@ -622,21 +741,28 @@
  if (wrap) wrap.classList.remove("portal-fb-voice-wrap--live");
 
  var chunks = s.audioChunks || [];
- if (!chunks.length) {
+ var mime = s.mime || "audio/webm";
+ var blob = chunks.length ? new Blob(chunks, { type: mime }) : null;
+ if (!blob || whisperBlobTooSmall(blob)) {
  cleanupSessionUi(s);
  if (s.textarea) s.textarea.value = s.prefix;
- setVoiceStatus(s.statusEl, "No audio recorded - tap mic and try again.", {
- autoClearMs: VOICE_ERROR_CLEAR_MS,
- });
+ var tooSoon =
+ s.recordingStartedAt && Date.now() - s.recordingStartedAt < 900;
+ setVoiceStatus(
+ s.statusEl,
+ tooSoon
+ ? "Recording was too short — speak for a few seconds, then tap mic again."
+ : "No audio recorded — check mic permission, speak clearly, then tap mic again.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ if (preferWebSpeechCapture() && !tooSoon) {
+ startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
+ }
  return;
  }
 
- var mime = s.mime || "audio/webm";
- var blob = new Blob(chunks, { type: mime });
  if (s.statusEl) {
- s.statusEl.textContent = s.needsTranslate
- ? "Converting speech to text..."
- : "Converting speech to text...";
+ s.statusEl.textContent = "Converting speech to text…";
  }
  if (s.btn) s.btn.disabled = true;
 
@@ -721,7 +847,10 @@
  }
 
  function shouldIgnoreMicToggle(s) {
- return !!(s && s.btn && Date.now() - (s.startedAt || 0) < MIC_TOGGLE_GUARD_MS);
+ if (!s || !s.btn) return false;
+ if (Date.now() - (s.startedAt || 0) >= MIC_TOGGLE_GUARD_MS) return false;
+ if (s.mode === "whisper") return !!s.recorderReady;
+ return true;
  }
 
  function shouldUseWhisperCapture() {
@@ -732,8 +861,17 @@
  if (session && session.btn === btn) {
  if (shouldIgnoreMicToggle(session)) {
  if (statusEl) {
- statusEl.textContent = "Still recording — speak, then tap mic again to finish.";
+ statusEl.textContent =
+ session.mode === "whisper" && !session.recorderReady
+ ? "Starting microphone… keep speaking."
+ : "Still recording — speak, then tap mic again to finish.";
  }
+ return;
+ }
+ if (session.mode === "whisper" && !session.recorderReady) {
+ session.pendingStop = true;
+ session.pendingStopReason = "manual";
+ if (statusEl) statusEl.textContent = "Stopping… (wait for mic)";
  return;
  }
  requestStop(session, "manual");
@@ -747,21 +885,25 @@
  function runCapture() {
  var translate = !!getLangConfig(getResolvedLang()).translate;
 
- /* ES/IT: prefer Whisper (OpenAI translations → reliable English). The free
-    WebSpeech + MyMemory path silently leaves Spanish/Italian text in the box
-    once MyMemory hits its daily/IP limit, so only use it when there is no
-    portal JWT (standalone forms without a session). */
- if (translate && shouldUseWhisperCapture()) {
+ function webSpeechFallback() {
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return true;
+ }
+ return false;
+ }
+
+ /* Whisper + MediaRecorder first (signed-in portal) — reliable for 1–2 min session narrative. */
+ if (shouldUseWhisperCapture()) {
  getAuthHeaders().then(function (headers) {
  if (headers) {
  startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
- if (preferWebSpeechCapture()) {
- startWebSpeechCapture(textarea, btn, statusEl);
- return;
+ if (translate && webSpeechFallback()) return;
+ if (statusEl) {
+ statusEl.textContent = "Sign in to the portal to use voice input.";
  }
- startMediaRecorderCapture(textarea, btn, statusEl);
  });
  return;
  }
@@ -771,18 +913,6 @@
  return;
  }
 
- if (shouldUseWhisperCapture()) {
- getAuthHeaders().then(function (headers) {
- if (headers) {
- startMediaRecorderCapture(textarea, btn, statusEl);
- return;
- }
- if (statusEl) {
- statusEl.textContent = "Sign in to the portal to use voice input.";
- }
- });
- return;
- }
  if (canUseMediaRecorderCapture()) {
  if (!whisperProbeDone) probeWhisperAvailability();
  startMediaRecorderCapture(textarea, btn, statusEl);
@@ -826,7 +956,13 @@
  recorder: null,
  stream: null,
  stopRequested: false,
+ pendingStop: false,
+ pendingStopReason: "manual",
+ recorderReady: false,
+ recordingStartedAt: 0,
  maxTimer: null,
+ warnTimer: null,
+ tickTimer: null,
  startedAt: Date.now(),
  };
  session = s;
@@ -835,16 +971,12 @@
  var wrap = textarea.closest(".portal-fb-voice-wrap");
  if (wrap) wrap.classList.add("portal-fb-voice-wrap--live");
 
- btn.classList.add("portal-fb-voice-mic--rec");
- btn.setAttribute("aria-label", "Stop voice input");
- btn.setAttribute("aria-pressed", "true");
- if (statusEl) {
- statusEl.textContent = "Recording - speak now, then tap mic again to finish.";
- }
+ if (statusEl) statusEl.textContent = "Starting microphone…";
 
  var mediaPromise = navigator.mediaDevices.getUserMedia({ audio: true });
  probeWhisperAvailability();
- mediaPromise.then(function (stream) {
+ mediaPromise
+ .then(function (stream) {
  if (session !== s) {
  stream.getTracks().forEach(function (t) {
  t.stop();
@@ -852,21 +984,64 @@
  return;
  }
  s.stream = stream;
- var rec = new MediaRecorder(stream, { mimeType: mime });
+ var rec = createMediaRecorder(stream, mime);
+ if (!rec) {
+ stream.getTracks().forEach(function (t) {
+ try {
+ t.stop();
+ } catch (_) {}
+ });
+ cleanupSessionUi(s);
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (statusEl) {
+ statusEl.textContent = "Could not start microphone — try again or type below.";
+ }
+ return;
+ }
  s.recorder = rec;
+ s.mime = rec.mimeType || mime;
  rec.ondataavailable = function (ev) {
  if (ev.data && ev.data.size) s.audioChunks.push(ev.data);
  };
  rec.onstop = function () {
  if (session === s) finishWhisperSession(s);
  };
- rec.start(250);
- s.maxTimer = setTimeout(function () {
- requestStop(s, "max");
- }, MAX_RECORD_MS);
+ rec.onerror = function () {
+ if (session === s && !s.stopRequested) {
+ requestStop(s, "error");
+ }
+ };
+ try {
+ rec.start(500);
+ } catch (startErr) {
+ cleanupSessionUi(s);
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (statusEl) {
+ statusEl.textContent = "Could not start microphone — try again or type below.";
+ }
+ return;
+ }
+ s.recorderReady = true;
+ s.recordingStartedAt = Date.now();
+ scheduleRecordTimers(s);
+ btn.classList.add("portal-fb-voice-mic--rec");
+ btn.setAttribute("aria-label", "Stop voice input");
+ btn.setAttribute("aria-pressed", "true");
+ if (statusEl) statusEl.textContent = RECORD_HINT;
+ if (s.pendingStop) {
+ requestStop(s, s.pendingStopReason || "manual");
+ }
  })
  .catch(function () {
- if (statusEl) statusEl.textContent = "Microphone blocked - allow it under Alerts, location & microphone in the menu.";
+ if (statusEl) {
+ statusEl.textContent = "Microphone blocked - allow it under Alerts, location & microphone in the menu.";
+ }
  cleanupSessionUi(s);
  });
  }
@@ -899,6 +1074,8 @@
  stopRequested: false,
  silenceTimer: null,
  maxTimer: null,
+ warnTimer: null,
+ tickTimer: null,
  translateTimer: null,
  translateSeq: 0,
  startedAt: Date.now(),
@@ -918,8 +1095,9 @@
  s.needsTranslate
  ? "Listening (" +
  (cfg.label || "your language") +
- ") — speak now, then tap mic again. English appears in the box."
- : "Listening — speak now, then tap mic again to finish."
+ ") — " +
+ RECORD_HINT
+ : RECORD_HINT
  );
  }
 
@@ -945,7 +1123,10 @@
  if (e.error === "not-allowed") {
  msg = "Microphone blocked - allow it under Alerts, location & microphone in the menu.";
  } else if (e.error === "no-speech") {
- if (Date.now() - (s.startedAt || 0) < NO_SPEECH_GRACE_MS) {
+ if (
+ isLongNarrativeField(s.textarea) ||
+ Date.now() - (s.startedAt || 0) < NO_SPEECH_GRACE_MS
+ ) {
  if (statusEl) {
  statusEl.textContent = "Listening - speak now, then tap mic again to finish.";
  }
@@ -966,9 +1147,32 @@
  rec.onend = function () {
  if (session !== s) return;
  if (!s.stopRequested) {
+ if (isLongNarrativeField(s.textarea)) {
+ s.restartAttempts = (s.restartAttempts || 0) + 1;
+ if (s.restartAttempts > 12 && shouldUseWhisperCapture()) {
+ s.stopRequested = true;
+ cleanupSessionUi(s);
+ getAuthHeaders().then(function (headers) {
+ if (headers) startMediaRecorderCapture(textarea, btn, statusEl);
+ else if (statusEl) {
+ statusEl.textContent = "Sign in to the portal to use voice input.";
+ }
+ });
+ return;
+ }
+ }
  try {
  rec.start();
  } catch (_) {
+ if (shouldUseWhisperCapture()) {
+ s.stopRequested = true;
+ cleanupSessionUi(s);
+ getAuthHeaders().then(function (headers) {
+ if (headers) startMediaRecorderCapture(textarea, btn, statusEl);
+ else finishWebSpeechSession(s);
+ });
+ return;
+ }
  finishWebSpeechSession(s);
  }
  return;
@@ -976,9 +1180,7 @@
  finishWebSpeechSession(s);
  };
 
- s.maxTimer = setTimeout(function () {
- requestStop(s, "max");
- }, MAX_RECORD_MS);
+ scheduleRecordTimers(s);
 
  try {
  rec.start();
@@ -995,7 +1197,6 @@
  var wrap = document.createElement("div");
  wrap.className = "portal-fb-voice-wrap";
  ta.parentNode.insertBefore(wrap, ta);
- wrap.appendChild(ta);
 
  var bar = document.createElement("div");
  bar.className = "portal-fb-voice-bar";
@@ -1019,9 +1220,24 @@
  bar.appendChild(statusEl);
  wrap.appendChild(bar);
 
+ var timerTrack = document.createElement("div");
+ timerTrack.className = "portal-fb-voice-timer";
+ timerTrack.hidden = true;
+ timerTrack.setAttribute("aria-hidden", "true");
+ var timerFill = document.createElement("div");
+ timerFill.className = "portal-fb-voice-timer__fill";
+ timerTrack.appendChild(timerFill);
+ wrap.appendChild(timerTrack);
+
+ wrap.appendChild(ta);
+
+ var lastMicPressAt = 0;
  function onMicPress(e) {
  e.preventDefault();
  e.stopPropagation();
+ var now = Date.now();
+ if (now - lastMicPressAt < 450) return;
+ lastMicPressAt = now;
  startCapture(ta, btn, statusEl);
  }
 
@@ -1118,6 +1334,6 @@
  setStaffName: setStaffName,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-whisper-first-es-it",
+ captureVersion: "voice-record-fix-empty-chunks-v2",
  };
 })(typeof window !== "undefined" ? window : this);

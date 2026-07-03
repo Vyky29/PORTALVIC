@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Session narrative demo — voice → Filter with AI</title>
+  <link rel="icon" type="image/png" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --navy: #0a3d62;
+      --blue: #2d84b3;
+      --gold: #f4b740;
+      --line: #d9e4ef;
+      --text: #1d2b3a;
+      --muted: #5f7185;
+      --pos-bg: #ecfdf5;
+      --pos-bd: #6ee7b7;
+      --rel-bg: #fff7ed;
+      --rel-bd: #fdba74;
+      --fam-bg: #eff6ff;
+      --fam-bd: #93c5fd;
+      --demo-bg: linear-gradient(180deg, #f4f8fc 0%, #eaf1f8 100%);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); background: var(--demo-bg); }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
+    .banner {
+      background: #fff8e6;
+      border: 1px solid rgba(244, 183, 64, 0.55);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .banner--rule {
+      background: #eff6ff;
+      border-color: rgba(45, 132, 179, 0.35);
+      margin-top: -8px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; color: var(--navy); letter-spacing: -0.02em; }
+    .sub { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 24px rgba(10, 61, 98, 0.06);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 15px; color: var(--navy); }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pill--on { background: rgba(45, 132, 179, 0.12); border-color: rgba(45, 132, 179, 0.35); color: var(--navy); }
+    .guide-steps { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+    .guide-steps li {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      padding-left: 12px;
+      border-left: 3px solid var(--gold);
+    }
+    .guide-steps strong { color: var(--text); }
+    .voice-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-play {
+      background: var(--navy);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-play--alt { background: #475569; }
+    .btn-play--live { background: #b91c1c; animation: pulse 1.2s ease infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.35); }
+      50% { box-shadow: 0 0 0 8px rgba(185, 28, 28, 0); }
+    }
+    .btn-filter {
+      background: linear-gradient(135deg, #0a3d62, #2d84b3);
+      color: #fff;
+      width: 100%;
+      margin-top: 4px;
+      font-size: 14px;
+      padding: 12px 16px;
+    }
+    .btn-example,
+    .btn-reset {
+      background: #fff;
+      color: var(--navy);
+      border: 1px solid var(--line);
+    }
+    .status { flex: 1; min-width: 140px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    .en-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #0369a1;
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      padding: 4px 8px;
+      margin-bottom: 8px;
+    }
+    .narrative-input {
+      min-height: 220px;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 15px;
+      line-height: 1.65;
+      font-family: inherit;
+      color: var(--text);
+      background: #fafcff;
+      resize: vertical;
+      overflow-wrap: anywhere;
+    }
+    .narrative-input:focus {
+      outline: none;
+      border-color: rgba(45, 132, 179, 0.55);
+      box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.15);
+    }
+    .narrative-input::placeholder { color: #94a3b8; }
+    .input-hint { margin: 0 0 8px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .record-timer {
+      height: 6px;
+      border-radius: 999px;
+      background: #e8edf2;
+      overflow: hidden;
+      margin: 0 0 10px;
+    }
+    .record-timer[hidden] { display: none !important; }
+    .record-timer__fill {
+      height: 100%;
+      width: 0;
+      background: #2d84b3;
+      border-radius: 999px;
+      transition: width 0.15s linear, background 0.2s ease;
+    }
+    .record-timer__fill--warn { background: #f59e0b; }
+    .record-timer__label {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    .out-grid { display: grid; gap: 12px; }
+    .out-box {
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .out-box--visible { opacity: 1; transform: none; }
+    .out-box--pos { background: var(--pos-bg); border: 1px solid var(--pos-bd); }
+    .out-box--rel { background: var(--rel-bg); border: 1px solid var(--rel-bd); }
+    .out-box--fam { background: var(--fam-bg); border: 1px solid var(--fam-bd); opacity: 1; transform: none; }
+    .out-box--staff {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      opacity: 1;
+      transform: none;
+    }
+    .out-box--staff .out-label { color: #334155; }
+    .step-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--navy);
+      border-radius: 6px;
+      padding: 3px 8px;
+      margin-bottom: 8px;
+    }
+    .staff-narrative-readonly {
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin: 0;
+      color: var(--text);
+    }
+    .out-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .out-box--pos .out-label { color: #047857; }
+    .out-box--rel .out-label { color: #c2410c; }
+    .out-box--fam .out-label { color: #1d4ed8; }
+    .fam-meta { display: grid; gap: 6px; margin-bottom: 10px; font-size: 13px; }
+    .fam-meta span { color: var(--muted); }
+    .fam-meta strong { color: var(--text); }
+    .compare {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(0,0,0,0.12);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .compare del { color: #9ca3af; }
+    .compare ins { text-decoration: none; color: #047857; font-weight: 600; }
+    .hidden { display: none !important; }
+    .foot { margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.5; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <strong>Local training demo</strong> — open via <code>python3 -m http.server</code> in <code>working_ui/</code>.
+      Not on Vercel yet.
+    </div>
+    <div class="banner banner--rule">
+      <strong>Important:</strong> this page no longer shows fake Filter output. The example text below is for voice training only.
+      On the live portal, open Session feedback from the orange card, dictate or type <strong>your own</strong> narrative, then tap
+      <strong>Filter with AI</strong> — output comes from <em>your</em> transcription, not this demo.
+    </div>
+    <div class="banner banner--rule">
+      <strong>Production rule:</strong> staff may speak <strong>English, Spanish or Italian</strong>, but the
+      <strong>transcript is always English</strong> (Whisper translation). <strong>Filter with AI</strong> also outputs
+      English only. <strong>Positive feedback</strong> goes straight to the <strong>family app</strong> on submit — no admin
+      rewrite step. Admin tables show the same AI text.
+    </div>
+
+    <h1>Session feedback — staff guide</h1>
+    <p class="sub">
+      What <strong>staff fill in</strong> vs what <strong>AI creates</strong> after Filter. Staff never type Positive/Relevant directly — only clicks + session narrative.
+    </p>
+
+    <div class="card">
+      <span class="step-badge">Step 1 · Staff clicks</span>
+      <h2>Engagement · Emotions · Independence</h2>
+      <div class="pill-row" aria-hidden="true">
+        <span class="pill pill--on">Engagement ★★★☆☆</span>
+        <span class="pill pill--on">Anxious</span>
+        <span class="pill pill--on">Happy/Excited</span>
+        <span class="pill pill--on">Regular support</span>
+      </div>
+      <p class="compare" style="margin-top:10px;border:none;padding:0">Also saved on submit: <strong>service</strong>, <strong>session time</strong> (from the form).</p>
+    </div>
+
+    <div class="card">
+      <span class="step-badge">Step 2 · Staff narrates or types</span>
+      <h2>Session narrative — internal (English transcript)</h2>
+      <ul class="guide-steps">
+        <li><strong>Reception</strong> — arrival, parent handover.</li>
+        <li><strong>Session</strong> — plan, strategies, challenges, First–Then, Intensive Interaction.</li>
+        <li><strong>Handover</strong> — what you told the family.</li>
+      </ul>
+      <div class="voice-bar">
+        <button type="button" class="btn btn-play" data-audio-lang="en" aria-pressed="false">▶ English voice</button>
+        <button type="button" class="btn btn-play btn-play--alt" data-audio-lang="es" aria-pressed="false">▶ Spanish voice</button>
+        <button type="button" class="btn btn-play btn-play--alt" data-audio-lang="it" aria-pressed="false">▶ Italian voice</button>
+        <button type="button" class="btn btn-example" id="btnExample">Load staff example</button>
+        <button type="button" class="btn btn-reset hidden" id="btnReset">Reset</button>
+      </div>
+      <p class="status" id="status" role="status">Type below in English, or pick a voice (ES/IT/EN → English transcript).</p>
+      <div class="en-badge">English only in this box · mic translates ES/IT → EN</div>
+      <p class="input-hint">Cover <strong>Reception</strong>, <strong>Session</strong> and <strong>Handover</strong>. Voice: aim ~1 min, max 2 min (reminder at 1½ min). Type or speak — always English in the box.</p>
+      <p class="record-timer__label hidden" id="recordTimerLabel">Recording time (max 2 min)</p>
+      <div class="record-timer hidden" id="recordTimer" aria-hidden="true">
+        <div class="record-timer__fill" id="recordTimerFill"></div>
+      </div>
+      <textarea
+        id="narrativeInput"
+        class="narrative-input"
+        rows="12"
+        spellcheck="true"
+        aria-label="Session narrative in English"
+        placeholder="Reception: how they arrived…&#10;&#10;Session: plan, strategies, challenges, what worked…&#10;&#10;Handover: what you told the family…"
+      ></textarea>
+      <button type="button" class="btn btn-filter" id="btnFilter" disabled>Filter with AI</button>
+    </div>
+
+    <div class="card hidden" id="staffFilledCard">
+      <span class="step-badge">Step 2 · What staff submitted</span>
+      <h2>Staff session narrative (kept on submit)</h2>
+      <p class="compare" style="margin-top:0;border:none;padding:0 0 10px">This is the internal narrative — <strong>not</strong> shown to families. Families only see filtered Positive below.</p>
+      <pre class="staff-narrative-readonly" id="staffNarrativeCopy"></pre>
+    </div>
+
+    <div class="card hidden" id="resultsCard">
+      <span class="step-badge">Step 3 · After Filter with AI</span>
+      <h2>AI fills these — staff review, then Submit</h2>
+      <div class="out-grid">
+        <div class="out-box out-box--pos" id="outPositive">
+          <div class="out-label">Positive feedback → family app on submit (no admin review)</div>
+          <div id="positiveText"></div>
+          <div class="compare" id="positiveCompare"></div>
+        </div>
+        <div class="out-box out-box--rel" id="outRelevant">
+          <div class="out-label">Relevant information · internal · admin tables only</div>
+          <div id="relevantText"></div>
+          <div class="compare" id="relevantCompare"></div>
+        </div>
+        <div class="out-box out-box--fam hidden" id="outFamily">
+          <div class="out-label">Step 4 · Family app (after submit)</div>
+          <div class="fam-meta">
+            <div><span>Service · </span><strong>Aquatic · Teaching Pool</strong></div>
+            <div><span>Time · </span><strong>Mon 5:00–5:30 pm</strong></div>
+            <div><span>Engagement · </span><strong>★★★☆☆</strong></div>
+            <div><span>Emotions · </span><strong>Anxious, Happy/Excited</strong></div>
+            <div><span>Independence · </span><strong>Regular support</strong></div>
+          </div>
+          <div><strong>Session feedback</strong></div>
+          <div id="familyFeedbackText" style="margin-top:6px"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="foot">Training guide demo v7 · staff input vs AI output</p>
+  </div>
+
+  <audio id="demoAudio" preload="auto"></audio>
+
+  <script>
+    (function () {
+      /** English transcript + filtered output — always EN regardless of spoken language. */
+      var DEMO = {
+        sections: [
+          {
+            tag: "Reception",
+            text:
+              "The participant arrived at the pool happy, relaxed and eager to begin the session. The handover with both the participant and their mother was positive, with no concerns raised before entering the water.",
+          },
+          {
+            tag: "Session",
+            text:
+              "At the beginning of the session, the participant was not yet engaged with the planned activities. He did not respond to the initial instructions, showed no interest in the available choices or motivators, and his attention was primarily focused on freely exploring the aquatic environment. To support regulation and build engagement, I followed his lead and used Intensive Interaction for approximately five minutes, allowing him to interact naturally with the water while strengthening our connection. Once he appeared more regulated, I introduced a simple First–Then routine using the Seahorse activity followed by a break. The participant successfully completed the activity before returning to free exploration. As the session progressed, he continued showing a strong preference for jumping, splashing and self-directed play within the pool. Rather than increasing demands, I continued to follow his interests through Intensive Interaction before gently reintroducing structured activities. The Seahorse activity was repeated successfully later in the session, followed by Front Kicking with a noodle, both using the same First–Then approach with movement breaks between activities. This strategy allowed the participant to engage in short periods of structured learning while maintaining a calm and regulated emotional state throughout the session.",
+          },
+          {
+            tag: "Handover",
+            text:
+              "Approximately ten minutes before the scheduled end of the session, the participant indicated that he wanted to finish early to go to the sauna and asked for food, suggesting that he was becoming hungry. To support a positive transition, I accompanied him to the sauna area before meeting with his mother. During the handover, I explained the overall session, highlighted his engagement with the structured activities and informed her that he had requested a snack and preferred to finish slightly earlier than planned.",
+          },
+        ],
+        audioFiles: {
+          en: "portal/demo/session-narrative-demo-en.mp3?v=20260702-v4",
+          es: "portal/demo/session-narrative-demo-es.mp3?v=20260702-v4",
+          it: "portal/demo/session-narrative-demo-it.mp3?v=20260702-v4",
+        },
+        filtered: {
+          positive:
+            "The participant arrived happy and ready to begin the session. Throughout the session, he remained calm and enjoyed exploring the aquatic environment. By following his interests and using Intensive Interaction alongside a First–Then routine, he successfully participated in several structured activities, including Seahorse and Front Kicking with a noodle. He responded positively when activities were presented in short, predictable sequences with regular movement breaks. The session finished with a smooth transition and a positive handover with his family.",
+          relevant:
+            "The participant initially demonstrated low engagement with the planned session activities and did not respond to verbal instructions, choices or available motivators. Engagement increased after approximately five minutes of Intensive Interaction and following his preferred interests. A First–Then strategy was effective in supporting participation in structured activities. The participant requested to finish the session approximately ten minutes early, indicating that he was hungry and wished to go to the sauna. This information was shared with his mother during the handover.",
+          highlights: [
+            { raw: "not yet engaged", pro: "low engagement (→ relevant)" },
+            { raw: "did not respond to the initial instructions", pro: "did not respond to verbal instructions, choices or motivators" },
+            { raw: "long spoken narrative", pro: "short professional English paragraphs" },
+            { raw: "Spanish / Italian speech", pro: "English transcript & English filter output" },
+          ],
+        },
+      };
+
+      var MIN_NARRATIVE_CHARS = 80;
+      var RECORD_WARN_MS = 90000;
+      var MAX_RECORD_MS = 120000;
+
+      function exampleNarrativeText() {
+        return DEMO.sections
+          .map(function (sec) {
+            return sec.tag + ":\n" + sec.text;
+          })
+          .join("\n\n");
+      }
+
+      var narrativeInput = document.getElementById("narrativeInput");
+      var btnFilter = document.getElementById("btnFilter");
+      var btnReset = document.getElementById("btnReset");
+      var btnExample = document.getElementById("btnExample");
+      var statusEl = document.getElementById("status");
+      var resultsCard = document.getElementById("resultsCard");
+      var audio = document.getElementById("demoAudio");
+      var playBtns = document.querySelectorAll("[data-audio-lang]");
+      var typingTimer = null;
+      var recordTickTimer = null;
+      var activePlayBtn = null;
+      var fullPlain = DEMO.sections.map(function (s) { return s.text; }).join(" ");
+
+      var spokenLabel = { en: "English", es: "Spanish", it: "Italian" };
+
+      function narrativeText() {
+        return String(narrativeInput.value || "").trim();
+      }
+
+      function syncFilterButton() {
+        btnFilter.disabled = narrativeText().length < MIN_NARRATIVE_CHARS;
+      }
+
+      function setStatus(msg) {
+        statusEl.textContent = msg;
+      }
+
+      function buildCompareHtml() {
+        return DEMO.filtered.highlights
+          .map(function (h) {
+            return '<del>' + h.raw + "</del> → <ins>" + h.pro + "</ins>";
+          })
+          .join("<br>");
+      }
+
+      function clearRecordTimerUi() {
+        if (recordTickTimer) {
+          clearInterval(recordTickTimer);
+          recordTickTimer = null;
+        }
+        document.getElementById("recordTimer").classList.add("hidden");
+        document.getElementById("recordTimerLabel").classList.add("hidden");
+        var fill = document.getElementById("recordTimerFill");
+        fill.style.width = "0%";
+        fill.classList.remove("record-timer__fill--warn");
+      }
+
+      function startRecordTimerUi(playStartedAt) {
+        clearRecordTimerUi();
+        document.getElementById("recordTimer").classList.remove("hidden");
+        document.getElementById("recordTimerLabel").classList.remove("hidden");
+        var fill = document.getElementById("recordTimerFill");
+        recordTickTimer = setInterval(function () {
+          var elapsed = Date.now() - playStartedAt;
+          var pct = Math.min(100, (elapsed / MAX_RECORD_MS) * 100);
+          fill.style.width = pct + "%";
+          fill.classList.toggle("record-timer__fill--warn", elapsed >= RECORD_WARN_MS);
+          if (elapsed >= RECORD_WARN_MS && elapsed < RECORD_WARN_MS + 250) {
+            setStatus("~30 seconds left (1½ min) — include handover if you haven't yet.");
+          }
+        }, 150);
+      }
+
+      function clearTyping() {
+        if (typingTimer) {
+          clearInterval(typingTimer);
+          typingTimer = null;
+        }
+      }
+
+      function typewriter(durationMs, onDone) {
+        clearTyping();
+        narrativeInput.value = "";
+        narrativeInput.readOnly = true;
+        var total = fullPlain.length;
+        var start = Date.now();
+        typingTimer = setInterval(function () {
+          var elapsed = Date.now() - start;
+          var ratio = Math.min(1, elapsed / durationMs);
+          narrativeInput.value = fullPlain.slice(0, Math.floor(total * ratio));
+          if (ratio >= 1) {
+            clearTyping();
+            narrativeInput.value = exampleNarrativeText();
+            narrativeInput.readOnly = false;
+            syncFilterButton();
+            onDone();
+          }
+        }, 35);
+      }
+
+      function resetResults() {
+        resultsCard.classList.add("hidden");
+        document.getElementById("outFamily").classList.add("hidden");
+        document.getElementById("outPositive").classList.remove("out-box--visible");
+        document.getElementById("outRelevant").classList.remove("out-box--visible");
+      }
+
+      function resetDemo() {
+        clearTyping();
+        clearRecordTimerUi();
+        audio.pause();
+        audio.currentTime = 0;
+        playBtns.forEach(function (b) {
+          b.disabled = false;
+          b.classList.remove("btn-play--live");
+          b.setAttribute("aria-pressed", "false");
+        });
+        activePlayBtn = null;
+        narrativeInput.readOnly = false;
+        narrativeInput.value = "";
+        syncFilterButton();
+        btnReset.classList.add("hidden");
+        resetResults();
+        setStatus("Type below in English, or pick a voice (ES/IT/EN → English transcript).");
+      }
+
+      function startPlay(lang, btn) {
+        if (btn.disabled) return;
+        clearTyping();
+        resetResults();
+        clearRecordTimerUi();
+        audio.pause();
+        audio.currentTime = 0;
+        narrativeInput.value = "";
+        narrativeInput.readOnly = true;
+        syncFilterButton();
+
+        activePlayBtn = btn;
+        playBtns.forEach(function (b) {
+          b.disabled = true;
+        });
+        btn.disabled = false;
+        btn.classList.add("btn-play--live");
+        btn.setAttribute("aria-pressed", "true");
+        btnReset.classList.remove("hidden");
+
+        var label = spokenLabel[lang] || lang;
+        setStatus(
+          "Playing " +
+            label +
+            " audio — building English transcript (translation, not Spanish/Italian text)."
+        );
+
+        audio.src = DEMO.audioFiles[lang] || DEMO.audioFiles.en;
+        audio.load();
+
+        var dur = 10000;
+        function runTypewriter() {
+          if (audio.duration && !isNaN(audio.duration)) dur = audio.duration * 1000;
+          var playStartedAt = Date.now();
+          startRecordTimerUi(playStartedAt);
+          audio.currentTime = 0;
+          audio.play().catch(function () {
+            setStatus("Audio blocked — English transcript still runs.");
+          });
+          typewriter(Math.max(8000, dur - 400), function () {
+            clearRecordTimerUi();
+            if (activePlayBtn) {
+              activePlayBtn.classList.remove("btn-play--live");
+            }
+            playBtns.forEach(function (b) {
+              b.disabled = false;
+            });
+            narrativeInput.readOnly = false;
+            syncFilterButton();
+            setStatus("English transcript ready — edit if needed, then Filter with AI.");
+          });
+        }
+
+        if (audio.readyState >= 1) runTypewriter();
+        else audio.addEventListener("loadedmetadata", runTypewriter, { once: true });
+      }
+
+      playBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          startPlay(btn.getAttribute("data-audio-lang"), btn);
+        });
+      });
+
+      btnExample.addEventListener("click", function () {
+        clearTyping();
+        audio.pause();
+        resetResults();
+        narrativeInput.readOnly = false;
+        narrativeInput.value = exampleNarrativeText();
+        syncFilterButton();
+        btnReset.classList.remove("hidden");
+        setStatus("Example loaded — edit or tap Filter with AI.");
+      });
+
+      narrativeInput.addEventListener("input", function () {
+        resetResults();
+        syncFilterButton();
+        btnReset.classList.toggle("hidden", !narrativeText());
+      });
+
+      btnFilter.addEventListener("click", function () {
+        if (narrativeText().length < MIN_NARRATIVE_CHARS) return;
+        btnFilter.disabled = true;
+        setStatus(
+          "This training page no longer fakes AI output. Open Session feedback from your orange session card, record or type YOUR narrative, then tap Filter with AI on the live portal.",
+        );
+        resultsCard.classList.remove("hidden");
+        document.getElementById("positiveText").textContent = "";
+        document.getElementById("relevantText").textContent = "";
+        document.getElementById("outFamily").classList.add("hidden");
+        btnFilter.disabled = false;
+      });
+
+      btnReset.addEventListener("click", resetDemo);
+
+      audio.addEventListener("error", function () {
+        setStatus("Audio missing — run: node database/local-vault/generate-session-narrative-demo-audio.mjs --all");
+      });
+    })();
+  </script>
+</body>
+</html>

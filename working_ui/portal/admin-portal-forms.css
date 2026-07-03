@@ -342,7 +342,7 @@ body.pfrm-modal-open { overflow: hidden; }
 .pfrm-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 120000;
+  z-index: 2147483001;
   background: rgba(15, 23, 42, 0.52);
   display: flex;
   align-items: flex-start;
@@ -406,7 +406,28 @@ body.pfrm-modal-open { overflow: hidden; }
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
+.pfrm-modal__foot--actions { justify-content: flex-start; }
+.pfrm-modal__btn--pri {
+  background: #16325c;
+  border-color: #16325c;
+  color: #fff;
+}
+.pfrm-modal__btn--pri:hover { background: #1e4070; }
+.pfrm-view-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: 700 12px inherit;
+  color: #16325c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pfrm-view-btn:hover { background: #f0f7ff; border-color: #93c5fd; }
+.admin-sessions-hub-root .col-portal-view { width: 72px; }
 .pfrm-modal__btn {
   border: 1px solid #cbd5e1;
   background: #fff;

@@ -20,7 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
 const guidePath = path.join(root, "working_ui/portal/portal_help_agent_guide.json");
 const outDir = path.join(root, "working_ui/portal/help-audio");
-const DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM";
+const DEFAULT_VOICE = "3WqHLnw80rOZqJzW9YRB";
 
 function readEnv(key) {
   const fromEnv = process.env[key];
@@ -193,7 +193,7 @@ for (const section of guide.sections || []) {
   }
 }
 
-guide.version = "2026-06-help-guide-v12";
+guide.version = guide.version || "2026-07-help-guide-v17";
 guide.description =
   "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).";
 fs.writeFileSync(guidePath, JSON.stringify(guide, null, 2) + "\n");

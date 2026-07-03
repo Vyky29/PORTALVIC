@@ -1,12 +1,14 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260705-help-guide-v11"></script>
+  <script src="/portal-static-bootstrap.js?v=20260707-help-guide-v17"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
-  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260630-term-day-status-fill" />
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <link rel="shortcut icon" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260702-home-icon" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
   <style>
     :root{
@@ -97,7 +99,23 @@
     /* Real portal UI inside demos */
     #guideLiveScope.guide-live-scope{min-width:0}
     #guideLiveScope .guide-today-panel{
-      border:none;background:transparent;box-shadow:none;padding:0;margin:0
+      border:none;background:transparent;box-shadow:none;padding:0;margin:0;
+      display:block;height:auto;min-height:0;max-height:none;flex:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid{
+      flex:none;min-height:auto;max-height:none;overflow:visible;padding:0 0 6px
+    }
+    #guideLiveScope .guide-today-panel .today-grid.today-grid--session-scroll{
+      overflow:visible;max-height:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows{
+      flex:none;height:auto;min-height:auto;max-height:none
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows > .session-card{
+      flex:0 0 auto;min-height:58px;max-height:none;margin:0 0 6px
+    }
+    #guideLiveScope .guide-today-panel .today-grid-rows > .session-card:last-child{
+      margin-bottom:0
     }
     #guideLiveScope .guide-today-panel .section-head--today{padding:0 0 8px}
     #guideLiveScope .guide-today-panel .today-section-title{font-size:15px}
@@ -131,6 +149,19 @@
     #guideLiveScope .guide-feedback-flow .guide-flow-arrow{
       font-size:22px;color:var(--guide-muted);flex:none
     }
+    #guideLiveScope .guide-fb-form{display:grid;gap:8px}
+    #guideLiveScope .guide-fb-stars{display:flex;gap:4px;flex-wrap:wrap}
+    #guideLiveScope .guide-fb-star{
+      width:28px;height:28px;border-radius:8px;background:#fff9eb;border:1px solid #f6d5ac;
+      display:flex;align-items:center;justify-content:center;font-size:14px;color:#b66416;font-weight:800
+    }
+    #guideLiveScope .guide-fb-star.is-on{background:#fdf0e0;border-color:#ef8b3b}
+    #guideLiveScope .guide-fb-btn{
+      display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:10px;
+      background:var(--guide-navy);color:#fff;font-size:12px;font-weight:800;border:none
+    }
+    #guideLiveScope .guide-fb-btn.is-hl{box-shadow:0 0 0 3px rgba(45,132,179,.35)}
+    #guideLiveScope .guide-fb-readonly{background:#f8fafc;color:var(--guide-muted);min-height:52px}
 
     /* Simplified mock-ups for forms / lists (not session cards) */
     .d-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -387,7 +418,17 @@
       margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--guide-border);
       background:#fff;font-size:13px;line-height:1.45;color:var(--guide-muted);min-width:0
     }
-    .guide-audio-fallback[hidden]{display:none !important}
+    .guide-read-body--open{
+      margin:0 0 12px;padding:12px 14px;border-radius:14px;
+      background:#f4f8fc;border:1px solid var(--guide-border)
+    }
+    .guide-read-body--open p{margin:0;color:var(--guide-text);font-size:15px;line-height:1.55;white-space:pre-wrap;overflow-wrap:break-word}
+    .guide-callout{
+      margin:0 0 12px;padding:12px 14px;border-radius:14px;
+      border:1px solid rgba(244,183,64,.55);background:#fff8e8;color:var(--guide-text);
+      font-size:14px;line-height:1.5;overflow-wrap:break-word
+    }
+    .guide-callout strong{color:var(--guide-navy)}
     .guide-audio-fallback audio{width:100%;margin-top:8px}
     .guide-audio-fallback strong{color:var(--guide-navy)}
   </style>
@@ -402,13 +443,16 @@
       Tap Play to hear a short walkthrough while the preview shows the matching part of the app.
       Use <strong>Read full text</strong> under a card if you prefer to read instead of listen.
       Open this page from Quick menu → Settings → <strong>Staff help guide</strong>.
+      For screenshot walkthroughs with fake sessions (outstanding, submitted, absent, halos), use the
+      <a href="/teflon_guide_shots.html"><strong>Teflon demo account</strong></a>
+      (login <strong>Teflon</strong> · PIN <strong>1111</strong>) — nothing counts in payroll or admin stats.
     </div>
     <p class="voice-banner" id="guideVoiceBanner" hidden></p>
     <div id="guideRoot"><p class="loading">Loading guide…</p></div>
     <p class="foot">CS Portal · Staff help guide</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260705-help-guide-v14"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260707-help-guide-v17"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -436,7 +480,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v14";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260707-feedback-guide-v17";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -513,7 +557,7 @@
 
   function buildLoginReplica() {
     return (
-      '<div class="guide-login-mock guide-login-replica">' +
+      '<form class="guide-login-mock guide-login-replica" autocomplete="off" aria-label="Login example (illustration only)" onsubmit="return false">' +
       '<header class="login-brand" data-guide-focus="brand">' +
       '<div class="login-logo-stage">' +
       loginOrbitSvg("guideLoginOrb") +
@@ -527,10 +571,10 @@
       "</div>" +
       '<div class="field" data-guide-focus="password">' +
       '<label>PIN or password</label>' +
-      '<input type="password" readonly value="12345678" aria-label="PIN or password example" />' +
+      '<input type="password" readonly value="12345678" autocomplete="off" aria-label="PIN or password example" />' +
       "</div>" +
       '<button type="button" class="btn-login" data-guide-focus="submit">Login</button>' +
-      "</div>"
+      "</form>"
     );
   }
 
@@ -715,6 +759,38 @@
         liveScopeClose()
       );
     }
+    if (k === "feedback-narrative-form") {
+      return (
+        liveScopeOpen() +
+        '<div class="d-form guide-fb-form">' +
+        '<div class="d-panel-title">Session feedback</div>' +
+        '<div data-guide-focus="ratings">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin-bottom:4px">Engagement</div>' +
+        '<div class="guide-fb-stars" aria-hidden="true">' +
+        '<span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star">★</span>' +
+        "</div>" +
+        '<div class="d-chips" style="margin-top:6px">' +
+        '<span class="d-chip d-chip--done">Happy/Excited</span><span class="d-chip d-chip--pending">With prompts</span>' +
+        "</div>" +
+        "</div>" +
+        '<div data-guide-focus="narrative">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Session narrative</div>' +
+        '<div class="d-input" style="min-height:72px;line-height:1.4">Reception: arrived calmly with mum…<br><br>Session: worked on backstroke…<br><br>Handover: told family he tried hard today.</div>' +
+        "</div>" +
+        '<div data-guide-focus="filter">' +
+        '<button type="button" class="guide-fb-btn is-hl">Filter with AI</button>' +
+        "</div>" +
+        '<div data-guide-focus="ai-output">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Positive feedback</div>' +
+        '<div class="d-input guide-fb-readonly">Hazem had a great session and worked hard on backstroke.</div>' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Relevant information</div>' +
+        '<div class="d-input guide-fb-readonly">Needed prompts for lane entry; calm throughout.</div>' +
+        '<div class="d-chips" style="margin-top:6px"><span class="d-chip d-chip--done">Submit</span></div>' +
+        "</div>" +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
     if (k === "login-screenshot" || k === "login-mock") {
       return buildLoginReplica();
     }
@@ -881,6 +957,24 @@
       });
   }
 
+  function renderSectionBody(id, paras) {
+    if (!paras) return "";
+    var openIds = { feedback: true };
+    if (openIds[id]) {
+      return (
+        '<div class="guide-callout"><strong>New feedback flow.</strong> Tap the orange session card → write your session narrative → Filter with AI → review → Submit. Steps 1–7 are below.</div>' +
+        '<div class="guide-read-body guide-read-body--open"><p>' +
+        esc(paras) +
+        "</p></div>"
+      );
+    }
+    return (
+      '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
+      esc(paras) +
+      "</p></div></details>"
+    );
+  }
+
   function renderSection(s) {
     var id = String(s.id || "").trim();
     var paras = String(s.content || "").trim();
@@ -911,12 +1005,8 @@
       "</div>" +
       "</div>" +
       (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
+      renderSectionBody(id, paras) +
       (renderIllustrations(s.illustrations) ? '<div class="guide-photos">' + renderIllustrations(s.illustrations) + "</div>" : "") +
-      (paras
-        ? '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
-          esc(paras) +
-          "</p></div></details>"
-        : "") +
       "</article>"
     );
   }
@@ -1035,14 +1125,22 @@
       steps.forEach(function (st, idx) {
         lines.push(st.voice);
         stepMap.push(idx);
-        stepOpts.push({ fallbackBrowser: false });
+        stepOpts.push({
+          staticUrl: st.audio || "",
+          preferStatic: true,
+          fallbackBrowser: false,
+        });
       });
     } else {
       var single = sectionVoiceText(section);
       if (single) {
         lines.push(single);
         stepMap.push(-1);
-        stepOpts.push({ fallbackBrowser: false });
+        stepOpts.push({
+          staticUrl: String(section.audio || "").trim(),
+          preferStatic: true,
+          fallbackBrowser: false,
+        });
       }
     }
     if (!lines.length) {
@@ -1146,6 +1244,20 @@
         return;
       }
       root.innerHTML = sections.map(renderSection).join("");
+      var nav = document.createElement("ul");
+      nav.className = "nav";
+      nav.setAttribute("aria-label", "Guide topics");
+      sections.forEach(function (s) {
+        var sid = String(s.id || "").trim();
+        if (!sid) return;
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = "#" + sid;
+        a.textContent = String(s.title || sid).trim();
+        li.appendChild(a);
+        nav.appendChild(li);
+      });
+      root.parentNode.insertBefore(nav, root);
       guideSectionsById = {};
       sections.forEach(function (s) {
         var sid = String(s.id || "").trim();

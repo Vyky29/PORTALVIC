@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-help-guide-v14",
+  "version": "2026-07-help-guide-v17",
   "description": "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).",
   "sections": [
     {
@@ -21,13 +21,13 @@
           "voice": "Each day, open Today on your dashboard. Orange cards mean feedback is still waiting.",
           "demo": "session-cards",
           "caption": "Today — tap orange cards for feedback",
-          "audio": "/portal/help-audio/getting-started-01-today-tap-orange-cards-for-feedback.mp3"
+          "audio": "/portal/help-audio/getting-started-01-today-tap-orange-cards-for-feedback.mp3?v=20260707-club-voice"
         },
         {
           "voice": "CS Portal runs on your phone — before, during and after sessions. Daily tools live in Quick menu.",
           "demo": "quick-menu-tiles",
           "caption": "Quick menu — your daily tools",
-          "audio": "/portal/help-audio/getting-started-02-quick-menu-your-daily-tools.mp3"
+          "audio": "/portal/help-audio/getting-started-02-quick-menu-your-daily-tools.mp3?v=20260707-club-voice"
         }
       ],
       "demos": [
@@ -58,28 +58,28 @@
           "voice": "Open the portal link your manager sent you. This is the sign-in screen.",
           "demo": "login-mock",
           "caption": "Log in",
-          "audio": "/portal/help-audio/login-01-foto-1-log-in.mp3"
+          "audio": "/portal/help-audio/login-01-log-in.mp3?v=20260707-club-voice"
         },
         {
           "voice": "Tap Name or email and enter your first name or club email address.",
           "demo": "login-mock",
           "focus": "email",
           "caption": "Name or email",
-          "audio": "/portal/help-audio/login-02-email.mp3"
+          "audio": "/portal/help-audio/login-02-email.mp3?v=20260707-club-voice"
         },
         {
           "voice": "Enter your PIN or password.",
           "demo": "login-mock",
           "focus": "password",
           "caption": "PIN or password",
-          "audio": "/portal/help-audio/login-03-password.mp3"
+          "audio": "/portal/help-audio/login-03-password.mp3?v=20260707-club-voice"
         },
         {
           "voice": "Tap Login. You land on your dashboard with Today’s sessions.",
           "demo": "login-mock",
           "focus": "submit",
           "caption": "Login",
-          "audio": "/portal/help-audio/login-04-submit.mp3"
+          "audio": "/portal/help-audio/login-04-submit.mp3?v=20260707-club-voice"
         }
       ],
       "demos": [
@@ -112,21 +112,21 @@
           "demo": "install-safari",
           "focus": "iphone",
           "caption": "iPhone — Share button",
-          "audio": "/portal/help-audio/install-01-iphone.mp3"
+          "audio": "/portal/help-audio/install-01-iphone.mp3?v=20260707-club-voice"
         },
         {
           "voice": "Choose Add to Home Screen, then Add. The CS Portal icon appears on your home screen.",
           "demo": "install-share-sheet",
           "focus": "iphone-add",
           "caption": "Add to Home Screen",
-          "audio": "/portal/help-audio/install-02-iphone-add.mp3"
+          "audio": "/portal/help-audio/install-02-iphone-add.mp3?v=20260707-club-voice"
         },
         {
           "voice": "On Android, open the portal in Chrome. Tap the menu, then Install app or Add to Home screen.",
           "demo": "install-android",
           "focus": "android",
           "caption": "Android — Install app",
-          "audio": "/portal/help-audio/install-03-android.mp3"
+          "audio": "/portal/help-audio/install-03-android.mp3?v=20260707-club-voice"
         }
       ],
       "demos": [
@@ -155,13 +155,13 @@
           "voice": "Today lists your sessions. Each card shows time, venue, participant and status.",
           "demo": "session-cards",
           "caption": "Today session cards",
-          "audio": "/portal/help-audio/dashboard-01-today-session-cards.mp3"
+          "audio": "/portal/help-audio/dashboard-01-today-session-cards.mp3?v=20260707-club-voice"
         },
         {
           "voice": "Coloured dots around the logo mean something is waiting. Tap the logo to see reminders.",
           "demo": "halo",
           "caption": "Logo halo — tap when dots show",
-          "audio": "/portal/help-audio/dashboard-02-logo-halo-tap-when-dots-show.mp3"
+          "audio": "/portal/help-audio/dashboard-02-logo-halo-tap-when-dots-show.mp3?v=20260707-club-voice"
         }
       ],
       "demos": [
@@ -210,7 +210,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/colours-overview.mp3"
+      "audio": "/portal/help-audio/colours-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "logo-halo",
@@ -237,11 +237,11 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/logo-halo-overview.mp3"
+      "audio": "/portal/help-audio/logo-halo-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "feedback",
-      "title": "Sessions and feedback",
+      "title": "Session feedback (NEW — narrative + Filter with AI)",
       "keywords": [
         "feedback",
         "outstanding",
@@ -249,10 +249,17 @@
         "submit",
         "session card",
         "voice feedback",
-        "comentarios"
+        "session narrative",
+        "filter with ai",
+        "filter ai",
+        "positive feedback",
+        "narrative",
+        "comentarios",
+        "narrativa",
+        "filtro ia"
       ],
-      "voice_script": "Always open feedback from the orange session card — it pre-fills the participant. Complete the form and submit. The card turns green. Mark Absent from the participant card if they did not attend.",
-      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nComplete engagement, regulation, independence and notes, then submit.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nWho needs their own feedback:\n• Day Centre and shared Bespoke (e.g. Ikram, Emmanuel, Fadi, Timi with co-instructors): if a colleague already submitted for that client during the shared block, your card can show green — you do not need a second report.\n• Multi-Activity, Aquatic/Teaching pool and Climbing: each instructor submits their own feedback for their slot (often 45 minutes). A colleague's submission does not complete yours — e.g. afternoon MA at Acton when you and another staff split the hour.\n• Linked services (e.g. Aquatic then Multi-Activity): each worker who ran their part of the session submits for their time only.\n\nMicrophone in Settings is optional for voice feedback or voice typing.",
+      "voice_script": "Always open feedback from the orange session card — it pre-fills the participant. Rate engagement, emotions and independence. Write your session narrative covering reception, session and handover. Tap Filter with AI, review what it wrote, then Submit. The card turns green. Mark Absent if they did not attend.",
+      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nHow to complete feedback:\n1. Rate **Engagement** (1–5 stars).\n2. Select **Participant emotions / regulation** — all that apply.\n3. Select **Independence** — all that apply.\n4. Write your **Session narrative** in English. Cover **Reception** (arrival, parent handover), **Session** (plan, strategies, challenges, what worked), and **Handover** (what you told the family). Type or use the microphone — optional in Settings; aim ~1 minute, max 2.\n5. Tap **Filter with AI**. AI fills **Positive feedback** (sent to the family app) and **Relevant information** (internal admin only).\n6. Review both fields. If you edit the narrative, run **Filter with AI** again before Submit.\n7. Tap **Submit**. The card turns green.\n\nSubmit is blocked until Filter with AI has run successfully.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nWho needs their own feedback:\n• Day Centre and shared Bespoke (e.g. Ikram, Emmanuel, Fadi, Timi with co-instructors): if a colleague already submitted for that client during the shared block, your card can show green — you do not need a second report.\n• Multi-Activity, Aquatic/Teaching pool and Climbing: each instructor submits their own feedback for their slot (often 45 minutes). A colleague's submission does not complete yours — e.g. afternoon MA at Acton when you and another staff split the hour.\n• Linked services (e.g. Aquatic then Multi-Activity): each worker who ran their part of the session submits for their time only.\n\nMicrophone in Settings is optional for voice narrative or voice typing.",
       "steps": [
         {
           "voice": "When feedback is pending, the session card is orange with a Pending pill.",
@@ -262,17 +269,35 @@
           "audio": "/portal/help-audio/feedback-01-pending.mp3"
         },
         {
-          "voice": "Tap the card, complete the feedback form, and submit. The card turns green.",
+          "voice": "On the form, rate engagement, emotions and independence. Then write your session narrative — reception, what happened in the session, and handover to the family.",
+          "demo": "feedback-narrative-form",
+          "focus": "narrative",
+          "caption": "Ratings + session narrative (Reception · Session · Handover)",
+          "audio": "/portal/help-audio/feedback-02-narrative.mp3"
+        },
+        {
+          "voice": "Tap Filter with AI. Review Positive feedback for families and Relevant information for admin. If you change the narrative, filter again, then Submit.",
+          "demo": "feedback-narrative-form",
+          "focus": "filter",
+          "caption": "Filter with AI — then Submit",
+          "audio": "/portal/help-audio/feedback-03-filter.mp3"
+        },
+        {
+          "voice": "After submit, the session card turns green.",
           "demo": "feedback-flow",
           "focus": "done",
           "caption": "Green — feedback submitted",
-          "audio": "/portal/help-audio/feedback-02-done.mp3"
+          "audio": "/portal/help-audio/feedback-04-done.mp3"
         }
       ],
       "demos": [
         {
           "demo": "feedback-flow",
           "caption": "Orange (pending) → submit → green (done)."
+        },
+        {
+          "demo": "feedback-narrative-form",
+          "caption": "Session narrative → Filter with AI → review → Submit."
         }
       ],
       "illustrations": []
@@ -302,7 +327,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/participants-overview.mp3"
+      "audio": "/portal/help-audio/participants-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "quick-menu",
@@ -324,7 +349,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/quick-menu-overview.mp3"
+      "audio": "/portal/help-audio/quick-menu-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "announcements",
@@ -352,7 +377,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/announcements-overview.mp3"
+      "audio": "/portal/help-audio/announcements-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "daily-forms",
@@ -380,7 +405,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/daily-forms-overview.mp3"
+      "audio": "/portal/help-audio/daily-forms-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "finance",
@@ -409,7 +434,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/finance-overview.mp3"
+      "audio": "/portal/help-audio/finance-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "session-disruption",
@@ -429,7 +454,7 @@
       "voice_script": "If you cannot work a rota session, submit Session disruption report in Quick menu. Still call or email admin as soon as you can.",
       "content": "If you cannot attend a session on the day, or you need a planned day off from the rota, complete the Session Disruption Report (POL-048).\n\nQuick menu → Session disruption report — same form for same-day absence and planned absence (section 3.3 of the procedure).\n\nFill in the affected date, venue and reason, then submit. Admin receives the report and your day off is recorded for cover.\n\nStill notify admin by phone or email as soon as possible — the form is the follow-up within 24 hours.\n\nClient session cancellations (participant did not attend) use a different form: Cancellation from the participant card.",
       "illustrations": [],
-      "audio": "/portal/help-audio/session-disruption-overview.mp3"
+      "audio": "/portal/help-audio/session-disruption-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "documents",
@@ -451,7 +476,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/documents-overview.mp3"
+      "audio": "/portal/help-audio/documents-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "alerts-settings",
@@ -475,7 +500,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/alerts-settings-overview.mp3"
+      "audio": "/portal/help-audio/alerts-settings-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "area-notes",
@@ -500,7 +525,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/area-notes-overview.mp3"
+      "audio": "/portal/help-audio/area-notes-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "lead-tools",
@@ -521,7 +546,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/lead-tools-overview.mp3"
+      "audio": "/portal/help-audio/lead-tools-overview.mp3?v=20260707-club-voice"
     },
     {
       "id": "profile-update",
@@ -542,7 +567,7 @@
         }
       ],
       "illustrations": [],
-      "audio": "/portal/help-audio/profile-update-overview.mp3"
+      "audio": "/portal/help-audio/profile-update-overview.mp3?v=20260707-club-voice"
     }
   ]
 }

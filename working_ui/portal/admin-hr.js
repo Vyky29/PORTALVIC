@@ -59,6 +59,8 @@
     linkedKeys: {}, // name_key -> true when the person has a login account
     unavail: [],    // staff_unavailability rows
     profileConfirmRows: [], // staff_profiles with profile_last_confirmed_at
+    ldFundingApps: [],
+    ldFundingFilter: "pending",
     activeFilter: "active", // active | inactive | all
     query: "",
   };
@@ -760,6 +762,9 @@
       + '</div>';
 
     html += renderAnnualProfileCard();
+    if (global.AdminLDFundingReview && typeof global.AdminLDFundingReview.renderCard === "function") {
+      html += global.AdminLDFundingReview.renderCard(state.ldFundingApps, state.ldFundingFilter);
+    }
 
     // People table (basics)
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
@@ -844,6 +849,33 @@
         openAnnualProfileResponse(btn.getAttribute("data-hr-profile-view"));
       });
     });
+    if (global.AdminLDFundingReview && typeof global.AdminLDFundingReview.bindCard === "function") {
+      global.AdminLDFundingReview.bindCard(root, state.ldFundingApps, {
+        client: deps.getClient(),
+        filter: state.ldFundingFilter,
+        onFilterChange: function (f) {
+          state.ldFundingFilter = f || "pending";
+          render();
+        },
+        onSaved: function () {
+          reloadLdFundingApps(deps.getClient());
+        },
+      });
+    }
+  }
+
+  function reloadLdFundingApps(client) {
+    if (!client || !global.AdminLDFundingReview) return Promise.resolve();
+    return global.AdminLDFundingReview.loadApplications(client)
+      .then(function (apps) {
+        state.ldFundingApps = apps || [];
+        render();
+      })
+      .catch(function (err) {
+        try {
+          console.warn("[hr] ld funding load", err);
+        } catch (_) {}
+      });
   }
 
   function openScreen(opts) {
@@ -1312,6 +1344,16 @@
     state.rootEl = rootEl;
     rootEl.innerHTML = '<p class="muted" style="padding:8px 0">Loading H&amp;R…</p>';
 
+    if (global.AdminLDFundingReview && typeof global.AdminLDFundingReview.configure === "function") {
+      global.AdminLDFundingReview.configure({
+        esc: deps.esc,
+        toast: deps.toast,
+        openScreen: openScreen,
+        closeScreen: closeScreen,
+        icon: icon,
+      });
+    }
+
     var client = deps.getClient();
     if (!client) {
       rootEl.innerHTML = '<p class="muted" style="padding:8px 0">Connecting to Supabase… open this view again in a moment.</p>';
@@ -1331,9 +1373,15 @@
       return Promise.all([
         loadUnavail(client),
         loadStaffProfileConfirmations(client),
+        global.AdminLDFundingReview
+          ? global.AdminLDFundingReview.loadApplications(client).catch(function () {
+              return [];
+            })
+          : Promise.resolve([]),
       ]).then(function (parts) {
         state.unavail = parts[0] || [];
         state.profileConfirmRows = parts[1] || [];
+        state.ldFundingApps = parts[2] || [];
         render();
       });
     }).catch(function (err) {

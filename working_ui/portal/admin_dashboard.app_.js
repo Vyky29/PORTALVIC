@@ -14411,33 +14411,63 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var o = el.options[el.selectedIndex];
       return o ? String(o.textContent || o.value || '') : '';
     }
+    function portalFillComposerStaffPicker(sel, rows){
+      if(!sel) return;
+      sel.innerHTML = '<option value="">Choose person…</option>';
+      (rows || []).forEach(function(row){
+        if(!row || row.is_active === false) return;
+        var label = (row.full_name || row.username || '').trim() || String(row.id || '').slice(0, 8);
+        var bits = [];
+        if(row.app_role) bits.push(row.app_role);
+        if(row.staff_role) bits.push(row.staff_role);
+        var suffix = bits.length ? ' — ' + bits.join(' · ') : '';
+        var opt = document.createElement('option');
+        opt.value = row.id;
+        opt.textContent = label + suffix;
+        sel.appendChild(opt);
+      });
+      sel.disabled = false;
+    }
     function portalLoadComposerStaffPicker(){
       var sel = $('cmpTargetUser');
       if(!sel) return Promise.resolve();
-      var client = getSchedSupabaseClient();
+      sel.disabled = true;
       sel.innerHTML = '<option value="">Loading…</option>';
-      if(!client){
-        sel.innerHTML = '<option value="">Sign in to Supabase to load staff</option>';
+      if(window.__PORTAL_COMPOSER_STAFF_CACHE__ && window.__PORTAL_COMPOSER_STAFF_CACHE__.length){
+        portalFillComposerStaffPicker(sel, window.__PORTAL_COMPOSER_STAFF_CACHE__);
         return Promise.resolve();
       }
-      return client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').order('full_name', { ascending:true }).then(function(res){
-        sel.innerHTML = '<option value="">Choose person…</option>';
-        if(res.error){
-          sel.innerHTML = '<option value="">'+esc(String(res.error.message || res.error))+'</option>';
+      return (typeof adminEnsureSupabaseClient === 'function'
+        ? adminEnsureSupabaseClient()
+        : Promise.resolve(getSchedSupabaseClient())
+      ).then(function(client){
+        if(!client || !client.from){
+          sel.disabled = false;
+          sel.innerHTML = '<option value="">Sign in to Supabase to load staff</option>';
           return;
         }
-        (res.data || []).forEach(function(row){
-          if(row.is_active === false) return;
-          var label = (row.full_name || row.username || '').trim() || String(row.id || '').slice(0, 8);
-          var bits = [];
-          if(row.app_role) bits.push(row.app_role);
-          if(row.staff_role) bits.push(row.staff_role);
-          var suffix = bits.length ? ' — ' + bits.join(' · ') : '';
-          var opt = document.createElement('option');
-          opt.value = row.id;
-          opt.textContent = label + suffix;
-          sel.appendChild(opt);
+        return Promise.race([
+          client.from('staff_profiles')
+            .select('id,full_name,username,app_role,staff_role,is_active')
+            .or('is_active.is.null,is_active.eq.true')
+            .order('full_name', { ascending:true })
+            .limit(500),
+          new Promise(function(_resolve, reject){
+            setTimeout(function(){ reject(new Error('Staff list timed out — refresh the page and try again.')); }, 15000);
+          })
+        ]).then(function(res){
+          if(res.error){
+            sel.disabled = false;
+            sel.innerHTML = '<option value="">'+esc(String(res.error.message || res.error))+'</option>';
+            return;
+          }
+          var rows = res.data || [];
+          window.__PORTAL_COMPOSER_STAFF_CACHE__ = rows;
+          portalFillComposerStaffPicker(sel, rows);
         });
+      }).catch(function(err){
+        sel.disabled = false;
+        sel.innerHTML = '<option value="">'+esc(String(err && err.message || err || 'Could not load staff'))+'</option>';
       });
     }
     function portalOnComposeToChange(){

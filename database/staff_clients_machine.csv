@@ -906,7 +906,7 @@ Wall,Rodin,Sunday,ALEX,Climbing Activity,2026-07-05,1 to 2,Westway
 Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-07-05,1 to 2,Westway
 Big Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Hub Room,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
-Hub Room,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
+Hub Room,Aydaan Ah,Sunday,BERTA,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Big Pool,Erik,Sunday,AURORA,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Small Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Hub Room,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
@@ -923,14 +923,14 @@ Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
 Small Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-07-05,9 to 10.15,SwimFarm
 Small Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Hub Room,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Hub Room,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Hub Room,Jack W,Sunday,BERTA,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Big Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Big Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Hub Room,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-07-05,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-07-05,10 to 11,Westway
 Teaching Pool,Jordan,Sunday,TEFLON,Aquatic Activity,2026-07-05,10 to 11,Northolt
-Hub Room,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
+Hub Room,Adam Ab,Sunday,BERTA,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Big Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Big Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Hub Room,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
@@ -938,13 +938,13 @@ Hub Room,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Small Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Small Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Hub Room,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
-Hub Room,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
+Hub Room,Cyrus,Sunday,BERTA,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Hub Room,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Big Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Big Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-07-05,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-07-05,11 to 12,Westway
-Hub Room,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
+Hub Room,Arthur Ma,Sunday,BERTA,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Big Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Small Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Big Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
@@ -955,7 +955,7 @@ Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-07-05,12 to 1,Westway
 Hub Room,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
-Hub Room,Erik,Sunday,"JOHN, BERTA",Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Hub Room,Erik,Sunday,BERTA,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Hub Room,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Small Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Teaching Pool,Adam Pi,Monday,ANGEL,Aquatic Activity,2026-07-06,4 to 5.30,Acton
