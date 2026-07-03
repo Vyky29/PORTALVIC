@@ -437,7 +437,7 @@
               '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
             );
           } else {
-            console.info('[PortalDayOps] session_feedback live rows:', live.length);
+            console.log('[PortalDayOps] session_feedback live rows:', live.length);
           }
           dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
         })()
@@ -580,7 +580,9 @@
       esc(String(fbCount)) +
       '</strong> rows · Overrides: <strong>' +
       esc(String(ovCount)) +
-      '</strong> · Console: <code>portalAdminLiveLoadStatus()</code>';
+      '</strong> · build <code>' +
+      esc(PORTAL_DAY_OPS_BUILD) +
+      '</code>';
   }
 
   function exposePortalAdminDebugGlobals() {

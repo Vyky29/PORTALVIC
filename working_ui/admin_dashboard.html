@@ -17762,8 +17762,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v2';
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260703-status-bar";
+      "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -18079,6 +18080,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_LIVE_LOAD__ = box;
       }catch(_rec){}
     }
+    async function adminFetchSessionFeedbackViaEdge(sinceIso){
+      var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
+      if(edge.error){
+        console.warn('[admin] session_feedback edge:', edge.error);
+        adminRecordLiveLoad('session_feedback', { count: 0, error: edge.error, via: 'edge' });
+        return { rows: [], error: edge.error, via: 'edge' };
+      }
+      var raw = (edge.data && edge.data.rows) ? edge.data.rows : [];
+      var rows = (raw || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+      if(!rows.length){
+        console.warn('[admin] session_feedback edge: 0 rows mapped');
+      } else {
+        console.log('[admin] session_feedback edge loaded:', rows.length, 'rows');
+      }
+      adminRecordLiveLoad('session_feedback', { count: rows.length, error: null, via: 'edge' });
+      return { rows: rows, error: null, via: 'edge' };
+    }
     async function adminFetchSessionFeedbackViaRpcRest(sinceIso, tok){
       var base = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL.trim()
         ? window.SUPABASE_URL.trim().replace(/\/+$/, '')
@@ -18387,8 +18405,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tab === 'cancellations') return 'cancellations';
       return 'feedback';
     }
+    function adminHubScriptNeedsReload(){
+      var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
+      if(tagged && tagged.src && tagged.src.indexOf(PORTAL_ADMIN_HUB_BUILD) === -1) return true;
+      if(window.AdminSessionsHub && typeof window.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function') return true;
+      return false;
+    }
+    function adminPurgeHubScript(){
+      try{
+        var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
+        if(tagged) tagged.remove();
+      }catch(_rm){}
+      try{ delete window.AdminSessionsHub; }catch(_del){ window.AdminSessionsHub = undefined; }
+    }
     function adminEnsureAdminSessionsHubScript(){
       return new Promise(function(resolve, reject){
+        if(adminHubScriptNeedsReload()) adminPurgeHubScript();
         if(window.AdminSessionsHub){ resolve(); return; }
         var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
         if(tagged){
