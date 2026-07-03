@@ -17127,6 +17127,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else console.warn('[admin] schedule_overrides edge: 0 rows');
       return { rows: rows, error: null, via: 'edge' };
     }
+    function adminSyncScheduleOverridesToDayOpsPayload(rows){
+      try{
+        if(window.PortalDayOps && typeof window.PortalDayOps.getPayload === 'function'){
+          var pay = window.PortalDayOps.getPayload();
+          if(pay && Array.isArray(rows)) pay.schedule_overrides = rows;
+        }
+        var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
+        if(th && typeof th.setPayload === 'function' && window.PortalDayOps.getPayload){
+          th.setPayload(window.PortalDayOps.getPayload());
+        }
+      }catch(_sync){}
+    }
     async function adminFetchScheduleOverridesForHub(){
       var since = new Date();
       since.setDate(since.getDate() - 120);
@@ -17134,6 +17146,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var edgeResult = await adminFetchScheduleOverridesViaEdge(sinceIso);
       if(edgeResult.rows && edgeResult.rows.length){
         window.__PORTAL_SCHEDULE_OVERRIDES__ = edgeResult.rows;
+        adminSyncScheduleOverridesToDayOpsPayload(edgeResult.rows);
         return edgeResult.rows;
       }
       var auth = await adminEnsureAuthedSupabaseClient();
