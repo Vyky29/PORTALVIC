@@ -744,6 +744,7 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 .toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px}
 .toolbar input{flex:1 1 180px}
 .btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:not-allowed}
 .btn--primary{background:var(--essential);color:#fff;border-color:var(--essential)}
 .manual-list{font-size:13px;margin:0;padding:0;list-style:none}
 .manual-list li{border-bottom:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}
@@ -834,7 +835,7 @@ try{
 Object.keys(DATA.defaultDecisions).forEach(function(k){
   if(!(k in decisions)) decisions[k]=DATA.defaultDecisions[k];
 });
-if(location.hash==='#paso2') viewMode='step2';
+if(location.hash==='#paso2' && DATA.stats.step2Count) viewMode='step2';
 else if(location.hash==='#cli13') viewMode='cli13';
 
 function setViewMode(mode){
