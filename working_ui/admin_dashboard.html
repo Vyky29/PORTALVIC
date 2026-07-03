@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-feedback-dual-fetch"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-feedback-rpc"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17680,7 +17680,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260703-feedback-dual-fetch";
+      "/portal/admin-sessions-hub.js?v=20260703-feedback-rpc";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17959,6 +17959,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_sess){}
       try{
+        var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
+        if(!rpc.error && Array.isArray(rpc.data) && rpc.data.length){
+          return (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        }
+        if(rpc.error){
+          console.warn('[admin] session_feedback rpc', rpc.error.message || rpc.error);
+        }
+      }catch(rpcErr){
+        console.warn('[admin] session_feedback rpc fetch', rpcErr);
+      }
+      try{
         var res = await client
           .from('session_feedback')
           .select(
@@ -18014,6 +18025,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var clientRows = await adminFetchSessionFeedbackViaClient(sinceIso);
       var merged = adminMergeSessionFeedbackRows(edgeRows, clientRows);
+      try{
+        window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
+          at: new Date().toISOString(),
+          total: merged.length,
+          edge: edgeRows.length,
+          client: clientRows.length,
+          edgeErr: edgeErr || ''
+        };
+      }catch(_meta){}
       console.warn(
         '[admin] session_feedback loaded:',
         merged.length,

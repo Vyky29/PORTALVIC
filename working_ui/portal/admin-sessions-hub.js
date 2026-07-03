@@ -8326,9 +8326,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       : "";
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var fbLoaded = this.payload && this.payload.session_feedback_loaded;
+    var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
     if ((this.opts && this.opts.externalTabs) && fbLoaded != null && fbCount === 0) {
+      var metaLine = loadMeta ?
+        ' Last attempt: edge ' + loadMeta.edge + ', client ' + loadMeta.client +
+          (loadMeta.edgeErr ? ' (' + loadMeta.edgeErr + ')' : '') + '.' :
+        '';
       warn +=
-        '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows). Hard-refresh, then sign in again as admin if this persists.</p>';
+        '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows).' +
+        esc(metaLine) +
+        ' Hard-refresh, then sign in again as admin (Victor/Raul/Javi/Sevitha).</p>';
+    } else if ((this.opts && this.opts.externalTabs) && fbCount > 0) {
+      warn +=
+        '<p class="muted" style="margin:0 0 10px;font-size:12px" role="status">' +
+        esc(String(fbCount)) + ' live feedback row(s) loaded.</p>';
     }
     if (this.mode === "feedback") {
       this.root.innerHTML = warn + '<div class="ash-panels ash-panels--feedback-only"></div>';
