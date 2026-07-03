@@ -812,7 +812,7 @@
       } else {
         var voiceScript = document.createElement("script");
         voiceScript.src =
-          "/portal/portal_feedback_voice_input.js?v=20260628-voice-whisper-first-es-it";
+          "/portal/portal_feedback_voice_input.js?v=20260702-record-120s-warn-90s";
         voiceScript.onload = startPortalVoice;
         voiceScript.onerror = function () {};
         (document.head || document.documentElement).appendChild(voiceScript);

@@ -8,7 +8,7 @@
   var BUCKET = "participant-achievements";
   var LEAD_INBOX_CLIENT_ID = "_inbox";
   var LEAD_INBOX_CLIENT_NAME = "Inbox";
-  /** Legacy export; capture is unlimited — feedback attach uses FEEDBACK_MAX_ATTACH. */
+  /** Legacy export; capture is unlimited — feedback submit attaches all session photos for the day. */
   var MAX_PHOTOS = null;
   var MAX_EDGE_PX = 3840;
   var JPEG_QUALITY = 0.92;
@@ -88,6 +88,8 @@
     isRecordingVideo: false,
     recordingStartedAt: 0,
     recordingTimer: null,
+    feedbackGalleryReview: false,
+    feedbackSessionDate: null,
   };
 
   var signedUrlCache = Object.create(null);
@@ -1677,7 +1679,10 @@
       return;
     }
     try {
-      state.photos = await fetchDraftPhotosForParticipant(state.participant, londonTodayIso());
+      state.photos = await fetchDraftPhotosForParticipant(
+        state.participant,
+        resolveGallerySessionDate()
+      );
     } catch (e) {
       console.error(e);
       state.photos = [];
@@ -2105,6 +2110,7 @@
       state.viewerIndex = -1;
       var ok = await deletePhotoById(row, { quiet: true });
       if (!ok) return;
+      notifyFeedbackPhotoSummaryChanged();
       if (!state.photos.length) {
         closeGalleryViewer();
         return;
@@ -2213,6 +2219,10 @@
     var backBtn = document.getElementById("portalAchievementsBackParticipants");
     if (backBtn) {
       backBtn.addEventListener("click", function () {
+        if (state.feedbackGalleryReview) {
+          closeFeedbackGalleryReview();
+          return;
+        }
         closeGalleryViewer();
         closeCameraFullscreen();
         state.participant = null;
@@ -2597,95 +2607,203 @@
     }
   }
 
-  /** Max achievement photos/videos attachable to one session feedback. */
-  var FEEDBACK_MAX_ATTACH = 10;
-
-  /** Enforce the attach cap: once FEEDBACK_MAX_ATTACH are ticked, disable the rest. */
-  function syncFeedbackPickLimit(host) {
-    if (!host) return;
-    var boxes = Array.prototype.slice.call(
-      host.querySelectorAll('input[name="achievementPhoto"]')
-    );
-    var checked = boxes.filter(function (b) {
-      return b.checked;
-    }).length;
-    var atMax = checked >= FEEDBACK_MAX_ATTACH;
-    boxes.forEach(function (b) {
-      b.disabled = atMax && !b.checked;
-      var pick = b.closest(".portal-achievements-feedback-pick");
-      if (pick) pick.classList.toggle("is-disabled", b.disabled);
-    });
-    var note = host.querySelector(".portal-achievements-feedback-count");
-    if (note) {
-      note.textContent = checked + " / " + FEEDBACK_MAX_ATTACH + " selected";
+  function resolveGallerySessionDate() {
+    var fromState = state.feedbackSessionDate
+      ? String(state.feedbackSessionDate).trim().slice(0, 10)
+      : "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fromState)) return fromState;
+    if (typeof cfg.getWorkingDateIso === "function") {
+      var w = String(cfg.getWorkingDateIso() || "").trim().slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(w)) return w;
     }
+    return londonTodayIso();
   }
 
-  async function renderFeedbackAttachPanel(clientId, sessionDate, portalSessionKey) {
-    var host = document.getElementById("portalFeedbackAchievementsPanel");
+  function notifyFeedbackPhotoSummaryChanged() {
+    try {
+      global.dispatchEvent(new CustomEvent("portal:feedback-photo-summary-changed"));
+    } catch (_e) {}
+  }
+
+  function closeFeedbackGalleryReview() {
+    var sheet = global.document.getElementById("achievementsSheet");
+    var backdrop = global.document.getElementById("portalFeedbackAchievementsBackdrop");
+    if (sheet) sheet.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("open");
+    global.document.body.style.overflow = "";
+    state.feedbackGalleryReview = false;
+    state.feedbackSessionDate = null;
+    syncFeedbackGalleryReviewUi();
+    notifyFeedbackPhotoSummaryChanged();
+  }
+
+  function syncFeedbackGalleryReviewUi() {
+    var review = !!state.feedbackGalleryReview;
+    var iconActions = global.document.getElementById("portalAchievementsIconActions");
+    var backBtn = global.document.getElementById("portalAchievementsBackParticipants");
+    if (iconActions) iconActions.hidden = review;
+    if (backBtn) backBtn.textContent = review ? "Done" : isLeadSessionPhotosMode() ? "Change" : "Participants";
+  }
+
+  function ensureAchievementsSheetMounted() {
+    bindSheet();
+    if (global.document.getElementById("achievementsSheet")) return;
+    var backdrop = global.document.getElementById("portalFeedbackAchievementsBackdrop");
+    if (!backdrop) {
+      backdrop = global.document.createElement("div");
+      backdrop.id = "portalFeedbackAchievementsBackdrop";
+      backdrop.className = "sheet-backdrop portal-feedback-achievements-backdrop";
+      backdrop.addEventListener("click", function () {
+        if (state.feedbackGalleryReview) closeFeedbackGalleryReview();
+      });
+      global.document.body.appendChild(backdrop);
+    }
+    var mount = global.document.getElementById("portalAchievementsSheetMount");
+    if (!mount) {
+      mount = global.document.createElement("div");
+      mount.id = "portalAchievementsSheetMount";
+      global.document.body.appendChild(mount);
+    }
+    mount.insertAdjacentHTML("beforeend", sheetHtml());
+    bindSheet();
+  }
+
+  /** Max achievement photos/videos attachable to one session feedback. */
+  var FEEDBACK_MAX_ATTACH = null;
+
+  var feedbackPhotoSummaryState = {
+    clientId: "",
+    clientName: "",
+    sessionDate: "",
+    portalSessionKey: null,
+    photoIds: [],
+    count: 0,
+  };
+
+  function feedbackPhotoCountLabel(count) {
+    var n = Number(count) || 0;
+    if (n === 0) return "No photos today";
+    if (n === 1) return "1 photo today";
+    return n + " photos today";
+  }
+
+  async function renderFeedbackPhotoSummary(clientId, sessionDate, portalSessionKey, clientName) {
+    var host = global.document.getElementById("portalFeedbackAchievementsPanel");
     if (!host) return [];
-    host.hidden = false;
-    var rows = await listDraftsForFeedback(clientId, sessionDate, portalSessionKey);
-    if (!rows.length) {
-      host.innerHTML =
-        '<p class="muted" style="margin:0">No achievement photos or videos for this participant. Take them from Quick menu → Participant achievements, then come back to attach them.</p>';
+    var cid = normalizeClientId(clientId);
+    var day = String(sessionDate || "").trim().slice(0, 10);
+    if (!cid || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+      host.hidden = true;
+      host.innerHTML = "";
+      feedbackPhotoSummaryState = {
+        clientId: "",
+        clientName: "",
+        sessionDate: "",
+        portalSessionKey: null,
+        photoIds: [],
+        count: 0,
+      };
       return [];
     }
-    var hasInbox = rows.some(function (r) {
-      return normalizeClientId(r.client_id) === LEAD_INBOX_CLIENT_ID;
-    });
-    var html =
-      '<p class="portal-achievements-feedback-label">Attach achievement photos/videos (optional) — up to ' +
-      FEEDBACK_MAX_ATTACH +
-      ' <span class="portal-achievements-feedback-count">0 / ' +
-      FEEDBACK_MAX_ATTACH +
-      " selected</span></p>";
-    if (hasInbox) {
-      html +=
-        '<p class="muted portal-achievements-feedback-inbox-note" style="margin:0 0 8px;font-size:13px">Includes your session photos taken without a participant (Inbox). They will be linked to this feedback when you submit.</p>';
+    host.hidden = false;
+    host.innerHTML =
+      '<p class="portal-achievements-feedback-label">Session photos</p>' +
+      '<div class="portal-feedback-photo-chip-row">' +
+      '<span class="portal-feedback-photo-chip" id="portalFeedbackPhotoChip" aria-live="polite">Loading…</span>' +
+      "</div>" +
+      '<p class="portal-feedback-photo-note muted">Photos save to the participant folder automatically. Check before submit if you want to remove any.</p>';
+
+    var rows = [];
+    try {
+      rows = await listDraftsForFeedback(cid, day, portalSessionKey);
+    } catch (_load) {
+      rows = [];
     }
-    html += '<div class="portal-achievements-feedback-grid portal-achievement-protected">';
-    rows.forEach(function (r) {
-      var inbox = normalizeClientId(r.client_id) === LEAD_INBOX_CLIENT_ID;
-      html +=
-        '<label class="portal-achievements-feedback-pick' +
-        (inbox ? " portal-achievements-feedback-pick--inbox" : "") +
-        '"><input type="checkbox" name="achievementPhoto" value="' +
-        esc(r.id) +
-        '" /><span class="portal-achievements-feedback-thumb" data-path="' +
-        esc(r.storage_path) +
-        '">…</span>' +
-        (inbox ? '<span class="portal-achievements-feedback-inbox-tag">Inbox</span>' : "") +
-        "</label>";
+    var participantRows = rows.filter(function (r) {
+      return r && normalizeClientId(r.client_id) !== LEAD_INBOX_CLIENT_ID;
     });
-    html += "</div>";
-    host.innerHTML = html;
-    var picks = host.querySelectorAll(".portal-achievements-feedback-thumb");
-    for (var i = 0; i < picks.length; i++) {
-      (function (el, path, row) {
-        void signedUrlFor(path).then(function (url) {
-          appendMediaThumb(el, url, row);
+    var ids = participantRows
+      .map(function (r) {
+        return String(r.id || "").trim();
+      })
+      .filter(Boolean);
+    feedbackPhotoSummaryState = {
+      clientId: cid,
+      clientName: String(clientName || feedbackPhotoSummaryState.clientName || "").trim(),
+      sessionDate: day,
+      portalSessionKey: portalSessionKey || null,
+      photoIds: ids,
+      count: ids.length,
+    };
+
+    var chip = host.querySelector("#portalFeedbackPhotoChip");
+    var rowEl = host.querySelector(".portal-feedback-photo-chip-row");
+    if (chip) {
+      chip.textContent = feedbackPhotoCountLabel(ids.length);
+      chip.classList.toggle("portal-feedback-photo-chip--empty", ids.length === 0);
+    }
+    if (rowEl) {
+      var existingBtn = rowEl.querySelector("#portalFeedbackPhotoCheckBtn");
+      if (existingBtn) existingBtn.remove();
+      if (ids.length > 0) {
+        var btn = global.document.createElement("button");
+        btn.type = "button";
+        btn.className = "btnGhost portal-feedback-photo-check-btn";
+        btn.id = "portalFeedbackPhotoCheckBtn";
+        btn.textContent = "Check photos";
+        btn.addEventListener("click", function () {
+          void openFeedbackPhotoGallery({
+            clientId: cid,
+            clientName: feedbackPhotoSummaryState.clientName || cid,
+            sessionDate: day,
+            portalSessionKey: portalSessionKey || null,
+          });
         });
-      })(picks[i], picks[i].getAttribute("data-path"), rows[i]);
+        rowEl.appendChild(btn);
+      }
     }
-    host.querySelectorAll('input[name="achievementPhoto"]').forEach(function (box) {
-      box.addEventListener("change", function () {
-        syncFeedbackPickLimit(host);
-      });
-    });
-    syncFeedbackPickLimit(host);
-    ensureCaptureGuard();
     return rows;
   }
 
+  async function openFeedbackPhotoGallery(opts) {
+    opts = opts || {};
+    var cid = normalizeClientId(opts.clientId);
+    var day = String(opts.sessionDate || "").trim().slice(0, 10);
+    if (!cid || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+    feedbackPhotoSummaryState.clientName = String(opts.clientName || "").trim();
+    ensureAchievementsSheetMounted();
+    state.feedbackGalleryReview = true;
+    state.feedbackSessionDate = day;
+    syncFeedbackGalleryReviewUi();
+    closeGalleryViewer();
+    closeCameraFullscreen();
+    stopCamera();
+    selectParticipant({
+      clientId: cid,
+      clientName: opts.clientName || cid,
+      portalSessionKey: opts.portalSessionKey || null,
+    });
+    setCaptureMode("gallery");
+    await loadGalleryPhotos();
+    renderGallery();
+    var sheet = global.document.getElementById("achievementsSheet");
+    var backdrop = global.document.getElementById("portalFeedbackAchievementsBackdrop");
+    if (sheet) sheet.classList.add("open");
+    if (backdrop) backdrop.classList.add("open");
+    global.document.body.style.overflow = "hidden";
+  }
+
+  /** @deprecated use renderFeedbackPhotoSummary */
+  async function renderFeedbackAttachPanel(clientId, sessionDate, portalSessionKey, clientName) {
+    return renderFeedbackPhotoSummary(clientId, sessionDate, portalSessionKey, clientName);
+  }
+
   function getSelectedFeedbackPhotoIds() {
-    var host = document.getElementById("portalFeedbackAchievementsPanel");
-    if (!host) return [];
-    return Array.from(host.querySelectorAll('input[name="achievementPhoto"]:checked'))
-      .slice(0, FEEDBACK_MAX_ATTACH)
-      .map(function (inp) {
-        return inp.value;
-      });
+    return (feedbackPhotoSummaryState.photoIds || []).slice();
+  }
+
+  function getFeedbackPhotoCount() {
+    return Number(feedbackPhotoSummaryState.count) || 0;
   }
 
   async function finalizeOnFeedbackSubmit(opts) {
@@ -2736,8 +2854,11 @@
     openCameraDirect: openCameraDirect,
     stopCamera: stopCamera,
     listDraftsForFeedback: listDraftsForFeedback,
+    renderFeedbackPhotoSummary: renderFeedbackPhotoSummary,
     renderFeedbackAttachPanel: renderFeedbackAttachPanel,
+    openFeedbackPhotoGallery: openFeedbackPhotoGallery,
     getSelectedFeedbackPhotoIds: getSelectedFeedbackPhotoIds,
+    getFeedbackPhotoCount: getFeedbackPhotoCount,
     finalizeOnFeedbackSubmit: finalizeOnFeedbackSubmit,
     syncScreenshotGuard: syncAchievementScreenshotGuard,
     refreshLeadInboxUi: refreshLeadInboxUi,

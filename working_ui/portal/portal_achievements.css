@@ -1209,6 +1209,96 @@ body.portal-achievements-viewer-open .dock-bar {
   font-size: 13px;
 }
 
+.portal-feedback-photo-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+.portal-feedback-photo-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(232, 168, 32, 0.18);
+  border: 1px solid rgba(180, 145, 90, 0.35);
+  color: #6b4a18;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-feedback-photo-chip--empty {
+  background: rgba(11, 18, 32, 0.05);
+  border-color: rgba(11, 18, 32, 0.12);
+  color: #5b6473;
+  font-weight: 600;
+}
+
+.portal-feedback-photo-check-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(11, 18, 32, 0.12);
+  background: rgba(11, 18, 32, 0.04);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.portal-feedback-photo-check-btn:hover {
+  background: rgba(11, 18, 32, 0.08);
+}
+
+.portal-feedback-photo-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-feedback-achievements-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(11, 18, 32, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.portal-feedback-achievements-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#achievementsSheet.sheet--fullscreen.sheet--mobile-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 510;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s ease, opacity 0.2s ease;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+#achievementsSheet.sheet--fullscreen.sheet--mobile-frame.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .portal-achievements-feedback-count {
   font-weight: 700;
   color: #2d84b3;
