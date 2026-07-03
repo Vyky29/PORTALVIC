@@ -4130,7 +4130,6 @@
     }
     this.indexAbsentMarks();
     this.indexParentShares();
-    this.ensureParentSharesGenerated();
     if (this.mode === "feedback") this.initFeedbackDateRange();
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
@@ -5998,7 +5997,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Positive</th><th>Relevant</th><th>Family summary</th><th>Reviewed by:</th>";
+    "<th>Positive</th><th>Relevant</th><th>Reviewed by:</th>";
 
   AdminSessionsHub.prototype.indexParentShares = function () {
     var map = {};
@@ -6218,7 +6217,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
       if (fbDay !== day) continue;
       if (isMislabeledRosterAreaClientName(fb.client_name)) continue;
-      if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      if (hub.mode !== "feedback" && !hub.feedbackAllowedOnCalendarDay(fb)) continue;
       pushRow(fb);
     }
     var marks = this.absentMarksForDate(day);
@@ -6493,15 +6492,32 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
-  /** Feedback tab: all rows (incl. absents) for the selected calendar day + search/note filters. */
+  /** Feedback tab: submitted rows for the selected day (+ optional awaiting slots). */
   AdminSessionsHub.prototype.feedbackRowsForSelectedDay = function () {
     var hub = this;
     var day = clean(this.selectedDay);
     if (!day) return [];
-    var rows =
-      hub.opts && hub.opts.feedbackMixAwaitingSlots
-        ? this.feedbackMixRowsForDay(day)
-        : this.feedbackLogRowsForDay(day);
+    var rows = this.feedbackLogRowsForDay(day);
+    if (hub.opts && hub.opts.feedbackMixAwaitingSlots) {
+      var mixed = this.feedbackMixRowsForDay(day);
+      var seen = {};
+      for (var i = 0; i < rows.length; i++) {
+        var k = hub.fbRowKey(rows[i]);
+        if (k) seen[k] = true;
+      }
+      for (var j = 0; j < mixed.length; j++) {
+        var m = mixed[j];
+        if (m && m._ashAwaitingSlot) {
+          rows.push(m);
+          continue;
+        }
+        var mk = hub.fbRowKey(m);
+        if (mk && !seen[mk]) {
+          seen[mk] = true;
+          rows.push(m);
+        }
+      }
+    }
     var q = clean(this.clientSearch).toLowerCase();
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
@@ -6553,7 +6569,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(clean(awaitSlot.service) || "\u2014") +
           awaitTime +
           "</td>" +
-          '<td colspan="6" class="ash-td-center">' +
+          '<td colspan="5" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6576,7 +6592,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(awaitSvc) +
         awaitTime +
         "</td>" +
-        '<td colspan="6" class="ash-td-center">' +
+        '<td colspan="5" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
         '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6666,7 +6682,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
-      hub.htmlFamilySummaryCell(fb, esc, terminal) +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
       '</div><div class="ash-cell-sub">' +
@@ -8413,7 +8428,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var rows = this.feedbackRowsForSelectedDay();
-    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
 
     var tableRows = rows
       .map(function (fb, rowIdx) {
@@ -8427,10 +8441,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       tableRows =
-        '<tr><td colspan="9"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
     } else if (!tableRows) {
       tableRows =
-        '<tr><td colspan="9"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
     var weekBlock =
@@ -8462,7 +8476,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     return (
-      this.htmlFeedbackMetricStrip(sum) +
       weekBlock +
       truncateHtml +
       noteFilterHtml +
