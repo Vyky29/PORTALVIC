@@ -106,12 +106,12 @@ begin
   for i in 2..coalesce(array_length(parts, 1), 0) loop
     p := parts[i];
     if p is null or p = '' then
-      out_parts := out_parts || '';
+      out_parts := array_append(out_parts, '');
       continue;
     end if;
     norm_t := public.portal_norm_time_key_token(p, day_word);
     if norm_t <> '' then
-      out_parts := out_parts || norm_t;
+      out_parts := array_append(out_parts, norm_t);
       continue;
     end if;
     slug := public.portal_slugify_key_token(p);
@@ -121,9 +121,9 @@ begin
       'multi_activity', 'multi-activity', 'bespoke', 'room_2', 'lane_de', 'lane_se'
     );
     if non_client then
-      out_parts := out_parts || slug;
+      out_parts := array_append(out_parts, slug);
     else
-      out_parts := out_parts || public.portal_canonical_client_slug(slug);
+      out_parts := array_append(out_parts, public.portal_canonical_client_slug(slug));
     end if;
   end loop;
   return array_to_string(out_parts, '|');
