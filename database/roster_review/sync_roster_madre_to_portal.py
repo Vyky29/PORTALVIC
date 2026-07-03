@@ -63,21 +63,24 @@ def is_bespoke(s: str) -> bool:
 
 
 MWF_STAFF_BAND_DAYS = frozenset({"Monday", "Wednesday", "Friday"})
-# M/W/F Bespoke + Multi-Activity staff band only (never Day Centre / Aquatic / etc.).
-MWF_STAFF_BAND_SLOT_MAP = {
-    "4.30 to 6": "4.15 to 6.15",
-    "4.30 to 5.15": "4.15 to 5.15",
-    "5.15 to 6": "5.15 to 6.15",
+# Participant session times are the source of truth in the bundle.
+# These maps are empty — the old staff-band mapping has been removed.
+MWF_STAFF_BAND_SLOT_MAP: dict[str, str] = {}
+SUNDAY_MA_SLOT_MAP: dict[str, str] = {}
+
+# Reverse-map to undo old staff-band times baked into the seed JSON.
+_MWF_REVERSE: dict[str, str] = {
+    "4.15 to 6.15": "4.30 to 6",
+    "4.15 to 5.15": "4.30 to 5.15",
+    "5.15 to 6.15": "5.15 to 6",
 }
-# Sunday Multi-Activity support worker band 9.15–14.15 (5h).
-SUNDAY_MA_SLOT_MAP = {
-    "9.30 to 10.15": "9.15 to 10",
-    "10.15 to 11": "10 to 10.45",
-    "11 to 11.45": "10.45 to 11.30",
-    "11.45 to 12.30": "11.30 to 12.15",
-    "12.30 to 1.15": "12.15 to 1",
-    "1.15 to 2": "1 to 2.15",
-    "1 to 2": "1 to 2.15",
+_SUNDAY_MA_REVERSE: dict[str, str] = {
+    "9.15 to 10": "9.30 to 10.15",
+    "10 to 10.45": "10.15 to 11",
+    "10.45 to 11.30": "11 to 11.45",
+    "11.30 to 12.15": "11.45 to 12.30",
+    "12.15 to 1": "12.30 to 1.15",
+    "1 to 2.15": "1.15 to 2",
 }
 SUNDAY_MA_LEADER_KEYS = frozenset({"berta", "john"})
 SUNDAY_MA_LEADER_LAST_END = "2.45"
@@ -122,9 +125,9 @@ def patch_term_session_time_slots(seed: dict) -> int:
                     ts = clean(s.get("time_slot"))
                     new_ts = None
                     if wd in MWF_STAFF_BAND_DAYS and (is_bespoke(svc) or is_multi(svc)):
-                        new_ts = MWF_STAFF_BAND_SLOT_MAP.get(ts)
+                        new_ts = MWF_STAFF_BAND_SLOT_MAP.get(ts) or _MWF_REVERSE.get(ts)
                     elif wd == "Sunday" and is_multi(svc):
-                        new_ts = SUNDAY_MA_SLOT_MAP.get(ts)
+                        new_ts = SUNDAY_MA_SLOT_MAP.get(ts) or _SUNDAY_MA_REVERSE.get(ts)
                     if new_ts and new_ts != ts:
                         s["time_slot"] = new_ts
                         n += 1

@@ -416,6 +416,7 @@
     eddie: "eddie_mc",
     chaitanya_trial_28_06: "chaitanya",
     junaid: "junaid_f",
+    khalid: "khalid_ab",
   };
 
   function canonicalClientSlug(name) {
@@ -2925,12 +2926,36 @@
     return true;
   }
 
+  var STAFF_BAND_TIME_EQUIV = {
+    "16:15": "16:30",
+    "16:30": "16:15",
+    "17:15": "17:15",
+    "09:15": "09:30",
+    "09:30": "09:15",
+    "10:00": "10:15",
+    "10:15": "10:00",
+    "10:45": "11:00",
+    "11:00": "10:45",
+    "11:30": "11:45",
+    "11:45": "11:30",
+    "12:15": "12:30",
+    "12:30": "12:15",
+    "13:00": "13:15",
+    "13:15": "13:00",
+  };
+
+  function staffBandTimeEquiv(hm) {
+    return STAFF_BAND_TIME_EQUIV[hm] || "";
+  }
+
   function feedbackTimeMatchesSlot(fb, slot) {
     var slotDay = slot.day || weekdayLongFromIso(slot.session_date);
     var st = slot.time_start || normTimeKey(slot.time_slot, slotDay);
     if (!st) return true;
     var ft = normTimeKey(fb.session_time, slotDay);
     if (ft && ft === st) return true;
+    if (ft && st && staffBandTimeEquiv(ft) === st) return true;
+    if (ft && st && staffBandTimeEquiv(st) === ft) return true;
     if (fb.session_time && slotDay) {
       var parsed = parseTimeSlot(fb.session_time, slotDay);
       if (parsed.start && parsed.start === st) return true;
@@ -2954,6 +2979,8 @@
       }
       if (parts.length >= 2 && normTimeKey(parts[1]) === st) return true;
       if (parts.length >= 3 && normTimeKey(parts[2]) === st) return true;
+      var pkTime = (parts.length >= 2 && normTimeKey(parts[1])) || (parts.length >= 3 && normTimeKey(parts[2])) || "";
+      if (pkTime && st && (staffBandTimeEquiv(pkTime) === st || staffBandTimeEquiv(st) === pkTime)) return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
     return !ft;

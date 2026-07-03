@@ -464,8 +464,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-21": [
         "zakariya",
         "haneef",
-        "zaid",
         "hazem",
+        "zaid",
         "eiji",
         "serine",
         "rayyan_fi",
