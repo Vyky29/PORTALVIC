@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-overview-fast"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-wait-supabase"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -11273,39 +11273,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return box && box.client ? box.client : null;
     }
     async function adminEnsureSupabaseClient(){
-      function bootWait(promise, ms){
-        return Promise.race([
-          promise,
-          new Promise(function(resolve){ setTimeout(resolve, ms); })
-        ]);
-      }
       var client = getSchedSupabaseClient();
       if(client) return client;
       if(window.__PORTAL_SUPABASE_BOOT_INFLIGHT__){
-        try{ await bootWait(window.__PORTAL_SUPABASE_BOOT_INFLIGHT__, 8000); }catch(_bootWait){}
+        try{ await window.__PORTAL_SUPABASE_BOOT_INFLIGHT__; }catch(_bootWait){}
         client = getSchedSupabaseClient();
         if(client) return client;
       }
       try{
         var mod = await import('/portal/auth-handler.js?v=20260707-login-cache');
         if(mod && typeof mod.bootstrapDashboardSupabase === 'function'){
-          await bootWait(mod.bootstrapDashboardSupabase({ page: 'admin' }), 8000);
+          await mod.bootstrapDashboardSupabase({ page: 'admin' });
         }
       }catch(_bootImport){}
       return getSchedSupabaseClient();
     }
-    function adminPromiseTimeout(promise, ms, label){
-      return Promise.race([
-        promise,
-        new Promise(function(resolve){
-          setTimeout(function(){
-            if(typeof console !== 'undefined' && console.warn){
-              console.warn('[admin] timeout', label || 'operation', ms + 'ms');
-            }
-            resolve(null);
-          }, ms);
-        })
-      ]);
+    async function adminWaitForSupabaseReady(maxMs){
+      maxMs = maxMs == null ? 22000 : maxMs;
+      var client = getSchedSupabaseClient();
+      if(client) return client;
+      if(window.__PORTAL_SUPABASE_BOOT_INFLIGHT__){
+        try{
+          await Promise.race([
+            window.__PORTAL_SUPABASE_BOOT_INFLIGHT__,
+            new Promise(function(resolve){ setTimeout(resolve, maxMs); })
+          ]);
+        }catch(_bootWait){}
+        client = getSchedSupabaseClient();
+        if(client) return client;
+      }
+      return new Promise(function(resolve){
+        var settled = false;
+        function finish(){
+          if(settled) return;
+          settled = true;
+          resolve(getSchedSupabaseClient());
+        }
+        var timer = setTimeout(finish, maxMs);
+        function onReady(){
+          clearTimeout(timer);
+          finish();
+        }
+        window.addEventListener('portal:supabase-ready', onReady, { once: true });
+        void adminEnsureSupabaseClient().finally(onReady);
+      });
     }
     /**
      * Bridge the live Programme payments table (public.client_payments — the rows
@@ -17849,6 +17860,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         isClubClosedDay: portalAdminDayIsClubClosed,
         showFullWeekDayStrip: true,
         getClient: getSchedSupabaseClient,
+        waitForSupabaseClient: adminWaitForSupabaseReady,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
           return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
@@ -17978,11 +17990,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_sess){}
       try{
-        var rpc = await adminPromiseTimeout(
-          client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso }),
-          8000,
-          'session_feedback_rpc'
-        );
+        var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
         if(rpc && !rpc.error && Array.isArray(rpc.data) && rpc.data.length){
           return (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
         }
@@ -17993,19 +18001,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         console.warn('[admin] session_feedback rpc fetch', rpcErr);
       }
       try{
-        var res = await adminPromiseTimeout(
-          client
-            .from('session_feedback')
-            .select(
-              'id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
-            )
-            .gte('session_date', sinceIso)
-            .order('session_date', { ascending: false })
-            .limit(2500),
-          8000,
-          'session_feedback_select'
-        );
-        if(!res) return [];
+        var res = await client
+          .from('session_feedback')
+          .select(
+            'id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
+          )
+          .gte('session_date', sinceIso)
+          .order('session_date', { ascending: false })
+          .limit(2500);
         if(res.error) throw res.error;
         return (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
       }catch(e){
@@ -18033,16 +18036,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       (secondary || []).forEach(add);
       return out;
     }
+    var __adminSessionFeedbackInflight = null;
     async function adminFetchSessionFeedbackForHub(){
-      return adminPromiseTimeout(adminFetchSessionFeedbackForHubInner(), 15000, 'session_feedback').then(function(rows){
-        return rows || [];
+      if(__adminSessionFeedbackInflight) return __adminSessionFeedbackInflight;
+      __adminSessionFeedbackInflight = adminFetchSessionFeedbackForHubInner().finally(function(){
+        __adminSessionFeedbackInflight = null;
       });
+      return __adminSessionFeedbackInflight;
     }
     async function adminFetchSessionFeedbackForHubInner(){
       var since = new Date();
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
-      await adminPromiseTimeout(adminEnsureSupabaseClient(), 8000, 'supabase_client');
+      await adminWaitForSupabaseReady(22000);
       var edgeRows = [];
       var edgeErr = '';
       var clientRows = [];
@@ -18109,6 +18115,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     async function adminPortalAuthToken(){
       function tokenFromSession(session){
         return session && session.access_token ? String(session.access_token) : null;
+      }
+      var storedQuick = typeof window.portalAdminResolveAccessToken === 'function'
+        ? window.portalAdminResolveAccessToken()
+        : '';
+      if(storedQuick && !adminJwtExpiringSoon(storedQuick, 120)){
+        return storedQuick;
       }
       var client = await adminEnsureSupabaseClient();
       if(client && client.auth){

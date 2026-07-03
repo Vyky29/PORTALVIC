@@ -25,8 +25,8 @@
 
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260704-search-combo';
   var EDGE_FETCH_MS = 12000;
-  var FEEDBACK_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 8000;
+  var SUPABASE_WAIT_MS = 22000;
 
   function promiseWithTimeout(promise, ms, fallback) {
     return Promise.race([
@@ -498,7 +498,11 @@
     }
     if (cfg.fetchSessionFeedback) {
       tasks.push(
-        promiseWithTimeout(cfg.fetchSessionFeedback(), FEEDBACK_FETCH_MS, []).then(function (dbFb) {
+        (async function () {
+          if (!client && cfg.waitForSupabaseClient) {
+            client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
+          }
+          var dbFb = await cfg.fetchSessionFeedback();
           var live = dbFb || [];
           out.session_feedback = cfg.buildFeedbackFromPortal
             ? mergeFeedbackRowLists(live, out.session_feedback || [])
@@ -508,7 +512,7 @@
           if (typeof console !== 'undefined' && console.warn) {
             console.warn('[PortalDayOps] session_feedback live rows:', live.length);
           }
-        })
+        })()
       );
     }
     if (cfg.fetchCancellations) {
