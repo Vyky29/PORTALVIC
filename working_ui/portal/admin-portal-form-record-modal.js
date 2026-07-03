@@ -227,16 +227,72 @@
   }
 
   function incidentFields(r) {
-    return (
+    var out =
       qaRow("Submitted by", r.submitted_by_name) +
       qaRow("Session date", formatDateOnly(r.session_date)) +
-      qaRow("Time", r.incident_time) +
+      qaRow("Session time", r.session_time) +
+      qaRow("Incident time", r.incident_time) +
       qaRow("Participant", r.client_name) +
       qaRow("Service", r.service) +
-      qaRow("Category", r.incident_category) +
-      qaRow("What happened", r.statement_during, true) +
-      qaRow("Outcome / injuries", r.injuries_sustained || r.outcome, true) +
-      qaRow("Recorded", formatWhen(r.created_at))
+      qaRow("Location", r.location) +
+      qaRow("Category", r.incident_category);
+    if (clean(r.staff_involved)) out += qaRow("Staff involved", r.staff_involved, true);
+    if (clean(r.witness)) out += qaRow("Witness", r.witness, true);
+    if (clean(r.statement_before)) out += qaRow("Before session", r.statement_before, true);
+    out += qaRow("During session", r.statement_during, true);
+    if (clean(r.statement_after)) out += qaRow("After session", r.statement_after, true);
+    if (clean(r.injuries_client)) out += qaRow("Client injuries", r.injuries_client, true);
+    if (clean(r.injuries_staff)) out += qaRow("Staff injuries", r.injuries_staff, true);
+    if (clean(r.injuries_sustained || r.outcome)) {
+      out += qaRow("Outcome / injuries (legacy)", r.injuries_sustained || r.outcome, true);
+    }
+    out += qaRow("Recorded", formatWhen(r.created_at));
+    return out;
+  }
+
+  function incidentPlainText(r) {
+    var lines = [
+      "Incident report",
+      "Submitted by: " + clean(r.submitted_by_name),
+      "Session date: " + formatDateOnly(r.session_date),
+      "Participant: " + clean(r.client_name),
+      "Category: " + clean(r.incident_category),
+      "Service: " + clean(r.service),
+    ];
+    if (clean(r.statement_before)) lines.push("Before: " + clean(r.statement_before));
+    if (clean(r.statement_during)) lines.push("During: " + clean(r.statement_during));
+    if (clean(r.statement_after)) lines.push("After: " + clean(r.statement_after));
+    if (clean(r.injuries_client)) lines.push("Client injuries: " + clean(r.injuries_client));
+    if (clean(r.injuries_staff)) lines.push("Staff injuries: " + clean(r.injuries_staff));
+    return lines.join("\n");
+  }
+
+  function modalFootHtml(kind) {
+    if (kind === "incident" || kind === "cancellation") {
+      return (
+        '<footer class="pfrm-modal__foot pfrm-modal__foot--actions">' +
+        '<button type="button" class="pfrm-modal__btn pfrm-modal__btn--pri" data-pfrm-action="goto-day">Go to session day</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-action="copy">Copy report</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-close>Close</button>' +
+        "</footer>"
+      );
+    }
+    return (
+      '<footer class="pfrm-modal__foot">' +
+      '<button type="button" class="pfrm-modal__btn" data-pfrm-close>Close</button>' +
+      "</footer>"
+    );
+  }
+
+  function portalFormsViewCellHtml(kind, idx) {
+    return (
+      '<td class="ash-td-center col-portal-view">' +
+      '<button type="button" class="pfrm-view-btn" data-pfrm-view="' +
+      esc(kind) +
+      '" data-portal-forms-idx="' +
+      esc(String(idx)) +
+      '" aria-label="View full report">View</button>' +
+      "</td>"
     );
   }
 
@@ -310,9 +366,8 @@
       '<div class="pfrm-modal__body pfrm-qa">' +
       body +
       "</div>" +
-      '<footer class="pfrm-modal__foot">' +
-      '<button type="button" class="pfrm-modal__btn" data-pfrm-close>Close</button>' +
-      "</footer></div>"
+      modalFootHtml(kind) +
+      "</div>"
     );
   }
 
@@ -327,9 +382,54 @@
     } catch (_2) {}
   }
 
-  function bindModalEvents() {
+  function runModalAction(action, kind, row) {
+    action = String(action || "").trim();
+    if (!row) return;
+    if (action === "copy") {
+      var text =
+        kind === "incident"
+          ? incidentPlainText(row)
+          : kind === "cancellation"
+            ? [
+                "Cancellation report",
+                "Submitted by: " + clean(row.submitted_by_name || row.instructor_name),
+                "Participant: " + clean(row.client_name),
+                "Session date: " + formatDateOnly(row.session_date),
+                "Reason: " + clean(row.reason_category || row.reason),
+                "Notes: " + clean(row.notes || row.additional_notes),
+              ].join("\n")
+            : JSON.stringify(row, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () {
+          window.prompt("Copy report:", text);
+        });
+      } else {
+        window.prompt("Copy report:", text);
+      }
+      return;
+    }
+    if (action === "goto-day") {
+      var iso = clean(row.session_date).slice(0, 10);
+      closeModal();
+      var ops = global.PortalDayOps;
+      var hub = ops && typeof ops.getTrackingHub === "function" ? ops.getTrackingHub() : null;
+      if (hub && iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) && typeof hub.goToCalendarDay === "function") {
+        hub.goToCalendarDay(iso);
+      }
+    }
+  }
+
+  function bindModalEvents(kind, row) {
     if (!backdropEl) return;
+    backdropEl.__pfrmKind = kind;
+    backdropEl.__pfrmRow = row;
     backdropEl.addEventListener("click", function (ev) {
+      var actionBtn = ev.target && ev.target.closest ? ev.target.closest("[data-pfrm-action]") : null;
+      if (actionBtn) {
+        ev.preventDefault();
+        runModalAction(actionBtn.getAttribute("data-pfrm-action"), kind, row);
+        return;
+      }
       if (ev.target === backdropEl || ev.target.closest("[data-pfrm-close]")) {
         ev.preventDefault();
         closeModal();
@@ -351,7 +451,7 @@
     backdropEl.innerHTML = buildModalHtml(kind, row);
     document.body.appendChild(backdropEl);
     document.body.classList.add("pfrm-modal-open");
-    bindModalEvents();
+    bindModalEvents(kind, row);
     var closeBtn = backdropEl.querySelector(".pfrm-modal__close");
     if (closeBtn) closeBtn.focus();
   }
@@ -371,12 +471,11 @@
     var cat = clean(r.incident_category);
     var sessLine = [r.session_date, r.incident_time].filter(Boolean).join(" – ");
     var svc = clean(r.service) || "—";
-    var inj = clean(r.injuries_sustained || r.outcome) || "—";
     var sub = clean(r.client_name) || "—";
     return (
       '<tr class="portal-forms-data-row" data-portal-forms-kind="incident" data-portal-forms-idx="' +
       i +
-      '" title="Double-click to view full report">' +
+      '" title="Double-click or View to open full report">' +
       '<td class="ash-td-center col-date">' +
       escLocal(fmt(r.created_at)) +
       "</td>" +
@@ -397,18 +496,32 @@
       '<td class="ash-td-center cell-wrap">' +
       escLocal(clean(r.statement_during).slice(0, 80) || "—") +
       "</td>" +
-      '<td class="ash-td-center cell-wrap">' +
-      escLocal(inj.slice(0, 80)) +
-      "</td></tr>"
+      portalFormsViewCellHtml("incident", i) +
+      "</tr>"
     );
+  }
+
+  function openPortalFormsRecord(kind, idx, rowOverride) {
+    kind = String(kind || "").trim();
+    var modal = global.PortalFormRecordModal;
+    if (!modal) return;
+    if (rowOverride && typeof modal.openWithRow === "function") {
+      modal.openWithRow(kind, rowOverride);
+      return;
+    }
+    var i = Number(idx);
+    if (!Number.isFinite(i) || i < 0) return;
+    if (typeof modal.open === "function") modal.open(kind, i);
   }
 
   global.PortalFormRecordModal = {
     open: open,
     openWithRow: openWithRow,
+    openPortalFormsRecord: openPortalFormsRecord,
     close: closeModal,
     leadReportActivity: leadReportActivity,
     leadReportBriefBody: leadReportBriefBody,
     incidentTableRowHtml: incidentTableRowHtml,
+    portalFormsViewCellHtml: portalFormsViewCellHtml,
   };
 })(typeof window !== "undefined" ? window : globalThis);

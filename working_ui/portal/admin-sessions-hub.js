@@ -6879,6 +6879,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (hub._modalFb) hub.openReviewModal(hub._modalFb);
         return;
       }
+      var pfrmView = t.closest("[data-pfrm-view]");
+      if (pfrmView && root.contains(pfrmView)) {
+        ev.preventDefault();
+        var pk = pfrmView.getAttribute("data-pfrm-view");
+        var pidx = parseInt(pfrmView.getAttribute("data-portal-forms-idx"), 10);
+        if (!pk || isNaN(pidx)) return;
+        var parr =
+          pk === "incident"
+            ? hub.payload.incident_reports
+            : pk === "cancellation"
+              ? hub.payload.cancellation_reports
+              : null;
+        var prow = parr && parr[pidx];
+        var Pfrm = global.PortalFormRecordModal;
+        if (Pfrm && prow && typeof Pfrm.openWithRow === "function") Pfrm.openWithRow(pk, prow);
+        else if (Pfrm && typeof Pfrm.open === "function") Pfrm.open(pk, pidx);
+        return;
+      }
       if (t.closest("[data-ash-modal-send]")) {
         if (hub._modalFb) hub.markFeedbackHandled(hub._modalFb);
         hub.closeModal();
@@ -7114,18 +7132,35 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
     this.root.addEventListener("dblclick", function (ev) {
       var fbRow = ev.target && ev.target.closest && ev.target.closest("[data-ash-fb-row]");
-      if (!fbRow || hub.mode !== "feedback") return;
+      if (fbRow && hub.mode === "feedback") {
+        ev.preventDefault();
+        clearTimeout(hub._fbRowClickTimer);
+        var idx = parseInt(fbRow.getAttribute("data-ash-fb-row"), 10);
+        var rows = hub.isFeedbackNotesTab()
+          ? hub.feedbackNotesRows(hub.tab)
+          : hub.feedbackInRange().filter(function (fb) {
+              return !fb.attendance || String(fb.attendance).toLowerCase().indexOf("no") !== 0;
+            });
+        if (isNaN(idx) || !rows[idx]) return;
+        var modal = global.PortalFormRecordModal;
+        if (modal && typeof modal.openWithRow === "function") modal.openWithRow("feedback", rows[idx], idx);
+        return;
+      }
+      if (ev.target && ev.target.closest && ev.target.closest("[data-pfrm-view]")) return;
+      var formsRow =
+        ev.target && ev.target.closest && ev.target.closest(".portal-forms-data-row[data-portal-forms-kind]");
+      if (!formsRow || !root.contains(formsRow)) return;
+      var kind = formsRow.getAttribute("data-portal-forms-kind");
+      if (kind !== "incident" && kind !== "cancellation") return;
       ev.preventDefault();
-      clearTimeout(hub._fbRowClickTimer);
-      var idx = parseInt(fbRow.getAttribute("data-ash-fb-row"), 10);
-      var rows = hub.isFeedbackNotesTab()
-        ? hub.feedbackNotesRows(hub.tab)
-        : hub.feedbackInRange().filter(function (fb) {
-            return !fb.attendance || String(fb.attendance).toLowerCase().indexOf("no") !== 0;
-          });
-      if (isNaN(idx) || !rows[idx]) return;
-      var modal = global.PortalFormRecordModal;
-      if (modal && typeof modal.openWithRow === "function") modal.openWithRow("feedback", rows[idx], idx);
+      var fidx = parseInt(formsRow.getAttribute("data-portal-forms-idx"), 10);
+      if (isNaN(fidx)) return;
+      var list =
+        kind === "incident" ? hub.payload.incident_reports : hub.payload.cancellation_reports;
+      var frow = list && list[fidx];
+      var Pfrm2 = global.PortalFormRecordModal;
+      if (Pfrm2 && frow && typeof Pfrm2.openWithRow === "function") Pfrm2.openWithRow(kind, frow);
+      else if (Pfrm2 && typeof Pfrm2.open === "function") Pfrm2.open(kind, fidx);
     });
   };
 
@@ -8528,11 +8563,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var cat = r.incident_category || "";
         var sessLine = [r.session_date, r.incident_time].filter(Boolean).join(" \u2013 ");
         var svc = clean(r.service) || "\u2014";
-        var inj = incidentSubjectSub(r) || "\u2014";
+        var viewCell =
+          Pfrm && typeof Pfrm.portalFormsViewCellHtml === "function"
+            ? Pfrm.portalFormsViewCellHtml("incident", i)
+            : '<td class="ash-td-center col-portal-view"><button type="button" class="pfrm-view-btn" data-pfrm-view="incident" data-portal-forms-idx="' +
+              i +
+              '">View</button></td>';
         return (
           '<tr class="portal-forms-data-row" data-portal-forms-kind="incident" data-portal-forms-idx="' +
           i +
-          '" title="Double-click to view full report">' +
+          '" title="Double-click or View to open full report">' +
           '<td class="ash-td-center col-date">' +
           esc(formatFbDate(r.created_at)) +
           "</td>" +
@@ -8553,9 +8593,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<td class="ash-td-center cell-wrap">' +
           esc(truncateCellText(clean(r.statement_during), 80)) +
           "</td>" +
-          '<td class="ash-td-center cell-wrap">' +
-          esc(truncateCellText(inj, 80)) +
-          "</td></tr>"
+          viewCell +
+          "</tr>"
         );
       })
       .join("");
@@ -8573,7 +8612,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (items.length === 1 ? " report" : " reports") +
       "</span></h3>" +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--overview portal-forms-table portal-forms-table--full-detail"><thead><tr>' +
-      '<th class="ash-td-center col-date">When</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Category</th><th class="ash-td-center">Session</th><th class="ash-td-center">Service</th><th class="ash-td-center">What happened</th><th class="ash-td-center col-incident-injuries">Outcome</th>' +
+      '<th class="ash-td-center col-date">When</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Category</th><th class="ash-td-center">Session</th><th class="ash-td-center">Service</th><th class="ash-td-center">What happened</th><th class="ash-td-center col-portal-view">View</th>' +
       "</tr></thead><tbody>" +
       rows +
       "</tbody></table></div>" +
