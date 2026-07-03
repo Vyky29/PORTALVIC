@@ -12,7 +12,7 @@
     "applying_for_scheme, can_pay_upfront, requests_exceptional_funding, exceptional_funding_note, " +
     "declaration_accepted, origin, reviewed_by_user_id, reviewed_at, review_notes, funding_amount_gbp, " +
     "reimbursement_schedule, exceptional_funding_arrangement, additional_conditions, " +
-    "letter_document_id, letter_generated_at";
+    "letter_document_id, letter_generated_at, decline_reason_codes, decline_reason_other";
 
   function lettersApi() {
     return global.PortalLDFundingLetters || null;
@@ -218,15 +218,140 @@
     }
     syncFundingOther();
     syncFundingPreview();
+
+    var statusSel = screen.querySelector("#ldfStatus");
+    var approvalWrap = screen.querySelector("#ldfApprovalWrap");
+    var declineWrap = screen.querySelector("#ldfDeclineWrap");
+    var declineOtherCheck = screen.querySelector("#ldfDeclineOtherCheck");
+    var declineOtherWrap = screen.querySelector("#ldfDeclineOtherWrap");
+
+    function syncDecisionSections() {
+      var st = statusSel ? clean(statusSel.value) : "approved";
+      var declined = st === "declined";
+      if (approvalWrap) approvalWrap.classList.toggle("is-hidden", declined);
+      if (declineWrap) declineWrap.classList.toggle("is-hidden", !declined);
+    }
+
+    function syncDeclineOther() {
+      if (!declineOtherWrap || !declineOtherCheck) return;
+      declineOtherWrap.classList.toggle("is-hidden", !declineOtherCheck.checked);
+    }
+
+    if (statusSel) {
+      statusSel.addEventListener("change", function () {
+        syncDecisionSections();
+        syncFundingPreview();
+      });
+    }
+    if (declineOtherCheck) {
+      declineOtherCheck.addEventListener("change", syncDeclineOther);
+    }
+    syncDecisionSections();
+    syncDeclineOther();
+  }
+
+  function decisionStatusValue(app) {
+    var st = clean(app && app.status).toLowerCase();
+    if (st === "declined") return "declined";
+    return "approved";
+  }
+
+  function declineReasonsFromForm(screen) {
+    var codes = [];
+    screen.querySelectorAll('input[name="ldfDeclineReason"]:checked').forEach(function (el) {
+      var v = clean(el.value);
+      if (v) codes.push(v);
+    });
+    var other =
+      clean((screen.querySelector("#ldfDeclineOtherText") || {}).value) || null;
+    return { codes: codes, other: other };
+  }
+
+  function buildDeclineReasonFields(app) {
+    var L = lettersApi();
+    var reasons = (L && L.DECLINE_REASONS) || [];
+    var otherCode = (L && L.DECLINE_REASON_OTHER) || "other";
+    var saved =
+      L && L.normalizeDeclineCodes
+        ? L.normalizeDeclineCodes(app.decline_reason_codes)
+        : [];
+    var isDeclined = decisionStatusValue(app) === "declined";
+    var html =
+      '<div class="ldf-fieldset' +
+      (isDeclined ? "" : " is-hidden") +
+      '" id="ldfDeclineWrap">';
+    html +=
+      '<fieldset class="ldf-checklist"><legend>Reasons for decline <span class="muted">(select all that apply)</span></legend>';
+    reasons.forEach(function (r) {
+      html +=
+        '<label class="ldf-check"><input type="checkbox" name="ldfDeclineReason" value="' +
+        esc(r.code) +
+        '"' +
+        (saved.indexOf(r.code) >= 0 ? " checked" : "") +
+        ' /> <span>' +
+        esc(r.label) +
+        "</span></label>";
+    });
+    var otherChecked = saved.indexOf(otherCode) >= 0;
+    html +=
+      '<label class="ldf-check"><input type="checkbox" id="ldfDeclineOtherCheck" name="ldfDeclineReason" value="' +
+      esc(otherCode) +
+      '"' +
+      (otherChecked ? " checked" : "") +
+      ' /> <span>Other</span></label></fieldset>';
+    html +=
+      '<div class="ldf-field' +
+      (otherChecked ? "" : " is-hidden") +
+      '" id="ldfDeclineOtherWrap"><label for="ldfDeclineOtherText">Other reason (included in email)</label>' +
+      '<textarea id="ldfDeclineOtherText" placeholder="Describe the reason sent to the employee">' +
+      esc(app.decline_reason_other || "") +
+      "</textarea></div></div>";
+    return html;
+  }
+
+  function buildDecisionStatusSelect(app) {
+    var selected = decisionStatusValue(app);
+    return (
+      '<div class="ldf-field"><label for="ldfStatus">Decision</label>' +
+      '<select id="ldfStatus" name="status" required>' +
+      '<option value="approved"' +
+      (selected === "approved" ? " selected" : "") +
+      ">Approved</option>" +
+      '<option value="declined"' +
+      (selected === "declined" ? " selected" : "") +
+      ">Declined</option></select></div>"
+    );
   }
 
   function readDecisionFields(screen, app) {
     var statusEl = screen.querySelector("#ldfStatus");
-    var status = statusEl ? clean(statusEl.value) : "pending";
-    var reimb = reimbursementFromForm(screen);
-    var isApproval = status === "approved" || status === "approved_conditional";
+    var status = statusEl ? clean(statusEl.value) : "approved";
+    var isApproval = status === "approved";
+    var isDeclined = status === "declined";
     var fundingAmount = null;
     var fundingPct = null;
+    var reimb = reimbursementFromForm(screen);
+    var declineReasonCodes = null;
+    var declineReasonOther = null;
+
+    if (isDeclined) {
+      var decline = declineReasonsFromForm(screen);
+      var otherCode =
+        (lettersApi() && lettersApi().DECLINE_REASON_OTHER) || "other";
+      if (!decline.codes.length) {
+        return { error: "Select at least one reason for decline." };
+      }
+      if (
+        decline.codes.indexOf(otherCode) >= 0 &&
+        !decline.other &&
+        decline.codes.length === 1
+      ) {
+        return { error: "Enter the other decline reason or select additional reasons." };
+      }
+      declineReasonCodes = decline.codes;
+      declineReasonOther =
+        decline.codes.indexOf(otherCode) >= 0 ? decline.other : null;
+    }
 
     if (isApproval) {
       fundingPct = fundingPctFromForm(screen);
@@ -240,20 +365,24 @@
             "Application has no course cost — cannot calculate funding from percentage.",
         };
       }
-    }
-
-    if (isApproval && reimb.key === REIMB_PRESET_OTHER && !reimb.text) {
-      return { error: "Enter the other reimbursement schedule or choose the standard option." };
+      if (reimb.key === REIMB_PRESET_OTHER && !reimb.text) {
+        return { error: "Enter the other reimbursement schedule or choose the standard option." };
+      }
     }
 
     return {
       status: status,
-      funding_amount_gbp: fundingAmount,
-      funding_pct: fundingPct,
-      reimbursement_schedule: isApproval || reimb.text ? reimb.text : null,
-      exceptional_funding_arrangement:
-        clean((screen.querySelector("#ldfExceptionalArr") || {}).value) || null,
-      additional_conditions: clean((screen.querySelector("#ldfConditions") || {}).value) || null,
+      funding_amount_gbp: isApproval ? fundingAmount : null,
+      funding_pct: isApproval ? fundingPct : null,
+      reimbursement_schedule: isApproval ? reimb.text : null,
+      exceptional_funding_arrangement: isApproval
+        ? clean((screen.querySelector("#ldfExceptionalArr") || {}).value) || null
+        : null,
+      additional_conditions: isApproval
+        ? clean((screen.querySelector("#ldfConditions") || {}).value) || null
+        : null,
+      decline_reason_codes: isDeclined ? declineReasonCodes : null,
+      decline_reason_other: isDeclined ? declineReasonOther : null,
       review_notes: clean((screen.querySelector("#ldfReviewNotes") || {}).value) || null,
     };
   }
@@ -374,6 +503,13 @@
       ".ldf-letter-actions .btn{min-width:0}",
       ".ldf-hint{margin:0;font-size:13px;color:#64748b;overflow-wrap:break-word}",
       ".ldf-field.is-hidden{display:none}",
+      ".ldf-section-block.is-hidden{display:none}",
+      ".ldf-fieldset.is-hidden{display:none}",
+      ".ldf-checklist{border:0;margin:0;padding:0;display:grid;gap:8px}",
+      ".ldf-checklist legend{font-size:13px;font-weight:700;color:#334155;padding:0;margin:0 0 4px}",
+      ".ldf-check{display:flex;gap:8px;align-items:flex-start;font-size:14px;min-width:0;cursor:pointer}",
+      ".ldf-check input{margin-top:3px;flex:0 0 auto}",
+      ".ldf-check span{overflow-wrap:break-word;min-width:0;color:#0f172a;line-height:1.45}",
       "@media(max-width:640px){.ldf-kv-row{grid-template-columns:1fr}}",
     ].join("");
     var el = document.createElement("style");
@@ -515,20 +651,11 @@
       '<div class="ldf-section"><h4>Director decision</h4>' +
       '<p class="muted" style="margin:0 0 10px;font-size:13px">Save updates the application status. Letter tools appear once a decision is recorded.</p>' +
       '<form class="ldf-form" id="ldfReviewForm">' +
-      '<div class="ldf-field"><label for="ldfStatus">Decision</label>' +
-      '<select id="ldfStatus" name="status" required>' +
-      '<option value="pending"' +
-      (clean(a.status) === "pending" ? " selected" : "") +
-      ">Pending review</option>" +
-      '<option value="approved"' +
-      (clean(a.status) === "approved" ? " selected" : "") +
-      ">Approved</option>" +
-      '<option value="approved_conditional"' +
-      (clean(a.status) === "approved_conditional" ? " selected" : "") +
-      ">Approved with conditions</option>" +
-      '<option value="declined"' +
-      (clean(a.status) === "declined" ? " selected" : "") +
-      ">Declined</option></select></div>" +
+      buildDecisionStatusSelect(a) +
+      buildDeclineReasonFields(a) +
+      '<div class="ldf-section-block' +
+      (decisionStatusValue(a) === "declined" ? " is-hidden" : "") +
+      '" id="ldfApprovalWrap">' +
       buildFundingPctSelect(a) +
       buildReimbScheduleFields(a) +
       '<div class="ldf-field"><label for="ldfExceptionalArr">Exceptional funding arrangement</label>' +
@@ -538,7 +665,7 @@
       '<div class="ldf-field"><label for="ldfConditions">Additional conditions</label>' +
       '<textarea id="ldfConditions" placeholder="Any conditions for approval">' +
       esc(a.additional_conditions || "") +
-      "</textarea></div>" +
+      "</textarea></div></div>" +
       '<div class="ldf-field"><label for="ldfReviewNotes">Internal notes (HR only)</label>' +
       '<textarea id="ldfReviewNotes" placeholder="Not sent to the employee">' +
       esc(a.review_notes || "") +
@@ -600,6 +727,8 @@
     a.reimbursement_schedule = fields.reimbursement_schedule;
     a.exceptional_funding_arrangement = fields.exceptional_funding_arrangement;
     a.additional_conditions = fields.additional_conditions;
+    a.decline_reason_codes = fields.decline_reason_codes;
+    a.decline_reason_other = fields.decline_reason_other;
     return a;
   }
 
@@ -641,13 +770,16 @@
       if (pre) pre.textContent = L.buildEmailBody(currentApp());
     }
 
-    ["#ldfStatus", "#ldfFundingMode", "#ldfFundingPctOther", "#ldfReimbSchedule", "#ldfReimbScheduleOther", "#ldfExceptionalArr", "#ldfConditions"].forEach(
+    ["#ldfStatus", "#ldfFundingMode", "#ldfFundingPctOther", "#ldfReimbSchedule", "#ldfReimbScheduleOther", "#ldfExceptionalArr", "#ldfConditions", "#ldfDeclineOtherText"].forEach(
       function (sel) {
         var el = screen.querySelector(sel);
         if (el) el.addEventListener("input", refreshPreview);
         if (el && el.tagName === "SELECT") el.addEventListener("change", refreshPreview);
       }
     );
+    screen.querySelectorAll('input[name="ldfDeclineReason"]').forEach(function (el) {
+      el.addEventListener("change", refreshPreview);
+    });
 
     var copyBtn = screen.querySelector("#ldfCopyEmail");
     if (copyBtn) {
@@ -837,6 +969,8 @@
           reimbursement_schedule: fields.reimbursement_schedule,
           exceptional_funding_arrangement: fields.exceptional_funding_arrangement,
           additional_conditions: fields.additional_conditions,
+          decline_reason_codes: fields.decline_reason_codes,
+          decline_reason_other: fields.decline_reason_other,
           review_notes: fields.review_notes,
           reviewed_at: new Date().toISOString(),
         };

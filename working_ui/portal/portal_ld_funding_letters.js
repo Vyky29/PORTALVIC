@@ -9,6 +9,84 @@
 
   var ORG = "clubSENsational Ltd";
   var SCHEME = "Learning & Development Funding Scheme (POL-049)";
+  var DECLINE_REASON_OTHER = "other";
+
+  var DECLINE_REASONS = [
+    {
+      code: "role_relevance",
+      label: "Not sufficiently relevant to current role or business need",
+      letter:
+        "The proposed learning is not sufficiently relevant to your current role or an identified business need at this time.",
+    },
+    {
+      code: "participant_benefit",
+      label: "Limited benefit to the individuals we support",
+      letter:
+        "The application does not demonstrate sufficient benefit to the individuals we support.",
+    },
+    {
+      code: "budget",
+      label: "Available training budget",
+      letter: "Available training budget does not allow approval of this application at present.",
+    },
+    {
+      code: "scheme_criteria",
+      label: "Scheme criteria not met (probation, performance or commitment)",
+      letter:
+        "The application does not meet the scheme criteria at this time (for example probation period, performance or commitment).",
+    },
+    {
+      code: "recent_funding",
+      label: "Recent approval or funding already committed",
+      letter:
+        "A recent application has already been approved or training funding is already committed elsewhere.",
+    },
+  ];
+
+  function declineReasonByCode(code) {
+    var k = clean(code);
+    for (var i = 0; i < DECLINE_REASONS.length; i++) {
+      if (DECLINE_REASONS[i].code === k) return DECLINE_REASONS[i];
+    }
+    return null;
+  }
+
+  function normalizeDeclineCodes(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map(function (c) {
+        return clean(c);
+      }).filter(Boolean);
+    }
+    if (typeof raw === "string") {
+      try {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return normalizeDeclineCodes(parsed);
+      } catch (_) {}
+      return raw
+        .split(",")
+        .map(function (c) {
+          return clean(c);
+        })
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  function buildDeclineReasonLines(app) {
+    var codes = normalizeDeclineCodes(app && app.decline_reason_codes);
+    var lines = [];
+    codes.forEach(function (code) {
+      if (code === DECLINE_REASON_OTHER) return;
+      var reason = declineReasonByCode(code);
+      if (reason) lines.push(reason.letter);
+    });
+    var other = clean(app && app.decline_reason_other);
+    if (codes.indexOf(DECLINE_REASON_OTHER) >= 0 && other) {
+      lines.push(other);
+    }
+    return lines;
+  }
 
   function clean(v) {
     return String(v == null ? "" : v).replace(/\s+/g, " ").trim();
@@ -97,8 +175,21 @@
         "After careful consideration, we are unable to approve funding for this application at this time. " +
           "This decision has been made in line with the " +
           SCHEME +
-          ", taking into account relevance to your role, benefit to the individuals we support, performance and commitment, and available training budget."
+          "."
       );
+      var declineLines = buildDeclineReasonLines(a);
+      if (declineLines.length) {
+        lines.push("");
+        lines.push("This reflects the following:");
+        declineLines.forEach(function (line) {
+          lines.push("• " + line);
+        });
+      } else {
+        lines.push("");
+        lines.push(
+          "This reflects relevance to your role, benefit to the individuals we support, performance and commitment, and available training budget."
+        );
+      }
       lines.push("");
       lines.push(
         "This does not prevent you from discussing alternative development options with your line manager or submitting a future application where circumstances change."
@@ -425,5 +516,9 @@
     documentTitle: documentTitle,
     pdfFilename: pdfFilename,
     decisionLabel: decisionLabel,
+    DECLINE_REASONS: DECLINE_REASONS,
+    DECLINE_REASON_OTHER: DECLINE_REASON_OTHER,
+    normalizeDeclineCodes: normalizeDeclineCodes,
+    buildDeclineReasonLines: buildDeclineReasonLines,
   };
 })(typeof window !== "undefined" ? window : globalThis);
