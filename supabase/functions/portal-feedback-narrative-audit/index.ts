@@ -76,6 +76,10 @@ Deno.serve(async (req) => {
     filterRelevant: str(body.filter_relevant, 4000),
     filterStatus: "submit",
     sessionFeedbackId: str(body.session_feedback_id, 64),
+    meta:
+      body.meta && typeof body.meta === "object"
+        ? (body.meta as Record<string, unknown>)
+        : {},
   });
 
   return json({ ok: true });

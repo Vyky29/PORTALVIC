@@ -1,15 +1,21 @@
 /**
- * Session feedback narrative — Filter with AI splits narrative into Positive + Relevant.
+ * Session feedback narrative — validate (typed) + filter with AI → Positive + Relevant.
  */
 (function (global) {
   "use strict";
 
+  var VALIDATE_FN = "portal-feedback-narrative-validate";
   var FILTER_FN = "portal-feedback-narrative-filter";
   var MIN_NARRATIVE_CHARS = 80;
 
-  /** Training-demo copy — must not be submitted as live feedback. */
   var DEMO_POSITIVE_MARKER =
     "The participant arrived happy and ready to begin the session";
+
+  var SECTION_LABELS = {
+    reception: "Reception",
+    session: "Session",
+    handover: "Handover",
+  };
 
   var cfg = {
     getClient: function () {
@@ -27,11 +33,20 @@
   };
 
   var state = {
+    inputMode: "typed",
+    validated: false,
+    validating: false,
+    validationSnapshot: "",
+    validationResult: null,
     filtered: false,
     filtering: false,
     liveAiUsed: false,
     narrativeSnapshot: "",
+    filterPositiveSnapshot: "",
+    filterRelevantSnapshot: "",
     contextKey: "",
+    voiceAutoFilterPending: false,
+    counts: { validate: 0, filter: 0 },
   };
 
   var els = {};
@@ -80,15 +95,6 @@
     return "";
   }
 
-  function previewFilterAllowed() {
-    try {
-      if (global.location && global.location.search) {
-        if (/[?&]localPreview=1(?:&|$)/.test(global.location.search)) return true;
-      }
-    } catch (_) {}
-    return !!global.__PORTAL_FEEDBACK_ALLOW_PREVIEW_FILTER;
-  }
-
   function isDemoTemplateOutput(positive, relevant, participantName) {
     var pos = clean(positive);
     var rel = clean(relevant);
@@ -133,6 +139,14 @@
     if (els.status) els.status.textContent = msg || "";
   }
 
+  function isTypedMode() {
+    return state.inputMode !== "voice";
+  }
+
+  function validationRequired() {
+    return isTypedMode();
+  }
+
   function setAiFieldsRequired(on) {
     if (els.positive) {
       if (on) els.positive.setAttribute("required", "");
@@ -144,24 +158,89 @@
     }
   }
 
+  function renderValidationChecklist(result) {
+    if (!els.validatePanel || !els.validateList) return;
+    if (!result) {
+      els.validatePanel.hidden = true;
+      els.validateList.innerHTML = "";
+      return;
+    }
+    els.validatePanel.hidden = false;
+    var keys = ["reception", "session", "handover"];
+    els.validateList.innerHTML = keys
+      .map(function (key) {
+        var sec = (result && result[key]) || {};
+        var ok = sec.covered === true;
+        var note = clean(sec.note);
+        return (
+          '<li class="fb-validate-item' +
+          (ok ? " fb-validate-item--ok" : " fb-validate-item--miss") +
+          '">' +
+          '<span class="fb-validate-item__icon" aria-hidden="true">' +
+          (ok ? "✓" : "!") +
+          "</span>" +
+          '<span class="fb-validate-item__copy">' +
+          "<strong>" +
+          (SECTION_LABELS[key] || key) +
+          "</strong>" +
+          (note && !ok ? " — " + escHtml(note) : ok ? " — covered" : "") +
+          "</span></li>"
+        );
+      })
+      .join("");
+  }
+
+  function escHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function syncModeNote() {
+    if (!els.modeNote) return;
+    if (state.inputMode === "voice") {
+      els.modeNote.textContent =
+        "Voice: when you finish recording, Filter with AI runs automatically. You can still edit Positive or Relevant before Submit.";
+    } else {
+      els.modeNote.textContent =
+        "Typed: Check narrative first (Reception, Session, Handover). Then Filter with AI creates parent-friendly Positive + internal Relevant. Edit anytime and check or filter again.";
+    }
+  }
+
+  function syncValidateButton() {
+    if (!els.validateBtn) return;
+    var len = narrativeText().length;
+    els.validateBtn.hidden = !isTypedMode();
+    els.validateBtn.disabled = state.validating || len < MIN_NARRATIVE_CHARS;
+  }
+
   function syncFilterButton() {
     if (!els.filterBtn) return;
     var len = narrativeText().length;
-    els.filterBtn.disabled = state.filtering || len < MIN_NARRATIVE_CHARS;
+    var needsValidate = validationRequired() && (!state.validated || narrativeText() !== state.validationSnapshot);
+    els.filterBtn.disabled = state.filtering || len < MIN_NARRATIVE_CHARS || needsValidate;
   }
 
   function syncSubmitGate() {
     if (!els.submitBtn) return;
     if (els.submitBtn.textContent === "Submitting") return;
-    els.submitBtn.disabled = !state.filtered || !state.liveAiUsed;
+    var needsValidate =
+      validationRequired() &&
+      (!state.validated || narrativeText() !== state.validationSnapshot);
+    els.submitBtn.disabled = !state.filtered || !state.liveAiUsed || needsValidate;
     var hint = global.document.getElementById("fbSubmitHint");
     if (hint) {
-      if (!state.filtered) {
-        hint.textContent = "Run Filter with AI before submitting.";
+      if (needsValidate) {
+        hint.textContent = "Check narrative (Reception, Session, Handover) before filtering or submit.";
+      } else if (!state.filtered) {
+        hint.textContent = isTypedMode()
+          ? "Check narrative, then Filter with AI before submitting."
+          : "Run Filter with AI before submitting.";
       } else if (!state.liveAiUsed) {
-        hint.textContent = "Live AI filter required — tap Filter with AI again (do not use training demo copy).";
+        hint.textContent = "Live AI filter required — tap Filter with AI again.";
       } else {
-        hint.textContent = "Ready to submit — edit Positive or Relevant if needed.";
+        hint.textContent = "Ready to submit — edit fields and re-check or re-filter if needed.";
       }
     }
   }
@@ -171,17 +250,34 @@
     els.aiSection.hidden = !show;
   }
 
+  function resetValidatedState() {
+    state.validated = false;
+    state.validationSnapshot = "";
+    state.validationResult = null;
+    renderValidationChecklist(null);
+    syncValidateButton();
+    syncFilterButton();
+    syncSubmitGate();
+  }
+
   function resetFilteredState() {
     state.filtered = false;
     state.liveAiUsed = false;
     state.narrativeSnapshot = "";
+    state.filterPositiveSnapshot = "";
+    state.filterRelevantSnapshot = "";
     if (els.positive) els.positive.value = "";
     if (els.relevant) els.relevant.value = "";
     setAiFieldsRequired(false);
     showAiOutput(false);
-    setStatus("");
     syncFilterButton();
     syncSubmitGate();
+  }
+
+  function resetAllAiState() {
+    resetValidatedState();
+    resetFilteredState();
+    setStatus("");
   }
 
   function readFormContext() {
@@ -231,11 +327,7 @@
 
   function buildContextKey() {
     var ctx = readFormContext();
-    return [
-      ctx.participant_name,
-      ctx.service,
-      ctx.session_date,
-    ]
+    return [ctx.participant_name, ctx.service, ctx.session_date]
       .map(function (v) {
         return clean(v).toLowerCase();
       })
@@ -245,10 +337,29 @@
   function onSessionContextChange() {
     var key = buildContextKey();
     if (state.contextKey && key && key !== state.contextKey) {
-      resetFilteredState();
-      setStatus("Participant or session changed — write or record this session, then Filter with AI.");
+      resetAllAiState();
+      state.counts = { validate: 0, filter: 0 };
+      state.inputMode = "typed";
+      syncModeNote();
+      setStatus("Participant or session changed — write or record this session.");
     }
     state.contextKey = key;
+  }
+
+  function applyValidationResult(result) {
+    state.validationResult = result;
+    state.validated = !!(result && result.all_complete);
+    state.validationSnapshot = narrativeText();
+    state.counts.validate += 1;
+    renderValidationChecklist(result);
+    syncValidateButton();
+    syncFilterButton();
+    syncSubmitGate();
+    if (result && result.all_complete) {
+      setStatus("All three sections covered — tap Filter with AI when ready.");
+    } else {
+      setStatus("Add what's missing in your narrative, then Check narrative again.");
+    }
   }
 
   function applyFilterResult(positive, relevant, liveAi) {
@@ -257,14 +368,54 @@
     state.filtered = true;
     state.liveAiUsed = !!liveAi;
     state.narrativeSnapshot = narrativeText();
+    state.filterPositiveSnapshot = positive;
+    state.filterRelevantSnapshot = relevant;
+    state.counts.filter += 1;
     setAiFieldsRequired(true);
     showAiOutput(true);
     syncSubmitGate();
     if (liveAi) {
-      setStatus("Filtered from your narrative — edit Positive and Relevant if needed, then Submit.");
-    } else {
-      setStatus("Preview only — sign in on the portal and run Filter with AI again before Submit.");
+      setStatus("Filtered — edit Positive or Relevant if needed, then Submit.");
     }
+  }
+
+  async function callValidateEdge(narrative, context) {
+    var token = await authToken();
+    if (!token) return { ok: false, error: "session_expired" };
+
+    var res = await fetch(baseUrl() + "/functions/v1/" + VALIDATE_FN, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        apikey: cfg.getAnonKey(),
+      },
+      body: JSON.stringify(Object.assign({ narrative_en: narrative }, context || {})),
+    });
+
+    var body = null;
+    try {
+      body = await res.json();
+    } catch (_e) {
+      body = null;
+    }
+
+    if (!res.ok || !body || !body.ok) {
+      return {
+        ok: false,
+        error: (body && body.error) || "validate_failed",
+        status: res.status,
+      };
+    }
+
+    return {
+      ok: true,
+      all_complete: !!body.all_complete,
+      reception: body.reception,
+      session: body.session,
+      handover: body.handover,
+      missing: body.missing || [],
+    };
   }
 
   async function callFilterEdge(narrative, context) {
@@ -278,9 +429,7 @@
         Authorization: "Bearer " + token,
         apikey: cfg.getAnonKey(),
       },
-      body: JSON.stringify(
-        Object.assign({ narrative_en: narrative }, context || {}),
-      ),
+      body: JSON.stringify(Object.assign({ narrative_en: narrative }, context || {})),
     });
 
     var body = null;
@@ -305,12 +454,59 @@
     };
   }
 
-  async function filterWithAi() {
+  async function validateNarrative() {
+    if (state.validating || !isTypedMode()) return;
+    var narrative = narrativeText();
+    if (narrative.length < MIN_NARRATIVE_CHARS) {
+      setStatus("Add more detail to the session narrative first.");
+      return;
+    }
+
+    state.validating = true;
+    syncValidateButton();
+    if (els.validateBtn) els.validateBtn.textContent = "Checking…";
+    setStatus("Checking Reception, Session and Handover…");
+
+    var context = readFormContext();
+    var result = await callValidateEdge(narrative, context);
+
+    state.validating = false;
+    if (els.validateBtn) els.validateBtn.textContent = "Check narrative";
+    syncValidateButton();
+
+    if (!result.ok) {
+      if (result.error === "session_expired") {
+        setStatus("Sign in on the portal, then try again.");
+        global.alert("Your session expired. Sign in again, then Check narrative.");
+        return;
+      }
+      setStatus("Could not check narrative — try again.");
+      return;
+    }
+
+    applyValidationResult(result);
+  }
+
+  async function filterWithAi(opts) {
+    opts = opts || {};
     if (state.filtering) return;
     var narrative = narrativeText();
     if (narrative.length < MIN_NARRATIVE_CHARS) {
       setStatus("Add more detail to the session narrative first.");
       return;
+    }
+    if (validationRequired()) {
+      if (!state.validated || narrative !== state.validationSnapshot) {
+        setStatus("Check narrative first (Reception, Session, Handover).");
+        if (!opts.silent) {
+          global.alert("Typed feedback: tap Check narrative and fix missing sections before Filter with AI.");
+        }
+        return;
+      }
+      if (!state.validationResult || !state.validationResult.all_complete) {
+        setStatus("Complete all three sections before filtering.");
+        return;
+      }
     }
 
     state.filtering = true;
@@ -328,24 +524,18 @@
       var err = result.error || "filter_failed";
       if (err === "session_expired") {
         setStatus("Sign in on the portal, then tap Filter with AI again.");
-        global.alert(
-          "Your session expired. Sign in again, then tap Filter with AI on YOUR transcribed narrative before Submit.",
-        );
+        global.alert("Your session expired. Sign in again, then Filter with AI.");
         return;
       }
-      if (err === "template_response" || err === "generic_participant_label" || err === "invented_details") {
+      if (
+        err === "template_response" ||
+        err === "generic_participant_label" ||
+        err === "invented_details"
+      ) {
         setStatus("AI returned a generic template — edit your narrative or try Filter again.");
-        global.alert(
-          "Filter with AI did not accept a generic training example. Use YOUR voice transcript or typed notes for this participant, then tap Filter with AI again.",
-        );
         return;
       }
       setStatus("Could not filter — check your connection and try again.");
-      global.alert(
-        "Filter with AI failed (" +
-          String(err).replace(/_/g, " ") +
-          "). Check your connection and try again. Do not paste text from the training demo.",
-      );
       return;
     }
 
@@ -360,9 +550,6 @@
       if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
       syncFilterButton();
       setStatus("Output looks like the training demo — use your own narrative.");
-      global.alert(
-        "This looks like the training demo example, not your transcription. Record or type what happened in THIS session, then tap Filter with AI again.",
-      );
       return;
     }
 
@@ -371,6 +558,52 @@
     state.filtering = false;
     if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
     syncFilterButton();
+  }
+
+  function onVoiceTranscriptDone() {
+    state.inputMode = "voice";
+    state.voiceAutoFilterPending = true;
+    syncModeNote();
+    syncValidateButton();
+    syncFilterButton();
+    setStatus("Voice transcribed — filtering for parent-friendly text…");
+    global.setTimeout(function () {
+      state.voiceAutoFilterPending = false;
+      void filterWithAi({ silent: true });
+    }, 400);
+  }
+
+  function onNarrativeInput(fromVoice) {
+    syncValidateButton();
+    syncFilterButton();
+    if (fromVoice) return;
+    if (state.inputMode === "voice" && !state.voiceAutoFilterPending) {
+      state.inputMode = "typed";
+      syncModeNote();
+      syncValidateButton();
+    }
+    if (!state.filtered && !state.validated) return;
+    if (narrativeText() !== state.narrativeSnapshot) {
+      resetFilteredState();
+      resetValidatedState();
+      setStatus("Narrative changed — check and filter again.");
+    }
+  }
+
+  function getSubmitAuditMeta() {
+    var positive = clean(els.positive && els.positive.value);
+    var relevant = clean(els.relevant && els.relevant.value);
+    return {
+      input_mode: state.inputMode,
+      validate_count: state.counts.validate,
+      filter_count: state.counts.filter,
+      positive_edited_after_filter:
+        state.filtered && positive !== clean(state.filterPositiveSnapshot),
+      relevant_edited_after_filter:
+        state.filtered && relevant !== clean(state.filterRelevantSnapshot),
+      narrative_edited_after_filter:
+        state.filtered && narrativeText() !== clean(state.narrativeSnapshot),
+    };
   }
 
   function validateBeforeSubmit() {
@@ -383,27 +616,33 @@
       global.alert("Please add more detail to the session narrative before submitting.");
       return false;
     }
+    if (validationRequired()) {
+      if (!state.validated || narrative !== state.validationSnapshot) {
+        global.alert("Check narrative first — Reception, Session and Handover must be covered.");
+        return false;
+      }
+      if (!state.validationResult || !state.validationResult.all_complete) {
+        global.alert("Your narrative is still missing sections. Check narrative and add detail.");
+        return false;
+      }
+    }
     if (!state.filtered) {
       global.alert("Tap Filter with AI first — Positive and Relevant are filled from your narrative.");
       return false;
     }
     if (!state.liveAiUsed) {
-      global.alert(
-        "Live Filter with AI is required. Do not submit training-demo copy — tap Filter with AI on your own narrative.",
-      );
+      global.alert("Live Filter with AI is required.");
       return false;
     }
     if (narrative !== state.narrativeSnapshot) {
-      global.alert("You edited the narrative after filtering. Tap Filter with AI again.");
+      global.alert("You edited the narrative after filtering. Check narrative and Filter with AI again.");
       return false;
     }
     var ctx = readFormContext();
     var positive = clean(els.positive && els.positive.value);
     var relevant = clean(els.relevant && els.relevant.value);
     if (isDemoTemplateOutput(positive, relevant, ctx.participant_name)) {
-      global.alert(
-        "Positive/Relevant still match the training demo example. Use Filter with AI on YOUR transcribed session narrative.",
-      );
+      global.alert("Positive/Relevant match the training demo — use Filter with AI on your narrative.");
       return false;
     }
     if (!positive) {
@@ -427,7 +666,11 @@
 
   function reset() {
     if (els.narrative) els.narrative.value = "";
-    resetFilteredState();
+    state.inputMode = "typed";
+    state.counts = { validate: 0, filter: 0 };
+    resetAllAiState();
+    syncModeNote();
+    syncValidateButton();
     state.contextKey = buildContextKey();
   }
 
@@ -435,34 +678,35 @@
     if (!form) return;
     form.addEventListener("change", function () {
       onSessionContextChange();
-      invalidateIfNarrativeChanged();
     });
-  }
-
-  function invalidateIfNarrativeChanged() {
-    if (!state.filtered) return;
-    if (narrativeText() === state.narrativeSnapshot) return;
-    resetFilteredState();
-    setStatus("Narrative changed — run Filter with AI again.");
   }
 
   function init(options) {
     configure(options);
 
     els.narrative = global.document.getElementById("fbSessionNarrative");
+    els.validateBtn = global.document.getElementById("btnValidateFeedbackNarrative");
     els.filterBtn = global.document.getElementById("btnFilterFeedbackAi");
     els.status = global.document.getElementById("filterAiStatus");
     els.aiSection = global.document.getElementById("fbAiOutputSection");
     els.positive = global.document.getElementById("fbPositiveFeedback");
     els.relevant = global.document.getElementById("fbRelevantInformation");
     els.submitBtn = global.document.getElementById("submitBtn");
+    els.validatePanel = global.document.getElementById("fbNarrativeValidatePanel");
+    els.validateList = global.document.getElementById("fbNarrativeValidateList");
+    els.modeNote = global.document.getElementById("fbNarrativeModeNote");
 
     if (!els.narrative || !els.filterBtn) return;
 
     if (els.narrative) {
       els.narrative.addEventListener("input", function () {
-        invalidateIfNarrativeChanged();
-        syncFilterButton();
+        onNarrativeInput(false);
+      });
+    }
+
+    if (els.validateBtn) {
+      els.validateBtn.addEventListener("click", function () {
+        validateNarrative();
       });
     }
 
@@ -470,9 +714,18 @@
       filterWithAi();
     });
 
+    if (!global.__portalFeedbackVoiceDoneBound) {
+      global.__portalFeedbackVoiceDoneBound = true;
+      global.addEventListener("portal:feedback-voice-transcript-done", function () {
+        onVoiceTranscriptDone();
+      });
+    }
+
     wireFormListeners(cfg.getForm());
     state.contextKey = buildContextKey();
     setAiFieldsRequired(false);
+    syncModeNote();
+    syncValidateButton();
     syncFilterButton();
     syncSubmitGate();
   }
@@ -483,10 +736,13 @@
     reset: reset,
     isFiltered: isFiltered,
     validateBeforeSubmit: validateBeforeSubmit,
+    validateNarrative: validateNarrative,
     filterWithAi: filterWithAi,
     syncSubmitGate: syncSubmitGate,
     onSessionContextChange: onSessionContextChange,
     getSessionNarrativeForSubmit: getSessionNarrativeForSubmit,
+    getSubmitAuditMeta: getSubmitAuditMeta,
+    participantGender: participantGender,
     isDemoTemplateOutput: isDemoTemplateOutput,
   };
 })(typeof window !== "undefined" ? window : globalThis);

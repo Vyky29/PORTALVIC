@@ -133,9 +133,65 @@
     }
   }
 
+  /**
+   * Admin: full audit timeline for a feedback row (validates, filters, submit).
+   */
+  async function fetchAuditHistoryForFeedbackRow(row) {
+    row = row || {};
+    var client = cfg.getClient();
+    if (!client) return { ok: false, error: "no_client" };
+    var participant = clean(row.client_name);
+    var sessionDate = clean(row.session_date).slice(0, 10);
+    if (!participant || !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+      return { ok: false, error: "missing_context" };
+    }
+    var selectCols =
+      "id,created_at,source,narrative_en,filter_positive,filter_relevant,filter_status,staff_display_name,session_feedback_id,meta";
+    try {
+      var feedbackId = clean(row.id);
+      var rows = [];
+      if (feedbackId) {
+        var linked = await client
+          .from("session_feedback_narrative_audit")
+          .select(selectCols)
+          .eq("session_feedback_id", feedbackId)
+          .order("created_at", { ascending: true });
+        if (!linked.error && linked.data && linked.data.length) {
+          rows = linked.data;
+        }
+      }
+      if (!rows.length) {
+        var resp = await client
+          .from("session_feedback_narrative_audit")
+          .select(selectCols)
+          .eq("participant_name", participant)
+          .eq("session_date", sessionDate)
+          .order("created_at", { ascending: true })
+          .limit(40);
+        if (resp.error) return { ok: false, error: resp.error.message || "query_failed" };
+        rows = resp.data || [];
+      }
+      var counts = { validate: 0, filter: 0, submit: 0, voice: 0, total_tokens: 0 };
+      rows.forEach(function (r) {
+        var src = clean(r.source);
+        if (src === "narrative_validate") counts.validate += 1;
+        if (src === "narrative_filter") counts.filter += 1;
+        if (src === "feedback_submit") counts.submit += 1;
+        if (src === "voice_transcribe") counts.voice += 1;
+        var meta = r.meta && typeof r.meta === "object" ? r.meta : {};
+        var tok = Number(meta.total_tokens || 0);
+        if (Number.isFinite(tok) && tok > 0) counts.total_tokens += tok;
+      });
+      return { ok: true, rows: rows, counts: counts };
+    } catch (e) {
+      return { ok: false, error: String(e && e.message ? e.message : e) };
+    }
+  }
+
   global.PortalSessionFeedbackNarrativeAudit = {
     configure: configure,
     logSubmitAudit: logSubmitAudit,
     fetchLatestForFeedbackRow: fetchLatestForFeedbackRow,
+    fetchAuditHistoryForFeedbackRow: fetchAuditHistoryForFeedbackRow,
   };
 })(typeof window !== "undefined" ? window : globalThis);

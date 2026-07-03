@@ -2,8 +2,10 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 
 export type NarrativeAuditSource =
   | "voice_transcribe"
+  | "narrative_validate"
   | "narrative_filter"
-  | "feedback_submit";
+  | "feedback_submit"
+  | "output_edit";
 
 export type NarrativeAuditRow = {
   source: NarrativeAuditSource;

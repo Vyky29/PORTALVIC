@@ -526,6 +526,17 @@
  return finals || interim;
  }
 
+ function notifyVoiceTranscriptDone(textarea) {
+ if (!isLongNarrativeField(textarea)) return;
+ try {
+ global.dispatchEvent(
+ new CustomEvent("portal:feedback-voice-transcript-done", {
+ detail: { fieldId: textarea.id || textarea.name || "" },
+ })
+ );
+ } catch (_ev) {}
+ }
+
  function setLiveTextarea(s, liveEnglish) {
  if (!s || !s.textarea) return;
  s.textarea.value = composePrefix(s.prefix, liveEnglish);
@@ -708,8 +719,11 @@
  setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
  autoClearMs: VOICE_ERROR_CLEAR_MS,
  });
- } else if (s.statusEl) {
- setVoiceStatus(s.statusEl, "Done - edit if needed before submit.");
+ } else {
+ if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
+ if (s.statusEl) {
+ setVoiceStatus(s.statusEl, "Done - filtering for parent-friendly text…");
+ }
  }
  }
 
@@ -771,8 +785,9 @@
  if (english) {
  setLiveTextarea(s, english);
  cleanupSessionUi(s);
+ if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
  if (s.statusEl) {
- s.statusEl.textContent = "Done - edit if needed before submit.";
+ s.statusEl.textContent = "Done - filtering for parent-friendly text…";
  }
  return;
  }

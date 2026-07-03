@@ -485,6 +485,119 @@
     if (kind === "feedback" && !clean(row.session_narrative)) {
       injectRecoveredNarrativeAudit(row);
     }
+    if (kind === "feedback") {
+      injectNarrativeAuditTimeline(row);
+    }
+  }
+
+  function auditSourceLabel(source) {
+    var s = String(source || "").trim();
+    if (s === "narrative_validate") return "Check narrative";
+    if (s === "narrative_filter") return "Filter with AI";
+    if (s === "feedback_submit") return "Submit";
+    if (s === "voice_transcribe") return "Voice transcribe";
+    return s.replace(/_/g, " ");
+  }
+
+  function auditTokensLabel(meta) {
+    if (!meta || typeof meta !== "object") return "";
+    var tok = Number(meta.total_tokens || 0);
+    if (!Number.isFinite(tok) || tok <= 0) return "";
+    return tok + " tokens";
+  }
+
+  function injectNarrativeAuditTimeline(row) {
+    if (typeof global.portalSessionFeedbackNarrativeAuditConfigureOnce === "function") {
+      global.portalSessionFeedbackNarrativeAuditConfigureOnce();
+    }
+    var audit = global.PortalSessionFeedbackNarrativeAudit;
+    if (!audit || typeof audit.fetchAuditHistoryForFeedbackRow !== "function") return;
+    void audit.fetchAuditHistoryForFeedbackRow(row).then(function (res) {
+      if (!res || !res.ok || !backdropEl) return;
+      var rows = res.rows || [];
+      if (!rows.length) return;
+      var body = backdropEl.querySelector(".pfrm-modal__body");
+      if (!body || body.querySelector("[data-pfrm-audit-timeline]")) return;
+      var counts = res.counts || {};
+      var summary =
+        (counts.validate ? counts.validate + " check(s)" : "") +
+        (counts.filter ? (counts.validate ? ", " : "") + counts.filter + " filter(s)" : "") +
+        (counts.total_tokens ? " · ~" + counts.total_tokens + " AI tokens logged" : "");
+      var items = rows
+        .map(function (r, idx) {
+          var when = formatWhen(r.created_at);
+          var src = auditSourceLabel(r.source);
+          var status = clean(r.filter_status);
+          var meta = r.meta && typeof r.meta === "object" ? r.meta : {};
+          var tok = auditTokensLabel(meta);
+          var narrative = clean(r.narrative_en);
+          var pos = clean(r.filter_positive);
+          var rel = clean(r.filter_relevant);
+          var detail = "";
+          if (r.source === "narrative_validate" && meta.sections) {
+            var sec = meta.sections;
+            var bits = [];
+            ["reception", "session", "handover"].forEach(function (k) {
+              var o = sec[k];
+              if (o && o.covered) bits.push(k);
+            });
+            detail = bits.length === 3 ? "All sections OK" : "Missing: " + (sec.missing || []).join(", ");
+          } else if (pos || rel) {
+            detail = (pos ? "Positive saved" : "") + (rel ? (pos ? " · " : "") + "Relevant saved" : "");
+          } else if (narrative) {
+            detail = narrative.length > 120 ? narrative.slice(0, 120) + "…" : narrative;
+          }
+          if (meta.positive_edited_after_filter || meta.relevant_edited_after_filter) {
+            detail += (detail ? " · " : "") + "Staff edited output before submit";
+          }
+          return (
+            '<details class="pfrm-audit-entry"' +
+            (idx === rows.length - 1 ? " open" : "") +
+            ">" +
+            '<summary class="pfrm-audit-entry__sum">' +
+            "<strong>" +
+            esc(src) +
+            "</strong>" +
+            (when !== "—" ? " · " + esc(when) : "") +
+            (status ? " · " + esc(status) : "") +
+            (tok ? " · " + esc(tok) : "") +
+            "</summary>" +
+            (detail
+              ? '<p class="muted pfrm-audit-entry__detail">' + esc(detail).replace(/\n/g, "<br>") + "</p>"
+              : "") +
+            (narrative && r.source !== "narrative_validate"
+              ? '<div class="pfrm-qa__value pfrm-qa__value--block" style="margin-top:8px;font-size:12px">' +
+                esc(narrative).replace(/\n/g, "<br>") +
+                "</div>"
+              : "") +
+            (pos
+              ? '<div class="pfrm-qa__value pfrm-qa__value--block" style="margin-top:8px;font-size:12px"><strong>Positive</strong><br>' +
+                esc(pos).replace(/\n/g, "<br>") +
+                "</div>"
+              : "") +
+            (rel
+              ? '<div class="pfrm-qa__value pfrm-qa__value--block" style="margin-top:8px;font-size:12px"><strong>Relevant</strong><br>' +
+                esc(rel).replace(/\n/g, "<br>") +
+                "</div>"
+              : "") +
+            "</details>"
+          );
+        })
+        .join("");
+      var html =
+        '<div class="pfrm-qa__row" data-pfrm-audit-timeline style="margin-top:12px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc">' +
+        '<div class="pfrm-qa__label">AI narrative log</div>' +
+        (summary
+          ? '<p class="muted" style="margin:0 0 10px;font-size:12px">' + esc(summary) + "</p>"
+          : "") +
+        '<div class="pfrm-audit-timeline">' +
+        items +
+        "</div></div>";
+      var wrap = document.createElement("div");
+      wrap.innerHTML = html;
+      var block = wrap.firstElementChild;
+      body.appendChild(block);
+    });
   }
 
   function injectRecoveredNarrativeAudit(row) {

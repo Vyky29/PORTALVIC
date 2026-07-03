@@ -30,10 +30,10 @@
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
 <script src="/portal/portal_participant_achievements.js?v=20260703-ios-gallery-upload-fix"></script>
-<script src="/portal/portal_feedback_voice_input.js?v=20260703-narrative-v1"></script>
+<script src="/portal/portal_feedback_voice_input.js?v=20260703-voice-auto-filter"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260703-live-filter-only"></script>
-<script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260703-validate-filter"></script>
+<script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -921,6 +921,82 @@ button{
   margin-top:12px;
   min-width:0;
 }
+.btnValidateNarrative{
+  background:#fff;
+  color:var(--blue, #2d84b3);
+  border:2px solid rgba(45, 132, 179, 0.45);
+  box-shadow:0 4px 12px rgba(45, 132, 179, 0.12);
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  font-family:inherit;
+  width:100%;
+  max-width:320px;
+}
+.btnValidateNarrative:hover:not(:disabled){ transform:translateY(-1px); }
+.btnValidateNarrative:disabled{
+  opacity:0.55;
+  cursor:not-allowed;
+  transform:none;
+}
+.fb-narrative-mode-note{
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-validate-panel{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(45, 132, 179, 0.28);
+  background:rgba(239, 246, 255, 0.75);
+  min-width:0;
+}
+.fb-validate-panel[hidden]{
+  display:none!important;
+}
+.fb-validate-list{
+  margin:0;
+  padding:0;
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.fb-validate-item{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:13px;
+  line-height:1.4;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-validate-item__icon{
+  flex:0 0 auto;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  font-size:12px;
+}
+.fb-validate-item--ok .fb-validate-item__icon{
+  background:#dcfce7;
+  color:#166534;
+}
+.fb-validate-item--miss .fb-validate-item__icon{
+  background:#fef3c7;
+  color:#92400e;
+}
+.fb-validate-item__copy{
+  min-width:0;
+  flex:1 1 auto;
+}
 .btnFilterAi{
   background:linear-gradient(135deg,#f0c04a,#d69820);
   color:#1a1004;
@@ -1139,15 +1215,21 @@ button{
             <li><strong>Handover</strong> — what you told the family.</li>
           </ul>
           <p class="small field-note" style="margin:0 0 8px">Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
+          <p class="small field-note fb-narrative-mode-note" id="fbNarrativeModeNote" style="margin:0 0 8px"></p>
           <textarea id="fbSessionNarrative" name="sessionNarrative" rows="10" required placeholder="Reception: how they arrived…&#10;&#10;Session: plan, strategies, challenges, what worked…&#10;&#10;Handover: what you told the family…"></textarea>
+          <div id="fbNarrativeValidatePanel" class="fb-validate-panel" hidden>
+            <p class="small field-note" style="margin:0 0 6px;font-weight:600">Narrative check (Reception · Session · Handover)</p>
+            <ul id="fbNarrativeValidateList" class="fb-validate-list"></ul>
+          </div>
           <div class="fb-filter-row">
+            <button type="button" class="btnValidateNarrative" id="btnValidateFeedbackNarrative" disabled>Check narrative</button>
             <button type="button" class="btnFilterAi" id="btnFilterFeedbackAi" disabled>Filter with AI</button>
             <p id="filterAiStatus" class="small field-note fb-filter-status" role="status" aria-live="polite"></p>
           </div>
         </div>
 
         <div id="fbAiOutputSection" class="fb-ai-output" hidden>
-          <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, run Filter again.</p>
+          <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, check and filter again.</p>
           <div class="field field--ai-positive">
             <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
             <textarea id="fbPositiveFeedback" name="positiveFeedback" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
@@ -2074,6 +2156,13 @@ button{
         gender = window.PortalFeedbackNarrative.participantGender(ctx2.client_name);
       }
     }catch(_){}
+    var auditMeta = {};
+    try{
+      if(window.PortalFeedbackNarrative &&
+        typeof window.PortalFeedbackNarrative.getSubmitAuditMeta === "function"){
+        auditMeta = window.PortalFeedbackNarrative.getSubmitAuditMeta() || {};
+      }
+    }catch(_){}
     return window.PortalSessionFeedbackNarrativeAudit.logSubmitAudit({
       narrative_en: narrative,
       participant_name: ctx2.client_name,
@@ -2084,6 +2173,7 @@ button{
       session_feedback_id: feedbackId || null,
       filter_positive: formFields.positiveFeedback || null,
       filter_relevant: formFields.relevantInformation || null,
+      meta: auditMeta,
     }).catch(function(){ return null; });
   }
 

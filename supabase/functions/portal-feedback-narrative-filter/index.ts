@@ -198,7 +198,10 @@ async function callOpenAi(
     return { ok: false as const, error: "openai_failed" };
   }
 
-  let parsed: { choices?: { message?: { content?: string } }[] };
+  let parsed: {
+    choices?: { message?: { content?: string } }[];
+    usage?: Record<string, unknown>;
+  };
   try {
     parsed = await res.json();
   } catch {
@@ -215,7 +218,14 @@ async function callOpenAi(
     if (!positive || !relevant) {
       return { ok: false as const, error: "incomplete_response" };
     }
-    return { ok: true as const, positive_feedback: positive, relevant_information: relevant };
+    const usage = parsed.usage || null;
+    return {
+      ok: true as const,
+      positive_feedback: positive,
+      relevant_information: relevant,
+      usage,
+      model,
+    };
   } catch {
     return { ok: false as const, error: "invalid_json_response" };
   }
@@ -262,7 +272,12 @@ Deno.serve(async (req) => {
 
   const participantName = str(body.participant_name, 200);
 
-  async function auditFilter(status: string, positive?: string, relevant?: string) {
+  async function auditFilter(
+    status: string,
+    positive?: string,
+    relevant?: string,
+    extraMeta?: Record<string, unknown>,
+  ) {
     await logSessionFeedbackNarrativeAudit({
       source: "narrative_filter",
       staffUserId: staff.userId,
@@ -275,12 +290,23 @@ Deno.serve(async (req) => {
       filterPositive: positive,
       filterRelevant: relevant,
       filterStatus: status,
+      meta: extraMeta || {},
     });
   }
 
+  let filterMeta: Record<string, unknown> = {};
   let result = await callOpenAi(apiKey, buildMessages(body, false));
+  if (result.ok && result.usage) {
+    filterMeta = {
+      model: result.model,
+      prompt_tokens: result.usage.prompt_tokens,
+      completion_tokens: result.usage.completion_tokens,
+      total_tokens: result.usage.total_tokens,
+      attempt: 1,
+    };
+  }
   if (!result.ok) {
-    await auditFilter(String(result.error));
+    await auditFilter(String(result.error), undefined, undefined, filterMeta);
     return json({ ok: false, error: result.error }, 502);
   }
 
@@ -299,6 +325,16 @@ Deno.serve(async (req) => {
     const retry = await callOpenAi(apiKey, buildMessages(body, true), 0.25);
     if (retry.ok) {
       result = retry;
+      if (retry.usage) {
+        filterMeta = {
+          model: retry.model,
+          prompt_tokens: retry.usage.prompt_tokens,
+          completion_tokens: retry.usage.completion_tokens,
+          total_tokens: retry.usage.total_tokens,
+          attempt: 2,
+          retry: true,
+        };
+      }
       validationError = validateFilterOutput(
         result.positive_feedback,
         result.relevant_information,
@@ -313,11 +349,12 @@ Deno.serve(async (req) => {
       validationError,
       result.positive_feedback,
       result.relevant_information,
+      filterMeta,
     );
     return json({ ok: false, error: validationError }, 422);
   }
 
-  await auditFilter("ok", result.positive_feedback, result.relevant_information);
+  await auditFilter("ok", result.positive_feedback, result.relevant_information, filterMeta);
 
   return json({
     ok: true,
