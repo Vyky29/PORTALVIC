@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-help-guide-v16",
+  "version": "2026-07-help-guide-v17",
   "description": "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).",
   "sections": [
     {
@@ -241,7 +241,7 @@
     },
     {
       "id": "feedback",
-      "title": "Sessions and feedback",
+      "title": "Session feedback (NEW — narrative + Filter with AI)",
       "keywords": [
         "feedback",
         "outstanding",
@@ -266,26 +266,28 @@
           "demo": "feedback-flow",
           "focus": "pending",
           "caption": "Orange — feedback waiting",
-          "audio": "/portal/help-audio/feedback-01-pending.mp3?v=20260707-club-voice"
+          "audio": "/portal/help-audio/feedback-01-pending.mp3"
         },
         {
           "voice": "On the form, rate engagement, emotions and independence. Then write your session narrative — reception, what happened in the session, and handover to the family.",
           "demo": "feedback-narrative-form",
           "focus": "narrative",
-          "caption": "Ratings + session narrative (Reception · Session · Handover)"
+          "caption": "Ratings + session narrative (Reception · Session · Handover)",
+          "audio": "/portal/help-audio/feedback-02-narrative.mp3"
         },
         {
           "voice": "Tap Filter with AI. Review Positive feedback for families and Relevant information for admin. If you change the narrative, filter again, then Submit.",
           "demo": "feedback-narrative-form",
           "focus": "filter",
-          "caption": "Filter with AI — then Submit"
+          "caption": "Filter with AI — then Submit",
+          "audio": "/portal/help-audio/feedback-03-filter.mp3"
         },
         {
           "voice": "After submit, the session card turns green.",
           "demo": "feedback-flow",
           "focus": "done",
           "caption": "Green — feedback submitted",
-          "audio": "/portal/help-audio/feedback-02-done.mp3?v=20260707-club-voice"
+          "audio": "/portal/help-audio/feedback-04-done.mp3"
         }
       ],
       "demos": [

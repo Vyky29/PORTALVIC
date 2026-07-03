@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="guide-page portal-staff-app">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260705-help-guide-v11"></script>
+  <script src="/portal-static-bootstrap.js?v=20260707-help-guide-v17"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
@@ -418,7 +418,17 @@
       margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--guide-border);
       background:#fff;font-size:13px;line-height:1.45;color:var(--guide-muted);min-width:0
     }
-    .guide-audio-fallback[hidden]{display:none !important}
+    .guide-read-body--open{
+      margin:0 0 12px;padding:12px 14px;border-radius:14px;
+      background:#f4f8fc;border:1px solid var(--guide-border)
+    }
+    .guide-read-body--open p{margin:0;color:var(--guide-text);font-size:15px;line-height:1.55;white-space:pre-wrap;overflow-wrap:break-word}
+    .guide-callout{
+      margin:0 0 12px;padding:12px 14px;border-radius:14px;
+      border:1px solid rgba(244,183,64,.55);background:#fff8e8;color:var(--guide-text);
+      font-size:14px;line-height:1.5;overflow-wrap:break-word
+    }
+    .guide-callout strong{color:var(--guide-navy)}
     .guide-audio-fallback audio{width:100%;margin-top:8px}
     .guide-audio-fallback strong{color:var(--guide-navy)}
   </style>
@@ -442,7 +452,7 @@
     <p class="foot">CS Portal · Staff help guide</p>
   </div>
   <script src="/portal/portal_area_note_icons.js?v=20260610-area-note-img"></script>
-  <script src="/portal/portal-help-voice-speak.js?v=20260630-voice-mp3-fallback"></script>
+  <script src="/portal/portal-help-voice-speak.js?v=20260707-help-guide-v17"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";
     try {
@@ -470,7 +480,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260703-feedback-narrative-v16";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260707-feedback-guide-v17";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -947,6 +957,24 @@
       });
   }
 
+  function renderSectionBody(id, paras) {
+    if (!paras) return "";
+    var openIds = { feedback: true };
+    if (openIds[id]) {
+      return (
+        '<div class="guide-callout"><strong>New feedback flow.</strong> Tap the orange session card → write your session narrative → Filter with AI → review → Submit. Steps 1–7 are below.</div>' +
+        '<div class="guide-read-body guide-read-body--open"><p>' +
+        esc(paras) +
+        "</p></div>"
+      );
+    }
+    return (
+      '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
+      esc(paras) +
+      "</p></div></details>"
+    );
+  }
+
   function renderSection(s) {
     var id = String(s.id || "").trim();
     var paras = String(s.content || "").trim();
@@ -977,12 +1005,8 @@
       "</div>" +
       "</div>" +
       (renderDemos(s.demos) ? '<div class="guide-demos-static">' + renderDemos(s.demos) + "</div>" : "") +
+      renderSectionBody(id, paras) +
       (renderIllustrations(s.illustrations) ? '<div class="guide-photos">' + renderIllustrations(s.illustrations) + "</div>" : "") +
-      (paras
-        ? '<details class="guide-read-more"><summary>Read full text</summary><div class="guide-read-body"><p>' +
-          esc(paras) +
-          "</p></div></details>"
-        : "") +
       "</article>"
     );
   }
@@ -1220,6 +1244,20 @@
         return;
       }
       root.innerHTML = sections.map(renderSection).join("");
+      var nav = document.createElement("ul");
+      nav.className = "nav";
+      nav.setAttribute("aria-label", "Guide topics");
+      sections.forEach(function (s) {
+        var sid = String(s.id || "").trim();
+        if (!sid) return;
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = "#" + sid;
+        a.textContent = String(s.title || sid).trim();
+        li.appendChild(a);
+        nav.appendChild(li);
+      });
+      root.parentNode.insertBefore(nav, root);
       guideSectionsById = {};
       sections.forEach(function (s) {
         var sid = String(s.id || "").trim();

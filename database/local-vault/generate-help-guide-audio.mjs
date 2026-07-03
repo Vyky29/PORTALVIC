@@ -193,7 +193,7 @@ for (const section of guide.sections || []) {
   }
 }
 
-guide.version = "2026-06-help-guide-v12";
+guide.version = guide.version || "2026-07-help-guide-v17";
 guide.description =
   "Staff help guide — visual demos + club voice (Eleven Labs via Supabase secrets, no device voice).";
 fs.writeFileSync(guidePath, JSON.stringify(guide, null, 2) + "\n");
