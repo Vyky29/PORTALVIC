@@ -22,6 +22,7 @@
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260703-v9-missing-feedback" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
+  <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260703-v10-ops-alerts" />
@@ -6879,15 +6880,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminSessionReviewKeyFromSlot(slot, sessionDateIso){
       var iso = String(sessionDateIso || '').trim();
-      var slug = String(slot.clientSlug || '').trim().toLowerCase();
+      var slug = adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
       if(!iso || !slug || slug === 'available' || slug === 'closed' || slug === 'noclient') return '';
       var startRaw = String(slot.rosterStartRaw || '').trim();
       if(!startRaw){
-        var pg = String(slot.anchorStart || '');
-        var m = pg.match(/^(\d{1,2}):(\d{2})/);
-        startRaw = m ? (String(parseInt(m[1], 10)) + ':' + m[2]) : normTimeShort(slot.anchorStart);
+        startRaw = normTimeShort(slot.anchorStart || slot.parentAnchorStart || '');
       }
-      return iso + '|' + startRaw + '|' + slug;
+      var key = iso + '|' + startRaw + '|' + slug;
+      if(window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === 'function'){
+        return window.PortalSessionKey.normalizePortalSessionKey(key) || key;
+      }
+      return key;
     }
     async function registerHydrateFeedbackMirrorFromServer(slot, dates, st){
       var client = getSchedSupabaseClient();
@@ -12139,7 +12142,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = {};
       if(ovTypeRaw === 'client_cancelled'){
         payload.cancelled_by_admin = true;
+        payload.feedback_resolution = 'cancelled';
       }
+      if(ovType === 'client_absence_announced'){
+        payload.feedback_resolution = 'absent';
+      } else if(ovType === 'slot_close'){
+        payload.feedback_resolution = 'cancelled';
+      }
+      var schedReviewKey = portalAdminSessionReviewKeyFromSlot(slot, slot.sessionDate);
+      if(schedReviewKey) payload.portal_session_key = schedReviewKey;
       if(repSlug){
         payload.replacement_client_id = repSlug;
         payload.to_client_id = repSlug;
@@ -17916,7 +17927,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v17-incident-view-fix';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v18-feedback-resolution';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

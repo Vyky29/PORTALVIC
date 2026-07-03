@@ -993,6 +993,7 @@
         override_type: ovType,
         payload: {
           cancelled_by_admin: true,
+          feedback_resolution: "cancelled",
           term_roster_edit: true,
           scope: p.scope,
           anchor_date: p.anchorDate,

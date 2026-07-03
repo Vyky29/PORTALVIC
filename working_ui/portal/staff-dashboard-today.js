@@ -849,11 +849,47 @@
       return true;
     }
     /** Sessions that need no feedback register (absent, cancelled, closed, covered away, no client). */
+    function portalOverrideFeedbackResolutionForSession(s, sessionDateIso){
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      if(!s || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+      const dayWord = iso ? new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '';
+      const sk = typeof portalBuildSessionReviewKey === 'function'
+        ? portalBuildSessionReviewKey(iso, s, dayWord, portalEffectiveClientIdForReview(s, iso))
+        : '';
+      const skL = String(sk || '').trim().toLowerCase();
+      if(!skL) return '';
+      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        const rowIso = typeof portalNormalizeScheduleOverrideSessionDate === 'function'
+          ? portalNormalizeScheduleOverrideSessionDate(r.session_date)
+          : String(r.session_date || '').trim().slice(0, 10);
+        if(rowIso !== iso) continue;
+        let p = r.payload;
+        if(typeof p === 'string'){
+          try{ p = JSON.parse(p); }catch(_){ p = {}; }
+        }
+        p = p && typeof p === 'object' ? p : {};
+        const res = String(p.feedback_resolution || '').trim().toLowerCase();
+        if(res !== 'absent' && res !== 'cancelled') continue;
+        const pk = String(p.portal_session_key || '').trim().toLowerCase();
+        if(pk && pk === skL) return res;
+      }
+      return '';
+    }
     function portalRosterSessionFeedbackResolvedFlags(s, sessionDateIso, staffId){
       if(!s) return null;
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId != null ? staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')).trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      const resolutionEarly = portalOverrideFeedbackResolutionForSession(s, iso);
+      if(resolutionEarly === 'absent'){
+        return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+      }
+      if(resolutionEarly === 'cancelled'){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+      }
       const manualOv = String(s && s.override || '').trim().toUpperCase();
       if(manualOv === 'ABSENT'){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };

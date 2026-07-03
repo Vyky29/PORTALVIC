@@ -1180,6 +1180,33 @@
     return t === "slot_clear_client" && !!p.cancelled_by_admin;
   }
 
+  function overrideFeedbackResolution(ov) {
+    var p = overridePayloadObj(ov);
+    var r = String(p.feedback_resolution || "").trim().toLowerCase();
+    if (r === "absent" || r === "cancelled") return r;
+    if (overrideIsAbsentType(ov)) return "absent";
+    if (overrideIsCancelledType(ov)) return "cancelled";
+    return "";
+  }
+
+  AdminSessionsHub.prototype.slotHasFeedbackResolution = function (slot, resolution) {
+    if (!slot || !resolution) return false;
+    var want = String(resolution).trim().toLowerCase();
+    var ovs = (this.payload && this.payload.schedule_overrides) || [];
+    var aliases = feedbackAliasKeysForSlot(slot).map(function (k) {
+      return clean(k).toLowerCase();
+    });
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (String(ov.status || "active").trim() !== "active") continue;
+      if (overrideFeedbackResolution(ov) !== want) continue;
+      var pk = clean(overridePayloadObj(ov).portal_session_key).toLowerCase();
+      if (pk && aliases.indexOf(pk) >= 0) return true;
+      if (this.overrideMatchesSlot(slot, ov)) return true;
+    }
+    return false;
+  };
+
   function overrideIsSlotUpdateType(ov) {
     return (
       String(ov && ov.override_type || "").trim() === "slot_update" &&
@@ -4888,6 +4915,7 @@
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
@@ -5115,6 +5143,7 @@
     if (!slot) return false;
     var stEx = this.statusExportRowForSlot(slot);
     if (stEx && statusExportRowIsAbsent(stEx)) return true;
+    if (this.slotHasFeedbackResolution(slot, "absent")) return true;
     var ovAbsent = this.overrideForSlotByType(slot, overrideIsAbsentType);
     if (ovAbsent) return true;
     var cid = canonicalClientSlug(slot.client_name);
