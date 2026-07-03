@@ -18,6 +18,246 @@
     return global.PortalLDFundingLetters || null;
   }
 
+  var DEFAULT_FUNDING_PCT = 40;
+  var FUNDING_MODE_STANDARD = "40";
+  var FUNDING_MODE_OTHER = "other";
+  var FUNDING_PCT_OTHER_OPTIONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  var REIMB_PRESET_5050 = "5050";
+  var REIMB_PRESET_OTHER = "other";
+  var REIMB_TEXT_5050 =
+    "50% after 6 months of continuous employment following course completion; 50% after 12 months.";
+
+  function courseCost(app) {
+    var n = Number(app && app.total_course_cost_gbp);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  function fundingAmountFromPct(app, pct) {
+    var cost = courseCost(app);
+    var p = Number(pct);
+    if (cost == null || !Number.isFinite(p) || p <= 0) return null;
+    return Math.round(((cost * p) / 100) * 100) / 100;
+  }
+
+  function snapFundingPct(p) {
+    var n = Math.round(Number(p) / 10) * 10;
+    if (!Number.isFinite(n) || n < 10) return 10;
+    if (n > 100) return 100;
+    return n;
+  }
+
+  function inferRawFundingPct(app) {
+    var cost = courseCost(app);
+    var amount = Number(app && app.funding_amount_gbp);
+    if (cost == null || !Number.isFinite(amount) || amount < 0) return DEFAULT_FUNDING_PCT;
+    return snapFundingPct(Math.round((amount / cost) * 100));
+  }
+
+  function inferFundingMode(app) {
+    var pct = inferRawFundingPct(app);
+    if (pct === DEFAULT_FUNDING_PCT) {
+      return { mode: FUNDING_MODE_STANDARD, otherPct: DEFAULT_FUNDING_PCT };
+    }
+    return { mode: FUNDING_MODE_OTHER, otherPct: pct };
+  }
+
+  function fundingPctFromForm(screen) {
+    var modeEl = screen.querySelector("#ldfFundingMode");
+    var mode = modeEl ? clean(modeEl.value) : FUNDING_MODE_STANDARD;
+    if (mode === FUNDING_MODE_STANDARD) return DEFAULT_FUNDING_PCT;
+    var otherEl = screen.querySelector("#ldfFundingPctOther");
+    var pct = otherEl ? Number(otherEl.value) : DEFAULT_FUNDING_PCT;
+    return snapFundingPct(pct);
+  }
+
+  function isValidFundingPct(pct) {
+    return FUNDING_PCT_OTHER_OPTIONS.indexOf(snapFundingPct(pct)) >= 0;
+  }
+
+  function inferReimbPreset(text) {
+    var t = clean(text).toLowerCase();
+    if (!t) return REIMB_PRESET_5050;
+    if (/50\s*%/.test(t) && /6/.test(t) && /12/.test(t)) return REIMB_PRESET_5050;
+    return REIMB_PRESET_OTHER;
+  }
+
+  function reimbursementFromForm(screen) {
+    var sel = screen.querySelector("#ldfReimbSchedule");
+    var key = sel ? clean(sel.value) : REIMB_PRESET_5050;
+    if (key === REIMB_PRESET_5050) return { key: key, text: REIMB_TEXT_5050 };
+    return {
+      key: key,
+      text: clean((screen.querySelector("#ldfReimbScheduleOther") || {}).value) || null,
+    };
+  }
+
+  function fundingPreviewText(app, pct) {
+    var cost = courseCost(app);
+    var amount = fundingAmountFromPct(app, pct);
+    if (cost == null) {
+      return "Course cost not stated on application — percentage cannot be calculated.";
+    }
+    if (amount == null) return "";
+    return (
+      fmtMoney(amount) +
+      " (" +
+      String(pct) +
+      "% of " +
+      fmtMoney(cost) +
+      " course cost)"
+    );
+  }
+
+  function buildFundingPctSelect(app) {
+    var funding = inferFundingMode(app);
+    var html =
+      '<div class="ldf-field"><label for="ldfFundingMode">Approved funding (% of course cost)</label>' +
+      '<select id="ldfFundingMode" name="funding_mode">' +
+      '<option value="' +
+      FUNDING_MODE_STANDARD +
+      '"' +
+      (funding.mode === FUNDING_MODE_STANDARD ? " selected" : "") +
+      ">40% (standard)</option>" +
+      '<option value="' +
+      FUNDING_MODE_OTHER +
+      '"' +
+      (funding.mode === FUNDING_MODE_OTHER ? " selected" : "") +
+      ">Other</option></select></div>" +
+      '<div class="ldf-field' +
+      (funding.mode === FUNDING_MODE_OTHER ? "" : " is-hidden") +
+      '" id="ldfFundingOtherWrap"><label for="ldfFundingPctOther">Other percentage</label>' +
+      '<select id="ldfFundingPctOther" name="funding_pct_other">';
+    FUNDING_PCT_OTHER_OPTIONS.forEach(function (p) {
+      html +=
+        '<option value="' +
+        p +
+        '"' +
+        (p === funding.otherPct ? " selected" : "") +
+        ">" +
+        p +
+        "%</option>";
+    });
+    html +=
+      '</select></div><p class="ldf-hint" id="ldfFundingPreview">' +
+      esc(
+        fundingPreviewText(
+          app,
+          funding.mode === FUNDING_MODE_STANDARD ? DEFAULT_FUNDING_PCT : funding.otherPct
+        )
+      ) +
+      "</p>";
+    return html;
+  }
+
+  function buildReimbScheduleFields(app) {
+    var preset = inferReimbPreset(app.reimbursement_schedule);
+    var otherText =
+      preset === REIMB_PRESET_OTHER ? clean(app.reimbursement_schedule || "") : "";
+    var html =
+      '<div class="ldf-field"><label for="ldfReimbSchedule">Reimbursement schedule</label>' +
+      '<select id="ldfReimbSchedule" name="reimbursement_schedule">' +
+      '<option value="' +
+      REIMB_PRESET_5050 +
+      '"' +
+      (preset === REIMB_PRESET_5050 ? " selected" : "") +
+      ">50% at 6 months · 50% at 12 months</option>" +
+      '<option value="' +
+      REIMB_PRESET_OTHER +
+      '"' +
+      (preset === REIMB_PRESET_OTHER ? " selected" : "") +
+      ">Other</option></select></div>" +
+      '<div class="ldf-field' +
+      (preset === REIMB_PRESET_OTHER ? "" : " is-hidden") +
+      '" id="ldfReimbOtherWrap"><label for="ldfReimbScheduleOther">Other reimbursement schedule</label>' +
+      '<textarea id="ldfReimbScheduleOther" placeholder="Describe the agreed reimbursement schedule">' +
+      esc(otherText) +
+      "</textarea></div>";
+    return html;
+  }
+
+  function bindDecisionFormControls(screen, app) {
+    if (!screen) return;
+    var reimbSel = screen.querySelector("#ldfReimbSchedule");
+    var reimbWrap = screen.querySelector("#ldfReimbOtherWrap");
+    function syncReimbOther() {
+      if (!reimbWrap || !reimbSel) return;
+      var show = clean(reimbSel.value) === REIMB_PRESET_OTHER;
+      reimbWrap.classList.toggle("is-hidden", !show);
+    }
+    if (reimbSel) {
+      reimbSel.addEventListener("change", syncReimbOther);
+      syncReimbOther();
+    }
+
+    var fundingModeSel = screen.querySelector("#ldfFundingMode");
+    var fundingOtherWrap = screen.querySelector("#ldfFundingOtherWrap");
+    var fundingOtherSel = screen.querySelector("#ldfFundingPctOther");
+    var preview = screen.querySelector("#ldfFundingPreview");
+
+    function syncFundingOther() {
+      if (!fundingOtherWrap || !fundingModeSel) return;
+      var show = clean(fundingModeSel.value) === FUNDING_MODE_OTHER;
+      fundingOtherWrap.classList.toggle("is-hidden", !show);
+    }
+
+    function syncFundingPreview() {
+      if (!preview) return;
+      preview.textContent = fundingPreviewText(app, fundingPctFromForm(screen));
+    }
+
+    function onFundingChange() {
+      syncFundingOther();
+      syncFundingPreview();
+    }
+
+    if (fundingModeSel) {
+      fundingModeSel.addEventListener("change", onFundingChange);
+    }
+    if (fundingOtherSel) {
+      fundingOtherSel.addEventListener("change", syncFundingPreview);
+    }
+    syncFundingOther();
+    syncFundingPreview();
+  }
+
+  function readDecisionFields(screen, app) {
+    var statusEl = screen.querySelector("#ldfStatus");
+    var status = statusEl ? clean(statusEl.value) : "pending";
+    var reimb = reimbursementFromForm(screen);
+    var isApproval = status === "approved" || status === "approved_conditional";
+    var fundingAmount = null;
+    var fundingPct = null;
+
+    if (isApproval) {
+      fundingPct = fundingPctFromForm(screen);
+      if (!isValidFundingPct(fundingPct)) {
+        return { error: "Choose a valid funding percentage (10%–100%)." };
+      }
+      fundingAmount = fundingAmountFromPct(app, fundingPct);
+      if (fundingAmount == null) {
+        return {
+          error:
+            "Application has no course cost — cannot calculate funding from percentage.",
+        };
+      }
+    }
+
+    if (isApproval && reimb.key === REIMB_PRESET_OTHER && !reimb.text) {
+      return { error: "Enter the other reimbursement schedule or choose the standard option." };
+    }
+
+    return {
+      status: status,
+      funding_amount_gbp: fundingAmount,
+      funding_pct: fundingPct,
+      reimbursement_schedule: isApproval || reimb.text ? reimb.text : null,
+      exceptional_funding_arrangement:
+        clean((screen.querySelector("#ldfExceptionalArr") || {}).value) || null,
+      additional_conditions: clean((screen.querySelector("#ldfConditions") || {}).value) || null,
+      review_notes: clean((screen.querySelector("#ldfReviewNotes") || {}).value) || null,
+    };
+  }
+
   var deps = {
     esc: function (s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -132,6 +372,8 @@
       ".ldf-letter pre{margin:0;font-family:inherit;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:break-word;color:#334155;max-height:220px;overflow:auto}",
       ".ldf-letter-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}",
       ".ldf-letter-actions .btn{min-width:0}",
+      ".ldf-hint{margin:0;font-size:13px;color:#64748b;overflow-wrap:break-word}",
+      ".ldf-field.is-hidden{display:none}",
       "@media(max-width:640px){.ldf-kv-row{grid-template-columns:1fr}}",
     ].join("");
     var el = document.createElement("style");
@@ -287,14 +529,8 @@
       '<option value="declined"' +
       (clean(a.status) === "declined" ? " selected" : "") +
       ">Declined</option></select></div>" +
-      '<div class="ldf-field"><label for="ldfFundingAmount">Approved funding amount (£)</label>' +
-      '<input type="number" id="ldfFundingAmount" min="0" step="0.01" inputmode="decimal" value="' +
-      esc(a.funding_amount_gbp != null ? String(a.funding_amount_gbp) : "") +
-      '" placeholder="e.g. 450.00" /></div>' +
-      '<div class="ldf-field"><label for="ldfReimbSchedule">Reimbursement schedule</label>' +
-      '<textarea id="ldfReimbSchedule" placeholder="e.g. 50% after 6 months, 50% after 12 months">' +
-      esc(a.reimbursement_schedule || "") +
-      "</textarea></div>" +
+      buildFundingPctSelect(a) +
+      buildReimbScheduleFields(a) +
       '<div class="ldf-field"><label for="ldfExceptionalArr">Exceptional funding arrangement</label>' +
       '<textarea id="ldfExceptionalArr" placeholder="If applicable — separate agreement note">' +
       esc(a.exceptional_funding_arrangement || "") +
@@ -354,19 +590,16 @@
 
   function readFormApp(screen, baseApp) {
     var a = Object.assign({}, baseApp || {});
-    var statusEl = screen.querySelector("#ldfStatus");
-    a.status = statusEl ? clean(statusEl.value) : a.status;
-    var amountRaw = clean((screen.querySelector("#ldfFundingAmount") || {}).value);
-    a.funding_amount_gbp = null;
-    if (amountRaw) {
-      var n = Number(amountRaw);
-      if (Number.isFinite(n) && n >= 0) a.funding_amount_gbp = Math.round(n * 100) / 100;
+    var fields = readDecisionFields(screen, a);
+    if (fields.error) {
+      a.status = clean((screen.querySelector("#ldfStatus") || {}).value) || a.status;
+      return a;
     }
-    a.reimbursement_schedule =
-      clean((screen.querySelector("#ldfReimbSchedule") || {}).value) || null;
-    a.exceptional_funding_arrangement =
-      clean((screen.querySelector("#ldfExceptionalArr") || {}).value) || null;
-    a.additional_conditions = clean((screen.querySelector("#ldfConditions") || {}).value) || null;
+    a.status = fields.status;
+    a.funding_amount_gbp = fields.funding_amount_gbp;
+    a.reimbursement_schedule = fields.reimbursement_schedule;
+    a.exceptional_funding_arrangement = fields.exceptional_funding_arrangement;
+    a.additional_conditions = fields.additional_conditions;
     return a;
   }
 
@@ -408,7 +641,7 @@
       if (pre) pre.textContent = L.buildEmailBody(currentApp());
     }
 
-    ["#ldfStatus", "#ldfFundingAmount", "#ldfReimbSchedule", "#ldfExceptionalArr", "#ldfConditions"].forEach(
+    ["#ldfStatus", "#ldfFundingMode", "#ldfFundingPctOther", "#ldfReimbSchedule", "#ldfReimbScheduleOther", "#ldfExceptionalArr", "#ldfConditions"].forEach(
       function (sel) {
         var el = screen.querySelector(sel);
         if (el) el.addEventListener("input", refreshPreview);
@@ -559,6 +792,7 @@
     });
 
     bindLetterActions(screen, app, client, onSaved);
+    bindDecisionFormControls(screen, app);
 
     var msg = screen.querySelector("#ldfReviewMsg");
     var saveBtn = screen.querySelector("#ldfSaveReview");
@@ -592,25 +826,18 @@
           setMsg("Not connected.", "err");
           return;
         }
-        var statusEl = screen.querySelector("#ldfStatus");
-        var status = statusEl ? clean(statusEl.value) : "pending";
-        var amountRaw = clean(screen.querySelector("#ldfFundingAmount").value);
-        var fundingAmount = null;
-        if (amountRaw) {
-          var n = Number(amountRaw);
-          if (!Number.isFinite(n) || n < 0) {
-            setMsg("Enter a valid funding amount or leave blank.", "err");
-            return;
-          }
-          fundingAmount = Math.round(n * 100) / 100;
+        var fields = readDecisionFields(screen, app);
+        if (fields.error) {
+          setMsg(fields.error, "err");
+          return;
         }
         var payload = {
-          status: status,
-          funding_amount_gbp: fundingAmount,
-          reimbursement_schedule: clean(screen.querySelector("#ldfReimbSchedule").value) || null,
-          exceptional_funding_arrangement: clean(screen.querySelector("#ldfExceptionalArr").value) || null,
-          additional_conditions: clean(screen.querySelector("#ldfConditions").value) || null,
-          review_notes: clean(screen.querySelector("#ldfReviewNotes").value) || null,
+          status: fields.status,
+          funding_amount_gbp: fields.funding_amount_gbp,
+          reimbursement_schedule: fields.reimbursement_schedule,
+          exceptional_funding_arrangement: fields.exceptional_funding_arrangement,
+          additional_conditions: fields.additional_conditions,
+          review_notes: fields.review_notes,
           reviewed_at: new Date().toISOString(),
         };
         var uid = null;

@@ -115,8 +115,17 @@
       lines.push("");
       lines.push("Please find the confirmed details below:");
       lines.push("");
-      if (approved) lines.push("Approved funding amount: " + approved);
-      else if (cost) lines.push("Course cost stated on application: " + cost);
+      if (approved) {
+        lines.push("Approved funding amount: " + approved);
+        if (cost) {
+          var amtNum = Number(a.funding_amount_gbp);
+          var costNum = Number(a.total_course_cost_gbp);
+          if (Number.isFinite(amtNum) && Number.isFinite(costNum) && costNum > 0) {
+            var pctShown = Math.round((amtNum / costNum) * 100);
+            lines.push("(" + pctShown + "% of stated course cost " + cost + ")");
+          }
+        }
+      } else if (cost) lines.push("Course cost stated on application: " + cost);
       if (clean(a.reimbursement_schedule)) {
         lines.push("Reimbursement schedule: " + clean(a.reimbursement_schedule));
       } else {
