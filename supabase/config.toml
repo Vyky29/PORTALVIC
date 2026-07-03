@@ -416,6 +416,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.portal-feedback-voice-transcribe]
 verify_jwt = false
 
+[functions.portal-feedback-narrative-filter]
+verify_jwt = false
+
 # DB triggers (pg_net / http_request) send x-portal-webhook-secret only — no Supabase JWT.
 [functions.portal-push-dispatch-admin-alert]
 verify_jwt = false
@@ -440,4 +443,50 @@ verify_jwt = false
 
 # Meta WhatsApp webhook — no Supabase JWT; signature + verify token in function.
 [functions.portal-whatsapp-webhook]
+verify_jwt = false
+
+# portal-admin-* verify staff JWT inside the function (verifyPortalAdminAccessToken).
+[functions.portal-admin-activity-alerts-list]
+verify_jwt = false
+
+[functions.portal-admin-document-delete]
+verify_jwt = false
+
+[functions.portal-admin-expense-mark-paid]
+verify_jwt = false
+
+[functions.portal-admin-expenses-list]
+verify_jwt = false
+
+[functions.portal-admin-ghost-start]
+verify_jwt = false
+
+[functions.portal-admin-ghost-verify]
+verify_jwt = false
+
+[functions.portal-admin-hr-file-signed-url]
+verify_jwt = false
+
+[functions.portal-admin-hr-files-list]
+verify_jwt = false
+
+[functions.portal-admin-onboarding-documents-list]
+verify_jwt = false
+
+[functions.portal-admin-onboarding-draft-export]
+verify_jwt = false
+
+[functions.portal-admin-parent-feedback-generate]
+verify_jwt = false
+
+[functions.portal-admin-parent-feedback-share-save]
+verify_jwt = false
+
+[functions.portal-admin-parent-feedback-shares-list]
+verify_jwt = false
+
+[functions.portal-admin-participant-documents-list]
+verify_jwt = false
+
+[functions.portal-admin-session-feedback-list]
 verify_jwt = false

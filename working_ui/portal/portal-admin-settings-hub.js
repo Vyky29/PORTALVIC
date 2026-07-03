@@ -131,6 +131,29 @@
     };
   }
 
+  function withTimeout(promise, ms, fallback) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function done(v) {
+        if (settled) return;
+        settled = true;
+        resolve(v);
+      }
+      var timer = setTimeout(function () {
+        done(typeof fallback === "function" ? fallback() : fallback);
+      }, ms);
+      Promise.resolve(promise)
+        .then(function (v) {
+          clearTimeout(timer);
+          done(v);
+        })
+        .catch(function () {
+          clearTimeout(timer);
+          done(typeof fallback === "function" ? fallback() : fallback);
+        });
+    });
+  }
+
   function queryLatePending(client) {
     if (
       global.PortalAdminLateSubmissions &&
@@ -192,28 +215,74 @@
   }
 
   function loadLivePayments(getClient) {
-    return new Promise(function (resolve) {
-      var settled = false;
-      function finish(v) {
-        if (settled) return;
-        settled = true;
-        resolve(!!v);
-      }
-      setTimeout(function () {
-        finish(false);
-      }, 8000);
-      if (typeof global.portalLoadLivePaymentsSource !== "function") {
-        finish(false);
-        return;
-      }
-      try {
-        global.portalLoadLivePaymentsSource(function (ok) {
-          finish(!!ok);
-        }, false);
-      } catch (_e) {
-        finish(false);
-      }
-    });
+    return withTimeout(
+      new Promise(function (resolve) {
+        if (typeof global.portalLoadLivePaymentsSource !== "function") {
+          resolve(false);
+          return;
+        }
+        try {
+          global.portalLoadLivePaymentsSource(function (ok) {
+            resolve(!!ok);
+          }, false);
+        } catch (_e) {
+          resolve(false);
+        }
+      }),
+      6000,
+      false,
+    );
+  }
+
+  function buildSnapshot(opts, triple, payOverride) {
+    opts = opts || {};
+    var k =
+      typeof opts.getOpsKpis === "function" ?
+        opts.getOpsKpis() :
+        (global.MOCK && global.MOCK.kpi) || {};
+    var pair = triple || [null, null, { count: null, recent: [], error: "" }];
+    var helpLog = pair[2] || { count: null, recent: [], error: "" };
+    var rows = payRows();
+    var pay = payOverride || aggregatePayments(rows);
+    var exports = {
+      payments: exportMeta("CLIENTS_PAYMENTS_PORTAL_SOURCE"),
+      participants: exportMeta("PARTICIPANTS_PARENTS_PORTAL_SOURCE"),
+      feedback: exportMeta("SESSION_FEEDBACK_PORTAL_SOURCE"),
+      absentees: exportMeta("ABSENTEES_CREDITS_PORTAL_SOURCE"),
+    };
+    return {
+      collectedAt: new Date().toISOString(),
+      session: sessionSnapshot(),
+      notify: notifySnapshot(),
+      term: termSnapshot(),
+      portal: {
+        host: global.location && global.location.host ? global.location.host : "",
+        path: global.location && global.location.pathname ? global.location.pathname : "",
+      },
+      payments: Object.assign(pay, {
+        liveTableCount: pair[1],
+        source: exports.payments.live ?
+          "client_payments" :
+          exports.payments.loaded ?
+            "export" :
+            "none",
+      }),
+      exports: exports,
+      ops: {
+        latePending: pair[0],
+        incidentsOpen: k.incidentsOpen != null ? k.incidentsOpen : null,
+        absentsPending: k.cancellationsOpen != null ? k.cancellationsOpen : null,
+        reportsPending: k.reportsPending != null ? k.reportsPending : null,
+        onboardingPending: k.onboardingPending != null ? k.onboardingPending : null,
+        participantsRows: k.participantsParentsRows != null ?
+          k.participantsParentsRows :
+          null,
+        sessionFeedbackRows: k.sessionFeedbackRows != null ?
+          k.sessionFeedbackRows :
+          null,
+      },
+      helpUnanswered: helpLog,
+    };
   }
 
   /**
@@ -231,62 +300,30 @@
     if (typeof opts.refreshKpis === "function") opts.refreshKpis();
 
     var client = getClient();
-    var k =
-      typeof opts.getOpsKpis === "function" ?
-        opts.getOpsKpis() :
-        (global.MOCK && global.MOCK.kpi) || {};
 
-    return loadLivePayments(getClient).then(function () {
-      return Promise.all([
-        queryLatePending(client),
-        queryClientPaymentsCount(client),
-        queryHelpUnanswered(client),
-      ]).then(function (triple) {
-        var pair = [triple[0], triple[1]];
-        var helpLog = triple[2] || { count: null, recent: [], error: "" };
-        var rows = payRows();
-        var pay = aggregatePayments(rows);
-        var exports = {
-          payments: exportMeta("CLIENTS_PAYMENTS_PORTAL_SOURCE"),
-          participants: exportMeta("PARTICIPANTS_PARENTS_PORTAL_SOURCE"),
-          feedback: exportMeta("SESSION_FEEDBACK_PORTAL_SOURCE"),
-          absentees: exportMeta("ABSENTEES_CREDITS_PORTAL_SOURCE"),
-        };
-        return {
-          collectedAt: new Date().toISOString(),
-          session: sessionSnapshot(),
-          notify: notifySnapshot(),
-          term: termSnapshot(),
-          portal: {
-            host: global.location && global.location.host ? global.location.host : "",
-            path: global.location && global.location.pathname ? global.location.pathname : "",
-          },
-          payments: Object.assign(pay, {
-            liveTableCount: pair[1],
-            source: exports.payments.live ?
-              "client_payments" :
-              exports.payments.loaded ?
-                "export" :
-                "none",
-          }),
-          exports: exports,
-          ops: {
-            latePending: pair[0],
-            incidentsOpen: k.incidentsOpen != null ? k.incidentsOpen : null,
-            absentsPending: k.cancellationsOpen != null ? k.cancellationsOpen : null,
-            reportsPending: k.reportsPending != null ? k.reportsPending : null,
-            onboardingPending: k.onboardingPending != null ? k.onboardingPending : null,
-            participantsRows: k.participantsParentsRows != null ?
-              k.participantsParentsRows :
-              null,
-            sessionFeedbackRows: k.sessionFeedbackRows != null ?
-              k.sessionFeedbackRows :
-              null,
-          },
-          helpUnanswered: helpLog,
-        };
-      });
-    });
+    return withTimeout(
+      loadLivePayments(getClient).then(function () {
+        return withTimeout(
+          Promise.all([
+            withTimeout(queryLatePending(client), 4000, null),
+            withTimeout(queryClientPaymentsCount(client), 4000, null),
+            withTimeout(queryHelpUnanswered(client), 4000, {
+              count: null,
+              recent: [],
+              error: "timed_out",
+            }),
+          ]),
+          5000,
+          [null, null, { count: null, recent: [], error: "timed_out" }],
+        ).then(function (triple) {
+          return buildSnapshot(opts, triple);
+        });
+      }),
+      9000,
+      function () {
+        return buildSnapshot(opts, [null, null, { count: null, recent: [], error: "timed_out" }]);
+      },
+    );
   }
 
   function kpiTile(label, value, sub, viewTarget, alert) {

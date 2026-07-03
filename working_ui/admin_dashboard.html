@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260707-admin-data-fix"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-feedback-dual-fetch"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -54,7 +54,7 @@
   <script src="/portal/admin-hr.js?v=20260704-profile-save-fix"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
-  <script src="/portal/portal-admin-settings-hub.js?v=20260707-admin-data-fix"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session"></script>
@@ -11360,13 +11360,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(__portalLivePaySource.loaded){ finish(false); return; }
       if(__portalLivePaySource.loading){
         __portalLivePaySource.waiters.push(cb);
+        if(!__portalLivePaySource.loadingStartedAt){
+          __portalLivePaySource.loadingStartedAt = Date.now();
+        }else if(Date.now() - __portalLivePaySource.loadingStartedAt > 12000){
+          console.warn('[orders] client_payments load reset after timeout');
+          __portalLivePaySource.loading = false;
+          __portalLivePaySource.loadingStartedAt = 0;
+          finish(false);
+        }
         return;
       }
       var client = getSchedSupabaseClient();
       if(!client || !client.from){ finish(false); return; }
       __portalLivePaySource.loading = true;
+      __portalLivePaySource.loadingStartedAt = Date.now();
+      var payLoadTimer = setTimeout(function(){
+        if(!__portalLivePaySource.loading) return;
+        console.warn('[orders] client_payments load timed out');
+        __portalLivePaySource.loading = false;
+        __portalLivePaySource.loadingStartedAt = 0;
+        finish(false);
+      }, 12000);
       try{
         client.from('client_payments').select('*').then(function(res){
+          clearTimeout(payLoadTimer);
           if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); finish(false); return; }
           var rows = (res && res.data) || [];
           if(!rows.length){ finish(false); return; }
@@ -11377,8 +11394,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ __portalEmailToParentDisplay = null; }catch(_e){}
           __portalLivePaySource.loaded = true;
           finish(true);
-        }, function(err){ console.warn('[orders] client_payments load error:', err); finish(false); });
-      }catch(e){ console.warn('[orders] client_payments load threw:', e); finish(false); }
+        }, function(err){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load error:', err); finish(false); });
+      }catch(e){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load threw:', e); finish(false); }
     }
     function closeSchedDrawer(){
       if(sched._schedDrawerFormCleanup){
@@ -17663,7 +17680,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260630-sevitha-admin-fix";
+      "/portal/admin-sessions-hub.js?v=20260703-feedback-dual-fetch";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17927,22 +17944,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_session_key: pk
       };
     }
-    async function adminFetchSessionFeedbackForHub(){
-      var since = new Date();
-      since.setDate(since.getDate() - 150);
-      var sinceIso = since.toISOString().slice(0, 10);
-      try{
-        var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
-        if(!edge.error && edge.data && Array.isArray(edge.data.rows)){
-          var mapped = (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
-          if(mapped.length) return mapped;
-        }
-        if(edge.error){
-          console.warn('[admin] session_feedback edge', edge.error);
-        }
-      }catch(eEdge){
-        console.warn('[admin] session_feedback edge fetch', eEdge);
-      }
+    async function adminFetchSessionFeedbackViaClient(sinceIso){
       var client = await adminEnsureSupabaseClient();
       if(!client) return [];
       try{
@@ -17966,62 +17968,144 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .order('session_date', { ascending: false })
           .limit(2500);
         if(res.error) throw res.error;
-        var rows = (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
-        if(!rows.length){
-          console.warn('[admin] session_feedback empty after live fetch');
-        }
-        return rows;
+        return (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
       }catch(e){
-        console.warn('[admin] session_feedback fetch', e);
+        console.warn('[admin] session_feedback client fetch', e);
         return [];
       }
+    }
+    function adminMergeSessionFeedbackRows(primary, secondary){
+      var seen = {};
+      var out = [];
+      function add(row){
+        if(!row) return;
+        var id = String(row.id || '').trim();
+        var key = id || [
+          String(row.session_date || '').slice(0, 10),
+          String(row.client_name || '').trim().toLowerCase(),
+          String(row.portal_session_key || '').trim().toLowerCase(),
+          String(row.completed_by_name || '').trim().toLowerCase()
+        ].join('|');
+        if(seen[key]) return;
+        seen[key] = true;
+        out.push(row);
+      }
+      (primary || []).forEach(add);
+      (secondary || []).forEach(add);
+      return out;
+    }
+    async function adminFetchSessionFeedbackForHub(){
+      var since = new Date();
+      since.setDate(since.getDate() - 150);
+      var sinceIso = since.toISOString().slice(0, 10);
+      await adminEnsureSupabaseClient();
+      var edgeRows = [];
+      var edgeErr = '';
+      try{
+        var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
+        if(!edge.error && edge.data && Array.isArray(edge.data.rows)){
+          edgeRows = (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        }else if(edge.error){
+          edgeErr = String(edge.error);
+        }
+      }catch(eEdge){
+        edgeErr = String((eEdge && eEdge.message) || eEdge);
+        console.warn('[admin] session_feedback edge fetch', eEdge);
+      }
+      var clientRows = await adminFetchSessionFeedbackViaClient(sinceIso);
+      var merged = adminMergeSessionFeedbackRows(edgeRows, clientRows);
+      console.warn(
+        '[admin] session_feedback loaded:',
+        merged.length,
+        '(edge=' + edgeRows.length + ', client=' + clientRows.length + (edgeErr ? ', edgeErr=' + edgeErr : '') + ')'
+      );
+      if(!merged.length && edgeErr){
+        console.warn('[admin] session_feedback — sign in again as admin (Victor/Raul/Javi/Sevitha) if this stays at 0');
+      }
+      return merged;
+    }
+    function adminJwtExpiringSoon(token, skewSec){
+      try{
+        var parts = String(token || '').split('.');
+        if(parts.length < 2) return false;
+        var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if(!payload.exp) return false;
+        var skew = (skewSec == null ? 90 : Number(skewSec)) * 1000;
+        return Date.now() >= (payload.exp * 1000) - skew;
+      }catch(_jwt){ return false; }
+    }
+    function adminSyncPortalSessionToBox(session){
+      if(!session || !session.access_token) return;
+      try{
+        var b = window.__PORTAL_SUPABASE__ || {};
+        b.session = session;
+        window.__PORTAL_SUPABASE__ = b;
+      }catch(_box){}
     }
     async function adminPortalAuthToken(){
       function tokenFromSession(session){
         return session && session.access_token ? String(session.access_token) : null;
       }
+      var client = await adminEnsureSupabaseClient();
+      if(client && client.auth){
+        try{
+          var stored = typeof window.portalAdminReadStoredAuthSession === 'function'
+            ? window.portalAdminReadStoredAuthSession()
+            : null;
+          if(stored && stored.access_token && stored.refresh_token){
+            try{
+              await client.auth.setSession({
+                access_token: stored.access_token,
+                refresh_token: stored.refresh_token
+              });
+            }catch(_set){}
+          }
+          var sessResp = await client.auth.getSession();
+          var session = sessResp && sessResp.data && sessResp.data.session;
+          var tok = tokenFromSession(session);
+          if(tok && adminJwtExpiringSoon(tok, 120)){
+            var refreshed = await client.auth.refreshSession();
+            if(!refreshed.error && refreshed.data && refreshed.data.session){
+              session = refreshed.data.session;
+              tok = tokenFromSession(session);
+            }
+          }
+          if(tok){
+            adminSyncPortalSessionToBox(session);
+            return tok;
+          }
+          if(stored && stored.refresh_token){
+            var forced = await client.auth.refreshSession({ refresh_token: stored.refresh_token });
+            if(!forced.error && forced.data && forced.data.session){
+              adminSyncPortalSessionToBox(forced.data.session);
+              return forced.data.session.access_token;
+            }
+          }
+          var gu = await client.auth.getUser();
+          if(!gu.error && gu.data && gu.data.user){
+            sessResp = await client.auth.getSession();
+            session = sessResp && sessResp.data && sessResp.data.session;
+            tok = tokenFromSession(session);
+            if(tok){
+              adminSyncPortalSessionToBox(session);
+              return tok;
+            }
+          }
+        }catch(_live){}
+      }
       if(typeof window.portalAdminResolveAccessToken === 'function'){
         var bridged = String(window.portalAdminResolveAccessToken() || '').trim();
-        if(bridged) return bridged;
+        if(bridged && !adminJwtExpiringSoon(bridged, 0)) return bridged;
       }
       try{
         var direct = portalReadPersistedSupabaseAccessTokenFromStorage();
-        if(direct) return direct;
+        if(direct && !adminJwtExpiringSoon(direct, 0)) return direct;
       }catch(_directTok){}
       try{
         var box = window.__PORTAL_SUPABASE__ || {};
         var cached = tokenFromSession(box.session);
-        if(cached) return cached;
+        if(cached && !adminJwtExpiringSoon(cached, 0)) return cached;
       }catch(_cached){}
-      var client = await adminEnsureSupabaseClient();
-      if(!client || !client.auth) return null;
-      try{
-        var sessResp = await client.auth.getSession();
-        var session = sessResp && sessResp.data && sessResp.data.session;
-        var tok = tokenFromSession(session);
-        if(tok){
-          try{
-            var b = window.__PORTAL_SUPABASE__ || {};
-            if(b) b.session = session;
-          }catch(_box){}
-          return tok;
-        }
-        var gu = await client.auth.getUser();
-        if(!gu.error && gu.data && gu.data.user){
-          sessResp = await client.auth.getSession();
-          session = sessResp && sessResp.data && sessResp.data.session;
-          tok = tokenFromSession(session);
-          if(tok){
-            try{
-              var b2 = window.__PORTAL_SUPABASE__ || {};
-              if(b2) b2.session = session;
-            }catch(_box2){}
-            return tok;
-          }
-        }
-      }catch(_e){
-        return null;
-      }
       return null;
     }
     function portalReadPersistedSupabaseAccessTokenFromStorage(){
@@ -18036,7 +18120,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k) return k;
       return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE';
     }
-    async function adminEdgePost(path, body){
+    async function adminEdgePost(path, body, retried){
       var token = await adminPortalAuthToken();
       if(!token) return { error: 'session_expired' };
       var base = typeof window.SUPABASE_URL === 'string' ? String(window.SUPABASE_URL).replace(/\/$/, '') : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
@@ -18048,11 +18132,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           Authorization: 'Bearer ' + token,
           apikey: anon
         },
-        body: body == null ? '{}' : JSON.stringify(body)
+        body: body == null ? '{}' : JSON.stringify(body),
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+          ? AbortSignal.timeout(20000)
+          : undefined
       });
       var j = null;
       try { j = await res.json(); } catch(_e) { j = null; }
-      if(!res.ok || !j || !j.ok) return { error: (j && (j.error || j.message)) || res.statusText || 'request_failed' };
+      if(!res.ok || !j || !j.ok){
+        var err = (j && (j.error || j.message)) || res.statusText || 'request_failed';
+        if(!retried && res.status === 401 && (
+          err === 'Invalid JWT' ||
+          err === 'invalid_or_expired_session' ||
+          err === 'missing_authorization'
+        )){
+          try{
+            var client = await adminEnsureSupabaseClient();
+            if(client && client.auth){
+              var stored = typeof window.portalAdminReadStoredAuthSession === 'function'
+                ? window.portalAdminReadStoredAuthSession()
+                : null;
+              if(stored && stored.refresh_token){
+                await client.auth.refreshSession({ refresh_token: stored.refresh_token });
+              }else{
+                await client.auth.refreshSession();
+              }
+            }
+          }catch(_retryRefresh){}
+          return adminEdgePost(path, body, true);
+        }
+        return { error: err };
+      }
       return { data: j };
     }
     async function adminFetchParentFeedbackSharesForHub(){
@@ -20708,7 +20818,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       root.innerHTML = window.PortalAdminSettingsHub.renderLoading();
-      adminEnsureSupabaseClient().then(function(client){
+      var bootPromise = adminEnsureSupabaseClient();
+      var timedBoot = Promise.race([
+        bootPromise,
+        new Promise(function(resolve){
+          setTimeout(function(){ resolve(getSchedSupabaseClient()); }, 5000);
+        })
+      ]);
+      timedBoot.then(function(client){
         if(client && window.__PORTAL_SUPABASE__ && !window.__PORTAL_SUPABASE__.client){
           window.__PORTAL_SUPABASE__.client = client;
         }
@@ -20729,6 +20846,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).catch(function(err){
         console.warn('[admin-settings]', err);
         if(state.view !== 'settings') return;
+        try{
+          if(window.PortalAdminSettingsHub && typeof window.PortalAdminSettingsHub.renderHtml === 'function'){
+            var partial = {
+              collectedAt: new Date().toISOString(),
+              session: { ok: !!(window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session), email: '', role: '', name: '' },
+              notify: { permission: 'unsupported', vapid: false },
+              term: { firstDate: '', lastDate: '', label: 'Current term' },
+              portal: { host: location.host || '', path: location.pathname || '' },
+              payments: { rowCount: 0, outstanding: 0, billed: 0, paid: 0, outstandingFamilies: 0, byFund: {}, laRows: 0, sheetParents: 0, sheetLa: 0, liveTableCount: null, source: 'none' },
+              exports: {},
+              ops: {},
+              helpUnanswered: { count: null, recent: [], error: String((err && err.message) || err) }
+            };
+            var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+            if(sess && sess.user){
+              partial.session.email = String(sess.user.email || '');
+              partial.session.ok = true;
+            }
+            var prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+            if(prof){
+              partial.session.name = String(prof.full_name || prof.username || '');
+              partial.session.role = String(prof.app_role || '');
+            }
+            root.innerHTML = window.PortalAdminSettingsHub.renderHtml(partial);
+            state._settingsHubRepaintOnly = true;
+            bindView('settings');
+            state._settingsHubRepaintOnly = false;
+            return;
+          }
+        }catch(_partial){}
         root.innerHTML =
           '<h1 class="page-title">Settings</h1>'+
           '<p class="page-intro">Could not load settings snapshot.</p>'+

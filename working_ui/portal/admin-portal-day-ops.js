@@ -308,11 +308,20 @@
       }
       payload.session_feedback_total = payload.session_feedback.length;
       payload.session_feedback_loaded = payload.session_feedback.length;
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[PortalDayOps] session_feedback refreshed:', payload.session_feedback.length);
+      }
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
       console.warn('[PortalDayOps] refreshSessionFeedbackLive', eFb);
     }
+  }
+
+  function ensureSessionFeedbackLoadedSoon() {
+    if (payload.session_feedback && payload.session_feedback.length) return;
+    if (!cfg.fetchSessionFeedback) return;
+    void refreshSessionFeedbackLive();
   }
 
   function ensureSessionFeedbackRealtime() {
@@ -458,21 +467,33 @@
   /** Fast path for Sessions overview — parallel, no incidents/lead/venue/DB feedback merge. */
   async function fetchOverviewSupabaseExtras() {
     var client = cfg.getClient && cfg.getClient();
-    if (!client) return emptyPayload();
+    if (!client && global.__PORTAL_SUPABASE_BOOT_INFLIGHT__) {
+      try {
+        await global.__PORTAL_SUPABASE_BOOT_INFLIGHT__;
+      } catch (_bootWait) {}
+      client = cfg.getClient && cfg.getClient();
+    }
     var out = emptyPayload();
     if (cfg.buildFeedbackFromPortal) {
       out.session_feedback = cfg.buildFeedbackFromPortal() || [];
       out.session_feedback_total = out.session_feedback.length;
       out.session_feedback_loaded = out.session_feedback.length;
     }
-    var tasks = [fetchScheduleOverridesInto(out, client)];
+    var tasks = [];
+    if (client) {
+      tasks.push(fetchScheduleOverridesInto(out, client));
+    }
     if (cfg.fetchSessionFeedback) {
       tasks.push(
         cfg.fetchSessionFeedback().then(function (dbFb) {
-          if (dbFb && dbFb.length) {
-            out.session_feedback = mergeFeedbackRowLists(out.session_feedback || [], dbFb);
-            out.session_feedback_total = out.session_feedback.length;
-            out.session_feedback_loaded = out.session_feedback.length;
+          var live = dbFb || [];
+          out.session_feedback = cfg.buildFeedbackFromPortal
+            ? mergeFeedbackRowLists(live, out.session_feedback || [])
+            : live;
+          out.session_feedback_total = out.session_feedback.length;
+          out.session_feedback_loaded = out.session_feedback.length;
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[PortalDayOps] session_feedback live rows:', live.length);
           }
         })
       );
@@ -724,6 +745,7 @@
     if (trackingHub && trackingHub.root === root) {
       trackingHub.setPayload(payload);
       applyPendingOverviewTab();
+      ensureSessionFeedbackLoadedSoon();
       if (
         !root.querySelector(".ash-panels") &&
         !root.querySelector(".ash-panels--feedback-only") &&
@@ -735,6 +757,7 @@
     }
     trackingHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'tracking' }));
     applyPendingOverviewTab();
+    ensureSessionFeedbackLoadedSoon();
     return trackingHub;
   }
 
@@ -749,6 +772,7 @@
     }
     if (feedbackHub && feedbackHub.root === root) {
       feedbackHub.setPayload(payload);
+      ensureSessionFeedbackLoadedSoon();
       if (typeof feedbackHub.render === 'function') {
         if (typeof requestAnimationFrame === 'function') {
           requestAnimationFrame(function () {
@@ -763,6 +787,7 @@
       return feedbackHub;
     }
     feedbackHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'feedback' }));
+    ensureSessionFeedbackLoadedSoon();
     return feedbackHub;
   }
 
@@ -1124,13 +1149,22 @@
           }
           applyPayload(quick);
           setStatus('');
+          try {
+            var partial = await fetchOverviewSupabaseExtras();
+            applyPayload(partial);
+            mergePortalFeedbackIntoPayload();
+            mergePortalVenueIntoPayload();
+            portalDayOpsAfterFeedbackPayloadMerge();
+            console.warn(
+              '[PortalDayOps] session_feedback ready:',
+              (payload.session_feedback || []).length,
+              'rows'
+            );
+          } catch (bgErr) {
+            console.warn('[PortalDayOps] overview enrich failed', bgErr);
+          }
           void (async function () {
             try {
-              var partial = await fetchOverviewSupabaseExtras();
-              applyPayload(partial);
-              mergePortalFeedbackIntoPayload();
-              mergePortalVenueIntoPayload();
-              portalDayOpsAfterFeedbackPayloadMergeDebounced();
               var runDeferred = function () {
                 void (async function () {
                   try {
@@ -1157,9 +1191,7 @@
               } else {
                 setTimeout(runDeferred, 1200);
               }
-            } catch (bgErr) {
-              console.debug('[PortalDayOps] background enrich', bgErr);
-            }
+            } catch (_deferWrap) {}
           })();
           return payload;
         }
@@ -1189,6 +1221,11 @@
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
           var th = await initTrackingHub();
+          if (cfg.fetchSessionFeedback) {
+            try {
+              await refreshSessionFeedbackLive();
+            } catch (_fbLive) {}
+          }
           if (th && feedbackHub) syncHubViewFilters(feedbackHub, th);
           if (th) {
             applyPendingOverviewTab();
@@ -1200,6 +1237,11 @@
           var fs = feedbackSetupForC4k(tabId);
           pendingFeedbackNoteFilter = fs.filter;
           var fh = await initFeedbackHub();
+          if (cfg.fetchSessionFeedback) {
+            try {
+              await refreshSessionFeedbackLive();
+            } catch (_fbLive2) {}
+          }
           if (fh && trackingHub) syncHubViewFilters(trackingHub, fh);
           if (fh) {
             fh.tab = fs.tab;

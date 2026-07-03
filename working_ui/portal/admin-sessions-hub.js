@@ -4590,6 +4590,12 @@
         hub.refreshRosterRowsFromResolvedSource();
         if (hub.root && hub.root.isConnected) hub.render();
       }
+      if (
+        global.PortalDayOps &&
+        typeof global.PortalDayOps.refreshSessionFeedback === "function"
+      ) {
+        void global.PortalDayOps.refreshSessionFeedback();
+      }
     });
   }
 
@@ -8318,6 +8324,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var warn = this.bundleError
       ? '<p class="ash-bundle-warn">' + esc(this.bundleError) + "</p>"
       : "";
+    var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
+    var fbLoaded = this.payload && this.payload.session_feedback_loaded;
+    if ((this.opts && this.opts.externalTabs) && fbLoaded != null && fbCount === 0) {
+      warn +=
+        '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows). Hard-refresh, then sign in again as admin if this persists.</p>';
+    }
     if (this.mode === "feedback") {
       this.root.innerHTML = warn + '<div class="ash-panels ash-panels--feedback-only"></div>';
       this.renderPanels();
