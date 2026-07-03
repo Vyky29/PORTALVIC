@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v7-live-forms';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v10-ops-alerts';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 45000;
@@ -185,7 +185,8 @@
     try {
       var cached = global.__PORTAL_SCHEDULE_OVERRIDES__;
       if (Array.isArray(cached) && cached.length) {
-        if (!payload.schedule_overrides || !payload.schedule_overrides.length) {
+        var curLen = (payload.schedule_overrides || []).length;
+        if (!curLen || cached.length > curLen) {
           payload.schedule_overrides = cached.slice();
         }
       }
@@ -697,6 +698,31 @@
       }
       return h.diagnoseDay(iso || h.selectedDay);
     };
+    global.portalAdminMissingFeedbackReport = function portalAdminMissingFeedbackReport(opts) {
+      opts = opts || {};
+      var h = trackingHub || feedbackHub;
+      if (!h || typeof h.missingFeedbackForDay !== 'function') {
+        return { error: 'hub_not_ready', payloadFeedback: (payload.session_feedback || []).length };
+      }
+      if (opts.day) {
+        return h.missingFeedbackForDay(String(opts.day).trim().slice(0, 10));
+      }
+      var to = opts.to ? String(opts.to).trim().slice(0, 10) : String(h.selectedDay || '').slice(0, 10);
+      var from = opts.from ? String(opts.from).trim().slice(0, 10) : '';
+      if (!to || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+        var today = new Date();
+        to = today.toISOString().slice(0, 10);
+      }
+      if (!from) {
+        var since = new Date(to + 'T12:00:00');
+        since.setDate(since.getDate() - 13);
+        from = since.toISOString().slice(0, 10);
+      }
+      if (typeof h.missingFeedbackForRange === 'function') {
+        return h.missingFeedbackForRange(from, to);
+      }
+      return h.missingFeedbackForDay(to);
+    };
   }
   exposePortalAdminDebugGlobals();
   try {
@@ -860,12 +886,63 @@
     return { tab: 'feedback', filter: '' };
   }
 
+  function refreshHubRosterFromLiveSource() {
+    if (trackingHub && typeof trackingHub.refreshRosterRowsFromResolvedSource === 'function') {
+      trackingHub.refreshRosterRowsFromResolvedSource();
+    }
+    if (feedbackHub && typeof feedbackHub.refreshRosterRowsFromResolvedSource === 'function') {
+      feedbackHub.refreshRosterRowsFromResolvedSource();
+    }
+  }
+
+  async function ensureLiveRosterForHub(force) {
+    if (typeof global.portalRefreshPortalRosterRowsFromSupabase !== 'function') return;
+    if (
+      global.portalAdminLoadHeavyScripts &&
+      typeof global.portalAdminHeavyScriptsReady === 'function' &&
+      !global.portalAdminHeavyScriptsReady()
+    ) {
+      try {
+        await global.portalAdminLoadHeavyScripts(['roster']);
+      } catch (_rosterScripts) {}
+    }
+    if (force) {
+      try {
+        if (global.PortalMadreFold && typeof global.PortalMadreFold.invalidateLiveMadreCache === 'function') {
+          global.PortalMadreFold.invalidateLiveMadreCache();
+        }
+      } catch (_invMadre) {}
+      try {
+        global.PORTAL_ROSTER_ROWS_CACHE = null;
+      } catch (_invRows) {}
+    }
+    var client = cfg.getClient && cfg.getClient();
+    if (!client && cfg.waitForSupabaseClient) {
+      try {
+        client = await cfg.waitForSupabaseClient(12000);
+      } catch (_waitClient) {}
+    }
+    if (!client) {
+      console.warn('[PortalDayOps] live roster: no supabase client');
+      return;
+    }
+    try {
+      await global.portalRefreshPortalRosterRowsFromSupabase(client);
+      refreshHubRosterFromLiveSource();
+      console.log('[PortalDayOps] live MADRE + portal_roster_rows refreshed');
+    } catch (eRoster) {
+      console.warn('[PortalDayOps] live roster refresh failed', eRoster);
+    }
+  }
+
   async function initTrackingHub() {
     var root = document.getElementById('adminSessionsHubRoot');
     if (!root) return null;
     await ensureHubScript();
+    await ensureLiveRosterForHub(false);
     if (!global.AdminSessionsHub) return null;
     if (trackingHub && trackingHub.root === root) {
+      trackingHub.refreshRosterRowsFromResolvedSource();
       trackingHub.setPayload(payload);
       applyPendingOverviewTab();
       ensureSessionFeedbackLoadedSoon();
@@ -888,12 +965,14 @@
     var root = document.getElementById('adminSessionFeedbacksRoot');
     if (!root) return null;
     await ensureHubScript();
+    await ensureLiveRosterForHub(false);
     if (!global.AdminSessionsHub) {
       root.innerHTML =
         '<p class="submission-state is-error"><strong>Feedback view failed to load.</strong> Refresh the page.</p>';
       return null;
     }
     if (feedbackHub && feedbackHub.root === root) {
+      feedbackHub.refreshRosterRowsFromResolvedSource();
       feedbackHub.setPayload(payload);
       ensureSessionFeedbackLoadedSoon();
       if (typeof feedbackHub.render === 'function') {
@@ -1265,6 +1344,7 @@
             quick.venue_reviews = cfg.buildVenueFromPortal() || [];
           }
           applyPayload(quick);
+          syncScheduleOverridesIntoPayload();
           portalDayOpsRenderLiveLoadStatus();
           setStatus('');
           var enrichPromise = fetchOverviewSupabaseExtras()
@@ -1289,6 +1369,7 @@
             });
           global.__PORTAL_DAY_OPS_ENRICH__ = enrichPromise;
           startDeferredSupabaseExtras();
+          void ensureLiveRosterForHub(false);
           return payload;
         }
         var fb = await fetchFallbackSupabase();
@@ -1311,6 +1392,7 @@
           } catch (_inv) {}
         }
         await global.PortalDayOps.ensurePayload();
+        await ensureLiveRosterForHub(!!(options && options.force));
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
           var th = await initTrackingHub();
@@ -1420,6 +1502,9 @@
     },
     refreshSessionFeedback: function () {
       return refreshSessionFeedbackLive();
+    },
+    ensureLiveRoster: function (force) {
+      return ensureLiveRosterForHub(!!force);
     }
   };
 

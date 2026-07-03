@@ -246,18 +246,96 @@
       : '<span class="ash-yn ash-yn--no">No</span>';
   }
 
-  function rosterFeedbackStatusHtml(isAbsent, fbDone) {
+  function rosterFeedbackStatusHtml(isAbsent, fbDone, titleExtra) {
     if (isAbsent) {
       return '<span class="ash-status ash-status--absent">Submitted (Absent)</span>';
     }
     if (fbDone) {
       return '<span class="ash-status ash-status--done">Feedback submitted</span>';
     }
+    var tip =
+      titleExtra ||
+      "No matching live session_feedback row for this date, participant, time, and instructor";
     return (
-      '<span class="ash-status ash-status--wait" title="No matching row in session feedback export for this date, participant, and instructor">' +
+      '<span class="ash-status ash-status--wait" title="' +
+      esc(tip) +
+      '">' +
       '<span class="ash-status__wide">Awaiting feedback</span>' +
       '<span class="ash-status__compact">Awaiting</span></span>'
     );
+  }
+
+  function nearMissFeedbackReason(fb, slot) {
+    var parts = [];
+    if (!feedbackTimeMatchesSlot(fb, slot)) parts.push("time");
+    if (
+      isPhysicalActivityService(slot.service) ||
+      clientNeedsPerSlotAquaticFeedback(slot) ||
+      isMultiActivityService(slot.service) ||
+      isClimbingService(slot.service)
+    ) {
+      if (!completedByMatchesSlotInstructors(fb.completed_by_name, slot)) parts.push("instructor");
+    }
+    var pk = clean(fb.portal_session_key).toLowerCase();
+    if (pk) {
+      var pkParts = pk.split("|").map(clean);
+      if (pkParts.length >= 4) {
+        var pkArea = portalKeyAreaFromParts(pkParts);
+        var slotArea = sessionAreaKey(slot.area);
+        if (pkArea && slotArea && pkArea !== slotArea) parts.push("area");
+      }
+    }
+    return parts.length ? parts.join(", ") + " mismatch" : "did not match slot rules";
+  }
+
+  function nearMissFeedbackForSlot(hub, slot) {
+    if (!hub || !slot) return [];
+    if (hub.findFeedbackForSlot(slot)) return [];
+    var day = slot.session_date;
+    var cid = canonicalClientSlug(slot.client_name);
+    if (!day || !cid) return [];
+    var hits = [];
+    var list = hub.payload.session_feedback || [];
+    for (var i = 0; i < list.length; i++) {
+      var fb = list[i];
+      if (feedbackSessionDate(fb) !== day) continue;
+      if (canonicalClientSlug(fb.client_name) !== cid) continue;
+      if (isAbsentFeedbackRow(fb)) continue;
+      if (feedbackFitsSlot(fb, slot)) continue;
+      var er = fb.engagement_rating;
+      if (er == null && er !== 0 && !clean(fb.positive_feedback) && !clean(fb.completed_by_name)) continue;
+      hits.push({
+        completed_by: clean(fb.completed_by_name) || "\u2014",
+        time: clean(fb.session_time) || "\u2014",
+        service: clean(fb.service) || "\u2014",
+        portal_session_key: clean(fb.portal_session_key),
+        reason: nearMissFeedbackReason(fb, slot),
+      });
+    }
+    return hits;
+  }
+
+  function awaitingFeedbackTitleForSlot(hub, slot) {
+    if (!slot) return "";
+    var inst = slotInstructors(slot).join(", ") || clean(slot.instructor_label) || "instructor";
+    var time = rosterTimeDisplay(slot) || clean(slot.time_slot) || "\u2014";
+    var tip =
+      "Missing feedback: " +
+      clean(slot.client_name) +
+      " \u00b7 " +
+      time +
+      " \u00b7 owed by " +
+      inst;
+    var near = nearMissFeedbackForSlot(hub, slot);
+    if (near.length) {
+      tip +=
+        ". Unmatched feedback from " +
+        near[0].completed_by +
+        " (" +
+        near[0].reason +
+        ")";
+    }
+    return tip;
   }
 
   /** Overview roster table: awaiting feedback first, then submitted, then absent. */
@@ -7197,6 +7275,185 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list;
   };
 
+  AdminSessionsHub.prototype.trackingDisplayContextForDay = function (iso) {
+    var hub = this;
+    iso = clean(iso) || hub.selectedDay;
+    var slots = hub.expandSlotsForDate(iso);
+    var units = hub.getFeedbackUnitsForDate(iso);
+    var unitComplete = {};
+    var unitAbsent = {};
+    for (var u = 0; u < units.length; u++) {
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
+      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    }
+    var scopedSlots = slots.filter(function (s) {
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+    });
+    var displaySlots = hub.sortOverviewSlotsForDisplay(
+      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
+        return hub.slotPassesOverviewFilters(s);
+      }),
+      unitComplete,
+      unitAbsent
+    );
+    return {
+      iso: iso,
+      units: units,
+      unitComplete: unitComplete,
+      unitAbsent: unitAbsent,
+      displaySlots: displaySlots,
+    };
+  };
+
+  AdminSessionsHub.prototype.missingFeedbackRowFromSlot = function (slot, ctx, meta) {
+    var hub = this;
+    meta = meta || {};
+    var inst = slotInstructors(slot);
+    return {
+      client: clean(slot.client_name),
+      service: clean(slot.service) || "\u2014",
+      time: rosterTimeDisplay(slot) || clean(slot.time_slot) || "\u2014",
+      venue: clean(slot.venue) || "\u2014",
+      area: clean(slot.area) || "\u2014",
+      instructors: inst.join(", ") || clean(slot.instructor_label) || "\u2014",
+      kind: meta.kind || "awaiting",
+      nearMissFeedback: nearMissFeedbackForSlot(hub, slot),
+    };
+  };
+
+  AdminSessionsHub.prototype.missingFeedbackForDay = function (iso) {
+    var hub = this;
+    var ctx = hub.trackingDisplayContextForDay(iso);
+    var missing = [];
+    var counts = { submitted: 0, absent: 0, cancelled: 0, open: 0 };
+    for (var i = 0; i < ctx.displaySlots.length; i++) {
+      var slot = ctx.displaySlots[i];
+      var ukey = feedbackUnitKey(slot);
+      var fbDone = ctx.unitComplete[ukey] || hub.slotFeedbackComplete(slot);
+      var isAbsent = ctx.unitAbsent[ukey] || hub.slotIsAbsent(slot);
+      var isCancelled = hub.slotHasCancellation(slot);
+      if (isOpenRosterSlot(slot.client_name)) {
+        counts.open++;
+        continue;
+      }
+      var makeupDisp = makeupOverrideDisplacingSlot(hub, slot);
+      if (makeupDisp) {
+        var mkSlot = makeupDisp.makeupSlot;
+        if (mkSlot && !hub.slotIsAbsent(mkSlot) && !hub.slotFeedbackComplete(mkSlot)) {
+          missing.push(hub.missingFeedbackRowFromSlot(mkSlot, ctx, { kind: "makeup" }));
+        }
+        continue;
+      }
+      if (isAbsent) {
+        counts.absent++;
+        continue;
+      }
+      if (isCancelled) {
+        counts.cancelled++;
+        continue;
+      }
+      if (fbDone) {
+        counts.submitted++;
+        continue;
+      }
+      missing.push(hub.missingFeedbackRowFromSlot(slot, ctx, { kind: "awaiting" }));
+    }
+    return {
+      date: ctx.iso,
+      missing: missing,
+      counts: counts,
+      total: ctx.displaySlots.length,
+      submitted: counts.submitted + counts.absent + counts.cancelled,
+    };
+  };
+
+  AdminSessionsHub.prototype.missingFeedbackForRange = function (fromIso, toIso) {
+    var hub = this;
+    var from = clean(fromIso);
+    var to = clean(toIso);
+    if (!from || !to) return { from: from, to: to, days: [], totalMissing: 0 };
+    if (from > to) {
+      var swap = from;
+      from = to;
+      to = swap;
+    }
+    var days = [];
+    var totalMissing = 0;
+    var cur = from;
+    while (cur <= to) {
+      var dayReport = hub.missingFeedbackForDay(cur);
+      if (dayReport.missing.length) {
+        days.push(dayReport);
+        totalMissing += dayReport.missing.length;
+      }
+      cur = addDaysIso(cur, 1);
+    }
+    return { from: from, to: to, days: days, totalMissing: totalMissing };
+  };
+
+  AdminSessionsHub.prototype.htmlOverviewMissingFeedbackBlock = function (iso) {
+    var hub = this;
+    var report = hub.missingFeedbackForDay(iso || hub.selectedDay);
+    if (!report.missing.length) return "";
+    var esc = hub.escapeHtml;
+    var rows = report.missing
+      .map(function (m) {
+        var note = "";
+        if (m.nearMissFeedback && m.nearMissFeedback.length) {
+          note =
+            m.nearMissFeedback
+              .map(function (n) {
+                return (
+                  esc(n.completed_by) +
+                  " @ " +
+                  esc(n.time) +
+                  " (" +
+                  esc(n.reason) +
+                  ")"
+                );
+              })
+              .join("; ");
+        }
+        return (
+          "<tr>" +
+          '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
+          esc(m.client) +
+          "</span></td>" +
+          '<td class="ash-td-center">' +
+          esc(m.time) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(m.instructors) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(m.service) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(m.venue) +
+          "</td>" +
+          '<td class="ash-td-center ash-cell-muted ash-near-miss">' +
+          (note || "\u2014") +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    return (
+      '<details class="ash-missing-fb" open>' +
+      '<summary class="ash-missing-fb__summary">' +
+      "<strong>" +
+      esc(String(report.missing.length)) +
+      " session(s) still awaiting feedback</strong>" +
+      " \u2014 participant, time, instructor owed (live roster + session_feedback + absents)" +
+      "</summary>" +
+      '<div class="ash-table-wrap"><table class="ash-table ash-table--missing-fb">' +
+      "<thead><tr>" +
+      '<th class="ash-td-center">Participant</th><th class="ash-td-center">Time</th><th class="ash-td-center">Instructor owed</th><th class="ash-td-center">Service</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Unmatched feedback note</th>' +
+      "</tr></thead><tbody>" +
+      rows +
+      "</tbody></table></div></details>"
+    );
+  };
+
   AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint = function () {
     if (!this.opts || !this.opts.externalTabs) return "";
     var esc = this.escapeHtml;
@@ -7238,10 +7495,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " Hard-refresh and sign in again as admin. Console: portalAdminLiveLoadStatus()</p>"
       );
     }
+    var missingToday = 0;
+    try {
+      missingToday = this.missingFeedbackForDay(this.selectedDay).missing.length;
+    } catch (_miss) {}
     var matched =
       dayDiag && typeof dayDiag.submitted === "number"
-        ? dayDiag.submitted + "/" + dayDiag.total + " roster slots matched today"
+        ? dayDiag.submitted + "/" + dayDiag.total + " roster slots resolved today"
         : "";
+    var awaitingLine = missingToday
+      ? " · <strong>" + esc(String(missingToday)) + "</strong> awaiting feedback today"
+      : "";
     var orphan =
       dayDiag && dayDiag.orphanFeedback && dayDiag.orphanFeedback.length
         ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
@@ -7255,9 +7519,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(String(fbCount)) +
       "</strong> rows from Supabase" +
       (matched ? " · " + esc(matched) : "") +
+      awaitingLine +
       esc(orphan) +
       ovLine +
-      ".</p>"
+      " · Console: <code>portalAdminMissingFeedbackReport()</code></p>"
     );
   };
 
@@ -7326,7 +7591,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else if (isCancelled) {
           fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
         } else {
-          fbCell = rosterFeedbackStatusHtml(false, fbDone);
+          fbCell = rosterFeedbackStatusHtml(
+            false,
+            fbDone,
+            fbDone ? "" : awaitingFeedbackTitleForSlot(hub, slot)
+          );
         }
         var statusCell = makeupDisp
           ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
@@ -7423,6 +7692,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
       this.htmlOverviewFeedbackLoadHint() +
+      this.htmlOverviewMissingFeedbackBlock(this.selectedDay) +
       this.overviewFilterRowHtml() +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
@@ -8491,35 +8761,50 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.diagnoseDay = function (iso) {
-    var day = clean(iso) || this.selectedDay;
     var hub = this;
-    var slots = this.expandSlotsForDate(day);
-    var awaiting = [];
+    var day = clean(iso) || hub.selectedDay;
+    var report = hub.missingFeedbackForDay(day);
+    var awaiting = report.missing.map(function (m) {
+      return {
+        client: m.client,
+        service: m.service,
+        time: m.time,
+        area: m.area,
+        instructors: m.instructors,
+        nearMissFeedback: m.nearMissFeedback,
+        status: "awaiting",
+      };
+    });
     var done = [];
     var used = {};
-    for (var u = 0; u < slots.length; u++) {
-      var slot = slots[u];
-      var fb = hub.findFeedbackForSlot(slot);
+    var ctx = hub.trackingDisplayContextForDay(day);
+    for (var i = 0; i < ctx.displaySlots.length; i++) {
+      var slot = ctx.displaySlots[i];
+      var ukey = feedbackUnitKey(slot);
+      var fbDone = ctx.unitComplete[ukey] || hub.slotFeedbackComplete(slot);
+      var isAbsent = ctx.unitAbsent[ukey] || hub.slotIsAbsent(slot);
+      var isCancelled = hub.slotHasCancellation(slot);
+      if (isOpenRosterSlot(slot.client_name)) continue;
       var row = {
         client: slot.client_name,
         service: slot.service,
-        time: slot.time_slot,
+        time: rosterTimeDisplay(slot) || slot.time_slot,
         area: slot.area,
-        merge: slot.feedback_merge_group || "",
-        instructors: slot.instructor_label || slotInstructors(slot).join(", ")
+        instructors: slot.instructor_label || slotInstructors(slot).join(", "),
       };
-      if (hub.slotIsAbsent(slot)) {
+      if (isAbsent) {
         row.status = "absent";
         done.push(row);
         continue;
       }
-      if (hub.slotIsAbsent(slot)) {
-        row.status = "absent";
+      if (isCancelled) {
+        row.status = "cancelled";
         done.push(row);
         continue;
       }
-      if (hub.slotFeedbackComplete(slot)) {
+      if (fbDone) {
         row.status = "submitted";
+        var fb = hub.findFeedbackForSlot(slot);
         if (fb) {
           row.completed_by = clean(fb.completed_by_name);
           row.portal_session_key = clean(fb.portal_session_key);
@@ -8529,21 +8814,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           row.completed_by = "(shared merge group)";
         }
         done.push(row);
-      } else {
-        row.status = "awaiting";
-        awaiting.push(row);
       }
     }
     var orphans = [];
-    var list = this.payload.session_feedback || [];
-    for (var i = 0; i < list.length; i++) {
-      var f = list[i];
+    var list = hub.payload.session_feedback || [];
+    for (var fi = 0; fi < list.length; fi++) {
+      var f = list[fi];
       if (feedbackSessionDate(f) !== day) continue;
-      var idKey = f.id != null ? String(f.id) : clean(f.portal_session_key) + "|" + clean(f.completed_by_name);
+      var idKey =
+        f.id != null ? String(f.id) : clean(f.portal_session_key) + "|" + clean(f.completed_by_name);
       if (used[idKey]) continue;
       var matched = false;
-      for (var j = 0; j < slots.length; j++) {
-        if (hub.findFeedbackForSlot(slots[j]) === f) {
+      for (var sj = 0; sj < ctx.displaySlots.length; sj++) {
+        if (hub.findFeedbackForSlot(ctx.displaySlots[sj]) === f) {
           matched = true;
           break;
         }
@@ -8554,18 +8837,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           time: f.session_time,
           service: f.service,
           completed_by: f.completed_by_name,
-          portal_session_key: f.portal_session_key
+          portal_session_key: f.portal_session_key,
         });
       }
     }
-    var st = this.dayStats(day);
+    var st = hub.dayStats(day);
     return {
       date: day,
       total: st.total,
       submitted: st.done,
       awaiting: awaiting,
+      awaitingCount: awaiting.length,
       done: done,
-      orphanFeedback: orphans
+      orphanFeedback: orphans,
+      counts: report.counts,
     };
   };
 

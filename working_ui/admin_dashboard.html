@@ -20,16 +20,16 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260630-sevitha-admin-fix" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260703-v9-missing-feedback" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260621-lead-report-table-slim" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260607-ops-hub-kpi-center" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260703-v10-ops-alerts" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v7-live-forms"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-v10-ops-alerts"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -288,6 +288,27 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260629-29jun-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
+  <script type="module">
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260707-admin-online-fix";
+    window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
+      try{
+        mountPortalLivePresenceBar("portalLivePresenceBar");
+      }catch(e){
+        console.warn("[admin] live presence mount", e);
+      }
+      try{
+        window.dispatchEvent(new CustomEvent("portal:presence-sync"));
+      }catch(_sync){}
+      try{
+        if(typeof window.opsHubPatchLiveAside === "function") window.opsHubPatchLiveAside();
+      }catch(_hub){}
+    };
+    function bootPresence(){
+      if(document.getElementById("portalLivePresenceBar")) window.portalAdminMountLivePresenceBarFn();
+    }
+    if(document.documentElement.classList.contains("portal-auth-ready")) bootPresence();
+    window.addEventListener("portal:supabase-ready", bootPresence);
+  </script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
 <script>
   (function(){
@@ -17853,7 +17874,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v7-live-forms';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v10-ops-alerts';
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 
@@ -17957,9 +17978,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           void refreshSessionFeedbackGrid();
         }
       }
-      function runHubRefreshWhenReady(){
+      function runHubRefreshWhenReady(forceReload){
         var start = function(){
-          runHubRefresh();
+          var chain = Promise.resolve();
+          if(window.PortalDayOps && typeof window.PortalDayOps.ensureLiveRoster === 'function'){
+            chain = window.PortalDayOps.ensureLiveRoster(!!forceReload);
+          }
+          chain.finally(function(){
+            runHubRefresh(forceReload);
+          });
         };
         if(getSchedSupabaseClient()){
           start();
@@ -20066,7 +20093,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function opsHubActionsHtml(actions, variant){
       return (actions || []).map(function(a){ return opsHubActionBtn(a, variant); }).filter(Boolean).join('');
     }
+    function opsHubConnectedStaffList(){
+      var rt = window.__PORTAL_PRESENCE_GROUPED__ || { connected: [] };
+      var sup = window.__PORTAL_PRESENCE_SUPPLEMENT__ || { connected: [] };
+      var merged = (rt.connected || []).slice();
+      var seen = Object.create(null);
+      merged.forEach(function(e){
+        var id = String(e && e.user_id || '').trim();
+        if(id) seen[id] = true;
+      });
+      (sup.connected || []).forEach(function(e){
+        if(!e) return;
+        var id = String(e.user_id || '').trim();
+        if(id && seen[id]) return;
+        if(id) seen[id] = true;
+        merged.push(e);
+      });
+      merged.sort(function(a, b){
+        return String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' });
+      });
+      return merged;
+    }
+
     function opsHubGlanceValueAlerts(){
+      if(typeof window.portalAdminBellBadgeCount === 'function'){
+        var nBell = window.portalAdminBellBadgeCount();
+        if(!isNaN(nBell)) return nBell;
+      }
       var bd = $('alertBadge');
       if(bd && String(bd.textContent || '').trim() !== ''){
         var n = parseInt(bd.textContent, 10);
@@ -20075,7 +20128,124 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(typeof window.portalAdminBellPrepareForRender === 'function'){
         return (window.portalAdminBellPrepareForRender() || []).length;
       }
-      return (MOCK.alerts || []).length;
+      return (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []).length;
+    }
+
+    function opsHubGlanceValueOnline(){
+      var list = opsHubConnectedStaffList();
+      if(list.length) return list.length;
+      if(window.__PORTAL_PRESENCE_SUPPLEMENT__ && (window.__PORTAL_PRESENCE_SUPPLEMENT__.connected || []).length){
+        return window.__PORTAL_PRESENCE_SUPPLEMENT__.connected.length;
+      }
+      if(MOCK.kpi && MOCK.kpi.activeStaff != null) return MOCK.kpi.activeStaff;
+      return '\u2014';
+    }
+
+    function opsHubAlertsAsideInnerHtml(){
+      var list = typeof window.portalAdminBellPrepareForRender === 'function'
+        ? window.portalAdminBellPrepareForRender()
+        : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
+      if(!list.length){
+        return '<p class="muted ops-hub-aside-empty">No incidents, cancellations, absents, or approval requests right now.</p>';
+      }
+      return list.slice(0, 14).map(function(a, idx){
+        var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
+        var meta = '';
+        if(a.recordId) meta += ' data-alert-record-id="'+esc(a.recordId)+'"';
+        if(a.clientName) meta += ' data-alert-client="'+esc(a.clientName)+'"';
+        if(a.sessionDate) meta += ' data-alert-date="'+esc(a.sessionDate)+'"';
+        return (
+          '<button type="button" class="ops-hub-alert-row portal-admin-activity-alert" data-ops-hub-alert-idx="'+idx+'"'+jump+meta+'>'+
+            '<span class="ops-hub-alert-row__main"><strong>'+esc(a.title || 'Alert')+'</strong>'+
+            '<span class="muted">'+esc(a.sub || '')+'</span></span>'+
+            '<span class="chip chip--info">'+esc(a.t || portalAdminAlertTimeLabel(a.created_at))+'</span>'+
+          '</button>'
+        );
+      }).join('');
+    }
+
+    function opsHubConnectedAsideInnerHtml(){
+      var list = opsHubConnectedStaffList();
+      if(!list.length){
+        return '<p class="muted ops-hub-aside-empty">Nobody else online right now. Names appear when staff have the portal open (visit heartbeat).</p>';
+      }
+      return (
+        '<div class="ops-hub-connected-list">'+
+        list.map(function(p){
+          return '<span class="ops-hub-connected-pill" title="Online now">'+esc(p.name || 'Staff')+'</span>';
+        }).join('')+
+        '</div>'
+      );
+    }
+
+    function opsHubAsideHtml(){
+      return (
+        '<aside class="ops-hub__aside" aria-label="Live alerts and connected staff">'+
+          '<div class="ops-hub-aside-card">'+
+            '<div class="ops-hub-aside-card__head">'+
+              '<h3 class="ops-hub-aside-card__title">Alerts</h3>'+
+              '<span class="ops-hub-aside-card__count" id="opsHubAlertsCount">0</span>'+
+            '</div>'+
+            '<div class="ops-hub-aside-card__body" id="opsHubAlertsHost">'+opsHubAlertsAsideInnerHtml()+'</div>'+
+          '</div>'+
+          '<div class="ops-hub-aside-card ops-hub-aside-card--connected">'+
+            '<div class="ops-hub-aside-card__head">'+
+              '<h3 class="ops-hub-aside-card__title">Gente conectada</h3>'+
+              '<span class="ops-hub-aside-card__count" id="opsHubConnectedCount">0</span>'+
+            '</div>'+
+            '<div class="ops-hub-aside-card__body" id="opsHubConnectedHost">'+opsHubConnectedAsideInnerHtml()+'</div>'+
+          '</div>'+
+        '</aside>'
+      );
+    }
+
+    function opsHubPatchLiveAside(){
+      if(state.view !== 'nav_hub' || state.navHubGroup) return;
+      var alertsHost = $('opsHubAlertsHost');
+      if(alertsHost) alertsHost.innerHTML = opsHubAlertsAsideInnerHtml();
+      var countEl = $('opsHubAlertsCount');
+      if(countEl) countEl.textContent = String(opsHubGlanceValueAlerts());
+      var connHost = $('opsHubConnectedHost');
+      if(connHost) connHost.innerHTML = opsHubConnectedAsideInnerHtml();
+      var connCount = $('opsHubConnectedCount');
+      if(connCount){
+        var n = opsHubConnectedStaffList().length;
+        connCount.textContent = String(n);
+        connCount.hidden = n < 1;
+      }
+      var todayOnline = document.querySelector('.ops-hub__today-item .ops-hub__today-v');
+      /* glance strip refreshed on full rerender only */
+    }
+    window.opsHubPatchLiveAside = opsHubPatchLiveAside;
+
+    function bindOpsHubAsideAlerts(){
+      document.querySelectorAll('[data-ops-hub-alert-idx]').forEach(function(btn){
+        if(btn.dataset.opsHubAlertBound === '1') return;
+        btn.dataset.opsHubAlertBound = '1';
+        btn.addEventListener('click', function(){
+          var idx = parseInt(btn.getAttribute('data-ops-hub-alert-idx'), 10);
+          var acts = typeof window.portalAdminBellPrepareForRender === 'function'
+            ? window.portalAdminBellPrepareForRender()
+            : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
+          var a = acts[idx];
+          if(!a || !a.view) return;
+          portalAdminOpenActivityAlert({
+            view: a.view,
+            recordId: a.recordId || '',
+            clientName: a.clientName || '',
+            sessionDate: a.sessionDate || ''
+          });
+        });
+      });
+    }
+
+    function bindNavHubLive(){
+      bindOpsHubAsideAlerts();
+      portalAdminMountLivePresenceBar();
+      void portalAdminBootstrapActivityAlerts().finally(function(){
+        opsHubPatchLiveAside();
+        bindOpsHubAsideAlerts();
+      });
     }
     function opsHubGlanceHtml(){
       refreshKpisFromDemo();
@@ -20085,13 +20255,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : now.toLocaleDateString('en-GB');
       var weekday = now.toLocaleDateString('en-GB', { weekday:'long' });
       var alertsN = opsHubGlanceValueAlerts();
-      var onlineN = (MOCK.kpi && MOCK.kpi.activeStaff != null) ? MOCK.kpi.activeStaff : '\u2014';
+      var onlineN = opsHubGlanceValueOnline();
       var pendingN = Number(state.portalLatePendingCount || 0) + portalAbsentsPendingCount();
       return (
         '<div class="ops-hub__today" role="region" aria-label="Today at a glance">' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Unread items</span></div>' +
-        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Staff on roster today</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Gente conectada ahora</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
         '</div>'
       );
@@ -20161,7 +20331,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="ops-hub__intro-sub">Choose the area you need. Each section groups the main tools used to manage sessions, participants, staff, documents, finance and monitoring.</p>' +
         '</header>' +
         opsHubGlanceHtml() +
+        '<div class="ops-hub__body">' +
+        '<div class="ops-hub__main">' +
         '<div class="ops-hub__grid admin-dashboard-grid">'+cards+'</div>' +
+        '</div>' +
+        opsHubAsideHtml() +
+        '</div>' +
         '</div>'
       );
     }
@@ -22312,6 +22487,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         b.addEventListener('click', function(){ openShiftModal(b.getAttribute('data-shift-session')||''); });
       });
       if(id === 'nav_hub'){
+        bindNavHubLive();
         root.querySelectorAll('[data-hub-open-group]').forEach(function(b){
           b.addEventListener('click', function(){
             openNavHubGroup(b.getAttribute('data-hub-open-group'));
@@ -25261,6 +25437,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function portalAdminMountLivePresenceBar(){
+      if(window.portalAdminMountLivePresenceBarFn){
+        window.portalAdminMountLivePresenceBarFn();
+        return;
+      }
       if(window.__portalAdminPresenceBarMounted) return;
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
@@ -25269,6 +25449,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');
+          try{ window.dispatchEvent(new CustomEvent('portal:presence-sync')); }catch(_s){}
         })
         .catch(function(err){
           console.warn('[admin] live presence mount', err);
@@ -25277,7 +25458,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     async function portalAdminFetchActivityAlertsBundle(client, sinceIso){
       try{
-        var edge = await adminEdgePost('portal-admin-activity-alerts-list', { since: sinceIso, days: 3 });
+        var edge = await adminEdgePost('portal-admin-activity-alerts-list', { since: sinceIso, days: 14 });
         if(!edge.error && edge.data){
           return {
             cancellations: edge.data.cancellations || [],
@@ -25611,18 +25792,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSetBootstrapSilent === 'function'){
           window.portalAdminBellSetBootstrapSilent(true);
         }
+        var prevAlerts = (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []).slice();
         window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = [];
         if(typeof window.portalAdminBellClearStaffSupport === 'function'){
           window.portalAdminBellClearStaffSupport();
         }
         var since = new Date();
-        since.setDate(since.getDate() - 3);
+        since.setDate(since.getDate() - 14);
         var sinceIso = since.toISOString();
         if(typeof window.portalAdminBellSyncLateFromServer === 'function'){
           await window.portalAdminBellSyncLateFromServer(client, { silent: true });
         }
         var bundle = await portalAdminFetchActivityAlertsBundle(client, sinceIso);
-        if(bundle){
+        if(!bundle){
+          window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = prevAlerts;
+        } else {
           (bundle.cancellations || []).forEach(function(r){
             var a = portalAdminActivityFromCancellation(r);
             if(a && typeof window.portalAdminPushActivityAlert === 'function'){
@@ -25647,6 +25831,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             absentRows.forEach(function(r){
               var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
               var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
+              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+                window.portalAdminPushActivityAlert(a, { silent: true });
+              }
+            });
+          }
+          if(bundle.late_requests && bundle.late_requests.length){
+            bundle.late_requests.forEach(function(r){
+              if(String(r.status || '').toLowerCase() !== 'pending') return;
+              var a = typeof window.portalAdminActivityFromLateRequest === 'function'
+                ? window.portalAdminActivityFromLateRequest(r)
+                : null;
               if(a && typeof window.portalAdminPushActivityAlert === 'function'){
                 window.portalAdminPushActivityAlert(a, { silent: true });
               }
@@ -25678,6 +25873,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.__portalAdminRenderAlerts === 'function'){
           window.__portalAdminRenderAlerts();
         }
+        try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHub){}
       }catch(err){ console.warn('[admin] activity alerts bootstrap', err); }
     }
 
@@ -25830,6 +26026,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         portalAdminDeferDayOpsBadgesRefresh();
       }catch(_badgeBell){}
+      try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHubBell){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 
@@ -25905,6 +26102,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminBootstrapAlertsAndPresence(){
       try{
         portalAdminMountLivePresenceBar();
+        if(!window.__opsHubPresenceListener){
+          window.__opsHubPresenceListener = true;
+          window.addEventListener('portal:presence-sync', function(){
+            try{ opsHubPatchLiveAside(); }catch(_pres){}
+          });
+        }
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         if(!portalAdminCanBootstrapAlerts(p)) return;
         var clientPromise = adminEnsureSupabaseClient();

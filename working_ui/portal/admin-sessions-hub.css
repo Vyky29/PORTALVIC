@@ -1485,3 +1485,22 @@
     .ash-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
     .ash-schedule-head h3 { margin: 0 0 6px; color: var(--navy); font-size: 18px; }
     .ash-schedule-head p { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+    .ash-missing-fb {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      background: #fff7ed;
+      min-width: 0;
+    }
+    .ash-missing-fb__summary {
+      cursor: pointer;
+      font-size: 13px;
+      color: #9a3412;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ash-table--missing-fb { margin-top: 10px; }
+    .ash-table--missing-fb td,
+    .ash-table--missing-fb th { font-size: 12px; }
+    .ash-near-miss { font-size: 11px; color: #b45309; overflow-wrap: anywhere; }
