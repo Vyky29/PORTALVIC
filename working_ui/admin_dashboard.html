@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-wait-supabase"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-live-rpc-only"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -2169,7 +2169,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(st === 'absent' || st === 'cancelled') return true;
       return !!stRow.feedbackComplete;
     }
-    /** Live session_feedback rows merged into PortalDayOps payload (Supabase + static export). */
+    /** Live session_feedback rows from PortalDayOps payload (Supabase RPC only). */
     function adminLiveSessionFeedbackHubRows(){
       try{
         var ops = window.PortalDayOps;
@@ -11272,6 +11272,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var box = window.__PORTAL_SUPABASE__;
       return box && box.client ? box.client : null;
     }
+    function adminDayOpsDebugEnabled(){
+      try{
+        if(/portalDebug=1/.test(String(location.search || ''))) return true;
+        if(localStorage.getItem('portalDebugDayOps') === '1') return true;
+      }catch(_dbg){}
+      return false;
+    }
+    function adminDayOpsDebug(){
+      if(!adminDayOpsDebugEnabled()) return;
+      try{ console.debug.apply(console, arguments); }catch(_log){}
+    }
     async function adminEnsureSupabaseClient(){
       var client = getSchedSupabaseClient();
       if(client) return client;
@@ -17710,7 +17721,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260703-feedback-rpc";
+      "/portal/admin-sessions-hub.js?v=20260703-rpc-only";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17830,7 +17841,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         setTimeout(go, 12000);
       }
       if((showFb || showTrack) && window.portalAdminLoadHeavyScripts && !portalAdminHeavyScriptsReady()){
-        void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(runHubRefreshWhenReady).catch(onHubRefreshFail);
+        void window.portalAdminLoadHeavyScripts(['roster']).then(runHubRefreshWhenReady).catch(onHubRefreshFail);
       }else{
         runHubRefreshWhenReady();
       }
@@ -17867,9 +17878,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         getAnonKey: function(){
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
-        },
-        buildFeedbackFromPortal: function(){
-          return adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
         },
         buildVenueFromPortal: function(){
           return adminVenueReviewPortalRows().map(adminMapPortalRowToHubVenueReview);
@@ -17975,7 +17983,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_session_key: pk
       };
     }
-    async function adminFetchSessionFeedbackViaClient(sinceIso){
+    async function adminFetchSessionFeedbackViaRpc(sinceIso){
       var client = await adminEnsureSupabaseClient();
       if(!client) return [];
       try{
@@ -17991,50 +17999,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_sess){}
       try{
         var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
-        if(rpc && !rpc.error && Array.isArray(rpc.data) && rpc.data.length){
-          return (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
-        }
         if(rpc && rpc.error){
-          console.warn('[admin] session_feedback rpc', rpc.error.message || rpc.error);
+          adminDayOpsDebug('[admin] session_feedback rpc', rpc.error.message || rpc.error);
+          return [];
         }
+        if(!rpc || !Array.isArray(rpc.data)) return [];
+        return (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
       }catch(rpcErr){
-        console.warn('[admin] session_feedback rpc fetch', rpcErr);
-      }
-      try{
-        var res = await client
-          .from('session_feedback')
-          .select(
-            'id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
-          )
-          .gte('session_date', sinceIso)
-          .order('session_date', { ascending: false })
-          .limit(2500);
-        if(res.error) throw res.error;
-        return (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
-      }catch(e){
-        console.warn('[admin] session_feedback client fetch', e);
+        adminDayOpsDebug('[admin] session_feedback rpc', rpcErr);
         return [];
       }
-    }
-    function adminMergeSessionFeedbackRows(primary, secondary){
-      var seen = {};
-      var out = [];
-      function add(row){
-        if(!row) return;
-        var id = String(row.id || '').trim();
-        var key = id || [
-          String(row.session_date || '').slice(0, 10),
-          String(row.client_name || '').trim().toLowerCase(),
-          String(row.portal_session_key || '').trim().toLowerCase(),
-          String(row.completed_by_name || '').trim().toLowerCase()
-        ].join('|');
-        if(seen[key]) return;
-        seen[key] = true;
-        out.push(row);
-      }
-      (primary || []).forEach(add);
-      (secondary || []).forEach(add);
-      return out;
     }
     var __adminSessionFeedbackInflight = null;
     async function adminFetchSessionFeedbackForHub(){
@@ -18049,50 +18023,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
       await adminWaitForSupabaseReady(22000);
-      var edgeRows = [];
-      var edgeErr = '';
-      var clientRows = [];
-      try{
-        var parts = await Promise.all([
-          (async function(){
-            try{
-              var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
-              if(!edge.error && edge.data && Array.isArray(edge.data.rows)){
-                return (edge.data.rows || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
-              }
-              if(edge.error) edgeErr = String(edge.error);
-            }catch(eEdge){
-              edgeErr = String((eEdge && eEdge.message) || eEdge);
-              console.warn('[admin] session_feedback edge fetch', eEdge);
-            }
-            return [];
-          })(),
-          adminFetchSessionFeedbackViaClient(sinceIso)
-        ]);
-        edgeRows = parts[0] || [];
-        clientRows = parts[1] || [];
-      }catch(_all){
-        clientRows = await adminFetchSessionFeedbackViaClient(sinceIso);
-      }
-      var merged = adminMergeSessionFeedbackRows(edgeRows, clientRows);
+      var rows = await adminFetchSessionFeedbackViaRpc(sinceIso);
       try{
         window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
           at: new Date().toISOString(),
-          total: merged.length,
-          edge: edgeRows.length,
-          client: clientRows.length,
-          edgeErr: edgeErr || ''
+          total: rows.length,
+          via: 'rpc'
         };
       }catch(_meta){}
-      console.warn(
-        '[admin] session_feedback loaded:',
-        merged.length,
-        '(edge=' + edgeRows.length + ', client=' + clientRows.length + (edgeErr ? ', edgeErr=' + edgeErr : '') + ')'
-      );
-      if(!merged.length && edgeErr){
-        console.warn('[admin] session_feedback — sign in again as admin (Victor/Raul/Javi/Sevitha) if this stays at 0');
-      }
-      return merged;
+      adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via rpc');
+      return rows;
     }
     function adminJwtExpiringSoon(token, skewSec){
       try{
@@ -18271,11 +18211,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     };
     window.adminFetchParentFeedbackSharesForHub = adminFetchParentFeedbackSharesForHub;
     function adminBuildSessionsHubPayload(){
-      var rows = adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
       return {
         counts: {},
-        session_feedback: rows,
-        session_feedback_total: rows.length,
+        session_feedback: [],
+        session_feedback_total: 0,
+        session_feedback_loaded: 0,
         incident_reports: [],
         lead_session_reports: [],
         venue_reviews: [],

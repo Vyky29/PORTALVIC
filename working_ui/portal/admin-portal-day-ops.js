@@ -23,10 +23,29 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260704-search-combo';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260703-rpc-only';
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 8000;
   var SUPABASE_WAIT_MS = 22000;
+
+  function dayOpsDebugEnabled() {
+    try {
+      if (typeof global.location !== 'undefined' && /portalDebug=1/.test(global.location.search || '')) {
+        return true;
+      }
+      if (typeof global.localStorage !== 'undefined' && global.localStorage.getItem('portalDebugDayOps') === '1') {
+        return true;
+      }
+    } catch (_dbg) {}
+    return false;
+  }
+
+  function dayOpsDebug() {
+    if (!dayOpsDebugEnabled()) return;
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug.apply(console, arguments);
+    }
+  }
 
   function promiseWithTimeout(promise, ms, fallback) {
     return Promise.race([
@@ -186,98 +205,6 @@
     payload.parent_feedback_shares = j.parent_feedback_shares || [];
   }
 
-  function feedbackRowMergeKey(row) {
-    var pk = String((row && row.portal_session_key) || '').trim();
-    if (pk) {
-      var by = String((row && row.completed_by_name) || '')
-        .trim()
-        .toLowerCase();
-      if (pk.indexOf('||') >= 0 || !by) return 'pk:' + pk;
-      return 'pk:' + pk + '|' + by;
-    }
-    return (
-      'd:' +
-      String((row && row.session_date) || '').trim().slice(0, 10) +
-      '|' +
-      String((row && row.client_name) || '')
-        .trim()
-        .toLowerCase() +
-      '|' +
-      String((row && row.session_time) || '').trim() +
-      '|' +
-      String((row && row.completed_by_name) || '')
-        .trim()
-        .toLowerCase()
-    );
-  }
-
-  function feedbackRowSubmittedAt(row) {
-    return String(
-      (row && (row.created_at || row.submittedAt || row.submitted_at || row.updated_at)) || ""
-    ).trim();
-  }
-
-  function mergeFeedbackRowLists(a, b) {
-    var byKey = {};
-    var out = [];
-    function addRow(row) {
-      if (!row) return;
-      var k = feedbackRowMergeKey(row);
-      if (!k) return;
-      if (byKey[k] !== undefined) {
-        var prev = out[byKey[k]];
-        if (!feedbackRowSubmittedAt(prev) && feedbackRowSubmittedAt(row)) out[byKey[k]] = row;
-        return;
-      }
-      byKey[k] = out.length;
-      out.push(row);
-    }
-    (a || []).forEach(addRow);
-    (b || []).forEach(addRow);
-    return out;
-  }
-
-  /** Static export coverage date (rows after this come from Supabase live only). */
-  function portalFeedbackCoverageThroughIso() {
-    try {
-      var meta =
-        typeof window !== 'undefined' &&
-        window.SESSION_FEEDBACK_PORTAL_SOURCE &&
-        window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
-      return String((meta && meta.coverageThroughIso) || '')
-        .trim()
-        .slice(0, 10);
-    } catch (eCov) {
-      return '';
-    }
-  }
-
-  /** Historical workbook rows only — recent days must not override live Supabase. */
-  function staticPortalFeedbackRowsForMerge() {
-    if (!cfg.buildFeedbackFromPortal) return [];
-    var all = cfg.buildFeedbackFromPortal() || [];
-    var thru = portalFeedbackCoverageThroughIso();
-    if (!thru) return all;
-    return all.filter(function (r) {
-      var d = String((r && (r.session_date || r.date)) || '')
-        .trim()
-        .slice(0, 10);
-      return d && d <= thru;
-    });
-  }
-
-  /** Live Supabase first; static export supplements history only. */
-  function mergePortalFeedbackIntoPayload() {
-    var portalRows = staticPortalFeedbackRowsForMerge();
-    if (!portalRows.length && !(payload.session_feedback || []).length) return;
-    payload.session_feedback = mergeFeedbackRowLists(
-      payload.session_feedback || [],
-      portalRows
-    );
-    payload.session_feedback_total = payload.session_feedback.length;
-    payload.session_feedback_loaded = payload.session_feedback.length;
-  }
-
   function portalDayOpsAfterFeedbackPayloadMerge() {
     if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
       window.portalInvalidateAdminFeedbackStatusCache();
@@ -311,23 +238,14 @@
     if (!cfg.fetchSessionFeedback) return;
     try {
       var dbFb = await cfg.fetchSessionFeedback();
-      if (cfg.buildFeedbackFromPortal) {
-        payload.session_feedback = mergeFeedbackRowLists(
-          dbFb || [],
-          staticPortalFeedbackRowsForMerge()
-        );
-      } else {
-        payload.session_feedback = dbFb || [];
-      }
+      payload.session_feedback = dbFb || [];
       payload.session_feedback_total = payload.session_feedback.length;
       payload.session_feedback_loaded = payload.session_feedback.length;
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[PortalDayOps] session_feedback refreshed:', payload.session_feedback.length);
-      }
+      dayOpsDebug('[PortalDayOps] session_feedback refreshed:', payload.session_feedback.length);
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
-      console.warn('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+      dayOpsDebug('[PortalDayOps] refreshSessionFeedbackLive', eFb);
     }
   }
 
@@ -487,11 +405,6 @@
       client = cfg.getClient && cfg.getClient();
     }
     var out = emptyPayload();
-    if (cfg.buildFeedbackFromPortal) {
-      out.session_feedback = cfg.buildFeedbackFromPortal() || [];
-      out.session_feedback_total = out.session_feedback.length;
-      out.session_feedback_loaded = out.session_feedback.length;
-    }
     var tasks = [];
     if (client) {
       tasks.push(fetchScheduleOverridesInto(out, client));
@@ -504,14 +417,10 @@
           }
           var dbFb = await cfg.fetchSessionFeedback();
           var live = dbFb || [];
-          out.session_feedback = cfg.buildFeedbackFromPortal
-            ? mergeFeedbackRowLists(live, out.session_feedback || [])
-            : live;
+          out.session_feedback = live;
           out.session_feedback_total = out.session_feedback.length;
           out.session_feedback_loaded = out.session_feedback.length;
-          if (typeof console !== 'undefined' && console.warn) {
-            console.warn('[PortalDayOps] session_feedback live rows:', live.length);
-          }
+          dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
         })()
       );
     }
@@ -592,14 +501,6 @@
         return p.catch(function () {});
       })
     );
-    if (out.session_feedback && out.session_feedback.length && cfg.buildFeedbackFromPortal) {
-      out.session_feedback = mergeFeedbackRowLists(
-        cfg.buildFeedbackFromPortal() || [],
-        out.session_feedback
-      );
-      out.session_feedback_total = out.session_feedback.length;
-      out.session_feedback_loaded = out.session_feedback.length;
-    }
     return out;
   }
 
@@ -1125,7 +1026,7 @@
           typeof global.portalAdminHeavyScriptsReady === 'function' &&
           !global.portalAdminHeavyScriptsReady()
         ) {
-          await global.portalAdminLoadHeavyScripts(['roster', 'feedback']);
+          await global.portalAdminLoadHeavyScripts(['roster']);
         }
         var skipEdge = !!(cfg && cfg.skipAdminFormsEdge);
         var edge = null;
@@ -1133,7 +1034,6 @@
           edge = await fetchEdgePayload();
           if (edge && edge.data) {
             applyPayload(edge.data);
-            mergePortalFeedbackIntoPayload();
             mergePortalVenueIntoPayload();
             setStatus('');
             return payload;
@@ -1156,11 +1056,6 @@
         }
         if (skipEdge) {
           var quick = emptyPayload();
-          if (cfg.buildFeedbackFromPortal) {
-            quick.session_feedback = cfg.buildFeedbackFromPortal() || [];
-            quick.session_feedback_total = quick.session_feedback.length;
-            quick.session_feedback_loaded = quick.session_feedback.length;
-          }
           if (cfg.buildVenueFromPortal) {
             quick.venue_reviews = cfg.buildVenueFromPortal() || [];
           }
@@ -1169,10 +1064,9 @@
           var enrichPromise = fetchOverviewSupabaseExtras()
             .then(function (partial) {
               applyPayload(partial);
-              mergePortalFeedbackIntoPayload();
               mergePortalVenueIntoPayload();
               portalDayOpsAfterFeedbackPayloadMerge();
-              console.warn(
+              dayOpsDebug(
                 '[PortalDayOps] session_feedback ready:',
                 (payload.session_feedback || []).length,
                 'rows'
@@ -1180,7 +1074,7 @@
               return partial;
             })
             .catch(function (bgErr) {
-              console.warn('[PortalDayOps] overview enrich failed', bgErr);
+              dayOpsDebug('[PortalDayOps] overview enrich failed', bgErr);
             })
             .finally(function () {
               if (global.__PORTAL_DAY_OPS_ENRICH__ === enrichPromise) {
@@ -1201,7 +1095,6 @@
                         venue_reviews: deferred.venue_reviews || []
                       })
                     );
-                    mergePortalFeedbackIntoPayload();
                     mergePortalVenueIntoPayload();
                     portalDayOpsAfterFeedbackPayloadMergeDebounced();
                     ensureSessionFeedbackRealtime();
@@ -1222,7 +1115,6 @@
         }
         var fb = await fetchFallbackSupabase();
         applyPayload(fb);
-        mergePortalFeedbackIntoPayload();
         mergePortalVenueIntoPayload();
         portalDayOpsAfterFeedbackPayloadMerge();
         ensureSessionFeedbackRealtime();
