@@ -375,49 +375,229 @@ const EXPERT_52 = {
     context: "Trigger push al INSERT portal_staff_announcements.",
     affects: "Push campana anuncios staff.",
   },
-  // --- solo database/migrations (39) ---
+  // --- solo database/migrations (26 paso 2) ---
+  // bootstrapKind: copy | duplicated | data | superseded
   "20260415_session_feedback.sql": {
     rec: "copy",
-    verdict: "Copiar a supabase/ luego borrar espejo",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
     context:
-      "CREATE TABLE session_feedback — ¡NO está en supabase/migrations! Prod lo tiene por SQL manual. Necesario para Supabase vacío.",
-    affects: "Todo el formulario feedback.",
+      "CREATE TABLE session_feedback. No existe en supabase/migrations (prod = SQL manual). Imprescindible Supabase vacío.",
+    affects: "Formulario feedback, admin hub, triggers push.",
+    supaRef: null,
   },
-  "20260416_session_feedback_context.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Columnas contexto feedback (portal_session_key, etc.).", affects: "Matching roster ↔ feedback." },
-  "20260417_session_feedback_insert_rls_fix.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS INSERT staff/lead.", affects: "Quién puede enviar feedback." },
-  "20260418_session_feedback_nullable_second_phase.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Nullable campos fase 2 formulario.", affects: "Formulario amarillo campos opcionales." },
-  "20260420_cancellation_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla cancellation_reports.", affects: "Tab Cancellations admin." },
-  "20260420_incident_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla incident_reports.", affects: "Tab Incidents." },
-  "20260420_portal_auth_generation_and_review_select.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Auth generation + review select policies.", affects: "Sesión remota logout stale." },
-  "20260420_session_feedback_insert_rls_ceo_admin.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS admin/CEO leen feedback.", affects: "Admin sessions hub." },
-  "20260421_portal_feedback_shared_session_keys_rpc.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RPC claves compartidas feedback.", affects: "Historial feedback export." },
-  "20260422_venue_reviews.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla venue_reviews.", affects: "Venue tab admin." },
-  "20260423_create_documents_table_storage_and_policies.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Storage documents bucket + tabla.", affects: "my_documents, HR docs." },
-  "20260423_enable_rls_clients_sessions_announcements_select_authenticated.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS clients/sessions/announcements.", affects: "Lectura authenticated programme data." },
-  "20260423_expense_claims_backend.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Backend expense claims.", affects: "Gastos staff." },
-  "20260423_lead_session_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla lead_session_reports (supabase solo tiene RLS posterior).", affects: "Lead report tab." },
-  "20260423_timesheets_backend.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tablas timesheets core.", affects: "Todo timesheet/payroll." },
-  "20260424_documents_user_soft_hide.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Soft-hide documentos usuario.", affects: "my_documents UI." },
+  "20260416_session_feedback_context.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "ALTER session_feedback (portal_session_key, etc.). Falta en cadena CLI.",
+    affects: "Matching roster ↔ feedback.",
+    supaRef: null,
+  },
+  "20260417_session_feedback_insert_rls_fix.sql": {
+    rec: "copy",
+    bootstrapKind: "superseded",
+    verdict: "Keep — cadena (opcional)",
+    context:
+      "Policy INSERT v1. Sustituida por 60420 (añade ceo/admin). Copiar solo si quieres historial completo; en env nuevo basta 60420.",
+    affects: "RLS INSERT feedback.",
+    supaRef: "→ 20260420_session_feedback_insert_rls_ceo_admin.sql",
+  },
+  "20260418_session_feedback_nullable_second_phase.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "Nullable campos fase 2. Falta en CLI.",
+    affects: "Formulario campos opcionales.",
+    supaRef: null,
+  },
+  "20260420_cancellation_reports.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE cancellation_reports. Falta en CLI.",
+    affects: "Tab Cancellations admin.",
+    supaRef: null,
+  },
+  "20260420_incident_reports.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE incident_reports. Falta en CLI.",
+    affects: "Tab Incidents.",
+    supaRef: null,
+  },
+  "20260420_portal_auth_generation_and_review_select.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "RPC portal_bump_auth_session_generation + policies review. No está en supabase/migrations.",
+    affects: "Logout sesión stale, auth generation.",
+    supaRef: null,
+  },
+  "20260420_session_feedback_insert_rls_ceo_admin.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "Policy session_feedback_insert_staff_lead (staff/lead/ceo/admin). No está en supabase/migrations.",
+    affects: "Victor/admin pueden enviar feedback.",
+    supaRef: null,
+  },
+  "20260421_portal_feedback_shared_session_keys_rpc.sql": {
+    rec: "copy",
+    bootstrapKind: "duplicated",
+    verdict: "Keep — ya duplicada",
+    context:
+      "RPC portal_feedback_submitted_keys_for_sessions YA en supabase (evolucionada). No hace falta copiar el espejo.",
+    affects: "Historial feedback export.",
+    supaRef: "20260608120000_portal_feedback_shared_history_lookback.sql, 20260616120000_portal_feedback_shared_keys_flexible_match.sql",
+  },
+  "20260422_venue_reviews.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE venue_reviews (distinto de venue_review_admin_notifications en jun). Falta en CLI.",
+    affects: "Venue tab admin.",
+    supaRef: null,
+  },
+  "20260423_create_documents_table_storage_and_policies.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE documents + bucket storage. Falta en CLI.",
+    affects: "my_documents, HR docs.",
+    supaRef: null,
+  },
+  "20260423_enable_rls_clients_sessions_announcements_select_authenticated.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "RLS SELECT authenticated en clients/sessions/announcements. Falta en CLI.",
+    affects: "Programme data lectura staff.",
+    supaRef: null,
+  },
+  "20260423_expense_claims_backend.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE expense_claims + trigger apply_server_fields. Falta en CLI.",
+    affects: "Gastos staff.",
+    supaRef: null,
+  },
+  "20260423_lead_session_reports.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE lead_session_reports. Supabase solo tiene RLS posterior (asume tabla ya existe).",
+    affects: "Lead report tab.",
+    supaRef: null,
+  },
+  "20260423_timesheets_backend.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE staff_pay_rates + staff_timesheets. Función apply_server_fields evoluciona después en supabase.",
+    affects: "Timesheet/payroll core.",
+    supaRef: null,
+  },
+  "20260424_documents_user_soft_hide.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "RPC hide_my_document. Falta en CLI.",
+    affects: "my_documents soft-hide.",
+    supaRef: null,
+  },
+  "20260425_staff_performance_reviews.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE staff_performance_reviews. Falta en CLI.",
+    affects: "HR performance reviews.",
+    supaRef: null,
+  },
+  "20260426_session_feedback_lead_select_all.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "Policy session_feedback_select_lead_all. No está en supabase/migrations.",
+    affects: "Lead performance.html feedback context.",
+    supaRef: null,
+  },
+  "20260427_leader_term_reviews_and_staff_observation_reports.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "CREATE leader_term_reviews + staff_observation_reports. Falta en CLI.",
+    affects: "Lead tools.",
+    supaRef: null,
+  },
   "20260424_onboarding_candidates.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Duplicado: supabase tiene 20260424000000_onboarding_candidates.sql.", affects: "Ninguno (CLI usa supabase)." },
-  "20260425_staff_performance_reviews.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Performance reviews schema.", affects: "HR reviews." },
-  "20260426_session_feedback_lead_select_all.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Leads leen feedback equipo.", affects: "Lead overview feedback." },
-  "20260427_leader_term_reviews_and_staff_observation_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Term reviews + observation reports.", affects: "Lead tools." },
   "20260428_venue_review_admin_notifications.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Reemplazada por 20260614160000_venue_review_admin_notifications.sql en supabase.", affects: "Ninguno." },
-  "20260429_schedule_overrides_foundation.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE schedule_overrides — base Scheduling & Cover. Falta en CLI.", affects: "Todo override roster admin." },
+  "20260429_schedule_overrides_foundation.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap (CRÍTICO)",
+    context: "CREATE schedule_overrides + schedule_override_events. Referenciada en 100+ migraciones supabase pero sin CREATE en CLI.",
+    affects: "Scheduling & Cover, overrides, push.",
+    supaRef: null,
+  },
   "20260507180000_portal_ceo_liaison_group.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Absorbida por portal_ceo_group / pool channels en supabase (jun 2026).", affects: "Ninguno." },
   "20260513140000_portal_ceo_group_chat.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Chat CEO evolucionado en supabase DM migrations.", affects: "Ninguno." },
   "20260521120000_employment_contracts_portal.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Supabase: 20260622200000_portal_employment_contract_documents_admin.sql.", affects: "Ninguno." },
   "20260521130000_employment_contracts_admin_rls.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "RLS contratos — versión en supabase posterior.", affects: "Ninguno." },
   "20260528120000_remove_test_client_cancellations.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Limpieza datos test cancelaciones.", affects: "Ninguno en prod." },
-  "20260607160000_payroll_roberto_split.sql": { rec: "copy", verdict: "Copiar a supabase/ si falta payroll", context: "Split payroll Roberto — schema/datos HR.", affects: "Nómina Roberto." },
-  "20260607170000_payroll_director_roles.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Roles director payroll.", affects: "Payroll admin." },
+  "20260607160000_payroll_roberto_split.sql": {
+    rec: "copy",
+    bootstrapKind: "data",
+    verdict: "Keep — solo datos prod",
+    context: "INSERT staff_timesheet_imports Roberto (contract + extras). One-shot nómina — no es esquema.",
+    affects: "Reporte payroll Roberto en prod.",
+    supaRef: "staff_timesheet_imports ya en 20260607130000_payroll_timesheet_imports.sql",
+  },
+  "20260607170000_payroll_director_roles.sql": {
+    rec: "copy",
+    bootstrapKind: "data",
+    verdict: "Keep — solo datos prod",
+    context: "UPDATE role='Director' Victor/Raul. One-shot — no es esquema.",
+    affects: "Etiqueta director en payroll prod.",
+    supaRef: null,
+  },
   "20260607180000_payroll_import_2025.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Import histórico 2025 — dato puntual.", affects: "Ninguno re-aplicar." },
   "20260607190000_payroll_sevitha_2026.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Seed payroll Sevitha 2026.", affects: "Ninguno re-aplicar." },
-  "20260607200000_payroll_contract_attributes.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Atributos contrato payroll.", affects: "HR contract attrs." },
+  "20260607200000_payroll_contract_attributes.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar esquema",
+    context: "ALTER ADD contract_type (falta en CLI). Los UPDATE de filas son seed prod — opcional en env nuevo.",
+    affects: "Payroll contract section labels.",
+    supaRef: null,
+  },
   "20260607210000_portal_routes_cleanup_legacy.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "UPDATE rutas legacy — overlap con dashboard_route_vercel_paths.", affects: "Ninguno." },
-  "20260607220000_hr_records.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE hr_records — referenciado en supabase pero sin CREATE allí.", affects: "Unavailability, HR roster keys." },
-  "20260607230000_hr_records_active.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Columna active hr_records.", affects: "HR filtros." },
-  "20260607240000_client_payments.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE client_payments — supabase solo tiene seed LA después.", affects: "Orders, Participants, payments admin." },
+  "20260607220000_hr_records.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap (CRÍTICO)",
+    context: "CREATE hr_records + hr_name_key(). Usada en supabase (unavailability) pero sin CREATE en CLI.",
+    affects: "Unavailability, HR roster keys.",
+    supaRef: "20260530110000_portal_staff_unavailability.sql (referencia)",
+  },
+  "20260607230000_hr_records_active.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap",
+    context: "ALTER hr_records ADD active. Falta en CLI.",
+    affects: "HR filtros active.",
+    supaRef: null,
+  },
+  "20260607240000_client_payments.sql": {
+    rec: "copy",
+    bootstrapKind: "copy",
+    verdict: "Keep — copiar bootstrap (CRÍTICO)",
+    context: "CREATE client_payments. Supabase solo tiene seeds LA después.",
+    affects: "Orders, Participants, payments admin.",
+    supaRef: null,
+  },
   "20260615200000_portal_announcements_retire_test_rows.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Retira filas test anuncios.", affects: "Ninguno." },
   "20260615210000_portal_announcements_clear_all.sql": { rec: "delete", verdict: "Borrar espejo (peligroso)", context: "DELETE all announcements — no reaplicar.", affects: "Ninguno." },
   "backup_before_rls_clients_sessions_announcements.sql": { rec: "delete", verdict: "Borrar backup", context: "Snapshot manual pre-RLS — no migración.", affects: "Ninguno." },
@@ -487,8 +667,10 @@ const manualReview = {
       file: f,
       verdict: ex.verdict,
       rec: ex.rec,
+      bootstrapKind: ex.bootstrapKind || null,
       context: ex.context,
       affects: ex.affects,
+      supaRef: ex.supaRef || null,
     };
   }),
   step2Copy: onlyDb
@@ -501,11 +683,20 @@ const manualReview = {
         path: `database/migrations/${f}`,
         verdict: ex.verdict,
         rec: ex.rec,
+        bootstrapKind: ex.bootstrapKind || "copy",
         context: ex.context,
         affects: ex.affects,
+        supaRef: ex.supaRef || null,
       };
     }),
 };
+
+const step2Breakdown = { copy: 0, duplicated: 0, data: 0, superseded: 0 };
+for (const r of manualReview.step2Copy) {
+  const k = r.bootstrapKind || "copy";
+  if (step2Breakdown[k] !== undefined) step2Breakdown[k]++;
+  else step2Breakdown.copy++;
+}
 
 for (const f of onlyDb) {
   const ex = expertFor(f);
@@ -525,6 +716,7 @@ const data = {
   generatedAt: new Date().toISOString(),
   stats,
   expertSummary,
+  step2Breakdown,
   defaultDecisions,
   manualReview,
   expert52: EXPERT_52,
@@ -571,6 +763,7 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 .mig-file{font-family:monospace;font-size:11px;word-break:break-all}
 .badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:4px;background:#e2e8f0}
 .badge--essential{background:#bbf7d0}.badge--chain{background:#bfdbfe}.badge--archive{background:#fed7aa}.badge--review{background:#cbd5e1}
+.badge--dup{background:#bbf7d0;color:#0a6e4a}.badge--data{background:#fed7aa;color:#b45309}.badge--boot{background:#bfdbfe;color:#1d4ed8}.badge--super{background:#e2e8f0;color:#475569}
 .mig p{margin:6px 0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .mig-comment{font-family:monospace;font-size:11px;background:#f1f5f9;padding:6px;border-radius:4px;white-space:pre-wrap}
 .mig-actions{margin-top:8px;display:flex;gap:6px}
@@ -609,8 +802,9 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 </header>
 
 <section class="panel panel--step2" id="step2Panel">
-<h2>Paso 2 — copiar a <code>supabase/migrations/</code> (${step2Count})</h2>
-<p class="lead">Bootstrap que falta en la cadena CLI. <strong>Portal prod ya lo tiene</strong> (aplicado a mano); esto es para git + Supabase vacío. No hagas <code>db push</code> ciego en prod linked.</p>
+<h2>Paso 2 — bootstrap en <code>supabase/migrations/</code> (${step2Count})</h2>
+<p class="lead">Las <strong>${step2Count}</strong> vienen pre-marcadas <strong>Keep</strong>. Veredicto experto: <strong>${step2Breakdown.copy} copiar</strong> (falta CREATE/ALTER en CLI) · <strong>${step2Breakdown.duplicated} ya duplicada</strong> · <strong>${step2Breakdown.data} solo datos prod</strong> · <strong>${step2Breakdown.superseded} cadena opcional</strong>.</p>
+<p class="lead" style="margin-top:8px;font-size:12px">Portal prod ya tiene el esquema (SQL manual). Paso 2 = git + Supabase vacío. No <code>db push</code> ciego en prod linked.</p>
 <ul class="manual-list" id="step2List"></ul>
 </section>
 
@@ -682,6 +876,13 @@ function counts(){
   return {keep:k,defer:d,unset:u};
 }
 
+function bootstrapBadge(kind){
+  if(kind==='duplicated') return '<span class="badge badge--dup">Ya en supabase</span>';
+  if(kind==='data') return '<span class="badge badge--data">Solo datos prod</span>';
+  if(kind==='superseded') return '<span class="badge badge--super">Cadena — opcional</span>';
+  return '<span class="badge badge--boot">Copiar — falta CLI</span>';
+}
+
 function renderManual(){
   function row(r,labels){
     labels=labels||{};
@@ -689,8 +890,10 @@ function renderManual(){
     var deferLabel=labels.defer||'Guardar sin usar';
     var dec=decisions[r.id]||'';
     var cls=r.rec==='keep'?'essential':r.rec==='defer'?'archive':r.rec==='copy'?'chain':r.rec==='delete'?'archive':'review';
-    return '<li class="'+(dec==='defer'?'is-defer':'')+'"><code>'+esc(r.file)+'</code> <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
+    var boot=r.bootstrapKind?bootstrapBadge(r.bootstrapKind):'';
+    return '<li class="'+(dec==='defer'?'is-defer':'')+'"><code>'+esc(r.file)+'</code> '+boot+' <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
       (r.path?'<div class="sub"><strong>Ruta:</strong> '+esc(r.path)+'</div>':'')+
+      (r.supaRef?'<div class="sub"><strong>En supabase:</strong> '+esc(r.supaRef)+'</div>':'')+
       '<div class="sub"><strong>Contexto:</strong> '+esc(r.context)+'</div>'+
       '<div class="sub"><strong>Afecta:</strong> '+esc(r.affects)+'</div>'+
       '<div class="mig-actions">'+
@@ -698,7 +901,7 @@ function renderManual(){
       '<button type="button" class="act act--defer'+(dec==='defer'?' is-on':'')+'" data-a="defer" data-i="'+esc(r.id)+'">'+esc(deferLabel)+'</button>'+
       '</div></li>';
   }
-  var step2Labels={keep:'Copiar a supabase/',defer:'Omitir paso 2'};
+  var step2Labels={keep:'Keep',defer:'Omitir paso 2'};
   document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.map(function(r){return row(r,step2Labels);}).join('');
   document.getElementById('reviewList').innerHTML=DATA.manualReview.inCliMixed.map(row).join('');
   var dbList=viewMode==='step2'?DATA.manualReview.step2Copy:DATA.manualReview.onlyDatabaseFolder;
