@@ -95,6 +95,29 @@
   var signedUrlCache = Object.create(null);
   var footerThumbObjectUrl = "";
   var cameraTapLockUntil = 0;
+  /** iOS: snapshot participant when opening gallery picker (page may suspend while picker is open). */
+  var pendingGalleryUploadParticipant = null;
+
+  function styleOffscreenFileInput(inp) {
+    if (!inp) return;
+    inp.className = "portal-achievements-file-input-offscreen";
+    inp.setAttribute("tabindex", "-1");
+    inp.setAttribute("aria-hidden", "true");
+  }
+
+  /** FileList is live — copy before clearing input.value (iOS Safari clears the list). */
+  function copyInputFiles(inp) {
+    return Array.prototype.slice.call((inp && inp.files) || []);
+  }
+
+  function resolveGalleryUploadParticipant() {
+    if (state.participant && state.participant.clientId) return state.participant;
+    if (pendingGalleryUploadParticipant && pendingGalleryUploadParticipant.clientId) {
+      state.participant = pendingGalleryUploadParticipant;
+      return state.participant;
+    }
+    return null;
+  }
 
   function guardCameraTap(fn) {
     return function (ev) {
@@ -895,56 +918,83 @@
     el.innerHTML = html || "";
   }
 
+  function handleNativePhotoInputSelected(files) {
+    var file = files && files[0];
+    if (!file) return;
+    var participant = resolveGalleryUploadParticipant();
+    if (!participant) {
+      setStatus("Session expired — close and reopen Session photos, then try again.", true);
+      return;
+    }
+    setStatus("Saving…");
+    void uploadGalleryFile(file)
+      .then(function () {
+        return loadGalleryPhotos();
+      })
+      .then(function () {
+        pendingGalleryUploadParticipant = null;
+        setStatus("Photo saved.");
+        syncGalleryUiAfterPhotosChanged();
+      })
+      .catch(function (e) {
+        setStatus(esc(uploadErrorMessage(e)), true);
+      });
+  }
+
+  function handleGalleryUploadInputSelected(files) {
+    if (!files || !files.length) return;
+    if (!canUploadFromDeviceGalleryResolved()) {
+      setStatus("Only leaders can upload from your photo gallery.", true);
+      return;
+    }
+    var participant = resolveGalleryUploadParticipant();
+    if (!participant) {
+      setStatus("Session expired — close and reopen Session photos, then try Upload again.", true);
+      return;
+    }
+    setStatus("Uploading 1 of " + files.length + "…");
+    void uploadGalleryFiles(files).finally(function () {
+      pendingGalleryUploadParticipant = null;
+    });
+  }
+
+  function bindFileInputChange(inp, onSelected) {
+    if (!inp || inp.getAttribute("data-portal-file-bound") === "1") return;
+    inp.setAttribute("data-portal-file-bound", "1");
+    inp.addEventListener("change", function () {
+      var files = copyInputFiles(inp);
+      inp.value = "";
+      onSelected(files);
+    });
+  }
+
   function ensureNativePhotoInput() {
     var inp = document.getElementById("portalAchievementsNativePhotoInput");
-    if (inp) return inp;
-    inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "image/*";
-    inp.setAttribute("capture", "environment");
-    inp.id = "portalAchievementsNativePhotoInput";
-    inp.hidden = true;
-    inp.addEventListener("change", function () {
-      var file = inp.files && inp.files[0];
-      inp.value = "";
-      if (!file || !state.participant) return;
-      setStatus("Saving…");
-      void uploadGalleryFile(file)
-        .then(function () {
-          return loadGalleryPhotos();
-        })
-        .then(function () {
-          setStatus("Photo saved.");
-          syncGalleryUiAfterPhotosChanged();
-        })
-        .catch(function (e) {
-          setStatus(esc(uploadErrorMessage(e)), true);
-        });
-    });
-    document.body.appendChild(inp);
+    if (!inp) {
+      inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/*";
+      inp.setAttribute("capture", "environment");
+      inp.id = "portalAchievementsNativePhotoInput";
+      document.body.appendChild(inp);
+    }
+    styleOffscreenFileInput(inp);
+    bindFileInputChange(inp, handleNativePhotoInputSelected);
     return inp;
   }
 
   function ensureGalleryUploadInput() {
     var inp = document.getElementById("portalAchievementsGalleryUploadInput");
-    if (inp) return inp;
-    inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "image/*,video/*,.heic,.heif";
-    inp.multiple = true;
-    inp.id = "portalAchievementsGalleryUploadInput";
-    inp.hidden = true;
-    inp.addEventListener("change", function () {
-      var files = inp.files;
-      inp.value = "";
-      if (!files || !files.length || !state.participant) return;
-      if (!canUploadFromDeviceGalleryResolved()) {
-        setStatus("Only leaders can upload from your photo gallery.", true);
-        return;
-      }
-      void uploadGalleryFiles(files);
-    });
-    document.body.appendChild(inp);
+    if (!inp) {
+      inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/*,video/*,.heic,.heif";
+      inp.multiple = true;
+      inp.id = "portalAchievementsGalleryUploadInput";
+      document.body.appendChild(inp);
+    }
+    styleOffscreenFileInput(inp);
+    bindFileInputChange(inp, handleGalleryUploadInputSelected);
     return inp;
   }
 
@@ -961,6 +1011,11 @@
       setStatus(photoLimitMessage(), true);
       return;
     }
+    pendingGalleryUploadParticipant = {
+      clientId: state.participant.clientId,
+      clientName: state.participant.clientName,
+      portalSessionKey: state.participant.portalSessionKey || null,
+    };
     ensureGalleryUploadInput().click();
   }
 
@@ -1057,6 +1112,11 @@
       setStatus(photoLimitMessage(), true);
       return;
     }
+    pendingGalleryUploadParticipant = {
+      clientId: state.participant.clientId,
+      clientName: state.participant.clientName,
+      portalSessionKey: state.participant.portalSessionKey || null,
+    };
     ensureNativePhotoInput().click();
   }
 

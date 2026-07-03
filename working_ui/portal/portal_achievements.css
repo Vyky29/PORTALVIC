@@ -17,6 +17,18 @@
   min-width: 0;
 }
 
+/* Off-screen file inputs — iOS Safari often ignores hidden inputs for gallery pickers. */
+.portal-achievements-file-input-offscreen {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .portal-achievements-note {
   margin: 0 0 12px;
   font-size: 12px;
