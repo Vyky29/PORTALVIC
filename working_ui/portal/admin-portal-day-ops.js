@@ -25,6 +25,19 @@
 
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260704-search-combo';
   var EDGE_FETCH_MS = 12000;
+  var FEEDBACK_FETCH_MS = 12000;
+  var ENRICH_WAIT_MS = 8000;
+
+  function promiseWithTimeout(promise, ms, fallback) {
+    return Promise.race([
+      promise,
+      new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve(fallback);
+        }, ms);
+      })
+    ]);
+  }
 
   function fetchWithTimeout(url, options, ms) {
     ms = ms || EDGE_FETCH_MS;
@@ -485,7 +498,7 @@
     }
     if (cfg.fetchSessionFeedback) {
       tasks.push(
-        cfg.fetchSessionFeedback().then(function (dbFb) {
+        promiseWithTimeout(cfg.fetchSessionFeedback(), FEEDBACK_FETCH_MS, []).then(function (dbFb) {
           var live = dbFb || [];
           out.session_feedback = cfg.buildFeedbackFromPortal
             ? mergeFeedbackRowLists(live, out.session_feedback || [])
@@ -1149,20 +1162,28 @@
           }
           applyPayload(quick);
           setStatus('');
-          try {
-            var partial = await fetchOverviewSupabaseExtras();
-            applyPayload(partial);
-            mergePortalFeedbackIntoPayload();
-            mergePortalVenueIntoPayload();
-            portalDayOpsAfterFeedbackPayloadMerge();
-            console.warn(
-              '[PortalDayOps] session_feedback ready:',
-              (payload.session_feedback || []).length,
-              'rows'
-            );
-          } catch (bgErr) {
-            console.warn('[PortalDayOps] overview enrich failed', bgErr);
-          }
+          var enrichPromise = fetchOverviewSupabaseExtras()
+            .then(function (partial) {
+              applyPayload(partial);
+              mergePortalFeedbackIntoPayload();
+              mergePortalVenueIntoPayload();
+              portalDayOpsAfterFeedbackPayloadMerge();
+              console.warn(
+                '[PortalDayOps] session_feedback ready:',
+                (payload.session_feedback || []).length,
+                'rows'
+              );
+              return partial;
+            })
+            .catch(function (bgErr) {
+              console.warn('[PortalDayOps] overview enrich failed', bgErr);
+            })
+            .finally(function () {
+              if (global.__PORTAL_DAY_OPS_ENRICH__ === enrichPromise) {
+                global.__PORTAL_DAY_OPS_ENRICH__ = null;
+              }
+            });
+          global.__PORTAL_DAY_OPS_ENRICH__ = enrichPromise;
           void (async function () {
             try {
               var runDeferred = function () {
@@ -1221,28 +1242,38 @@
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
           var th = await initTrackingHub();
-          if (cfg.fetchSessionFeedback) {
-            try {
-              await refreshSessionFeedbackLive();
-            } catch (_fbLive) {}
-          }
           if (th && feedbackHub) syncHubViewFilters(feedbackHub, th);
           if (th) {
             applyPendingOverviewTab();
             reRenderHub(th);
           }
+          try {
+            var enrichWait = global.__PORTAL_DAY_OPS_ENRICH__;
+            if (enrichWait) {
+              await promiseWithTimeout(enrichWait, ENRICH_WAIT_MS, null);
+              if (th && typeof th.setPayload === 'function') {
+                th.setPayload(payload);
+                reRenderHub(th);
+              }
+            }
+          } catch (_enrichWait) {}
           return th;
         }
         if (tabId === 'feedback' || tabId === 'positive' || tabId === 'relevant') {
           var fs = feedbackSetupForC4k(tabId);
           pendingFeedbackNoteFilter = fs.filter;
           var fh = await initFeedbackHub();
-          if (cfg.fetchSessionFeedback) {
-            try {
-              await refreshSessionFeedbackLive();
-            } catch (_fbLive2) {}
-          }
           if (fh && trackingHub) syncHubViewFilters(trackingHub, fh);
+          try {
+            var enrichWaitFb = global.__PORTAL_DAY_OPS_ENRICH__;
+            if (enrichWaitFb) {
+              await promiseWithTimeout(enrichWaitFb, ENRICH_WAIT_MS, null);
+              if (fh && typeof fh.setPayload === 'function') {
+                fh.setPayload(payload);
+                if (typeof fh.render === 'function') fh.render();
+              }
+            }
+          } catch (_enrichWaitFb) {}
           if (fh) {
             fh.tab = fs.tab;
             fh.feedbackNoteFilter = fs.filter;
