@@ -1291,16 +1291,15 @@
     function todaySessionCardInnerHtml(item){
       const timeRaw = String(item.time || '').trim();
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
-      const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
-      const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
+      const hideDutyVenue = item && (item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin');
+      const venueLine = hideDutyVenue ? '' : escapeHtml(portalTodaySessionVenueLabel(item));
+      const timeStack = hideDutyVenue
+        ? `<div class="session-line session-line--time session-line--time-stack session-line--time-duty"><span class="session-slot-time">${time}</span></div>`
+        : `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : (item.kind === 'home'
-          ? '<span class="session-meta-name session-meta-name--home">' +
-            (typeof portalAreaNoteIconHtml === 'function'
-              ? portalAreaNoteIconHtml('Home', { showLabel: false, size: 'sm', className: 'session-home-name-icon' })
-              : '') +
-            `<span>${escapeHtml(item.name)}</span></span>`
+          ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
           : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);

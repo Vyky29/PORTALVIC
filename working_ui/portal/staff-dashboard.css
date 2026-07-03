@@ -5608,12 +5608,8 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:6px;
       min-width:0;
       max-width:100%;
-    }
-    .session-card.session-card--home .session-meta-name--home .session-home-name-icon{
-      flex:0 0 auto;
     }
     .session-card.session-card--home .session-meta-name--home > span{
       min-width:0;
