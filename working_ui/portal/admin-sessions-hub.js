@@ -6909,6 +6909,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var pfrmView = t.closest("[data-pfrm-view]");
       if (pfrmView && root.contains(pfrmView)) {
         ev.preventDefault();
+        ev.stopPropagation();
         var pk = pfrmView.getAttribute("data-pfrm-view");
         var pidx = parseInt(pfrmView.getAttribute("data-portal-forms-idx"), 10);
         if (!pk || isNaN(pidx)) return;

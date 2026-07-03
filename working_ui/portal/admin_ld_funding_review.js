@@ -653,7 +653,7 @@
 
     html +=
       '<div class="ldf-section"><h4>Director decision</h4>' +
-      '<p class="muted" style="margin:0 0 10px;font-size:13px">Save updates the application status. Letter tools appear once a decision is recorded.</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:13px">Save records the decision. Then edit the letter and tap <strong>Send to employee</strong> — PDF + portal reminder, no email.</p>' +
       '<form class="ldf-form" id="ldfReviewForm">' +
       buildDecisionStatusSelect(a) +
       buildDeclineReasonFields(a) +
@@ -726,6 +726,62 @@
       });
   }
 
+  function announcementForLetter(app, docTitle) {
+    var L = lettersApi();
+    var live = app || {};
+    var st = clean(live.status).toLowerCase();
+    var course = clean(live.course_title) || "your course application";
+    var bit =
+      st === "approved"
+        ? "approved"
+        : st === "declined"
+          ? "declined"
+          : "decided";
+    var title = "L&D funding application " + bit;
+    var body =
+      "Your decision letter for " +
+      course +
+      " is in My Documents → Training" +
+      (docTitle ? " (" + docTitle + ")." : ".") +
+      "\n\nOpen Quick menu → Training documents, or My Documents and choose Training.\n\nNo separate email — read and keep the PDF from your portal.";
+    return { title: title, body: body };
+  }
+
+  function authUserId() {
+    try {
+      return (global.__PORTAL_SUPABASE__ || {}).session.user.id || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function insertEmployeeAnnouncement(client, staffId, ann) {
+    var uid = authUserId();
+    if (!uid) return Promise.reject(new Error("Not signed in."));
+    return client
+      .from("portal_staff_announcements")
+      .insert([
+        {
+          title: ann.title,
+          body: ann.body,
+          message_type: "reminder",
+          reminder_category: "training",
+          priority: "high",
+          audience_scope: "all_staff",
+          delivery_scope: "single_user",
+          target_user_id: staffId,
+          target_staff_role: null,
+          created_by: uid,
+        },
+      ])
+      .select("id")
+      .single()
+      .then(function (res) {
+        if (res.error) throw res.error;
+        return res.data;
+      });
+  }
+
   function letterSectionHtml(app) {
     var L = lettersApi();
     if (!L || !L.isDecided(app)) {
@@ -737,25 +793,22 @@
     var savedNote = "";
     if (app.letter_generated_at) {
       savedNote =
-        '<p class="muted" style="margin:0 0 8px;font-size:12px">Saved to My Documents: ' +
+        '<p class="muted" style="margin:0 0 8px;font-size:12px">Sent to employee: ' +
         esc(fmtDateTime(app.letter_generated_at)) +
-        "</p>";
+        " — PDF in My Documents and portal reminder.</p>";
     }
     return (
       '<div class="ldf-section" id="ldfLetterSection">' +
       "<h4>Decision letter</h4>" +
       savedNote +
-      '<p class="ldf-letter-hint">Edit the email below before copying or saving. Use <strong>Regenerate from form</strong> to reset to the auto-generated draft.</p>' +
+      '<p class="ldf-letter-hint">Edit the letter if needed, then tap <strong>Send to employee</strong>. This saves the PDF to their My Documents → Training and creates a portal reminder — no email.</p>' +
       '<div class="ldf-letter">' +
-      '<label for="ldfLetterEditor" class="visually-hidden">Decision email text</label>' +
+      '<label for="ldfLetterEditor" class="visually-hidden">Decision letter text</label>' +
       '<textarea id="ldfLetterEditor" class="ldf-letter-editor" spellcheck="true">' +
       esc(letterBody) +
       '</textarea><div class="ldf-letter-actions">' +
       '<button type="button" class="btn btn--sm" id="ldfRegenerateLetter">Regenerate from form</button>' +
-      '<button type="button" class="btn btn--sm" id="ldfCopyEmail">Copy email</button>' +
-      '<button type="button" class="btn btn--sm" id="ldfPrintLetter">Print</button>' +
-      '<button type="button" class="btn btn--sm" id="ldfDownloadPdf">Download PDF</button>' +
-      '<button type="button" class="btn btn--sm btn--pri" id="ldfSaveToDocs">Save to My Documents</button>' +
+      '<button type="button" class="btn btn--sm btn--pri" id="ldfSendToEmployee">Send to employee</button>' +
       "</div>" +
       '<p class="ldf-msg" id="ldfLetterMsg" role="status" aria-live="polite"></p></div></div>'
     );
@@ -825,71 +878,9 @@
       });
     }
 
-    var copyBtn = screen.querySelector("#ldfCopyEmail");
-    if (copyBtn) {
-      copyBtn.addEventListener("click", function () {
-        var text = letterText();
-        if (!clean(text)) {
-          setLetterMsg("Letter is empty.", "err");
-          return;
-        }
-        setLetterMsg("Copying…", "");
-        L.copyText(text)
-          .then(function () {
-            persistLetterText(client, app, text);
-            setLetterMsg("Email copied to clipboard.", "ok");
-            deps.toast("L&D letter copied.");
-          })
-          .catch(function (err) {
-            setLetterMsg((err && err.message) || "Could not copy.", "err");
-          });
-      });
-    }
-
-    var printBtn = screen.querySelector("#ldfPrintLetter");
-    if (printBtn) {
-      printBtn.addEventListener("click", function () {
-        try {
-          var text = letterText();
-          if (!clean(text)) {
-            setLetterMsg("Letter is empty.", "err");
-            return;
-          }
-          L.printLetterText(text, L.subjectFor(currentApp()));
-          setLetterMsg("Print dialog opened.", "ok");
-        } catch (err) {
-          setLetterMsg((err && err.message) || "Could not print.", "err");
-        }
-      });
-    }
-
-    var pdfBtn = screen.querySelector("#ldfDownloadPdf");
-    if (pdfBtn) {
-      pdfBtn.addEventListener("click", function () {
-        var text = letterText();
-        if (!clean(text)) {
-          setLetterMsg("Letter is empty.", "err");
-          return;
-        }
-        pdfBtn.disabled = true;
-        setLetterMsg("Building PDF…", "");
-        L.buildLetterPdfBlobFromText(text)
-          .then(function (blob) {
-            L.downloadPdfBlob(blob, L.pdfFilename(currentApp()));
-            setLetterMsg("PDF downloaded.", "ok");
-          })
-          .catch(function (err) {
-            setLetterMsg((err && err.message) || "PDF failed.", "err");
-          })
-          .finally(function () {
-            pdfBtn.disabled = false;
-          });
-      });
-    }
-
-    var saveBtn = screen.querySelector("#ldfSaveToDocs");
-    if (saveBtn) {
-      saveBtn.addEventListener("click", function () {
+    var sendBtn = screen.querySelector("#ldfSendToEmployee");
+    if (sendBtn) {
+      sendBtn.addEventListener("click", function () {
         if (!client) {
           setLetterMsg("Not connected.", "err");
           return;
@@ -905,11 +896,12 @@
           setLetterMsg("Applicant has no portal account linked.", "err");
           return;
         }
-        saveBtn.disabled = true;
-        setLetterMsg("Saving to My Documents…", "");
+        sendBtn.disabled = true;
+        setLetterMsg("Saving PDF and sending portal reminder…", "");
+        var docTitle = L.documentTitle(live);
+        var ann = announcementForLetter(live, docTitle);
         L.buildLetterPdfBlobFromText(text)
           .then(function (blob) {
-            var title = L.documentTitle(live);
             var filename = L.pdfFilename(live);
             var storagePath = staffId + "/training/" + filename;
             return client.storage
@@ -925,7 +917,7 @@
                       user_id: staffId,
                       document_type: "ld_funding_letter",
                       category: "training",
-                      title: title,
+                      title: docTitle,
                       related_date: relatedDate,
                       file_url: storagePath,
                       source_page: "ld-funding",
@@ -936,6 +928,11 @@
               })
               .then(function (ins) {
                 if (ins.error) throw ins.error;
+                return insertEmployeeAnnouncement(client, staffId, ann).then(function () {
+                  return ins;
+                });
+              })
+              .then(function (ins) {
                 var docId = ins.data && ins.data.id;
                 var now = new Date().toISOString();
                 return client
@@ -957,18 +954,18 @@
           .then(function (updated) {
             Object.assign(app, updated || {});
             setLetterMsg(
-              "Saved to employee My Documents → Training.",
+              "PDF saved to My Documents → Training and portal reminder sent.",
               "ok"
             );
-            deps.toast("L&D letter saved to My Documents.");
+            deps.toast("L&D decision sent to employee.");
             refreshLetterSection(screen, app, client, onLetterSaved);
             if (typeof onLetterSaved === "function") onLetterSaved(app);
           })
           .catch(function (err) {
-            setLetterMsg((err && err.message) || "Could not save document.", "err");
+            setLetterMsg((err && err.message) || "Could not send to employee.", "err");
           })
           .finally(function () {
-            saveBtn.disabled = false;
+            sendBtn.disabled = false;
           });
       });
     }
@@ -986,9 +983,6 @@
       body: applicationDetailBody(app),
       foot:
         '<button type="button" class="btn btn--ghost" id="hrScreenClose">Close</button>' +
-        (lettersApi() && lettersApi().isDecided(app)
-          ? '<button type="button" class="btn" id="ldfCopyEmailFoot">Copy email</button>'
-          : "") +
         '<button type="button" class="btn btn--pri" id="ldfSaveReview">Save decision</button>',
     });
 
@@ -997,34 +991,6 @@
 
     var msg = screen.querySelector("#ldfReviewMsg");
     var saveBtn = screen.querySelector("#ldfSaveReview");
-
-    var copyFoot = screen.querySelector("#ldfCopyEmailFoot");
-    if (copyFoot && lettersApi()) {
-      copyFoot.addEventListener("click", function () {
-        var text =
-          letterEditorText(screen) ||
-          lettersApi().buildEmailBody(readFormApp(screen, app));
-        if (!clean(text)) {
-          if (msg) {
-            msg.textContent = "Letter is empty.";
-            msg.className = "ldf-msg is-err";
-          }
-          return;
-        }
-        lettersApi()
-          .copyText(text)
-          .then(function () {
-            persistLetterText(client, app, text);
-            deps.toast("L&D letter copied.");
-          })
-          .catch(function (err) {
-            if (msg) {
-              msg.textContent = (err && err.message) || "Could not copy.";
-              msg.className = "ldf-msg is-err";
-            }
-          });
-      });
-    }
 
     function setMsg(text, kind) {
       if (!msg) return;
@@ -1087,32 +1053,6 @@
             deps.toast("L&D application updated.");
             setMsg("Saved.", "ok");
             refreshLetterSection(screen, app, client, onSaved);
-            var foot = screen.closest(".hr-screen") || screen.parentElement;
-            if (foot && lettersApi() && lettersApi().isDecided(saved)) {
-              var copyExists = screen.querySelector("#ldfCopyEmailFoot");
-              if (!copyExists) {
-                var saveReviewBtn = screen.querySelector("#ldfSaveReview");
-                if (saveReviewBtn && saveReviewBtn.parentElement) {
-                  var b = global.document.createElement("button");
-                  b.type = "button";
-                  b.className = "btn";
-                  b.id = "ldfCopyEmailFoot";
-                  b.textContent = "Copy email";
-                  saveReviewBtn.parentElement.insertBefore(b, saveReviewBtn);
-                  b.addEventListener("click", function () {
-                    var text =
-                      letterEditorText(screen) ||
-                      lettersApi().buildEmailBody(readFormApp(screen, app));
-                    lettersApi()
-                      .copyText(text)
-                      .then(function () {
-                        persistLetterText(client, app, text);
-                        deps.toast("L&D letter copied.");
-                      });
-                  });
-                }
-              }
-            }
             if (typeof onSaved === "function") onSaved(saved);
           })
           .catch(function (err) {
