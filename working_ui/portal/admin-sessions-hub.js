@@ -2726,6 +2726,8 @@
     if (pkArea === "aquatic" || slotArea === "aquatic") return true;
     if (pkArea.indexOf("pool") >= 0 && slotArea.indexOf("pool") >= 0) return true;
     if (/swim|aquatic/.test(pkArea) && /swim|aquatic|pool/.test(slotArea)) return true;
+    /* Acton lanes: staff keys often say "lane" while roster notes use Lane (SE) / Lane (DE). */
+    if (/lane/.test(pkArea) && /lane/.test(slotArea)) return true;
     return false;
   }
 
@@ -2924,12 +2926,13 @@
   }
 
   function feedbackTimeMatchesSlot(fb, slot) {
-    var st = slot.time_start || normTimeKey(slot.time_slot);
+    var slotDay = slot.day || weekdayLongFromIso(slot.session_date);
+    var st = slot.time_start || normTimeKey(slot.time_slot, slotDay);
     if (!st) return true;
-    var ft = normTimeKey(fb.session_time);
+    var ft = normTimeKey(fb.session_time, slotDay);
     if (ft && ft === st) return true;
-    if (fb.session_time && slot.day) {
-      var parsed = parseTimeSlot(fb.session_time, slot.day);
+    if (fb.session_time && slotDay) {
+      var parsed = parseTimeSlot(fb.session_time, slotDay);
       if (parsed.start && parsed.start === st) return true;
     }
     var pk = clean(fb.portal_session_key);
@@ -3232,6 +3235,14 @@
               return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
             }
             return completedByFitsSlotArea(fb.completed_by_name, slot);
+          }
+          if (
+            isAquaticService(slot.service) &&
+            !clientNeedsPerSlotAquaticFeedback(slot) &&
+            feedbackTimeMatchesSlot(fb, slot) &&
+            completedByMatchesSlotInstructors(fb.completed_by_name, slot)
+          ) {
+            return true;
           }
           return false;
         }
