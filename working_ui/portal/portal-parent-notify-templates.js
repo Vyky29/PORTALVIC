@@ -421,6 +421,7 @@
     if (k === "trial_scheduled") return "Trial session · " + client;
     if (k === "session_cancelled") return "Session cancelled · " + client;
     if (k === "booking_confirmation") return "Booking confirmation · " + client;
+    if (k === "incident_report") return "Session incident update · " + client;
     return "Payment reminder · " + client;
   }
 

@@ -268,7 +268,17 @@
   }
 
   function modalFootHtml(kind) {
-    if (kind === "incident" || kind === "cancellation") {
+    if (kind === "incident") {
+      return (
+        '<footer class="pfrm-modal__foot pfrm-modal__foot--actions">' +
+        '<button type="button" class="pfrm-modal__btn pfrm-modal__btn--pri" data-pfrm-action="notify-parent">Notify parent</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-action="goto-day">Go to session day</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-action="copy">Copy report</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-close>Close</button>' +
+        "</footer>"
+      );
+    }
+    if (kind === "cancellation") {
       return (
         '<footer class="pfrm-modal__foot pfrm-modal__foot--actions">' +
         '<button type="button" class="pfrm-modal__btn pfrm-modal__btn--pri" data-pfrm-action="goto-day">Go to session day</button>' +
@@ -406,6 +416,20 @@
       } else {
         window.prompt("Copy report:", text);
       }
+      return;
+    }
+    if (action === "notify-parent") {
+      if (kind !== "incident") return;
+      var notify = global.PortalIncidentParentNotify;
+      if (!notify || typeof notify.openNotifyFlow !== "function") {
+        window.alert("Notify parent module not loaded — refresh the page.");
+        return;
+      }
+      var btn =
+        backdropEl && backdropEl.querySelector
+          ? backdropEl.querySelector('[data-pfrm-action="notify-parent"]')
+          : null;
+      void notify.openNotifyFlow(row, btn);
       return;
     }
     if (action === "goto-day") {

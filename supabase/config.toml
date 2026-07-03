@@ -419,6 +419,9 @@ verify_jwt = false
 [functions.portal-feedback-narrative-filter]
 verify_jwt = false
 
+[functions.portal-incident-parent-notify-draft]
+verify_jwt = false
+
 # DB triggers (pg_net / http_request) send x-portal-webhook-secret only — no Supabase JWT.
 [functions.portal-push-dispatch-admin-alert]
 verify_jwt = false

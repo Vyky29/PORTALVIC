@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
-  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-incident-view"></script>
+  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260703-v17-incident-view-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
@@ -64,6 +64,8 @@
   <script src="/portal/portal_induction.js?v=20260614-induction-canonical"></script>
   <script src="/portal/portal_induction_admin_entry.js?v=20260614-induction-canonical"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
+  <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
+  <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260624-wa-inbound-live"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
@@ -9078,6 +9080,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
+    function portalIncidentParentNotifyConfigureOnce(){
+      if(window.__portalIncidentParentNotifyConfigured || !window.PortalIncidentParentNotify) return;
+      window.__portalIncidentParentNotifyConfigured = true;
+      window.PortalIncidentParentNotify.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
     function notifyParentTemplateOpts(){
       return {
         effectiveParticipantLabel: bookingEffectiveParticipantLabel,
@@ -9344,7 +9362,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         baseMeta.parentWhatsapp = '';
       }
       var meta = adminParentNotifyPrefillFromDirectory(baseMeta, prefillSlot);
-      var subj = notifyParentSubjectForKind(kind, replacementName || slot.clientDisplay);
+      var subj = (pack.subject && String(pack.subject).trim())
+        ? String(pack.subject).trim()
+        : notifyParentSubjectForKind(kind, replacementName || slot.clientDisplay);
       var notifyPhotoCtx = {
         slot: slot,
         ov: pack.ov,
@@ -9558,6 +9578,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       };
     }
+    window.openParentNotifyModal = openParentNotifyModal;
+    window.adminParentNotifyPrefillFromDirectory = adminParentNotifyPrefillFromDirectory;
+    window.portalParentNotifyConfigureOnce = portalParentNotifyConfigureOnce;
+    window.portalIncidentParentNotifyConfigureOnce = portalIncidentParentNotifyConfigureOnce;
     function applyBookingTableFilters(){
       var v = ($('bookingVenueFilter') && $('bookingVenueFilter').value) || '';
       var st = ($('bookingStaffFilter') && $('bookingStaffFilter').value) || '';
