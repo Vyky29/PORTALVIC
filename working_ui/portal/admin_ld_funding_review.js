@@ -12,7 +12,7 @@
     "applying_for_scheme, can_pay_upfront, requests_exceptional_funding, exceptional_funding_note, " +
     "declaration_accepted, origin, reviewed_by_user_id, reviewed_at, review_notes, funding_amount_gbp, " +
     "reimbursement_schedule, exceptional_funding_arrangement, additional_conditions, " +
-    "letter_document_id, letter_generated_at, decline_reason_codes, decline_reason_other";
+    "letter_document_id, letter_generated_at, decline_reason_codes, decline_reason_other, decision_letter_text";
 
   function lettersApi() {
     return global.PortalLDFundingLetters || null;
@@ -499,6 +499,10 @@
       ".ldf-msg.is-ok{color:#1f7a4d}",
       ".ldf-letter{margin-top:4px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}",
       ".ldf-letter pre{margin:0;font-family:inherit;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:break-word;color:#334155;max-height:220px;overflow:auto}",
+      ".ldf-letter-editor{width:100%;min-height:240px;max-height:420px;font:inherit;font-size:13px;line-height:1.5;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;resize:vertical;box-sizing:border-box;min-width:0}",
+      ".ldf-letter-editor:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}",
+      ".ldf-letter-hint{margin:0 0 8px;font-size:12px;color:#64748b;overflow-wrap:break-word}",
+      ".visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}",
       ".ldf-letter-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}",
       ".ldf-letter-actions .btn{min-width:0}",
       ".ldf-hint{margin:0;font-size:13px;color:#64748b;overflow-wrap:break-word}",
@@ -684,6 +688,44 @@
     return html;
   }
 
+  function initialLetterText(app) {
+    if (clean(app && app.decision_letter_text)) return app.decision_letter_text;
+    var L = lettersApi();
+    return L ? L.buildEmailBody(app) : "";
+  }
+
+  function letterEditorText(screen) {
+    var el = screen.querySelector("#ldfLetterEditor");
+    return el ? String(el.value || "") : "";
+  }
+
+  function generatedLetterText(screen, app) {
+    var L = lettersApi();
+    if (!L) return "";
+    return L.buildEmailBody(readFormApp(screen, app));
+  }
+
+  function persistLetterText(client, app, text, onDone) {
+    if (!client || !app || !app.id) {
+      if (typeof onDone === "function") onDone(null);
+      return;
+    }
+    var body = clean(text);
+    client
+      .from(TABLE)
+      .update({ decision_letter_text: body || null })
+      .eq("id", app.id)
+      .select(SELECT_COLS)
+      .maybeSingle()
+      .then(function (res) {
+        if (!res.error && res.data) Object.assign(app, res.data);
+        if (typeof onDone === "function") onDone(res.error || null);
+      })
+      .catch(function (err) {
+        if (typeof onDone === "function") onDone(err);
+      });
+  }
+
   function letterSectionHtml(app) {
     var L = lettersApi();
     if (!L || !L.isDecided(app)) {
@@ -691,7 +733,7 @@
         '<div class="ldf-section" id="ldfLetterSection" hidden aria-hidden="true"></div>'
       );
     }
-    var preview = L.buildEmailBody(app);
+    var letterBody = initialLetterText(app);
     var savedNote = "";
     if (app.letter_generated_at) {
       savedNote =
@@ -703,9 +745,13 @@
       '<div class="ldf-section" id="ldfLetterSection">' +
       "<h4>Decision letter</h4>" +
       savedNote +
-      '<div class="ldf-letter"><pre id="ldfLetterPreview">' +
-      esc(preview) +
-      '</pre><div class="ldf-letter-actions">' +
+      '<p class="ldf-letter-hint">Edit the email below before copying or saving. Use <strong>Regenerate from form</strong> to reset to the auto-generated draft.</p>' +
+      '<div class="ldf-letter">' +
+      '<label for="ldfLetterEditor" class="visually-hidden">Decision email text</label>' +
+      '<textarea id="ldfLetterEditor" class="ldf-letter-editor" spellcheck="true">' +
+      esc(letterBody) +
+      '</textarea><div class="ldf-letter-actions">' +
+      '<button type="button" class="btn btn--sm" id="ldfRegenerateLetter">Regenerate from form</button>' +
       '<button type="button" class="btn btn--sm" id="ldfCopyEmail">Copy email</button>' +
       '<button type="button" class="btn btn--sm" id="ldfPrintLetter">Print</button>' +
       '<button type="button" class="btn btn--sm" id="ldfDownloadPdf">Download PDF</button>' +
@@ -758,6 +804,10 @@
       return readFormApp(screen, app);
     }
 
+    function letterText() {
+      return letterEditorText(screen);
+    }
+
     function setLetterMsg(text, kind) {
       var msg = screen.querySelector("#ldfLetterMsg");
       if (!msg) return;
@@ -765,28 +815,28 @@
       msg.className = "ldf-msg" + (kind === "err" ? " is-err" : kind === "ok" ? " is-ok" : "");
     }
 
-    function refreshPreview() {
-      var pre = screen.querySelector("#ldfLetterPreview");
-      if (pre) pre.textContent = L.buildEmailBody(currentApp());
+    var regenBtn = screen.querySelector("#ldfRegenerateLetter");
+    if (regenBtn) {
+      regenBtn.addEventListener("click", function () {
+        var editor = screen.querySelector("#ldfLetterEditor");
+        if (!editor) return;
+        editor.value = generatedLetterText(screen, app);
+        setLetterMsg("Draft regenerated from the form.", "ok");
+      });
     }
-
-    ["#ldfStatus", "#ldfFundingMode", "#ldfFundingPctOther", "#ldfReimbSchedule", "#ldfReimbScheduleOther", "#ldfExceptionalArr", "#ldfConditions", "#ldfDeclineOtherText"].forEach(
-      function (sel) {
-        var el = screen.querySelector(sel);
-        if (el) el.addEventListener("input", refreshPreview);
-        if (el && el.tagName === "SELECT") el.addEventListener("change", refreshPreview);
-      }
-    );
-    screen.querySelectorAll('input[name="ldfDeclineReason"]').forEach(function (el) {
-      el.addEventListener("change", refreshPreview);
-    });
 
     var copyBtn = screen.querySelector("#ldfCopyEmail");
     if (copyBtn) {
       copyBtn.addEventListener("click", function () {
+        var text = letterText();
+        if (!clean(text)) {
+          setLetterMsg("Letter is empty.", "err");
+          return;
+        }
         setLetterMsg("Copying…", "");
-        L.copyText(L.buildEmailBody(currentApp()))
+        L.copyText(text)
           .then(function () {
+            persistLetterText(client, app, text);
             setLetterMsg("Email copied to clipboard.", "ok");
             deps.toast("L&D letter copied.");
           })
@@ -800,7 +850,12 @@
     if (printBtn) {
       printBtn.addEventListener("click", function () {
         try {
-          L.printLetter(currentApp());
+          var text = letterText();
+          if (!clean(text)) {
+            setLetterMsg("Letter is empty.", "err");
+            return;
+          }
+          L.printLetterText(text, L.subjectFor(currentApp()));
           setLetterMsg("Print dialog opened.", "ok");
         } catch (err) {
           setLetterMsg((err && err.message) || "Could not print.", "err");
@@ -811,9 +866,14 @@
     var pdfBtn = screen.querySelector("#ldfDownloadPdf");
     if (pdfBtn) {
       pdfBtn.addEventListener("click", function () {
+        var text = letterText();
+        if (!clean(text)) {
+          setLetterMsg("Letter is empty.", "err");
+          return;
+        }
         pdfBtn.disabled = true;
         setLetterMsg("Building PDF…", "");
-        L.buildLetterPdfBlob(currentApp())
+        L.buildLetterPdfBlobFromText(text)
           .then(function (blob) {
             L.downloadPdfBlob(blob, L.pdfFilename(currentApp()));
             setLetterMsg("PDF downloaded.", "ok");
@@ -834,6 +894,11 @@
           setLetterMsg("Not connected.", "err");
           return;
         }
+        var text = letterText();
+        if (!clean(text)) {
+          setLetterMsg("Letter is empty.", "err");
+          return;
+        }
         var live = currentApp();
         var staffId = clean(live.submitted_by_user_id);
         if (!staffId) {
@@ -842,7 +907,7 @@
         }
         saveBtn.disabled = true;
         setLetterMsg("Saving to My Documents…", "");
-        L.buildLetterPdfBlob(live)
+        L.buildLetterPdfBlobFromText(text)
           .then(function (blob) {
             var title = L.documentTitle(live);
             var filename = L.pdfFilename(live);
@@ -875,7 +940,11 @@
                 var now = new Date().toISOString();
                 return client
                   .from(TABLE)
-                  .update({ letter_document_id: docId, letter_generated_at: now })
+                  .update({
+                    letter_document_id: docId,
+                    letter_generated_at: now,
+                    decision_letter_text: clean(text) || null,
+                  })
                   .eq("id", live.id)
                   .select(SELECT_COLS)
                   .maybeSingle()
@@ -892,7 +961,7 @@
               "ok"
             );
             deps.toast("L&D letter saved to My Documents.");
-            refreshLetterSection(screen, app, client, onSaved);
+            refreshLetterSection(screen, app, client, onLetterSaved);
             if (typeof onLetterSaved === "function") onLetterSaved(app);
           })
           .catch(function (err) {
@@ -932,9 +1001,20 @@
     var copyFoot = screen.querySelector("#ldfCopyEmailFoot");
     if (copyFoot && lettersApi()) {
       copyFoot.addEventListener("click", function () {
+        var text =
+          letterEditorText(screen) ||
+          lettersApi().buildEmailBody(readFormApp(screen, app));
+        if (!clean(text)) {
+          if (msg) {
+            msg.textContent = "Letter is empty.";
+            msg.className = "ldf-msg is-err";
+          }
+          return;
+        }
         lettersApi()
-          .copyText(lettersApi().buildEmailBody(readFormApp(screen, app)))
+          .copyText(text)
           .then(function () {
+            persistLetterText(client, app, text);
             deps.toast("L&D letter copied.");
           })
           .catch(function (err) {
@@ -974,6 +1054,14 @@
           review_notes: fields.review_notes,
           reviewed_at: new Date().toISOString(),
         };
+        var editedLetter = clean(letterEditorText(screen));
+        if (editedLetter) {
+          payload.decision_letter_text = editedLetter;
+        } else if (lettersApi()) {
+          payload.decision_letter_text = lettersApi().buildEmailBody(
+            Object.assign({}, app, fields)
+          );
+        }
         var uid = null;
         try {
           uid = (global.__PORTAL_SUPABASE__ || {}).session.user.id;
@@ -1012,9 +1100,13 @@
                   b.textContent = "Copy email";
                   saveReviewBtn.parentElement.insertBefore(b, saveReviewBtn);
                   b.addEventListener("click", function () {
+                    var text =
+                      letterEditorText(screen) ||
+                      lettersApi().buildEmailBody(readFormApp(screen, app));
                     lettersApi()
-                      .copyText(lettersApi().buildEmailBody(readFormApp(screen, app)))
+                      .copyText(text)
                       .then(function () {
+                        persistLetterText(client, app, text);
                         deps.toast("L&D letter copied.");
                       });
                   });

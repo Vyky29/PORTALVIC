@@ -499,6 +499,65 @@
     }, 2000);
   }
 
+  function buildLetterPdfBlobFromText(text) {
+    return ensureJsPdf().then(function () {
+      var pdf = new global.jspdf.jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+      var lines = String(text || "").split(/\r?\n/);
+      var y = 18;
+      var margin = 18;
+      var maxW = pdf.internal.pageSize.getWidth() - margin * 2;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+      lines.forEach(function (line) {
+        if (!line) {
+          y += 4;
+          return;
+        }
+        var wrapped = pdf.splitTextToSize(line, maxW);
+        wrapped.forEach(function (wl) {
+          if (y > 280) {
+            pdf.addPage();
+            y = 18;
+          }
+          pdf.text(wl, margin, y);
+          y += 6;
+        });
+      });
+      return pdf.output("blob");
+    });
+  }
+
+  function buildLetterHtmlFromText(text, subject) {
+    return (
+      '<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><title>' +
+      escHtml(subject || "L&D funding decision") +
+      '</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#1f2937">' +
+      '<pre style="margin:0;font-family:inherit;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:break-word">' +
+      escHtml(text || "") +
+      "</pre></body></html>"
+    );
+  }
+
+  function printLetterText(text, subject) {
+    var html = buildLetterHtmlFromText(text, subject);
+    var w = global.open("", "_blank", "noopener,noreferrer");
+    if (!w) throw new Error("Pop-up blocked — allow pop-ups to print.");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    global.setTimeout(function () {
+      try {
+        w.print();
+      } catch (_) {}
+    }, 350);
+  }
+
   function isDecided(app) {
     var st = statusKey(app);
     return st === "approved" || st === "declined" || st === "approved_conditional";
@@ -510,8 +569,11 @@
     buildEmailBody: buildEmailBody,
     buildLetterHtml: buildLetterHtml,
     buildLetterPdfBlob: buildLetterPdfBlob,
+    buildLetterPdfBlobFromText: buildLetterPdfBlobFromText,
+    buildLetterHtmlFromText: buildLetterHtmlFromText,
     copyText: copyText,
     printLetter: printLetter,
+    printLetterText: printLetterText,
     downloadPdfBlob: downloadPdfBlob,
     documentTitle: documentTitle,
     pdfFilename: pdfFilename,
