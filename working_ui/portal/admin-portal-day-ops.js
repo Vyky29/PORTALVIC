@@ -222,6 +222,9 @@
       global.portalAdminSessionFeedbackLoadMeta = function portalAdminSessionFeedbackLoadMeta() {
         return global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ || null;
       };
+      global.portalAdminLiveLoadStatus = function portalAdminLiveLoadStatus() {
+        return global.__PORTAL_ADMIN_LIVE_LOAD__ || null;
+      };
       global.portalAdminDiagnoseFeedbackDay = function portalAdminDiagnoseFeedbackDay(iso) {
         var h = trackingHub || feedbackHub;
         if (!h || typeof h.diagnoseDay !== 'function') {
@@ -419,7 +422,13 @@
     }
     var out = emptyPayload();
     var tasks = [];
-    if (client) {
+    if (cfg.fetchScheduleOverrides) {
+      tasks.push(
+        cfg.fetchScheduleOverrides().then(function (rows) {
+          out.schedule_overrides = rows || [];
+        })
+      );
+    } else if (client) {
       tasks.push(fetchScheduleOverridesInto(out, client));
     }
     if (cfg.fetchSessionFeedback) {

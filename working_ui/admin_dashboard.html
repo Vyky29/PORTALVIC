@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-auth-sync"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-live-unified"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17075,15 +17075,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     async function adminFetchCancellationReportsForHub(){
       if(window.__PORTAL_CANCELLATION_REPORTS__) return window.__PORTAL_CANCELLATION_REPORTS__;
       var portalRows = adminCancellationPortalRows().map(adminMapPortalCancellationRow);
-      var client = getSchedSupabaseClient();
-      if(!client){
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        adminRecordLiveLoad('cancellation_reports', { count: portalRows.length, error: auth.error || 'no_client', portalOnly: true });
         window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
         return window.__PORTAL_CANCELLATION_REPORTS__;
       }
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await client
+        var res = await auth.client
           .from('cancellation_reports')
           .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
           .gte('session_date', since.toISOString().slice(0, 10))
@@ -17091,7 +17092,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .limit(400);
         var dbRows = res.error ? [] : (res.data || []);
         window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports(dbRows, portalRows);
-      }catch(_e){
+        adminRecordLiveLoad('cancellation_reports', {
+          count: window.__PORTAL_CANCELLATION_REPORTS__.length,
+          error: res.error ? (res.error.message || String(res.error)) : null
+        });
+      }catch(e){
+        adminRecordLiveLoad('cancellation_reports', { count: portalRows.length, error: String(e && e.message ? e.message : e), portalOnly: true });
         window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
       }
       return window.__PORTAL_CANCELLATION_REPORTS__;
@@ -17101,59 +17107,90 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
       window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
       window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
+      window.__PORTAL_ADMIN_LIVE_LOAD__ = null;
+      window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = null;
       adminHubQuickMarksBySessionKey._m = null;
       if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
         window.PortalDayOps.invalidatePayload();
       }
     }
     async function adminFetchScheduleOverridesForHub(){
-      var client = getSchedSupabaseClient();
-      if(!client){
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        console.warn('[admin] schedule_overrides:', auth.error || 'no_client');
+        adminRecordLiveLoad('schedule_overrides', { count: 0, error: auth.error || 'no_client' });
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
         return [];
       }
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await client
+        var res = await auth.client
           .from('schedule_overrides')
           .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
           .gte('session_date', since.toISOString().slice(0, 10))
           .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(600);
-        window.__PORTAL_SCHEDULE_OVERRIDES__ = res.error ? [] : (res.data || []);
-      }catch(_e){
+        if(res.error){
+          var ovErr = res.error.message || String(res.error);
+          console.warn('[admin] schedule_overrides:', ovErr);
+          adminRecordLiveLoad('schedule_overrides', { count: 0, error: ovErr });
+          window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
+          return [];
+        }
+        var rows = res.data || [];
+        window.__PORTAL_SCHEDULE_OVERRIDES__ = rows;
+        adminRecordLiveLoad('schedule_overrides', { count: rows.length, error: null });
+        if(rows.length) console.info('[admin] schedule_overrides loaded:', rows.length);
+        return rows;
+      }catch(e){
+        console.warn('[admin] schedule_overrides fetch failed', e);
+        adminRecordLiveLoad('schedule_overrides', { count: 0, error: String(e && e.message ? e.message : e) });
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
+        return [];
       }
-      return window.__PORTAL_SCHEDULE_OVERRIDES__;
     }
     async function adminFetchLeadSessionReportsForHub(){
       if(window.__PORTAL_LEAD_SESSION_REPORTS__) return window.__PORTAL_LEAD_SESSION_REPORTS__;
-      var client = getSchedSupabaseClient();
-      if(!client){
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        adminRecordLiveLoad('lead_session_reports', { count: 0, error: auth.error || 'no_client' });
         window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
         return [];
       }
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await client
+        var res = await auth.client
           .from('lead_session_reports')
           .select('*')
           .gte('session_date', since.toISOString().slice(0, 10))
           .order('session_date', { ascending: false })
           .limit(500);
-        window.__PORTAL_LEAD_SESSION_REPORTS__ = res.error ? [] : (res.data || []);
-      }catch(_e){
+        if(res.error){
+          adminRecordLiveLoad('lead_session_reports', { count: 0, error: res.error.message || String(res.error) });
+          window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+          return [];
+        }
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = res.data || [];
+        adminRecordLiveLoad('lead_session_reports', { count: window.__PORTAL_LEAD_SESSION_REPORTS__.length, error: null });
+        return window.__PORTAL_LEAD_SESSION_REPORTS__;
+      }catch(e){
+        adminRecordLiveLoad('lead_session_reports', { count: 0, error: String(e && e.message ? e.message : e) });
         window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+        return [];
       }
-      return window.__PORTAL_LEAD_SESSION_REPORTS__;
     }
     async function adminFetchAbsentQuickMarksForHub(){
       if(window.__PORTAL_ABSENT_QUICK_MARKS__) return window.__PORTAL_ABSENT_QUICK_MARKS__;
-      var client = getSchedSupabaseClient();
-      if(!client){ window.__PORTAL_ABSENT_QUICK_MARKS__ = []; return []; }
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        adminRecordLiveLoad('absent_quick_marks', { count: 0, error: auth.error || 'no_client' });
+        window.__PORTAL_ABSENT_QUICK_MARKS__ = [];
+        return [];
+      }
+      var client = auth.client;
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
@@ -17213,7 +17250,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             staff_name: String(r.staff_name || '').trim()
           };
         });
-      }catch(_e2){
+        adminRecordLiveLoad('absent_quick_marks', {
+          count: window.__PORTAL_ABSENT_QUICK_MARKS__.length,
+          error: null
+        });
+      }catch(e2){
+        adminRecordLiveLoad('absent_quick_marks', { count: 0, error: String(e2 && e2.message ? e2.message : e2) });
         window.__PORTAL_ABSENT_QUICK_MARKS__ = [];
       }
       adminHubQuickMarksBySessionKey._m = null;
@@ -17721,7 +17763,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260703-auth-sync";
+      "/portal/admin-sessions-hub.js?v=20260703-live-unified";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -18015,6 +18057,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return adminPortalAuthToken();
     }
+    async function adminEnsureAuthedSupabaseClient(maxMs){
+      var client = await adminWaitForSupabaseReady(maxMs == null ? 22000 : maxMs);
+      if(!client){
+        return { client: null, tok: null, error: 'no_client' };
+      }
+      try{
+        var tok = await adminAttachAuthSessionToClient(client);
+        if(!tok){
+          return { client: client, tok: null, error: 'no_token' };
+        }
+        return { client: client, tok: tok, error: null };
+      }catch(authErr){
+        return { client: client, tok: null, error: 'auth_failed' };
+      }
+    }
+    function adminRecordLiveLoad(key, meta){
+      try{
+        var box = window.__PORTAL_ADMIN_LIVE_LOAD__ || {};
+        box[key] = Object.assign({ at: new Date().toISOString() }, meta || {});
+        window.__PORTAL_ADMIN_LIVE_LOAD__ = box;
+      }catch(_rec){}
+    }
     async function adminFetchSessionFeedbackViaRpcRest(sinceIso, tok){
       var base = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL.trim()
         ? window.SUPABASE_URL.trim().replace(/\/+$/, '')
@@ -18044,22 +18108,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return { rows: rows, error: null, via: 'rest' };
     }
     async function adminFetchSessionFeedbackViaRpc(sinceIso){
-      var client = await adminEnsureSupabaseClient();
-      if(!client){
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client){
         console.warn('[admin] session_feedback: Supabase client not ready');
+        adminRecordLiveLoad('session_feedback', { count: 0, error: 'no_client' });
         return { rows: [], error: 'no_client' };
       }
-      var tok = null;
-      try{
-        tok = await adminAttachAuthSessionToClient(client);
-        if(!tok){
-          console.warn('[admin] session_feedback: no auth token — sign out and in again as admin');
-          return { rows: [], error: 'no_token' };
-        }
-      }catch(authErr){
-        console.warn('[admin] session_feedback: auth failed', authErr);
-        return { rows: [], error: 'auth_failed' };
+      var tok = auth.tok;
+      if(!tok){
+        console.warn('[admin] session_feedback: no auth token — sign out and in again as admin');
+        adminRecordLiveLoad('session_feedback', { count: 0, error: auth.error || 'no_token' });
+        return { rows: [], error: auth.error || 'no_token' };
       }
+      var client = auth.client;
       try{
         var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
         if(rpc && rpc.error){
@@ -18069,6 +18130,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var rest = await adminFetchSessionFeedbackViaRpcRest(sinceIso, tok);
             if(rest.rows && rest.rows.length){
               console.info('[admin] session_feedback loaded:', rest.rows.length, 'rows via REST fallback');
+              adminRecordLiveLoad('session_feedback', { count: rest.rows.length, error: null, via: 'rest' });
               return rest;
             }
             if(rest.error && rest.error !== msg){
@@ -18077,10 +18139,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           console.warn('[admin] session_feedback rpc error:', msg);
           adminDayOpsDebug('[admin] session_feedback rpc', msg);
+          adminRecordLiveLoad('session_feedback', { count: 0, error: msg });
           return { rows: [], error: msg };
         }
         if(!rpc || !Array.isArray(rpc.data)){
           console.warn('[admin] session_feedback: unexpected RPC response');
+          adminRecordLiveLoad('session_feedback', { count: 0, error: 'bad_response' });
           return { rows: [], error: 'bad_response' };
         }
         var rows = (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
@@ -18089,11 +18153,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         } else {
           console.info('[admin] session_feedback loaded:', rows.length, 'rows via RPC');
         }
+        adminRecordLiveLoad('session_feedback', { count: rows.length, error: null, via: 'rpc' });
         return { rows: rows, error: null, via: 'rpc' };
       }catch(rpcErr){
         console.warn('[admin] session_feedback rpc failed', rpcErr);
         adminDayOpsDebug('[admin] session_feedback rpc', rpcErr);
-        return { rows: [], error: String(rpcErr && rpcErr.message ? rpcErr.message : rpcErr) };
+        var errMsg = String(rpcErr && rpcErr.message ? rpcErr.message : rpcErr);
+        adminRecordLiveLoad('session_feedback', { count: 0, error: errMsg });
+        return { rows: [], error: errMsg };
       }
     }
     var __adminSessionFeedbackInflight = null;

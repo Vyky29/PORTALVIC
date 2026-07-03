@@ -7147,7 +7147,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (!this.opts || !this.opts.externalTabs) return "";
     var esc = this.escapeHtml;
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
+    var ovCount = (this.payload && this.payload.schedule_overrides) ? this.payload.schedule_overrides.length : 0;
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+    var liveLoad = global.__PORTAL_ADMIN_LIVE_LOAD__ || {};
+    var ovMeta = liveLoad.schedule_overrides || null;
     var dayDiag = null;
     try {
       dayDiag = this.diagnoseDay(this.selectedDay);
@@ -7156,10 +7159,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var errLine = loadMeta && loadMeta.error
         ? " Error: " + esc(String(loadMeta.error)) + "."
         : "";
+      var ovErr = ovMeta && ovMeta.error && !ovCount
+        ? " Overrides: " + esc(String(ovMeta.error)) + "."
+        : "";
       return (
         '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows).' +
         errLine +
-        " Hard-refresh and sign in again as admin. Console (F12) shows details.</p>"
+        ovErr +
+        " Hard-refresh and sign in again as admin. Console: portalAdminLiveLoadStatus()</p>"
       );
     }
     var matched =
@@ -7170,12 +7177,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       dayDiag && dayDiag.orphanFeedback && dayDiag.orphanFeedback.length
         ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
         : "";
+    var ovLine = ovCount
+      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded"
+      : (ovMeta && ovMeta.error ? " · overrides failed: " + esc(String(ovMeta.error)) : "");
     return (
       '<p class="ash-feedback-filter-hint" role="status">Live feedback: <strong>' +
       esc(String(fbCount)) +
       "</strong> rows from Supabase" +
       (matched ? " · " + esc(matched) : "") +
       esc(orphan) +
+      ovLine +
       ".</p>"
     );
   };

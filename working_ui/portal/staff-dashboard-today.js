@@ -444,8 +444,45 @@
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           return;
         }
-        const sess = box.session;
+        let sess = box.session;
+        if((!sess || !sess.user) && box.client.auth){
+          try{
+            const cur = await box.client.auth.getSession();
+            sess = cur && cur.data && cur.data.session;
+            if(sess && sess.user) box.session = sess;
+          }catch(_gs){}
+        }
+        if((!sess || !sess.user) && box.client.auth){
+          const stores = [window.localStorage, window.sessionStorage];
+          for(let si = 0; si < stores.length; si++){
+            try{
+              for(let i = 0; i < stores[si].length; i++){
+                const k = stores[si].key(i);
+                if(!k || !/^sb-.*-auth-token$/i.test(k)) continue;
+                const raw = stores[si].getItem(k);
+                if(!raw) continue;
+                let data = null;
+                try{ data = JSON.parse(raw); }catch(_p){ continue; }
+                const stored = data && data.access_token && data.user
+                  ? data
+                  : (data && data.currentSession && data.currentSession.access_token ? data.currentSession : null);
+                if(!stored || !stored.access_token || !stored.refresh_token) continue;
+                const set = await box.client.auth.setSession({
+                  access_token: stored.access_token,
+                  refresh_token: stored.refresh_token
+                });
+                if(!set.error && set.data && set.data.session){
+                  box.session = set.data.session;
+                  sess = set.data.session;
+                  break;
+                }
+              }
+            }catch(_scan){}
+            if(sess && sess.user) break;
+          }
+        }
         if(!sess || !sess.user){
+          console.warn('[portal] schedule_overrides: no auth session on client');
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           return;
         }
@@ -469,6 +506,7 @@
         }
         merged.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
         window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
+        if(merged.length) console.info('[portal] schedule_overrides loaded:', merged.length);
       }catch(e){
         console.debug('[portal] schedule_overrides fetch', e);
         window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
