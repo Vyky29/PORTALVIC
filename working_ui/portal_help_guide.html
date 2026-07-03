@@ -5,7 +5,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Staff help guide</title>
-  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <link rel="shortcut icon" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260702-home-icon" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-area-note-img" />
   <style>
@@ -147,6 +149,19 @@
     #guideLiveScope .guide-feedback-flow .guide-flow-arrow{
       font-size:22px;color:var(--guide-muted);flex:none
     }
+    #guideLiveScope .guide-fb-form{display:grid;gap:8px}
+    #guideLiveScope .guide-fb-stars{display:flex;gap:4px;flex-wrap:wrap}
+    #guideLiveScope .guide-fb-star{
+      width:28px;height:28px;border-radius:8px;background:#fff9eb;border:1px solid #f6d5ac;
+      display:flex;align-items:center;justify-content:center;font-size:14px;color:#b66416;font-weight:800
+    }
+    #guideLiveScope .guide-fb-star.is-on{background:#fdf0e0;border-color:#ef8b3b}
+    #guideLiveScope .guide-fb-btn{
+      display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:10px;
+      background:var(--guide-navy);color:#fff;font-size:12px;font-weight:800;border:none
+    }
+    #guideLiveScope .guide-fb-btn.is-hl{box-shadow:0 0 0 3px rgba(45,132,179,.35)}
+    #guideLiveScope .guide-fb-readonly{background:#f8fafc;color:var(--guide-muted);min-height:52px}
 
     /* Simplified mock-ups for forms / lists (not session cards) */
     .d-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -455,7 +470,7 @@
   </script>
   <script>
 (function () {
-  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260705-help-guide-v14";
+  var GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260703-feedback-narrative-v16";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -532,7 +547,7 @@
 
   function buildLoginReplica() {
     return (
-      '<div class="guide-login-mock guide-login-replica">' +
+      '<form class="guide-login-mock guide-login-replica" autocomplete="off" aria-label="Login example (illustration only)" onsubmit="return false">' +
       '<header class="login-brand" data-guide-focus="brand">' +
       '<div class="login-logo-stage">' +
       loginOrbitSvg("guideLoginOrb") +
@@ -546,10 +561,10 @@
       "</div>" +
       '<div class="field" data-guide-focus="password">' +
       '<label>PIN or password</label>' +
-      '<input type="password" readonly value="12345678" aria-label="PIN or password example" />' +
+      '<input type="password" readonly value="12345678" autocomplete="off" aria-label="PIN or password example" />' +
       "</div>" +
       '<button type="button" class="btn-login" data-guide-focus="submit">Login</button>' +
-      "</div>"
+      "</form>"
     );
   }
 
@@ -730,6 +745,38 @@
         '<span data-guide-focus="done">' +
         todayCardHtml("session-card--review-done", "5 to 5.30", "Acton", "Hazem", "portal-session-slot-chip--submitted", "Submitted", "Teaching Pool") +
         "</span>" +
+        "</div>" +
+        liveScopeClose()
+      );
+    }
+    if (k === "feedback-narrative-form") {
+      return (
+        liveScopeOpen() +
+        '<div class="d-form guide-fb-form">' +
+        '<div class="d-panel-title">Session feedback</div>' +
+        '<div data-guide-focus="ratings">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin-bottom:4px">Engagement</div>' +
+        '<div class="guide-fb-stars" aria-hidden="true">' +
+        '<span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star is-on">★</span><span class="guide-fb-star">★</span>' +
+        "</div>" +
+        '<div class="d-chips" style="margin-top:6px">' +
+        '<span class="d-chip d-chip--done">Happy/Excited</span><span class="d-chip d-chip--pending">With prompts</span>' +
+        "</div>" +
+        "</div>" +
+        '<div data-guide-focus="narrative">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Session narrative</div>' +
+        '<div class="d-input" style="min-height:72px;line-height:1.4">Reception: arrived calmly with mum…<br><br>Session: worked on backstroke…<br><br>Handover: told family he tried hard today.</div>' +
+        "</div>" +
+        '<div data-guide-focus="filter">' +
+        '<button type="button" class="guide-fb-btn is-hl">Filter with AI</button>' +
+        "</div>" +
+        '<div data-guide-focus="ai-output">' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Positive feedback</div>' +
+        '<div class="d-input guide-fb-readonly">Hazem had a great session and worked hard on backstroke.</div>' +
+        '<div class="small" style="font-weight:700;color:var(--guide-navy);margin:6px 0 4px">Relevant information</div>' +
+        '<div class="d-input guide-fb-readonly">Needed prompts for lane entry; calm throughout.</div>' +
+        '<div class="d-chips" style="margin-top:6px"><span class="d-chip d-chip--done">Submit</span></div>' +
+        "</div>" +
         "</div>" +
         liveScopeClose()
       );
