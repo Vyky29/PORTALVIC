@@ -9696,6 +9696,16 @@ window.STAFF_DASHBOARD_SOURCE = {
       "session_date": "2026-07-03"
     },
     {
+      "client_name": "MANAGER",
+      "day": "Friday",
+      "instructors": "VICTOR",
+      "service": "Day Centre",
+      "area": "Hub · Manager",
+      "time_slot": "11 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-03"
+    },
+    {
       "client_name": "Timi",
       "day": "Friday",
       "instructors": "VICTOR",

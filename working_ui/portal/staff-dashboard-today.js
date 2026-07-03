@@ -1771,18 +1771,19 @@
           const sessionEndTs = _rowTs.sessionEndTs;
           const dutyLabel = portalRosterDutySlotLabel(s);
           if(dutyLabel){
+            if(String(s.staffId || '').trim().toLowerCase() !== staffId) return null;
             const isHomeDuty = dutyLabel === 'HOME';
             const isAdminDuty = !isHomeDuty && String(dutyLabel).toUpperCase() === 'ADMIN';
             const dutyKind = isHomeDuty ? 'home' : (isAdminDuty ? 'admin' : 'manager');
-            const hubRoom = 'Hub Room';
+            const dutyAreaLabel = isHomeDuty ? 'Home' : 'Day Centre';
             return Object.assign({
-              time: isHomeDuty ? '' : time,
+              time: time,
               kind: dutyKind,
               clientId: String(s.clientId || '').trim().toLowerCase() || dutyKind,
               name: dutyLabel,
-              activity,
-              areaLabel: isHomeDuty ? 'Home' : hubRoom,
-              poolLocationLabel: isHomeDuty ? 'Home' : hubRoom,
+              activity: String(s.rosterService || s.activity || 'Day Centre').trim(),
+              areaLabel: dutyAreaLabel,
+              poolLocationLabel: dutyAreaLabel,
               poolTier: null,
               showPoolSymbol: true,
               showSpecialty: false,

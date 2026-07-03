@@ -119,9 +119,10 @@
     var activity = portalNormalizeProgrammeKey(
       ctx.activity || ctx.rosterService || ctx.service || ""
     );
-    if (/day\s*cent(re|er)/.test(activity)) return "Day Centre";
-
     var clientKey = portalClientKeyFromContext(ctx);
+    if (clientKey === "home") return "Home";
+    if (clientKey === "manager" || clientKey === "admin") return "Day Centre";
+    if (/day\s*cent(re|er)/.test(activity)) return "Day Centre";
     if (clientKey === "tinashe" && activity.indexOf("bespoke") >= 0) return "Bespoke";
 
     return "";

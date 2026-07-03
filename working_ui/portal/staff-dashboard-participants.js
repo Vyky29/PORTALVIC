@@ -1234,7 +1234,7 @@
 
     function portalManagerDutyAreaLabel(item){
       if(!item || item.kind !== 'manager') return '';
-      return 'Hub Room';
+      return 'Day Centre';
     }
     /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){

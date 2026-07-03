@@ -24704,9 +24704,9 @@
         "day": "Friday",
         "staff_key": "raul",
         "staff_name": "Raul",
-        "venue": "SwimFarm",
+        "venue": "HOME",
         "time_range": "11-4",
-        "raw_assignment": "Raul 11-4"
+        "raw_assignment": "Raul HOME 11-4"
       },
       {
         "session_date": "2026-07-03",
@@ -24732,8 +24732,8 @@
         "staff_key": "victor",
         "staff_name": "Victor",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Victor 11-4"
+        "time_range": "11-3",
+        "raw_assignment": "Victor 11-1 Timi; 1-3 Emmanuel"
       },
       {
         "session_date": "2026-07-03",

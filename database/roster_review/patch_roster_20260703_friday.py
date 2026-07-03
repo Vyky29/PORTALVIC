@@ -23,6 +23,16 @@ STAFF_CSV = ROOT / "database" / "roster_review" / "staff-shifts.csv"
 # Rows to insert (one row per instructor when co-teaching uses separate bundle rows)
 NEW_ROWS = [
     {
+        "client_name": "MANAGER",
+        "day": DAY,
+        "instructors": "VICTOR",
+        "service": "Day Centre",
+        "area": "Hub · Manager",
+        "time_slot": "11 to 3",
+        "venue": "SwimFarm",
+        "session_date": DATE,
+    },
+    {
         "client_name": "Timi",
         "day": DAY,
         "instructors": "VICTOR",
