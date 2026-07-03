@@ -54,6 +54,116 @@ export function resolveStaffContactEmail(row, authEmail) {
   return "";
 }
 
+const HR_EMAIL_KEYS = [
+  "Email address",
+  "Email Address",
+  "Email",
+  "Personal email",
+  "Personal Email",
+  "Contact email",
+  "Contact Email"
+];
+
+const HR_ADDRESS_FULL_KEYS = ["Address", "Home Address", "Home address", "Full Address"];
+
+const HR_ADDRESS_PART_KEYS = {
+  line1: ["Address line 1", "Address Line 1", "Address 1"],
+  line2: ["Address line 2", "Address Line 2", "Address 2"],
+  city: ["Town", "City", "Town / city", "Town/City"],
+  postcode: ["Postcode", "Post code", "Postal code"]
+};
+
+function pickHrField(data, keys) {
+  const src = data || {};
+  for (let i = 0; i < keys.length; i++) {
+    const v = src[keys[i]];
+    if (v != null) {
+      const trimmed = String(v).trim();
+      if (trimmed && trimmed !== "-") return trimmed;
+    }
+  }
+  return "";
+}
+
+export function formatHrAddress(data) {
+  const full = pickHrField(data, HR_ADDRESS_FULL_KEYS);
+  if (full) return full;
+  return [
+    pickHrField(data, HR_ADDRESS_PART_KEYS.line1),
+    pickHrField(data, HR_ADDRESS_PART_KEYS.line2),
+    pickHrField(data, HR_ADDRESS_PART_KEYS.city),
+    pickHrField(data, HR_ADDRESS_PART_KEYS.postcode)
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function hrNameKey(text) {
+  return String(text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function loadStaffProfileContact(supabase, profileId, authEmail) {
+  const out = { contactEmail: "", contactAddress: "" };
+  if (!supabase || !profileId) return out;
+  const { data, error } = await supabase
+    .from("staff_profiles")
+    .select("email_personal, address_line1, address_line2, address_city, address_postcode")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (error || !data) return out;
+  return {
+    contactEmail: resolveStaffContactEmail(data, authEmail),
+    contactAddress: formatStaffAddress(data)
+  };
+}
+
+async function loadHrRecordContact(supabase, entry) {
+  const out = { contactEmail: "", contactAddress: "" };
+  if (!supabase || !entry) return out;
+
+  async function readRow(query) {
+    const { data, error } = await query.maybeSingle();
+    if (error || !data || !data.data) return null;
+    return data.data;
+  }
+
+  let data = null;
+  if (entry.profileId) {
+    data = await readRow(
+      supabase
+        .from("hr_records")
+        .select("data")
+        .eq("sheet", "Employees info")
+        .eq("staff_id", entry.profileId)
+        .order("row_index", { ascending: true })
+        .limit(1)
+    );
+  }
+  if (!data && entry.displayName) {
+    const key = hrNameKey(entry.displayName);
+    if (key) {
+      data = await readRow(
+        supabase
+          .from("hr_records")
+          .select("data")
+          .eq("sheet", "Employees info")
+          .eq("name_key", key)
+          .order("row_index", { ascending: true })
+          .limit(1)
+      );
+    }
+  }
+  if (!data) return out;
+  return {
+    contactEmail: pickHrField(data, HR_EMAIL_KEYS),
+    contactAddress: formatHrAddress(data)
+  };
+}
+
 function loadStaticStaffRoster(seenAuth) {
   const roster = [];
   Object.entries(STAFF_USERNAME_TO_EMAIL).forEach(([label, email]) => {
@@ -99,6 +209,8 @@ export async function loadPortalStaffRoster(supabase) {
           contactAddress: formatStaffAddress(row)
         });
       });
+    } else if (error) {
+      console.warn("[hr-contract] staff_profiles roster load failed:", error.message || error);
     }
   }
 
@@ -135,6 +247,19 @@ export async function loadStaffContractContact(supabase, entry) {
     contactAddress: String((entry && entry.contactAddress) || "").trim()
   };
   if (!supabase || !entry) return out;
+
+  if (!out.contactEmail || !out.contactAddress) {
+    const profileContact = await loadStaffProfileContact(supabase, entry.profileId, entry.authEmail);
+    if (!out.contactEmail && profileContact.contactEmail) out.contactEmail = profileContact.contactEmail;
+    if (!out.contactAddress && profileContact.contactAddress) out.contactAddress = profileContact.contactAddress;
+  }
+
+  if (!out.contactEmail || !out.contactAddress) {
+    const hrContact = await loadHrRecordContact(supabase, entry);
+    if (!out.contactEmail && hrContact.contactEmail) out.contactEmail = hrContact.contactEmail;
+    if (!out.contactAddress && hrContact.contactAddress) out.contactAddress = hrContact.contactAddress;
+  }
+
   if (out.contactEmail && out.contactAddress) return out;
 
   const verified = entry.authEmail

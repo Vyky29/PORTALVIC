@@ -16,7 +16,7 @@
   const venueHoursStore = {};
   const roleScaleStore = {};
   const SCALE_OPTIONS = C.SCALE_OPTIONS || ["Scale 1", "Scale 2", "Scale 3"];
-  const STAFF_LINK_MOD = "./hr-contract-staff-link.js?v=20260622-staff";
+  const STAFF_LINK_MOD = "./hr-contract-staff-link.js?v=20260703-contact-autofill";
   let staffRoster = [];
   let portalLinkVerified = false;
   let selectedPortalLogin = "";
