@@ -469,6 +469,7 @@ const manualReview = {
   inCliMixed: reviewItems.map((i) => {
     const ex = expertFor(i.file);
     return {
+      id: i.file,
       file: i.file,
       kind: i.kind,
       cluster: i.clusterTitle,
@@ -482,6 +483,7 @@ const manualReview = {
   onlyDatabaseFolder: onlyDb.map((f) => {
     const ex = expertFor(f);
     return {
+      id: `database:${f}`,
       file: f,
       verdict: ex.verdict,
       rec: ex.rec,
@@ -494,6 +496,7 @@ const manualReview = {
     .map((f) => {
       const ex = expertFor(f);
       return {
+        id: `database:${f}`,
         file: f,
         path: `database/migrations/${f}`,
         verdict: ex.verdict,
@@ -503,6 +506,13 @@ const manualReview = {
       };
     }),
 };
+
+for (const f of onlyDb) {
+  const ex = expertFor(f);
+  if (ex.rec === "copy") {
+    defaultDecisions[`database:${f}`] = "keep";
+  }
+}
 
 const expertSummary = {
   cliKeep: reviewItems.filter((i) => expertFor(i.file).rec === "keep").length,
@@ -547,7 +557,8 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 .manual-list li{border-bottom:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}
 .manual-list li:last-child{border-bottom:none}
 .manual-list code{font-size:11px}
-.manual-list .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.manual-list .mig-actions{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.manual-list li.is-defer{opacity:.72}
 .cluster{margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .cluster-head{padding:14px 16px;background:#f8fafc;border-bottom:1px solid var(--line);cursor:pointer}
 .cluster-head h3{margin:0 0 4px;font-size:1rem}
@@ -625,6 +636,9 @@ try{
   var saved=localStorage.getItem(KEY);
   if(saved) decisions=JSON.parse(saved);
 }catch(e){}
+Object.keys(DATA.defaultDecisions).forEach(function(k){
+  if(!(k in decisions)) decisions[k]=DATA.defaultDecisions[k];
+});
 if(location.hash==='#paso2') viewMode='step2';
 else if(location.hash==='#cli13') viewMode='cli13';
 
@@ -669,28 +683,52 @@ function counts(){
 }
 
 function renderManual(){
-  function row(r){
+  function row(r,labels){
+    labels=labels||{};
+    var keepLabel=labels.keep||'Keep';
+    var deferLabel=labels.defer||'Guardar sin usar';
+    var dec=decisions[r.id]||'';
     var cls=r.rec==='keep'?'essential':r.rec==='defer'?'archive':r.rec==='copy'?'chain':r.rec==='delete'?'archive':'review';
-    return '<li><code>'+esc(r.file)+'</code> <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
+    return '<li class="'+(dec==='defer'?'is-defer':'')+'"><code>'+esc(r.file)+'</code> <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
       (r.path?'<div class="sub"><strong>Ruta:</strong> '+esc(r.path)+'</div>':'')+
       '<div class="sub"><strong>Contexto:</strong> '+esc(r.context)+'</div>'+
-      '<div class="sub"><strong>Afecta:</strong> '+esc(r.affects)+'</div></li>';
+      '<div class="sub"><strong>Afecta:</strong> '+esc(r.affects)+'</div>'+
+      '<div class="mig-actions">'+
+      '<button type="button" class="act act--keep'+(dec==='keep'?' is-on':'')+'" data-a="keep" data-i="'+esc(r.id)+'">'+esc(keepLabel)+'</button>'+
+      '<button type="button" class="act act--defer'+(dec==='defer'?' is-on':'')+'" data-a="defer" data-i="'+esc(r.id)+'">'+esc(deferLabel)+'</button>'+
+      '</div></li>';
   }
-  document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.map(row).join('');
+  var step2Labels={keep:'Copiar a supabase/',defer:'Omitir paso 2'};
+  document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.map(function(r){return row(r,step2Labels);}).join('');
   document.getElementById('reviewList').innerHTML=DATA.manualReview.inCliMixed.map(row).join('');
   var dbList=viewMode==='step2'?DATA.manualReview.step2Copy:DATA.manualReview.onlyDatabaseFolder;
-  document.getElementById('onlyDbList').innerHTML=dbList.map(row).join('');
+  document.getElementById('onlyDbList').innerHTML=dbList.map(function(r){return row(r,step2Labels);}).join('');
+}
+
+function manualCounts(list){
+  var k=0,d=0,u=0;
+  list.forEach(function(r){
+    var x=decisions[r.id];
+    if(x==='keep')k++; else if(x==='defer')d++; else u++;
+  });
+  return {keep:k,defer:d,unset:u};
 }
 
 function renderStats(){
   var c=counts(),s=DATA.stats;
+  var mc=viewMode==='step2'?manualCounts(DATA.manualReview.step2Copy):
+    viewMode==='cli13'?manualCounts(DATA.manualReview.inCliMixed):null;
+  var mcTotal=viewMode==='step2'?DATA.manualReview.step2Copy.length:DATA.manualReview.inCliMixed.length;
   document.getElementById('stats').innerHTML=
     '<div class="stat"><b>'+(s.essential+s.chain)+'</b>Keep auto</div>'+
     '<div class="stat"><b>'+s.archive+'</b>Defer auto</div>'+
     '<div class="stat"><b style="color:#dc2626">'+s.manualTotal+'</b>Decidir tú</div>'+
     '<div class="stat"><b style="color:var(--essential)">'+c.keep+'</b>Tu Keep</div>'+
-    '<div class="stat"><b>'+c.defer+'</b>Tu defer</div>';
-  document.getElementById('foot').textContent='Keep: '+c.keep+' · Defer: '+c.defer+' · Sin marcar: '+c.unset;
+    '<div class="stat"><b>'+c.defer+'</b>Tu defer</div>'+
+    (mc?'<div class="stat"><b style="color:#2563eb">'+mc.keep+'/'+mcTotal+'</b>Esta vista Keep</div>':'');
+  var foot='Keep: '+c.keep+' · Defer: '+c.defer+' · Sin marcar: '+c.unset;
+  if(mc) foot+=' · Vista: '+mc.keep+' Keep, '+mc.defer+' Omitir, '+mc.unset+' sin marcar';
+  document.getElementById('foot').textContent=foot;
 }
 
 function match(it){
@@ -733,16 +771,19 @@ function render(){
   document.getElementById('root').innerHTML=html||'<p>Nada con este filtro.</p>';
 }
 
-document.getElementById('root').addEventListener('click',function(ev){
+document.getElementById('root').addEventListener('click',handleReviewClick);
+document.getElementById('step2Panel').addEventListener('click',handleReviewClick);
+document.getElementById('manualPanel').addEventListener('click',handleReviewClick);
+function handleReviewClick(ev){
   var t=ev.target;
   if(t.dataset.t){t.closest('.cluster').classList.toggle('is-open');return}
   if(t.dataset.a){ var id=t.dataset.i,a=t.dataset.a; decisions[id]=decisions[id]===a?undefined:a; if(!decisions[id])delete decisions[id]; save(); render(); }
-});
+}
 document.getElementById('q').oninput=render;
 document.getElementById('fRec').onchange=render;
 document.getElementById('fUser').onchange=render;
 document.getElementById('resetAuto').onclick=function(){
-  if(!confirm('Restaurar recomendación experta (267 auto + 52 manual)?'))return;
+  if(!confirm('Restaurar recomendación experta ('+DATA.stats.manualTotal+' manual + auto)?'))return;
   decisions=Object.assign({}, DATA.defaultDecisions);
   save(); render();
 };
