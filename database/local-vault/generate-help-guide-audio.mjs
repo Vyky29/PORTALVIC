@@ -20,7 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
 const guidePath = path.join(root, "working_ui/portal/portal_help_agent_guide.json");
 const outDir = path.join(root, "working_ui/portal/help-audio");
-const DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM";
+const DEFAULT_VOICE = "3WqHLnw80rOZqJzW9YRB";
 
 function readEnv(key) {
   const fromEnv = process.env[key];
