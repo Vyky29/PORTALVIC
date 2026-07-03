@@ -121,7 +121,7 @@
     var run = function () {
       loadParallel(TIER_IDLE, false);
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
-      loadCss("/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix");
+      loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
       }

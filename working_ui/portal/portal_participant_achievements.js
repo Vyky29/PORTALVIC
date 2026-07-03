@@ -2253,7 +2253,85 @@
     syncAchievementScreenshotGuard();
   }
 
+  function closeAchievementsSheet() {
+    if (state.feedbackGalleryReview) {
+      closeFeedbackGalleryReview();
+      return;
+    }
+    if (isAchievementGalleryViewerOpen()) {
+      closeGalleryViewer();
+      return;
+    }
+    if (isAchievementCameraOpen()) {
+      exitCameraToHub();
+      return;
+    }
+    closeGalleryViewer();
+    closeCameraFullscreen();
+    stopCamera();
+    state.participant = null;
+    state.photos = [];
+    state.captureMode = "hub";
+    pendingGalleryUploadParticipant = null;
+    setStatus("");
+    if (typeof global.closeSheet === "function") {
+      global.closeSheet({ bypassAnnouncementLock: true });
+      return;
+    }
+    var sheet = global.document.getElementById("achievementsSheet");
+    if (sheet) sheet.classList.remove("open");
+    var backdrop = global.document.getElementById("backdrop");
+    if (backdrop) backdrop.classList.remove("open");
+    global.document.body.style.overflow = "";
+  }
+
+  function ensureSheetChrome() {
+    var root = document.getElementById("achievementsSheet");
+    if (!root) return;
+    var head = root.querySelector(".portal-achievements-sheet-head");
+    if (!head) return;
+    if (!head.querySelector(".sheet-handle")) {
+      var handle = document.createElement("div");
+      handle.className = "sheet-handle";
+      handle.setAttribute("role", "button");
+      handle.setAttribute("tabindex", "0");
+      handle.setAttribute("aria-label", "Close session photos");
+      var title = head.querySelector("h3");
+      if (title) head.insertBefore(handle, title);
+      else head.appendChild(handle);
+    }
+    var backBtn = document.getElementById("portalAchievementsSheetBack");
+    if (!backBtn) {
+      backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "portal-achievements-sheet-back";
+      backBtn.id = "portalAchievementsSheetBack";
+      backBtn.setAttribute("aria-label", "Back to dashboard");
+      backBtn.textContent = "← Back";
+      head.insertBefore(backBtn, head.firstChild);
+    }
+    if (backBtn.getAttribute("data-portal-back-bound") !== "1") {
+      backBtn.setAttribute("data-portal-back-bound", "1");
+      backBtn.addEventListener("click", function () {
+        closeAchievementsSheet();
+      });
+    }
+  }
+
+  function syncAchievementsSheetBackLabel() {
+    var backBtn = document.getElementById("portalAchievementsSheetBack");
+    if (!backBtn) return;
+    if (state.feedbackGalleryReview) {
+      backBtn.textContent = "← Done";
+      backBtn.setAttribute("aria-label", "Done reviewing photos");
+      return;
+    }
+    backBtn.textContent = "← Back";
+    backBtn.setAttribute("aria-label", "Back to dashboard");
+  }
+
   function bindSheet() {
+    ensureSheetChrome();
     var root = document.getElementById("achievementsSheet");
     if (!root || root.getAttribute("data-portal-achievements-bound") === "1") return;
     root.setAttribute("data-portal-achievements-bound", "1");
@@ -2424,6 +2502,8 @@
   function openSheet(opts) {
     opts = opts || {};
     bindSheet();
+    ensureSheetChrome();
+    syncAchievementsSheetBackLabel();
     closeGalleryViewer();
     closeCameraFullscreen();
     state.participant = null;
@@ -2455,6 +2535,8 @@
     return (
       '<section class="sheet sheet--fullscreen sheet--mobile-frame" id="achievementsSheet" aria-labelledby="achievementsSheetTitle">' +
       '<div class="sheet-head portal-achievements-sheet-head">' +
+      '<button type="button" class="portal-achievements-sheet-back" id="portalAchievementsSheetBack" aria-label="Back to dashboard">← Back</button>' +
+      '<div class="sheet-handle" role="button" tabindex="0" aria-label="Close session photos"></div>' +
       '<h3 id="achievementsSheetTitle">Participant achievements</h3>' +
       "</div>" +
       '<div class="sheet-body portal-achievements-sheet-body">' +
@@ -2703,6 +2785,7 @@
     var backBtn = global.document.getElementById("portalAchievementsBackParticipants");
     if (iconActions) iconActions.hidden = review;
     if (backBtn) backBtn.textContent = review ? "Done" : isLeadSessionPhotosMode() ? "Change" : "Participants";
+    syncAchievementsSheetBackLabel();
   }
 
   function ensureAchievementsSheetMounted() {
