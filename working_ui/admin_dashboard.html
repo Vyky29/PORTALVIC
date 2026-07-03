@@ -291,7 +291,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260629-29jun-roster"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260703-bundle-iife"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
   <script type="module">
@@ -18504,7 +18504,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var base = typeof window.SUPABASE_URL === 'string' ? String(window.SUPABASE_URL).replace(/\/$/, '') : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
       var anon = adminPortalAnonKey();
       var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(_ab){} }, 25000) : null;
+      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(_ab){} }, 35000) : null;
       var res;
       try{
         res = await fetch(base + '/functions/v1/' + path, {
@@ -18520,6 +18520,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(fetchErr){
         if(timer) clearTimeout(timer);
         var fetchMsg = String(fetchErr && fetchErr.name === 'AbortError' ? 'request_timeout' : (fetchErr && fetchErr.message ? fetchErr.message : fetchErr));
+        if(!retried && fetchMsg === 'request_timeout'){
+          await new Promise(function(r){ setTimeout(r, 800); });
+          return adminEdgePost(path, body, true);
+        }
         return { error: fetchMsg };
       }
       if(timer) clearTimeout(timer);

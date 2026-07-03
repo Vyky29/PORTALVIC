@@ -422,7 +422,7 @@
     return fetchRowsForMerge(client);
   }
 
-  function fetchRowsForMerge(client) {
+  function fetchRowsForMerge(client, retried) {
     if (!client || typeof client.from !== "function") {
       return Promise.resolve([]);
     }
@@ -432,13 +432,30 @@
       .in("status", ["active", "cancelled"])
       .then(function (res) {
         if (res.error) {
+          var msg = String(res.error.message || res.error);
+          var timedOut = /timeout|57014/i.test(msg);
           console.warn("[portal_roster_rows] fetch", res.error);
+          if (!retried && timedOut) {
+            return new Promise(function (r) {
+              setTimeout(r, 900);
+            }).then(function () {
+              return fetchRowsForMerge(client, true);
+            });
+          }
           return [];
         }
         return res.data || [];
       })
       .catch(function (err) {
+        var msg = String(err && err.message ? err.message : err);
         console.warn("[portal_roster_rows] fetch", err);
+        if (!retried && /timeout|57014/i.test(msg)) {
+          return new Promise(function (r) {
+            setTimeout(r, 900);
+          }).then(function () {
+            return fetchRowsForMerge(client, true);
+          });
+        }
         return [];
       });
   }

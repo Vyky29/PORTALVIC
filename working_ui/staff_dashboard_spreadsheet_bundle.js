@@ -1,4 +1,6 @@
-window.STAFF_DASHBOARD_SOURCE = {
+(function () {
+  // Source consumed by staff_dashboard_spreadsheet_adapter.js
+  window.STAFF_DASHBOARD_SOURCE = {
   "staffPhotosBaseUrl": "portal/staff_photos/",
   "staffPhotoExtension": "png",
   "sundayDateOverrides": {
@@ -5860,7 +5862,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Wednesday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-17"
@@ -6100,7 +6102,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Thursday",
       "instructors": "VICTOR",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-18"
@@ -6930,7 +6932,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "1.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
@@ -6970,7 +6972,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "12.30 to 1,30",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
@@ -7040,7 +7042,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-22"
@@ -7350,7 +7352,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Tuesday",
       "instructors": "VICTOR",
       "service": "Day Centre",
-      "area": "HUB · MANAGER",
+      "area": "HUB \u00b7 MANAGER",
       "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-23"
@@ -8730,7 +8732,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-06-29"
@@ -8810,7 +8812,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-29"
@@ -9290,7 +9292,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Wednesday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-01"
@@ -9530,7 +9532,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Thursday",
       "instructors": "VICTOR",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-02"
@@ -10410,7 +10412,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
@@ -10490,7 +10492,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
@@ -10790,7 +10792,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Tuesday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-07"
@@ -12060,7 +12062,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
@@ -12140,7 +12142,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
@@ -12620,7 +12622,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Wednesday",
       "instructors": "RAUL",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-15"
@@ -12860,7 +12862,7 @@ window.STAFF_DASHBOARD_SOURCE = {
       "day": "Thursday",
       "instructors": "VICTOR",
       "service": "Day Centre",
-      "area": "Hub · Manager",
+      "area": "Hub \u00b7 Manager",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-16"
@@ -13043,15 +13045,15 @@ window.STAFF_DASHBOARD_SOURCE = {
     },
     {
       "client_name": "Sam",
-      "client_info": "1. Goals: Social participation in group activities.\n2. Medical: None known.\n3. Communication: Verbal — prefers calm, step-by-step instructions."
+      "client_info": "1. Goals: Social participation in group activities.\n2. Medical: None known.\n3. Communication: Verbal \u2014 prefers calm, step-by-step instructions."
     },
     {
       "client_name": "Vitin",
-      "client_info": "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n2. Medical: None known.\n3. Communication: Verbal — family present at home visits."
+      "client_info": "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n2. Medical: None known.\n3. Communication: Verbal \u2014 family present at home visits."
     },
     {
       "client_name": "Jordan",
-      "client_info": "1. Goals: Improve pool entry routine and floating.\n2. Medical: Epilepsy — emergency medication in bag; staff briefed on seizure protocol.\n3. Communication: Non-verbal; responds to gestures and picture cards."
+      "client_info": "1. Goals: Improve pool entry routine and floating.\n2. Medical: Epilepsy \u2014 emergency medication in bag; staff briefed on seizure protocol.\n3. Communication: Non-verbal; responds to gestures and picture cards."
     }
   ],
   "meta": {
