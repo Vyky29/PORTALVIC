@@ -31,6 +31,8 @@
     { "source": "/ra_portal.html", "destination": "/risk_assessment.html" },
     { "source": "/staff-wellbeing-review", "destination": "/staff_wellbeing_review.html" },
     { "source": "/wellbeing-review", "destination": "/staff_wellbeing_review.html" },
+    { "source": "/ld-funding", "destination": "/staff_ld_funding_apply.html" },
+    { "source": "/ld-funding-apply", "destination": "/staff_ld_funding_apply.html" },
     { "source": "/timesheet", "destination": "/timesheet.html" },
     { "source": "/general-induction", "destination": "/general-induction/index.html" },
     { "source": "/induction", "destination": "/general-induction/index.html" },

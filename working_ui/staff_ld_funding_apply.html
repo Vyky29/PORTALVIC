@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<script src="/portal-static-bootstrap.js?v=20260703-ld-funding"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#f4f8fc" />
+<title>L&amp;D Funding Application — clubSENsational</title>
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
+<style>
+:root{
+  --navy:#0a3d62;
+  --navy-deep:#072f4b;
+  --gold:#f4b740;
+  --line:#d9e4ef;
+  --field:#f4f8fc;
+  --text:#1d2b3a;
+  --muted:#5f7185;
+  --ok:#1f7a4d;
+  --okBg:#ecfdf3;
+  --err:#b91c1c;
+  --errBg:#fff1f2;
+  --radius:18px;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding:18px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+}
+.wrap{max-width:760px;margin:0 auto;min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-width:0}
+.back{
+  flex:0 1 auto;min-width:0;max-width:100%;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;
+  border:1px solid var(--line);background:#fff;color:var(--navy);font-weight:700;
+  font-size:14px;text-decoration:none
+}
+h1{margin:0 0 6px;font-size:clamp(22px,4vw,28px);color:var(--navy);letter-spacing:-.02em;text-align:center}
+.lead{margin:0 0 14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.55}
+.policy-link{
+  display:block;margin:0 0 16px;padding:12px 14px;border-radius:14px;
+  border:1px solid rgba(244,183,64,.55);background:#fff9eb;font-size:14px;line-height:1.5;
+  overflow-wrap:break-word
+}
+.policy-link a{color:var(--navy);font-weight:700}
+.card{
+  border:1px solid var(--line);border-radius:var(--radius);background:#fff;
+  box-shadow:0 12px 32px rgba(10,61,98,.08);overflow:hidden
+}
+form{padding:18px}
+section{margin:0 0 18px;padding:0 0 18px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0;margin-bottom:0;padding-bottom:0}
+section h2{margin:0 0 4px;font-size:17px;color:var(--navy)}
+section .hint{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.45}
+.grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.grid .full{grid-column:1/-1}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field .field-label{font-size:14px;font-weight:700;color:var(--text);overflow-wrap:break-word}
+.req{color:var(--err)}
+input,select,textarea{
+  width:100%;min-width:0;border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;font:inherit;font-size:16px;background:#fff;color:var(--text)
+}
+input[readonly]{background:var(--field);color:var(--muted)}
+textarea{min-height:88px;resize:vertical}
+.radio-row{display:flex;flex-wrap:wrap;gap:8px}
+.radio-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  border:1px solid var(--line);background:var(--field);font-size:14px;font-weight:600;
+  cursor:pointer;min-width:0;max-width:100%
+}
+.radio-pill input{accent-color:var(--navy);width:auto;margin:0;flex:none}
+.radio-pill:has(input:checked){border-color:var(--navy);background:#eef6fc}
+.conditional[hidden]{display:none!important}
+.check-row{
+  display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;
+  min-width:0;width:100%;cursor:pointer;margin-bottom:10px
+}
+.check-row:last-child{margin-bottom:0}
+.check-row input[type="checkbox"]{
+  margin-top:3px;flex:none;width:auto;min-width:18px;max-width:18px;height:18px;padding:0
+}
+.check-row span{flex:1;min-width:0;overflow-wrap:break-word}
+.decl-list{margin:0 0 12px;padding-left:18px;font-size:14px;line-height:1.5;color:var(--text)}
+.decl-list li{margin-bottom:6px;overflow-wrap:break-word}
+.actions{
+  margin-top:16px;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px
+}
+.btn{
+  border:none;border-radius:12px;padding:12px 18px;font:inherit;font-weight:800;
+  font-size:14px;cursor:pointer
+}
+.btn-primary{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);color:#fff}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.btn-ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+.msg{
+  margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;display:none;
+  overflow-wrap:break-word
+}
+.msg.show{display:block}
+.msg.ok{background:var(--okBg);color:var(--ok);border:1px solid #bbf7d0}
+.msg.err{background:var(--errBg);color:var(--err);border:1px solid #fecaca}
+.autofill{
+  display:grid;gap:8px;padding:12px 14px;border-radius:14px;background:var(--field);
+  border:1px solid var(--line);margin-bottom:12px
+}
+.autofill div{font-size:14px;min-width:0;overflow-wrap:break-word}
+.autofill strong{color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" id="backLink" href="staff_dashboard.html">← Back to dashboard</a>
+  </div>
+  <h1>L&amp;D Funding Application</h1>
+  <p class="lead">Complete this form before enrolling on any course or training programme. You must receive written approval before you enrol.</p>
+  <p class="policy-link">Read the scheme first: <a href="policies_portal.html?policy=POL-049">Learning &amp; Development Funding Scheme (POL-049)</a></p>
+
+  <div class="card">
+    <form id="ldFundingForm" novalidate>
+      <section aria-labelledby="secEmployee">
+        <h2 id="secEmployee">1. Employee details</h2>
+        <p class="hint">Your name is filled from your portal account. Check job title and department before submitting.</p>
+        <div class="grid">
+          <div class="field full">
+            <label for="employeeName">Employee name <span class="req">*</span></label>
+            <input type="text" id="employeeName" name="employeeName" required maxlength="200" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="jobTitle">Job title</label>
+            <input type="text" id="jobTitle" name="jobTitle" maxlength="200" placeholder="e.g. Swimming Instructor" />
+          </div>
+          <div class="field">
+            <label for="serviceDepartment">Service / department</label>
+            <input type="text" id="serviceDepartment" name="serviceDepartment" maxlength="200" placeholder="e.g. Aquatics" />
+          </div>
+          <div class="field">
+            <label for="applicationDate">Date of application <span class="req">*</span></label>
+            <input type="date" id="applicationDate" name="applicationDate" required />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secCourse">
+        <h2 id="secCourse">2. Course details</h2>
+        <div class="grid">
+          <div class="field full">
+            <label for="courseTitle">Course / qualification title <span class="req">*</span></label>
+            <input type="text" id="courseTitle" name="courseTitle" required maxlength="300" />
+          </div>
+          <div class="field full">
+            <label for="trainingProvider">Training provider <span class="req">*</span></label>
+            <input type="text" id="trainingProvider" name="trainingProvider" required maxlength="300" />
+          </div>
+          <div class="field">
+            <label for="courseStartDate">Course start date</label>
+            <input type="date" id="courseStartDate" name="courseStartDate" />
+          </div>
+          <div class="field">
+            <label for="courseEndDate">Course end date (if known)</label>
+            <input type="date" id="courseEndDate" name="courseEndDate" />
+          </div>
+          <div class="field full">
+            <span class="field-label">Delivery method</span>
+            <div class="radio-row" role="radiogroup" aria-label="Delivery method">
+              <label class="radio-pill"><input type="radio" name="deliveryMethod" value="online" /> Online</label>
+              <label class="radio-pill"><input type="radio" name="deliveryMethod" value="face_to_face" /> Face-to-face</label>
+              <label class="radio-pill"><input type="radio" name="deliveryMethod" value="blended" /> Blended</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="totalCourseCost">Total course cost (£)</label>
+            <input type="number" id="totalCourseCost" name="totalCourseCost" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secProposal">
+        <h2 id="secProposal">3. Learning proposal</h2>
+        <div class="grid">
+          <div class="field full">
+            <label for="whyLearning">Why would you like to complete this learning or training? <span class="req">*</span></label>
+            <textarea id="whyLearning" name="whyLearning" required maxlength="3000"></textarea>
+          </div>
+          <div class="field full">
+            <label for="roleImprovement">How will this learning improve your role at ClubSENsational? <span class="req">*</span></label>
+            <textarea id="roleImprovement" name="roleImprovement" required maxlength="3000"></textarea>
+          </div>
+          <div class="field full">
+            <label for="participantsBenefit">How will the individuals we support benefit from this learning? <span class="req">*</span></label>
+            <textarea id="participantsBenefit" name="participantsBenefit" required maxlength="3000"></textarea>
+          </div>
+          <div class="field full">
+            <label for="applySharePlan">How do you plan to apply or share your learning within ClubSENsational? <span class="req">*</span></label>
+            <textarea id="applySharePlan" name="applySharePlan" required maxlength="3000"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secFunding">
+        <h2 id="secFunding">4. Funding request</h2>
+        <div class="grid">
+          <div class="field full">
+            <span class="field-label">Are you applying for funding through the Learning &amp; Development Funding Scheme? <span class="req">*</span></span>
+            <div class="radio-row" role="radiogroup" aria-label="Applying for scheme funding">
+              <label class="radio-pill"><input type="radio" name="applyingForScheme" value="yes" required /> Yes</label>
+              <label class="radio-pill"><input type="radio" name="applyingForScheme" value="no" /> No</label>
+            </div>
+          </div>
+          <div class="field full conditional" id="upfrontWrap">
+            <span class="field-label">Will you be able to pay the course fees upfront?</span>
+            <div class="radio-row" role="radiogroup" aria-label="Pay fees upfront">
+              <label class="radio-pill"><input type="radio" name="canPayUpfront" value="yes" /> Yes</label>
+              <label class="radio-pill"><input type="radio" name="canPayUpfront" value="no" /> No – I would like to request an exceptional funding arrangement</label>
+            </div>
+          </div>
+          <div class="field full conditional" id="exceptionalWrap" hidden>
+            <label for="exceptionalNote">If requesting an exceptional funding arrangement, please briefly explain <span class="req">*</span></label>
+            <textarea id="exceptionalNote" name="exceptionalNote" maxlength="2000"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secDecl">
+        <h2 id="secDecl">5. Employee declaration</h2>
+        <p class="hint">Tick the box to confirm. This replaces a handwritten signature on this portal form.</p>
+        <ul class="decl-list">
+          <li>I confirm that the information provided in this application is accurate.</li>
+          <li>Submission of this application does not guarantee approval.</li>
+          <li>I must not enrol on the course until I have received written confirmation from ClubSENsational.</li>
+          <li>Any approved funding is subject to the ClubSENsational Learning &amp; Development Funding Scheme.</li>
+          <li>If my application is approved, I agree to comply with the conditions set out in the Funding Approval Letter and, where applicable, any Training Funding Agreement.</li>
+        </ul>
+        <label class="check-row">
+          <input type="checkbox" id="declaration" name="declaration" required />
+          <span>I confirm the above declaration.</span>
+        </label>
+      </section>
+
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="clearBtn">Clear</button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Submit application</button>
+      </div>
+      <p class="msg" id="formMsg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="/portal/portal_ld_funding_apply.js?v=20260703-ld-funding"></script>
+</body>
+</html>
