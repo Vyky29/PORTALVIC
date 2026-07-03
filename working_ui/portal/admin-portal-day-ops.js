@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v5-load-fix';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v6-overrides-match';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 45000;
@@ -177,9 +177,19 @@
       lead_session_reports: [],
       venue_reviews: [],
       cancellation_reports: [],
-      schedule_overrides: [],
       session_quick_marks: []
     };
+  }
+
+  function syncScheduleOverridesIntoPayload() {
+    try {
+      var cached = global.__PORTAL_SCHEDULE_OVERRIDES__;
+      if (Array.isArray(cached) && cached.length) {
+        if (!payload.schedule_overrides || !payload.schedule_overrides.length) {
+          payload.schedule_overrides = cached.slice();
+        }
+      }
+    } catch (_syncOv) {}
   }
 
   async function fetchParentFeedbackSharesInto(target) {
@@ -213,6 +223,7 @@
   }
 
   function portalDayOpsAfterFeedbackPayloadMerge() {
+    syncScheduleOverridesIntoPayload();
     if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
       window.portalInvalidateAdminFeedbackStatusCache();
     }
@@ -479,6 +490,12 @@
       })
     );
     await fetchParentFeedbackSharesInto(out);
+    try {
+      if ((!out.schedule_overrides || !out.schedule_overrides.length) && global.__PORTAL_SCHEDULE_OVERRIDES__) {
+        out.schedule_overrides = global.__PORTAL_SCHEDULE_OVERRIDES__.slice();
+      }
+    } catch (_ovFallback) {}
+    console.log('[PortalDayOps] schedule_overrides live rows:', (out.schedule_overrides || []).length);
     return out;
   }
 

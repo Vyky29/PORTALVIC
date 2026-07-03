@@ -4005,6 +4005,13 @@
 
   AdminSessionsHub.prototype.setPayload = function (payload) {
     this.payload = payload || {};
+    if (
+      (!this.payload.schedule_overrides || !this.payload.schedule_overrides.length) &&
+      global.__PORTAL_SCHEDULE_OVERRIDES__ &&
+      global.__PORTAL_SCHEDULE_OVERRIDES__.length
+    ) {
+      this.payload.schedule_overrides = global.__PORTAL_SCHEDULE_OVERRIDES__.slice();
+    }
     this.invalidateComputeCaches();
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {
@@ -4750,8 +4757,8 @@
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
-    var ov = this.overrideForSlot(slot);
-    if (ov && overrideIsCancelledType(ov)) return true;
+    var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
+    if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
   };
@@ -4977,8 +4984,8 @@
     if (!slot) return false;
     var stEx = this.statusExportRowForSlot(slot);
     if (stEx && statusExportRowIsAbsent(stEx)) return true;
-    var ov = this.overrideForSlot(slot);
-    if (ov && overrideIsAbsentType(ov)) return true;
+    var ovAbsent = this.overrideForSlotByType(slot, overrideIsAbsentType);
+    if (ovAbsent) return true;
     var cid = canonicalClientSlug(slot.client_name);
     var absentMap = this._absentFbByDateClient || {};
     var dk = slot.session_date + "|" + cid;
@@ -5540,15 +5547,21 @@
       }
       return false;
     }
-    if (oStart && sStart && oStart !== sStart) return false;
+    if (oStart && sStart && oStart !== sStart) {
+      var oLabel = clean(ov.anchor_time_slot_label).toLowerCase();
+      var sLabel = clean(slot.time_slot).toLowerCase();
+      if (oLabel && sLabel && oLabel === sLabel) return true;
+      return false;
+    }
     return true;
   };
 
-  AdminSessionsHub.prototype.overrideForSlot = function (slot) {
-    if (slot && slot.__portalScheduleOverride) return slot.__portalScheduleOverride;
+  AdminSessionsHub.prototype.overrideForSlotByType = function (slot, typeFn) {
+    if (!slot || typeof typeFn !== "function") return null;
     var ovs = this.payload.schedule_overrides || [];
     var best = null;
     for (var i = 0; i < ovs.length; i++) {
+      if (!typeFn(ovs[i])) continue;
       if (!this.overrideMatchesSlot(slot, ovs[i])) continue;
       if (
         !best ||
@@ -5559,6 +5572,40 @@
       }
     }
     return best;
+  };
+
+  AdminSessionsHub.prototype.primaryOverrideForSlot = function (slot) {
+    if (slot && slot.__portalScheduleOverride) return slot.__portalScheduleOverride;
+    var hub = this;
+    var checks = [
+      overrideIsCancelledType,
+      overrideIsAbsentType,
+      overrideIsInstructorReassignType,
+      function (ov) {
+        return overrideIsReplaceType(ov) && !overrideIsTrialType(ov);
+      },
+      overrideIsTrialType,
+      overrideIsSlotUpdateType,
+      overrideIsShadowingSessionAdd,
+    ];
+    for (var c = 0; c < checks.length; c++) {
+      var hit = hub.overrideForSlotByType(slot, checks[c]);
+      if (hit) return hit;
+    }
+    return null;
+  };
+
+  AdminSessionsHub.prototype.activeOverridesForDate = function (iso) {
+    var day = clean(iso).substring(0, 10);
+    if (!day) return [];
+    var ovs = (this.payload && this.payload.schedule_overrides) || [];
+    return ovs.filter(function (ov) {
+      return clean(ov.session_date) === day && String(ov.status || "active").trim() === "active";
+    });
+  };
+
+  AdminSessionsHub.prototype.overrideForSlot = function (slot) {
+    return this.primaryOverrideForSlot(slot);
   };
 
   AdminSessionsHub.prototype.fbRowKey = function (fb) {
@@ -7155,9 +7202,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var ovCount = (this.payload && this.payload.schedule_overrides) ? this.payload.schedule_overrides.length : 0;
+    if (!ovCount && global.__PORTAL_SCHEDULE_OVERRIDES__ && global.__PORTAL_SCHEDULE_OVERRIDES__.length) {
+      ovCount = global.__PORTAL_SCHEDULE_OVERRIDES__.length;
+    }
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
     var liveLoad = global.__PORTAL_ADMIN_LIVE_LOAD__ || {};
     var ovMeta = liveLoad.schedule_overrides || null;
+    if (!ovCount && ovMeta && ovMeta.count) ovCount = ovMeta.count;
+    var ovToday = 0;
+    try {
+      ovToday = this.activeOverridesForDate(this.selectedDay).length;
+    } catch (_ovDay) {}
     var dayDiag = null;
     try {
       dayDiag = this.diagnoseDay(this.selectedDay);
@@ -7185,7 +7240,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
         : "";
     var ovLine = ovCount
-      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded"
+      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded" +
+        (ovToday ? " (<strong>" + esc(String(ovToday)) + "</strong> active this day)" : "")
       : (ovMeta && ovMeta.error ? " · overrides failed: " + esc(String(ovMeta.error)) : "");
     return (
       '<p class="ash-feedback-filter-hint" role="status">Live feedback: <strong>' +
