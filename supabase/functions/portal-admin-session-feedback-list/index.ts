@@ -12,7 +12,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 
 const SELECT_COLS =
-  "id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at";
+  "id,client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,session_narrative,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });

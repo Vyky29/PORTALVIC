@@ -319,7 +319,7 @@
   }
 
   function feedbackFields(r) {
-    return (
+    var out =
       qaRow("Participant", r.client_name) +
       qaRow("Session date", formatDateOnly(r.session_date)) +
       qaRow("Service", r.service) +
@@ -327,12 +327,16 @@
       qaRow("Attendance", r.attendance) +
       qaRow("Engagement", r.engagement || r.engagement_rating) +
       qaRow("Emotions / regulation", r.client_emotions) +
-      qaRow("Independence", r.independence || r.independence_level) +
+      qaRow("Independence", r.independence || r.independence_level);
+    if (clean(r.session_narrative)) {
+      out += qaRow("Session narrative (staff)", r.session_narrative, true);
+    }
+    out +=
       qaRow("Positive feedback", r.positive_feedback, true) +
       qaRow("Relevant information", r.relevant_information, true) +
       qaRow("Incidents", r.incidents, true) +
-      qaRow("Recorded", formatWhen(r.created_at))
-    );
+      qaRow("Recorded", formatWhen(r.created_at));
+    return out;
   }
 
   function buildModalHtml(kind, row) {

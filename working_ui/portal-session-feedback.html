@@ -32,7 +32,7 @@
 <script src="/portal/portal_participant_achievements.js?v=20260703-achievements-unlimited"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260703-narrative-v1"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260703-narrative-names"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260703-live-filter-only"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -1412,6 +1412,10 @@ button{
 
   function applyFeedbackSessionContextUi(){
     syncFeedbackManualFields();
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+      typeof window.PortalFeedbackNarrative.onSessionContextChange === "function"){
+      window.PortalFeedbackNarrative.onSessionContextChange();
+    }
     const ctx = buildResolvedContext();
     renderPortalSessionContextCard(ctx);
     const locked = feedbackContextLockedFromDashboard();
@@ -1663,6 +1667,10 @@ button{
     const svc = document.getElementById("fbService");
     if(svc){
       try{ svc.focus(); }catch(_){}
+    }
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+      typeof window.PortalFeedbackNarrative.onSessionContextChange === "function"){
+      window.PortalFeedbackNarrative.onSessionContextChange();
     }
   }
 
@@ -2584,6 +2592,7 @@ button{
       engagement_rating: fields.engagementRating,
       engagement_patterns: Array.isArray(fields.independenceLevels) ? fields.independenceLevels : [],
       positive_feedback: fields.positiveFeedback || null,
+      session_narrative: fields.sessionNarrative || null,
       client_emotions: fields.clientEmotionsVal || null,
       relevant_information: fields.relevantInformation || null,
       exceptional_challenges: null,
@@ -2612,6 +2621,11 @@ button{
     if(insertErr && String(insertErr.message || "").toLowerCase().includes("late_session")){
       payload = Object.assign({}, payload);
       delete payload.late_session_feedback;
+      ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
+    }
+    if(insertErr && String(insertErr.message || "").toLowerCase().includes("session_narrative")){
+      payload = Object.assign({}, payload);
+      delete payload.session_narrative;
       ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     }
     if(insertErr) throw insertErr;
@@ -2730,6 +2744,7 @@ button{
       engagement_rating: row.engagement_rating,
       engagement_patterns: row.engagement_patterns,
       positive_feedback: row.positive_feedback,
+      session_narrative: row.session_narrative,
       client_emotions: row.client_emotions,
       relevant_information: row.relevant_information,
       exceptional_challenges: row.exceptional_challenges,
@@ -2858,6 +2873,11 @@ button{
     const formFields = {
       positiveFeedback,
       relevantInformation,
+      sessionNarrative:
+        typeof window.PortalFeedbackNarrative !== "undefined" &&
+        typeof window.PortalFeedbackNarrative.getSessionNarrativeForSubmit === "function"
+          ? window.PortalFeedbackNarrative.getSessionNarrativeForSubmit()
+          : clean((data.get("sessionNarrative") || "").toString()),
       hasPositiveFeedback,
       hasRelevantInformation,
       attendanceVal,

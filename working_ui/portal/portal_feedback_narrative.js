@@ -7,6 +7,10 @@
   var FILTER_FN = "portal-feedback-narrative-filter";
   var MIN_NARRATIVE_CHARS = 80;
 
+  /** Training-demo copy — must not be submitted as live feedback. */
+  var DEMO_POSITIVE_MARKER =
+    "The participant arrived happy and ready to begin the session";
+
   var cfg = {
     getClient: function () {
       return null;
@@ -25,39 +29,23 @@
   var state = {
     filtered: false,
     filtering: false,
+    liveAiUsed: false,
     narrativeSnapshot: "",
+    contextKey: "",
   };
 
   var els = {};
 
-  /** Offline preview only — uses participant name; live filter uses OpenAI. */
-  function buildPreviewFilter(participantName, gender, narrative) {
-    var first = participantFirstName(participantName);
-    var g = normGenderValue(gender);
-    var subj = g === "m" ? "He" : g === "f" ? "She" : first;
-    var pos = g === "m" ? "his" : g === "f" ? "her" : first + "'s";
-    var snippet = clean(narrative).slice(0, 220);
-    return {
-      positive:
-        first +
-        " had a good session today. " +
-        subj +
-        " took part in the activities described in your narrative" +
-        (snippet ? " (" + snippet.replace(/\s+/g, " ") + "…)" : "") +
-        ". " +
-        subj +
-        " finished with a calm handover to " +
-        pos +
-        " family.",
-      relevant:
-        "Session notes from staff narrative for " +
-        first +
-        ". " +
-        (snippet
-          ? "Key points: " + snippet.replace(/\s+/g, " ") + "…"
-          : "Review the full narrative on file.") +
-        " Sign in on the portal for live AI filtering.",
-    };
+  function configure(options) {
+    if (!options) return;
+    if (options.getClient) cfg.getClient = options.getClient;
+    if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
+    if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
+    if (options.getForm) cfg.getForm = options.getForm;
+  }
+
+  function clean(v) {
+    return String(v == null ? "" : v).trim();
   }
 
   function normGenderValue(v) {
@@ -89,39 +77,40 @@
       var g = normGenderValue(map[n]) || normGenderValue(map[first]);
       if (g) return g;
     } catch (_) {}
-    try {
-      var notes = global.clientNotesById;
-      if (notes && typeof notes === "object") {
-        var keys = Object.keys(notes);
-        for (var i = 0; i < keys.length; i++) {
-          var note = notes[keys[i]];
-          if (!note) continue;
-          var nm = photoKey(note.name || note.clientName || "");
-          if (!nm) continue;
-          if (nm === n || nm.split(/\s+/)[0] === first || n.indexOf(nm.split(/\s+/)[0]) === 0) {
-            var g2 = normGenderValue(note.gender);
-            if (g2) return g2;
-          }
-        }
-      }
-    } catch (_2) {}
     return "";
   }
 
-  function configure(options) {
-    if (!options) return;
-    if (options.getClient) cfg.getClient = options.getClient;
-    if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
-    if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
-    if (options.getForm) cfg.getForm = options.getForm;
+  function previewFilterAllowed() {
+    try {
+      if (global.location && global.location.search) {
+        if (/[?&]localPreview=1(?:&|$)/.test(global.location.search)) return true;
+      }
+    } catch (_) {}
+    return !!global.__PORTAL_FEEDBACK_ALLOW_PREVIEW_FILTER;
+  }
+
+  function isDemoTemplateOutput(positive, relevant, participantName) {
+    var pos = clean(positive);
+    var rel = clean(relevant);
+    if (!pos && !rel) return false;
+    if (pos.indexOf(DEMO_POSITIVE_MARKER) !== -1) return true;
+    if (rel.indexOf("requested to finish the session approximately ten minutes early") !== -1) {
+      return true;
+    }
+    var first = participantFirstName(participantName);
+    if (first && first !== "Participant") {
+      if (/\bthe participant\b/i.test(pos)) return true;
+      if (pos && pos.indexOf(first) === -1 && rel.indexOf(first) === -1) {
+        if (pos.indexOf("Seahorse") !== -1 || pos.indexOf("Intensive Interaction") !== -1) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   function baseUrl() {
     return String(cfg.getSupabaseUrl() || "").replace(/\/$/, "");
-  }
-
-  function clean(v) {
-    return String(v == null ? "" : v).trim();
   }
 
   async function authToken() {
@@ -158,19 +147,22 @@
   function syncFilterButton() {
     if (!els.filterBtn) return;
     var len = narrativeText().length;
-    els.filterBtn.disabled =
-      state.filtering || len < MIN_NARRATIVE_CHARS;
+    els.filterBtn.disabled = state.filtering || len < MIN_NARRATIVE_CHARS;
   }
 
   function syncSubmitGate() {
     if (!els.submitBtn) return;
     if (els.submitBtn.textContent === "Submitting") return;
-    els.submitBtn.disabled = !state.filtered;
+    els.submitBtn.disabled = !state.filtered || !state.liveAiUsed;
     var hint = global.document.getElementById("fbSubmitHint");
     if (hint) {
-      hint.textContent = state.filtered
-        ? "Ready to submit — edit Positive or Relevant if needed."
-        : "Run Filter with AI before submitting.";
+      if (!state.filtered) {
+        hint.textContent = "Run Filter with AI before submitting.";
+      } else if (!state.liveAiUsed) {
+        hint.textContent = "Live AI filter required — tap Filter with AI again (do not use training demo copy).";
+      } else {
+        hint.textContent = "Ready to submit — edit Positive or Relevant if needed.";
+      }
     }
   }
 
@@ -181,6 +173,7 @@
 
   function resetFilteredState() {
     state.filtered = false;
+    state.liveAiUsed = false;
     state.narrativeSnapshot = "";
     if (els.positive) els.positive.value = "";
     if (els.relevant) els.relevant.value = "";
@@ -189,13 +182,6 @@
     setStatus("");
     syncFilterButton();
     syncSubmitGate();
-  }
-
-  function invalidateIfNarrativeChanged() {
-    if (!state.filtered) return;
-    if (narrativeText() === state.narrativeSnapshot) return;
-    resetFilteredState();
-    setStatus("Narrative changed — run Filter with AI again.");
   }
 
   function readFormContext() {
@@ -228,6 +214,7 @@
 
     var participantEl = form.querySelector("#fbParticipantName, [name='participantName']");
     var serviceEl = form.querySelector("#fbService, [name='service']");
+    var dateEl = form.querySelector("#fbSessionDate, [name='sessionDate']");
     var participantName = participantEl ? clean(participantEl.value) : "";
     var gender = participantGender(participantName);
 
@@ -238,23 +225,45 @@
       participant_name: participantName,
       participant_gender: gender,
       service: serviceEl ? clean(serviceEl.value) : "",
+      session_date: dateEl ? clean(dateEl.value).slice(0, 10) : "",
     };
   }
 
-  function applyFilterResult(positive, relevant, previewMode) {
+  function buildContextKey() {
+    var ctx = readFormContext();
+    return [
+      ctx.participant_name,
+      ctx.service,
+      ctx.session_date,
+    ]
+      .map(function (v) {
+        return clean(v).toLowerCase();
+      })
+      .join("|");
+  }
+
+  function onSessionContextChange() {
+    var key = buildContextKey();
+    if (state.contextKey && key && key !== state.contextKey) {
+      resetFilteredState();
+      setStatus("Participant or session changed — write or record this session, then Filter with AI.");
+    }
+    state.contextKey = key;
+  }
+
+  function applyFilterResult(positive, relevant, liveAi) {
     if (els.positive) els.positive.value = positive;
     if (els.relevant) els.relevant.value = relevant;
     state.filtered = true;
+    state.liveAiUsed = !!liveAi;
     state.narrativeSnapshot = narrativeText();
     setAiFieldsRequired(true);
     showAiOutput(true);
     syncSubmitGate();
-    if (previewMode) {
-      setStatus(
-        "Preview filter applied (sign in on portal for live AI). Review below, then Submit.",
-      );
+    if (liveAi) {
+      setStatus("Filtered from your narrative — edit Positive and Relevant if needed, then Submit.");
     } else {
-      setStatus("Filtered — edit Positive and Relevant if needed, then Submit.");
+      setStatus("Preview only — sign in on the portal and run Filter with AI again before Submit.");
     }
   }
 
@@ -296,19 +305,6 @@
     };
   }
 
-  async function runPreviewFilter(participantName, gender, narrative) {
-    await new Promise(function (r) {
-      setTimeout(r, 700);
-    });
-    var preview = buildPreviewFilter(participantName, gender, narrative);
-    return {
-      ok: true,
-      positive_feedback: preview.positive,
-      relevant_information: preview.relevant,
-      preview: true,
-    };
-  }
-
   async function filterWithAi() {
     if (state.filtering) return;
     var narrative = narrativeText();
@@ -320,39 +316,57 @@
     state.filtering = true;
     syncFilterButton();
     if (els.filterBtn) els.filterBtn.textContent = "Filtering…";
-    setStatus("Filtering with AI…");
+    setStatus("Filtering with AI from your narrative…");
 
     var context = readFormContext();
     var result = await callFilterEdge(narrative, context);
 
     if (!result.ok) {
-      var usePreview =
-        result.error === "session_expired" ||
-        result.status === 401 ||
-        result.status === 503 ||
-        result.status === 502 ||
-        result.error === "filter_failed";
-
-      if (usePreview) {
-        result = await runPreviewFilter(
-          context.participant_name,
-          context.participant_gender,
-          narrative,
+      state.filtering = false;
+      if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
+      syncFilterButton();
+      var err = result.error || "filter_failed";
+      if (err === "session_expired") {
+        setStatus("Sign in on the portal, then tap Filter with AI again.");
+        global.alert(
+          "Your session expired. Sign in again, then tap Filter with AI on YOUR transcribed narrative before Submit.",
         );
-      } else {
-        state.filtering = false;
-        if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
-        syncFilterButton();
-        setStatus("Could not filter — try again or check your connection.");
         return;
       }
+      if (err === "template_response" || err === "generic_participant_label" || err === "invented_details") {
+        setStatus("AI returned a generic template — edit your narrative or try Filter again.");
+        global.alert(
+          "Filter with AI did not accept a generic training example. Use YOUR voice transcript or typed notes for this participant, then tap Filter with AI again.",
+        );
+        return;
+      }
+      setStatus("Could not filter — check your connection and try again.");
+      global.alert(
+        "Filter with AI failed (" +
+          String(err).replace(/_/g, " ") +
+          "). Check your connection and try again. Do not paste text from the training demo.",
+      );
+      return;
     }
 
-    applyFilterResult(
-      result.positive_feedback,
-      result.relevant_information,
-      !!result.preview,
-    );
+    if (
+      isDemoTemplateOutput(
+        result.positive_feedback,
+        result.relevant_information,
+        context.participant_name,
+      )
+    ) {
+      state.filtering = false;
+      if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
+      syncFilterButton();
+      setStatus("Output looks like the training demo — use your own narrative.");
+      global.alert(
+        "This looks like the training demo example, not your transcription. Record or type what happened in THIS session, then tap Filter with AI again.",
+      );
+      return;
+    }
+
+    applyFilterResult(result.positive_feedback, result.relevant_information, true);
 
     state.filtering = false;
     if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
@@ -362,46 +376,74 @@
   function validateBeforeSubmit() {
     var narrative = narrativeText();
     if (!narrative) {
-      alert("Please complete the session narrative (Reception, Session, Handover).");
+      global.alert("Please complete the session narrative (Reception, Session, Handover).");
       return false;
     }
     if (narrative.length < MIN_NARRATIVE_CHARS) {
-      alert("Please add more detail to the session narrative before submitting.");
+      global.alert("Please add more detail to the session narrative before submitting.");
       return false;
     }
     if (!state.filtered) {
-      alert("Tap Filter with AI first — Positive and Relevant are filled from your narrative.");
+      global.alert("Tap Filter with AI first — Positive and Relevant are filled from your narrative.");
+      return false;
+    }
+    if (!state.liveAiUsed) {
+      global.alert(
+        "Live Filter with AI is required. Do not submit training-demo copy — tap Filter with AI on your own narrative.",
+      );
       return false;
     }
     if (narrative !== state.narrativeSnapshot) {
-      alert("You edited the narrative after filtering. Tap Filter with AI again.");
+      global.alert("You edited the narrative after filtering. Tap Filter with AI again.");
       return false;
     }
-    if (!clean(els.positive && els.positive.value)) {
-      alert("Positive feedback is empty — run Filter with AI again.");
+    var ctx = readFormContext();
+    var positive = clean(els.positive && els.positive.value);
+    var relevant = clean(els.relevant && els.relevant.value);
+    if (isDemoTemplateOutput(positive, relevant, ctx.participant_name)) {
+      global.alert(
+        "Positive/Relevant still match the training demo example. Use Filter with AI on YOUR transcribed session narrative.",
+      );
       return false;
     }
-    if (!clean(els.relevant && els.relevant.value)) {
-      alert("Relevant information is empty — run Filter with AI again.");
+    if (!positive) {
+      global.alert("Positive feedback is empty — run Filter with AI again.");
+      return false;
+    }
+    if (!relevant) {
+      global.alert("Relevant information is empty — run Filter with AI again.");
       return false;
     }
     return true;
   }
 
   function isFiltered() {
-    return state.filtered;
+    return state.filtered && state.liveAiUsed;
+  }
+
+  function getSessionNarrativeForSubmit() {
+    return narrativeText();
   }
 
   function reset() {
     if (els.narrative) els.narrative.value = "";
     resetFilteredState();
+    state.contextKey = buildContextKey();
   }
 
   function wireFormListeners(form) {
     if (!form) return;
     form.addEventListener("change", function () {
+      onSessionContextChange();
       invalidateIfNarrativeChanged();
     });
+  }
+
+  function invalidateIfNarrativeChanged() {
+    if (!state.filtered) return;
+    if (narrativeText() === state.narrativeSnapshot) return;
+    resetFilteredState();
+    setStatus("Narrative changed — run Filter with AI again.");
   }
 
   function init(options) {
@@ -429,6 +471,7 @@
     });
 
     wireFormListeners(cfg.getForm());
+    state.contextKey = buildContextKey();
     setAiFieldsRequired(false);
     syncFilterButton();
     syncSubmitGate();
@@ -442,5 +485,8 @@
     validateBeforeSubmit: validateBeforeSubmit,
     filterWithAi: filterWithAi,
     syncSubmitGate: syncSubmitGate,
+    onSessionContextChange: onSessionContextChange,
+    getSessionNarrativeForSubmit: getSessionNarrativeForSubmit,
+    isDemoTemplateOutput: isDemoTemplateOutput,
   };
 })(typeof window !== "undefined" ? window : globalThis);
