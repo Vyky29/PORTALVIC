@@ -23,10 +23,10 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v4-overrides';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v5-load-fix';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
-  var ENRICH_WAIT_MS = 8000;
+  var ENRICH_WAIT_MS = 45000;
   var SUPABASE_WAIT_MS = 22000;
 
   function dayOpsDebugEnabled() {
@@ -172,6 +172,7 @@
       counts: {},
       session_feedback: [],
       session_feedback_total: 0,
+      session_feedback_loaded: false,
       incident_reports: [],
       lead_session_reports: [],
       venue_reviews: [],
@@ -246,15 +247,16 @@
   async function refreshSessionFeedbackLive() {
     if (!cfg.fetchSessionFeedback) return;
     try {
-      var dbFb = await cfg.fetchSessionFeedback();
-      payload.session_feedback = dbFb || [];
+      var dbFb = (await promiseWithTimeout(cfg.fetchSessionFeedback(), 45000, [])) || [];
+      payload.session_feedback = dbFb;
       payload.session_feedback_total = payload.session_feedback.length;
-      payload.session_feedback_loaded = true;
-      dayOpsDebug('[PortalDayOps] session_feedback refreshed:', payload.session_feedback.length);
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
-      dayOpsDebug('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+      console.error('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+    } finally {
+      payload.session_feedback_loaded = true;
+      portalDayOpsRenderLiveLoadStatus();
     }
   }
 
@@ -427,24 +429,31 @@
     if (cfg.fetchSessionFeedback) {
       tasks.push(
         (async function () {
-          if (!client && cfg.waitForSupabaseClient) {
-            client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
+          var live = [];
+          try {
+            if (!client && cfg.waitForSupabaseClient) {
+              client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
+            }
+            live = (await promiseWithTimeout(cfg.fetchSessionFeedback(), 45000, [])) || [];
+            out.session_feedback = live;
+            out.session_feedback_total = out.session_feedback.length;
+            if (!live.length) {
+              var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+              var err = meta && meta.error ? String(meta.error) : '';
+              console.warn(
+                '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
+              );
+            } else {
+              console.log('[PortalDayOps] session_feedback live rows:', live.length);
+            }
+            dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
+          } catch (taskErr) {
+            console.error('[PortalDayOps] session_feedback task failed', taskErr);
+            out.session_feedback = out.session_feedback || [];
+            out.session_feedback_total = out.session_feedback.length;
+          } finally {
+            out.session_feedback_loaded = true;
           }
-          var dbFb = await cfg.fetchSessionFeedback();
-          var live = dbFb || [];
-          out.session_feedback = live;
-          out.session_feedback_total = out.session_feedback.length;
-          out.session_feedback_loaded = true;
-          if (!live.length) {
-            var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
-            var err = meta && meta.error ? String(meta.error) : '';
-            console.warn(
-              '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
-            );
-          } else {
-            console.log('[PortalDayOps] session_feedback live rows:', live.length);
-          }
-          dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
         })()
       );
     }
@@ -1238,14 +1247,12 @@
         });
       return loadInFlight;
     },
-    refreshTab: async function (tabId) {
+    refreshTab: async function (tabId, options) {
       try {
-        if (cfg.invalidateLiveCaches) {
+        if (options && options.force && cfg.invalidateLiveCaches) {
           try {
             cfg.invalidateLiveCaches();
           } catch (_inv) {}
-        } else {
-          this.invalidatePayload();
         }
         await global.PortalDayOps.ensurePayload();
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {

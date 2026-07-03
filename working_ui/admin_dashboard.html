@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v4-overrides"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-v5-load-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17781,7 +17781,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v4-overrides';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v5-load-fix';
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 
@@ -17874,13 +17874,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(liveTb) liveTb.innerHTML = errRow6;
         if(logTb) logTb.innerHTML = errRow7;
       }
-      function runHubRefresh(){
+      function runHubRefresh(forceReload){
         if(showPickup){
           void adminRefreshPickupHandoverMonitor().then(onHubRefreshDone).catch(onPickupRefreshFail);
           return;
         }
         if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
-          void window.PortalDayOps.refreshTab(h.tab).then(onHubRefreshDone).catch(onHubRefreshFail);
+          void window.PortalDayOps.refreshTab(h.tab, forceReload ? { force: true } : null).then(onHubRefreshDone).catch(onHubRefreshFail);
         }else{
           void refreshSessionFeedbackGrid();
         }
@@ -18203,21 +18203,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var __adminSessionFeedbackInflight = null;
     async function adminFetchSessionFeedbackForHub(){
       if(__adminSessionFeedbackInflight) return __adminSessionFeedbackInflight;
-      __adminSessionFeedbackInflight = adminFetchSessionFeedbackForHubInner().finally(function(){
-        __adminSessionFeedbackInflight = null;
-      });
+      __adminSessionFeedbackInflight = (async function(){
+        try{
+          return await adminFetchSessionFeedbackForHubInner();
+        }catch(innerErr){
+          console.warn('[admin] session_feedback inner failed', innerErr);
+          return [];
+        }finally{
+          __adminSessionFeedbackInflight = null;
+        }
+      })();
       return __adminSessionFeedbackInflight;
     }
     async function adminFetchSessionFeedbackForHubInner(){
       var since = new Date();
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
-      await adminWaitForSupabaseReady(22000);
       var edgeResult = await adminFetchSessionFeedbackViaEdge(sinceIso);
       var rows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
       var via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
       var loadErr = edgeResult && edgeResult.error ? edgeResult.error : null;
       if(!rows.length){
+        await adminWaitForSupabaseReady(12000);
         var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
         rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
         via = (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc';
@@ -18342,18 +18349,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!token) return { error: 'session_expired' };
       var base = typeof window.SUPABASE_URL === 'string' ? String(window.SUPABASE_URL).replace(/\/$/, '') : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
       var anon = adminPortalAnonKey();
-      var res = await fetch(base + '/functions/v1/' + path, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-          apikey: anon
-        },
-        body: body == null ? '{}' : JSON.stringify(body),
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
-          ? AbortSignal.timeout(20000)
-          : undefined
-      });
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(_ab){} }, 25000) : null;
+      var res;
+      try{
+        res = await fetch(base + '/functions/v1/' + path, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+            apikey: anon
+          },
+          body: body == null ? '{}' : JSON.stringify(body),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+      }catch(fetchErr){
+        if(timer) clearTimeout(timer);
+        var fetchMsg = String(fetchErr && fetchErr.name === 'AbortError' ? 'request_timeout' : (fetchErr && fetchErr.message ? fetchErr.message : fetchErr));
+        return { error: fetchMsg };
+      }
+      if(timer) clearTimeout(timer);
       var j = null;
       try { j = await res.json(); } catch(_e) { j = null; }
       if(!res.ok || !j || !j.ok){
@@ -18522,7 +18537,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hubRef){
         hubRef.onclick = function(){
           adminInvalidateSessionsHubLiveCaches();
-          void sessionsHubRefreshActiveTab();
+          runHubRefresh(true);
         };
       }
       function bindHubClientFilter(inpId){
