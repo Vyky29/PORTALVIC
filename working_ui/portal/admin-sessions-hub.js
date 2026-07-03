@@ -8428,6 +8428,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var rows = this.feedbackRowsForSelectedDay();
+    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
 
     var tableRows = rows
       .map(function (fb, rowIdx) {
@@ -8476,6 +8477,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     return (
+      this.htmlFeedbackMetricStrip(sum) +
       weekBlock +
       truncateHtml +
       noteFilterHtml +
