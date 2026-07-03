@@ -23,7 +23,8 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260703-live-unified';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v2';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 8000;
   var SUPABASE_WAIT_MS = 22000;
@@ -598,9 +599,40 @@
     };
   }
   exposePortalAdminDebugGlobals();
+  try {
+    if (typeof console !== 'undefined' && console.info) {
+      console.info('[Portal] Admin day-ops build:', PORTAL_DAY_OPS_BUILD);
+    }
+  } catch (_buildLog) {}
+
+  function hubScriptNeedsReload() {
+    var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
+    if (tagged && tagged.src && tagged.src.indexOf(PORTAL_DAY_OPS_BUILD) === -1) return true;
+    if (
+      global.AdminSessionsHub &&
+      (!global.AdminSessionsHub.prototype ||
+        typeof global.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function purgeHubScript() {
+    try {
+      var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
+      if (tagged) tagged.remove();
+    } catch (_rm) {}
+    try {
+      delete global.AdminSessionsHub;
+    } catch (_del) {
+      global.AdminSessionsHub = undefined;
+    }
+  }
 
   function ensureHubScript() {
     return new Promise(function (resolve, reject) {
+      if (hubScriptNeedsReload()) purgeHubScript();
       if (global.AdminSessionsHub) {
         resolve();
         return;
