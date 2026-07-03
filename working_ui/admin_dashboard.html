@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-live-rpc-only"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-auth-sync"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17721,7 +17721,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      "/portal/admin-sessions-hub.js?v=20260703-rpc-only";
+      "/portal/admin-sessions-hub.js?v=20260703-auth-sync";
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17983,14 +17983,75 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_session_key: pk
       };
     }
+    async function adminAttachAuthSessionToClient(client){
+      if(!client || !client.auth) return null;
+      function tokFromSess(session){
+        return session && session.access_token ? String(session.access_token) : null;
+      }
+      try{
+        var cur = await client.auth.getSession();
+        var active = cur && cur.data && cur.data.session;
+        var curTok = tokFromSess(active);
+        if(curTok && !adminJwtExpiringSoon(curTok, 90)){
+          adminSyncPortalSessionToBox(active);
+          return curTok;
+        }
+      }catch(_cur){}
+      var stored = typeof window.portalAdminReadStoredAuthSession === 'function'
+        ? window.portalAdminReadStoredAuthSession()
+        : null;
+      if(stored && stored.access_token && stored.refresh_token){
+        try{
+          var set = await client.auth.setSession({
+            access_token: stored.access_token,
+            refresh_token: stored.refresh_token
+          });
+          if(!set.error && set.data && set.data.session){
+            adminSyncPortalSessionToBox(set.data.session);
+            var attached = tokFromSess(set.data.session);
+            if(attached) return attached;
+          }
+        }catch(_set){}
+      }
+      return adminPortalAuthToken();
+    }
+    async function adminFetchSessionFeedbackViaRpcRest(sinceIso, tok){
+      var base = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL.trim()
+        ? window.SUPABASE_URL.trim().replace(/\/+$/, '')
+        : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+      var anon = typeof window.SUPABASE_ANON_KEY === 'string' ? String(window.SUPABASE_ANON_KEY).trim() : '';
+      if(!anon){
+        anon = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE';
+      }
+      var resp = await fetch(base + '/rest/v1/rpc/portal_admin_session_feedback_list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: anon,
+          Authorization: 'Bearer ' + tok
+        },
+        body: JSON.stringify({ p_since: sinceIso })
+      });
+      var body = await resp.json().catch(function(){ return null; });
+      if(!resp.ok){
+        var errMsg = body && (body.message || body.error) ? String(body.message || body.error) : ('HTTP ' + resp.status);
+        return { rows: [], error: errMsg };
+      }
+      if(!Array.isArray(body)){
+        return { rows: [], error: 'bad_response' };
+      }
+      var rows = body.map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+      return { rows: rows, error: null, via: 'rest' };
+    }
     async function adminFetchSessionFeedbackViaRpc(sinceIso){
       var client = await adminEnsureSupabaseClient();
       if(!client){
         console.warn('[admin] session_feedback: Supabase client not ready');
         return { rows: [], error: 'no_client' };
       }
+      var tok = null;
       try{
-        var tok = await adminPortalAuthToken();
+        tok = await adminAttachAuthSessionToClient(client);
         if(!tok){
           console.warn('[admin] session_feedback: no auth token — sign out and in again as admin');
           return { rows: [], error: 'no_token' };
@@ -18003,6 +18064,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
         if(rpc && rpc.error){
           var msg = rpc.error.message || String(rpc.error);
+          var retry = /not_allowed|jwt|session|401|42501/i.test(msg);
+          if(retry && tok){
+            var rest = await adminFetchSessionFeedbackViaRpcRest(sinceIso, tok);
+            if(rest.rows && rest.rows.length){
+              console.info('[admin] session_feedback loaded:', rest.rows.length, 'rows via REST fallback');
+              return rest;
+            }
+            if(rest.error && rest.error !== msg){
+              msg = rest.error;
+            }
+          }
           console.warn('[admin] session_feedback rpc error:', msg);
           adminDayOpsDebug('[admin] session_feedback rpc', msg);
           return { rows: [], error: msg };
@@ -18017,7 +18089,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         } else {
           console.info('[admin] session_feedback loaded:', rows.length, 'rows via RPC');
         }
-        return { rows: rows, error: null };
+        return { rows: rows, error: null, via: 'rpc' };
       }catch(rpcErr){
         console.warn('[admin] session_feedback rpc failed', rpcErr);
         adminDayOpsDebug('[admin] session_feedback rpc', rpcErr);
@@ -18043,7 +18115,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
           at: new Date().toISOString(),
           total: rows.length,
-          via: 'rpc',
+          via: (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc',
           error: rpcResult && rpcResult.error ? rpcResult.error : null
         };
       }catch(_meta){}

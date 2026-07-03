@@ -215,8 +215,21 @@
     }
     if (trackingHub && typeof trackingHub.setPayload === 'function') {
       trackingHub.setPayload(payload);
-      if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
+      if (typeof trackingHub.render === 'function') trackingHub.render();
+      else if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
     }
+    try {
+      global.portalAdminSessionFeedbackLoadMeta = function portalAdminSessionFeedbackLoadMeta() {
+        return global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ || null;
+      };
+      global.portalAdminDiagnoseFeedbackDay = function portalAdminDiagnoseFeedbackDay(iso) {
+        var h = trackingHub || feedbackHub;
+        if (!h || typeof h.diagnoseDay !== 'function') {
+          return { error: 'hub_not_ready' };
+        }
+        return h.diagnoseDay(iso || h.selectedDay);
+      };
+    } catch (_diagExpose) {}
     if (typeof global.portalAdminDayOpsBadgesRefresh === 'function') {
       global.portalAdminDayOpsBadgesRefresh();
     }
@@ -240,7 +253,7 @@
       var dbFb = await cfg.fetchSessionFeedback();
       payload.session_feedback = dbFb || [];
       payload.session_feedback_total = payload.session_feedback.length;
-      payload.session_feedback_loaded = payload.session_feedback.length;
+      payload.session_feedback_loaded = true;
       dayOpsDebug('[PortalDayOps] session_feedback refreshed:', payload.session_feedback.length);
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
@@ -419,7 +432,16 @@
           var live = dbFb || [];
           out.session_feedback = live;
           out.session_feedback_total = out.session_feedback.length;
-          out.session_feedback_loaded = out.session_feedback.length;
+          out.session_feedback_loaded = true;
+          if (!live.length) {
+            var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+            var err = meta && meta.error ? String(meta.error) : '';
+            console.warn(
+              '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
+            );
+          } else {
+            console.info('[PortalDayOps] session_feedback live rows:', live.length);
+          }
           dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
         })()
       );

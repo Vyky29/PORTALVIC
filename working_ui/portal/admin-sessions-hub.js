@@ -7143,6 +7143,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list;
   };
 
+  AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint = function () {
+    if (!this.opts || !this.opts.externalTabs) return "";
+    var esc = this.escapeHtml;
+    var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
+    var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+    var dayDiag = null;
+    try {
+      dayDiag = this.diagnoseDay(this.selectedDay);
+    } catch (_diag) {}
+    if (fbCount === 0) {
+      var errLine = loadMeta && loadMeta.error
+        ? " Error: " + esc(String(loadMeta.error)) + "."
+        : "";
+      return (
+        '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows).' +
+        errLine +
+        " Hard-refresh and sign in again as admin. Console (F12) shows details.</p>"
+      );
+    }
+    var matched =
+      dayDiag && typeof dayDiag.submitted === "number"
+        ? dayDiag.submitted + "/" + dayDiag.total + " roster slots matched today"
+        : "";
+    var orphan =
+      dayDiag && dayDiag.orphanFeedback && dayDiag.orphanFeedback.length
+        ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
+        : "";
+    return (
+      '<p class="ash-feedback-filter-hint" role="status">Live feedback: <strong>' +
+      esc(String(fbCount)) +
+      "</strong> rows from Supabase" +
+      (matched ? " · " + esc(matched) : "") +
+      esc(orphan) +
+      ".</p>"
+    );
+  };
+
   AdminSessionsHub.prototype.htmlTracking = function () {
     var esc = this.escapeHtml;
     var hub = this;
@@ -7304,6 +7341,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+      this.htmlOverviewFeedbackLoadHint() +
       this.overviewFilterRowHtml() +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
@@ -8327,7 +8365,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var fbLoaded = this.payload && this.payload.session_feedback_loaded;
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
-    if ((this.opts && this.opts.externalTabs) && fbLoaded != null && fbCount === 0) {
+    if ((this.opts && this.opts.externalTabs) && fbLoaded && fbCount === 0) {
       var metaLine = loadMeta ?
         ' Last attempt: ' + esc(String(loadMeta.via || 'rpc')) + ', ' + esc(String(loadMeta.total != null ? loadMeta.total : 0)) + ' rows' +
         (loadMeta.error ? ' (' + esc(String(loadMeta.error)) + ')' : '') + '.' :
