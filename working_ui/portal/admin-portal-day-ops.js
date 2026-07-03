@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260703-rpc-only';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260703-live-unified';
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 8000;
   var SUPABASE_WAIT_MS = 22000;
@@ -218,21 +218,8 @@
       if (typeof trackingHub.render === 'function') trackingHub.render();
       else if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
     }
-    try {
-      global.portalAdminSessionFeedbackLoadMeta = function portalAdminSessionFeedbackLoadMeta() {
-        return global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ || null;
-      };
-      global.portalAdminLiveLoadStatus = function portalAdminLiveLoadStatus() {
-        return global.__PORTAL_ADMIN_LIVE_LOAD__ || null;
-      };
-      global.portalAdminDiagnoseFeedbackDay = function portalAdminDiagnoseFeedbackDay(iso) {
-        var h = trackingHub || feedbackHub;
-        if (!h || typeof h.diagnoseDay !== 'function') {
-          return { error: 'hub_not_ready' };
-        }
-        return h.diagnoseDay(iso || h.selectedDay);
-      };
-    } catch (_diagExpose) {}
+    exposePortalAdminDebugGlobals();
+    portalDayOpsRenderLiveLoadStatus();
     if (typeof global.portalAdminDayOpsBadgesRefresh === 'function') {
       global.portalAdminDayOpsBadgesRefresh();
     }
@@ -471,7 +458,9 @@
     }
     await Promise.all(
       tasks.map(function (p) {
-        return p.catch(function () {});
+        return p.catch(function (taskErr) {
+          console.error('[PortalDayOps] overview enrich task failed', taskErr);
+        });
       })
     );
     await fetchParentFeedbackSharesInto(out);
@@ -556,6 +545,59 @@
     el.className = 'portal-forms-status' + (isError ? ' is-error' : '');
     el.innerHTML = msg || '';
   }
+
+  function portalDayOpsRenderLiveLoadStatus() {
+    var el = document.getElementById('portalDayOpsStatus');
+    if (!el) return;
+    var live = global.__PORTAL_ADMIN_LIVE_LOAD__ || {};
+    var fbMeta = live.session_feedback || global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ || null;
+    var ovMeta = live.schedule_overrides || null;
+    var fbCount = (payload.session_feedback || []).length;
+    var ovCount = (payload.schedule_overrides || []).length;
+    var loaded = payload.session_feedback_loaded === true;
+    if (!loaded) {
+      el.className = 'portal-forms-status';
+      el.innerHTML =
+        '<strong>Loading live data…</strong> session feedback, overrides, absents from Supabase.';
+      return;
+    }
+    if (!fbCount) {
+      el.className = 'portal-forms-status is-error';
+      var err = fbMeta && fbMeta.error ? esc(String(fbMeta.error)) : 'unknown';
+      el.innerHTML =
+        '<strong>Session feedback not loaded (0 rows).</strong> ' +
+        esc(err) +
+        ' — hard-refresh (Cmd+Shift+R) and sign in again as admin. Overrides: ' +
+        esc(String(ovCount)) +
+        (ovMeta && ovMeta.error ? ' (' + esc(String(ovMeta.error)) + ')' : '') +
+        '.';
+      return;
+    }
+    el.className = 'portal-forms-status';
+    el.innerHTML =
+      '<strong>Live data OK</strong> · Feedback: <strong>' +
+      esc(String(fbCount)) +
+      '</strong> rows · Overrides: <strong>' +
+      esc(String(ovCount)) +
+      '</strong> · Console: <code>portalAdminLiveLoadStatus()</code>';
+  }
+
+  function exposePortalAdminDebugGlobals() {
+    global.portalAdminSessionFeedbackLoadMeta = function portalAdminSessionFeedbackLoadMeta() {
+      return global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ || null;
+    };
+    global.portalAdminLiveLoadStatus = function portalAdminLiveLoadStatus() {
+      return global.__PORTAL_ADMIN_LIVE_LOAD__ || null;
+    };
+    global.portalAdminDiagnoseFeedbackDay = function portalAdminDiagnoseFeedbackDay(iso) {
+      var h = trackingHub || feedbackHub;
+      if (!h || typeof h.diagnoseDay !== 'function') {
+        return { error: 'hub_not_ready', payloadFeedback: (payload.session_feedback || []).length };
+      }
+      return h.diagnoseDay(iso || h.selectedDay);
+    };
+  }
+  exposePortalAdminDebugGlobals();
 
   function ensureHubScript() {
     return new Promise(function (resolve, reject) {
@@ -1091,6 +1133,7 @@
             quick.venue_reviews = cfg.buildVenueFromPortal() || [];
           }
           applyPayload(quick);
+          portalDayOpsRenderLiveLoadStatus();
           setStatus('');
           var enrichPromise = fetchOverviewSupabaseExtras()
             .then(function (partial) {

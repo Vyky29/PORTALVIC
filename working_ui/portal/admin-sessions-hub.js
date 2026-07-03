@@ -7146,6 +7146,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint = function () {
     if (!this.opts || !this.opts.externalTabs) return "";
     var esc = this.escapeHtml;
+    var loaded = !!(this.payload && this.payload.session_feedback_loaded);
+    if (!loaded) {
+      return (
+        '<p class="ash-feedback-filter-hint" role="status">' +
+        '<strong>Loading live session feedback</strong> from Supabase…</p>'
+      );
+    }
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var ovCount = (this.payload && this.payload.schedule_overrides) ? this.payload.schedule_overrides.length : 0;
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
