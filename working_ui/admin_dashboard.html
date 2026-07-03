@@ -17985,29 +17985,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     async function adminFetchSessionFeedbackViaRpc(sinceIso){
       var client = await adminEnsureSupabaseClient();
-      if(!client) return [];
+      if(!client){
+        console.warn('[admin] session_feedback: Supabase client not ready');
+        return { rows: [], error: 'no_client' };
+      }
       try{
-        var stored = typeof window.portalAdminReadStoredAuthSession === 'function'
-          ? window.portalAdminReadStoredAuthSession()
-          : null;
-        if(stored && stored.access_token){
-          await client.auth.setSession({
-            access_token: stored.access_token,
-            refresh_token: stored.refresh_token || ''
-          });
+        var tok = await adminPortalAuthToken();
+        if(!tok){
+          console.warn('[admin] session_feedback: no auth token — sign out and in again as admin');
+          return { rows: [], error: 'no_token' };
         }
-      }catch(_sess){}
+      }catch(authErr){
+        console.warn('[admin] session_feedback: auth failed', authErr);
+        return { rows: [], error: 'auth_failed' };
+      }
       try{
         var rpc = await client.rpc('portal_admin_session_feedback_list', { p_since: sinceIso });
         if(rpc && rpc.error){
-          adminDayOpsDebug('[admin] session_feedback rpc', rpc.error.message || rpc.error);
-          return [];
+          var msg = rpc.error.message || String(rpc.error);
+          console.warn('[admin] session_feedback rpc error:', msg);
+          adminDayOpsDebug('[admin] session_feedback rpc', msg);
+          return { rows: [], error: msg };
         }
-        if(!rpc || !Array.isArray(rpc.data)) return [];
-        return (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        if(!rpc || !Array.isArray(rpc.data)){
+          console.warn('[admin] session_feedback: unexpected RPC response');
+          return { rows: [], error: 'bad_response' };
+        }
+        var rows = (rpc.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+        if(!rows.length){
+          console.warn('[admin] session_feedback: 0 rows — RPC ok but empty (not_allowed or no data)');
+        } else {
+          console.info('[admin] session_feedback loaded:', rows.length, 'rows via RPC');
+        }
+        return { rows: rows, error: null };
       }catch(rpcErr){
+        console.warn('[admin] session_feedback rpc failed', rpcErr);
         adminDayOpsDebug('[admin] session_feedback rpc', rpcErr);
-        return [];
+        return { rows: [], error: String(rpcErr && rpcErr.message ? rpcErr.message : rpcErr) };
       }
     }
     var __adminSessionFeedbackInflight = null;
@@ -18023,12 +18037,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
       await adminWaitForSupabaseReady(22000);
-      var rows = await adminFetchSessionFeedbackViaRpc(sinceIso);
+      var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
+      var rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
       try{
         window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
           at: new Date().toISOString(),
           total: rows.length,
-          via: 'rpc'
+          via: 'rpc',
+          error: rpcResult && rpcResult.error ? rpcResult.error : null
         };
       }catch(_meta){}
       adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via rpc');

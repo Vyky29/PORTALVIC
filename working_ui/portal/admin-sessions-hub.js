@@ -8329,12 +8329,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
     if ((this.opts && this.opts.externalTabs) && fbLoaded != null && fbCount === 0) {
       var metaLine = loadMeta ?
-        ' Last attempt: ' + esc(String(loadMeta.via || 'rpc')) + ', ' + esc(String(loadMeta.total != null ? loadMeta.total : 0)) + ' rows.' :
+        ' Last attempt: ' + esc(String(loadMeta.via || 'rpc')) + ', ' + esc(String(loadMeta.total != null ? loadMeta.total : 0)) + ' rows' +
+        (loadMeta.error ? ' (' + esc(String(loadMeta.error)) + ')' : '') + '.' :
         '';
       warn +=
         '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows).' +
-        esc(metaLine) +
-        ' Hard-refresh, then sign in again as admin (Victor/Raul/Javi/Sevitha).</p>';
+        metaLine +
+        ' Hard-refresh, then sign in again as admin (Victor/Raul/Javi/Sevitha). Open console (F12) for details.</p>';
+    } else if ((this.opts && this.opts.externalTabs) && fbCount > 0) {
+      warn +=
+        '<p class="ash-feedback-filter-hint" role="status">Live feedback loaded: <strong>' +
+        esc(String(fbCount)) +
+        '</strong> rows from Supabase.</p>';
     }
     if (this.mode === "feedback") {
       this.root.innerHTML = warn + '<div class="ash-panels ash-panels--feedback-only"></div>';
