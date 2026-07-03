@@ -287,11 +287,152 @@ const clusterList = Object.values(clusters).sort(
   (a, b) => b.items.length - a.items.length
 );
 
+/** Victor / auto review 2026-07-03 — 13 CLI + 39 database-only */
+const EXPERT_52 = {
+  "20260519120000_dashboard_route_vercel_paths.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI",
+    context:
+      "Antes staff_profiles.dashboard_route apuntaba a rutas legacy (/p1, /l1). El portal Vercel usa *.html. UPDATE idempotente.",
+    affects: "login.html → staff/lead/ceo/admin dashboard correcto tras migrar de WordPress.",
+  },
+  "20260522120000_portal_admin_clubsensational_emails.sql": {
+    rec: "defer",
+    verdict: "Guardar sin usar (no es migración)",
+    context:
+      "Solo SELECT de diagnóstico + UPDATE comentados para Victor/Raul/Javi/Sevitha. No cambia esquema. Era checklist SQL Editor.",
+    affects: "Nada en runtime — mover a docs/local-vault.",
+  },
+  "20260530090000_portal_add_michelle_staff_login.sql": {
+    rec: "defer",
+    verdict: "Guardar sin usar (one-shot staff)",
+    context:
+      "Relink perfil Michelle → auth michelle@youtimecounselling.com. Ya aplicado en prod; re-ejecutar falla si no existe auth user.",
+    affects: "Login Michelle lead dashboard.",
+  },
+  "20260601174600_portal_fix_schedule_override_push_webhook.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI",
+    context:
+      "Trigger HTTP en schedule_overrides → push cuando admin cambia roster. Necesita secret sustituido en prod.",
+    affects: "Push móvil al guardar override en Scheduling & Cover.",
+  },
+  "20260609120000_portal_late_feedback_9am_digest.sql": {
+    rec: "keep",
+    verdict: "Keep en cadena (cron viejo)",
+    context:
+      "Cron 9am digest — sustituido por migraciones posteriores (21h London). Debe quedarse: desprograma jobs viejos en orden.",
+    affects: "Historial pg_cron; no ejecutar manualmente otra vez.",
+  },
+  "20260610120000_portal_clear_erroneous_feedback_quick_marks.sql": {
+    rec: "defer",
+    verdict: "Guardar sin usar (one-shot)",
+    context: "DELETE quick marks feedback_done sin fila session_feedback desde 2026-06-10. Limpieza puntual tablets.",
+    affects: "Staff dashboard marcas verdes incorrectas (ya corregido).",
+  },
+  "20260610220000_portal_late_feedback_single_21h_cron.sql": {
+    rec: "keep",
+    verdict: "Keep en cadena",
+    context: "Unifica digest a 21:00 UTC; unschedule nombres viejos. Paso intermedio hacia London 21h.",
+    affects: "pg_cron digest feedback pendiente.",
+  },
+  "20260611210000_portal_late_feedback_london_21h_cron.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI (cron activo)",
+    context:
+      "Versión actual: 20:00 y 21:00 UTC para que Edge ejecute a las 21:00 London. Esta es la que manda hoy.",
+    affects: "Push admin feedback no enviado tras turno tarde.",
+  },
+  "20260616140000_session_feedback_adaam_ah_worker_name.sql": {
+    rec: "defer",
+    verdict: "Guardar sin usar (one-shot)",
+    context: "Corrige client_name Adaam Ah vs Aadam Ah en filas existentes.",
+    affects: "Matching admin hub / export nombres.",
+  },
+  "20260620220000_portal_late_feedback_push_webhook_and_cron.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI",
+    context:
+      "Trigger push en INSERT session_feedback + cron 21h. Complementa digest; trigger sigue activo.",
+    affects: "Alerta admin al submit feedback; cron (parcialmente superseded).",
+  },
+  "20260625130100_portal_payroll_june26_9am_cron.sql": {
+    rec: "defer",
+    verdict: "Guardar sin usar (one-off junio 2026)",
+    context:
+      "Cron único 26-jun-2026 9am London payroll email. Se auto-desprograma; fecha ya pasará.",
+    affects: "Email nómina a contabilidad — evento puntual.",
+  },
+  "20260628120000_portal_dm_chat_admin_push_webhook.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI",
+    context: "Triggers push en DM staff y CEO group → admin alert edge.",
+    affects: "Push chat interno (UI chat oculta pero triggers activos).",
+  },
+  "20260630190000_portal_announcement_push_webhook.sql": {
+    rec: "keep",
+    verdict: "Keep en CLI",
+    context: "Trigger push al INSERT portal_staff_announcements.",
+    affects: "Push campana anuncios staff.",
+  },
+  // --- solo database/migrations (39) ---
+  "20260415_session_feedback.sql": {
+    rec: "copy",
+    verdict: "Copiar a supabase/ luego borrar espejo",
+    context:
+      "CREATE TABLE session_feedback — ¡NO está en supabase/migrations! Prod lo tiene por SQL manual. Necesario para Supabase vacío.",
+    affects: "Todo el formulario feedback.",
+  },
+  "20260416_session_feedback_context.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Columnas contexto feedback (portal_session_key, etc.).", affects: "Matching roster ↔ feedback." },
+  "20260417_session_feedback_insert_rls_fix.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS INSERT staff/lead.", affects: "Quién puede enviar feedback." },
+  "20260418_session_feedback_nullable_second_phase.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Nullable campos fase 2 formulario.", affects: "Formulario amarillo campos opcionales." },
+  "20260420_cancellation_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla cancellation_reports.", affects: "Tab Cancellations admin." },
+  "20260420_incident_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla incident_reports.", affects: "Tab Incidents." },
+  "20260420_portal_auth_generation_and_review_select.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Auth generation + review select policies.", affects: "Sesión remota logout stale." },
+  "20260420_session_feedback_insert_rls_ceo_admin.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS admin/CEO leen feedback.", affects: "Admin sessions hub." },
+  "20260421_portal_feedback_shared_session_keys_rpc.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RPC claves compartidas feedback.", affects: "Historial feedback export." },
+  "20260422_venue_reviews.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla venue_reviews.", affects: "Venue tab admin." },
+  "20260423_create_documents_table_storage_and_policies.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Storage documents bucket + tabla.", affects: "my_documents, HR docs." },
+  "20260423_enable_rls_clients_sessions_announcements_select_authenticated.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "RLS clients/sessions/announcements.", affects: "Lectura authenticated programme data." },
+  "20260423_expense_claims_backend.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Backend expense claims.", affects: "Gastos staff." },
+  "20260423_lead_session_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tabla lead_session_reports (supabase solo tiene RLS posterior).", affects: "Lead report tab." },
+  "20260423_timesheets_backend.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Tablas timesheets core.", affects: "Todo timesheet/payroll." },
+  "20260424_documents_user_soft_hide.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Soft-hide documentos usuario.", affects: "my_documents UI." },
+  "20260424_onboarding_candidates.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Duplicado: supabase tiene 20260424000000_onboarding_candidates.sql.", affects: "Ninguno (CLI usa supabase)." },
+  "20260425_staff_performance_reviews.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Performance reviews schema.", affects: "HR reviews." },
+  "20260426_session_feedback_lead_select_all.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Leads leen feedback equipo.", affects: "Lead overview feedback." },
+  "20260427_leader_term_reviews_and_staff_observation_reports.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Term reviews + observation reports.", affects: "Lead tools." },
+  "20260428_venue_review_admin_notifications.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Reemplazada por 20260614160000_venue_review_admin_notifications.sql en supabase.", affects: "Ninguno." },
+  "20260429_schedule_overrides_foundation.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE schedule_overrides — base Scheduling & Cover. Falta en CLI.", affects: "Todo override roster admin." },
+  "20260507180000_portal_ceo_liaison_group.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Absorbida por portal_ceo_group / pool channels en supabase (jun 2026).", affects: "Ninguno." },
+  "20260513140000_portal_ceo_group_chat.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Chat CEO evolucionado en supabase DM migrations.", affects: "Ninguno." },
+  "20260521120000_employment_contracts_portal.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "Supabase: 20260622200000_portal_employment_contract_documents_admin.sql.", affects: "Ninguno." },
+  "20260521130000_employment_contracts_admin_rls.sql": { rec: "delete", verdict: "Borrar espejo database/", context: "RLS contratos — versión en supabase posterior.", affects: "Ninguno." },
+  "20260528120000_remove_test_client_cancellations.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Limpieza datos test cancelaciones.", affects: "Ninguno en prod." },
+  "20260607160000_payroll_roberto_split.sql": { rec: "copy", verdict: "Copiar a supabase/ si falta payroll", context: "Split payroll Roberto — schema/datos HR.", affects: "Nómina Roberto." },
+  "20260607170000_payroll_director_roles.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Roles director payroll.", affects: "Payroll admin." },
+  "20260607180000_payroll_import_2025.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Import histórico 2025 — dato puntual.", affects: "Ninguno re-aplicar." },
+  "20260607190000_payroll_sevitha_2026.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Seed payroll Sevitha 2026.", affects: "Ninguno re-aplicar." },
+  "20260607200000_payroll_contract_attributes.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Atributos contrato payroll.", affects: "HR contract attrs." },
+  "20260607210000_portal_routes_cleanup_legacy.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "UPDATE rutas legacy — overlap con dashboard_route_vercel_paths.", affects: "Ninguno." },
+  "20260607220000_hr_records.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE hr_records — referenciado en supabase pero sin CREATE allí.", affects: "Unavailability, HR roster keys." },
+  "20260607230000_hr_records_active.sql": { rec: "copy", verdict: "Copiar a supabase/", context: "Columna active hr_records.", affects: "HR filtros." },
+  "20260607240000_client_payments.sql": { rec: "copy", verdict: "Copiar a supabase/ (CRÍTICO)", context: "CREATE client_payments — supabase solo tiene seed LA después.", affects: "Orders, Participants, payments admin." },
+  "20260615200000_portal_announcements_retire_test_rows.sql": { rec: "delete", verdict: "Borrar espejo one-shot", context: "Retira filas test anuncios.", affects: "Ninguno." },
+  "20260615210000_portal_announcements_clear_all.sql": { rec: "delete", verdict: "Borrar espejo (peligroso)", context: "DELETE all announcements — no reaplicar.", affects: "Ninguno." },
+  "backup_before_rls_clients_sessions_announcements.sql": { rec: "delete", verdict: "Borrar backup", context: "Snapshot manual pre-RLS — no migración.", affects: "Ninguno." },
+};
+
 const defaultDecisions = {};
 for (const it of items) {
-  if (it.auto.rec === "essential" || it.auto.rec === "chain")
+  const ex = EXPERT_52[it.id];
+  if (ex && (ex.rec === "keep" || ex.rec === "defer")) {
+    defaultDecisions[it.id] = ex.rec;
+  } else if (it.auto.rec === "essential" || it.auto.rec === "chain") {
     defaultDecisions[it.id] = "keep";
-  else if (it.auto.rec === "archive") defaultDecisions[it.id] = "defer";
+  } else if (it.auto.rec === "archive") {
+    defaultDecisions[it.id] = "defer";
+  }
 }
 
 const onlyDb = dbFiles.filter((f) => !supaSet.has(f));
@@ -310,25 +451,57 @@ const stats = {
   manualTotal: reviewItems.length + onlyDb.length,
 };
 
+function expertFor(file) {
+  return (
+    EXPERT_52[file] || {
+      rec: "review",
+      verdict: "Revisar",
+      context: "Sin entrada experta.",
+      affects: "—",
+    }
+  );
+}
+
 const manualReview = {
-  inCliMixed: reviewItems.map((i) => ({
-    file: i.file,
-    kind: i.kind,
-    cluster: i.clusterTitle,
-    why: i.auto.why,
-    comment: i.comment,
-  })),
-  onlyDatabaseFolder: onlyDb.map((f) => ({
-    file: f,
-    note: "NO está en supabase/migrations — el CLI de Portal no la aplica. Espejo viejo o borrador local.",
-  })),
+  inCliMixed: reviewItems.map((i) => {
+    const ex = expertFor(i.file);
+    return {
+      file: i.file,
+      kind: i.kind,
+      cluster: i.clusterTitle,
+      verdict: ex.verdict,
+      rec: ex.rec,
+      context: ex.context,
+      affects: ex.affects,
+      comment: i.comment,
+    };
+  }),
+  onlyDatabaseFolder: onlyDb.map((f) => {
+    const ex = expertFor(f);
+    return {
+      file: f,
+      verdict: ex.verdict,
+      rec: ex.rec,
+      context: ex.context,
+      affects: ex.affects,
+    };
+  }),
+};
+
+const expertSummary = {
+  cliKeep: reviewItems.filter((i) => expertFor(i.file).rec === "keep").length,
+  cliDefer: reviewItems.filter((i) => expertFor(i.file).rec === "defer").length,
+  dbCopy: onlyDb.filter((f) => expertFor(f).rec === "copy").length,
+  dbDelete: onlyDb.filter((f) => expertFor(f).rec === "delete").length,
 };
 
 const data = {
   generatedAt: new Date().toISOString(),
   stats,
+  expertSummary,
   defaultDecisions,
   manualReview,
+  expert52: EXPERT_52,
   clusters: clusterList,
 };
 
@@ -388,7 +561,7 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <strong>${stats.essential + stats.chain}</strong> Keep auto · 
 <strong>${stats.archive}</strong> Guardar sin usar auto · 
 <strong>${stats.manualTotal}</strong> para decidir tú (${stats.review} en CLI + ${stats.onlyDb} solo en database/)</p>
-<div class="callout"><strong>Los 39</strong> que viste son archivos <em>solo</em> en <code>database/migrations/</code> — <strong>no van al CLI</strong> de Portal. Son espejos viejos. Las <strong>13</strong> "Revisar" sí están en CLI y necesitan tu ojo.</div>
+<div class="callout"><strong>Recomendación experta aplicada:</strong> CLI ${expertSummary.cliKeep} Keep + ${expertSummary.cliDefer} defer · database/ ${expertSummary.dbCopy} copiar a supabase + ${expertSummary.dbDelete} borrar espejo. Los <strong>39</strong> no van al CLI; <strong>~22 son bootstrap crítico</strong> que falta en supabase/migrations.</div>
 <div class="stats" id="stats"></div>
 <div class="toolbar">
 <input type="search" id="q" placeholder="Buscar…"/>
@@ -414,7 +587,7 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <div class="sticky" id="foot"></div>
 <script>
 var DATA=${JSON.stringify(data)};
-var KEY='portalMigrationReview_v3';
+var KEY='portalMigrationReview_v4';
 var decisions=Object.assign({}, DATA.defaultDecisions);
 try{
   var saved=localStorage.getItem(KEY);
@@ -433,13 +606,14 @@ function counts(){
 }
 
 function renderManual(){
-  var rl=document.getElementById('reviewList');
-  rl.innerHTML=DATA.manualReview.inCliMixed.map(function(r){
-    return '<li><code>'+esc(r.file)+'</code> <span class="badge badge--review">'+esc(r.cluster)+'</span><div class="sub">'+esc(r.why)+'</div></li>';
-  }).join('');
-  document.getElementById('onlyDbList').innerHTML=DATA.manualReview.onlyDatabaseFolder.map(function(r){
-    return '<li><code>'+esc(r.file)+'</code><div class="sub">'+esc(r.note)+'</div></li>';
-  }).join('');
+  function row(r){
+    var cls=r.rec==='keep'?'essential':r.rec==='defer'?'archive':r.rec==='copy'?'chain':r.rec==='delete'?'archive':'review';
+    return '<li><code>'+esc(r.file)+'</code> <span class="badge badge--'+cls+'">'+esc(r.verdict)+'</span>'+
+      '<div class="sub"><strong>Contexto:</strong> '+esc(r.context)+'</div>'+
+      '<div class="sub"><strong>Afecta:</strong> '+esc(r.affects)+'</div></li>';
+  }
+  document.getElementById('reviewList').innerHTML=DATA.manualReview.inCliMixed.map(row).join('');
+  document.getElementById('onlyDbList').innerHTML=DATA.manualReview.onlyDatabaseFolder.map(row).join('');
 }
 
 function renderStats(){
@@ -498,7 +672,7 @@ document.getElementById('q').oninput=render;
 document.getElementById('fRec').onchange=render;
 document.getElementById('fUser').onchange=render;
 document.getElementById('resetAuto').onclick=function(){
-  if(!confirm('Restaurar Keep/Defer automático (177 keep + 90 defer)?'))return;
+  if(!confirm('Restaurar recomendación experta (267 auto + 52 manual)?'))return;
   decisions=Object.assign({}, DATA.defaultDecisions);
   save(); render();
 };
