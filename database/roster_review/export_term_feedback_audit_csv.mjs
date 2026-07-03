@@ -59,7 +59,14 @@ function classify(row, dupRank, hasFeedbackForQm) {
     flags.push("demo_template_arrived_happy");
   }
   if (NA_RE.test(pf) || NA_RE.test(rel)) {
-    if (!narr && !rel.replace(/NA/i, "").trim()) flags.push("na_only_fields");
+    const byDan = by.includes("dan");
+    const hasNarr = !!narr;
+    const hasRealRel = !!rel.replace(/NA/i, "").trim();
+    if (byDan && (hasNarr || hasRealRel)) {
+      flags.push("dan_legacy_or_narrative_ok");
+    } else if (byDan) {
+      flags.push("dan_legacy_minimal_na");
+    } else if (!hasNarr && !hasRealRel) flags.push("na_only_fields");
     else flags.push("na_in_positive_or_rel");
   }
   if (att.toLowerCase() === "no") flags.push("attendance_no_legitimate");
