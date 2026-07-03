@@ -2890,10 +2890,18 @@
       return true;
     }
     var insts = slotInstructors(slot);
-    if (!insts.length) return true;
-    for (var i = 0; i < insts.length; i++) {
-      if (completedByMatchesInstructor(completedBy, insts[i])) return true;
+    if (insts.length) {
+      for (var i = 0; i < insts.length; i++) {
+        if (completedByMatchesInstructor(completedBy, insts[i])) return true;
+      }
     }
+    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var orig = normalizeInstructorList(slot.portalOriginalInstructors);
+      for (var oi = 0; oi < orig.length; oi++) {
+        if (completedByMatchesInstructor(completedBy, orig[oi])) return true;
+      }
+    }
+    if (!insts.length) return true;
     return false;
   }
 
@@ -3149,7 +3157,8 @@
     if (isAbsentFeedbackRow(fb)) return false;
     if (!feedbackRosterDateMatches(fb, slot)) return false;
     if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
-    if (!completedByMatchesSlotInstructors(fb.completed_by_name, slot)) return false;
+    var instructorOk = completedByMatchesSlotInstructors(fb.completed_by_name, slot);
+    if (!instructorOk) return false;
     var slotSvcKey = serviceKey(clean(slot.service));
     var fbSvcKey = serviceKey(clean(fb.service));
     var swimFarmSession =
@@ -7510,6 +7519,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       dayDiag && dayDiag.orphanFeedback && dayDiag.orphanFeedback.length
         ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
         : "";
+    var nearMissHint = "";
+    try {
+      var missReport = this.missingFeedbackForDay(this.selectedDay);
+      var nearN = 0;
+      (missReport.missing || []).forEach(function (m) {
+        if (m.nearMissFeedback && m.nearMissFeedback.length) nearN += 1;
+      });
+      if (nearN) {
+        nearMissHint =
+          " · <strong>" + esc(String(nearN)) + "</strong> awaiting with unmatched feedback in Supabase (time/instructor)";
+      }
+    } catch (_nm) {}
     var ovLine = ovCount
       ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded" +
         (ovToday ? " (<strong>" + esc(String(ovToday)) + "</strong> active this day)" : "")
@@ -7521,6 +7542,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (matched ? " · " + esc(matched) : "") +
       awaitingLine +
       esc(orphan) +
+      nearMissHint +
       ovLine +
       " · Console: <code>portalAdminMissingFeedbackReport()</code></p>"
     );

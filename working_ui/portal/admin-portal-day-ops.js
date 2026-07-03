@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v10-ops-alerts';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v11-reassign-match';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 45000;
