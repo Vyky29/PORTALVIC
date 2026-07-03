@@ -134,6 +134,9 @@
     selectedPortalLogin = "";
     if ($("portalAuthEmail")) $("portalAuthEmail").value = "";
     if (!sel || sel.value === "") {
+      if ($("employeeName")) $("employeeName").value = "";
+      if ($("employeeEmail")) $("employeeEmail").value = "";
+      if ($("employeeAddress")) $("employeeAddress").value = "";
       if (statusEl) {
         statusEl.textContent = "";
         statusEl.className = "portal-link-status";
@@ -141,23 +144,31 @@
       updatePreview();
       return;
     }
+    const rosterEntry = staffRoster[Number(sel.value)] || null;
     const opt = sel.options[sel.selectedIndex];
-    const authEmail = opt.dataset.authEmail || "";
-    const displayName = opt.dataset.displayName || "";
-    const loginName = opt.dataset.loginName || "";
+    const authEmail = opt.dataset.authEmail || (rosterEntry && rosterEntry.authEmail) || "";
+    const displayName = opt.dataset.displayName || (rosterEntry && rosterEntry.displayName) || "";
+    const loginName = opt.dataset.loginName || (rosterEntry && rosterEntry.loginName) || "";
     selectedPortalLogin = loginName;
     if ($("portalAuthEmail")) $("portalAuthEmail").value = authEmail;
     if (displayName && $("employeeName")) $("employeeName").value = displayName;
     try {
       const mod = await import(STAFF_LINK_MOD);
-      if (
-        $("employeeEmail") &&
-        !mod.isPlaceholderPortalEmail(authEmail) &&
-        !$("employeeEmail").value.trim()
-      ) {
-        $("employeeEmail").value = authEmail;
-      }
       const auth = portalClient();
+      let contact = rosterEntry
+        ? { contactEmail: rosterEntry.contactEmail || "", contactAddress: rosterEntry.contactAddress || "" }
+        : { contactEmail: "", contactAddress: "" };
+      if (auth && auth.supabase && rosterEntry) {
+        contact = await mod.loadStaffContractContact(auth.supabase, rosterEntry);
+      }
+      if ($("employeeEmail")) {
+        $("employeeEmail").value =
+          contact.contactEmail ||
+          (!mod.isPlaceholderPortalEmail(authEmail) ? authEmail : "");
+      }
+      if ($("employeeAddress")) {
+        $("employeeAddress").value = contact.contactAddress || "";
+      }
       if (statusEl) {
         statusEl.textContent = "Checking Portal account…";
         statusEl.className = "portal-link-status";

@@ -27,8 +27,31 @@ function pushRosterEntry(roster, seenAuth, entry) {
     profileId: entry.profileId || null,
     loginName: entry.loginName,
     displayName: entry.displayName || entry.loginName,
-    authEmail
+    authEmail,
+    contactEmail: entry.contactEmail || "",
+    contactAddress: entry.contactAddress || ""
   });
+}
+
+export function formatStaffAddress(row) {
+  if (!row) return "";
+  return [
+    row.address_line1,
+    row.address_line2,
+    row.address_city,
+    row.address_postcode
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function resolveStaffContactEmail(row, authEmail) {
+  const personal = String((row && row.email_personal) || "").trim();
+  if (personal && !isPlaceholderPortalEmail(personal)) return personal;
+  const auth = String(authEmail || "").trim();
+  if (auth && !isPlaceholderPortalEmail(auth)) return auth;
+  return "";
 }
 
 function loadStaticStaffRoster(seenAuth) {
@@ -55,7 +78,9 @@ export async function loadPortalStaffRoster(supabase) {
   if (supabase) {
     const { data, error } = await supabase
       .from("staff_profiles")
-      .select("id, full_name, username, is_active")
+      .select(
+        "id, full_name, username, is_active, email_personal, address_line1, address_line2, address_city, address_postcode"
+      )
       .or("is_active.is.null,is_active.eq.true")
       .order("full_name", { ascending: true });
     if (!error && Array.isArray(data)) {
@@ -69,7 +94,9 @@ export async function loadPortalStaffRoster(supabase) {
           profileId: row.id,
           loginName: login,
           displayName: String(row.full_name || login).trim(),
-          authEmail
+          authEmail,
+          contactEmail: resolveStaffContactEmail(row, authEmail),
+          contactAddress: formatStaffAddress(row)
         });
       });
     }
@@ -100,4 +127,35 @@ export async function verifyPortalStaffLink(supabase, authEmail) {
     };
   }
   return { ok: true, userId: data, error: null };
+}
+
+export async function loadStaffContractContact(supabase, entry) {
+  const out = {
+    contactEmail: String((entry && entry.contactEmail) || "").trim(),
+    contactAddress: String((entry && entry.contactAddress) || "").trim()
+  };
+  if (!supabase || !entry) return out;
+  if (out.contactEmail && out.contactAddress) return out;
+
+  const verified = entry.authEmail
+    ? await verifyPortalStaffLink(supabase, entry.authEmail)
+    : { ok: false, userId: null };
+  if (!verified.ok || !verified.userId) return out;
+
+  const { data, error } = await supabase
+    .from("employment_contracts")
+    .select("employee_email, employee_address")
+    .eq("user_id", verified.userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return out;
+
+  if (!out.contactEmail && data.employee_email) {
+    out.contactEmail = String(data.employee_email).trim();
+  }
+  if (!out.contactAddress && data.employee_address) {
+    out.contactAddress = String(data.employee_address).trim();
+  }
+  return out;
 }
