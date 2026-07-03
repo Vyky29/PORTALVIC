@@ -4012,6 +4012,13 @@
     ) {
       this.payload.schedule_overrides = global.__PORTAL_SCHEDULE_OVERRIDES__.slice();
     }
+    if (
+      (!this.payload.incident_reports || !this.payload.incident_reports.length) &&
+      global.__PORTAL_INCIDENT_REPORTS__ &&
+      global.__PORTAL_INCIDENT_REPORTS__.length
+    ) {
+      this.payload.incident_reports = global.__PORTAL_INCIDENT_REPORTS__.slice();
+    }
     this.invalidateComputeCaches();
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {

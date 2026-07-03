@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v6-overrides-match';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v7-live-forms';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 45000;
@@ -187,6 +187,12 @@
       if (Array.isArray(cached) && cached.length) {
         if (!payload.schedule_overrides || !payload.schedule_overrides.length) {
           payload.schedule_overrides = cached.slice();
+        }
+      }
+      var cachedInc = global.__PORTAL_INCIDENT_REPORTS__;
+      if (Array.isArray(cachedInc) && cachedInc.length) {
+        if (!payload.incident_reports || !payload.incident_reports.length) {
+          payload.incident_reports = cachedInc.slice();
         }
       }
     } catch (_syncOv) {}
@@ -499,26 +505,38 @@
     return out;
   }
 
-  /** Heavier tables — defer until idle so overview paints first. */
+  /** Heavier tables — incidents, lead, venue (edge fetchers avoid RLS client gaps). */
   async function fetchDeferredSupabaseExtras() {
     var client = cfg.getClient && cfg.getClient();
-    if (!client) return emptyPayload();
+    if (!client && cfg.waitForSupabaseClient) {
+      try {
+        client = await cfg.waitForSupabaseClient(12000);
+      } catch (_waitClient) {}
+    }
     var out = emptyPayload();
     var since = new Date();
     since.setDate(since.getDate() - 120);
     var sinceIso = since.toISOString().slice(0, 10);
     var tasks = [];
-    tasks.push(
-      client
-        .from('incident_reports')
-        .select('*')
-        .gte('created_at', sinceIso)
-        .order('created_at', { ascending: false })
-        .limit(400)
-        .then(function (inc) {
-          if (!inc.error) out.incident_reports = inc.data || [];
+    if (cfg.fetchIncidentReports) {
+      tasks.push(
+        cfg.fetchIncidentReports().then(function (rows) {
+          out.incident_reports = rows || [];
         })
-    );
+      );
+    } else if (client) {
+      tasks.push(
+        client
+          .from('incident_reports')
+          .select('*')
+          .gte('created_at', sinceIso)
+          .order('created_at', { ascending: false })
+          .limit(400)
+          .then(function (inc) {
+            if (!inc.error) out.incident_reports = inc.data || [];
+          })
+      );
+    }
     if (cfg.fetchLeadReports) {
       tasks.push(
         cfg.fetchLeadReports().then(function (rows) {
@@ -550,10 +568,47 @@
     );
     await Promise.all(
       tasks.map(function (p) {
-        return p.catch(function () {});
+        return p.catch(function (deferErr) {
+          console.error('[PortalDayOps] deferred enrich task failed', deferErr);
+        });
       })
     );
+    console.log('[PortalDayOps] incident_reports live rows:', (out.incident_reports || []).length);
     return out;
+  }
+
+  function applyDeferredPayload(deferred) {
+    applyPayload(
+      Object.assign({}, payload, {
+        incident_reports: deferred.incident_reports || [],
+        lead_session_reports: deferred.lead_session_reports || [],
+        venue_reviews: deferred.venue_reviews || []
+      })
+    );
+    mergePortalVenueIntoPayload();
+    portalDayOpsAfterFeedbackPayloadMerge();
+    ensureSessionFeedbackRealtime();
+    renderLeadVenueTables();
+  }
+
+  function startDeferredSupabaseExtras() {
+    if (global.__PORTAL_DAY_OPS_DEFER__) return global.__PORTAL_DAY_OPS_DEFER__;
+    var deferPromise = fetchDeferredSupabaseExtras()
+      .then(function (deferred) {
+        applyDeferredPayload(deferred);
+        return deferred;
+      })
+      .catch(function (bgDeferErr) {
+        console.error('[PortalDayOps] deferred enrich failed', bgDeferErr);
+        return null;
+      })
+      .finally(function () {
+        if (global.__PORTAL_DAY_OPS_DEFER__ === deferPromise) {
+          global.__PORTAL_DAY_OPS_DEFER__ = null;
+        }
+      });
+    global.__PORTAL_DAY_OPS_DEFER__ = deferPromise;
+    return deferPromise;
   }
 
   async function fetchFallbackSupabase() {
@@ -586,6 +641,16 @@
     var ovMeta = live.schedule_overrides || null;
     var fbCount = (payload.session_feedback || []).length;
     var ovCount = (payload.schedule_overrides || []).length;
+    if (!ovCount && global.__PORTAL_SCHEDULE_OVERRIDES__ && global.__PORTAL_SCHEDULE_OVERRIDES__.length) {
+      ovCount = global.__PORTAL_SCHEDULE_OVERRIDES__.length;
+    }
+    if (ovMeta && ovMeta.count && !ovCount) ovCount = ovMeta.count;
+    var incCount = (payload.incident_reports || []).length;
+    if (!incCount && global.__PORTAL_INCIDENT_REPORTS__ && global.__PORTAL_INCIDENT_REPORTS__.length) {
+      incCount = global.__PORTAL_INCIDENT_REPORTS__.length;
+    }
+    var incMeta = live.incident_reports || null;
+    if (incMeta && incMeta.count && !incCount) incCount = incMeta.count;
     var loaded = payload.session_feedback_loaded === true;
     if (!loaded) {
       el.className = 'portal-forms-status';
@@ -611,6 +676,8 @@
       esc(String(fbCount)) +
       '</strong> rows · Overrides: <strong>' +
       esc(String(ovCount)) +
+      '</strong> · Incidents: <strong>' +
+      esc(String(incCount)) +
       '</strong> · build <code>' +
       esc(PORTAL_DAY_OPS_BUILD) +
       '</code>';
@@ -1221,35 +1288,7 @@
               }
             });
           global.__PORTAL_DAY_OPS_ENRICH__ = enrichPromise;
-          void (async function () {
-            try {
-              var runDeferred = function () {
-                void (async function () {
-                  try {
-                    var deferred = await fetchDeferredSupabaseExtras();
-                    applyPayload(
-                      Object.assign({}, payload, {
-                        incident_reports: deferred.incident_reports || [],
-                        lead_session_reports: deferred.lead_session_reports || [],
-                        venue_reviews: deferred.venue_reviews || []
-                      })
-                    );
-                    mergePortalVenueIntoPayload();
-                    portalDayOpsAfterFeedbackPayloadMergeDebounced();
-                    ensureSessionFeedbackRealtime();
-                    renderLeadVenueTables();
-                  } catch (bgDeferErr) {
-                    console.debug('[PortalDayOps] background deferred enrich', bgDeferErr);
-                  }
-                })();
-              };
-              if (typeof requestIdleCallback === 'function') {
-                requestIdleCallback(runDeferred, { timeout: 6000 });
-              } else {
-                setTimeout(runDeferred, 1200);
-              }
-            } catch (_deferWrap) {}
-          })();
+          startDeferredSupabaseExtras();
           return payload;
         }
         var fb = await fetchFallbackSupabase();
@@ -1287,6 +1326,19 @@
               if (th && typeof th.setPayload === 'function') {
                 th.setPayload(payload);
                 reRenderHub(th);
+              }
+            }
+            if (tabId === 'incidents' || tabId === 'cancellations' || tabId === 'lead' || tabId === 'venue') {
+              var deferWait = global.__PORTAL_DAY_OPS_DEFER__;
+              if (!deferWait && cfg.fetchIncidentReports) {
+                deferWait = startDeferredSupabaseExtras();
+              }
+              if (deferWait) {
+                await promiseWithTimeout(deferWait, ENRICH_WAIT_MS, null);
+                if (th && typeof th.setPayload === 'function') {
+                  th.setPayload(payload);
+                  reRenderHub(th);
+                }
               }
             }
           } catch (_enrichWait) {}

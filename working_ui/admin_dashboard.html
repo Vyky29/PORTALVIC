@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v6-overrides-match"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-v7-live-forms"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17106,12 +17106,70 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_CANCELLATION_REPORTS__ = null;
       window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
       window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+      window.__PORTAL_INCIDENT_REPORTS__ = null;
       window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
       window.__PORTAL_ADMIN_LIVE_LOAD__ = null;
       window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = null;
       adminHubQuickMarksBySessionKey._m = null;
       if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
         window.PortalDayOps.invalidatePayload();
+      }
+    }
+    function adminSyncIncidentsToDayOpsPayload(rows){
+      try{
+        if(window.PortalDayOps && typeof window.PortalDayOps.getPayload === 'function'){
+          var pay = window.PortalDayOps.getPayload();
+          if(pay && Array.isArray(rows)) pay.incident_reports = rows;
+        }
+        var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
+        if(th && typeof th.setPayload === 'function' && window.PortalDayOps.getPayload){
+          th.setPayload(window.PortalDayOps.getPayload());
+        }
+      }catch(_syncInc){}
+    }
+    async function adminFetchIncidentReportsForHub(){
+      if(window.__PORTAL_INCIDENT_REPORTS__) return window.__PORTAL_INCIDENT_REPORTS__;
+      var since = new Date();
+      since.setDate(since.getDate() - 120);
+      var sinceIso = since.toISOString().slice(0, 10);
+      var edge = await adminEdgePost('portal-admin-incident-reports-list', { since: sinceIso });
+      if(!edge.error && edge.data && edge.data.rows){
+        var edgeRows = edge.data.rows;
+        window.__PORTAL_INCIDENT_REPORTS__ = edgeRows;
+        adminSyncIncidentsToDayOpsPayload(edgeRows);
+        adminRecordLiveLoad('incident_reports', { count: edgeRows.length, error: null, via: 'edge' });
+        if(edgeRows.length) console.info('[admin] incident_reports edge loaded:', edgeRows.length);
+        return edgeRows;
+      }
+      if(edge.error) console.warn('[admin] incident_reports edge:', edge.error);
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        adminRecordLiveLoad('incident_reports', { count: 0, error: edge.error || auth.error || 'no_client', via: 'edge' });
+        window.__PORTAL_INCIDENT_REPORTS__ = [];
+        return [];
+      }
+      try{
+        var res = await auth.client
+          .from('incident_reports')
+          .select('*')
+          .gte('created_at', sinceIso)
+          .order('created_at', { ascending: false })
+          .limit(400);
+        if(res.error){
+          adminRecordLiveLoad('incident_reports', { count: 0, error: res.error.message || String(res.error), via: 'client' });
+          window.__PORTAL_INCIDENT_REPORTS__ = [];
+          return [];
+        }
+        var rows = res.data || [];
+        window.__PORTAL_INCIDENT_REPORTS__ = rows;
+        adminSyncIncidentsToDayOpsPayload(rows);
+        adminRecordLiveLoad('incident_reports', { count: rows.length, error: null, via: 'client' });
+        if(rows.length) console.info('[admin] incident_reports loaded:', rows.length, 'via client');
+        return rows;
+      }catch(e){
+        adminRecordLiveLoad('incident_reports', { count: 0, error: String(e && e.message ? e.message : e), via: 'client' });
+        window.__PORTAL_INCIDENT_REPORTS__ = [];
+        return [];
       }
     }
     async function adminFetchScheduleOverridesViaEdge(sinceIso){
@@ -17173,6 +17231,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var rows = res.data || [];
         window.__PORTAL_SCHEDULE_OVERRIDES__ = rows;
+        adminSyncScheduleOverridesToDayOpsPayload(rows);
         adminRecordLiveLoad('schedule_overrides', { count: rows.length, error: null, via: 'client' });
         if(rows.length) console.info('[admin] schedule_overrides loaded:', rows.length, 'via client');
         return rows;
@@ -17794,7 +17853,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v6-overrides-match';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v7-live-forms';
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 
@@ -17960,6 +18019,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
         fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
+        fetchIncidentReports: adminFetchIncidentReportsForHub,
         invalidateLiveCaches: adminInvalidateSessionsHubLiveCaches,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
         fetchSessionFeedback: adminFetchSessionFeedbackForHub,
