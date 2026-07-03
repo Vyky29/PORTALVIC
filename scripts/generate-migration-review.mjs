@@ -785,10 +785,10 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <strong>${stats.essential + stats.chain}</strong> Keep auto · 
 <strong>${stats.archive}</strong> Guardar sin usar auto · 
 <strong>${stats.manualTotal}</strong> para decidir tú (${stats.review} en CLI + ${stats.onlyDb} solo en database/)</p>
-<div class="callout"><strong>Recomendación experta:</strong> CLI ${expertSummary.cliKeep} Keep + ${expertSummary.cliDefer} defer · database/ <strong>${step2Count} pendientes paso 2</strong> (copiar bootstrap a supabase/). Espejos borrados: ${expertSummary.dbDelete}.</div>
+<div class="callout"><strong>Recomendación experta:</strong> CLI ${expertSummary.cliKeep} Keep + ${expertSummary.cliDefer} defer · ${step2Count ? `<strong>${step2Count} pendientes paso 2</strong> (copiar bootstrap a supabase/).` : `<strong>Paso 2 completado</strong> → <code>20260414120000_portal_april_bootstrap_consolidated.sql</code> + repair prod.`}</div>
 <div class="view-tabs">
 <button type="button" class="btn btn--primary is-active" id="viewAll">Ver todo (${stats.manualTotal} manual)</button>
-<button type="button" class="btn" id="viewStep2">Paso 2 pendientes (${step2Count})</button>
+${step2Count ? `<button type="button" class="btn" id="viewStep2">Paso 2 pendientes (${step2Count})</button>` : `<button type="button" class="btn" id="viewStep2" disabled>Paso 2 ✓ completado</button>`}
 <button type="button" class="btn" id="viewCli13">Solo CLI revisar (${stats.review})</button>
 </div>
 <div class="stats" id="stats"></div>
@@ -802,10 +802,11 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 </header>
 
 <section class="panel panel--step2" id="step2Panel">
-<h2>Paso 2 — bootstrap en <code>supabase/migrations/</code> (${step2Count})</h2>
-<p class="lead">Las <strong>${step2Count}</strong> vienen pre-marcadas <strong>Keep</strong>. Veredicto experto: <strong>${step2Breakdown.copy} copiar</strong> (falta CREATE/ALTER en CLI) · <strong>${step2Breakdown.duplicated} ya duplicada</strong> · <strong>${step2Breakdown.data} solo datos prod</strong> · <strong>${step2Breakdown.superseded} cadena opcional</strong>.</p>
-<p class="lead" style="margin-top:8px;font-size:12px">Portal prod ya tiene el esquema (SQL manual). Paso 2 = git + Supabase vacío. No <code>db push</code> ciego en prod linked.</p>
-<ul class="manual-list" id="step2List"></ul>
+<h2>Paso 2 — bootstrap en <code>supabase/migrations/</code></h2>
+${step2Count ? `<p class="lead">Las <strong>${step2Count}</strong> vienen pre-marcadas <strong>Keep</strong>. Veredicto experto: <strong>${step2Breakdown.copy} copiar</strong> · <strong>${step2Breakdown.duplicated} duplicada</strong> · <strong>${step2Breakdown.data} datos</strong> · <strong>${step2Breakdown.superseded} cadena</strong>.</p>
+<p class="lead" style="margin-top:8px;font-size:12px">Portal prod ya tiene el esquema. No <code>db push</code> ciego en prod linked.</p>
+<ul class="manual-list" id="step2List"></ul>` : `<p class="lead"><strong>Completado.</strong> Consolidado en <code>20260414120000_portal_april_bootstrap_consolidated.sql</code> + <code>20260607130100_portal_payroll_contract_type_column.sql</code>. Espejos movidos a <code>database/archive/april-bootstrap-sources/</code>. Prod repair aplicado.</p>
+<ul class="manual-list" id="step2List"><li class="sub">Nada pendiente en paso 2.</li></ul>`}
 </section>
 
 <section class="panel callout-warn" id="manualPanel">
@@ -813,9 +814,9 @@ header h1,.panel h2{margin:0 0 8px;font-size:1.25rem}
 <p class="lead" style="margin-bottom:12px">Lista completa manual. Usa el botón <strong>Paso 2 pendientes</strong> arriba para ver solo los ${step2Count} de bootstrap.</p>
 <h3 style="font-size:14px;margin:16px 0 8px" id="sectionCli">A) En CLI — revisar (${stats.review})</h3>
 <ul class="manual-list" id="reviewList"></ul>
-<h3 style="font-size:14px;margin:16px 0 8px" id="sectionDb">B) Solo en database/ — NO en CLI (${stats.onlyDb})</h3>
-<p class="lead" style="font-size:12px;margin-bottom:8px" id="sectionDbHint">Los marcados «Copiar a supabase/» son el paso 2. El resto ya se borró del repo.</p>
-<ul class="manual-list" id="onlyDbList"></ul>
+${stats.onlyDb ? `<h3 style="font-size:14px;margin:16px 0 8px" id="sectionDb">B) Solo en database/ — NO en CLI (${stats.onlyDb})</h3>
+<p class="lead" style="font-size:12px;margin-bottom:8px" id="sectionDbHint">Los marcados «Copiar a supabase/» son el paso 2.</p>
+<ul class="manual-list" id="onlyDbList"></ul>` : `<p class="lead" style="font-size:13px;margin-top:12px" id="sectionDbHint">B) Espejos database/ — <strong>ninguno pendiente</strong> (archivados o consolidados en supabase/).</p>`}
 </section>
 
 <div id="root"></div>
@@ -854,13 +855,19 @@ function setViewMode(mode){
     document.getElementById('reviewList').classList.remove('hidden');
   }
   if(mode==='cli13'){
-    document.getElementById('sectionDb').classList.add('hidden');
-    document.getElementById('sectionDbHint').classList.add('hidden');
-    document.getElementById('onlyDbList').classList.add('hidden');
+    var sDb=document.getElementById('sectionDb');
+    var sDbH=document.getElementById('sectionDbHint');
+    var oDb=document.getElementById('onlyDbList');
+    if(sDb) sDb.classList.add('hidden');
+    if(sDbH) sDbH.classList.add('hidden');
+    if(oDb) oDb.classList.add('hidden');
   }else if(mode!=='step2'){
-    document.getElementById('sectionDb').classList.remove('hidden');
-    document.getElementById('sectionDbHint').classList.remove('hidden');
-    document.getElementById('onlyDbList').classList.remove('hidden');
+    var sDb=document.getElementById('sectionDb');
+    var sDbH=document.getElementById('sectionDbHint');
+    var oDb=document.getElementById('onlyDbList');
+    if(sDb) sDb.classList.remove('hidden');
+    if(sDbH) sDbH.classList.remove('hidden');
+    if(oDb) oDb.classList.remove('hidden');
   }
   render();
 }
@@ -902,10 +909,11 @@ function renderManual(){
       '</div></li>';
   }
   var step2Labels={keep:'Keep',defer:'Omitir paso 2'};
-  document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.map(function(r){return row(r,step2Labels);}).join('');
+  document.getElementById('step2List').innerHTML=DATA.manualReview.step2Copy.length?DATA.manualReview.step2Copy.map(function(r){return row(r,step2Labels);}).join(''):'<li class="sub">Nada pendiente.</li>';
   document.getElementById('reviewList').innerHTML=DATA.manualReview.inCliMixed.map(row).join('');
   var dbList=viewMode==='step2'?DATA.manualReview.step2Copy:DATA.manualReview.onlyDatabaseFolder;
-  document.getElementById('onlyDbList').innerHTML=dbList.map(function(r){return row(r,step2Labels);}).join('');
+  var onlyDbEl=document.getElementById('onlyDbList');
+  if(onlyDbEl) onlyDbEl.innerHTML=dbList.map(function(r){return row(r,step2Labels);}).join('');
 }
 
 function manualCounts(list){
@@ -996,7 +1004,7 @@ document.getElementById('export').onclick=function(){
   a.download='portal-migration-decisions-v4.json'; a.click();
 };
 document.getElementById('viewAll').onclick=function(){ setViewMode('all'); };
-document.getElementById('viewStep2').onclick=function(){ setViewMode('step2'); };
+document.getElementById('viewStep2').onclick=function(){ if(DATA.stats.step2Count) setViewMode('step2'); };
 document.getElementById('viewCli13').onclick=function(){ setViewMode('cli13'); };
 setViewMode(viewMode);
 </script>

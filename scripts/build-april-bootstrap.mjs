@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
  * Builds supabase/migrations/20260414120000_portal_april_bootstrap_consolidated.sql
- * from database/migrations/ April bootstrap sources (22 → consolidated, idempotent).
+ * from database/archive/april-bootstrap-sources/ (archived mirrors; consolidated in supabase/).
  * Run: node scripts/build-april-bootstrap.mjs
  */
 import fs from "fs";
 import path from "path";
 
-const DB = "database/migrations";
+const DB = "database/archive/april-bootstrap-sources";
 const OUT =
   "supabase/migrations/20260414120000_portal_april_bootstrap_consolidated.sql";
 const CONTRACT_TYPE_OUT =
