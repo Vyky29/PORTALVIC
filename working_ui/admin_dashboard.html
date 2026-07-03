@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v2"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-v3-edge"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17762,7 +17762,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v2';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v3-edge';
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 
@@ -18194,17 +18194,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
       await adminWaitForSupabaseReady(22000);
-      var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
-      var rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
+      var edgeResult = await adminFetchSessionFeedbackViaEdge(sinceIso);
+      var rows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
+      var via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
+      var loadErr = edgeResult && edgeResult.error ? edgeResult.error : null;
+      if(!rows.length){
+        var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
+        rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
+        via = (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc';
+        loadErr = rpcResult && rpcResult.error ? rpcResult.error : loadErr;
+      }
       try{
         window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
           at: new Date().toISOString(),
           total: rows.length,
-          via: (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc',
-          error: rpcResult && rpcResult.error ? rpcResult.error : null
+          via: via,
+          error: rows.length ? null : loadErr
         };
       }catch(_meta){}
-      adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via rpc');
+      console.log('[admin] session_feedback final:', rows.length, 'rows via', via, loadErr || '');
+      adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via', via);
       return rows;
     }
     function adminJwtExpiringSoon(token, skewSec){
