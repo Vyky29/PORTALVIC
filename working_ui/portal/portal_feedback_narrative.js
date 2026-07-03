@@ -30,13 +30,83 @@
 
   var els = {};
 
-  /** Preview output when edge function unavailable (local / offline). */
-  var PREVIEW_FILTER = {
-    positive:
-      "The participant arrived happy and ready to begin the session. Throughout the session, he remained calm and enjoyed exploring the aquatic environment. By following his interests and using Intensive Interaction alongside a First–Then routine, he successfully participated in several structured activities, including Seahorse and Front Kicking with a noodle. He responded positively when activities were presented in short, predictable sequences with regular movement breaks. The session finished with a smooth transition and a positive handover with his family.",
-    relevant:
-      "The participant initially demonstrated low engagement with the planned session activities and did not respond to verbal instructions, choices or available motivators. Engagement increased after approximately five minutes of Intensive Interaction and following his preferred interests. A First–Then strategy was effective in supporting participation in structured activities. The participant requested to finish the session approximately ten minutes early, indicating that he was hungry and wished to go to the sauna. This information was shared with his mother during the handover.",
-  };
+  /** Offline preview only — uses participant name; live filter uses OpenAI. */
+  function buildPreviewFilter(participantName, gender, narrative) {
+    var first = participantFirstName(participantName);
+    var g = normGenderValue(gender);
+    var subj = g === "m" ? "He" : g === "f" ? "She" : first;
+    var pos = g === "m" ? "his" : g === "f" ? "her" : first + "'s";
+    var snippet = clean(narrative).slice(0, 220);
+    return {
+      positive:
+        first +
+        " had a good session today. " +
+        subj +
+        " took part in the activities described in your narrative" +
+        (snippet ? " (" + snippet.replace(/\s+/g, " ") + "…)" : "") +
+        ". " +
+        subj +
+        " finished with a calm handover to " +
+        pos +
+        " family.",
+      relevant:
+        "Session notes from staff narrative for " +
+        first +
+        ". " +
+        (snippet
+          ? "Key points: " + snippet.replace(/\s+/g, " ") + "…"
+          : "Review the full narrative on file.") +
+        " Sign in on the portal for live AI filtering.",
+    };
+  }
+
+  function normGenderValue(v) {
+    v = String(v == null ? "" : v)
+      .trim()
+      .toLowerCase();
+    if (v === "m" || v === "male" || v === "boy") return "m";
+    if (v === "f" || v === "female" || v === "girl") return "f";
+    return "";
+  }
+
+  function photoKey(name) {
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function participantFirstName(name) {
+    var parts = clean(name).split(/\s+/).filter(Boolean);
+    return parts[0] || clean(name) || "Participant";
+  }
+
+  function participantGender(name) {
+    var n = photoKey(name);
+    var first = n.split(/\s+/)[0] || "";
+    try {
+      var map = global.PORTAL_CLIENT_GENDER_OVERRIDES || {};
+      var g = normGenderValue(map[n]) || normGenderValue(map[first]);
+      if (g) return g;
+    } catch (_) {}
+    try {
+      var notes = global.clientNotesById;
+      if (notes && typeof notes === "object") {
+        var keys = Object.keys(notes);
+        for (var i = 0; i < keys.length; i++) {
+          var note = notes[keys[i]];
+          if (!note) continue;
+          var nm = photoKey(note.name || note.clientName || "");
+          if (!nm) continue;
+          if (nm === n || nm.split(/\s+/)[0] === first || n.indexOf(nm.split(/\s+/)[0]) === 0) {
+            var g2 = normGenderValue(note.gender);
+            if (g2) return g2;
+          }
+        }
+      }
+    } catch (_2) {}
+    return "";
+  }
 
   function configure(options) {
     if (!options) return;
@@ -158,12 +228,15 @@
 
     var participantEl = form.querySelector("#fbParticipantName, [name='participantName']");
     var serviceEl = form.querySelector("#fbService, [name='service']");
+    var participantName = participantEl ? clean(participantEl.value) : "";
+    var gender = participantGender(participantName);
 
     return {
       engagement_rating: engagementRaw,
       client_emotions: emotions,
       independence_level: independence,
-      participant_name: participantEl ? clean(participantEl.value) : "",
+      participant_name: participantName,
+      participant_gender: gender,
       service: serviceEl ? clean(serviceEl.value) : "",
     };
   }
@@ -223,14 +296,15 @@
     };
   }
 
-  async function runPreviewFilter() {
+  async function runPreviewFilter(participantName, gender, narrative) {
     await new Promise(function (r) {
       setTimeout(r, 700);
     });
+    var preview = buildPreviewFilter(participantName, gender, narrative);
     return {
       ok: true,
-      positive_feedback: PREVIEW_FILTER.positive,
-      relevant_information: PREVIEW_FILTER.relevant,
+      positive_feedback: preview.positive,
+      relevant_information: preview.relevant,
       preview: true,
     };
   }
@@ -260,7 +334,11 @@
         result.error === "filter_failed";
 
       if (usePreview) {
-        result = await runPreviewFilter();
+        result = await runPreviewFilter(
+          context.participant_name,
+          context.participant_gender,
+          narrative,
+        );
       } else {
         state.filtering = false;
         if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";

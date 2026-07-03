@@ -7,7 +7,7 @@
 // GET  → { ok: true, openai: boolean }
 // POST JSON:
 //   narrative_en, engagement_rating?, client_emotions?, independence_level?,
-//   participant_name?, service?
+//   participant_name?, participant_gender?, service?
 //
 // Auth: active portal staff JWT
 
@@ -34,16 +34,32 @@ function str(v: unknown, max = 12000): string {
   return String(v ?? "").trim().slice(0, max);
 }
 
+function firstName(full: string): string {
+  const parts = str(full, 200).split(/\s+/).filter(Boolean);
+  return parts[0] || str(full, 80) || "Participant";
+}
+
+function genderLabel(raw: unknown): "male" | "female" | "" {
+  const g = str(raw, 8).toLowerCase();
+  if (g === "m" || g === "male" || g === "boy") return "male";
+  if (g === "f" || g === "female" || g === "girl") return "female";
+  return "";
+}
+
 function buildMessages(body: Record<string, unknown>) {
   const narrative = str(body.narrative_en, 10000);
   const engagement = str(body.engagement_rating, 8);
   const emotions = str(body.client_emotions, 500);
   const independence = str(body.independence_level, 200);
   const participant = str(body.participant_name, 200);
+  const participantFirst = firstName(participant);
+  const gender = genderLabel(body.participant_gender);
   const service = str(body.service, 200);
 
   const contextLines = [
-    participant ? `Participant: ${participant}` : "",
+    participant ? `Participant full name: ${participant}` : "",
+    participant ? `Use first name in text: ${participantFirst}` : "",
+    gender ? `Gender: ${gender}` : participant ? "Gender: unknown — use the first name, not they/them" : "",
     service ? `Service: ${service}` : "",
     engagement ? `Engagement rating (1–5): ${engagement}` : "",
     emotions ? `Emotions / regulation: ${emotions}` : "",
@@ -55,15 +71,27 @@ function buildMessages(body: Record<string, unknown>) {
     "Staff have already written an internal English session narrative covering Reception, Session and Handover.",
     "Your job is to split it into two English text fields for database storage.",
     "",
+    "Naming and pronouns (strict):",
+    "- Use the participant's FIRST NAME throughout — never write \"the participant\", \"the client\", or \"the child\".",
+    "- If gender is male: he, him, his only — never they/them/their.",
+    "- If gender is female: she, her, hers only — never they/them/their.",
+    "- If gender is unknown: repeat the first name instead of generic labels or singular they.",
+    "",
+    "Style (strict — daily feedback must not look templated):",
+    "- Every sentence must come from THIS staff narrative only — no invented details.",
+    "- Do NOT reuse stock phrases (e.g. \"arrived happy and ready\", \"remained calm throughout\", \"responded positively\", \"smooth transition\") unless the narrative literally says that.",
+    "- Vary openings and structure — sound like a human summarising today's session, not a copy-paste template.",
+    "- Different sessions should read differently even when themes are similar.",
+    "",
     "positive_feedback:",
     "- Warm, professional text suitable for parents in the family app.",
-    "- Focus on what went well, participation, strategies that worked, smooth transitions.",
+    "- Focus on what went well, participation, strategies that worked, smooth transitions — only if stated in the narrative.",
     "- Do NOT include internal jargon-heavy negatives, low engagement details, hunger/toilet breaks as problems, or anything that would worry parents unnecessarily.",
     "- One or two short paragraphs, plain English.",
     "",
     "relevant_information:",
     "- Internal staff/admin notes only — not shown to families as the positive message.",
-    "- Include low engagement, non-response to instructions, strategies used (e.g. Intensive Interaction, First–Then), finishing early, hunger/sauna requests, handover details for the team.",
+    "- Include low engagement, non-response to instructions, strategies used, finishing early, hunger/sauna requests, handover details for the team — only from the narrative.",
     "- One or two short paragraphs, plain English.",
     "",
     "Always output valid JSON with keys positive_feedback and relevant_information only.",
@@ -96,7 +124,7 @@ async function callOpenAi(apiKey: string, messages: { role: string; content: str
     body: JSON.stringify({
       model,
       messages,
-      temperature: 0.35,
+      temperature: 0.55,
       max_tokens: 1200,
       response_format: { type: "json_object" },
     }),
