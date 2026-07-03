@@ -99,7 +99,7 @@
     var hint = global.document.getElementById("fbSubmitHint");
     if (hint) {
       hint.textContent = state.filtered
-        ? "Ready to submit."
+        ? "Ready to submit — edit Positive or Relevant if needed."
         : "Run Filter with AI before submitting.";
     }
   }
@@ -181,7 +181,7 @@
         "Preview filter applied (sign in on portal for live AI). Review below, then Submit.",
       );
     } else {
-      setStatus("Filtered — review Positive and Relevant, then Submit.");
+      setStatus("Filtered — edit Positive and Relevant if needed, then Submit.");
     }
   }
 
