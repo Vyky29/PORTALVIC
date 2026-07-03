@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v3-edge"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260703-v4-overrides"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -17114,39 +17114,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.PortalDayOps.invalidatePayload();
       }
     }
+    async function adminFetchScheduleOverridesViaEdge(sinceIso){
+      var edge = await adminEdgePost('portal-admin-schedule-overrides-list', { since: sinceIso });
+      if(edge.error){
+        console.warn('[admin] schedule_overrides edge:', edge.error);
+        adminRecordLiveLoad('schedule_overrides', { count: 0, error: edge.error, via: 'edge' });
+        return { rows: [], error: edge.error, via: 'edge' };
+      }
+      var rows = (edge.data && edge.data.rows) ? edge.data.rows : [];
+      adminRecordLiveLoad('schedule_overrides', { count: rows.length, error: null, via: 'edge' });
+      if(rows.length) console.info('[admin] schedule_overrides edge loaded:', rows.length);
+      else console.warn('[admin] schedule_overrides edge: 0 rows');
+      return { rows: rows, error: null, via: 'edge' };
+    }
     async function adminFetchScheduleOverridesForHub(){
+      var since = new Date();
+      since.setDate(since.getDate() - 120);
+      var sinceIso = since.toISOString().slice(0, 10);
+      var edgeResult = await adminFetchScheduleOverridesViaEdge(sinceIso);
+      if(edgeResult.rows && edgeResult.rows.length){
+        window.__PORTAL_SCHEDULE_OVERRIDES__ = edgeResult.rows;
+        return edgeResult.rows;
+      }
       var auth = await adminEnsureAuthedSupabaseClient();
       if(!auth.client || !auth.tok){
-        console.warn('[admin] schedule_overrides:', auth.error || 'no_client');
-        adminRecordLiveLoad('schedule_overrides', { count: 0, error: auth.error || 'no_client' });
+        console.warn('[admin] schedule_overrides:', auth.error || edgeResult.error || 'no_client');
+        adminRecordLiveLoad('schedule_overrides', { count: 0, error: auth.error || edgeResult.error || 'no_client' });
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
         return [];
       }
       try{
-        var since = new Date();
-        since.setDate(since.getDate() - 120);
         var res = await auth.client
           .from('schedule_overrides')
           .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
-          .gte('session_date', since.toISOString().slice(0, 10))
+          .gte('session_date', sinceIso)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(600);
         if(res.error){
           var ovErr = res.error.message || String(res.error);
           console.warn('[admin] schedule_overrides:', ovErr);
-          adminRecordLiveLoad('schedule_overrides', { count: 0, error: ovErr });
+          adminRecordLiveLoad('schedule_overrides', { count: 0, error: ovErr, via: 'client' });
           window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
           return [];
         }
         var rows = res.data || [];
         window.__PORTAL_SCHEDULE_OVERRIDES__ = rows;
-        adminRecordLiveLoad('schedule_overrides', { count: rows.length, error: null });
-        if(rows.length) console.info('[admin] schedule_overrides loaded:', rows.length);
+        adminRecordLiveLoad('schedule_overrides', { count: rows.length, error: null, via: 'client' });
+        if(rows.length) console.info('[admin] schedule_overrides loaded:', rows.length, 'via client');
         return rows;
       }catch(e){
         console.warn('[admin] schedule_overrides fetch failed', e);
-        adminRecordLiveLoad('schedule_overrides', { count: 0, error: String(e && e.message ? e.message : e) });
+        adminRecordLiveLoad('schedule_overrides', { count: 0, error: String(e && e.message ? e.message : e), via: 'client' });
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
         return [];
       }
@@ -17762,7 +17781,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v3-edge';
+    var PORTAL_ADMIN_HUB_BUILD = '20260703-v4-overrides';
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
 

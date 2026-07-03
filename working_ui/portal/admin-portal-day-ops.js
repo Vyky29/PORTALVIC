@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v3-edge';
+  var PORTAL_DAY_OPS_BUILD = '20260703-v4-overrides';
   var HUB_SRC = '/portal/admin-sessions-hub.js?v=' + PORTAL_DAY_OPS_BUILD;
   var EDGE_FETCH_MS = 12000;
   var ENRICH_WAIT_MS = 8000;
@@ -193,17 +193,22 @@
   }
 
   function applyPayload(j) {
-    payload.counts = j.counts || {};
-    payload.session_feedback = j.session_feedback || [];
-    payload.session_feedback_loaded = j.session_feedback_loaded;
-    payload.session_feedback_total = j.session_feedback_total != null ? j.session_feedback_total : payload.session_feedback.length;
-    payload.incident_reports = j.incident_reports || [];
-    payload.lead_session_reports = j.lead_session_reports || [];
-    payload.venue_reviews = j.venue_reviews || [];
-    payload.cancellation_reports = j.cancellation_reports || [];
-    payload.schedule_overrides = j.schedule_overrides || [];
-    payload.session_quick_marks = j.session_quick_marks || [];
-    payload.parent_feedback_shares = j.parent_feedback_shares || [];
+    if (!j) return;
+    if (j.counts) payload.counts = j.counts;
+    if (Array.isArray(j.session_feedback)) payload.session_feedback = j.session_feedback;
+    if (j.session_feedback_loaded !== undefined) payload.session_feedback_loaded = j.session_feedback_loaded;
+    if (j.session_feedback_total != null) {
+      payload.session_feedback_total = j.session_feedback_total;
+    } else if (Array.isArray(j.session_feedback)) {
+      payload.session_feedback_total = j.session_feedback.length;
+    }
+    if (Array.isArray(j.incident_reports)) payload.incident_reports = j.incident_reports;
+    if (Array.isArray(j.lead_session_reports)) payload.lead_session_reports = j.lead_session_reports;
+    if (Array.isArray(j.venue_reviews)) payload.venue_reviews = j.venue_reviews;
+    if (Array.isArray(j.cancellation_reports)) payload.cancellation_reports = j.cancellation_reports;
+    if (Array.isArray(j.schedule_overrides)) payload.schedule_overrides = j.schedule_overrides;
+    if (Array.isArray(j.session_quick_marks)) payload.session_quick_marks = j.session_quick_marks;
+    if (Array.isArray(j.parent_feedback_shares)) payload.parent_feedback_shares = j.parent_feedback_shares;
   }
 
   function portalDayOpsAfterFeedbackPayloadMerge() {
