@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-afterschools-default";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-term-edges-crash";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -261,6 +261,90 @@
     return "portal-ann:" + annId + global.portalCalendar202627AckKeySuffix();
   };
 
+  /** First & last day of each After-Schools term (darker-green blinking underline). */
+  var DC_CAL_TERM_EDGES = {
+    "2026-09-05": "first",
+    "2026-12-18": "last",
+    "2027-01-04": "first",
+    "2027-03-25": "last",
+    "2027-04-12": "first",
+    "2027-07-16": "last",
+  };
+  /** Crash-course days (Mon–Thu of each half term) — red, tappable to the crash timetable. */
+  var DC_CAL_CRASH_DAYS = {
+    "2026-10-26": 1, "2026-10-27": 1, "2026-10-28": 1, "2026-10-29": 1,
+    "2027-02-15": 1, "2027-02-16": 1, "2027-02-17": 1, "2027-02-18": 1,
+    "2027-05-31": 1, "2027-06-01": 1, "2027-06-02": 1, "2027-06-03": 1,
+  };
+  var DC_CAL_MONTHS = {
+    january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+    july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+  };
+
+  function dcCalPad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function dcCalMonthYearFromLabel(label) {
+    var parts = String(label || "").trim().toLowerCase().split(/\s+/);
+    if (parts.length < 2) return null;
+    var mo = DC_CAL_MONTHS[parts[0]];
+    var yr = parseInt(parts[1], 10);
+    if (mo == null || !yr) return null;
+    return { mo: mo, yr: yr };
+  }
+
+  /** Mark first/last term days and crash-course-week days in the After-Schools panel. */
+  global.portalMarkCalendar202627Highlights = function portalMarkCalendar202627Highlights(root) {
+    var section = null;
+    if (root && root.querySelector) {
+      section = root.classList && root.classList.contains("dc-cal") ? root : root.querySelector(".dc-cal");
+    }
+    if (!section && global.document) section = global.document.querySelector(".dc-cal");
+    if (!section || section.__dcCalHighlighted) return;
+    var panel = section.querySelector("#dcCalSessionsPanel");
+    if (!panel) return;
+    section.__dcCalHighlighted = true;
+    var crashTab = section.querySelector("#dcCalCrashTab");
+    var months = panel.querySelectorAll(".dc-cal-month");
+    Array.prototype.forEach.call(months, function (mEl) {
+      var labelEl = mEl.querySelector(".dc-cal-month__label");
+      var my = dcCalMonthYearFromLabel(labelEl && labelEl.textContent);
+      if (!my) return;
+      var cells = mEl.querySelectorAll(".dc-cal-cell");
+      Array.prototype.forEach.call(cells, function (cell) {
+        var dayEl = cell.querySelector(".dc-cal-day");
+        if (!dayEl) return;
+        var day = parseInt(dayEl.textContent, 10);
+        if (!day) return;
+        var iso = my.yr + "-" + dcCalPad2(my.mo + 1) + "-" + dcCalPad2(day);
+        var edge = DC_CAL_TERM_EDGES[iso];
+        if (edge) {
+          cell.classList.add("dc-cal-cell--term-edge");
+          cell.setAttribute("title", edge === "first" ? "First day of term" : "Last day of term");
+        }
+        if (DC_CAL_CRASH_DAYS[iso]) {
+          cell.classList.add("dc-cal-cell--crash");
+          cell.setAttribute("role", "button");
+          cell.setAttribute("tabindex", "0");
+          cell.setAttribute("title", "Crash course — tap for the crash course timetable");
+          cell.setAttribute("aria-label", "Crash course day " + day + " — open crash course timetable");
+          var goCrash = function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            if (crashTab) {
+              crashTab.click();
+              if (crashTab.scrollIntoView) crashTab.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          };
+          cell.addEventListener("click", goCrash);
+          cell.addEventListener("keydown", function (ev) {
+            if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") goCrash(ev);
+          });
+        }
+      });
+    });
+  };
+
   /** Tab switcher — required when HTML is injected (inline scripts do not run). */
   global.portalInitCalendar202627Tabs = function portalInitCalendar202627Tabs(root) {
     var section = null;
@@ -311,6 +395,9 @@
         ? initial.getAttribute("data-dc-cal-target")
         : "dcCalSessionsPanel";
     showPanel(initialTarget);
+    try {
+      global.portalMarkCalendar202627Highlights(section);
+    } catch (_mark) {}
   };
 
   /** Inject the interactive HTML calendar into a host element (announcement modal). */

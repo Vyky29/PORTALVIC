@@ -364,6 +364,63 @@
     .dc-cal-crash-day--off {
       background: var(--dc-red);
     }
+    .dc-cal__swatch--edge { background: var(--dc-green); box-shadow: inset 0 -3px 0 #2f6b00; }
+    .dc-cal__swatch--crash { background: var(--dc-red); box-shadow: inset 0 -3px 0 #a01414; }
+    @keyframes dcCalEdgePulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    @keyframes dcCalCrashPulse {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+    /* First / last day of each term — darker-green blinking underline. */
+    #dcCalSessionsPanel .dc-cal-cell--term-edge {
+      position: relative;
+      box-shadow: inset 0 0 0 2px #2f6b00;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--term-edge::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 2px;
+      height: 3px;
+      border-radius: 2px;
+      background: #2f6b00;
+      animation: dcCalEdgePulse 1.1s ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* Crash-course-week days — red, tappable, with a blinking darker-red underline. */
+    #dcCalSessionsPanel .dc-cal-cell--crash {
+      position: relative;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--crash::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 2px;
+      height: 3px;
+      border-radius: 2px;
+      background: #a01414;
+      animation: dcCalCrashPulse 0.85s ease-in-out infinite;
+      pointer-events: none;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--crash:focus-visible {
+      outline: 2px solid var(--dc-navy);
+      outline-offset: 1px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #dcCalSessionsPanel .dc-cal-cell--term-edge::after,
+      #dcCalSessionsPanel .dc-cal-cell--crash::after {
+        animation: none;
+        opacity: 1;
+      }
+    }
     @media (min-width: 720px) {
       .dc-cal { padding: 20px 18px 28px; }
       .dc-cal-term { padding: 18px 16px 20px; }
@@ -790,6 +847,8 @@
     <ul class="dc-cal__legend" id="dcCalLegendSessions" aria-label="Sessions colour key">
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Sessions running (Mon–Sun)</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / no sessions</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--edge" aria-hidden="true"></span> Blinking green line = first &amp; last day of term</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--crash" aria-hidden="true"></span> Blinking red = crash course week (tap for timetable)</li>
     </ul>
     <p class="dc-cal-panel__intro">Weekly and weekend sessions (aquatic, climbing, multi-activity and other programmes). Includes Saturdays and Sundays when sessions run.</p>
     <article class="dc-cal-term" aria-labelledby="dcCalSessionsPanel-term-autumn">
@@ -797,6 +856,7 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-autumn"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> Autumn Term 2026</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Saturday 5 September 2026</li>
+          <li>Term ends: Friday 18 December 2026</li>
           <li>Half Term: Monday 26 October – Friday 30 October 2026</li>
           <li>Weekend closures: 24–25 October and 31 October–1 November</li>
           <li>Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027</li>
@@ -970,6 +1030,7 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-spring"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> Spring Term 2027</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 4 January 2027</li>
+          <li>Term ends: Thursday 25 March 2027</li>
           <li>Half Term: Monday 15 February – Friday 19 February 2027</li>
           <li>Weekend closures: 13–14 February and 20–21 February</li>
           <li>Easter closure: Friday 26 March – Sunday 11 April 2027</li>
@@ -1098,9 +1159,9 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer Term 2027</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 12 April 2027</li>
+          <li>Term ends: Friday 16 July 2027</li>
           <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
           <li>Weekend closures: 29–30 May and 5–6 June</li>
-          <li>Last sessions day: Friday 16 July 2027</li>
         </ul>
         <div class="dc-cal-term__weeks">
           <p><strong>School Services:</strong> 13 weeks</p>
