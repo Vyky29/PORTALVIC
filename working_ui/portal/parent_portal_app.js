@@ -315,10 +315,20 @@
     }
   }
 
+  function childPhotoMissingNoticeHtml() {
+    return (
+      '<p class="pp-child-photo-missing" role="status">' +
+      "<strong>No photo on file.</strong> " +
+      "Please add a photo so instructors can identify them at sessions. " +
+      "Shared with club staff only · stored in line with GDPR." +
+      "</p>"
+    );
+  }
+
   function childAvatarHtml(c) {
     var name = c.display_name || "Participant";
     var url = String(c.avatar_url || "").trim();
-    if (!url && typeof global.portalParticipantPhotoUrl === "function") {
+    if (!url && c.has_avatar !== false && typeof global.portalParticipantPhotoUrl === "function") {
       url = global.portalParticipantPhotoUrl(name, "", c.contact_id) || "";
     }
     var initials =
@@ -394,8 +404,11 @@
             var meta = [];
             if (c.dob_iso) meta.push("DOB " + esc(formatDob(c.dob_iso)));
             if (c.city && c.city !== "—") meta.push(esc(c.city));
+            var photoMissing = c.has_avatar === false;
             return (
-              '<article class="pp-card pp-child-card pp-child-card--link" role="button" tabindex="0" data-contact-id="' +
+              '<article class="pp-card pp-child-card pp-child-card--link' +
+              (photoMissing ? " pp-child-card--no-photo" : "") +
+              '" role="button" tabindex="0" data-contact-id="' +
               esc(String(c.contact_id || "")) +
               '" aria-label="View sessions for ' +
               esc(c.display_name || "Participant") +
@@ -412,6 +425,7 @@
               chips.join("") +
               "</div>" +
               "</div>" +
+              (photoMissing ? childPhotoMissingNoticeHtml() : "") +
               '<p class="pp-child-card__cta">Sessions, messages &amp; achievements →</p>' +
               '<a class="pp-reenrol-chip" href="/parent/re-enrolment?from=portal&amp;contact_id=' +
               esc(String(c.contact_id || "")) +

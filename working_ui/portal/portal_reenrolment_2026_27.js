@@ -263,10 +263,160 @@
       .replace(/\bCLIMBING ACTIVITY\b/i, "Climbing Activity")
       .replace(/\bSW\b/i, "Aquatic Activity")
       .replace(/^[''\s]+|[''\s]+$/g, "");
-    var day = slot.day ? " - " + slot.day + (slot.day.endsWith("s") ? "" : "s") : "";
-    var time = slot.timeSlot ? " - " + slot.timeSlot + (/\b(am|pm)\b/i.test(slot.timeSlot) ? "" : " pm") : "";
+    var time = slot.timeSlot ? " - " + slot.timeSlot : "";
+    var day = slot.day ? ", " + slot.day + (slot.day.endsWith("s") ? "" : "s") : "";
     var venue = slot.venue ? " (" + slot.venue + ")" : "";
-    return esc((dur ? dur + " " : "") + svc + day + time + venue);
+    return esc((dur ? dur + " " : "") + svc + time + day + venue);
+  }
+
+  function hasWeeklySlots(data) {
+    return !!((data && data.weekly_slots) || []).length;
+  }
+
+  function hasDayCentreEnrolled(data) {
+    return !!(data && data.day_centre && data.day_centre.slots && data.day_centre.slots.length);
+  }
+
+  function primaryServiceSectionTitle(data) {
+    if (!hasWeeklySlots(data) && hasDayCentreEnrolled(data)) return "Day Centre — SwimFarm";
+    if (hasWeeklySlots(data)) return "After-School &amp; Weekends";
+    return "Your programme";
+  }
+
+  function renderCurrentArrangementsSide(data) {
+    var cur = (data && data.current_arrangements_2526) || {};
+    var rows = [];
+    function add(label, val) {
+      val = val != null ? String(val).trim() : "";
+      if (val) rows.push("<dt>" + esc(label) + "</dt><dd>" + esc(val) + "</dd>");
+    }
+    add("Participant", cur.participant_name || participantDisplayName(data));
+    add("Age", cur.age ? cur.age + " years" : "");
+    add("Service", cur.service);
+    add("Slot", cur.slot);
+    add("Venue", cur.venue);
+    add("Instructor", cur.instructor);
+    add("Payment method", cur.payment_method);
+    add("Funding", cur.funding);
+    add("Invoice", cur.invoice_type);
+    if (!rows.length) {
+      var legacy = fundingCurrent2526(data);
+      add("Payment method", legacy.payment_method);
+      add("Funding", legacy.funding);
+      add("Invoice", legacy.invoice_type);
+    }
+    return (
+      '<section class="re-section re-section--current-ref">' +
+      reSectionTitle("h3", "current", "Your current arrangements (2025/26)") +
+      '<p class="re-muted re-current-ref-note">Reference from this year&apos;s record. Confirm 2026/27 choices on the right.</p>' +
+      '<dl class="re-dl re-current-ref-dl">' +
+      rows.join("") +
+      "</dl></section>"
+    );
+  }
+
+  function termProgrammeTotal(data, term) {
+    var slots = (data && data.weekly_slots) || [];
+    if (term === "annual") return resolveAnnualWeeklyTotal(data);
+    return slots.reduce(function (sum, s) {
+      var t = s.termTotals && s.termTotals[term];
+      return sum + (Number.isFinite(Number(t)) ? Number(t) : 0);
+    }, 0);
+  }
+
+  function renderPaymentSchedulePreviewHtml(data) {
+    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+    var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
+    var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
+    var fundCode = fundEl ? fundEl.value : "privately_funded";
+    if (!isParentPaysPanel(fundCode)) return "";
+    var payCode = payEl ? payEl.value : "bank_transfer";
+    var schedCode = schedEl ? schedEl.value : null;
+    if (payCode !== "bank_transfer" && payCode !== "gocardless") return "";
+    if (!schedCode) return "";
+    var annual = resolveAnnualWeeklyTotal(data);
+    var fee = adminFeeApplies(payCode);
+    function amt(base) {
+      var n = Number(base);
+      if (!Number.isFinite(n) || n <= 0) return "—";
+      return money(fee ? moneyWithAdminFee(n) : n);
+    }
+    var rows = [];
+    if (schedCode === "yearly_1off") {
+      rows.push({
+        label: "Full year (1 payment)",
+        due: "Before Saturday 5 September 2026",
+        amount: amt(annual),
+      });
+    } else if (schedCode === "term_3") {
+      rows.push({
+        label: "Autumn term",
+        due: "Before Saturday 5 September 2026",
+        amount: amt(termProgrammeTotal(data, "autumn")),
+      });
+      rows.push({
+        label: "Spring term",
+        due: "Before Monday 4 January 2027",
+        amount: amt(termProgrammeTotal(data, "spring")),
+      });
+      rows.push({
+        label: "Summer term",
+        due: "Before Monday 12 April 2027",
+        amount: amt(termProgrammeTotal(data, "summer")),
+      });
+    } else if (schedCode === "monthly_10") {
+      var monthly = annual / 10;
+      var months = [
+        "September 2026",
+        "October 2026",
+        "November 2026",
+        "December 2026",
+        "January 2027",
+        "February 2027",
+        "March 2027",
+        "April 2027",
+        "May 2027",
+        "June 2027",
+      ];
+      months.forEach(function (label, i) {
+        rows.push({
+          label: "Payment " + (i + 1) + " · " + label,
+          due: "1 " + label,
+          amount: amt(monthly),
+        });
+      });
+    }
+    if (!rows.length) return "";
+    return (
+      '<div class="re-pay-preview">' +
+      '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
+      '<p class="re-muted re-pay-preview__note">Same programme total — compare due dates below. The office confirms your final invoice plan before September 2026.</p>' +
+      '<ul class="re-pay-preview-list">' +
+      rows
+        .map(function (r) {
+          return (
+            '<li class="re-pay-preview-list__row">' +
+            '<span class="re-pay-preview-list__label">' +
+            esc(r.label) +
+            "</span>" +
+            '<span class="re-pay-preview-list__due">Due ' +
+            esc(r.due) +
+            "</span>" +
+            '<span class="re-pay-preview-list__amt">' +
+            esc(r.amount) +
+            "</span></li>"
+          );
+        })
+        .join("") +
+      "</ul></div>"
+    );
+  }
+
+  function syncPaymentSchedulePreview() {
+    var host = $("rePaySchedulePreview");
+    if (!host || !state.lookup) return;
+    host.innerHTML = renderPaymentSchedulePreviewHtml(state.lookup);
+    host.hidden = !host.innerHTML;
   }
 
   function participantDisplayName(data) {
@@ -571,7 +721,7 @@
     return Math.round(n * 1.025 * 100) / 100;
   }
 
-  function renderFundingBlock(data) {
+  function renderBilling2627Block(data) {
     var cur = fundingCurrent2526(data);
     var annualTotal = resolveAnnualWeeklyTotal(data);
     var fundDefault = mapFundingCode(cur.funding);
@@ -580,36 +730,14 @@
     var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
     if (isDirectPayments(fundDefault)) vatDefault = "exempt";
 
-    var currentRows = [];
-    if (cur.payment_method) {
-      currentRows.push(
-        "<dt>Preferred Payment Method 2025/26</dt><dd>" + esc(cur.payment_method) + "</dd>",
-      );
-    }
-    if (cur.funding) {
-      currentRows.push("<dt>Funding</dt><dd>" + esc(cur.funding) + "</dd>");
-    }
-    if (cur.invoice_type) {
-      currentRows.push("<dt>Invoice type</dt><dd>" + esc(cur.invoice_type) + "</dd>");
-    }
-
-    var currentHtml = currentRows.length
-      ? '<div class="re-funding-current">' +
-        "<h4>Your current arrangements (2025/26)</h4>" +
-        '<dl class="re-dl">' +
-        currentRows.join("") +
-        "</dl></div>"
-      : '<p class="re-muted">Current payment details were not found on file — choose your 2026/27 preferences below and the office will confirm.</p>';
-
     return (
-      currentHtml +
       '<div class="re-funding-2627" data-annual-total="' +
       esc(String(annualTotal)) +
       '">' +
-      "<h4>2026/27 billing preferences</h4>" +
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
       "</p>" +
+      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose how you would like invoices timed — the programme total stays the same.</p>' +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Funding</legend>' +
       renderFundingRadios(fundDefault) +
@@ -627,6 +755,7 @@
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       renderPayScheduleFieldset(payDefault, scheduleDefault) +
       "</div>" +
+      '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
       (adminFeeApplies(payDefault) ? "" : " hidden") +
       ">" +
@@ -676,14 +805,30 @@
 
   var RE_SCHEDULE_OPTIONS = {
     bank_transfer: [
-      { code: "yearly_1off", label: "1 off payment (whole year)" },
-      { code: "term_3", label: "3 payments (one per term)" },
+      { code: "yearly_1off", label: "All year — one payment" },
+      { code: "term_3", label: "Flexible — pay each term" },
     ],
     gocardless: [
-      { code: "monthly_10", label: "10 payments (one per month)" },
-      { code: "term_3", label: "3 payments (one per term)" },
+      { code: "monthly_10", label: "All year — 10 monthly payments" },
+      { code: "term_3", label: "Flexible — pay each term" },
     ],
   };
+
+  function scheduleOptionHint(code, payCode) {
+    if (code === "yearly_1off") {
+      return "Confirm the full academic year in one step. One bank transfer before September — same programme total.";
+    }
+    if (code === "monthly_10") {
+      return "Year agreement with payments spread September–June via GoCardless — same programme total.";
+    }
+    if (code === "term_3" && payCode === "gocardless") {
+      return "Three term payments via GoCardless. You confirm again before each term — same programme total over the year.";
+    }
+    if (code === "term_3") {
+      return "Three separate invoices (Autumn, Spring, Summer). You confirm again before each term — same programme total over the year.";
+    }
+    return "";
+  }
 
   function mapPrivatePayMethodCode(raw, fundingRaw) {
     if (isFunderPaid(mapFundingCode(fundingRaw))) return "bank_transfer";
@@ -778,28 +923,37 @@
       : opts[0].code;
     var title =
       payCode === "bank_transfer"
-        ? "Bank transfer — payment schedule"
-        : "GoCardless — payment schedule";
+        ? "How would you like to pay?"
+        : "How would you like to pay via GoCardless?";
     return (
       '<fieldset class="re-choice-fieldset re-funding-field re-pay-schedule">' +
       '<legend class="re-label">' +
       esc(title) +
       "</legend>" +
+      '<div class="re-schedule-options">' +
       opts
         .map(function (o) {
           var checked = o.code === validDefault ? " checked" : "";
+          var hint = scheduleOptionHint(o.code, payCode);
           return (
-            '<label class="re-radio"><input type="radio" name="re_pay_schedule_2627" value="' +
+            '<label class="re-radio re-radio--schedule">' +
+            '<input type="radio" name="re_pay_schedule_2627" value="' +
             esc(o.code) +
             '"' +
             checked +
-            " /> " +
+            " />" +
+            '<span class="re-radio--schedule__body">' +
+            '<span class="re-radio--schedule__title">' +
             esc(o.label) +
-            "</label>"
+            "</span>" +
+            (hint
+              ? '<span class="re-radio--schedule__hint">' + esc(hint) + "</span>"
+              : "") +
+            "</span></label>"
           );
         })
         .join("") +
-      "</fieldset>"
+      "</div></fieldset>"
     );
   }
 
@@ -863,6 +1017,7 @@
     if (vatChoice) vatChoice.hidden = isDirectPayments(fundCode);
     if (vatDirect) vatDirect.hidden = !isDirectPayments(fundCode);
     syncPrivatePayPanels();
+    syncPaymentSchedulePreview();
   }
 
   function syncPrivatePayPanels() {
@@ -891,16 +1046,25 @@
       feeAmt.textContent = " — indicative total with fee: " + money(moneyWithAdminFee(annual));
     } else if (feeAmt) feeAmt.textContent = "";
     if (upfrontNote) upfrontNote.hidden = payCode !== "own_way_upfront";
+    syncPaymentSchedulePreview();
   }
 
   function bindFundingHandlers() {
     document.querySelectorAll('input[name="re_fund_2627"]').forEach(function (radio) {
-      radio.addEventListener("change", syncFundingPanels);
+      radio.addEventListener("change", function () {
+        syncFundingPanels();
+        syncPaymentSchedulePreview();
+      });
     });
     document.querySelectorAll('input[name="re_pay_2627"]').forEach(function (radio) {
       radio.addEventListener("change", syncPrivatePayPanels);
     });
+    document.addEventListener("change", function (ev) {
+      var t = ev.target;
+      if (t && t.name === "re_pay_schedule_2627") syncPaymentSchedulePreview();
+    });
     syncFundingPanels();
+    syncPaymentSchedulePreview();
   }
 
   function collectBillingChoices(data) {
@@ -1061,13 +1225,26 @@
     );
   }
 
-  function renderDayCentre(dc) {
-    var inner = renderDayCentreBlock(dc);
-    if (!inner) return "";
+  function renderPrimaryServiceSection(data) {
+    var hasWeekly = hasWeeklySlots(data);
+    var hasDc = hasDayCentreEnrolled(data);
+    if (!hasWeekly && hasDc) {
+      return (
+        '<section class="re-section re-section--services">' +
+        reSectionTitle("h3", "services", primaryServiceSectionTitle(data)) +
+        '<p class="re-muted">Your weekday Day Centre pattern — fees agreed with your funder.</p>' +
+        renderDayCentreBlock(data.day_centre) +
+        "</section>"
+      );
+    }
+    var weeklyHtml = hasWeekly
+      ? renderWeeklySlots(data.weekly_slots || [])
+      : '<p class="re-muted">No weekly or weekend activities on file — contact the office if this is wrong.</p>';
     return (
-      '<section class="re-section re-section--dc">' +
-      reSectionTitle("h3", "daycentre", "Day Centre — SwimFarm") +
-      inner +
+      '<section class="re-section re-section--services">' +
+      reSectionTitle("h3", "services", primaryServiceSectionTitle(data)) +
+      '<p class="re-muted">Your weekly and weekend activities · prices per session · term counts exclude bank holidays.</p>' +
+      weeklyHtml +
       "</section>"
     );
   }
@@ -1083,29 +1260,39 @@
   }
 
   function renderExtendedOfferSection(data) {
-    var hasDc = !!(data && data.day_centre && data.day_centre.slots && data.day_centre.slots.length);
-    var dcBlock = hasDc
-      ? '<div class="re-offer-block re-offer-block--dc">' +
+    var hasDc = hasDayCentreEnrolled(data);
+    var hasWeekly = hasWeeklySlots(data);
+    var dcBlock;
+    if (hasDc && hasWeekly) {
+      dcBlock =
+        '<div class="re-offer-block re-offer-block--dc">' +
         "<h4>Your Day Centre (SwimFarm)</h4>" +
         renderDayCentreBlock(data.day_centre) +
-        "</div>"
-      : '<div class="re-offer-block">' +
+        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
+        "</div>";
+    } else if (hasDc && !hasWeekly) {
+      dcBlock =
+        '<div class="re-offer-block">' +
+        "<h4>Day Centre (SwimFarm)</h4>" +
+        '<p class="re-muted">Weekday provision (Mon–Fri) at SwimFarm. Your 2026/27 choices are above.</p>' +
+        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
+        "</div>";
+    } else {
+      dcBlock =
+        '<div class="re-offer-block">' +
         "<h4>Day Centre (SwimFarm)</h4>" +
         '<p class="re-muted">Weekday provision (Mon–Fri), separate from After-School &amp; Weekends. Contact the office if you would like to add Day Centre.</p>' +
+        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
         "</div>";
+    }
     return (
       '<section class="re-section re-section--offer">' +
-      reSectionTitle("h3", "daycentre", "Day Centre &amp; crash courses") +
-      '<p class="re-muted">Many families combine <strong>After-School &amp; Weekends</strong> with weekday Day Centre and/or half-term crash courses. These are optional add-ons — see dates below.</p>' +
       dcBlock +
       '<div class="re-offer-block">' +
-      "<h4>Crash courses</h4>" +
+      "<h4>Intensive courses and camps</h4>" +
       '<p class="re-muted">Intensive swimming at Acton Centre, Monday–Thursday in the half terms. Booking is a separate form (coming soon).</p>' +
-      '<div class="re-info-btns">' +
-      '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
-      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Crash course dates</button>' +
-      "</div></div>" +
-      "</section>"
+      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Intensive course dates</button>' +
+      "</div></section>"
     );
   }
 
@@ -1271,7 +1458,7 @@
         reCalIconSvg("crash") +
         '<span class="re-cal-offer-link__text">' +
         '<span class="re-cal-offer-link__title">Half term offer</span>' +
-        '<span class="re-cal-offer-link__hint">Crash courses · Mon–Thu · view dates</span>' +
+        '<span class="re-cal-offer-link__hint">Intensive courses · Mon–Thu · view dates</span>' +
         "</span></button>" +
         '<span class="re-cal-line__date">' +
         esc(item.date) +
@@ -1330,7 +1517,7 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Crash courses run Monday to Thursday during half terms at Acton Centre. Times TBC — booking is a separate form (coming soon).</p>' +
+      '<p class="re-cal-summary">Intensive courses and camps run Monday to Thursday during half terms at Acton Centre. Times TBC — booking is a separate form (coming soon).</p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (
           '<div class="re-cal-block' +
@@ -1437,7 +1624,7 @@
     var crashBtn = $("reCrashDatesBtn");
     if (crashBtn) {
       crashBtn.addEventListener("click", function () {
-        openInfoModal("Crash course dates 2026/27", renderCrashDatesModalBody());
+        openInfoModal("Intensive course dates 2026/27", renderCrashDatesModalBody());
       });
     }
   }
@@ -1474,23 +1661,15 @@
       '<p class="re-muted">Review your current programme and confirm for September 2026.</p>' +
       "</section>" +
       '<aside class="re-form-grid__side">' +
-      renderTermDatesLead() +
-      renderPhotoSection(data) +
-      '<section class="re-section re-section--billing">' +
-      reSectionTitle("h3", "billing", "Funding &amp; billing") +
-      renderFundingBlock(data) +
-      "</section>" +
+      renderCurrentArrangementsSide(data) +
       "</aside>" +
       '<div class="re-form-grid__main">' +
-      '<section class="re-section re-section--services">' +
-      reSectionTitle("h3", "services", "After-School &amp; Weekends") +
-      '<p class="re-muted">Your weekly and weekend activities · prices per session · term counts exclude bank holidays.</p>' +
-      renderWeeklySlots(data.weekly_slots || []) +
-      (data.annual_weekly_total
-        ? '<p class="re-year-total"><strong>Combined weekly/year total:</strong> ' +
-          esc(money(data.annual_weekly_total)) +
-          ' <span class="re-muted">(excl. Day Centre)</span></p>'
-        : "") +
+      renderTermDatesLead() +
+      renderPhotoSection(data) +
+      renderPrimaryServiceSection(data) +
+      '<section class="re-section re-section--billing">' +
+      reSectionTitle("h3", "billing", "Funding &amp; billing 2026/27") +
+      renderBilling2627Block(data) +
       "</section>" +
       renderExtendedOfferSection(data) +
       "</div>" +

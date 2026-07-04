@@ -22,6 +22,7 @@ export type ParsedSlot = {
   hoursLabel?: string;
   venue?: string;
   timeSlot?: string;
+  instructor?: string;
   displayLabel?: string;
 };
 
@@ -273,8 +274,8 @@ export function buildSlotDisplayLabel(slot: ParsedSlot): string {
   if (slot.durationMin) parts.push(`${slot.durationMin}'`);
   parts.push(formatServiceTypeLabel(slot.serviceType));
   let label = parts.join(" ");
-  if (slot.day) label += ` - ${dayPluralLabel(slot.day)}`;
   if (slot.timeSlot) label += ` - ${formatTimeSlotLabel(slot.timeSlot)}`;
+  if (slot.day) label += `, ${dayPluralLabel(slot.day)}`;
   if (slot.venue) label += ` (${slot.venue})`;
   return label.trim();
 }
@@ -313,6 +314,7 @@ export function enrichWeeklySlotsFromRoster(
     time_slot?: string;
     service?: string;
     venue?: string;
+    instructors?: string;
   }>,
 ): ParsedSlot[] {
   return slots.map((slot) => {
@@ -326,16 +328,20 @@ export function enrichWeeklySlotsFromRoster(
     }
     const timeCounts = new Map<string, number>();
     const venueCounts = new Map<string, number>();
+    const instructorCounts = new Map<string, number>();
     for (const row of matches) {
       const ts = String(row.time_slot || "").trim();
       const venue = String(row.venue || "").trim();
+      const instructor = String(row.instructors || "").trim();
       if (ts) timeCounts.set(ts, (timeCounts.get(ts) || 0) + 1);
       if (venue) venueCounts.set(venue, (venueCounts.get(venue) || 0) + 1);
+      if (instructor) instructorCounts.set(instructor, (instructorCounts.get(instructor) || 0) + 1);
     }
     const enriched: ParsedSlot = {
       ...slot,
       timeSlot: pickModeValue(timeCounts),
       venue: pickModeValue(venueCounts) || slot.venue,
+      instructor: pickModeValue(instructorCounts) || slot.instructor,
       displayLabel: undefined,
     };
     enriched.displayLabel = buildSlotDisplayLabel(enriched);
@@ -490,6 +496,7 @@ export function weeklySlotsFromRosterRows(
     time_slot?: string;
     service?: string;
     venue?: string;
+    instructors?: string;
   }>,
 ): ParsedSlot[] {
   const seen = new Set<string>();
@@ -543,11 +550,70 @@ export function weeklySlotsFromRosterRows(
       termTotals: termTotals(price, counts),
       timeSlot: String(row.time_slot || "").trim() || undefined,
       venue: String(row.venue || "").trim() || undefined,
+      instructor: String(row.instructors || "").trim() || undefined,
     };
     slot.displayLabel = buildSlotDisplayLabel(slot);
     out.push(slot);
   }
   return out;
+}
+
+export function ageFromDobIso(dobIso: string | null | undefined): string | null {
+  const raw = String(dobIso || "").trim();
+  if (!raw) return null;
+  const d = new Date(`${raw}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const monthDiff = now.getMonth() - d.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) age -= 1;
+  return age >= 0 ? String(age) : null;
+}
+
+export function buildCurrentArrangements2526(opts: {
+  participantName: string;
+  dobIso?: string | null;
+  serviceRaw?: string | null;
+  weeklySlots: ParsedSlot[];
+  dayCentreSlots: ParsedSlot[];
+  rosterRows: Array<{ instructors?: string; venue?: string }>;
+  paymentMethod?: string | null;
+  funding?: string | null;
+  invoiceType?: string | null;
+}) {
+  const weekly = opts.weeklySlots || [];
+  const dc = opts.dayCentreSlots || [];
+  const slotLabels = weekly
+    .map((s) => s.displayLabel || buildSlotDisplayLabel(s))
+    .filter(Boolean);
+  const venues = weekly.map((s) => s.venue).filter(Boolean) as string[];
+  const instructors = weekly.map((s) => s.instructor).filter(Boolean) as string[];
+  if (!instructors.length && opts.rosterRows.length) {
+    const counts = new Map<string, number>();
+    for (const row of opts.rosterRows) {
+      const name = String(row.instructors || "").trim();
+      if (name) counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    const picked = pickModeValue(counts);
+    if (picked) instructors.push(picked);
+  }
+  let service = String(opts.serviceRaw || "").trim() || null;
+  if (!service) {
+    if (weekly.length && dc.length) service = "After-School & Weekends + Day Centre";
+    else if (weekly.length) service = "After-School & Weekends";
+    else if (dc.length) service = "Day Centre";
+  }
+  return {
+    participant_name: opts.participantName,
+    age: ageFromDobIso(opts.dobIso),
+    service,
+    slot: slotLabels.length ? slotLabels.join(" · ") : dc.length ? "Day Centre (weekdays)" : null,
+    venue: venues.length ? [...new Set(venues)].join(" · ") : dc.length ? "SwimFarm" : null,
+    instructor: instructors.length ? [...new Set(instructors)].join(" · ") : null,
+    payment_method: opts.paymentMethod || null,
+    funding: opts.funding || null,
+    invoice_type: opts.invoiceType || null,
+  };
 }
 
 function parseCostPerSession(data: Record<string, unknown>): number | null {

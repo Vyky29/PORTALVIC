@@ -248,6 +248,72 @@
       min-width: 0;
     }
     .re-funding-current h4 { margin: 0 0 8px; font-size: .88rem; color: var(--muted); font-weight: 700; }
+    .re-section--current-ref {
+      padding: 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+    .re-current-ref-note { margin: 0 0 10px; font-size: .82rem; overflow-wrap: break-word; }
+    .re-current-ref-dl { margin: 0; display: block; }
+    .re-current-ref-dl dt {
+      font-size: .72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .re-current-ref-dl dt:first-child { margin-top: 0; }
+    .re-current-ref-dl dd {
+      margin: 2px 0 0;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-pay-preview-host[hidden] { display: none !important; }
+    .re-pay-preview {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+    .re-pay-preview__title { margin: 0 0 4px; font-size: .9rem; color: var(--ink); font-weight: 800; }
+    .re-pay-preview__note { margin: 0 0 10px; font-size: .82rem; overflow-wrap: break-word; }
+    .re-pay-preview-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .re-pay-preview-list__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+      gap: 6px 10px;
+      align-items: baseline;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--blueSoft);
+      font-size: .82rem;
+      min-width: 0;
+    }
+    .re-pay-preview-list__label { font-weight: 800; color: var(--ink); overflow-wrap: break-word; min-width: 0; }
+    .re-pay-preview-list__due { color: var(--muted); overflow-wrap: break-word; min-width: 0; }
+    .re-pay-preview-list__amt { font-weight: 800; color: var(--blue); white-space: nowrap; }
+    @media (max-width: 520px) {
+      .re-pay-preview-list__row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+      .re-pay-preview-list__amt { margin-top: 2px; }
+    }
     .re-funding-2627 {
       background: var(--blueSoft);
       border-radius: 12px;
@@ -262,6 +328,52 @@
       overflow-wrap: break-word;
     }
     .re-funding-total strong { color: var(--blue); }
+    .re-billing-plan-intro {
+      margin: 0 0 12px;
+      font-size: .86rem;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .re-schedule-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .re-radio--schedule {
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .re-radio--schedule:has(input:checked) {
+      border-color: rgba(45, 132, 179, .45);
+      background: var(--blueSoft);
+      box-shadow: 0 0 0 1px rgba(45, 132, 179, .12);
+    }
+    .re-radio--schedule__body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+    .re-radio--schedule__title {
+      font-size: .9rem;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-radio--schedule__hint {
+      font-size: .82rem;
+      line-height: 1.4;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
     .re-funding-field { margin-top: 12px; min-width: 0; }
     .re-funding-field > legend,
     .re-funding-field > .re-label { margin-bottom: 6px; }
@@ -562,8 +674,8 @@
       }
       .re-form-grid {
         display: grid;
-        grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-        gap: 0 22px;
+        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+        gap: 0 24px;
         align-items: start;
       }
       .re-form-grid__head {
@@ -622,18 +734,17 @@
         padding-top: 0;
         margin-top: 0;
       }
-      .re-offer-block { margin-top: 10px; }
-      .re-offer-block--dc + .re-offer-block {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px 16px;
-        align-items: start;
+      .re-offer-block {
+        margin-top: 12px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        min-width: 0;
       }
-      .re-offer-block--dc + .re-offer-block .re-info-btns {
-        grid-column: 1 / -1;
-        margin-top: 0;
-      }
-      .re-info-btns .re-btn--secondary { flex: 0 1 auto; }
+      .re-offer-block h4 { margin: 0 0 8px; font-size: .95rem; overflow-wrap: break-word; }
+      .re-offer-block .re-muted { margin: 0 0 10px; overflow-wrap: break-word; }
+      .re-offer-block .re-btn--secondary { margin-top: 4px; }
       .re-modal { width: min(520px, 100%); }
       .re-modal--wide { width: min(560px, 100%); }
     }
@@ -691,6 +802,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-total"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-billing-copy"></script>
 </body>
 </html>

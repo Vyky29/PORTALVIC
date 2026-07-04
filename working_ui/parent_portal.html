@@ -382,6 +382,25 @@
       color: var(--blue);
       overflow-wrap: break-word;
     }
+    .pp-child-photo-missing {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(234, 179, 8, 0.12);
+      border: 1px solid rgba(180, 130, 0, 0.28);
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--ink-muted, #475569);
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .pp-child-photo-missing strong {
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .pp-child-card--no-photo .pp-child-photo--init {
+      box-shadow: inset 0 0 0 2px rgba(180, 130, 0, 0.45);
+    }
     .pp-reenrol-chip {
       display: inline-flex;
       align-items: center;
@@ -1036,7 +1055,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
   <script src="/portal/parent_portal_participant.js?v=20260704-unread-msgs"></script>
-  <script src="/portal/parent_portal_app.js?v=20260704-home-layout"></script>
+  <script src="/portal/parent_portal_app.js?v=20260704-no-photo-notice"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

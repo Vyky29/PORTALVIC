@@ -11,6 +11,7 @@ import {
 import {
   ageMatchesInput,
   annualTotalForWeekly,
+  buildCurrentArrangements2526,
   enrichWeeklySlotsFromRoster,
   namesMatch,
   normalizePersonName,
@@ -200,6 +201,18 @@ Deno.serve(async (req) => {
     weeklySlots = weeklySlotsFromRosterRows(participantDisplayName, rosterRows);
   }
   const annualWeeklyTotal = annualTotalForWeekly(weeklySlots);
+  const dayCentreSlots = paymentCtx?.dayCentreSlots || [];
+  const currentArrangements2526 = buildCurrentArrangements2526({
+    participantName: participantDisplayName,
+    dobIso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
+    serviceRaw: paymentCtx?.serviceRaw || null,
+    weeklySlots,
+    dayCentreSlots,
+    rosterRows,
+    paymentMethod: paymentCtx?.payMethod || null,
+    funding: paymentCtx?.fundingSource || null,
+    invoiceType: paymentCtx?.vat || null,
+  });
 
   return json(200, {
     ok: true,
@@ -229,6 +242,7 @@ Deno.serve(async (req) => {
     payment_status: paymentCtx?.paymentStatus || null,
     outstanding_amount: paymentCtx?.outstanding ?? null,
     service_raw: paymentCtx?.serviceRaw || null,
+    current_arrangements_2526: currentArrangements2526,
     weekly_slots: weeklySlots,
     day_centre: paymentCtx?.dayCentreSlots?.length
       ? {
@@ -341,7 +355,7 @@ async function fetchRosterRowsForParticipant(
 
   const { data } = await supabase
     .from("portal_roster_rows")
-    .select("client_name, day, time_slot, service, venue")
+    .select("client_name, day, time_slot, service, venue, instructors")
     .eq("status", "active")
     .ilike("client_name", `${firstToken}%`)
     .gte("session_date", "2026-01-01")
