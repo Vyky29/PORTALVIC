@@ -7453,6 +7453,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var ctx = hub.trackingDisplayContextForDay(iso);
     var missing = [];
     var counts = { submitted: 0, absent: 0, cancelled: 0, open: 0 };
+    // A single make-up override can surface twice: once folded onto the displaced
+    // slot (e.g. Amaar → Elijah) and once as its own injected synthetic slot. Both
+    // resolve to the same feedback unit, so track emitted keys and never list a unit
+    // twice (one make-up = one feedback owed).
+    var emitted = Object.create(null);
+    var pushMissing = function (rowSlot, meta) {
+      var rowKey = clean(feedbackUnitKey(rowSlot)).toLowerCase();
+      if (rowKey && emitted[rowKey]) return false;
+      if (rowKey) emitted[rowKey] = true;
+      missing.push(hub.missingFeedbackRowFromSlot(rowSlot, ctx, meta));
+      return true;
+    };
     for (var i = 0; i < ctx.displaySlots.length; i++) {
       var slot = ctx.displaySlots[i];
       var ukey = feedbackUnitKey(slot);
@@ -7467,7 +7479,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (makeupDisp) {
         var mkSlot = makeupDisp.makeupSlot;
         if (mkSlot && !hub.slotIsAbsent(mkSlot) && !hub.slotFeedbackComplete(mkSlot)) {
-          missing.push(hub.missingFeedbackRowFromSlot(mkSlot, ctx, { kind: "makeup" }));
+          pushMissing(mkSlot, { kind: "makeup" });
         }
         continue;
       }
@@ -7483,7 +7495,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         counts.submitted++;
         continue;
       }
-      missing.push(hub.missingFeedbackRowFromSlot(slot, ctx, { kind: "awaiting" }));
+      pushMissing(slot, { kind: "awaiting" });
     }
     return {
       date: ctx.iso,
