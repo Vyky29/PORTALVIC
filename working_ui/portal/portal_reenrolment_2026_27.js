@@ -314,6 +314,30 @@
     }
   }
 
+  function formatServiceTwoLineParts(slot) {
+    if (!slot) return null;
+    var dur = slot.durationMin ? slot.durationMin + "'" : "";
+    var svc = serviceTypeDisplay(slot.serviceType);
+    var day = slot.day ? String(slot.day).trim() : "";
+    var service = [dur, svc].filter(Boolean).join(" ");
+    if (slot.venue) service += " (" + String(slot.venue).trim().toUpperCase() + ")";
+    var detailParts = [];
+    var time = formatTimeForServiceLine(slot.timeSlot);
+    if (time) detailParts.push(time);
+    if (day) detailParts.push(day.endsWith("s") ? day : day + "s");
+    var detail = detailParts.join(", ");
+    if (!service) return null;
+    return { service: service, detail: detail };
+  }
+
+  function formatCurrentServiceParts(slot) {
+    return formatServiceTwoLineParts(slot);
+  }
+
+  function formatWeeklySlotCardParts(slot) {
+    return formatServiceTwoLineParts(slot);
+  }
+
   function slotLabel(slot) {
     if (slot.displayLabel) return esc(slot.displayLabel);
     var dur = slot.durationMin ? slot.durationMin + "'" : "";
@@ -370,21 +394,17 @@
     return s;
   }
 
-  function formatCurrentServiceLine(slot) {
-    if (!slot) return "";
-    var dur = slot.durationMin ? slot.durationMin + "'" : "";
-    var svc = serviceTypeDisplay(slot.serviceType);
-    var day = slot.day ? String(slot.day).trim() : "";
-    var head = [dur, svc].filter(Boolean).join(" ");
-    if (day) head += " (" + day + ")";
-    var tailParts = [];
-    var time = formatTimeForServiceLine(slot.timeSlot);
-    if (time) tailParts.push(time);
-    if (day) tailParts.push(day.endsWith("s") ? day : day + "s");
-    var tail = tailParts.join(", ");
-    if (slot.venue) tail += (tail ? " " : "") + "(" + slot.venue + ")";
-    if (!head) return "";
-    return tail ? head + " / " + tail : head;
+  function parseLegacyServicePart(part) {
+    var p = String(part || "").trim();
+    if (!p) return null;
+    var slashIdx = p.indexOf(" / ");
+    if (slashIdx >= 0) {
+      return {
+        service: p.slice(0, slashIdx).trim(),
+        detail: p.slice(slashIdx + 3).trim(),
+      };
+    }
+    return { service: p, detail: "" };
   }
 
   function formatCurrentPaymentMethodLabel(raw) {
@@ -416,29 +436,38 @@
       );
     }
     function addRefServicesBlock(slots) {
-      var lines = [];
+      var items = [];
       (slots || []).forEach(function (slot) {
-        var line = formatCurrentServiceLine(slot);
-        if (line) lines.push(line);
+        var parts = formatCurrentServiceParts(slot);
+        if (parts) items.push(parts);
       });
-      if (!lines.length && cur.slot) {
+      if (!items.length && cur.slot) {
         String(cur.slot)
           .split(" · ")
           .forEach(function (part) {
-            var p = String(part || "").trim();
-            if (p) lines.push(p);
+            var parsed = parseLegacyServicePart(part);
+            if (parsed) items.push(parsed);
           });
       }
-      if (!lines.length) return;
+      if (!items.length) return;
       rows.push(
         '<li class="re-current-ref-row re-current-ref-row--services">' +
         reRefIconSvg("services") +
         '<div class="re-ref-body">' +
         '<span class="re-ref-label">Service / Services</span>' +
         '<ul class="re-ref-service-list">' +
-        lines
-          .map(function (line) {
-            return '<li class="re-ref-service-item">' + esc(line) + "</li>";
+        items
+          .map(function (item) {
+            return (
+              '<li class="re-ref-service-item">' +
+              '<span class="re-ref-service-name">' +
+              esc(item.service) +
+              "</span>" +
+              (item.detail
+                ? '<span class="re-ref-service-detail">' + esc(item.detail) + "</span>"
+                : "") +
+              "</li>"
+            );
           })
           .join("") +
         "</ul></div></li>",
@@ -654,10 +683,30 @@
     return state.avatarUrl || "";
   }
 
+  function hasSavedParticipantPhoto() {
+    return !!(state.avatarUrl && String(state.avatarUrl).trim());
+  }
+
+  function syncPhotoSectionUi() {
+    var section = document.querySelector(".re-photo-section");
+    var saved = hasSavedParticipantPhoto();
+    var btns = $("rePhotoBtns");
+    var edit = $("rePhotoEditBtn");
+    var status = $("rePhotoStatus");
+    if (section) section.classList.toggle("re-photo-section--saved", saved);
+    if (btns) btns.hidden = saved;
+    if (edit) edit.hidden = !saved;
+    if (status && saved && status.className.indexOf("re-photo-status--error") < 0) {
+      status.textContent = "";
+      status.hidden = true;
+    } else if (status) status.hidden = false;
+  }
+
   function renderPhotoSection(data) {
     var name = participantDisplayName(data);
     var url = currentAvatarPreviewUrl();
     var initials = esc(participantInitials(name));
+    var saved = !!(resolveAvatarUrl(data) && !state.pendingPhotoFile);
     var imgHtml = url
       ? '<img class="re-photo-img" src="' +
         esc(url) +
@@ -668,21 +717,34 @@
       : '<span class="re-photo-init" aria-hidden="true">' + initials + "</span>";
 
     return (
-      '<section class="re-section re-photo-section">' +
+      '<section class="re-section re-photo-section' +
+      (saved ? " re-photo-section--saved" : "") +
+      '">' +
       '<div class="re-photo-row">' +
+      '<div class="re-photo-col">' +
       '<div class="re-photo-avatar" id="rePhotoAvatar">' +
       imgHtml +
+      "</div>" +
+      '<button type="button" class="re-photo-edit" id="rePhotoEditBtn"' +
+      (saved ? "" : " hidden") +
+      '>Edit</button>' +
       "</div>" +
       '<div class="re-photo-actions">' +
       reSectionTitle("h3", "photo", "Participant photo") +
       '<p class="re-muted">Used in the family portal and internal records. Previous photos are kept for admin use.</p>' +
       '<input type="file" id="rePhotoInput" accept="image/jpeg,image/png,image/webp,image/*" hidden />' +
-      '<div class="re-photo-btns">' +
-      '<button type="button" class="re-btn re-btn--secondary" id="rePhotoChooseBtn">Change photo</button>' +
+      '<div class="re-photo-btns" id="rePhotoBtns"' +
+      (saved ? " hidden" : "") +
+      ">" +
+      '<button type="button" class="re-btn re-btn--secondary" id="rePhotoChooseBtn">' +
+      (saved ? "Change photo" : "Add photo") +
+      "</button>" +
       '<button type="button" class="re-btn re-btn--ghost" id="rePhotoRemoveBtn">Remove</button>' +
       '<button type="button" class="re-btn re-btn--primary re-photo-save" id="rePhotoSaveBtn">Save photo</button>' +
       "</div>" +
-      '<p class="re-muted re-photo-status" id="rePhotoStatus" role="status"></p>' +
+      '<p class="re-muted re-photo-status" id="rePhotoStatus" role="status"' +
+      (saved ? " hidden" : "") +
+      "></p>" +
       "</div>" +
       "</div>" +
       "</section>"
@@ -711,6 +773,7 @@
   function setPhotoStatus(msg, type) {
     var el = $("rePhotoStatus");
     if (!el) return;
+    el.hidden = false;
     el.textContent = msg || "";
     el.className = "re-muted re-photo-status" + (type ? " re-photo-status--" + type : "");
   }
@@ -777,8 +840,13 @@
       if (state.lookup && state.lookup.participant) {
         state.lookup.participant.avatar_url = state.avatarUrl;
       }
+      var input = $("rePhotoInput");
+      if (input) input.value = "";
       refreshPhotoAvatarDom();
-      setPhotoStatus("Photo saved.", "ok");
+      syncPhotoSectionUi();
+      if (!hasSavedParticipantPhoto()) {
+        setPhotoStatus("Photo saved.", "ok");
+      }
     } catch (_e) {
       setPhotoStatus("Network error saving photo.", "error");
     } finally {
@@ -817,6 +885,7 @@
         state.lookup.participant.avatar_url = null;
       }
       refreshPhotoAvatarDom();
+      syncPhotoSectionUi();
       setPhotoStatus("Live photo removed. Previous copies stay in admin archive.", "ok");
     } catch (_e) {
       setPhotoStatus("Network error.", "error");
@@ -830,27 +899,41 @@
     var choose = $("rePhotoChooseBtn");
     var save = $("rePhotoSaveBtn");
     var remove = $("rePhotoRemoveBtn");
+    var edit = $("rePhotoEditBtn");
+    function onPhotoFilePicked(file) {
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) {
+        setPhotoStatus("Photo must be under 8 MB.", "error");
+        if (input) input.value = "";
+        syncPhotoSectionUi();
+        return;
+      }
+      state.pendingPhotoFile = file;
+      if (state.pendingPreviewUrl) {
+        try {
+          URL.revokeObjectURL(state.pendingPreviewUrl);
+        } catch (_e) {}
+      }
+      state.pendingPreviewUrl = URL.createObjectURL(file);
+      refreshPhotoAvatarDom();
+      if (hasSavedParticipantPhoto()) {
+        saveParticipantPhoto();
+        return;
+      }
+      syncPhotoSectionUi();
+      setPhotoStatus("Preview ready — tap Save photo.", "info");
+    }
     if (choose && input) {
       choose.addEventListener("click", function () {
         input.click();
       });
       input.addEventListener("change", function () {
-        var file = input.files && input.files[0];
-        if (!file) return;
-        if (file.size > 8 * 1024 * 1024) {
-          setPhotoStatus("Photo must be under 8 MB.", "error");
-          input.value = "";
-          return;
-        }
-        state.pendingPhotoFile = file;
-        if (state.pendingPreviewUrl) {
-          try {
-            URL.revokeObjectURL(state.pendingPreviewUrl);
-          } catch (_e) {}
-        }
-        state.pendingPreviewUrl = URL.createObjectURL(file);
-        refreshPhotoAvatarDom();
-        setPhotoStatus("Preview ready — tap Save photo.", "info");
+        onPhotoFilePicked(input.files && input.files[0]);
+      });
+    }
+    if (edit && input) {
+      edit.addEventListener("click", function () {
+        input.click();
       });
     }
     if (save) save.addEventListener("click", saveParticipantPhoto);
@@ -1321,33 +1404,44 @@
       slots
         .map(function (slot, idx) {
           var id = esc(slot.id || "slot-" + idx);
+          var parts = formatWeeklySlotCardParts(slot) || { service: slotLabel(slot), detail: "" };
           var price = slot.pricePerSession != null ? money(slot.pricePerSession) + " / session" : "—";
+          var autumn = slot.sessions && slot.sessions.autumn;
+          var spring = slot.sessions && slot.sessions.spring;
+          var summer = slot.sessions && slot.sessions.summer;
+          var annualSessions = slot.sessions && slot.sessions.annual;
           return (
             '<article class="re-slot-card" data-slot-id="' +
             id +
             '">' +
-            '<div class="re-slot-head">' +
-            "<h4>" +
-            slotLabel(slot) +
-            "</h4>" +
-            '<p class="re-slot-price">' +
-            esc(price) +
+            '<div class="re-slot-intro">' +
+            '<p class="re-slot-service-name">' +
+            esc(parts.service) +
             "</p>" +
+            (parts.detail ? '<p class="re-slot-service-detail">' + esc(parts.detail) + "</p>" : "") +
             "</div>" +
-            '<p class="re-muted re-slot-sessions">' +
+            '<div class="re-slot-meta">' +
+            '<div class="re-slot-meta-block">' +
+            '<span class="re-slot-meta-label">Cost</span>' +
+            '<span class="re-slot-price">' +
+            esc(price) +
+            "</span></div>" +
+            '<div class="re-slot-meta-block">' +
+            '<span class="re-slot-meta-label">Sessions</span>' +
+            '<span class="re-slot-meta-value">' +
             "Autumn " +
-            esc(String(slot.sessions && slot.sessions.autumn)) +
+            esc(String(autumn)) +
             " · Spring " +
-            esc(String(slot.sessions && slot.sessions.spring)) +
+            esc(String(spring)) +
             " · Summer " +
-            esc(String(slot.sessions && slot.sessions.summer)) +
-            " = " +
-            esc(String(slot.sessions && slot.sessions.annual)) +
-            " sessions/year" +
-            "</p>" +
+            esc(String(summer)) +
+            "</span>" +
+            '<span class="re-slot-meta-sub">' +
+            esc(String(annualSessions)) +
+            " sessions/year</span></div>" +
             '<p class="re-slot-total"><strong>Year total:</strong> ' +
             esc(money(slot.termTotals && slot.termTotals.annual)) +
-            "</p>" +
+            "</p></div>" +
             '<fieldset class="re-choice-fieldset">' +
             '<legend class="re-sr-only">Choice for ' +
             esc(slot.serviceType || "slot") +
@@ -1882,6 +1976,7 @@
     }
 
     bindPhotoHandlers();
+    syncPhotoSectionUi();
     bindFundingHandlers();
     bindInfoPanelHandlers();
   }
