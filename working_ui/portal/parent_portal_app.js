@@ -346,7 +346,7 @@
         '">' +
         '<img src="' +
         esc(url) +
-        '" alt="" width="52" height="52" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');" />' +
+        '" alt="" width="80" height="80" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');" />' +
         '<span class="pp-child-photo__init" aria-hidden="true">' +
         esc(initials) +
         "</span></div>"
@@ -358,6 +358,39 @@
       '" aria-hidden="true">' +
       esc(initials) +
       "</div>"
+    );
+  }
+
+  function childReenrolBtnHtml(c) {
+    var cid = String(c.contact_id || "");
+    var href = "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(cid);
+    var submitted = !!(c.reenrolment && c.reenrolment.submitted);
+    return (
+      '<a class="pp-btn pp-child-reenrol-btn' +
+      (submitted ? " pp-child-reenrol-btn--saved" : "") +
+      '" href="' +
+      esc(href) +
+      '">' +
+      esc(submitted ? "Re-enrol 2026/27 · Saved" : "Re-enrol 2026/27") +
+      (submitted
+        ? '<span class="pp-child-reenrol-hint">Tap to edit — the club office is notified of changes</span>'
+        : "") +
+      "</a>"
+    );
+  }
+
+  function childSessionsBtnHtml(c) {
+    var childUnread = unreadCountForContact(c.contact_id);
+    var label = "Messages, photos & feedback…";
+    if (childUnread > 0) {
+      label += " (" + childUnread + " new)";
+    }
+    return (
+      '<button type="button" class="pp-btn pp-btn--secondary pp-child-sessions-btn" data-contact-id="' +
+      esc(String(c.contact_id || "")) +
+      '">' +
+      esc(label) +
+      "</button>"
     );
   }
 
@@ -395,7 +428,6 @@
               global.portalRegisterParticipantStorageAvatar(c.contact_id, c.display_name, c.avatar_url);
             }
             var chips = [];
-            if (c.in_class) chips.push('<span class="pp-chip pp-chip--ok">In class</span>');
             if (c.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
             var childUnread = unreadCountForContact(c.contact_id);
             if (childUnread > 0) {
@@ -406,12 +438,10 @@
             if (c.city && c.city !== "—") meta.push(esc(c.city));
             var photoMissing = c.has_avatar === false;
             return (
-              '<article class="pp-card pp-child-card pp-child-card--link' +
+              '<article class="pp-card pp-child-card' +
               (photoMissing ? " pp-child-card--no-photo" : "") +
-              '" role="button" tabindex="0" data-contact-id="' +
+              '" data-contact-id="' +
               esc(String(c.contact_id || "")) +
-              '" aria-label="View sessions for ' +
-              esc(c.display_name || "Participant") +
               '">' +
               '<div class="pp-child-row">' +
               '<div class="pp-child-main">' +
@@ -419,18 +449,15 @@
               esc(c.display_name || "Participant") +
               "</h3>" +
               (meta.length ? '<p class="pp-muted pp-child-meta">' + meta.join(" · ") + "</p>" : "") +
+              (chips.length ? '<div class="pp-chip-row pp-child-status">' + chips.join("") + "</div>" : "") +
               "</div>" +
               childAvatarHtml(c) +
-              '<div class="pp-chip-row pp-child-status">' +
-              chips.join("") +
-              "</div>" +
               "</div>" +
               (photoMissing ? childPhotoMissingNoticeHtml() : "") +
-              '<p class="pp-child-card__cta">Sessions, messages &amp; achievements →</p>' +
-              '<a class="pp-reenrol-chip" href="/parent/re-enrolment?from=portal&amp;contact_id=' +
-              esc(String(c.contact_id || "")) +
-              '" onclick="event.stopPropagation()">Re-enrol 2026/27</a>' +
-              "</article>"
+              '<div class="pp-child-actions">' +
+              childSessionsBtnHtml(c) +
+              childReenrolBtnHtml(c) +
+              "</div></article>"
             );
           })
           .join("");
@@ -452,16 +479,6 @@
         ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
         : "") +
       '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
-
-    var reenrolBannerLink = $("ppReenrolBannerLink");
-    if (reenrolBannerLink) {
-      var reHref = "/parent/re-enrolment?from=portal";
-      if (children.length === 1 && children[0].contact_id) {
-        reHref +=
-          "&contact_id=" + encodeURIComponent(String(children[0].contact_id || ""));
-      }
-      reenrolBannerLink.setAttribute("href", reHref);
-    }
   }
 
   async function loadParticipantDetail(contactId) {
@@ -502,17 +519,9 @@
     var list = $("ppChildList");
     if (!list) return;
     list.addEventListener("click", function (e) {
-      var card = e.target && e.target.closest ? e.target.closest("[data-contact-id]") : null;
-      if (!card) return;
-      var id = card.getAttribute("data-contact-id");
-      if (id) void loadParticipantDetail(id);
-    });
-    list.addEventListener("keydown", function (e) {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      var card = e.target && e.target.closest ? e.target.closest("[data-contact-id]") : null;
-      if (!card) return;
-      e.preventDefault();
-      var id = card.getAttribute("data-contact-id");
+      var btn = e.target && e.target.closest ? e.target.closest(".pp-child-sessions-btn") : null;
+      if (!btn) return;
+      var id = btn.getAttribute("data-contact-id");
       if (id) void loadParticipantDetail(id);
     });
   }

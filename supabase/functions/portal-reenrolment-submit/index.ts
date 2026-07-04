@@ -64,6 +64,20 @@ Deno.serve(async (req) => {
 
   const source = sanitize(body.source, 40) === "parent_portal" ? "parent_portal" : "link";
 
+  const participantContactId = sanitize(body.participant_contact_id, 80) || null;
+
+  let priorSubmissionAt: string | null = null;
+  if (participantContactId) {
+    const { data: prior } = await supabase
+      .from("portal_re_enrolment_submissions")
+      .select("submitted_at")
+      .eq("academic_year", REENROL_ACADEMIC_YEAR)
+      .eq("participant_contact_id", participantContactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1);
+    if (prior && prior.length) priorSubmissionAt = String(prior[0].submitted_at || "") || null;
+  }
+
   const payload = {
     choices,
     declarations,
@@ -75,6 +89,8 @@ Deno.serve(async (req) => {
     contact_email: sanitize(body.contact_email, 200) || null,
     contact_phone: sanitize(body.contact_phone, 40) || null,
     submitted_from: sanitize(body.submitted_from, 500) || null,
+    resubmission: !!priorSubmissionAt,
+    prior_submission_at: priorSubmissionAt,
   };
 
   const { data: inserted, error: insErr } = await supabase
@@ -85,7 +101,7 @@ Deno.serve(async (req) => {
       parent_first_name: sanitize(body.parent_first_name, 120) || null,
       parent_last_name: sanitize(body.parent_last_name, 120) || null,
       participant_name: participantName,
-      participant_contact_id: sanitize(body.participant_contact_id, 80) || null,
+      participant_contact_id: participantContactId,
       parent_person_id: sanitize(body.parent_person_id, 80) || null,
       client_payments_client_key: sanitize(body.client_key, 120) || null,
       payment_status_at_submit: sanitize(body.payment_status, 80) || null,
@@ -109,6 +125,9 @@ Deno.serve(async (req) => {
     ok: true,
     submission_id: inserted.id,
     submitted_at: inserted.submitted_at,
-    message: "Thank you — your re-enrolment has been sent to the club office.",
+    resubmission: !!priorSubmissionAt,
+    message: priorSubmissionAt
+      ? "Thank you — your updated re-enrolment has been sent to the club office for review."
+      : "Thank you — your re-enrolment has been sent to the club office.",
   });
 });
