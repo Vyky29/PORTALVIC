@@ -385,12 +385,18 @@
   }
 
   function subviewShell(data, viewName, innerHtml) {
+    var pName =
+      (data.participant && data.participant.display_name) || "Participant";
     return (
       '<div class="pp-pax-shell" data-pp-view="' +
       esc(viewName) +
       '">' +
       '<div class="pp-pax-sticky-hero">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub">← Back</button>' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to sections for ' +
+      esc(pName) +
+      '">← ' +
+      esc(pName) +
+      "&apos;s sections</button>" +
       heroHtml(data) +
       "</div>" +
       '<div class="pp-pax-subview-body">' +

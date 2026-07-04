@@ -920,6 +920,10 @@
     .pp-pax-sticky-hero .pp-pax-hero { margin-bottom: 0; }
     .pp-pax-subview-body { min-width: 0; }
     .pp-pax-back { margin: 0 0 10px; padding-left: 0; width: auto; min-height: 36px; }
+    .pp-back-home { font-weight: 800; }
+    .pp-pax-back { font-weight: 700; color: var(--muted); font-size: .88rem; }
+    .pp-pax-back:hover,
+    .pp-pax-back:focus-visible { color: var(--blue); }
     .pp-pax-subview-title { margin: 0 0 6px; font-size: 17px; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
     .pp-pax-subview-note { margin: 0 0 12px; font-size: 12px; }
     .pp-gen-card { padding: 14px; margin-bottom: 12px; }
@@ -1185,7 +1189,7 @@
     <section id="ppStepParticipant" hidden>
       <div class="pp-participant-head">
         <div style="min-width:0">
-          <button id="ppBackToHome" class="pp-btn pp-btn--ghost" type="button" style="margin:0;padding-left:0">← Back</button>
+          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal — all children">← All children</button>
           <h2 id="ppParticipantTitle">Participant</h2>
         </div>
         <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
@@ -1205,7 +1209,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260704-hub-rows"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260704-back-labels"></script>
   <script src="/portal/parent_portal_app.js?v=20260704-home-action-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
