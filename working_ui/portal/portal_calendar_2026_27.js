@@ -133,15 +133,12 @@
       var panel = global.document.createElement("div");
       panel.id = "dcCalSessionsPanel";
       var art = article.cloneNode(true);
-      // Preview only: keep the title on top, but move the term info + week count
-      // BELOW the month grids (the full modal keeps its original order).
-      var months = art.querySelector(".dc-cal-term__months");
+      // Preview only: title + month grids only (drop the term info list + week
+      // count — the full modal keeps them).
       var info = art.querySelector(".dc-cal-term__info");
       var weeks = art.querySelector(".dc-cal-term__weeks");
-      if (months) {
-        if (info) art.appendChild(info);
-        if (weeks) art.appendChild(weeks);
-      }
+      if (info) info.remove();
+      if (weeks) weeks.remove();
       // Preview only: short month labels (e.g. "Sep 2026") so they fit on one line.
       var labels = art.querySelectorAll(".dc-cal-month__label");
       Array.prototype.forEach.call(labels, function (el) {
