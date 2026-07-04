@@ -504,18 +504,6 @@
         grid-template-columns: minmax(120px, 168px) minmax(0, 1fr);
         gap: 18px 22px;
       }
-      /* Two columns: Services on the left, Payment + Funding stacked on the right. */
-      .re-current-ref-list {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-auto-flow: row;
-        gap: 8px 10px;
-        align-items: start;
-      }
-      .re-current-ref-row--services {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-      }
     }
     .re-current-ref-list {
       list-style: none;
@@ -613,6 +601,21 @@
       font-weight: 600;
     }
     .re-current-ref-row--services .re-ref-body { min-width: 0; }
+    /* Two columns: Services on the left, Payment + Funding stacked on the right.
+       Placed after the base .re-current-ref-list flex rule so it wins the cascade. */
+    @media (min-width: 640px) {
+      .re-current-ref-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-auto-flow: row;
+        gap: 8px 10px;
+        align-items: start;
+      }
+      .re-current-ref-row--services {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+      }
+    }
     .re-pay-preview-host[hidden] { display: none !important; }
     .re-pay-preview {
       margin-top: 12px;
