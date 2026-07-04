@@ -1781,7 +1781,7 @@
       '<span class="re-dates-lead__cta-icon" aria-hidden="true">' +
       reIconSvg("calendar") +
       "</span>" +
-      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">See dates</button>' +
+      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">See dates for the whole year</button>' +
       '<p class="re-muted re-dates-lead__hint">Tap to open the full calendar for the whole year — every term, half term and closure.</p>' +
       "</div>" +
       '<div class="re-dates-lead__preview" id="reAutumnPreviewHost" role="button" tabindex="0" aria-label="Preview of Autumn term — open the full calendar">' +
