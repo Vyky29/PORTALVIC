@@ -15,6 +15,20 @@ const ADMIN_POLL_MS = 45000;
 const VISIT_STALE_SECONDS = 90;
 const SUBSCRIBE_TIMEOUT_MS = 15000;
 
+function isRetryableSupabaseErr(err) {
+  const msg = String((err && err.message) || err || "");
+  return /504|502|503|timeout|57014|gateway|fetch failed/i.test(msg);
+}
+
+async function supabaseRpcWithRetry(client, fn, args) {
+  let rpc = await client.rpc(fn, args);
+  if (rpc.error && isRetryableSupabaseErr(rpc.error)) {
+    await new Promise((r) => setTimeout(r, 900));
+    rpc = await client.rpc(fn, args);
+  }
+  return rpc;
+}
+
 /** @type {import("@supabase/supabase-js").RealtimeChannel | null} */
 let _channel = null;
 /** @type {string | null} */
@@ -383,7 +397,7 @@ async function fetchAdminPresenceSupplement() {
     return { connected };
   }
 
-  const rpc = await client.rpc("portal_admin_fetch_online_staff", {
+  const rpc = await supabaseRpcWithRetry(client, "portal_admin_fetch_online_staff", {
     p_visit_stale_seconds: VISIT_STALE_SECONDS,
   });
   if (!rpc.error && rpc.data != null) {
@@ -407,7 +421,7 @@ async function fetchAdminPresenceSupplement() {
   const today = londonTodayIso();
 
   const [locRes, visitRes] = await Promise.all([
-    client.rpc("portal_admin_fetch_staff_live_locations", { p_stale_minutes: 20 }),
+    supabaseRpcWithRetry(client, "portal_admin_fetch_staff_live_locations", { p_stale_minutes: 20 }),
     client
       .from("portal_staff_visit_sessions")
       .select("staff_user_id, staff_display_name, last_seen_at")

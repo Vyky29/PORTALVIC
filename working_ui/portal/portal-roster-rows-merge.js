@@ -426,38 +426,37 @@
     if (!client || typeof client.from !== "function") {
       return Promise.resolve([]);
     }
-    return client
+    var q = client
       .from("portal_roster_rows")
       .select("id,client_name,day,time_slot,instructors,service,area,venue,session_date,status,updated_at")
       .in("status", ["active", "cancelled"])
-      .then(function (res) {
-        if (res.error) {
-          var msg = String(res.error.message || res.error);
-          var timedOut = /timeout|57014/i.test(msg);
-          console.warn("[portal_roster_rows] fetch", res.error);
-          if (!retried && timedOut) {
-            return new Promise(function (r) {
-              setTimeout(r, 900);
-            }).then(function () {
-              return fetchRowsForMerge(client, true);
-            });
-          }
-          return [];
-        }
-        return res.data || [];
-      })
-      .catch(function (err) {
-        var msg = String(err && err.message ? err.message : err);
-        console.warn("[portal_roster_rows] fetch", err);
-        if (!retried && /timeout|57014/i.test(msg)) {
+      .gte("session_date", "2026-04-13");
+    return q.then(function (res) {
+      if (res.error) {
+        var msg = String(res.error.message || res.error);
+        if (!retried && /timeout|57014|504|502|503|gateway/i.test(msg)) {
           return new Promise(function (r) {
-            setTimeout(r, 900);
+            setTimeout(r, 1200);
           }).then(function () {
             return fetchRowsForMerge(client, true);
           });
         }
+        console.warn("[portal_roster_rows] fetch", res.error);
         return [];
-      });
+      }
+      return res.data || [];
+    }).catch(function (err) {
+      var msg = String(err && err.message ? err.message : err);
+      console.warn("[portal_roster_rows] fetch", err);
+      if (!retried && /timeout|57014|504|502|503|gateway/i.test(msg)) {
+        return new Promise(function (r) {
+          setTimeout(r, 1200);
+        }).then(function () {
+          return fetchRowsForMerge(client, true);
+        });
+      }
+      return [];
+    });
   }
 
   function loadAndCache(client) {

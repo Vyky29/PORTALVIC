@@ -11,10 +11,10 @@
       "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
       "/portal/portal_participant_catalog.js?v=20260628-home-manager-exclude",
-      "/portal/portal-roster-rows-merge.js?v=20260703-roster-retry",
-      "/portal/portal_madre_fold.js?v=20260614-madre-dedupe",
+      "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
+      "/portal/portal_madre_fold.js?v=20260704-madre-504",
       "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",

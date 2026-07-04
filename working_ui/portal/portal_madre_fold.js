@@ -7,7 +7,19 @@
   var TERM_KEY = "summer-2026";
   var CACHE = null;
   var CACHE_AT = 0;
-  var CACHE_MS = 45000;
+  var CACHE_MS = 120000;
+  var LOAD_INFLIGHT = null;
+
+  function isRetryableSupabaseError(err) {
+    var msg = String((err && err.message) || err || "");
+    return /504|502|503|timeout|57014|gateway|fetch failed/i.test(msg);
+  }
+
+  function delay(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
 
   function normIso(v) {
     var s = String(v || "").trim().slice(0, 10);
@@ -121,36 +133,57 @@
     if (!client || typeof client.from !== "function") {
       return Promise.resolve(null);
     }
-    return client
-      .from("portal_madre_document")
-      .select("document, revision, updated_at")
-      .eq("term_key", TERM_KEY)
-      .maybeSingle()
-      .then(function (res) {
-        if (res.error) {
-          console.warn("[portal_madre_document]", res.error);
+    if (LOAD_INFLIGHT && !force) {
+      return LOAD_INFLIGHT;
+    }
+    function fetchOnce(retried) {
+      return client
+        .from("portal_madre_document")
+        .select("document, revision, updated_at")
+        .eq("term_key", TERM_KEY)
+        .maybeSingle()
+        .then(function (res) {
+          if (res.error) {
+            var msg = String(res.error.message || res.error);
+            if (!retried && isRetryableSupabaseError(msg)) {
+              return delay(1200).then(function () {
+                return fetchOnce(true);
+              });
+            }
+            console.warn("[portal_madre_document]", res.error);
+            return null;
+          }
+          if (!res.data || !res.data.document) return null;
+          CACHE = {
+            document: res.data.document,
+            revision: res.data.revision,
+            updated_at: res.data.updated_at,
+            rows: madreToAdapterRows(res.data.document),
+          };
+          CACHE_AT = Date.now();
+          global.PORTAL_MADRE_LIVE = CACHE;
+          return CACHE;
+        })
+        .catch(function (err) {
+          if (!retried && isRetryableSupabaseError(err)) {
+            return delay(1200).then(function () {
+              return fetchOnce(true);
+            });
+          }
+          console.warn("[portal_madre_document]", err);
           return null;
-        }
-        if (!res.data || !res.data.document) return null;
-        CACHE = {
-          document: res.data.document,
-          revision: res.data.revision,
-          updated_at: res.data.updated_at,
-          rows: madreToAdapterRows(res.data.document),
-        };
-        CACHE_AT = Date.now();
-        global.PORTAL_MADRE_LIVE = CACHE;
-        return CACHE;
-      })
-      .catch(function (err) {
-        console.warn("[portal_madre_document]", err);
-        return null;
-      });
+        });
+    }
+    LOAD_INFLIGHT = fetchOnce(false).finally(function () {
+      LOAD_INFLIGHT = null;
+    });
+    return LOAD_INFLIGHT;
   }
 
   function invalidateLiveMadreCache() {
     CACHE = null;
     CACHE_AT = 0;
+    LOAD_INFLIGHT = null;
     global.PORTAL_MADRE_LIVE = null;
   }
 

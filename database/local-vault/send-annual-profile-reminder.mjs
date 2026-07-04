@@ -232,7 +232,7 @@ async function main() {
       target_staff_role: null,
       target_user_id: prof.id,
       reminder_category: "notes",
-      on_ack_action: null,
+      on_ack_action: "annual_profile",
     };
 
     const { data: inserted, error: insErr } = await admin

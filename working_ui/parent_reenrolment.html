@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--
+  PORTALVIC · Re-enrolment 2026/27 — public link + family portal handoff.
+  URLs: /parent/re-enrolment · /parent/re-enrolment.html
+-->
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <link rel="canonical" href="https://portalvic.vercel.app/parent/re-enrolment" />
+  <title>Re-enrolment 2026/27 — clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_brand.js?v=20260704-reenrol"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
+      --white: #ffffff;
+      --bg: #f4f8fb;
+      --radius: 18px;
+      --danger: #c0392b;
+      --dangerSoft: #fff1f1;
+      --warn: #b8860b;
+      --warnSoft: #fff8e6;
+      --success: #157347;
+      --successSoft: #e8f7ef;
+      --max: min(520px, 100%);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      line-height: 1.45;
+    }
+    .re-page {
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .re-brand { text-align: center; margin-bottom: 20px; }
+    .re-brand img { width: 72px; height: 72px; object-fit: contain; border-radius: 14px; }
+    .re-brand h1 { margin: 8px 0 4px; font-size: 1.15rem; color: var(--ink); font-weight: 800; }
+    .re-brand p { margin: 0; font-size: .9rem; color: var(--muted); }
+    .re-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 28px rgba(23, 50, 71, .06);
+      min-width: 0;
+    }
+    .re-section { min-width: 0; margin-bottom: 18px; }
+    .re-section h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--ink); }
+    .re-section h3 { margin: 0 0 8px; font-size: 1rem; color: var(--ink); }
+    .re-section--dc { background: var(--blueSoft); border-radius: 12px; padding: 12px; }
+    .re-section--info { border-top: 1px dashed var(--line); padding-top: 12px; }
+    .re-label { display: block; margin: 10px 0 4px; font-size: .88rem; font-weight: 700; color: var(--ink); }
+    .re-input {
+      width: 100%;
+      min-width: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font: inherit;
+      font-size: 16px;
+      background: var(--white);
+    }
+    .re-input:focus { outline: 2px solid var(--blue); border-color: var(--blue); }
+    .re-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .re-btn--primary { width: 100%; background: var(--blue); color: var(--white); margin-top: 12px; }
+    .re-btn--primary:disabled { opacity: .55; cursor: not-allowed; }
+    .re-btn--ghost { background: transparent; color: var(--blue); padding-left: 0; min-height: 40px; }
+    .re-muted { color: var(--muted); font-size: .88rem; margin: 0 0 8px; overflow-wrap: break-word; }
+    .re-notice {
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-size: .9rem;
+      overflow-wrap: break-word;
+    }
+    .re-notice--error { background: var(--dangerSoft); color: var(--danger); }
+    .re-notice--info { background: var(--blueSoft); color: var(--ink); }
+    .re-banner { padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; font-size: .9rem; overflow-wrap: break-word; min-width: 0; }
+    .re-banner--warn { background: var(--warnSoft); border: 1px solid rgba(184,134,11,.25); }
+    .re-banner--info { background: var(--blueSoft); }
+    .re-slot-list { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .re-slot-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 0;
+      background: #fafcfe;
+    }
+    .re-slot-head { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; min-width: 0; }
+    .re-slot-head h4 { margin: 0; font-size: .95rem; color: var(--ink); min-width: 0; overflow-wrap: break-word; flex: 1; }
+    .re-slot-price { margin: 0; font-size: .88rem; font-weight: 700; color: var(--blue); white-space: nowrap; }
+    .re-slot-total, .re-year-total { font-size: .92rem; margin: 8px 0 0; overflow-wrap: break-word; }
+    .re-choice-fieldset { border: 0; margin: 10px 0 0; padding: 0; min-width: 0; }
+    .re-radio, .re-check {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin: 8px 0;
+      font-size: .88rem;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .re-radio input, .re-check input { margin-top: 3px; flex-shrink: 0; }
+    .re-change-note { margin-top: 8px; min-width: 0; }
+    .re-warn-inline { color: var(--warn); font-size: .82rem; }
+    .re-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: .9rem; min-width: 0; }
+    .re-dl dt { font-weight: 700; color: var(--muted); }
+    .re-dl dd { margin: 0; overflow-wrap: break-word; min-width: 0; }
+    .re-dc-list { margin: 8px 0; padding-left: 1.2rem; font-size: .9rem; overflow-wrap: break-word; }
+    .re-link { color: var(--blue); font-weight: 700; }
+    .re-declarations { border-top: 1px solid var(--line); padding-top: 12px; }
+    .re-sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); border: 0;
+    }
+    .re-legal { text-align: center; font-size: .78rem; color: var(--muted); margin-top: 20px; overflow-wrap: break-word; }
+    .re-legal a { color: var(--blue); }
+    .re-done-icon { font-size: 2rem; text-align: center; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <main class="re-page">
+    <header class="re-brand">
+      <img src="/portal/F-02-1.png" alt="" width="72" height="72" />
+      <h1>Re-enrolment 2026/27</h1>
+      <p>Confirm next year&apos;s programme</p>
+    </header>
+
+    <div id="reNotice" class="re-notice re-notice--info" hidden role="status"></div>
+
+    <section id="reStepIdentify" class="re-card">
+      <h2>Find your record</h2>
+      <p class="re-muted">Enter the parent/carer name and participant details we have on file.</p>
+      <form id="reIdentifyForm">
+        <label class="re-label" for="reParentFirst">Parent first name</label>
+        <input id="reParentFirst" class="re-input" required autocomplete="given-name" maxlength="80" />
+
+        <label class="re-label" for="reParentLast">Parent last name</label>
+        <input id="reParentLast" class="re-input" required autocomplete="family-name" maxlength="80" />
+
+        <label class="re-label" for="reParticipantName">Participant full name</label>
+        <input id="reParticipantName" class="re-input" required maxlength="120" placeholder="As registered with the club" />
+
+        <label class="re-label" for="reParticipantAge">Participant age (today)</label>
+        <input id="reParticipantAge" class="re-input" required inputmode="numeric" pattern="[0-9]+" maxlength="3" placeholder="e.g. 12" />
+
+        <button id="reLookupBtn" class="re-btn re-btn--primary" type="submit">Continue</button>
+      </form>
+    </section>
+
+    <section id="reStepForm" hidden>
+      <button id="reBackLink" class="re-btn re-btn--ghost" type="button">← Back</button>
+      <div id="reFormNotice" class="re-notice re-notice--error" hidden role="alert"></div>
+      <div id="reFormHost" class="re-card" style="box-shadow:none;border:0;padding:0;background:transparent"></div>
+    </section>
+
+    <section id="reStepDone" class="re-card" hidden>
+      <div class="re-done-icon" aria-hidden="true">✓</div>
+      <h2>Submitted</h2>
+      <p id="reDoneMsg">Thank you — your re-enrolment has been sent to the club office.</p>
+      <p class="re-muted">We will confirm places and any slot changes by email or message. Outstanding balances remain payable separately.</p>
+      <a class="re-btn re-btn--primary" href="/parent/app">Open family portal</a>
+    </section>
+
+    <p class="re-legal">
+      Questions? <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>
+      · <a href="/parent/app">Family portal</a>
+    </p>
+  </main>
+
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol"></script>
+</body>
+</html>

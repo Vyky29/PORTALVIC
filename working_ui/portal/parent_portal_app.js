@@ -413,6 +413,9 @@
               "</div>" +
               "</div>" +
               '<p class="pp-child-card__cta">Sessions, messages &amp; achievements →</p>' +
+              '<a class="pp-reenrol-chip" href="/parent/re-enrolment?from=portal&amp;contact_id=' +
+              esc(String(c.contact_id || "")) +
+              '" onclick="event.stopPropagation()">Re-enrol 2026/27</a>' +
               "</article>"
             );
           })

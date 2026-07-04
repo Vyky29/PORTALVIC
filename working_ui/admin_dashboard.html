@@ -31,7 +31,7 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260703-narrative-audit"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v17-incident-view-fix"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260704-admin-504-stagger"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -77,10 +77,10 @@
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260704-roster-504"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260614-madre-dedupe"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260704-madre-504"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260610-aquatic-half-hour-b"></script>
@@ -291,11 +291,11 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260703-bundle-iife"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
   <script type="module">
-    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260707-admin-online-fix";
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
       try{
         mountPortalLivePresenceBar("portalLivePresenceBar");
@@ -11489,7 +11489,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         finish(false);
       }, 12000);
       try{
-        client.from('client_payments').select('*').then(function(res){
+        (async function(){
+          var res = await adminSupabaseWithRetry(function(){
+            return client.from('client_payments').select('*');
+          });
           clearTimeout(payLoadTimer);
           if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); finish(false); return; }
           var rows = (res && res.data) || [];
@@ -11501,7 +11504,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ __portalEmailToParentDisplay = null; }catch(_e){}
           __portalLivePaySource.loaded = true;
           finish(true);
-        }, function(err){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load error:', err); finish(false); });
+        })().catch(function(err){
+          clearTimeout(payLoadTimer);
+          console.warn('[orders] client_payments load error:', err);
+          finish(false);
+        });
       }catch(e){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load threw:', e); finish(false); }
     }
     function closeSchedDrawer(){
@@ -17158,12 +17165,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await auth.client
-          .from('cancellation_reports')
-          .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
-          .gte('session_date', since.toISOString().slice(0, 10))
-          .order('session_date', { ascending: false })
-          .limit(400);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('cancellation_reports')
+            .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
+            .gte('session_date', since.toISOString().slice(0, 10))
+            .order('session_date', { ascending: false })
+            .limit(400);
+        });
         var dbRows = res.error ? [] : (res.data || []);
         window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports(dbRows, portalRows);
         adminRecordLiveLoad('cancellation_reports', {
@@ -17289,13 +17298,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return [];
       }
       try{
-        var res = await auth.client
-          .from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
-          .gte('session_date', sinceIso)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(600);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('schedule_overrides')
+            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
+            .gte('session_date', sinceIso)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(600);
+        });
         if(res.error){
           var ovErr = res.error.message || String(res.error);
           console.warn('[admin] schedule_overrides:', ovErr);
@@ -17327,12 +17338,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await auth.client
-          .from('lead_session_reports')
-          .select('*')
-          .gte('session_date', since.toISOString().slice(0, 10))
-          .order('session_date', { ascending: false })
-          .limit(500);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('lead_session_reports')
+            .select('*')
+            .gte('session_date', since.toISOString().slice(0, 10))
+            .order('session_date', { ascending: false })
+            .limit(500);
+        });
         if(res.error){
           adminRecordLiveLoad('lead_session_reports', { count: 0, error: res.error.message || String(res.error) });
           window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
@@ -17361,7 +17374,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         since.setDate(since.getDate() - 120);
         var sinceIso = since.toISOString().slice(0, 10);
         var rows = [];
-        var rpc = await client.rpc('portal_admin_fetch_absent_quick_marks', { p_since: sinceIso });
+        var rpc = await adminSupabaseWithRetry(function(){
+          return client.rpc('portal_admin_fetch_absent_quick_marks', { p_since: sinceIso });
+        });
         if(!rpc.error && Array.isArray(rpc.data)){
           rows = rpc.data;
         }else{
@@ -18252,6 +18267,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         box[key] = Object.assign({ at: new Date().toISOString() }, meta || {});
         window.__PORTAL_ADMIN_LIVE_LOAD__ = box;
       }catch(_rec){}
+    }
+    function adminIsRetryableSupabaseErr(err){
+      var msg = String((err && err.message) || err || '');
+      return /504|502|503|timeout|57014|gateway|fetch failed/i.test(msg);
+    }
+    async function adminSupabaseWithRetry(run){
+      var res;
+      try{
+        res = await run();
+      }catch(e){
+        if(!adminIsRetryableSupabaseErr(e)) throw e;
+        await new Promise(function(r){ setTimeout(r, 900); });
+        return await run();
+      }
+      if(res && res.error && adminIsRetryableSupabaseErr(res.error)){
+        await new Promise(function(r){ setTimeout(r, 900); });
+        return await run();
+      }
+      return res;
     }
     async function adminFetchSessionFeedbackViaEdge(sinceIso){
       var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
@@ -25530,7 +25564,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
       window.__portalAdminPresenceBarMounted = true;
-      import('/portal/portal_live_presence.js?v=20260707-admin-online-fix')
+      import('/portal/portal_live_presence.js?v=20260704-presence-504')
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');

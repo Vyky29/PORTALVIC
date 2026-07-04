@@ -4246,6 +4246,16 @@
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
     window.addEventListener('portal:annual-profile-complete', function(){
       try{
+        if(typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
+          portalAckAllAnnualProfileCampaignReminders(
+            portalReminderAckMapLoad,
+            portalReminderAckMapSave,
+            dashboardData && dashboardData.portalRemindersFromAdmin,
+            typeof portalPersistReminderAckToSupabase === 'function'
+              ? portalPersistReminderAckToSupabase
+              : null
+          );
+        }
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
           void portalHydrateAnnouncementsFromSupabase();
         }
@@ -4443,6 +4453,19 @@
       rems.forEach(function(r){
         const n = portalReminderAsSignableNotice(r);
         if(!n) return;
+        if(
+          typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
+          portalSignableItemIsAnnualProfileCampaign(n)
+        ){
+          const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+          const p = box && box.staff_profile;
+          if(
+            typeof portalAnnualProfileCampaignComplete === 'function' &&
+            portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at)
+          ){
+            return;
+          }
+        }
         const k = portalReminderSignatureKey(n);
         if(!!k && !remAck[k]) items.push(n);
       });
@@ -4452,7 +4475,17 @@
         if(Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
         return 0;
       });
-      return items;
+      let sawProfileCampaign = false;
+      return items.filter(function(it){
+        if(
+          typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
+          portalSignableItemIsAnnualProfileCampaign(it)
+        ){
+          if(sawProfileCampaign) return false;
+          sawProfileCampaign = true;
+        }
+        return true;
+      });
     }
     function portalAnnouncementPendingItem(){
       const list = portalActiveAnnouncementItems();
@@ -4678,8 +4711,8 @@
             '</article>';
           portalLoadContractAnnouncementPreview(String(pending.portalContractId));
         }else if(
-          typeof portalSignableItemIsAnnualProfile === 'function' &&
-          portalSignableItemIsAnnualProfile(pending)
+          typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
+          portalSignableItemIsAnnualProfileCampaign(pending)
         ){
           hostPending.innerHTML =
             '<article class="announcement-lock-card announcement-lock-card--annual-profile">' +

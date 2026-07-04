@@ -4261,11 +4261,20 @@
       }
       const signBtn = e.target && e.target.closest ? e.target.closest('#announcementSignBtn') : null;
       if(signBtn){
+        e.preventDefault();
+        const chk = document.getElementById('announcementReadConfirm');
+        if(chk && !chk.checked) return;
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();
         if(!key) return;
         const pending = portalAnnouncementPendingItem();
         const expected = pending ? portalSignableSignatureKey(pending) : '';
-        if(!pending || key !== expected) return;
+        if(!pending || key !== expected){
+          try{ console.warn('[portal] announcement sign key mismatch', { key: key, expected: expected }); }catch(_){}
+          return;
+        }
+        const isProfileCampaign =
+          typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
+          portalSignableItemIsAnnualProfileCampaign(pending);
         if(typeof portalActivatePermissionsFromSignableItem === 'function'){
           void portalActivatePermissionsFromSignableItem(pending);
         }
@@ -4279,6 +4288,16 @@
             portalAdminReminderId: pending.portalAdminReminderId || ''
           };
           portalReminderAckMapSave(remAck);
+          if(isProfileCampaign && typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
+            portalAckAllAnnualProfileCampaignReminders(
+              portalReminderAckMapLoad,
+              portalReminderAckMapSave,
+              dashboardData && dashboardData.portalRemindersFromAdmin,
+              typeof portalPersistReminderAckToSupabase === 'function'
+                ? portalPersistReminderAckToSupabase
+                : null
+            );
+          }
           if(typeof portalPersistReminderAckToSupabase === 'function'){
             void portalPersistReminderAckToSupabase(pending);
           }
@@ -4307,6 +4326,14 @@
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         if(typeof renderHeader === 'function') renderHeader();
+        if(isProfileCampaign){
+          if(typeof portalOpenAnnualProfileUpdate === 'function'){
+            void portalOpenAnnualProfileUpdate('staff_profile_update.html');
+          }else{
+            window.location.href = 'staff_profile_update.html';
+          }
+          return;
+        }
         var hideMs = isReminder ? null : portalAnnouncementHideDelayMs(pending);
         if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
           setTimeout(function(){

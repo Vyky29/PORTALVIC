@@ -32,20 +32,36 @@
 
   window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
 
+  var REFRESH_INFLIGHT = null;
+
   function refreshPortalRosterRowsFromSupabase(client) {
+    if (REFRESH_INFLIGHT) {
+      return REFRESH_INFLIGHT;
+    }
     var madreP =
       window.PortalMadreFold && typeof window.PortalMadreFold.loadLiveMadre === "function"
         ? window.PortalMadreFold.loadLiveMadre(client, true)
         : Promise.resolve(null);
-    var rowsP =
-      window.PortalRosterRowsMerge &&
-      typeof window.PortalRosterRowsMerge.loadAndCache === "function"
-        ? window.PortalRosterRowsMerge.loadAndCache(client)
-        : Promise.resolve([]);
-    return Promise.all([madreP, rowsP]).then(function (parts) {
-      refreshStaffDashboardSourceFromPortal();
-      return parts[1];
-    });
+    REFRESH_INFLIGHT = madreP
+      .then(function () {
+        return new Promise(function (r) {
+          setTimeout(r, 250);
+        });
+      })
+      .then(function () {
+        return window.PortalRosterRowsMerge &&
+          typeof window.PortalRosterRowsMerge.loadAndCache === "function"
+          ? window.PortalRosterRowsMerge.loadAndCache(client)
+          : Promise.resolve([]);
+      })
+      .then(function (rows) {
+        refreshStaffDashboardSourceFromPortal();
+        return rows;
+      })
+      .finally(function () {
+        REFRESH_INFLIGHT = null;
+      });
+    return REFRESH_INFLIGHT;
   }
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;

@@ -734,6 +734,73 @@
     return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "annual_profile";
   };
 
+  /** Announcement or reminder about the annual profile campaign (not cleared by checkbox alone). */
+  global.portalSignableItemIsAnnualProfileCampaign = function portalSignableItemIsAnnualProfileCampaign(
+    item
+  ) {
+    if (global.portalSignableItemIsAnnualProfile(item)) return true;
+    if (!item || typeof item !== "object") return false;
+    var blob = (
+      String(item.title || "") +
+      " " +
+      String(item.text || item.body || "") +
+      " " +
+      String(item.href || "")
+    ).toLowerCase();
+    return /annual profile|profile check-in|profile check in|confirm your contact details/.test(
+      blob
+    );
+  };
+
+  /** Mark every live annual-profile reminder acked (handles duplicate reminder rows per worker). */
+  global.portalAckAllAnnualProfileCampaignReminders = function portalAckAllAnnualProfileCampaignReminders(
+    loadMap,
+    saveMap,
+    remList,
+    persistFn
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var list = Array.isArray(remList) ? remList : [];
+      if (!list.length) return false;
+      var ack = loadMap();
+      var changed = false;
+      list.forEach(function (r) {
+        if (!r) return;
+        var notice = {
+          type: "reminder",
+          title: r.title,
+          text: r.body || r.text,
+          body: r.body || r.text,
+          portalAdminReminderId: r.portalAdminReminderId,
+          onAckAction: r.onAckAction || r.on_ack_action,
+        };
+        if (!global.portalSignableItemIsAnnualProfileCampaign(notice)) return;
+        var remId = String(r.portalAdminReminderId || "").trim();
+        if (!remId) return;
+        var key = global.portalReminderSignatureKey({ portalAdminReminderId: remId });
+        if (!key || ack[key]) return;
+        ack[key] = {
+          title: String(r.title || "Reminder").trim() || "Reminder",
+          text: String(r.body || r.text || "").trim(),
+          signedAt: Date.now(),
+          portalAdminReminderId: remId,
+        };
+        changed = true;
+        if (typeof persistFn === "function") {
+          void persistFn(notice);
+        }
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] ack annual profile reminders", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
   global.portalAnnualProfileCampaignComplete = function portalAnnualProfileCampaignComplete(confirmedAtIso) {
     if (typeof global.portalAnnualProfileIsCompleteAt === "function") {
       return global.portalAnnualProfileIsCompleteAt(confirmedAtIso);
