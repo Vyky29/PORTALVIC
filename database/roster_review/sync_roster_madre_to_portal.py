@@ -82,8 +82,6 @@ _SUNDAY_MA_REVERSE: dict[str, str] = {
     "12.15 to 1": "12.30 to 1.15",
     "1 to 2.15": "1.15 to 2",
 }
-SUNDAY_MA_LEADER_KEYS = frozenset({"berta", "john"})
-SUNDAY_MA_LEADER_LAST_END = "2.45"
 # Roberto last aquatic block 2.30–3.30 (6.5h Sunday) from this date; before that 2.30–3 (6h).
 ROBERTO_SUNDAY_EXTENDED_FROM = "2026-06-28"
 ROBERTO_SUNDAY_AQUATIC_LAST_END = "3.30"
@@ -112,7 +110,7 @@ def dedupe_adapter_rows(rows: list[dict]) -> list[dict]:
 
 
 def patch_term_session_time_slots(seed: dict) -> int:
-    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support 9.15–14.15 (5h); Berta/John lead +15' → 2.45 end."""
+    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support blocks use participant-facing slots (last 1.15–2)."""
     n = 0
     for w in seed.get("weeks", []):
         for st in w.get("staff", []):
@@ -133,21 +131,6 @@ def patch_term_session_time_slots(seed: dict) -> int:
                         n += 1
                 if wd != "Sunday":
                     continue
-                if staff_key in SUNDAY_MA_LEADER_KEYS:
-                    ma_slots = [
-                        s
-                        for s in slots
-                        if is_multi(s.get("service"))
-                        and clean(s.get("time_slot")).endswith(" to 2.15")
-                    ]
-                    if ma_slots:
-                        last = max(
-                            ma_slots, key=lambda x: parse_start_minutes(x.get("time_slot", ""))
-                        )
-                        ts = clean(last.get("time_slot"))
-                        if ts.endswith(" to 2.15"):
-                            last["time_slot"] = ts[: -len("2.15")] + SUNDAY_MA_LEADER_LAST_END
-                            n += 1
                 if staff_key == "roberto":
                     for s in slots:
                         if clean(s.get("time_slot")) == "2.30 to 3":

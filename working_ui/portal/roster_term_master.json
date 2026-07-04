@@ -564,7 +564,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Amaar Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -1634,7 +1634,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Aydaan Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -3842,7 +3842,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Aydaan Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -3965,7 +3965,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Amaar Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -8181,7 +8181,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Aydaan Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -10515,7 +10515,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Amaar Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -11585,7 +11585,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Aydaan Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -14159,72 +14159,6 @@
                   "participant_info": "1. Age: 13 years (born April 2012)\n2. Medical: Eczema controlled with Melatonin and eczema creams. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing/soft play, dancing, drawing, painting, crafts, Lego/construction, puzzles, pattern games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, books.\n4. Dislikes/Avoids: Being told \u201cno\u201d, loud noises, crowds.\n5. Known Triggers: Loud/unexpected noise, changes to routine, waiting/delays, sensory overload, being told \u201cno\u201d/denied access, group settings/crowds.\n6. Regulation Strategies: Movement or pacing, preferred toy/object, visual supports (first/then, countdowns), quiet space, supportive adult nearby, breathing exercises/calming prompts.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words/scripts; also uses signs (Makaton), AAC (tablet/GoTalk/speech device), PECS/visuals, gestural cues.\n9. Preferred Communication: Visual prompts and calm, clear speech; requires 1:1 adult support to process instructions.\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support to complete most activities.\n13. Transitions/Flexibility: Needs preparation/countdowns for transitions; struggles with unexpected changes and waiting.\n14. Safety: May act impulsively; requires supervision.\n15. Other Notes: None."
                 }
               ]
-            },
-            {
-              "sessionDate": "2026-07-05",
-              "weekday": "Sunday",
-              "slots": [
-                {
-                  "time_slot": "1 to 2.45",
-                  "client_name": "Aydaan Ah",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 11 years (born September 2013)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Anything Disney, trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing walls/soft play, dancing or rhythmic activities, watching YouTube videos.\n4. Dislikes/Avoids: Messy play, not getting his way.\n5. Known Triggers: Transitions or changes to routine, waiting or delays, being told \u201cno\u201d/denied access.\n6. Regulation Strategies: Preferred toy or object, supportive adult staying nearby.\n7. Level of Support: Can self-regulate with minimal prompts; needs adult nearby and occasional guidance.\n8. Communication: Verbal (limited words or scripts); uses AAC (tablet, GoTalk, speech device); uses PECS or visuals to express needs; gestural/non-verbal cues (pointing, taking adult to item).\n9. Preferred Communication: AAC, verbal + gestures, visual support (symbols, schedules, first-then boards).\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Can follow a simple routine independently; needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to change in activities or environment.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: \u2014"
-                },
-                {
-                  "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack W",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 29 years (born September 1995)\n2. Medical: Childhood epilepsy. Seasonal hayfever. Takes daily Lactulose for constipation. No Health/Emergency Plan in place.\n3. Likes/Motivators: Positive relationships with staff.\n4. Dislikes/Avoids: Sensitive to noise; going down escalators.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Simple sentences, eye contact, \u201cfirst & then\u201d strategies.\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Can follow a simple routine independently; needs visual or verbal prompts; requires 1:1 support for most activities; easily distracted and needs frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger \u2013 constant 1:1 required.\n15. Other Notes: \u2014"
-                },
-                {
-                  "time_slot": "10.15 to 11",
-                  "client_name": "Adam Ab",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 6 years (born January 2018)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, puzzles, pattern-based games, music, lights, bubbles, books, cars.\n4. Dislikes/Avoids: Being told \u201cno.\u201d\n5. Known Triggers: Transitions or changes to routine, waiting or delays, being told \u201cno\u201d/denied access, fatigue or hunger.\n6. Regulation Strategies: Deep pressure, supportive adult staying nearby.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal \u2013 uses full sentences and limited scripts.\n9. Preferred Communication: Verbal instructions; supported with gestures when needed.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; may need verbal/visual prompts to stay on task.\n13. Transitions/Flexibility: Adapts well to change with preparation or countdowns.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: \u2014"
-                },
-                {
-                  "time_slot": "11 to 11.45",
-                  "client_name": "Cyrus",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 10 years (born April 2014)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, cars.\n4. Dislikes/Avoids: Being stopped from preferred activities.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, being told \u201cno\u201d / denied access.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, breathing exercises and calming prompts.\n7. Level of Support: Can self-regulate with minimal prompts; may need adult nearby and occasional guidance.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Verbal + gestures, visuals (symbols, schedules, first-then boards), \u201cfirst/then\u201d sentences.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; may need 1:1 support for activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively \u2013 requires supervision.\n15. Other Notes: Impulsive behaviour observed."
-                },
-                {
-                  "time_slot": "11.45 to 12.30",
-                  "client_name": "Arthur Ma",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 4 years (born December 2019)\n2. Medical: No diagnosed conditions. No allergies; intolerant to gluten and dairy. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, weighted blankets, deep pressure activities, climbing/soft play, water play (swimming, pouring, splashing), dancing/rhythmic activities, music, lights, bubbles, tickles, food.\n4. Dislikes/Avoids: Loud noises; crying and screaming from other children.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, sensory overload (lights, textures), being told \u201cno\u201d/denied access, fatigue or hunger, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Uses AAC (tablet/GoTalk/speech device).\n9. Preferred Communication: Verbal input supported with gestures and visual aids; responds well to clear instructions with visual support.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders/prompts; sometimes needs physical assistance or supervision.\n12. Task Engagement: Needs verbal/visual prompts to stay on task; requires 1:1 support for most activities.\n13. Transitions/Flexibility: Needs preparation or countdowns; struggles with unexpected changes or waiting.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: Arthur is cautious in new environments and may become upset at first but adjusts over time. Takes a while to warm up to new people."
-                },
-                {
-                  "time_slot": "12.30 to 1.15",
-                  "client_name": "Erik",
-                  "service": "Multi-Activity",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "BERTA",
-                  "participant_info": "1. Age: 9 years (born July 2015)\n2. Medical: Severe nut allergy (cashews, pistachios) \u2014 carries Epipen. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), drawing, painting, crafts, Lego/construction sets, strong interest in fire exits, pipes, drains.\n4. Dislikes/Avoids: Screen time (iPad, videos, photos) can trigger stress and obsessive behaviours \u2014 currently limited.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby, breathing exercises and calming prompts.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Calm, slow talking; praise and encouragement; writing plans down; using \u201cnow and next\u201d approaches.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs 1:1 support to complete most activities.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger \u2014 constant 1:1 required. Risk of running off towards objects of interest (e.g. fire exit signs, pipes) and does not stop when prompted.\n15. Other Notes: Limit screen use to avoid obsessive or anger-driven behaviours; screens can be used as short reinforcers if needed."
-                }
-              ]
             }
           ]
         },
@@ -14751,7 +14685,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Amaar Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -15120,6 +15054,72 @@
                   "venue": "SwimFarm",
                   "instructors": "BISMARK, GIUSEPPE, JOHN",
                   "participant_info": "1. Age: 14 years (born November 2009)\n2. Medical: No diagnosed medical conditions. No allergies. Will not need to take medication at sessions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, iPad/tablet apps (matching, sequencing), YouTube videos, music, lights, bubbles.\n4. Dislikes/Avoids: Not specified (\u201con file\u201d).\n5. Known Triggers: Transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d / denied access, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Needs active adult support throughout episodes. Requires 3:1 staffing ratio.\n8. Communication: Uses AAC (tablet, GoTalk, speech device); uses PECS/visuals; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Not fully specified (\u201con file\u201d); benefits from verbal + gestures and visual supports.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual/verbal prompts; requires 1:1 support for most activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 support.\n15. Other Notes: Requires 3:1 staffing ratio for safe participation."
+                }
+              ]
+            },
+            {
+              "sessionDate": "2026-07-05",
+              "weekday": "Sunday",
+              "slots": [
+                {
+                  "time_slot": "1.15 to 2",
+                  "client_name": "Aydaan Ah",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 11 years (born September 2013)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Anything Disney, trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing walls/soft play, dancing or rhythmic activities, watching YouTube videos.\n4. Dislikes/Avoids: Messy play, not getting his way.\n5. Known Triggers: Transitions or changes to routine, waiting or delays, being told \u201cno\u201d/denied access.\n6. Regulation Strategies: Preferred toy or object, supportive adult staying nearby.\n7. Level of Support: Can self-regulate with minimal prompts; needs adult nearby and occasional guidance.\n8. Communication: Verbal (limited words or scripts); uses AAC (tablet, GoTalk, speech device); uses PECS or visuals to express needs; gestural/non-verbal cues (pointing, taking adult to item).\n9. Preferred Communication: AAC, verbal + gestures, visual support (symbols, schedules, first-then boards).\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Can follow a simple routine independently; needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to change in activities or environment.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "9.30 to 10.15",
+                  "client_name": "Jack W",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 29 years (born September 1995)\n2. Medical: Childhood epilepsy. Seasonal hayfever. Takes daily Lactulose for constipation. No Health/Emergency Plan in place.\n3. Likes/Motivators: Positive relationships with staff.\n4. Dislikes/Avoids: Sensitive to noise; going down escalators.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Simple sentences, eye contact, \u201cfirst & then\u201d strategies.\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Can follow a simple routine independently; needs visual or verbal prompts; requires 1:1 support for most activities; easily distracted and needs frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger \u2013 constant 1:1 required.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "10.15 to 11",
+                  "client_name": "Adam Ab",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 6 years (born January 2018)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, puzzles, pattern-based games, music, lights, bubbles, books, cars.\n4. Dislikes/Avoids: Being told \u201cno.\u201d\n5. Known Triggers: Transitions or changes to routine, waiting or delays, being told \u201cno\u201d/denied access, fatigue or hunger.\n6. Regulation Strategies: Deep pressure, supportive adult staying nearby.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal \u2013 uses full sentences and limited scripts.\n9. Preferred Communication: Verbal instructions; supported with gestures when needed.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; may need verbal/visual prompts to stay on task.\n13. Transitions/Flexibility: Adapts well to change with preparation or countdowns.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "11 to 11.45",
+                  "client_name": "Cyrus",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 10 years (born April 2014)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, cars.\n4. Dislikes/Avoids: Being stopped from preferred activities.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, being told \u201cno\u201d / denied access.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, breathing exercises and calming prompts.\n7. Level of Support: Can self-regulate with minimal prompts; may need adult nearby and occasional guidance.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Verbal + gestures, visuals (symbols, schedules, first-then boards), \u201cfirst/then\u201d sentences.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or verbal prompts.\n12. Task Engagement: Can follow a simple routine independently; may need 1:1 support for activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively \u2013 requires supervision.\n15. Other Notes: Impulsive behaviour observed."
+                },
+                {
+                  "time_slot": "11.45 to 12.30",
+                  "client_name": "Arthur Ma",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 4 years (born December 2019)\n2. Medical: No diagnosed conditions. No allergies; intolerant to gluten and dairy. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, weighted blankets, deep pressure activities, climbing/soft play, water play (swimming, pouring, splashing), dancing/rhythmic activities, music, lights, bubbles, tickles, food.\n4. Dislikes/Avoids: Loud noises; crying and screaming from other children.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, sensory overload (lights, textures), being told \u201cno\u201d/denied access, fatigue or hunger, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Uses AAC (tablet/GoTalk/speech device).\n9. Preferred Communication: Verbal input supported with gestures and visual aids; responds well to clear instructions with visual support.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders/prompts; sometimes needs physical assistance or supervision.\n12. Task Engagement: Needs verbal/visual prompts to stay on task; requires 1:1 support for most activities.\n13. Transitions/Flexibility: Needs preparation or countdowns; struggles with unexpected changes or waiting.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: Arthur is cautious in new environments and may become upset at first but adjusts over time. Takes a while to warm up to new people."
+                },
+                {
+                  "time_slot": "12.30 to 1.15",
+                  "client_name": "Erik",
+                  "service": "Multi-Activity",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "JOHN",
+                  "participant_info": "1. Age: 9 years (born July 2015)\n2. Medical: Severe nut allergy (cashews, pistachios) \u2014 carries Epipen. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), drawing, painting, crafts, Lego/construction sets, strong interest in fire exits, pipes, drains.\n4. Dislikes/Avoids: Screen time (iPad, videos, photos) can trigger stress and obsessive behaviours \u2014 currently limited.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby, breathing exercises and calming prompts.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Calm, slow talking; praise and encouragement; writing plans down; using \u201cnow and next\u201d approaches.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs 1:1 support to complete most activities.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger \u2014 constant 1:1 required. Risk of running off towards objects of interest (e.g. fire exit signs, pipes) and does not stop when prompted.\n15. Other Notes: Limit screen use to avoid obsessive or anger-driven behaviours; screens can be used as short reinforcers if needed."
                 }
               ]
             },
@@ -17224,7 +17224,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Aydaan Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -17363,7 +17363,7 @@
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "1 to 2.45",
+                  "time_slot": "1.15 to 2",
                   "client_name": "Amaar Ah",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
@@ -22783,8 +22783,8 @@
         "staff_key": "john",
         "staff_name": "John",
         "venue": "SwimFarm",
-        "time_range": "9.15-2.15",
-        "raw_assignment": "John 9.15-2.15"
+        "time_range": "9-2.30",
+        "raw_assignment": "John 9-2.30"
       },
       {
         "session_date": "2026-06-07",
@@ -22792,8 +22792,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-06-08",
@@ -23350,8 +23350,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-06-15",
@@ -23899,8 +23899,8 @@
         "staff_key": "john",
         "staff_name": "John",
         "venue": "SwimFarm",
-        "time_range": "9.15-2.15",
-        "raw_assignment": "John 9.15-2.15"
+        "time_range": "9-2.30",
+        "raw_assignment": "John 9-2.30"
       },
       {
         "session_date": "2026-06-21",
@@ -23908,8 +23908,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-06-22",
@@ -24457,8 +24457,8 @@
         "staff_key": "john",
         "staff_name": "John",
         "venue": "SwimFarm",
-        "time_range": "9.15-2.15",
-        "raw_assignment": "John 9.15-2.15"
+        "time_range": "9-2.30",
+        "raw_assignment": "John 9-2.30"
       },
       {
         "session_date": "2026-06-28",
@@ -24466,8 +24466,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-06-28",
@@ -25030,11 +25030,11 @@
       {
         "session_date": "2026-07-05",
         "day": "Sunday",
-        "staff_key": "berta",
-        "staff_name": "Berta",
+        "staff_key": "john",
+        "staff_name": "John",
         "venue": "SwimFarm",
-        "time_range": "9.15-2.15",
-        "raw_assignment": "Berta 9.15-2.15"
+        "time_range": "9-2.30",
+        "raw_assignment": "John 9-2.30"
       },
       {
         "session_date": "2026-07-05",
@@ -25042,8 +25042,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-07-06",
@@ -25609,8 +25609,8 @@
         "staff_key": "roberto",
         "staff_name": "Roberto",
         "venue": "SwimFarm",
-        "time_range": "9-3",
-        "raw_assignment": "Roberto 9-3"
+        "time_range": "8.45-3.15",
+        "raw_assignment": "Roberto 8.45-3.15"
       },
       {
         "session_date": "2026-07-13",
