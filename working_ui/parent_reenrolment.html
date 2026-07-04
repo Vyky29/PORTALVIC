@@ -139,6 +139,45 @@
       font-size: 1rem;
       padding: 13px 16px;
     }
+    .re-dates-lead-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      min-width: 0;
+    }
+    .re-dates-lead__intro { min-width: 0; display: flex; flex-direction: column; }
+    .re-dates-lead__preview {
+      min-width: 0;
+      border: 1px solid rgba(45, 132, 179, .22);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      max-height: 360px;
+      overflow-y: auto;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .re-dates-lead__preview:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    .re-dates-lead__preview .re-cal-loading {
+      margin: 0;
+      padding: 24px 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .86rem;
+    }
+    .re-dates-lead__preview .dc-cal--preview { padding: 8px; }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-term { margin-bottom: 0; }
+    @media (min-width: 720px) {
+      .re-dates-lead-grid {
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: 18px;
+      }
+      .re-btn--dates-lead { margin-top: 4px; }
+    }
     .re-section--offer {
       border-top: 1px dashed var(--line);
       padding-top: 14px;
@@ -1345,8 +1384,8 @@
     </p>
   </main>
 
-  <script src="/portal/portal_calendar_2026_27.js?v=20260704-term-edges-crash-v2"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260704-autumn-preview"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-billing-flex"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-autumn-preview"></script>
 </body>
 </html>

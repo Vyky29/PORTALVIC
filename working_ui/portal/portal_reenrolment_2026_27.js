@@ -1775,8 +1775,15 @@
     return (
       '<section class="re-section re-section--dates-lead">' +
       reSectionTitle("h3", "calendar", "ClubSENsational Calendar 2026/27") +
+      '<div class="re-dates-lead-grid">' +
+      '<div class="re-dates-lead__intro">' +
       '<p class="re-muted">Start here — view term dates, half terms and closures for the year ahead.</p>' +
-      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">Open ClubSENsational Calendar 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">See dates</button>' +
+      "</div>" +
+      '<div class="re-dates-lead__preview" id="reAutumnPreviewHost" role="button" tabindex="0" aria-label="Preview of Autumn term — open the full calendar">' +
+      '<p class="re-cal-loading" role="status">Loading preview…</p>' +
+      "</div>" +
+      "</div>" +
       "</section>"
     );
   }
@@ -2192,6 +2199,33 @@
       termBtn.addEventListener("click", function () {
         openStaffCalendarModal("", "dcCalSessionsPanel");
       });
+    }
+    var previewHost = $("reAutumnPreviewHost");
+    if (previewHost && !previewHost.__reBound) {
+      previewHost.__reBound = true;
+      var openCal = function () {
+        openStaffCalendarModal("", "dcCalSessionsPanel");
+      };
+      previewHost.addEventListener("click", openCal);
+      previewHost.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") {
+          ev.preventDefault();
+          openCal();
+        }
+      });
+      if (typeof global.portalBuildCalendar202627AutumnPreview === "function") {
+        global
+          .portalBuildCalendar202627AutumnPreview()
+          .then(function (node) {
+            previewHost.innerHTML = "";
+            previewHost.appendChild(node);
+          })
+          .catch(function () {
+            previewHost.hidden = true;
+          });
+      } else {
+        previewHost.hidden = true;
+      }
     }
     var dcBtn = $("reDayCentreDatesBtn");
     if (dcBtn) {

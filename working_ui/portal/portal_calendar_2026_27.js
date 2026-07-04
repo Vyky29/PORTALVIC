@@ -114,6 +114,32 @@
     return root.cloneNode(true);
   }
 
+  /**
+   * Standalone preview node showing just the After-Schools Autumn term card
+   * (same markup/styles as the full calendar). For the re-enrolment lead card.
+   */
+  global.portalBuildCalendar202627AutumnPreview =
+    async function portalBuildCalendar202627AutumnPreview() {
+      var html = await fetchCalendarSectionHtml();
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var root = doc.querySelector(".dc-cal");
+      if (!root) throw new Error("Calendar section missing");
+      var article = root.querySelector("#dcCalSessionsPanel .dc-cal-term");
+      if (!article) throw new Error("Autumn term not found");
+      var styleEl = root.querySelector("style");
+      var wrap = global.document.createElement("div");
+      wrap.className = "dc-cal dc-cal--preview";
+      if (styleEl) wrap.appendChild(styleEl.cloneNode(true));
+      var panel = global.document.createElement("div");
+      panel.id = "dcCalSessionsPanel";
+      panel.appendChild(article.cloneNode(true));
+      wrap.appendChild(panel);
+      try {
+        global.portalMarkCalendar202627Highlights(wrap);
+      } catch (_) {}
+      return wrap;
+    };
+
   async function importDocumentsModule() {
     var v = "20260702-html-cal";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
