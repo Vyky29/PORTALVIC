@@ -48,6 +48,7 @@
     avatarUrl: "",
     pendingPhotoFile: null,
     pendingPreviewUrl: "",
+    billing2627: { fundCode: "privately_funded", payCode: "bank_transfer", editing: false },
   };
 
   function $(id) {
@@ -510,12 +511,10 @@
     addRefServicesBlock((data && data.weekly_slots) || []);
     addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(cur.payment_method));
     addRefRow("wallet", "Funding", cur.funding);
-    addRefRow("receipt", "Invoice", cur.invoice_type);
     if (!rows.length) {
       var legacy = fundingCurrent2526(data);
       addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(legacy.payment_method));
       addRefRow("wallet", "Funding", legacy.funding);
-      addRefRow("receipt", "Invoice", legacy.invoice_type);
     }
     return (
       '<section class="re-section re-section--current-ref">' +
@@ -1080,12 +1079,129 @@
     return Math.round(n * 1.025 * 100) / 100;
   }
 
-  function renderBilling2627Block(data) {
+  function initBilling2627State(data) {
     var cur = fundingCurrent2526(data);
-    var annualTotal = resolveAnnualWeeklyTotal(data);
-    var fundDefault = normalizeFundingChoice(mapFundingCode(cur.funding));
-    var payDefault = normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding));
+    state.billing2627 = {
+      fundCode: normalizeFundingChoice(mapFundingCode(cur.funding)),
+      payCode: normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding)),
+      editing: false,
+    };
+  }
+
+  function billing2526FundingLabel(cur) {
+    var raw = String((cur && cur.funding) || "").trim();
+    if (raw) return raw;
+    return fundingLabel(normalizeFundingChoice(mapFundingCode(cur && cur.funding)), "—");
+  }
+
+  function billing2627ChangedFrom2526(data) {
+    var cur = fundingCurrent2526(data);
+    var b = state.billing2627 || {};
+    return (
+      normalizeFundingChoice(b.fundCode) !== normalizeFundingChoice(mapFundingCode(cur.funding)) ||
+      normalizePayMethodChoice(b.payCode) !==
+        normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding))
+    );
+  }
+
+  function renderBilling2526Reference(cur) {
+    var fundText = billing2526FundingLabel(cur);
+    var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
+    return (
+      '<div class="re-funding-current">' +
+      "<h4>Funding &amp; payment on file (2025/26)</h4>" +
+      '<ul class="re-billing-ref-list">' +
+      "<li>" +
+      '<span class="re-billing-ref-label">Funding</span>' +
+      '<span class="re-billing-ref-value">' +
+      esc(fundText) +
+      "</span></li>" +
+      "<li>" +
+      '<span class="re-billing-ref-label">Payment method</span>' +
+      '<span class="re-billing-ref-value">' +
+      esc(payText) +
+      "</span></li>" +
+      "</ul>" +
+      '<p class="re-muted re-billing-ref-note">This continues for 2026/27 unless you edit below.</p>' +
+      "</div>"
+    );
+  }
+
+  function renderBilling2627SummaryIfChanged(data) {
+    if (!billing2627ChangedFrom2526(data)) return "";
+    var b = state.billing2627 || {};
+    return (
+      '<div class="re-billing-2627-saved">' +
+      '<p class="re-billing-ref-label">Your choice for 2026/27</p>' +
+      '<p class="re-billing-2627-saved__value">' +
+      esc(fundingLabel(b.fundCode)) +
+      " · " +
+      esc(privatePayMethodLabel(b.payCode)) +
+      "</p></div>"
+    );
+  }
+
+  function renderBillingArrangementSection(data) {
+    var b = state.billing2627 || {};
+    var editing = !!b.editing;
+    return (
+      '<div id="reBillingArrangementWrap" class="re-billing-arrangement">' +
+      '<div id="reBillingArrangementView"' +
+      (editing ? " hidden" : "") +
+      ">" +
+      renderBilling2526Reference(fundingCurrent2526(data)) +
+      renderBilling2627SummaryIfChanged(data) +
+      '<button type="button" class="re-btn re-btn--secondary re-btn--billing-edit" id="reBillingEditBtn">Edit for 2026/27</button>' +
+      "</div>" +
+      '<div id="reBillingArrangementEdit"' +
+      (editing ? "" : " hidden") +
+      ">" +
+      '<p class="re-muted re-billing-edit-intro">Change funding or payment method for 2026/27, then save before choosing how you would like to pay.</p>' +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Funding 2026/27</legend>' +
+      renderFundingRadios(b.fundCode) +
+      "</fieldset>" +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Payment method 2026/27</legend>' +
+      renderPrivatePayMethodRadios(b.payCode) +
+      "</fieldset>" +
+      '<div class="re-billing-edit-actions">' +
+      '<button type="button" class="re-btn re-btn--primary" id="reBillingSaveBtn">Save for 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--ghost" id="reBillingCancelBtn">Cancel</button>' +
+      "</div></div></div>"
+    );
+  }
+
+  function refreshBillingPaySection(data) {
+    var b = state.billing2627 || {};
+    if (b.editing) return;
+    var cur = fundingCurrent2526(data);
+    var payCode = normalizePayMethodChoice(b.payCode);
     var scheduleDefault = mapScheduleCode(cur.payment_method, cur.funding);
+    var schedWrap = $("rePayScheduleWrap");
+    if (schedWrap) schedWrap.innerHTML = renderPayScheduleFieldset(payCode, scheduleDefault);
+    syncPrivatePayPanels();
+    syncPaymentSchedulePreview();
+  }
+
+  function refreshBillingArrangementUI() {
+    var wrap = $("reBillingArrangementWrap");
+    if (!wrap || !state.lookup) return;
+    var tmp = document.createElement("div");
+    tmp.innerHTML = renderBillingArrangementSection(state.lookup);
+    var next = tmp.firstElementChild;
+    if (next) wrap.replaceWith(next);
+    var paySec = $("reBillingPaySection");
+    if (paySec) paySec.hidden = !!(state.billing2627 && state.billing2627.editing);
+    if (!state.billing2627 || !state.billing2627.editing) refreshBillingPaySection(state.lookup);
+  }
+
+  function renderBilling2627Block(data) {
+    initBilling2627State(data);
+    var annualTotal = resolveAnnualWeeklyTotal(data);
+    var b = state.billing2627;
+    var payCode = normalizePayMethodChoice(b.payCode);
+    var scheduleDefault = mapScheduleCode(fundingCurrent2526(data).payment_method, fundingCurrent2526(data).funding);
 
     return (
       '<div class="re-funding-2627" data-annual-total="' +
@@ -1094,37 +1210,30 @@
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
       "</p>" +
-      '<p class="re-muted re-billing-prefill">We have pre-selected funding and payment from your 2025/26 record where available. Change anything that will be different for 2026/27.</p>' +
+      renderBillingArrangementSection(data) +
+      '<div id="reBillingPaySection"' +
+      (b.editing ? " hidden" : "") +
+      ">" +
       '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose how you would like invoices timed — the programme total stays the same.</p>' +
-      '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">Funding 2026/27</legend>' +
-      renderFundingRadios(fundDefault) +
-      "</fieldset>" +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
-      '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">Payment method 2026/27</legend>' +
-      renderPrivatePayMethodRadios(payDefault) +
-      "</fieldset>" +
-      renderVatFixedBlock(fundDefault) +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
-      renderPayScheduleFieldset(payDefault, scheduleDefault) +
+      renderPayScheduleFieldset(payCode, scheduleDefault) +
       "</div>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
-      (adminFeeApplies(payDefault) ? "" : " hidden") +
+      (adminFeeApplies(payCode) ? "" : " hidden") +
       ">" +
       "<strong>2.5% admin fees on top of final price</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
-      (payDefault === "gocardless" ? "" : " hidden") +
+      (payCode === "gocardless" ? "" : " hidden") +
       ">" +
       "<strong>If a direct debit fails</strong>" +
       "If a payment fails (for example insufficient funds or a cancelled mandate), you must pay within " +
       "<strong>7 days</strong> by bank transfer, including any GoCardless failure charge. " +
       "After <strong>two failed attempts in the same term</strong>, direct payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer." +
-      "</div>" +
-      "</div>" +
+      "</div></div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
       ". First payments from September — see schedule above.</p>" +
@@ -1144,22 +1253,6 @@
 
   function vatLabelForFunding(fundCode) {
     return isDirectPayments(fundCode) ? "EXEMPT VAT" : "20% VAT included";
-  }
-
-  function renderVatFixedBlock(fundCode) {
-    var exempt = isDirectPayments(fundCode);
-    return (
-      '<div id="reVatFixedBlock" class="re-funding-vat-fixed">' +
-      '<span class="re-label">Invoice type</span>' +
-      '<p class="re-funded-vat">' +
-      esc(vatLabelForFunding(fundCode)) +
-      "</p>" +
-      '<p class="re-muted re-funding-note">' +
-      (exempt
-        ? "Using LA Direct Payments from your EHCP care package — exempt VAT applies automatically."
-        : "Private funding — 20% VAT included on invoices. This is set automatically.") +
-      "</p></div>"
-    );
   }
 
   var RE_PRIVATE_PAY_METHODS = [
@@ -1348,7 +1441,6 @@
       "<dt>Invoice route</dt><dd>" +
       esc(fundedPayMethodLabel(payCode)) +
       "</dd>" +
-      "<dt>Invoice type</dt><dd>EXEMPT VAT</dd>" +
       "<dt>Our billing</dt><dd>Annual total to funder · admin monthly internally</dd>" +
       "</dl>"
     );
@@ -1377,19 +1469,13 @@
   }
 
   function syncFundingPanels() {
-    var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
-    var fundCode = fundEl ? fundEl.value : "privately_funded";
-    var vatBlock = $("reVatFixedBlock");
-    if (vatBlock) {
-      vatBlock.outerHTML = renderVatFixedBlock(fundCode);
-    }
     syncPrivatePayPanels();
     syncPaymentSchedulePreview();
   }
 
   function syncPrivatePayPanels() {
-    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
-    var payCode = payEl ? payEl.value : "bank_transfer";
+    var b = state.billing2627 || {};
+    var payCode = normalizePayMethodChoice(b.payCode || "bank_transfer");
     var schedWrap = $("rePayScheduleWrap");
     if (schedWrap) {
       var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
@@ -1417,16 +1503,37 @@
   }
 
   function bindFundingHandlers() {
-    document.querySelectorAll('input[name="re_fund_2627"]').forEach(function (radio) {
-      radio.addEventListener("change", function () {
-        syncFundingPanels();
-        syncPaymentSchedulePreview();
-      });
+    var host = $("reFormHost");
+    if (!host || host.__reBillingBound) {
+      syncFundingPanels();
+      syncPaymentSchedulePreview();
+      return;
+    }
+    host.__reBillingBound = true;
+    host.addEventListener("click", function (e) {
+      var editBtn = e.target && e.target.closest ? e.target.closest("#reBillingEditBtn") : null;
+      var saveBtn = e.target && e.target.closest ? e.target.closest("#reBillingSaveBtn") : null;
+      var cancelBtn = e.target && e.target.closest ? e.target.closest("#reBillingCancelBtn") : null;
+      if (editBtn) {
+        state.billing2627.editing = true;
+        refreshBillingArrangementUI();
+        return;
+      }
+      if (saveBtn) {
+        var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
+        var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+        if (fundEl) state.billing2627.fundCode = normalizeFundingChoice(fundEl.value);
+        if (payEl) state.billing2627.payCode = normalizePayMethodChoice(payEl.value);
+        state.billing2627.editing = false;
+        refreshBillingArrangementUI();
+        return;
+      }
+      if (cancelBtn) {
+        state.billing2627.editing = false;
+        refreshBillingArrangementUI();
+      }
     });
-    document.querySelectorAll('input[name="re_pay_2627"]').forEach(function (radio) {
-      radio.addEventListener("change", syncPrivatePayPanels);
-    });
-    document.addEventListener("change", function (ev) {
+    host.addEventListener("change", function (ev) {
       var t = ev.target;
       if (t && t.name === "re_pay_schedule_2627") syncPaymentSchedulePreview();
     });
@@ -1436,15 +1543,14 @@
 
   function collectBillingChoices(data) {
     var cur = fundingCurrent2526(data);
-    var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
-    var fundCode = normalizeFundingChoice(fundEl ? fundEl.value : mapFundingCode(cur.funding));
+    var b = state.billing2627 || {};
+    var fundCode = normalizeFundingChoice(b.fundCode || mapFundingCode(cur.funding));
     var annualTotal = resolveAnnualWeeklyTotal(data);
 
-    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
-    var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
     var payCode = normalizePayMethodChoice(
-      payEl ? payEl.value : mapPrivatePayMethodCode(cur.payment_method, cur.funding),
+      b.payCode || mapPrivatePayMethodCode(cur.payment_method, cur.funding),
     );
+    var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
     var scheduleCode =
       schedEl && (payCode === "bank_transfer" || payCode === "gocardless")
         ? schedEl.value
@@ -2219,6 +2325,14 @@
     }
     if (!$("reDeclAccurate") || !$("reDeclAccurate").checked || !$("reDeclTerms") || !$("reDeclTerms").checked) {
       showNotice($("reFormNotice"), "error", "Please tick both confirmation boxes.");
+      return;
+    }
+    if (state.billing2627 && state.billing2627.editing) {
+      showNotice(
+        $("reFormNotice"),
+        "error",
+        "Please save your funding and payment choices for 2026/27 before submitting.",
+      );
       return;
     }
 

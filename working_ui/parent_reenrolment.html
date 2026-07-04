@@ -397,6 +397,63 @@
       min-width: 0;
     }
     .re-funding-current h4 { margin: 0 0 8px; font-size: .88rem; color: var(--muted); font-weight: 700; }
+    .re-billing-arrangement { margin-bottom: 14px; min-width: 0; }
+    .re-billing-ref-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .re-billing-ref-list li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .re-billing-ref-label {
+      font-size: .82rem;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-billing-ref-value {
+      font-size: .88rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .re-billing-ref-note { margin: 10px 0 0; font-size: .82rem; }
+    .re-billing-2627-saved {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px solid rgba(45, 132, 179, .2);
+      min-width: 0;
+    }
+    .re-billing-2627-saved__value {
+      margin: 4px 0 0;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-btn--billing-edit {
+      width: 100%;
+      margin-top: 12px;
+    }
+    .re-billing-edit-intro { margin: 0 0 10px; }
+    .re-billing-edit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .re-billing-edit-actions .re-btn { flex: 1 1 140px; min-width: 0; margin-top: 0; }
+    #reBillingPaySection[hidden] { display: none !important; }
     .re-section--current-ref {
       padding: 12px;
       border-radius: 12px;
@@ -1183,6 +1240,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260704-reenrol-cal"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-no-ref-participant"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-billing-edit"></script>
 </body>
 </html>
