@@ -1660,10 +1660,14 @@
             "</legend>" +
             '<label class="re-radio"><input type="radio" name="choice_' +
             id +
-            '" value="keep" checked /> Keep this slot for 2026/27</label>' +
+            '" value="keep" checked /> Keep this slot for 2026/27' +
+            '<svg class="re-radio__icon re-radio__icon--yes" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#16a34a"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+            "</label>" +
             '<label class="re-radio"><input type="radio" name="choice_' +
             id +
-            '" value="withdraw" /> Do not continue this activity</label>' +
+            '" value="withdraw" /> Do not continue this activity' +
+            '<svg class="re-radio__icon re-radio__icon--no" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#dc2626"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>' +
+            "</label>" +
             "</fieldset>" +
             "</article>"
           );
