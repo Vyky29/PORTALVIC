@@ -342,6 +342,61 @@
     return "Your programme";
   }
 
+  function serviceTypeDisplay(serviceType) {
+    var t = String(serviceType || "")
+      .trim()
+      .toUpperCase();
+    if (t.includes("AQUATIC") || t === "SW") return "Aquatic Activity";
+    if (t.includes("MULTI")) return "Multi-Activity";
+    if (t.includes("CLIMB") || t === "CL") return "Climbing Activity";
+    if (t.includes("PHYSICAL") || t.includes("FITNESS")) return "Physical Activity";
+    if (t.includes("BESPOKE")) return "Bespoke Programme";
+    if (t.includes("COUNSEL")) return "Counselling";
+    return String(serviceType || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, function (c) {
+        return c.toUpperCase();
+      });
+  }
+
+  function formatTimeForServiceLine(timeSlot) {
+    var s = String(timeSlot || "").trim();
+    if (!s) return "";
+    if (/\b(am|pm)\b/i.test(s)) return s;
+    var startRaw = (s.split(/\s+to\s+/i)[0] || "").trim();
+    var start = Number.parseFloat(startRaw);
+    if (Number.isFinite(start) && start >= 1 && start <= 8) return s + " pm";
+    return s;
+  }
+
+  function formatCurrentServiceLine(slot) {
+    if (!slot) return "";
+    var dur = slot.durationMin ? slot.durationMin + "'" : "";
+    var svc = serviceTypeDisplay(slot.serviceType);
+    var day = slot.day ? String(slot.day).trim() : "";
+    var head = [dur, svc].filter(Boolean).join(" ");
+    if (day) head += " (" + day + ")";
+    var tailParts = [];
+    var time = formatTimeForServiceLine(slot.timeSlot);
+    if (time) tailParts.push(time);
+    if (day) tailParts.push(day.endsWith("s") ? day : day + "s");
+    var tail = tailParts.join(", ");
+    if (slot.venue) tail += (tail ? " " : "") + "(" + slot.venue + ")";
+    if (!head) return "";
+    return tail ? head + " / " + tail : head;
+  }
+
+  function formatCurrentPaymentMethodLabel(raw) {
+    var s = String(raw || "").toLowerCase();
+    if (!s) return "";
+    if (s.includes("gocardless") || s.includes("direct debit") || s.includes("direct payment")) {
+      return "Direct Payment (GoCardless)";
+    }
+    if (s.includes("bank")) return "Bank Transfer";
+    return String(raw).trim();
+  }
+
   function renderCurrentArrangementsSide(data) {
     var cur = (data && data.current_arrangements_2526) || {};
     var rows = [];
@@ -360,18 +415,44 @@
         "</span></div></li>",
       );
     }
+    function addRefServicesBlock(slots) {
+      var lines = [];
+      (slots || []).forEach(function (slot) {
+        var line = formatCurrentServiceLine(slot);
+        if (line) lines.push(line);
+      });
+      if (!lines.length && cur.slot) {
+        String(cur.slot)
+          .split(" · ")
+          .forEach(function (part) {
+            var p = String(part || "").trim();
+            if (p) lines.push(p);
+          });
+      }
+      if (!lines.length) return;
+      rows.push(
+        '<li class="re-current-ref-row re-current-ref-row--services">' +
+        reRefIconSvg("services") +
+        '<div class="re-ref-body">' +
+        '<span class="re-ref-label">Service / Services</span>' +
+        '<ul class="re-ref-service-list">' +
+        lines
+          .map(function (line) {
+            return '<li class="re-ref-service-item">' + esc(line) + "</li>";
+          })
+          .join("") +
+        "</ul></div></li>",
+      );
+    }
     addRefRow("user", "Participant", cur.participant_name || participantDisplayName(data));
     addRefRow("age", "Age", cur.age ? cur.age + " years" : "");
-    addRefRow("services", "Service", cur.service);
-    addRefRow("clock", "Slot", cur.slot);
-    addRefRow("mapPin", "Venue", cur.venue);
-    addRefRow("instructor", "Instructor", cur.instructor);
-    addRefRow("billing", "Payment method", cur.payment_method);
+    addRefServicesBlock((data && data.weekly_slots) || []);
+    addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(cur.payment_method));
     addRefRow("wallet", "Funding", cur.funding);
     addRefRow("receipt", "Invoice", cur.invoice_type);
     if (!rows.length) {
       var legacy = fundingCurrent2526(data);
-      addRefRow("billing", "Payment method", legacy.payment_method);
+      addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(legacy.payment_method));
       addRefRow("wallet", "Funding", legacy.funding);
       addRefRow("receipt", "Invoice", legacy.invoice_type);
     }
@@ -912,8 +993,8 @@
   }
 
   var RE_PRIVATE_PAY_METHODS = [
-    { code: "bank_transfer", label: "Bank transfer" },
-    { code: "gocardless", label: "Direct payment" },
+    { code: "bank_transfer", label: "Bank Transfer" },
+    { code: "gocardless", label: "Direct Payment (GoCardless)" },
   ];
 
   var RE_FUNDING_OPTIONS = [

@@ -313,6 +313,32 @@
       color: var(--ink);
       overflow-wrap: break-word;
     }
+    .re-ref-service-list {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .re-ref-service-item {
+      position: relative;
+      padding-left: 12px;
+      font-size: .88rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-ref-service-item::before {
+      content: "–";
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+      font-weight: 800;
+    }
+    .re-current-ref-row--services .re-ref-body { min-width: 0; }
     .re-pay-preview-host[hidden] { display: none !important; }
     .re-pay-preview {
       margin-top: 12px;
@@ -856,6 +882,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-dd-fail"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-services-block"></script>
 </body>
 </html>
