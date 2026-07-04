@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260702-cal-back";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-afterschools-default";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -309,7 +309,7 @@
     var initialTarget =
       initial && initial.getAttribute("data-dc-cal-target")
         ? initial.getAttribute("data-dc-cal-target")
-        : "dcCalDayCentrePanel";
+        : "dcCalSessionsPanel";
     showPanel(initialTarget);
   };
 

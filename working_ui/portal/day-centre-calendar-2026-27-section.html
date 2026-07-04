@@ -380,15 +380,15 @@
   </header>
 
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="true" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="false" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Half Terms</span></button>
   </div>
 
-  <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary">
+  <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary" hidden>
     <span>Day Centre open <strong>43</strong> weeks/year</span>
   </div>
-  <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary" hidden>
+  <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary">
     <span><strong>38</strong> week sessions</span>
     <span><strong>33</strong> weekend sessions</span>
   </div>
@@ -396,7 +396,7 @@
     <span><strong>12</strong> crash course days · 3 half terms</span>
   </div>
 
-  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab">
+  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab" hidden>
     <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Open</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed</li>
@@ -786,7 +786,7 @@
     </article>
   </div>
 
-  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsTab" hidden>
+  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsTab">
     <ul class="dc-cal__legend" id="dcCalLegendSessions" aria-label="Sessions colour key">
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Sessions running (Mon–Sun)</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / no sessions</li>
@@ -1342,7 +1342,7 @@
           showPanel(tab.getAttribute("data-dc-cal-target"));
         });
       });
-      showPanel("dcCalDayCentrePanel");
+      showPanel("dcCalSessionsPanel");
     })();
   </script>
 </section>

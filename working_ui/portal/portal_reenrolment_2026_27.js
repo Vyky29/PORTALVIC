@@ -518,7 +518,7 @@
     }
     return (
       '<section class="re-section re-section--current-ref">' +
-      reSectionTitle("h3", "current", "Your current arrangements (2025/26)") +
+      reSectionTitle("h3", "current", "Current arrangements (2025/26)") +
       '<p class="re-muted re-current-ref-note">Reference from this year&apos;s record. Confirm 2026/27 choices on the right.</p>' +
       '<ul class="re-current-ref-list">' +
       rows.join("") +
