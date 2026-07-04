@@ -549,12 +549,16 @@
     };
   }
 
-  function isPrivateFunding(fundCode) {
-    return fundCode === "privately_funded";
+  function isFunderPaid(fundCode) {
+    return fundCode === "la_nhs";
   }
 
-  function isFundedFamily(fundCode) {
-    return fundCode === "la_direct_payments" || fundCode === "la_nhs";
+  function isParentPaysPanel(fundCode) {
+    return fundCode === "privately_funded" || fundCode === "la_direct_payments";
+  }
+
+  function isDirectPayments(fundCode) {
+    return fundCode === "la_direct_payments";
   }
 
   function adminFeeApplies(payCode) {
@@ -574,7 +578,7 @@
     var payDefault = mapPrivatePayMethodCode(cur.payment_method, cur.funding);
     var scheduleDefault = mapScheduleCode(cur.payment_method, cur.funding);
     var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
-    if (isFundedFamily(fundDefault)) vatDefault = "exempt";
+    if (isDirectPayments(fundDefault)) vatDefault = "exempt";
 
     var currentRows = [];
     if (cur.payment_method) {
@@ -610,8 +614,11 @@
       '<legend class="re-label">Funding</legend>' +
       renderFundingRadios(fundDefault) +
       "</fieldset>" +
+      '<p id="reDirectPaymentsNote" class="re-muted re-funding-note"' +
+      (isDirectPayments(fundDefault) ? "" : " hidden") +
+      ">You receive LA Direct Payments and pay the club yourself — same payment choices as privately funded families, but <strong>EXEMPT VAT</strong>.</p>" +
       '<div id="rePanelPrivate" class="re-funding-panel"' +
-      (isPrivateFunding(fundDefault) ? "" : " hidden") +
+      (isParentPaysPanel(fundDefault) ? "" : " hidden") +
       ">" +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Preferred payment method</legend>' +
@@ -629,7 +636,9 @@
       '<p id="reOwnWayUpfrontNote" class="re-muted re-funding-note"' +
       (payDefault === "own_way_upfront" ? "" : " hidden") +
       ">You pay ahead of schedule in your own way — no change unless you tell the office.</p>" +
-      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<fieldset id="reVatChoiceFieldset" class="re-choice-fieldset re-funding-field"' +
+      (isDirectPayments(fundDefault) ? " hidden" : "") +
+      '>' +
       '<legend class="re-label">Invoice type</legend>' +
       '<label class="re-radio"><input type="radio" name="re_vat_2627" value="vat_included"' +
       (vatDefault === "vat_included" ? " checked" : "") +
@@ -638,9 +647,12 @@
       (vatDefault === "exempt" ? " checked" : "") +
       ' /> EXEMPT VAT</label>' +
       "</fieldset>" +
+      '<div id="reVatDirectBlock" class="re-funding-vat-fixed"' +
+      (isDirectPayments(fundDefault) ? "" : " hidden") +
+      '><span class="re-label">Invoice type</span><p class="re-funded-vat">EXEMPT VAT</p></div>' +
       "</div>" +
       '<div id="rePanelFunded" class="re-funding-panel re-funding-panel--funded"' +
-      (isFundedFamily(fundDefault) ? "" : " hidden") +
+      (isFunderPaid(fundDefault) ? "" : " hidden") +
       ">" +
       renderFundedInvoicePanel(data, fundDefault, cur, annualTotal) +
       "</div>" +
@@ -674,7 +686,7 @@
   };
 
   function mapPrivatePayMethodCode(raw, fundingRaw) {
-    if (isFundedFamily(mapFundingCode(fundingRaw))) return "bank_transfer";
+    if (isFunderPaid(mapFundingCode(fundingRaw))) return "bank_transfer";
     var s = String(raw || "").toLowerCase();
     if (!s) return "bank_transfer";
     if (s.includes("gocardless")) return "gocardless";
@@ -704,9 +716,8 @@
     return "term_3";
   }
 
-  function mapFundedPayMethodCode(fundCode, cur) {
+  function mapFundedPayMethodCode(cur) {
     var s = String((cur && cur.payment_method) || "").toLowerCase();
-    if (fundCode === "la_direct_payments") return "direct_payment";
     if (s.includes("nhs") || s.includes("po")) return "nhs_invoice";
     return "la_invoice";
   }
@@ -714,7 +725,7 @@
   function mapFundingCode(raw) {
     var s = String(raw || "").toLowerCase();
     if (!s) return "privately_funded";
-    if (s.includes("direct payment")) return "la_direct_payments";
+    if (s.includes("direct payment") || s.includes("direct payments")) return "la_direct_payments";
     if (s.includes("local authority") || s.includes("nhs") || s.includes("la-funded")) {
       return "la_nhs";
     }
@@ -730,7 +741,6 @@
   }
 
   function fundedPayMethodLabel(code) {
-    if (code === "direct_payment") return "Direct payment (CWD remittance)";
     if (code === "nhs_invoice") return "NHS invoice (PO)";
     return "LA invoice (BACS)";
   }
@@ -794,7 +804,7 @@
   }
 
   function renderFundedInvoicePanel(data, fundCode, cur, annualTotal) {
-    var payCode = mapFundedPayMethodCode(fundCode, cur);
+    var payCode = mapFundedPayMethodCode(cur);
     var funderLabel = fundingLabel(fundCode, cur.funding);
     return (
       '<div class="re-funded-invoice">' +
@@ -802,17 +812,17 @@
       '<p class="re-funded-invoice__amount">' +
       esc(money(annualTotal)) +
       "</p>" +
-      '<p class="re-muted">For your records — this is the full-year programme total we invoice to your funder. Day Centre is excluded if not on your programme.</p>' +
+      '<p class="re-muted">For your records — this is the full-year total we invoice to your LA or NHS funder. The club bills your funder monthly on our admin schedule; you do not pay us directly.</p>' +
       "</div>" +
       '<dl class="re-dl re-funded-meta">' +
-      "<dt>Funder</dt><dd>" +
+      "<dt>Funder pays</dt><dd>" +
       esc(funderLabel) +
       "</dd>" +
       "<dt>Invoice route</dt><dd>" +
       esc(fundedPayMethodLabel(payCode)) +
       "</dd>" +
       "<dt>Invoice type</dt><dd>EXEMPT VAT</dd>" +
-      "<dt>Our billing</dt><dd>Admin monthly to your funder (you do not choose a payment schedule here)</dd>" +
+      "<dt>Our billing</dt><dd>Annual total to funder · admin monthly internally</dd>" +
       "</dl>"
     );
   }
@@ -844,8 +854,14 @@
     var fundCode = fundEl ? fundEl.value : "privately_funded";
     var privatePanel = $("rePanelPrivate");
     var fundedPanel = $("rePanelFunded");
-    if (privatePanel) privatePanel.hidden = !isPrivateFunding(fundCode);
-    if (fundedPanel) fundedPanel.hidden = !isFundedFamily(fundCode);
+    var directNote = $("reDirectPaymentsNote");
+    var vatChoice = $("reVatChoiceFieldset");
+    var vatDirect = $("reVatDirectBlock");
+    if (privatePanel) privatePanel.hidden = !isParentPaysPanel(fundCode);
+    if (fundedPanel) fundedPanel.hidden = !isFunderPaid(fundCode);
+    if (directNote) directNote.hidden = !isDirectPayments(fundCode);
+    if (vatChoice) vatChoice.hidden = isDirectPayments(fundCode);
+    if (vatDirect) vatDirect.hidden = !isDirectPayments(fundCode);
     syncPrivatePayPanels();
   }
 
@@ -894,18 +910,18 @@
     var annualTotal = resolveAnnualWeeklyTotal(data);
     var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
 
-    if (isFundedFamily(fundCode)) {
-      var fundedPay = mapFundedPayMethodCode(fundCode, cur);
+    if (isFunderPaid(fundCode)) {
+      var fundedPay = mapFundedPayMethodCode(cur);
       return {
         current_2526: cur,
         choices_2627: {
-          billing_mode: "funded",
+          billing_mode: "funder_paid",
           funding_code: fundCode,
           funding_label: fundingLabel(fundCode, cur.funding),
           payment_method_code: fundedPay,
           payment_method_label: fundedPayMethodLabel(fundedPay),
           payment_schedule_code: "admin_monthly",
-          payment_schedule_label: "Admin monthly (funder invoiced — full year total on record)",
+          payment_schedule_label: "Admin monthly (LA/NHS invoiced — full year total on record)",
           invoice_type_code: "exempt",
           invoice_type_label: "EXEMPT VAT",
           admin_fee_applies: false,
@@ -926,12 +942,16 @@
           : payCode === "bank_transfer"
             ? "term_3"
             : null;
-    var vatCode = vatEl ? vatEl.value : cur.invoice_type_code || "vat_included";
+    var vatCode = isDirectPayments(fundCode)
+      ? "exempt"
+      : vatEl
+        ? vatEl.value
+        : cur.invoice_type_code || "vat_included";
     var fee = adminFeeApplies(payCode);
     return {
       current_2526: cur,
       choices_2627: {
-        billing_mode: "private",
+        billing_mode: isDirectPayments(fundCode) ? "direct_payments" : "private",
         funding_code: fundCode,
         funding_label: fundingLabel(fundCode, cur.funding),
         payment_method_code: payCode,
