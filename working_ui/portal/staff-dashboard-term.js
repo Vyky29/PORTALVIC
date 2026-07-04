@@ -341,6 +341,14 @@
       }
       if(stillRunning) return 'pending';
 
+      // HOME / MANAGER / Admin duty days (and days with no participant sessions) have
+      // nothing to review, so they count complete from the moment the day starts (never
+      // held orange until the shift end time).
+      const hasRealClientForDay = (typeof portalTermRosterHasRealClientSessions === 'function')
+        ? portalTermRosterHasRealClientSessions(relFb.length ? relFb : relAll, key)
+        : true;
+      if(!hasRealClientForDay) return 'complete';
+
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
         && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){

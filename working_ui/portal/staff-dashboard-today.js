@@ -908,7 +908,7 @@
         }
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
-      if(st === 'Home' || st === 'Manager'){
+      if(st === 'Home' || st === 'Manager' || st === 'Admin'){
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       if(st === 'Closed' && !openedClosed){
@@ -5094,6 +5094,9 @@
       function portalIsRealClientSession(s, sessionDateIsoForOpen){
         var status = (typeof sessionModelStatus === 'function') ? sessionModelStatus(s) : '';
         if(status === 'Available') return false;
+        // HOME / MANAGER / Admin are duty shifts, not participant sessions: they never
+        // need feedback and must not hold a day "still running" until the shift end time.
+        if(status === 'Home' || status === 'Manager' || status === 'Admin') return false;
         if(status === 'Closed'){
           var iso = String(sessionDateIsoForOpen || '').trim();
           if(iso && typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso)) return true;
