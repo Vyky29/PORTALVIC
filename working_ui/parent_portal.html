@@ -183,6 +183,7 @@
       min-width: 0;
     }
     .pp-card + .pp-card { margin-top: 12px; }
+    #ppStepHome .pp-card + .pp-card { margin-top: 0; }
     .pp-section-title {
       margin: 0 0 12px;
       font-size: 15px;
@@ -401,11 +402,18 @@
       gap: 10px;
       min-width: 0;
     }
+    #ppStepHome {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
     #ppStepHome > .pp-card,
     #ppStepHome > #ppContactBlock {
-      flex: 1;
+      flex: 0 0 auto;
       min-height: 0;
       min-width: 0;
+      width: 100%;
     }
     .pp-participant-head {
       display: flex;
@@ -810,23 +818,21 @@
         width: 100%;
       }
       #ppStepHome {
-        display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
+        display: flex;
+        flex-direction: column;
         gap: 16px;
-        align-items: stretch;
-      }
-      #ppStepHome > .pp-home-head {
-        grid-column: 1 / -1;
+        max-width: 560px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
       }
       #ppStepHome > .pp-card,
       #ppStepHome > #ppContactBlock {
         margin-top: 0;
-        height: 100%;
+        height: auto;
       }
-      .pp-card + .pp-card { margin-top: 0; }
       #ppChildList {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: 1fr;
       }
       .pp-child-card { padding: 18px; }
       .pp-child-row { grid-template-columns: minmax(0, 1fr) 64px auto; }
@@ -978,19 +984,6 @@
         </div>
       </div>
 
-      <div class="pp-card pp-reenrol-banner" id="ppReenrolBanner">
-        <h3 class="pp-section-title">
-          <span class="pp-title-inner">
-            <span class="pp-title-ico" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
-            </span>
-            <span>Re-enrolment 2026/27</span>
-          </span>
-        </h3>
-        <p class="pp-muted" style="margin:0 0 10px;overflow-wrap:break-word">Confirm next year&apos;s slots for each participant below.</p>
-        <a id="ppReenrolBannerLink" class="pp-btn pp-btn--primary pp-reenrol-link" href="/parent/re-enrolment?from=portal" style="display:inline-flex;text-decoration:none;margin:0">Open re-enrolment form</a>
-      </div>
-
       <div class="pp-card">
         <h3 class="pp-section-title">
           <span class="pp-title-inner">
@@ -1001,6 +994,19 @@
           </span>
         </h3>
         <div id="ppChildList"></div>
+      </div>
+
+      <div class="pp-card pp-reenrol-banner" id="ppReenrolBanner">
+        <h3 class="pp-section-title">
+          <span class="pp-title-inner">
+            <span class="pp-title-ico" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+            </span>
+            <span>Re-enrolment 2026/27</span>
+          </span>
+        </h3>
+        <p class="pp-muted" style="margin:0 0 10px;overflow-wrap:break-word">Confirm next year&apos;s slots for each participant above.</p>
+        <a id="ppReenrolBannerLink" class="pp-btn pp-btn--primary pp-reenrol-link" href="/parent/re-enrolment?from=portal" style="display:inline-flex;text-decoration:none;margin:0">Open re-enrolment form</a>
       </div>
 
       <div class="pp-card" id="ppContactBlock"></div>
@@ -1030,7 +1036,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
   <script src="/portal/parent_portal_participant.js?v=20260704-unread-msgs"></script>
-  <script src="/portal/parent_portal_app.js?v=20260704-reenrol-skip"></script>
+  <script src="/portal/parent_portal_app.js?v=20260704-home-layout"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
