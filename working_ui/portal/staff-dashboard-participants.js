@@ -1103,6 +1103,7 @@
     function portalShadowingHostQuickMenuCard(row, staffId, staffDisplayName){
       const iso = normaliseIsoDate(row && row.session_date);
       if(!iso) return null;
+      const sid = portalNormKeyStr(staffId);
       const shadowerName = typeof portalStaffProfileFirstName === 'function'
         ? portalStaffProfileFirstName(row.anchor_staff_id)
         : String(row.anchor_staff_id || '').trim();
@@ -1123,7 +1124,6 @@
       if(locLabel) subParts.push(locLabel);
       const host = portalShadowingTrainerDisplayName(pl && pl.trainer);
       if(host) subParts.push(host);
-      const sid = portalNormKeyStr(staffId);
       return {
         id: portalShadowingHostOverrideDismissKey(row, sid),
         iso: iso,
