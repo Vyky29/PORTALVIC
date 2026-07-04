@@ -142,6 +142,15 @@
         if (info) art.appendChild(info);
         if (weeks) art.appendChild(weeks);
       }
+      // Preview only: short month labels (e.g. "Sep 2026") so they fit on one line.
+      var labels = art.querySelectorAll(".dc-cal-month__label");
+      Array.prototype.forEach.call(labels, function (el) {
+        var parts = String(el.textContent || "").trim().split(/\s+/);
+        if (parts.length && parts[0].length > 3) {
+          parts[0] = parts[0].slice(0, 3);
+          el.textContent = parts.join(" ");
+        }
+      });
       panel.appendChild(art);
       wrap.appendChild(panel);
       try {
