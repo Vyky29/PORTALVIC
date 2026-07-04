@@ -10,6 +10,34 @@
   var RE_ENROL_DEADLINE_ISO = "2026-07-17";
   var RE_ENROL_DEADLINE_LABEL = "Friday 17 July 2026";
 
+  /** Bank transfer · flexi term: 2 payments per term (before half term + half-term week). */
+  var RE_PAY_FLEXI_TERM = [
+    {
+      term: "autumn",
+      termLabel: "Autumn term",
+      halves: [
+        { halfLabel: "1st half", due: "1 September 2026" },
+        { halfLabel: "2nd half", due: "Monday 26 October 2026" },
+      ],
+    },
+    {
+      term: "spring",
+      termLabel: "Spring term",
+      halves: [
+        { halfLabel: "1st half", due: "1 January 2027" },
+        { halfLabel: "2nd half", due: "Monday 15 February 2027" },
+      ],
+    },
+    {
+      term: "summer",
+      termLabel: "Summer term",
+      halves: [
+        { halfLabel: "1st half", due: "1 April 2027" },
+        { halfLabel: "2nd half", due: "Monday 31 May 2027" },
+      ],
+    },
+  ];
+
   var state = {
     step: "identify",
     lookup: null,
@@ -378,7 +406,7 @@
         "<strong>Submit by " +
         esc(RE_ENROL_DEADLINE_LABEL) +
         "</strong> — the last day of After-School &amp; Weekends for 2025/26. " +
-        "Payments are separate: bank transfers are due on the <strong>1st of each month</strong> from September; direct payment follows the schedule you choose below." +
+        "Payments are separate: choose your billing plan below — bank transfer or direct payment." +
         "</div>"
       );
     }
@@ -395,7 +423,10 @@
     return "1 " + monthYear;
   }
 
-  function paymentPreviewNote(payCode) {
+  function paymentPreviewNote(payCode, schedCode) {
+    if (payCode === "bank_transfer" && schedCode === "term_flexi") {
+      return "Same programme total — two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
+    }
     if (payCode === "bank_transfer") {
       return "Same programme total — bank transfers due on the 1st of each month from September 2026. The office confirms your final invoice plan before term starts.";
     }
@@ -442,6 +473,18 @@
         due: dueOnFirst("March 2027"),
         amount: amt(termProgrammeTotal(data, "summer")),
       });
+    } else if (schedCode === "term_flexi") {
+      RE_PAY_FLEXI_TERM.forEach(function (t) {
+        var termTotal = termProgrammeTotal(data, t.term);
+        var halfAmt = termTotal / 2;
+        t.halves.forEach(function (h) {
+          rows.push({
+            label: t.termLabel + " · " + h.halfLabel,
+            due: h.due,
+            amount: amt(halfAmt),
+          });
+        });
+      });
     } else if (schedCode === "monthly_10") {
       var monthly = annual / 10;
       var months = [
@@ -469,7 +512,7 @@
       '<div class="re-pay-preview">' +
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
       '<p class="re-muted re-pay-preview__note">' +
-      esc(paymentPreviewNote(payCode)) +
+      esc(paymentPreviewNote(payCode, schedCode)) +
       "</p>" +
       '<ul class="re-pay-preview-list">' +
       rows
@@ -876,7 +919,8 @@
   var RE_SCHEDULE_OPTIONS = {
     bank_transfer: [
       { code: "yearly_1off", label: "All year — one payment" },
-      { code: "term_3", label: "Flexible — pay each term" },
+      { code: "term_3", label: "Pay each term — one payment" },
+      { code: "term_flexi", label: "Flexi term — 2 payments per term" },
     ],
     gocardless: [
       { code: "monthly_10", label: "All year — 10 monthly payments" },
@@ -890,6 +934,9 @@
     }
     if (code === "monthly_10") {
       return "Year agreement with 10 payments on the 1st of each month, September–June, by direct payment — same programme total.";
+    }
+    if (code === "term_flexi") {
+      return "Six bank transfers over the year — two per term: before half term starts, and during half-term week before the second half. Same programme total.";
     }
     if (code === "term_3" && payCode === "gocardless") {
       return "Three term payments on 1 September, 1 December and 1 March by direct payment — same programme total over the year.";
@@ -924,6 +971,9 @@
     }
     if (s.includes("whole year") || s.includes("1 off") || s.includes("one invoice") || s.includes("yearly")) {
       return "yearly_1off";
+    }
+    if (s.includes("flexi") || s.includes("2 payment") || s.includes("half term") || s.includes("halves")) {
+      return "term_flexi";
     }
     return "term_3";
   }
@@ -1160,7 +1210,13 @@
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee: fee && annualTotal > 0 ? moneyWithAdminFee(annualTotal) : null,
         billing_schedule:
-          scheduleCode === "yearly_1off" ? "yearly" : scheduleCode === "monthly_10" ? "monthly" : "term",
+          scheduleCode === "yearly_1off"
+            ? "yearly"
+            : scheduleCode === "monthly_10"
+              ? "monthly"
+              : scheduleCode === "term_flexi"
+                ? "term_flexi"
+                : "term",
       },
     };
   }
