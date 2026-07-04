@@ -2155,7 +2155,7 @@
     var termBtn = $("reTermDatesBtn");
     if (termBtn) {
       termBtn.addEventListener("click", function () {
-        openStaffCalendarModal("Term dates 2026/27", "dcCalSessionsPanel");
+        openStaffCalendarModal("", "dcCalSessionsPanel");
       });
     }
     var dcBtn = $("reDayCentreDatesBtn");
