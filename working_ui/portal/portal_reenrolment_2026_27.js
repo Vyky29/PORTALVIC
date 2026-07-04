@@ -724,7 +724,6 @@
     var name = participantDisplayName(data);
     var url = resolveAvatarUrl(data);
     var initials = esc(participantInitials(name));
-    var ageLine = participantAgeLabel(data);
     var gCls =
       typeof global.portalParticipantGenderClass === "function"
         ? global.portalParticipantGenderClass(name, "re-head-photo--")
@@ -748,7 +747,6 @@
       '<p class="re-participant-name">' +
       esc(name) +
       "</p>" +
-      (ageLine ? '<p class="re-participant-age">' + esc(ageLine) + "</p>" : "") +
       "</div>"
     );
   }
