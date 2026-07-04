@@ -29,22 +29,16 @@ WordPress ya usa `www.clubsensational.org`. Para que `/parent` y `/parents` abra
 
 ### Opción A — Plugin WordPress (recomendada, ~2 min)
 
-En el repo: `wordpress/clubsensational-family-portal-redirect/`
+En el repo: `wordpress/clubsensational-family-portal-redirect/` (v1.2+ = **proxy**, URL se queda en `www.clubsensational.org/parent`)
 
 1. Comprimir la carpeta en ZIP o subirla por FTP a `wp-content/plugins/`
-2. WordPress → **Plugins** → activar **clubSENsational Family Portal Redirect**
+2. WordPress → **Plugins** → activar **clubSENsational Family Portal Proxy**
 3. Probar:
-   - https://www.clubsensational.org/parent
-   - https://www.clubsensational.org/parents → mismo destino
+   - https://www.clubsensational.org/parent — portal carga **sin cambiar** la URL
+   - https://www.clubsensational.org/parents → mismo contenido
    - https://www.clubsensational.org/parent/re-enrolment
 
-Por defecto redirige a `https://portalvic.vercel.app/parent`. Cuando exista subdominio limpio, añadir en `functions.php` del tema hijo:
-
-```php
-add_filter('cs_family_portal_origin', function () {
-  return 'https://family.clubsensational.org/parent';
-});
-```
+El plugin hace **reverse proxy** desde `family.clubsensational.org` (Vercel). Requiere DNS **A** `family` → `76.76.21.21`.
 
 ### Opción B — Redirección WordPress (plugin Redirection)
 

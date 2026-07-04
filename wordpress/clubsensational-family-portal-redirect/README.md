@@ -1,44 +1,28 @@
-# WordPress — activar family portal en clubsensational.org
+# clubSENsational Family Portal — WordPress proxy
 
-## Qué hace
+Sirve **https://www.clubsensational.org/parent** en tu dominio (la URL **no cambia** en el navegador).
 
-Redirige estas rutas de WordPress al portal Vercel:
+Proxies desde `family.clubsensational.org` (Vercel):
 
-- `/parent` → portal familiar
-- `/parents` → `/parent` (misma app)
-- `/parent/re-enrolment`, `/parent/registration`, etc.
+- `/parent`, `/parents`, `/parent/*`
+- `/portal/*` (JS, CSS, imágenes)
+- `/portal-static-bootstrap.js`, manifest PWA, etc.
 
 ## Instalación
 
-1. Copia la carpeta `clubsensational-family-portal-redirect` a:
-   ```
-   wp-content/plugins/clubsensational-family-portal-redirect/
-   ```
-2. WordPress admin → **Plugins** → **Activate** “clubSENsational Family Portal Redirect”
-3. Prueba en el navegador:
-   - https://www.clubsensational.org/parent
-   - https://www.clubsensational.org/parents
+1. Sube la carpeta a `wp-content/plugins/clubsensational-family-portal-redirect/`
+2. Activa **clubSENsational Family Portal Proxy**
+3. Prueba: https://www.clubsensational.org/parent — debe cargar el portal **sin** redirigir a portalvic ni family
 
-Deberías acabar en `portalvic.vercel.app/parent` (302) hasta que configures subdominio limpio.
+## Requisitos
 
-## Cambiar destino (subdominio futuro)
+- Registro DNS **A** `family` → `76.76.21.21` (Vercel) — ya configurado
+- `https://family.clubsensational.org/parent` debe responder 200 (upstream del proxy)
 
-En el tema hijo `functions.php`:
+## Cambiar upstream
 
 ```php
-add_filter('cs_family_portal_origin', function () {
-    return 'https://family.clubsensational.org/parent';
+add_filter('cs_family_portal_upstream', function () {
+    return 'https://family.clubsensational.org';
 });
-```
-
-## Sin plugin (LiteSpeed / Apache)
-
-Añadir antes de las reglas de WordPress en `.htaccess`:
-
-```apache
-RewriteEngine On
-RewriteRule ^parents/?$ https://portalvic.vercel.app/parent [R=302,L,QSA]
-RewriteRule ^parents/(.+)$ https://portalvic.vercel.app/parent/$1 [R=302,L,QSA]
-RewriteRule ^parent/?$ https://portalvic.vercel.app/parent [R=302,L,QSA]
-RewriteRule ^parent/(.+)$ https://portalvic.vercel.app/parent/$1 [R=302,L,QSA]
 ```

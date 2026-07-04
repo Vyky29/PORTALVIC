@@ -1,46 +1,139 @@
 <?php
 /**
- * Plugin Name: clubSENsational Family Portal Redirect
- * Description: Sends /parent and /parents (and subpaths) to the Vercel family portal.
- * Version: 1.1.0
+ * Plugin Name: clubSENsational Family Portal Proxy
+ * Description: Serves /parent on www.clubsensational.org via reverse proxy (URL stays on your domain).
+ * Version: 1.2.0
  * Author: clubSENsational
  *
- * Upload this folder to wp-content/plugins/ and activate in WordPress admin.
- * Default target: family.clubsensational.org (Vercel portalvic).
+ * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-add_action('template_redirect', 'cs_family_portal_redirect', 1);
+add_action('plugins_loaded', 'cs_family_portal_early_proxy', 1);
 
-function cs_family_portal_redirect(): void
+function cs_family_portal_upstream_origin(): string
+{
+    return rtrim((string) apply_filters('cs_family_portal_upstream', 'https://family.clubsensational.org'), '/');
+}
+
+function cs_family_portal_should_proxy(string $path): bool
+{
+    $path = '/' . trim($path, '/');
+    if ($path === '/') {
+        return false;
+    }
+
+    $patterns = [
+        '#^/parent(?:/|$)#',
+        '#^/parents(?:/|$)#',
+        '#^/portal/#',
+        '#^/portal-static-bootstrap\.js$#',
+        '#^/clubsensational-family\.webmanifest$#',
+        '#^/re-enrolment/?$#',
+        '#^/climbing-registration/?$#',
+        '#^/registration-form/?$#',
+    ];
+
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $path)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function cs_family_portal_map_path(string $path): string
+{
+    $path = '/' . trim($path, '/');
+
+    if (preg_match('#^/parents(?:/(.*))?$#', $path, $m)) {
+        $rest = isset($m[1]) ? trim((string) $m[1], '/') : '';
+        return $rest === '' ? '/parent' : '/parent/' . $rest;
+    }
+
+    return $path === '/' ? '/parent' : $path;
+}
+
+function cs_family_portal_early_proxy(): void
 {
     if (is_admin() || wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
         return;
     }
 
-    $path = trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
-    if ($path === '') {
+    $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?: '/');
+
+    if (!cs_family_portal_should_proxy($path)) {
         return;
     }
 
-    $base = rtrim(apply_filters('cs_family_portal_origin', 'https://family.clubsensational.org/parent'), '/');
-    $query = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
+    $query = (string) (parse_url($requestUri, PHP_URL_QUERY) ?: '');
+    $mapped = cs_family_portal_map_path($path);
+    $url = cs_family_portal_upstream_origin() . $mapped . ($query !== '' ? '?' . $query : '');
 
-    if ($path === 'parent' || $path === 'parents') {
-        wp_redirect($base . $query, 302);
+    $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    $headers = [
+        'Accept' => (string) ($_SERVER['HTTP_ACCEPT'] ?? '*/*'),
+        'Accept-Encoding' => 'identity',
+    ];
+
+    $args = [
+        'method' => $method,
+        'timeout' => 45,
+        'redirection' => 0,
+        'headers' => $headers,
+    ];
+
+    if ($method !== 'GET' && $method !== 'HEAD') {
+        $raw = file_get_contents('php://input');
+        if ($raw !== false && $raw !== '') {
+            $args['body'] = $raw;
+        }
+        if (!empty($_SERVER['CONTENT_TYPE'])) {
+            $args['headers']['Content-Type'] = (string) $_SERVER['CONTENT_TYPE'];
+        }
+    }
+
+    $response = wp_remote_request($url, $args);
+
+    if (is_wp_error($response)) {
+        status_header(502);
+        nocache_headers();
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Family portal temporarily unavailable. Please try again in a moment.';
         exit;
     }
 
-    if (preg_match('#^parents/(.+)$#', $path, $m)) {
-        wp_redirect($base . '/' . $m[1] . $query, 302);
-        exit;
+    $code = (int) wp_remote_retrieve_response_code($response);
+    if ($code < 100) {
+        $code = 502;
     }
 
-    if (preg_match('#^parent/(.+)$#', $path, $m)) {
-        wp_redirect($base . '/' . $m[1] . $query, 302);
-        exit;
+    status_header($code);
+    nocache_headers();
+
+    $respHeaders = wp_remote_retrieve_headers($response);
+    $forward = ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified', 'content-disposition'];
+
+    foreach ($forward as $name) {
+        $val = null;
+        if (is_array($respHeaders)) {
+            $val = $respHeaders[$name] ?? null;
+        } elseif (is_object($respHeaders) && isset($respHeaders[$name])) {
+            $val = $respHeaders[$name];
+        }
+        if ($val !== null && $val !== '') {
+            header($name . ': ' . $val);
+        }
     }
+
+    if ($method !== 'HEAD') {
+        echo wp_remote_retrieve_body($response);
+    }
+
+    exit;
 }
