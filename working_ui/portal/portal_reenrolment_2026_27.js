@@ -605,7 +605,7 @@
       "<h4>2026/27 billing preferences</h4>" +
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
-      ' <span class="re-muted">(weekly activities kept as now · excl. Day Centre)</span></p>' +
+      "</p>" +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Funding</legend>' +
       renderFundingRadios(fundDefault) +
