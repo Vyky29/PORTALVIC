@@ -32,6 +32,53 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** Same stroke icons as admin participant workspace tabs (photo 2). */
+  var RE_ICON_SVGS = {
+    registers:
+      '<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/>',
+    photo:
+      '<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>',
+    billing:
+      '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+    services:
+      '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+    daycentre:
+      '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/>',
+    calendar:
+      '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    contact:
+      '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+    submit:
+      '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
+  };
+
+  function reIconSvg(key) {
+    var inner = RE_ICON_SVGS[key];
+    if (!inner) return "";
+    return (
+      '<span class="re-title-ico" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg></span>"
+    );
+  }
+
+  function reSectionTitle(tag, iconKey, textHtml) {
+    tag = tag || "h3";
+    return (
+      "<" +
+      tag +
+      ' class="re-section-title">' +
+      '<span class="re-section-title__inner">' +
+      reIconSvg(iconKey) +
+      '<span class="re-section-title__text">' +
+      textHtml +
+      "</span></span></" +
+      tag +
+      ">"
+    );
+  }
+
   function supabaseUrl() {
     return String(global.SUPABASE_URL || "").replace(/\/$/, "");
   }
@@ -149,7 +196,7 @@
       imgHtml +
       "</div>" +
       '<div class="re-photo-actions">' +
-      "<h3>Participant photo</h3>" +
+      reSectionTitle("h3", "photo", "Participant photo") +
       '<p class="re-muted">Used in the family portal and internal records. Previous photos are kept for admin use.</p>' +
       '<input type="file" id="rePhotoInput" accept="image/jpeg,image/png,image/webp,image/*" hidden />' +
       '<div class="re-photo-btns">' +
@@ -437,7 +484,7 @@
       .join("");
     return (
       '<section class="re-section re-section--dc">' +
-      "<h3>Day Centre — SwimFarm</h3>" +
+      reSectionTitle("h3", "daycentre", "Day Centre — SwimFarm") +
       '<p class="re-muted">' +
       esc(dc.note || "Fees agreed with your funder — not shown here.") +
       "</p>" +
@@ -459,7 +506,7 @@
     var prices = crash.indicativePrices || {};
     return (
       '<section class="re-section re-section--info">' +
-      "<h3>Calendar &amp; crash courses</h3>" +
+      reSectionTitle("h3", "calendar", "Calendar &amp; crash courses") +
       '<p class="re-muted">Term dates and session counts for 2026/27:</p>' +
       '<p><a class="re-link" href="' +
       esc(data.calendar_url || "/portal/day-centre-calendar-2026-27-section.html") +
@@ -502,9 +549,7 @@
       existing +
       renderOutstandingBanner(data) +
       '<section class="re-section re-head-section">' +
-      "<h2>Re-enrolment " +
-      esc(ACADEMIC_YEAR.replace("-", "/")) +
-      "</h2>" +
+      reSectionTitle("h2", "registers", "Re-enrolment " + esc(ACADEMIC_YEAR.replace("-", "/"))) +
       '<p class="re-participant-name">' +
       esc(participantDisplayName(data)) +
       "</p>" +
@@ -512,11 +557,11 @@
       "</section>" +
       renderPhotoSection(data) +
       '<section class="re-section">' +
-      "<h3>Funding &amp; billing</h3>" +
+      reSectionTitle("h3", "billing", "Funding &amp; billing") +
       renderFundingBlock(data) +
       "</section>" +
       '<section class="re-section">' +
-      "<h3>Weekly &amp; weekend activities</h3>" +
+      reSectionTitle("h3", "services", "Weekly &amp; weekend activities") +
       '<p class="re-muted">Prices per session · term session counts already exclude bank holidays.</p>' +
       renderWeeklySlots(data.weekly_slots || []) +
       (data.annual_weekly_total
@@ -528,14 +573,14 @@
       renderDayCentre(data.day_centre) +
       renderInfoPanel(data) +
       '<section class="re-section">' +
-      "<h3>Contact for this submission</h3>" +
+      reSectionTitle("h3", "contact", "Contact for this submission") +
       '<label class="re-label">Email (optional)</label>' +
       '<input id="reContactEmail" class="re-input" type="email" maxlength="200" autocomplete="email" />' +
       '<label class="re-label">Mobile (optional)</label>' +
       '<input id="reContactPhone" class="re-input" type="tel" maxlength="40" autocomplete="tel" />' +
       "</section>" +
       '<section class="re-section re-declarations">' +
-      "<h3>Confirm &amp; submit</h3>" +
+      reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
       '<label class="re-check"><input id="reDeclTerms" type="checkbox" /> I understand that slot changes are subject to availability and outstanding balances remain payable.</label>' +
       '<button id="reSubmitBtn" class="re-btn re-btn--primary" type="button">Submit re-enrolment</button>' +
