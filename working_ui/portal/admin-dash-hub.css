@@ -1782,6 +1782,17 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   box-sizing:border-box;
   text-align:center;
 }
+.ops-hub__today-item--alerts{
+  cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.ops-hub__today-item--alerts:hover,
+.ops-hub__today-item--alerts:focus-visible{
+  border-color:#93c5fd;
+  background:#f8fafc;
+  box-shadow:0 0 0 1px rgba(45,132,179,.12);
+  outline:none;
+}
 .ops-hub__today-k{
   font-size:10px;
   font-weight:800;

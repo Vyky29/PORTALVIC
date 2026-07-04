@@ -25,7 +25,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260703-v10-ops-alerts" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260704-ops-alerts-header" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
@@ -92,7 +92,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-search-combo" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-admin-alerts-pop" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -293,7 +293,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260704-admin-alerts-no-absents"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -20233,29 +20233,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '\u2014';
     }
 
-    function opsHubAlertsAsideInnerHtml(){
-      var list = typeof window.portalAdminBellPrepareForRender === 'function'
-        ? window.portalAdminBellPrepareForRender()
-        : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
-      if(!list.length){
-        return '<p class="muted ops-hub-aside-empty">No incidents, cancellations, absents, or approval requests right now.</p>';
-      }
-      return list.slice(0, 14).map(function(a, idx){
-        var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
-        var meta = '';
-        if(a.recordId) meta += ' data-alert-record-id="'+esc(a.recordId)+'"';
-        if(a.clientName) meta += ' data-alert-client="'+esc(a.clientName)+'"';
-        if(a.sessionDate) meta += ' data-alert-date="'+esc(a.sessionDate)+'"';
-        return (
-          '<button type="button" class="ops-hub-alert-row portal-admin-activity-alert" data-ops-hub-alert-idx="'+idx+'"'+jump+meta+'>'+
-            '<span class="ops-hub-alert-row__main"><strong>'+esc(a.title || 'Alert')+'</strong>'+
-            '<span class="muted">'+esc(a.sub || '')+'</span></span>'+
-            '<span class="chip chip--info">'+esc(a.t || portalAdminAlertTimeLabel(a.created_at))+'</span>'+
-          '</button>'
-        );
-      }).join('');
-    }
-
     function opsHubConnectedAsideInnerHtml(){
       var list = opsHubConnectedStaffList();
       if(!list.length){
@@ -20272,14 +20249,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function opsHubAsideHtml(){
       return (
-        '<aside class="ops-hub__aside" aria-label="Live alerts and connected staff">'+
-          '<div class="ops-hub-aside-card">'+
-            '<div class="ops-hub-aside-card__head">'+
-              '<h3 class="ops-hub-aside-card__title">Alerts</h3>'+
-              '<span class="ops-hub-aside-card__count" id="opsHubAlertsCount">0</span>'+
-            '</div>'+
-            '<div class="ops-hub-aside-card__body" id="opsHubAlertsHost">'+opsHubAlertsAsideInnerHtml()+'</div>'+
-          '</div>'+
+        '<aside class="ops-hub__aside" aria-label="Connected staff">'+
           '<div class="ops-hub-aside-card ops-hub-aside-card--connected">'+
             '<div class="ops-hub-aside-card__head">'+
               '<h3 class="ops-hub-aside-card__title">Gente conectada</h3>'+
@@ -20293,10 +20263,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function opsHubPatchLiveAside(){
       if(state.view !== 'nav_hub' || state.navHubGroup) return;
-      var alertsHost = $('opsHubAlertsHost');
-      if(alertsHost) alertsHost.innerHTML = opsHubAlertsAsideInnerHtml();
-      var countEl = $('opsHubAlertsCount');
-      if(countEl) countEl.textContent = String(opsHubGlanceValueAlerts());
       var connHost = $('opsHubConnectedHost');
       if(connHost) connHost.innerHTML = opsHubConnectedAsideInnerHtml();
       var connCount = $('opsHubConnectedCount');
@@ -20305,38 +20271,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         connCount.textContent = String(n);
         connCount.hidden = n < 1;
       }
-      var todayOnline = document.querySelector('.ops-hub__today-item .ops-hub__today-v');
-      /* glance strip refreshed on full rerender only */
     }
     window.opsHubPatchLiveAside = opsHubPatchLiveAside;
 
-    function bindOpsHubAsideAlerts(){
-      document.querySelectorAll('[data-ops-hub-alert-idx]').forEach(function(btn){
-        if(btn.dataset.opsHubAlertBound === '1') return;
-        btn.dataset.opsHubAlertBound = '1';
-        btn.addEventListener('click', function(){
-          var idx = parseInt(btn.getAttribute('data-ops-hub-alert-idx'), 10);
-          var acts = typeof window.portalAdminBellPrepareForRender === 'function'
-            ? window.portalAdminBellPrepareForRender()
-            : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
-          var a = acts[idx];
-          if(!a || !a.view) return;
-          portalAdminOpenActivityAlert({
-            view: a.view,
-            recordId: a.recordId || '',
-            clientName: a.clientName || '',
-            sessionDate: a.sessionDate || ''
-          });
-        });
-      });
-    }
-
     function bindNavHubLive(){
-      bindOpsHubAsideAlerts();
       portalAdminMountLivePresenceBar();
+      var alertsGlance = $('opsHubAlertsGlance');
+      if(alertsGlance && !alertsGlance.dataset.bound){
+        alertsGlance.dataset.bound = '1';
+        function openAlertsFromGlance(ev){
+          if(ev) ev.preventDefault();
+          var ap = $('alertsPop');
+          if(ap && !ap.classList.contains('open') && typeof toggleAlerts === 'function'){
+            toggleAlerts();
+          }else if(ap && typeof toggleAlerts === 'function'){
+            toggleAlerts();
+          }
+        }
+        alertsGlance.addEventListener('click', openAlertsFromGlance);
+        alertsGlance.addEventListener('keydown', function(ev){
+          if(ev.key === 'Enter' || ev.key === ' '){
+            openAlertsFromGlance(ev);
+          }
+        });
+      }
       void portalAdminBootstrapActivityAlerts().finally(function(){
         opsHubPatchLiveAside();
-        bindOpsHubAsideAlerts();
       });
     }
     function opsHubGlanceHtml(){
@@ -20352,7 +20312,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="ops-hub__today" role="region" aria-label="Today at a glance">' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
-        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Unread items</span></div>' +
+        '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
+        '<span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Gente conectada ahora</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
         '</div>'
@@ -25726,6 +25687,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return;
       }
+      if(tab === 'c4k_late_submissions'){
+        setView('c4k_late_submissions');
+        return;
+      }
+      if(tab === 'absents'){
+        return;
+      }
       if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents'){
         if(tab.indexOf('portal_docs_') === 0){
           window.__portalDocsPresetFilter = tab.slice('portal_docs_'.length);
@@ -25938,23 +25906,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a, { silent: true });
             }
           });
-          var absentRows = bundle.absents || [];
-          if(absentRows.length){
-            var absentStaffIds = [];
-            var absentStaffSeen = {};
-            absentRows.forEach(function(r){
-              var sid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-              if(sid && !absentStaffSeen[sid]){ absentStaffSeen[sid] = true; absentStaffIds.push(sid); }
-            });
-            var absentNameByStaff = await portalAdminStaffNamesById(client, absentStaffIds);
-            absentRows.forEach(function(r){
-              var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-              var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
-              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-                window.portalAdminPushActivityAlert(a, { silent: true });
-              }
-            });
-          }
           if(bundle.late_requests && bundle.late_requests.length){
             bundle.late_requests.forEach(function(r){
               if(String(r.status || '').toLowerCase() !== 'pending') return;
@@ -25992,7 +25943,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.__portalAdminRenderAlerts === 'function'){
           window.__portalAdminRenderAlerts();
         }
-        try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHub){}
+        try{ opsHubPatchLiveAside(); }catch(_opsHub){}
       }catch(err){ console.warn('[admin] activity alerts bootstrap', err); }
     }
 
@@ -26054,25 +26005,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
           })
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_staff_session_quick_marks' }, function(payload){
-            var row = payload && payload.new;
-            if(!row || String(row.mark_type || '').trim() !== 'absent') return;
-            void (async function(){
-              var staffName = '';
-              try{
-                if(row.staff_user_id && client){
-                  var spRes = await client.from('staff_profiles').select('full_name,username').eq('id', row.staff_user_id).maybeSingle();
-                  if(!spRes.error && spRes.data){
-                    staffName = String(spRes.data.full_name || spRes.data.username || '').trim();
-                  }
-                }
-              }catch(_sp){}
-              var a = portalAdminActivityFromAbsentMark(row, staffName);
-              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-                window.portalAdminPushActivityAlert(a);
-              }
-            })();
-          })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
             var row = payload && payload.new;
             if(typeof window.portalAdminBellOnWellbeingNotificationInsert === 'function'){
@@ -26125,7 +26057,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, absents, or approval requests right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, expenses, or wellbeing requests right now.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
@@ -26145,7 +26077,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         portalAdminDeferDayOpsBadgesRefresh();
       }catch(_badgeBell){}
-      try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHubBell){}
+      try{ opsHubPatchLiveAside(); }catch(_opsHubBell){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 
@@ -26692,6 +26624,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var btn = ev.target && ev.target.closest ? ev.target.closest('[data-alert-view]') : null;
           if(!btn || !alertsPopEl.contains(btn)) return;
+          ev.preventDefault();
+          ev.stopPropagation();
           var v = String(btn.getAttribute('data-alert-view') || '').trim();
           if(!v) return;
           alertsPopEl.classList.remove('open');
@@ -26706,9 +26640,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         });
       }
-      document.addEventListener('click', function(){
+      document.addEventListener('click', function(ev){
         var ap = $('alertsPop');
-        if(ap) ap.classList.remove('open');
+        if(!ap || !ap.classList.contains('open')) return;
+        if(ev.target && ev.target.closest && (ev.target.closest('#btnAlerts') || ev.target.closest('#alertsPop') || ev.target.closest('#opsHubAlertsGlance'))) return;
+        ap.classList.remove('open');
       });
       var apEl = $('alertsPop');
       if(apEl) apEl.addEventListener('click', function(e){ e.stopPropagation(); });

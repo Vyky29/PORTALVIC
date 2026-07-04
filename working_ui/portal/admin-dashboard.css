@@ -3221,7 +3221,7 @@
     .spark{display:flex;align-items:flex-end;gap:3px;height:36px;margin-top:8px}
     .spark>i{flex:1;border-radius:3px;background:var(--blueSoft);border:1px solid rgba(45,132,179,.2);min-height:4px}
     .alerts-pop{
-      position:fixed;z-index:11800;top:max(12px,env(safe-area-inset-top,0px));right:20px;width:min(360px,calc(100vw - 32px));background:var(--surface);
+      position:fixed;z-index:12050;top:max(calc(var(--topH, 56px) + 8px),env(safe-area-inset-top,0px));right:20px;width:min(360px,calc(100vw - 32px));background:var(--surface);
       border:1px solid var(--line);border-radius:var(--radiusLg);box-shadow:var(--shadow);display:none;max-height:min(400px,70dvh);overflow:auto;
     }
     .alerts-pop.open{display:block}
