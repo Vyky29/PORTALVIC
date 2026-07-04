@@ -199,6 +199,28 @@
     });
   }
 
+  function parentPortalHref() {
+    return "/parent/app";
+  }
+
+  function syncPortalBackUi() {
+    var back = $("reBackLink");
+    if (back) {
+      back.textContent =
+        state.fromPortal || state.portalSession ? "← Back to portal" : "← Back";
+    }
+    var modalBack = $("reInfoModalPortalBack");
+    if (modalBack) modalBack.href = parentPortalHref();
+  }
+
+  function patchStaffCalendarPortalBack(host) {
+    if (!host) return;
+    var backWrap = host.querySelector(".dc-cal__back-wrap");
+    if (!backWrap) return;
+    backWrap.innerHTML =
+      '<a class="dc-cal__back" href="' + esc(parentPortalHref()) + '">← Back to portal</a>';
+  }
+
   function readPortalSession() {
     try {
       var raw = localStorage.getItem(SESSION_KEY);
@@ -276,6 +298,7 @@
         if (!cid) return;
         state.contactId = cid;
         state.fromPortal = true;
+        syncPortalBackUi();
         hideNotice($("reNotice"));
         showNotice($("reNotice"), "info", "Loading your programme…");
         void onLookup(null);
@@ -1860,9 +1883,11 @@
     }
     setInfoModalFullscreen(true);
     modal.hidden = false;
+    syncPortalBackUi();
     var host = $("reStaffCalendarHost");
     if (host && typeof global.portalLoadCalendar202627Into === "function") {
       void global.portalLoadCalendar202627Into(host).then(function () {
+        patchStaffCalendarPortalBack(host);
         selectStaffCalendarTab(bodyEl, calendarTab || "dcCalSessionsPanel");
       });
     } else if (host) {
@@ -1919,6 +1944,7 @@
     backdrop.innerHTML =
       '<div class="re-modal" role="dialog" aria-modal="true" aria-labelledby="reInfoModalTitle">' +
       '<div class="re-modal-head">' +
+      '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to portal</a>' +
       '<h3 id="reInfoModalTitle"></h3>' +
       '<button type="button" class="re-modal-close" id="reInfoModalClose">Close</button>' +
       "</div>" +
@@ -2207,6 +2233,7 @@
     }
 
     state.fromPortal = true;
+    syncPortalBackUi();
 
     if (state.contactId) {
       $("reIdentifyForm").hidden = true;
@@ -2253,6 +2280,7 @@
 
   function init() {
     bind();
+    syncPortalBackUi();
     if (readPortalSession()) {
       if ($("reIdentifyForm")) $("reIdentifyForm").hidden = true;
       if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
