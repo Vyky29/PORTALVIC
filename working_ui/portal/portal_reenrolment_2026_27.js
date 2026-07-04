@@ -733,21 +733,6 @@
     if (remove) remove.addEventListener("click", removeParticipantPhoto);
   }
 
-  function renderOutstandingBanner(data) {
-    var st = String(data.payment_status || "").toLowerCase();
-    var out = Number(data.outstanding_amount);
-    if (st.indexOf("outstanding") >= 0 || (Number.isFinite(out) && out > 0)) {
-      return (
-        '<div class="re-banner re-banner--warn" role="alert">' +
-        "<strong>Outstanding balance on file</strong>" +
-        (Number.isFinite(out) && out > 0 ? " — " + esc(money(out)) + " due." : ".") +
-        " Re-enrolment can still be submitted; the office will contact you about settlement." +
-        "</div>"
-      );
-    }
-    return "";
-  }
-
   function sumAnnualWeeklyTotal(slots) {
     if (!slots || !slots.length) return 0;
     var sum = 0;
@@ -1699,7 +1684,6 @@
     host.innerHTML =
       existing +
       renderReEnrolDeadlineBanner() +
-      renderOutstandingBanner(data) +
       '<div class="re-form-grid">' +
       '<section class="re-section re-head-section re-form-grid__head">' +
       reSectionTitle("h2", "registers", "Re-enrolment " + esc(ACADEMIC_YEAR.replace("-", "/"))) +
@@ -1726,7 +1710,7 @@
       '<section class="re-section re-declarations re-form-grid__submit">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
-      '<label class="re-check"><input id="reDeclTerms" type="checkbox" /> I understand that slot changes are subject to availability and outstanding balances remain payable.</label>' +
+      '<label class="re-check"><input id="reDeclTerms" type="checkbox" /> I understand that slot changes are subject to availability and club terms apply.</label>' +
       '<button id="reSubmitBtn" class="re-btn re-btn--primary re-btn--submit" type="button">Submit re-enrolment</button>' +
       "</section>" +
       "</div>";
