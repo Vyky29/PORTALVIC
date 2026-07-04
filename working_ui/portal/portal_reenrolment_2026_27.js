@@ -216,9 +216,20 @@
   function patchStaffCalendarPortalBack(host) {
     if (!host) return;
     var backWrap = host.querySelector(".dc-cal__back-wrap");
-    if (!backWrap) return;
-    backWrap.innerHTML =
-      '<a class="dc-cal__back" href="' + esc(parentPortalHref()) + '">← Back to portal</a>';
+    if (backWrap) backWrap.hidden = true;
+  }
+
+  function upgradeInfoModalChrome() {
+    var closeBtn = $("reInfoModalClose");
+    if (closeBtn) closeBtn.remove();
+    var head = document.querySelector("#reInfoModal .re-modal-head");
+    if (head && !$("reInfoModalPortalBack")) {
+      head.insertAdjacentHTML(
+        "afterbegin",
+        '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to portal</a>',
+      );
+    }
+    syncPortalBackUi();
   }
 
   function readPortalSession() {
@@ -496,8 +507,6 @@
         "</ul></div></li>",
       );
     }
-    addRefRow("user", "Participant", cur.participant_name || participantDisplayName(data));
-    addRefRow("age", "Age", cur.age ? cur.age + " years" : "");
     addRefServicesBlock((data && data.weekly_slots) || []);
     addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(cur.payment_method));
     addRefRow("wallet", "Funding", cur.funding);
@@ -536,10 +545,10 @@
     if (isReEnrolSubmissionOpen()) {
       return (
         '<div class="re-banner re-banner--deadline">' +
+        "Review your current programme and confirm for September 2026. " +
         "<strong>Submit by " +
         esc(RE_ENROL_DEADLINE_LABEL) +
-        "</strong> — the last day of After-School &amp; Weekends for 2025/26. " +
-        "Payments are separate: choose your billing plan below — bank transfer or direct payment." +
+        "</strong> — payments follow from September." +
         "</div>"
       );
     }
@@ -677,6 +686,61 @@
 
   function participantDisplayName(data) {
     return (data && data.participant && data.participant.display_name) || "";
+  }
+
+  function participantAgeLabel(data) {
+    var cur = data && data.current_arrangements_2526;
+    if (cur && cur.age != null && String(cur.age).trim()) {
+      var n = String(cur.age).trim();
+      return /\s*years?$/i.test(n) ? n : n + " years";
+    }
+    var dob = data && data.participant && data.participant.dob_iso;
+    if (dob) {
+      try {
+        var d = new Date(String(dob).slice(0, 10) + "T12:00:00");
+        var now = new Date();
+        var age = now.getFullYear() - d.getFullYear();
+        var m = now.getMonth() - d.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+        if (age >= 0) return age + " years";
+      } catch (_e) {}
+    }
+    var ageInput = $("reParticipantAge") && $("reParticipantAge").value;
+    if (ageInput) return String(ageInput).trim() + " years";
+    return "";
+  }
+
+  function renderParticipantHeadIdentity(data) {
+    var name = participantDisplayName(data);
+    var url = resolveAvatarUrl(data);
+    var initials = esc(participantInitials(name));
+    var ageLine = participantAgeLabel(data);
+    var gCls =
+      typeof global.portalParticipantGenderClass === "function"
+        ? global.portalParticipantGenderClass(name, "re-head-photo--")
+        : "";
+    var imgHtml = url
+      ? '<img class="re-head-photo__img" src="' +
+        esc(url) +
+        '" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.remove();this.parentElement.classList.remove(\'re-head-photo--has-img\');" />' +
+        '<span class="re-head-photo__init" aria-hidden="true">' +
+        initials +
+        "</span>"
+      : '<span class="re-head-photo__init" aria-hidden="true">' + initials + "</span>";
+    return (
+      '<div class="re-head-identity">' +
+      '<div class="re-head-photo' +
+      (url ? " re-head-photo--has-img" : "") +
+      gCls +
+      '">' +
+      imgHtml +
+      "</div>" +
+      '<p class="re-participant-name">' +
+      esc(name) +
+      "</p>" +
+      (ageLine ? '<p class="re-participant-age">' + esc(ageLine) + "</p>" : "") +
+      "</div>"
+    );
   }
 
   function resolveAvatarUrl(data) {
@@ -1872,6 +1936,7 @@
 
   function openStaffCalendarModal(title, calendarTab) {
     var modal = ensureInfoModal();
+    upgradeInfoModalChrome();
     var titleEl = $("reInfoModalTitle");
     var bodyEl = $("reInfoModalBody");
     if (titleEl) titleEl.textContent = title;
@@ -1894,8 +1959,8 @@
       host.innerHTML =
         '<p class="re-muted" style="margin:12px;">Could not load calendar. Please refresh and try again.</p>';
     }
-    var btn = $("reInfoModalClose");
-    if (btn) btn.focus();
+    var backLink = $("reInfoModalPortalBack");
+    if (backLink) backLink.focus();
   }
 
   function openInfoModal(title, bodyHtml, afterOpen) {
@@ -1908,8 +1973,8 @@
     modal.hidden = false;
     wireModalBodyLinks();
     if (typeof afterOpen === "function") afterOpen(bodyEl);
-    var btn = $("reInfoModalClose");
-    if (btn) btn.focus();
+    var backLink = $("reInfoModalPortalBack");
+    if (backLink) backLink.focus();
   }
 
   function wireModalBodyLinks() {
@@ -1946,13 +2011,10 @@
       '<div class="re-modal-head">' +
       '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to portal</a>' +
       '<h3 id="reInfoModalTitle"></h3>' +
-      '<button type="button" class="re-modal-close" id="reInfoModalClose">Close</button>' +
       "</div>" +
       '<div id="reInfoModalBody"></div>' +
       "</div>";
     document.body.appendChild(backdrop);
-    var closeBtn = $("reInfoModalClose");
-    if (closeBtn) closeBtn.addEventListener("click", closeInfoModal);
     document.addEventListener("keydown", function (ev) {
       if (ev.key !== "Escape") return;
       var modal = $("reInfoModal");
@@ -2004,16 +2066,11 @@
 
     host.innerHTML =
       existing +
-      renderReEnrolDeadlineBanner() +
       '<div class="re-form-grid">' +
       '<section class="re-section re-head-section re-form-grid__head">' +
       reSectionTitle("h2", "registers", "Re-enrolment " + esc(ACADEMIC_YEAR.replace("-", "/"))) +
-      '<p class="re-participant-name">' +
-      esc(participantDisplayName(data)) +
-      "</p>" +
-      '<p class="re-muted">Review your current programme and confirm for September 2026. Submit by ' +
-      esc(RE_ENROL_DEADLINE_LABEL) +
-      " — payments follow from September.</p>" +
+      renderParticipantHeadIdentity(data) +
+      renderReEnrolDeadlineBanner() +
       "</section>" +
       '<aside class="re-form-grid__side">' +
       renderCurrentArrangementsSide(data) +

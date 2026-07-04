@@ -68,6 +68,44 @@
     .re-section { min-width: 0; margin-bottom: 18px; }
     .re-section-title { margin: 0 0 8px; font-size: 1rem; color: var(--ink); min-width: 0; }
     .re-head-section .re-section-title { font-size: 1.1rem; }
+    .re-head-identity {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 0;
+      margin: 4px 0 12px;
+    }
+    .re-head-photo {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--blueSoft);
+      border: 2px solid rgba(45, 132, 179, .18);
+      display: grid;
+      place-items: center;
+      position: relative;
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+    .re-head-photo--m { background: #dbeafe; }
+    .re-head-photo--f { background: #fce7f3; }
+    .re-head-photo__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .re-head-photo__init {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .re-head-photo--has-img .re-head-photo__init { display: none; }
+    .re-head-section .re-banner--deadline { margin: 0; }
     .re-section-title__inner {
       display: inline-flex;
       align-items: center;
@@ -223,7 +261,14 @@
     .re-photo-status--error { color: var(--danger); font-weight: 700; }
     .re-photo-status--warn { color: var(--warn); font-weight: 700; }
     .re-photo-status--info { color: var(--blue); font-weight: 600; }
-    .re-participant-name { margin: 0 0 6px; font-size: 1.15rem; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
+    .re-participant-name { margin: 0 0 4px; font-size: 1.15rem; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
+    .re-participant-age {
+      margin: 0;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
     .re-muted { color: var(--muted); font-size: .88rem; margin: 0 0 8px; overflow-wrap: break-word; }
     .re-notice {
       padding: 12px 14px;
@@ -238,8 +283,13 @@
     .re-banner--warn { background: var(--warnSoft); border: 1px solid rgba(184,134,11,.25); }
     .re-banner--info { background: var(--blueSoft); }
     .re-banner--deadline {
-      background: linear-gradient(180deg, #fff 0%, var(--blueSoft) 100%);
-      border: 1px solid rgba(45, 132, 179, .22);
+      background: #dc2626;
+      border: 1px solid #b91c1c;
+      color: #fff;
+    }
+    .re-banner--deadline strong {
+      color: #fff;
+      font-weight: 800;
     }
     .re-slot-list { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .re-slot-card {
@@ -660,6 +710,13 @@
       justify-content: stretch;
       background: #fff;
     }
+    .re-modal-backdrop--fullscreen > .re-modal {
+      flex: 1 1 auto;
+      align-self: stretch;
+      width: 100%;
+      max-width: none;
+      min-width: 0;
+    }
     .re-modal {
       width: min(420px, 100%);
       max-height: min(85dvh, 520px);
@@ -684,7 +741,7 @@
     }
     .re-modal-head {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr);
       align-items: center;
       gap: 10px 12px;
       padding: 12px 16px;
@@ -754,6 +811,7 @@
     }
     .portal-calendar-2026-27-preview {
       min-width: 0;
+      width: 100%;
       background: #fff;
     }
     .re-modal--fullscreen .portal-calendar-2026-27-preview {
@@ -765,16 +823,13 @@
     }
     .portal-calendar-2026-27-preview--loading { min-height: 120px; }
     .portal-calendar-2026-27-preview .dc-cal {
-      max-width: none;
+      width: 100%;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 12px 12px 28px;
     }
     .re-modal--fullscreen .dc-cal__back-wrap {
-      display: block;
-      margin: 0;
-    }
-    .re-modal--fullscreen .dc-cal__back {
-      color: #162B5B;
+      display: none;
     }
     .portal-calendar-2026-27-preview .dc-cal-tabs {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1067,6 +1122,11 @@
       .re-offer-block .re-btn--secondary { margin-top: 4px; }
       .re-modal { width: min(520px, 100%); }
       .re-modal--wide { width: min(560px, 100%); }
+      .re-modal-backdrop--fullscreen > .re-modal,
+      .re-modal.re-modal--fullscreen {
+        width: 100%;
+        max-width: none;
+      }
     }
   </style>
 </head>
@@ -1123,6 +1183,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260704-reenrol-cal"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-portal-back"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-no-ref-participant"></script>
 </body>
 </html>
