@@ -197,9 +197,12 @@ Deno.serve(async (req) => {
       email: parentContact?.email ?? null,
     },
     funding: {
-      method: paymentCtx?.funding || null,
-      vat: paymentCtx?.vat || null,
-      invoice: paymentCtx?.invoice || null,
+      current_2526: {
+        payment_method: paymentCtx?.payMethod || null,
+        funding: paymentCtx?.fundingSource || null,
+        invoice_type: paymentCtx?.vat || null,
+        invoice_type_code: paymentCtx?.vatCode || null,
+      },
     },
     payment_status: paymentCtx?.paymentStatus || null,
     outstanding_amount: paymentCtx?.outstanding ?? null,

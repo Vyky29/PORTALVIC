@@ -276,6 +276,44 @@ export function ageMatchesInput(dobIso: string | null, inputAge: number | null):
   return Math.abs(ageNow - inputAge) <= 1;
 }
 
+export type InvoiceTypeCode = "vat_included" | "exempt";
+
+export function normalizeInvoiceType(vatRaw: string): { code: InvoiceTypeCode; label: string } {
+  const s = String(vatRaw || "").trim().toLowerCase();
+  if (!s || s === "—" || s === "-") {
+    return { code: "vat_included", label: "20% VAT included" };
+  }
+  if (s.includes("exempt") || s === "0") {
+    return { code: "exempt", label: "EXEMPT VAT" };
+  }
+  if (s.includes("20") || s.includes("vat") || s === "0.2") {
+    return { code: "vat_included", label: "20% VAT included" };
+  }
+  return { code: "vat_included", label: "20% VAT included" };
+}
+
+export function normalizeFundingSource(raw: string): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  const lower = s.toLowerCase();
+  if (lower === "parent" || lower.includes("privately") || lower === "private") {
+    return "Privately Funded";
+  }
+  if (lower.includes("direct payment") || (lower.includes("local authority") && lower.includes("dp"))) {
+    return "Local authority (Direct Payments)";
+  }
+  if (lower.includes("la-funded") || lower.includes("local authority") || lower.includes("nhs")) {
+    return "Local authority / NHS funded";
+  }
+  return s;
+}
+
+export function normalizePayMethod(raw: string): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  return s.replace(/\bbank transfer\b/i, "Bank Transfer");
+}
+
 export function paymentRowToContext(row: Record<string, unknown>) {
   const data = (row.data && typeof row.data === "object" ? row.data : {}) as Record<string, unknown>;
   const service = String(
@@ -299,8 +337,18 @@ export function paymentRowToContext(row: Record<string, unknown>) {
       ? Number(row.outstanding_amount)
       : null;
 
-  const vatRaw = String(data.vat || data.VAT || "");
-  const vatLabel = vatRaw === "0.2" || vatRaw === "20" ? "PF / VAT 20%" : vatRaw;
+  const payMethod = normalizePayMethod(
+    String(
+      data.payMethod ||
+        data["Payment Method"] ||
+        data["Payment method"] ||
+        "",
+    ),
+  );
+  const fund = normalizeFundingSource(
+    String(data.fund || data.Funding || data["Funding origin"] || data.Funder || ""),
+  );
+  const vatInfo = normalizeInvoiceType(String(data.vat || data.VAT || ""));
 
   const slots = parseServiceString(service);
   const { weekly, dayCentre } = splitSlots(slots);
@@ -312,9 +360,10 @@ export function paymentRowToContext(row: Record<string, unknown>) {
     sheet: String(row.sheet || ""),
     paymentStatus: String(row.payment_status || data.st || data.Status || ""),
     outstanding,
-    funding: String(data.fund || data.payMethod || data["Payment Method"] || ""),
-    vat: vatLabel,
-    invoice: String(data.inv || data["INVOICES / SET UP"] || ""),
+    payMethod,
+    fundingSource: fund,
+    vat: vatInfo.label,
+    vatCode: vatInfo.code,
     serviceRaw: service,
     weeklySlots: weekly,
     dayCentreSlots: dayCentre,

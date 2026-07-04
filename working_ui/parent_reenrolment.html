@@ -205,6 +205,73 @@
     .re-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: .9rem; min-width: 0; }
     .re-dl dt { font-weight: 700; color: var(--muted); }
     .re-dl dd { margin: 0; overflow-wrap: break-word; min-width: 0; }
+    .re-funding-current {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      min-width: 0;
+    }
+    .re-funding-current h4 { margin: 0 0 8px; font-size: .88rem; color: var(--muted); font-weight: 700; }
+    .re-funding-2627 {
+      background: var(--blueSoft);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .re-funding-2627 h4 { margin: 0 0 6px; font-size: .95rem; color: var(--ink); font-weight: 800; }
+    .re-funding-total {
+      font-size: 1.05rem;
+      margin: 0 0 12px;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-funding-total strong { color: var(--blue); }
+    .re-funding-field { margin-top: 12px; min-width: 0; }
+    .re-funding-field > legend,
+    .re-funding-field > .re-label { margin-bottom: 6px; }
+    .re-help-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      min-height: 22px;
+      padding: 0;
+      margin-left: 6px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--white);
+      color: var(--blue);
+      font-size: .78rem;
+      font-weight: 800;
+      cursor: pointer;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .re-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(23, 50, 71, .45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .re-modal {
+      width: min(420px, 100%);
+      max-height: min(85dvh, 520px);
+      overflow: auto;
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      box-shadow: 0 18px 48px rgba(23, 50, 71, .18);
+      min-width: 0;
+    }
+    .re-modal h3 { margin: 0 0 10px; font-size: 1rem; color: var(--ink); overflow-wrap: break-word; }
+    .re-modal p { margin: 0 0 10px; font-size: .9rem; overflow-wrap: break-word; }
+    .re-modal-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
     .re-dc-list { margin: 8px 0; padding-left: 1.2rem; font-size: .9rem; overflow-wrap: break-word; }
     .re-link { color: var(--blue); font-weight: 700; }
     .re-declarations { border-top: 1px solid var(--line); padding-top: 12px; }
@@ -268,6 +335,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-icons"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-funding"></script>
 </body>
 </html>

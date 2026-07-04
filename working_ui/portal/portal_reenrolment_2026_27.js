@@ -395,15 +395,226 @@
   }
 
   function renderFundingBlock(data) {
-    var f = data.funding || {};
-    var rows = [];
-    if (f.method) rows.push("<dt>Funding</dt><dd>" + esc(f.method) + "</dd>");
-    if (f.vat && f.vat !== "—") rows.push("<dt>Invoice type</dt><dd>" + esc(f.vat) + "</dd>");
-    if (f.invoice && f.invoice !== "—") rows.push("<dt>Last invoice ref</dt><dd>" + esc(f.invoice) + "</dd>");
-    if (!rows.length) {
-      return '<p class="re-muted">Funding details will be confirmed by the office if not on file.</p>';
+    var cur = (data.funding && data.funding.current_2526) || {};
+    var annualTotal = data.annual_weekly_total != null ? data.annual_weekly_total : 0;
+    var payDefault = mapPayMethodCode(cur.payment_method);
+    var fundDefault = mapFundingCode(cur.funding);
+    var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
+
+    var currentRows = [];
+    if (cur.payment_method) {
+      currentRows.push(
+        "<dt>Preferred Payment Method 2025/26</dt><dd>" + esc(cur.payment_method) + "</dd>",
+      );
     }
-    return '<dl class="re-dl">' + rows.join("") + "</dl>";
+    if (cur.funding) {
+      currentRows.push("<dt>Funding</dt><dd>" + esc(cur.funding) + "</dd>");
+    }
+    if (cur.invoice_type) {
+      currentRows.push("<dt>Invoice type</dt><dd>" + esc(cur.invoice_type) + "</dd>");
+    }
+
+    var currentHtml = currentRows.length
+      ? '<div class="re-funding-current">' +
+        "<h4>Your current arrangements (2025/26)</h4>" +
+        '<dl class="re-dl">' +
+        currentRows.join("") +
+        "</dl></div>"
+      : "";
+
+    return (
+      currentHtml +
+      '<div class="re-funding-2627">' +
+      "<h4>2026/27 billing preferences</h4>" +
+      '<p class="re-funding-total"><strong>Estimated total 2026/27:</strong> ' +
+      esc(money(annualTotal)) +
+      ' <span class="re-muted">(weekly activities kept as now · excl. Day Centre)</span></p>' +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Preferred payment method</legend>' +
+      renderPayMethodRadios(payDefault) +
+      "</fieldset>" +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Funding</legend>' +
+      renderFundingRadios(fundDefault) +
+      "</fieldset>" +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Invoice type</legend>' +
+      '<label class="re-radio"><input type="radio" name="re_vat_2627" value="vat_included"' +
+      (vatDefault === "vat_included" ? " checked" : "") +
+      ' /> 20% VAT included</label>' +
+      '<label class="re-radio"><input type="radio" name="re_vat_2627" value="exempt"' +
+      (vatDefault === "exempt" ? " checked" : "") +
+      ' /> EXEMPT VAT</label>' +
+      "</fieldset>" +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">When to invoice</legend>' +
+      '<label class="re-radio"><input type="radio" name="re_billing_2627" value="term" checked /> Per term (Autumn, Spring, Summer)</label>' +
+      '<label class="re-radio"><input type="radio" name="re_billing_2627" value="yearly" /> Whole year (one invoice) ' +
+      '<button type="button" class="re-help-btn" id="reYearlyHelpBtn" aria-label="About whole-year billing">?</button></label>' +
+      "</fieldset>" +
+      '<p class="re-muted">The office will confirm your invoice schedule and any LA or NHS billing separately.</p>' +
+      "</div>"
+    );
+  }
+
+  var RE_PAY_METHODS = [
+    { code: "bank_transfer", label: "1 · Bank Transfer" },
+    { code: "gocardless", label: "4 · GoCardless" },
+    { code: "own_way", label: "Own way (upfront)" },
+    { code: "la_invoice", label: "LA invoice (BACS)" },
+    { code: "direct_payment", label: "Direct payment (CWD remittance)" },
+    { code: "nhs_invoice", label: "NHS invoice (PO)" },
+  ];
+
+  var RE_FUNDING_OPTIONS = [
+    { code: "privately_funded", label: "Privately Funded" },
+    { code: "la_direct_payments", label: "Local authority (Direct Payments)" },
+    { code: "la_nhs", label: "Local authority / NHS funded" },
+  ];
+
+  function mapPayMethodCode(raw) {
+    var s = String(raw || "").toLowerCase();
+    if (!s) return "bank_transfer";
+    if (s.includes("gocardless")) return "gocardless";
+    if (s.includes("own way") || s.includes("upfront")) return "own_way";
+    if (s.includes("la invoice") || s.includes("bacs")) return "la_invoice";
+    if (s.includes("direct payment") || s.includes("cwd")) return "direct_payment";
+    if (s.includes("nhs") || s.includes("po")) return "nhs_invoice";
+    if (s.includes("bank")) return "bank_transfer";
+    return "bank_transfer";
+  }
+
+  function mapFundingCode(raw) {
+    var s = String(raw || "").toLowerCase();
+    if (!s) return "privately_funded";
+    if (s.includes("direct payment")) return "la_direct_payments";
+    if (s.includes("local authority") || s.includes("nhs") || s.includes("la-funded")) {
+      return "la_nhs";
+    }
+    if (s.includes("privately") || s.includes("private") || s === "parent") return "privately_funded";
+    return "privately_funded";
+  }
+
+  function payMethodLabel(code, fallback) {
+    for (var i = 0; i < RE_PAY_METHODS.length; i++) {
+      if (RE_PAY_METHODS[i].code === code) return RE_PAY_METHODS[i].label;
+    }
+    return fallback || code;
+  }
+
+  function fundingLabel(code, fallback) {
+    for (var j = 0; j < RE_FUNDING_OPTIONS.length; j++) {
+      if (RE_FUNDING_OPTIONS[j].code === code) return RE_FUNDING_OPTIONS[j].label;
+    }
+    return fallback || code;
+  }
+
+  function renderPayMethodRadios(defaultCode) {
+    return RE_PAY_METHODS.map(function (o) {
+      var checked = o.code === defaultCode ? " checked" : "";
+      return (
+        '<label class="re-radio"><input type="radio" name="re_pay_2627" value="' +
+        esc(o.code) +
+        '"' +
+        checked +
+        " /> " +
+        esc(o.label) +
+        "</label>"
+      );
+    }).join("");
+  }
+
+  function renderFundingRadios(defaultCode) {
+    return RE_FUNDING_OPTIONS.map(function (o) {
+      var checked = o.code === defaultCode ? " checked" : "";
+      return (
+        '<label class="re-radio"><input type="radio" name="re_fund_2627" value="' +
+        esc(o.code) +
+        '"' +
+        checked +
+        " /> " +
+        esc(o.label) +
+        "</label>"
+      );
+    }).join("");
+  }
+
+  function ensureYearlyModal() {
+    var existing = $("reYearlyModal");
+    if (existing) return existing;
+    var backdrop = document.createElement("div");
+    backdrop.id = "reYearlyModal";
+    backdrop.className = "re-modal-backdrop";
+    backdrop.hidden = true;
+    backdrop.setAttribute("role", "presentation");
+    backdrop.innerHTML =
+      '<div class="re-modal" role="dialog" aria-modal="true" aria-labelledby="reYearlyModalTitle">' +
+      "<h3 id=\"reYearlyModalTitle\">Whole-year billing</h3>" +
+      "<p>Choosing <strong>whole year</strong> means one invoice for the full 2026/27 programme instead of three term invoices.</p>" +
+      "<p>This saves time for your family and for our admin team — fewer reminders and less paperwork across the year.</p>" +
+      "<p class=\"re-muted\">You can still choose per-term billing if you prefer. The office will confirm before your first invoice.</p>" +
+      '<div class="re-modal-actions"><button type="button" class="re-btn re-btn--secondary" id="reYearlyModalClose">Got it</button></div>' +
+      "</div>";
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeYearlyModal();
+    });
+    var closeBtn = $("reYearlyModalClose");
+    if (closeBtn) closeBtn.addEventListener("click", closeYearlyModal);
+    return backdrop;
+  }
+
+  function openYearlyModal() {
+    var modal = ensureYearlyModal();
+    modal.hidden = false;
+    var btn = $("reYearlyModalClose");
+    if (btn) btn.focus();
+  }
+
+  function closeYearlyModal() {
+    var modal = $("reYearlyModal");
+    if (modal) modal.hidden = true;
+  }
+
+  function bindFundingHandlers() {
+    var helpBtn = $("reYearlyHelpBtn");
+    if (helpBtn) {
+      helpBtn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openYearlyModal();
+      });
+    }
+    document.querySelectorAll('input[name="re_billing_2627"]').forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        if (radio.value === "yearly" && radio.checked) openYearlyModal();
+      });
+    });
+  }
+
+  function collectBillingChoices(data) {
+    var cur = (data.funding && data.funding.current_2526) || {};
+    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+    var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
+    var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
+    var billEl = document.querySelector('input[name="re_billing_2627"]:checked');
+    var payCode = payEl ? payEl.value : mapPayMethodCode(cur.payment_method);
+    var fundCode = fundEl ? fundEl.value : mapFundingCode(cur.funding);
+    var vatCode = vatEl ? vatEl.value : cur.invoice_type_code || "vat_included";
+    var billing = billEl ? billEl.value : "term";
+    return {
+      current_2526: cur,
+      choices_2627: {
+        payment_method_code: payCode,
+        payment_method_label: payMethodLabel(payCode, cur.payment_method),
+        funding_code: fundCode,
+        funding_label: fundingLabel(fundCode, cur.funding),
+        invoice_type_code: vatCode,
+        invoice_type_label: vatCode === "exempt" ? "EXEMPT VAT" : "20% VAT included",
+        billing_schedule: billing,
+        estimated_annual_total: data.annual_weekly_total != null ? data.annual_weekly_total : null,
+      },
+    };
   }
 
   function renderWeeklySlots(slots) {
@@ -600,6 +811,7 @@
     if (submitBtn) submitBtn.addEventListener("click", onSubmit);
 
     bindPhotoHandlers();
+    bindFundingHandlers();
 
     var preEmail = (data.parent && data.parent.email) || "";
     var emailEl = $("reContactEmail");
@@ -703,7 +915,7 @@
       client_key: data.client_key || null,
       payment_status: data.payment_status || null,
       outstanding_amount: data.outstanding_amount,
-      funding: data.funding,
+      funding: collectBillingChoices(data),
       weekly_slots: data.weekly_slots,
       day_centre: data.day_centre,
       annual_weekly_total: data.annual_weekly_total,
