@@ -576,6 +576,9 @@
   }
 
   function paymentPreviewNote(payCode, schedCode) {
+    if (payCode === "gocardless" && schedCode === "monthly_term") {
+      return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; the first payment is collected at the end of August so it reaches us on 1 September, then on the 1st of each month.";
+    }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
       return "Same programme total — two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
     }
@@ -634,6 +637,25 @@
             label: t.termLabel + " · " + h.halfLabel,
             due: h.due,
             amount: amt(halfAmt),
+          });
+        });
+      });
+    } else if (schedCode === "monthly_term") {
+      var termPlan = [
+        { term: "autumn", label: "Autumn", months: ["September 2026", "October 2026", "November 2026", "December 2026"] },
+        { term: "spring", label: "Spring", months: ["January 2027", "February 2027", "March 2027"] },
+        { term: "summer", label: "Summer", months: ["April 2027", "May 2027", "June 2027", "July 2027"] },
+      ];
+      var payNo = 0;
+      termPlan.forEach(function (t) {
+        var termTotal = termProgrammeTotal(data, t.term);
+        var perMonth = termTotal / t.months.length;
+        t.months.forEach(function (label) {
+          payNo += 1;
+          rows.push({
+            label: "Payment " + payNo + " · " + label + " (" + t.label + ")",
+            due: dueOnFirst(label),
+            amount: amt(perMonth),
           });
         });
       });
@@ -1090,6 +1112,7 @@
   var RE_ADMIN_FEE_PER_INSTALLMENT = 2.5;
 
   function installmentCountForSchedule(scheduleCode) {
+    if (scheduleCode === "monthly_term") return 11;
     if (scheduleCode === "monthly_10") return 10;
     if (scheduleCode === "term_flexi") return 6;
     if (scheduleCode === "term_3") return 3;
@@ -1301,14 +1324,19 @@
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
     ],
     gocardless: [
-      { code: "monthly_10", label: "All year — 10 monthly payments" },
-      { code: "term_3", label: "Flexible — pay each term" },
+      {
+        code: "monthly_term",
+        label: "Monthly by term — 11 payments across the year",
+      },
     ],
   };
 
   function scheduleOptionHint(code, payCode) {
     if (code === "yearly_1off") {
       return "New this year — confirm the full academic year in one step. One bank transfer on 1 September 2026, same programme total, nothing to re-confirm each term.";
+    }
+    if (code === "monthly_term") {
+      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; the first payment is collected at the end of August so it reaches us on 1 September, then on the 1st of each month. Same programme total, nothing to re-confirm each term.";
     }
     if (code === "monthly_10") {
       return "New this year — one year agreement with 10 payments on the 1st of each month, September–June, by direct payment. Same programme total, and no termly re-confirmation.";
@@ -1341,21 +1369,20 @@
   }
 
   function defaultScheduleForPay(payCode) {
-    if (payCode === "gocardless") return "term_3";
+    if (payCode === "gocardless") return "monthly_term";
     if (payCode === "bank_transfer") return "term_flexi";
     return "term_3";
   }
 
   function isAllYearScheduleCode(code) {
-    return code === "monthly_10" || code === "yearly_1off";
+    return code === "monthly_term" || code === "monthly_10" || code === "yearly_1off";
   }
 
   function mapScheduleCode(rawPay, fundingRaw) {
     var pay = mapPrivatePayMethodCode(rawPay, fundingRaw);
     var s = String(rawPay || "").toLowerCase();
     if (pay === "gocardless") {
-      if (s.includes("month") || s.includes("10")) return "monthly_10";
-      return "term_3";
+      return "monthly_term";
     }
     if (s.includes("whole year") || s.includes("1 off") || s.includes("one invoice") || s.includes("yearly")) {
       return "yearly_1off";
@@ -1521,7 +1548,7 @@
       var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
       var prevVal = prev ? prev.value : null;
       if (payCode === "bank_transfer" || payCode === "gocardless") {
-        var fallbackSched = payCode === "gocardless" ? "monthly_10" : "term_3";
+        var fallbackSched = payCode === "gocardless" ? "monthly_term" : "term_3";
         schedWrap.innerHTML = renderPayScheduleFieldset(payCode, prevVal || fallbackSched);
         schedWrap.hidden = false;
       } else {
@@ -1549,7 +1576,7 @@
       var schedCode = schedEl
         ? schedEl.value
         : payCode === "gocardless"
-          ? "monthly_10"
+          ? "monthly_term"
           : "term_3";
       var n = installmentCountForSchedule(schedCode);
       var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
@@ -1624,7 +1651,7 @@
       schedEl && (payCode === "bank_transfer" || payCode === "gocardless")
         ? schedEl.value
         : payCode === "gocardless"
-          ? "monthly_10"
+          ? "monthly_term"
           : payCode === "bank_transfer"
             ? "term_3"
             : null;
@@ -1652,7 +1679,7 @@
         billing_schedule:
           scheduleCode === "yearly_1off"
             ? "yearly"
-            : scheduleCode === "monthly_10"
+            : scheduleCode === "monthly_term" || scheduleCode === "monthly_10"
               ? "monthly"
               : scheduleCode === "term_flexi"
                 ? "term_flexi"
