@@ -265,6 +265,55 @@
     .re-funding-field { margin-top: 12px; min-width: 0; }
     .re-funding-field > legend,
     .re-funding-field > .re-label { margin-bottom: 6px; }
+    .re-funding-panel { min-width: 0; }
+    .re-funding-panel[hidden] { display: none !important; }
+    .re-funding-fee {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--warnSoft);
+      border: 1px solid rgba(184, 134, 11, .28);
+      font-size: .86rem;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-funding-fee strong {
+      display: block;
+      font-size: .82rem;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: var(--warn);
+      margin-bottom: 2px;
+    }
+    .re-funding-fee[hidden] { display: none !important; }
+    .re-funding-note { margin: 8px 0 0; }
+    .re-funding-note[hidden] { display: none !important; }
+    .re-funding-foot { margin: 12px 0 0; }
+    .re-pay-schedule-wrap[hidden] { display: none !important; }
+    .re-funded-invoice {
+      margin: 12px 0 0;
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+    .re-funded-invoice h4 {
+      margin: 0 0 6px;
+      font-size: .88rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+    .re-funded-invoice__amount {
+      margin: 0 0 8px;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--blue);
+      overflow-wrap: break-word;
+    }
+    .re-funded-meta { margin-top: 12px; }
     .re-help-btn {
       display: inline-flex;
       align-items: center;
@@ -317,6 +366,109 @@
     .re-modal--wide { width: min(480px, 100%); }
     .re-cal-block { margin: 0 0 14px; min-width: 0; }
     .re-cal-block h4 { margin: 0 0 6px; font-size: .92rem; color: var(--ink); overflow-wrap: break-word; }
+    .re-cal-block__title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 6px;
+      font-size: .92rem;
+      color: var(--ink);
+      min-width: 0;
+    }
+    .re-cal-block__title .re-cal-line__ico { color: var(--blue); }
+    .re-cal-block__title > span { min-width: 0; overflow-wrap: break-word; }
+    .re-cal-block__sessions { margin: 0 0 8px; font-size: .84rem; }
+    .re-cal-block--highlight {
+      border: 1px solid rgba(45, 132, 179, .35);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: var(--blueSoft);
+    }
+    .re-cal-lines {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .re-cal-line {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+    .re-cal-line__ico {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      color: var(--blue);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .re-cal-line__ico svg { width: 100%; height: 100%; display: block; }
+    .re-cal-line__body { flex: 1; min-width: 0; }
+    .re-cal-line__label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      margin-bottom: 2px;
+    }
+    .re-cal-line__date {
+      display: block;
+      font-size: .9rem;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .re-cal-offer-link {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      width: 100%;
+      margin: 0 0 4px;
+      padding: 8px 10px;
+      border: 1px solid rgba(45, 132, 179, .28);
+      border-radius: 10px;
+      background: var(--blueSoft);
+      color: var(--ink);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .re-cal-offer-link:hover,
+    .re-cal-offer-link:focus-visible {
+      border-color: var(--blue);
+      background: #e3f2fa;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(45, 132, 179, .15);
+    }
+    .re-cal-offer-link .re-cal-line__ico {
+      width: 20px;
+      height: 20px;
+      margin-top: 0;
+    }
+    .re-cal-offer-link__text { flex: 1; min-width: 0; }
+    .re-cal-offer-link__title {
+      display: block;
+      font-size: .88rem;
+      font-weight: 800;
+      color: var(--blue);
+      overflow-wrap: break-word;
+    }
+    .re-cal-offer-link__hint {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 1px;
+      overflow-wrap: break-word;
+    }
     .re-cal-block ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; overflow-wrap: break-word; }
     .re-cal-block li { margin-bottom: 4px; }
     .re-cal-summary { font-size: .88rem; color: var(--muted); margin: 0 0 12px; overflow-wrap: break-word; }
@@ -366,6 +518,117 @@
     .re-pick-card__name { font-weight: 800; color: var(--ink); overflow-wrap: break-word; min-width: 0; }
     .re-pick-card__meta { font-size: .82rem; color: var(--muted); margin-top: 2px; overflow-wrap: break-word; }
     .re-pick-card__cta { flex-shrink: 0; font-size: .78rem; font-weight: 800; color: var(--blue); white-space: nowrap; }
+    .re-form-grid { min-width: 0; }
+    .re-form-host {
+      box-shadow: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      margin-bottom: 0;
+    }
+    .re-form-grid__side,
+    .re-form-grid__main { min-width: 0; }
+    @media (min-width: 900px) {
+      :root { --max: min(1140px, 96vw); }
+      .re-page { padding-top: 20px; }
+      .re-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-align: left;
+        margin-bottom: 18px;
+        max-width: var(--max);
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .re-brand h1 { margin: 0 0 4px; font-size: 1.35rem; }
+      .re-brand img { flex-shrink: 0; }
+      #reStepForm .re-btn--ghost { margin-bottom: 8px; }
+      .re-form-host {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px 22px 22px;
+        box-shadow: 0 10px 28px rgba(23, 50, 71, .06);
+        margin-bottom: 14px;
+      }
+      .re-form-grid {
+        display: grid;
+        grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+        gap: 0 22px;
+        align-items: start;
+      }
+      .re-form-grid__head {
+        grid-column: 1 / -1;
+        margin-bottom: 4px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .re-form-grid__head .re-section-title { font-size: 1.05rem; }
+      .re-form-grid__side {
+        grid-column: 1;
+        position: sticky;
+        top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .re-form-grid__side .re-section { margin-bottom: 0; }
+      .re-form-grid__main {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+      .re-form-grid__main .re-section { margin-bottom: 0; }
+      .re-form-grid__submit {
+        grid-column: 1 / -1;
+        margin-top: 6px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      .re-form-grid__submit .re-check {
+        display: inline-flex;
+        margin-right: 20px;
+        max-width: calc(50% - 12px);
+        vertical-align: top;
+      }
+      .re-btn--submit {
+        width: auto;
+        min-width: 220px;
+        margin-top: 14px;
+      }
+      .re-section--dates-lead { margin-bottom: 0; }
+      .re-photo-section { padding: 12px; }
+      .re-photo-row { gap: 12px; }
+      .re-photo-avatar { width: 80px; height: 80px; }
+      .re-photo-btns .re-btn--secondary { flex: 1 1 auto; font-size: .82rem; padding: 0 10px; }
+      .re-slot-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+      }
+      .re-section--offer {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      .re-offer-block { margin-top: 10px; }
+      .re-offer-block--dc + .re-offer-block {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px 16px;
+        align-items: start;
+      }
+      .re-offer-block--dc + .re-offer-block .re-info-btns {
+        grid-column: 1 / -1;
+        margin-top: 0;
+      }
+      .re-info-btns .re-btn--secondary { flex: 0 1 auto; }
+      .re-modal { width: min(520px, 100%); }
+      .re-modal--wide { width: min(560px, 100%); }
+    }
   </style>
 </head>
 <body>
@@ -402,7 +665,7 @@
     <section id="reStepForm" hidden>
       <button id="reBackLink" class="re-btn re-btn--ghost" type="button">← Back</button>
       <div id="reFormNotice" class="re-notice re-notice--error" hidden role="alert"></div>
-      <div id="reFormHost" class="re-card" style="box-shadow:none;border:0;padding:0;background:transparent"></div>
+      <div id="reFormHost" class="re-card re-form-host"></div>
     </section>
 
     <section id="reStepDone" class="re-card" hidden>
@@ -420,6 +683,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-layout"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-billing"></script>
 </body>
 </html>

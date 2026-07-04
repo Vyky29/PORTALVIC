@@ -50,6 +50,16 @@
       '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
     submit:
       '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
+    termStart:
+      '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 14 11 16 15 12"/>',
+    halfTerm:
+      '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    closure:
+      '<path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/>',
+    lastDay:
+      '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="16" y2="15"/>',
+    crash:
+      '<path d="M2 12c2.5-5 7-8 10-8s7.5 3 10 8"/><path d="M5 16.5c2.5 3.5 6 5.5 9.5 5.5"/><circle cx="12" cy="13" r="2"/>',
   };
 
   function reIconSvg(key) {
@@ -58,6 +68,17 @@
     return (
       '<span class="re-title-ico" aria-hidden="true">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg></span>"
+    );
+  }
+
+  function reCalIconSvg(key) {
+    var inner = RE_ICON_SVGS[key];
+    if (!inner) return "";
+    return (
+      '<span class="re-cal-line__ico" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
       inner +
       "</svg></span>"
     );
@@ -528,12 +549,32 @@
     };
   }
 
+  function isPrivateFunding(fundCode) {
+    return fundCode === "privately_funded";
+  }
+
+  function isFundedFamily(fundCode) {
+    return fundCode === "la_direct_payments" || fundCode === "la_nhs";
+  }
+
+  function adminFeeApplies(payCode) {
+    return payCode === "gocardless" || payCode === "own_way_flexible";
+  }
+
+  function moneyWithAdminFee(base) {
+    var n = Number(base);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n * 1.025 * 100) / 100;
+  }
+
   function renderFundingBlock(data) {
     var cur = fundingCurrent2526(data);
     var annualTotal = resolveAnnualWeeklyTotal(data);
-    var payDefault = mapPayMethodCode(cur.payment_method);
     var fundDefault = mapFundingCode(cur.funding);
+    var payDefault = mapPrivatePayMethodCode(cur.payment_method, cur.funding);
+    var scheduleDefault = mapScheduleCode(cur.payment_method, cur.funding);
     var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
+    if (isFundedFamily(fundDefault)) vatDefault = "exempt";
 
     var currentRows = [];
     if (cur.payment_method) {
@@ -558,19 +599,36 @@
 
     return (
       currentHtml +
-      '<div class="re-funding-2627">' +
+      '<div class="re-funding-2627" data-annual-total="' +
+      esc(String(annualTotal)) +
+      '">' +
       "<h4>2026/27 billing preferences</h4>" +
-      '<p class="re-funding-total"><strong>Estimated total 2026/27:</strong> ' +
+      '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
       ' <span class="re-muted">(weekly activities kept as now · excl. Day Centre)</span></p>' +
-      '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">Preferred payment method</legend>' +
-      renderPayMethodRadios(payDefault) +
-      "</fieldset>" +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Funding</legend>' +
       renderFundingRadios(fundDefault) +
       "</fieldset>" +
+      '<div id="rePanelPrivate" class="re-funding-panel"' +
+      (isPrivateFunding(fundDefault) ? "" : " hidden") +
+      ">" +
+      '<fieldset class="re-choice-fieldset re-funding-field">' +
+      '<legend class="re-label">Preferred payment method</legend>' +
+      renderPrivatePayMethodRadios(payDefault) +
+      "</fieldset>" +
+      '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
+      renderPayScheduleFieldset(payDefault, scheduleDefault) +
+      "</div>" +
+      '<div id="reAdminFeeNote" class="re-funding-fee"' +
+      (adminFeeApplies(payDefault) ? "" : " hidden") +
+      ">" +
+      "<strong>2.5% admin fees on top of final price</strong>" +
+      '<span id="reAdminFeeAmount"></span>' +
+      "</div>" +
+      '<p id="reOwnWayUpfrontNote" class="re-muted re-funding-note"' +
+      (payDefault === "own_way_upfront" ? "" : " hidden") +
+      ">You pay ahead of schedule in your own way — no change unless you tell the office.</p>" +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Invoice type</legend>' +
       '<label class="re-radio"><input type="radio" name="re_vat_2627" value="vat_included"' +
@@ -580,42 +638,77 @@
       (vatDefault === "exempt" ? " checked" : "") +
       ' /> EXEMPT VAT</label>' +
       "</fieldset>" +
-      '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">When to invoice</legend>' +
-      '<label class="re-radio"><input type="radio" name="re_billing_2627" value="term" checked /> Per term (Autumn, Spring, Summer)</label>' +
-      '<label class="re-radio"><input type="radio" name="re_billing_2627" value="yearly" /> Whole year (one invoice) ' +
-      '<button type="button" class="re-help-btn" id="reYearlyHelpBtn" aria-label="About whole-year billing">?</button></label>' +
-      "</fieldset>" +
-      '<p class="re-muted">The office will confirm your invoice schedule and any LA or NHS billing separately.</p>' +
+      "</div>" +
+      '<div id="rePanelFunded" class="re-funding-panel re-funding-panel--funded"' +
+      (isFundedFamily(fundDefault) ? "" : " hidden") +
+      ">" +
+      renderFundedInvoicePanel(data, fundDefault, cur, annualTotal) +
+      "</div>" +
+      '<p class="re-muted re-funding-foot">The office will confirm your invoice schedule before September 2026.</p>' +
       "</div>"
     );
   }
 
-  var RE_PAY_METHODS = [
-    { code: "bank_transfer", label: "1 · Bank Transfer" },
+  var RE_PRIVATE_PAY_METHODS = [
+    { code: "bank_transfer", label: "1 · Bank transfer" },
     { code: "gocardless", label: "4 · GoCardless" },
-    { code: "own_way", label: "Own way (upfront)" },
-    { code: "la_invoice", label: "LA invoice (BACS)" },
-    { code: "direct_payment", label: "Direct payment (CWD remittance)" },
-    { code: "nhs_invoice", label: "NHS invoice (PO)" },
+    { code: "own_way_upfront", label: "Own way (upfront — pay ahead)" },
+    { code: "own_way_flexible", label: "Flexible payments (when you choose)" },
   ];
 
   var RE_FUNDING_OPTIONS = [
-    { code: "privately_funded", label: "Privately Funded" },
+    { code: "privately_funded", label: "Privately funded" },
     { code: "la_direct_payments", label: "Local authority (Direct Payments)" },
     { code: "la_nhs", label: "Local authority / NHS funded" },
   ];
 
-  function mapPayMethodCode(raw) {
+  var RE_SCHEDULE_OPTIONS = {
+    bank_transfer: [
+      { code: "yearly_1off", label: "1 off payment (whole year)" },
+      { code: "term_3", label: "3 payments (one per term)" },
+    ],
+    gocardless: [
+      { code: "monthly_10", label: "10 payments (one per month)" },
+      { code: "term_3", label: "3 payments (one per term)" },
+    ],
+  };
+
+  function mapPrivatePayMethodCode(raw, fundingRaw) {
+    if (isFundedFamily(mapFundingCode(fundingRaw))) return "bank_transfer";
     var s = String(raw || "").toLowerCase();
     if (!s) return "bank_transfer";
     if (s.includes("gocardless")) return "gocardless";
-    if (s.includes("own way") || s.includes("upfront")) return "own_way";
-    if (s.includes("la invoice") || s.includes("bacs")) return "la_invoice";
-    if (s.includes("direct payment") || s.includes("cwd")) return "direct_payment";
-    if (s.includes("nhs") || s.includes("po")) return "nhs_invoice";
+    if (s.includes("flexible") || s.includes("when you") || s.includes("when they")) {
+      return "own_way_flexible";
+    }
+    if (s.includes("own way") || s.includes("upfront") || s.includes("ahead")) {
+      return "own_way_upfront";
+    }
+    if (s.includes("la invoice") || s.includes("bacs") || s.includes("nhs") || s.includes("direct payment")) {
+      return "bank_transfer";
+    }
     if (s.includes("bank")) return "bank_transfer";
     return "bank_transfer";
+  }
+
+  function mapScheduleCode(rawPay, fundingRaw) {
+    var pay = mapPrivatePayMethodCode(rawPay, fundingRaw);
+    var s = String(rawPay || "").toLowerCase();
+    if (pay === "gocardless") {
+      if (s.includes("month") || s.includes("10")) return "monthly_10";
+      return "term_3";
+    }
+    if (s.includes("whole year") || s.includes("1 off") || s.includes("one invoice") || s.includes("yearly")) {
+      return "yearly_1off";
+    }
+    return "term_3";
+  }
+
+  function mapFundedPayMethodCode(fundCode, cur) {
+    var s = String((cur && cur.payment_method) || "").toLowerCase();
+    if (fundCode === "la_direct_payments") return "direct_payment";
+    if (s.includes("nhs") || s.includes("po")) return "nhs_invoice";
+    return "la_invoice";
   }
 
   function mapFundingCode(raw) {
@@ -629,22 +722,29 @@
     return "privately_funded";
   }
 
-  function payMethodLabel(code, fallback) {
-    for (var i = 0; i < RE_PAY_METHODS.length; i++) {
-      if (RE_PAY_METHODS[i].code === code) return RE_PAY_METHODS[i].label;
+  function privatePayMethodLabel(code) {
+    for (var i = 0; i < RE_PRIVATE_PAY_METHODS.length; i++) {
+      if (RE_PRIVATE_PAY_METHODS[i].code === code) return RE_PRIVATE_PAY_METHODS[i].label;
     }
-    return fallback || code;
+    return code;
   }
 
-  function fundingLabel(code, fallback) {
-    for (var j = 0; j < RE_FUNDING_OPTIONS.length; j++) {
-      if (RE_FUNDING_OPTIONS[j].code === code) return RE_FUNDING_OPTIONS[j].label;
-    }
-    return fallback || code;
+  function fundedPayMethodLabel(code) {
+    if (code === "direct_payment") return "Direct payment (CWD remittance)";
+    if (code === "nhs_invoice") return "NHS invoice (PO)";
+    return "LA invoice (BACS)";
   }
 
-  function renderPayMethodRadios(defaultCode) {
-    return RE_PAY_METHODS.map(function (o) {
+  function scheduleLabel(code) {
+    var all = (RE_SCHEDULE_OPTIONS.bank_transfer || []).concat(RE_SCHEDULE_OPTIONS.gocardless || []);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].code === code) return all[i].label;
+    }
+    return code;
+  }
+
+  function renderPrivatePayMethodRadios(defaultCode) {
+    return RE_PRIVATE_PAY_METHODS.map(function (o) {
       var checked = o.code === defaultCode ? " checked" : "";
       return (
         '<label class="re-radio"><input type="radio" name="re_pay_2627" value="' +
@@ -656,6 +756,65 @@
         "</label>"
       );
     }).join("");
+  }
+
+  function renderPayScheduleFieldset(payCode, scheduleDefault) {
+    var opts = RE_SCHEDULE_OPTIONS[payCode];
+    if (!opts || !opts.length) return "";
+    var validDefault = opts.some(function (o) {
+      return o.code === scheduleDefault;
+    })
+      ? scheduleDefault
+      : opts[0].code;
+    var title =
+      payCode === "bank_transfer"
+        ? "Bank transfer — payment schedule"
+        : "GoCardless — payment schedule";
+    return (
+      '<fieldset class="re-choice-fieldset re-funding-field re-pay-schedule">' +
+      '<legend class="re-label">' +
+      esc(title) +
+      "</legend>" +
+      opts
+        .map(function (o) {
+          var checked = o.code === validDefault ? " checked" : "";
+          return (
+            '<label class="re-radio"><input type="radio" name="re_pay_schedule_2627" value="' +
+            esc(o.code) +
+            '"' +
+            checked +
+            " /> " +
+            esc(o.label) +
+            "</label>"
+          );
+        })
+        .join("") +
+      "</fieldset>"
+    );
+  }
+
+  function renderFundedInvoicePanel(data, fundCode, cur, annualTotal) {
+    var payCode = mapFundedPayMethodCode(fundCode, cur);
+    var funderLabel = fundingLabel(fundCode, cur.funding);
+    return (
+      '<div class="re-funded-invoice">' +
+      "<h4>Annual invoice total 2026/27</h4>" +
+      '<p class="re-funded-invoice__amount">' +
+      esc(money(annualTotal)) +
+      "</p>" +
+      '<p class="re-muted">For your records — this is the full-year programme total we invoice to your funder. Day Centre is excluded if not on your programme.</p>' +
+      "</div>" +
+      '<dl class="re-dl re-funded-meta">' +
+      "<dt>Funder</dt><dd>" +
+      esc(funderLabel) +
+      "</dd>" +
+      "<dt>Invoice route</dt><dd>" +
+      esc(fundedPayMethodLabel(payCode)) +
+      "</dd>" +
+      "<dt>Invoice type</dt><dd>EXEMPT VAT</dd>" +
+      "<dt>Our billing</dt><dd>Admin monthly to your funder (you do not choose a payment schedule here)</dd>" +
+      "</dl>"
+    );
   }
 
   function renderFundingRadios(defaultCode) {
@@ -673,80 +832,119 @@
     }).join("");
   }
 
-  function ensureYearlyModal() {
-    var existing = $("reYearlyModal");
-    if (existing) return existing;
-    var backdrop = document.createElement("div");
-    backdrop.id = "reYearlyModal";
-    backdrop.className = "re-modal-backdrop";
-    backdrop.hidden = true;
-    backdrop.setAttribute("role", "presentation");
-    backdrop.innerHTML =
-      '<div class="re-modal" role="dialog" aria-modal="true" aria-labelledby="reYearlyModalTitle">' +
-      "<h3 id=\"reYearlyModalTitle\">Whole-year billing</h3>" +
-      "<p>Choosing <strong>whole year</strong> means one invoice for the full 2026/27 programme instead of three term invoices.</p>" +
-      "<p>This saves time for your family and for our admin team — fewer reminders and less paperwork across the year.</p>" +
-      "<p class=\"re-muted\">You can still choose per-term billing if you prefer. The office will confirm before your first invoice.</p>" +
-      '<div class="re-modal-actions"><button type="button" class="re-btn re-btn--secondary" id="reYearlyModalClose">Got it</button></div>' +
-      "</div>";
-    document.body.appendChild(backdrop);
-    backdrop.addEventListener("click", function (ev) {
-      if (ev.target === backdrop) closeYearlyModal();
-    });
-    var closeBtn = $("reYearlyModalClose");
-    if (closeBtn) closeBtn.addEventListener("click", closeYearlyModal);
-    return backdrop;
+  function fundingLabel(code, fallback) {
+    for (var j = 0; j < RE_FUNDING_OPTIONS.length; j++) {
+      if (RE_FUNDING_OPTIONS[j].code === code) return RE_FUNDING_OPTIONS[j].label;
+    }
+    return fallback || code;
   }
 
-  function openYearlyModal() {
-    var modal = ensureYearlyModal();
-    modal.hidden = false;
-    var btn = $("reYearlyModalClose");
-    if (btn) btn.focus();
+  function syncFundingPanels() {
+    var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
+    var fundCode = fundEl ? fundEl.value : "privately_funded";
+    var privatePanel = $("rePanelPrivate");
+    var fundedPanel = $("rePanelFunded");
+    if (privatePanel) privatePanel.hidden = !isPrivateFunding(fundCode);
+    if (fundedPanel) fundedPanel.hidden = !isFundedFamily(fundCode);
+    syncPrivatePayPanels();
   }
 
-  function closeYearlyModal() {
-    var modal = $("reYearlyModal");
-    if (modal) modal.hidden = true;
+  function syncPrivatePayPanels() {
+    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+    var payCode = payEl ? payEl.value : "bank_transfer";
+    var schedWrap = $("rePayScheduleWrap");
+    if (schedWrap) {
+      var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
+      var prevVal = prev ? prev.value : null;
+      if (payCode === "bank_transfer" || payCode === "gocardless") {
+        var fallbackSched = payCode === "gocardless" ? "monthly_10" : "term_3";
+        schedWrap.innerHTML = renderPayScheduleFieldset(payCode, prevVal || fallbackSched);
+        schedWrap.hidden = false;
+      } else {
+        schedWrap.innerHTML = "";
+        schedWrap.hidden = true;
+      }
+    }
+    var feeNote = $("reAdminFeeNote");
+    var feeAmt = $("reAdminFeeAmount");
+    var upfrontNote = $("reOwnWayUpfrontNote");
+    var wrap = document.querySelector(".re-funding-2627");
+    var annual = wrap ? Number(wrap.getAttribute("data-annual-total")) : 0;
+    if (feeNote) feeNote.hidden = !adminFeeApplies(payCode);
+    if (feeAmt && adminFeeApplies(payCode) && annual > 0) {
+      feeAmt.textContent = " — indicative total with fee: " + money(moneyWithAdminFee(annual));
+    } else if (feeAmt) feeAmt.textContent = "";
+    if (upfrontNote) upfrontNote.hidden = payCode !== "own_way_upfront";
   }
 
   function bindFundingHandlers() {
-    var helpBtn = $("reYearlyHelpBtn");
-    if (helpBtn) {
-      helpBtn.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        openYearlyModal();
-      });
-    }
-    document.querySelectorAll('input[name="re_billing_2627"]').forEach(function (radio) {
-      radio.addEventListener("change", function () {
-        if (radio.value === "yearly" && radio.checked) openYearlyModal();
-      });
+    document.querySelectorAll('input[name="re_fund_2627"]').forEach(function (radio) {
+      radio.addEventListener("change", syncFundingPanels);
     });
+    document.querySelectorAll('input[name="re_pay_2627"]').forEach(function (radio) {
+      radio.addEventListener("change", syncPrivatePayPanels);
+    });
+    syncFundingPanels();
   }
 
   function collectBillingChoices(data) {
     var cur = fundingCurrent2526(data);
-    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
     var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
-    var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
-    var billEl = document.querySelector('input[name="re_billing_2627"]:checked');
-    var payCode = payEl ? payEl.value : mapPayMethodCode(cur.payment_method);
     var fundCode = fundEl ? fundEl.value : mapFundingCode(cur.funding);
+    var annualTotal = resolveAnnualWeeklyTotal(data);
+    var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
+
+    if (isFundedFamily(fundCode)) {
+      var fundedPay = mapFundedPayMethodCode(fundCode, cur);
+      return {
+        current_2526: cur,
+        choices_2627: {
+          billing_mode: "funded",
+          funding_code: fundCode,
+          funding_label: fundingLabel(fundCode, cur.funding),
+          payment_method_code: fundedPay,
+          payment_method_label: fundedPayMethodLabel(fundedPay),
+          payment_schedule_code: "admin_monthly",
+          payment_schedule_label: "Admin monthly (funder invoiced — full year total on record)",
+          invoice_type_code: "exempt",
+          invoice_type_label: "EXEMPT VAT",
+          admin_fee_applies: false,
+          estimated_annual_total: annualTotal,
+          annual_invoice_total: annualTotal,
+        },
+      };
+    }
+
+    var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+    var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
+    var payCode = payEl ? payEl.value : mapPrivatePayMethodCode(cur.payment_method, cur.funding);
+    var scheduleCode =
+      schedEl && (payCode === "bank_transfer" || payCode === "gocardless")
+        ? schedEl.value
+        : payCode === "gocardless"
+          ? "monthly_10"
+          : payCode === "bank_transfer"
+            ? "term_3"
+            : null;
     var vatCode = vatEl ? vatEl.value : cur.invoice_type_code || "vat_included";
-    var billing = billEl ? billEl.value : "term";
+    var fee = adminFeeApplies(payCode);
     return {
       current_2526: cur,
       choices_2627: {
-        payment_method_code: payCode,
-        payment_method_label: payMethodLabel(payCode, cur.payment_method),
+        billing_mode: "private",
         funding_code: fundCode,
         funding_label: fundingLabel(fundCode, cur.funding),
+        payment_method_code: payCode,
+        payment_method_label: privatePayMethodLabel(payCode),
+        payment_schedule_code: scheduleCode,
+        payment_schedule_label: scheduleCode ? scheduleLabel(scheduleCode) : null,
         invoice_type_code: vatCode,
         invoice_type_label: vatCode === "exempt" ? "EXEMPT VAT" : "20% VAT included",
-        billing_schedule: billing,
-        estimated_annual_total: resolveAnnualWeeklyTotal(data),
+        admin_fee_applies: fee,
+        estimated_annual_total: annualTotal,
+        estimated_total_with_admin_fee: fee && annualTotal > 0 ? moneyWithAdminFee(annualTotal) : null,
+        billing_schedule:
+          scheduleCode === "yearly_1off" ? "yearly" : scheduleCode === "monthly_10" ? "monthly" : "term",
       },
     };
   }
@@ -926,28 +1124,48 @@
     {
       title: "Autumn Term 2026",
       sessions: "14 weekday · 13 weekend sessions",
-      lines: [
-        "Term starts: Saturday 5 September 2026",
-        "Half term: Monday 26 – Friday 30 October 2026",
-        "Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027",
+      items: [
+        { type: "start", date: "Saturday 5 September 2026" },
+        {
+          type: "half_term",
+          date: "Monday 26 – Friday 30 October 2026",
+          crashIndex: 0,
+        },
+        {
+          type: "closure",
+          label: "Christmas closure",
+          date: "Saturday 19 December 2026 – Sunday 3 January 2027",
+        },
       ],
     },
     {
       title: "Spring Term 2027",
       sessions: "11 weekday · 9 weekend sessions",
-      lines: [
-        "Term starts: Monday 4 January 2027",
-        "Half term: Monday 15 – Friday 19 February 2027",
-        "Easter closure: Friday 26 March – Sunday 11 April 2027",
+      items: [
+        { type: "start", date: "Monday 4 January 2027" },
+        {
+          type: "half_term",
+          date: "Monday 15 – Friday 19 February 2027",
+          crashIndex: 1,
+        },
+        {
+          type: "closure",
+          label: "Easter closure",
+          date: "Friday 26 March – Sunday 11 April 2027",
+        },
       ],
     },
     {
       title: "Summer Term 2027",
       sessions: "13 weekday · 11 weekend sessions",
-      lines: [
-        "Term starts: Monday 12 April 2027",
-        "Half term: Monday 31 May – Friday 4 June 2027",
-        "Last sessions day: Friday 16 July 2027",
+      items: [
+        { type: "start", date: "Monday 12 April 2027" },
+        {
+          type: "half_term",
+          date: "Monday 31 May – Friday 4 June 2027",
+          crashIndex: 2,
+        },
+        { type: "last_day", date: "Friday 16 July 2027" },
       ],
     },
   ];
@@ -1009,36 +1227,97 @@
     );
   }
 
+  function renderTermDateItem(item) {
+    if (!item || !item.type) return "";
+    if (item.type === "start") {
+      return (
+        '<li class="re-cal-line">' +
+        reCalIconSvg("termStart") +
+        '<div class="re-cal-line__body">' +
+        '<span class="re-cal-line__label">Term starts</span>' +
+        '<span class="re-cal-line__date">' +
+        esc(item.date) +
+        "</span></div></li>"
+      );
+    }
+    if (item.type === "half_term") {
+      return (
+        '<li class="re-cal-line re-cal-line--offer">' +
+        reCalIconSvg("halfTerm") +
+        '<div class="re-cal-line__body">' +
+        '<button type="button" class="re-cal-offer-link" data-crash-idx="' +
+        esc(String(item.crashIndex != null ? item.crashIndex : "")) +
+        '">' +
+        reCalIconSvg("crash") +
+        '<span class="re-cal-offer-link__text">' +
+        '<span class="re-cal-offer-link__title">Half term offer</span>' +
+        '<span class="re-cal-offer-link__hint">Crash courses · Mon–Thu · view dates</span>' +
+        "</span></button>" +
+        '<span class="re-cal-line__date">' +
+        esc(item.date) +
+        "</span></div></li>"
+      );
+    }
+    if (item.type === "closure") {
+      return (
+        '<li class="re-cal-line">' +
+        reCalIconSvg("closure") +
+        '<div class="re-cal-line__body">' +
+        '<span class="re-cal-line__label">' +
+        esc(item.label || "Closure") +
+        "</span>" +
+        '<span class="re-cal-line__date">' +
+        esc(item.date) +
+        "</span></div></li>"
+      );
+    }
+    if (item.type === "last_day") {
+      return (
+        '<li class="re-cal-line">' +
+        reCalIconSvg("lastDay") +
+        '<div class="re-cal-line__body">' +
+        '<span class="re-cal-line__label">Last sessions day</span>' +
+        '<span class="re-cal-line__date">' +
+        esc(item.date) +
+        "</span></div></li>"
+      );
+    }
+    return "";
+  }
+
   function renderTermDatesModalBody() {
     return (
-      '<p class="re-cal-summary">Bank holidays are excluded from session counts shown on your activity cards.</p>' +
+      '<p class="re-cal-summary">Bank holidays are excluded from session counts shown on your activity cards. Term start dates only — no end-of-term date is listed here.</p>' +
       RE_TERM_DATES_2627.map(function (term) {
         return (
           '<div class="re-cal-block">' +
-          "<h4>" +
+          '<h4 class="re-cal-block__title">' +
+          reCalIconSvg("calendar") +
+          "<span>" +
           esc(term.title) +
-          "</h4>" +
-          '<p class="re-muted" style="margin:0 0 6px;font-size:.84rem">' +
+          "</span></h4>" +
+          '<p class="re-muted re-cal-block__sessions">' +
           esc(term.sessions) +
           "</p>" +
-          "<ul>" +
-          term.lines
-            .map(function (line) {
-              return "<li>" + esc(line) + "</li>";
-            })
-            .join("") +
+          '<ul class="re-cal-lines">' +
+          (term.items || []).map(renderTermDateItem).join("") +
           "</ul></div>"
         );
       }).join("")
     );
   }
 
-  function renderCrashDatesModalBody() {
+  function renderCrashDatesModalBody(highlightIdx) {
+    var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
       '<p class="re-cal-summary">Crash courses run Monday to Thursday during half terms at Acton Centre. Times TBC — booking is a separate form (coming soon).</p>' +
-      RE_CRASH_DATES_2627.map(function (block) {
+      RE_CRASH_DATES_2627.map(function (block, i) {
         return (
-          '<div class="re-cal-block">' +
+          '<div class="re-cal-block' +
+          (i === hi ? " re-cal-block--highlight" : "") +
+          '" id="reCrashBlock' +
+          i +
+          '">' +
           "<h4>" +
           esc(block.title) +
           "</h4>" +
@@ -1066,15 +1345,32 @@
     );
   }
 
-  function openInfoModal(title, bodyHtml) {
+  function openInfoModal(title, bodyHtml, afterOpen) {
     var modal = ensureInfoModal();
     var titleEl = $("reInfoModalTitle");
     var bodyEl = $("reInfoModalBody");
     if (titleEl) titleEl.textContent = title;
     if (bodyEl) bodyEl.innerHTML = bodyHtml;
     modal.hidden = false;
+    wireModalBodyLinks();
+    if (typeof afterOpen === "function") afterOpen(bodyEl);
     var btn = $("reInfoModalClose");
     if (btn) btn.focus();
+  }
+
+  function wireModalBodyLinks() {
+    var bodyEl = $("reInfoModalBody");
+    if (!bodyEl) return;
+    bodyEl.querySelectorAll(".re-cal-offer-link[data-crash-idx]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-crash-idx"));
+        openInfoModal("Half term offer — crash courses", renderCrashDatesModalBody(idx), function (el) {
+          if (!el || isNaN(idx)) return;
+          var block = el.querySelector("#reCrashBlock" + idx);
+          if (block) block.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
+      });
+    });
   }
 
   function closeInfoModal() {
@@ -1149,20 +1445,24 @@
     host.innerHTML =
       existing +
       renderOutstandingBanner(data) +
-      '<section class="re-section re-head-section">' +
+      '<div class="re-form-grid">' +
+      '<section class="re-section re-head-section re-form-grid__head">' +
       reSectionTitle("h2", "registers", "Re-enrolment " + esc(ACADEMIC_YEAR.replace("-", "/"))) +
       '<p class="re-participant-name">' +
       esc(participantDisplayName(data)) +
       "</p>" +
       '<p class="re-muted">Review your current programme and confirm for September 2026.</p>' +
       "</section>" +
+      '<aside class="re-form-grid__side">' +
       renderTermDatesLead() +
       renderPhotoSection(data) +
-      '<section class="re-section">' +
+      '<section class="re-section re-section--billing">' +
       reSectionTitle("h3", "billing", "Funding &amp; billing") +
       renderFundingBlock(data) +
       "</section>" +
-      '<section class="re-section">' +
+      "</aside>" +
+      '<div class="re-form-grid__main">' +
+      '<section class="re-section re-section--services">' +
       reSectionTitle("h3", "services", "After-School &amp; Weekends") +
       '<p class="re-muted">Your weekly and weekend activities · prices per session · term counts exclude bank holidays.</p>' +
       renderWeeklySlots(data.weekly_slots || []) +
@@ -1173,12 +1473,14 @@
         : "") +
       "</section>" +
       renderExtendedOfferSection(data) +
-      '<section class="re-section re-declarations">' +
+      "</div>" +
+      '<section class="re-section re-declarations re-form-grid__submit">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
       '<label class="re-check"><input id="reDeclTerms" type="checkbox" /> I understand that slot changes are subject to availability and outstanding balances remain payable.</label>' +
-      '<button id="reSubmitBtn" class="re-btn re-btn--primary" type="button">Submit re-enrolment</button>' +
-      "</section>";
+      '<button id="reSubmitBtn" class="re-btn re-btn--primary re-btn--submit" type="button">Submit re-enrolment</button>' +
+      "</section>" +
+      "</div>";
 
     host.querySelectorAll(".re-choice-fieldset input[type=radio]").forEach(function (radio) {
       radio.addEventListener("change", function () {
