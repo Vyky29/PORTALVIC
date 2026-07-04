@@ -721,18 +721,33 @@
       overflow-wrap: break-word;
     }
     .pp-pax-dob { margin: 4px 0 8px; font-size: 12px; }
-    .pp-pax-info-buttons { display: grid; gap: 10px; margin: 12px 0; min-width: 0; }
-    .pp-pax-info-row { min-width: 0; }
+    .pp-pax-info-buttons { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; min-width: 0; }
+    .pp-pax-info-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
     .pp-pax-info-btn {
       width: 100%;
       border: 1px solid var(--line);
       background: #fff;
       border-radius: 16px;
-      padding: 14px 12px;
+      padding: 12px 8px;
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(23,50,71,.05);
       min-width: 0;
     }
+    .pp-pax-info-btn:disabled,
+    .pp-pax-info-btn--disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .pp-pax-info-btn:disabled .pp-pax-info-icon,
+    .pp-pax-info-btn--disabled .pp-pax-info-icon { color: var(--muted); }
+    .pp-pax-info-btn:disabled .pp-pax-info-caption,
+    .pp-pax-info-btn--disabled .pp-pax-info-caption { color: var(--muted); }
     .pp-pax-info-btn-stack {
       display: flex;
       flex-direction: column;
@@ -742,12 +757,51 @@
     }
     .pp-pax-info-icon { width: 28px; height: 28px; color: var(--blue); flex-shrink: 0; }
     .pp-pax-info-caption {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       color: var(--ink);
       text-align: center;
       overflow-wrap: break-word;
+      line-height: 1.25;
     }
+    .pp-pax-info-subcaption {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      overflow-wrap: break-word;
+      line-height: 1.25;
+      max-width: 100%;
+    }
+    .pp-booking-list {
+      list-style: none;
+      margin: 12px 0 16px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-booking-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+    .pp-booking-item__label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-booking-item__choice {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--blue);
+      font-weight: 700;
+      overflow-wrap: break-word;
+    }
+    .pp-booking-card .pp-btn { margin-top: 4px; }
     .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
     .pp-btn--whatsapp {
       background: linear-gradient(180deg, #25d366 0%, #1ebe57 100%);
@@ -971,9 +1025,9 @@
       .pp-child-photo--init { font-size: 26px; }
       .pp-child-action-label { font-size: 12px; }
       .pp-home-head h2 { font-size: 28px; }
-      .pp-pax-info-buttons {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      }
+      .pp-pax-info-caption { font-size: 13px; }
+      .pp-pax-info-subcaption { font-size: 11px; }
+      .pp-pax-info-btn { padding: 14px 10px; }
       .pp-pax-hero {
         grid-template-columns: 80px minmax(0, 1fr);
         gap: 16px;
@@ -997,9 +1051,6 @@
       .pp-page {
         padding-left: max(32px, env(safe-area-inset-left));
         padding-right: max(32px, env(safe-area-inset-right));
-      }
-      .pp-pax-info-buttons {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
   </style>
@@ -1154,7 +1205,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260704-unread-msgs"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260704-hub-rows"></script>
   <script src="/portal/parent_portal_app.js?v=20260704-home-action-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

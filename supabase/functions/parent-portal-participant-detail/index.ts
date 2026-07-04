@@ -27,6 +27,8 @@ import {
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
 } from "../_shared/participant_identity.ts";
+import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
+import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -586,8 +588,35 @@ Deno.serve(async (req) => {
 
   const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
 
+  let reenrolmentSummary = buildReenrolmentParentSummary(null, null);
+  if (wantGeneral) {
+    const { data: reenrolRow } = await supabase
+      .from("portal_re_enrolment_submissions")
+      .select("submitted_at, payload")
+      .eq("academic_year", REENROL_ACADEMIC_YEAR)
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const submittedAt = reenrolRow?.submitted_at ? String(reenrolRow.submitted_at) : null;
+    const payload = reenrolRow?.payload && typeof reenrolRow.payload === "object"
+      ? (reenrolRow.payload as Record<string, unknown>)
+      : null;
+    reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
+  }
+
+  let swimTermReviewAvailable = false;
+  if (wantGeneral) {
+    const { count: swimShareCount } = await supabase
+      .from("portal_parent_swim_term_share")
+      .select("document_id", { count: "exact", head: true })
+      .eq("contact_id", contactId)
+      .eq("share_status", "ready");
+    swimTermReviewAvailable = (swimShareCount || 0) > 0;
+  }
+
   const swimTermReviews: Record<string, unknown>[] = [];
-  if (wantSwim && hasAquatics) {
+  if (wantSwim && (hasAquatics || swimTermReviewAvailable)) {
     const { data: shares } = await supabase
       .from("portal_parent_swim_term_share")
       .select("document_id, ready_at")
@@ -658,6 +687,8 @@ Deno.serve(async (req) => {
       sessions: sessionsOut,
       achievements,
       swim_term_reviews: swimTermReviews,
+      swim_term_review_available: swimTermReviewAvailable,
+      reenrolment: reenrolmentSummary,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },

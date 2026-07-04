@@ -236,52 +236,97 @@
     );
   }
 
+  function bookingSummary(data) {
+    var r = data.reenrolment || {};
+    return {
+      submitted: !!r.submitted,
+      submitted_at: r.submitted_at || null,
+      hint: String(r.summary_hint || "").trim() || "Not submitted yet",
+      items: Array.isArray(r.items) ? r.items : [],
+    };
+  }
+
+  function infoBtnHtml(view, caption, iconSvg, opts) {
+    opts = opts || {};
+    var disabled = !!opts.disabled;
+    var subtitle = opts.subtitle ? String(opts.subtitle).trim() : "";
+    var extraClass = opts.extraClass || "";
+    var unreadBadge = opts.unreadBadge || "";
+    return (
+      '<button type="button" class="pp-pax-info-btn' +
+      extraClass +
+      (disabled ? " pp-pax-info-btn--disabled" : "") +
+      '" data-pp-open="' +
+      esc(view) +
+      '"' +
+      (disabled ? ' disabled aria-disabled="true"' : "") +
+      ' aria-label="' +
+      esc(caption + (subtitle ? " — " + subtitle : "")) +
+      '">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      (unreadBadge
+        ? '<span class="pp-pax-info-icon-wrap">' + iconSvg + unreadBadge + "</span>"
+        : iconSvg) +
+      '<span class="pp-pax-info-caption">' +
+      esc(caption) +
+      "</span>" +
+      (subtitle ? '<span class="pp-pax-info-subcaption">' + esc(subtitle) + "</span>" : "") +
+      "</span></button>"
+    );
+  }
+
   function infoButtonsHtml(data, opts) {
-    var g = data.general || {};
-    var hasAquatics = !!g.has_aquatics;
     var msgUnread =
       opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
     var msgBadge =
       opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
         ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
         : "";
+    var booking = bookingSummary(data);
+    var swimAvailable = !!data.swim_term_review_available;
+    var msgIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
     return (
       '<div class="pp-pax-info-buttons">' +
-      '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--messages' +
-      (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : "") +
-      '" data-pp-open="messages" aria-label="Messages' +
-      (msgUnread > 0 ? " — " + msgUnread + " unread" : "") +
-      '">' +
-      '<span class="pp-pax-info-btn-stack">' +
-      '<span class="pp-pax-info-icon-wrap">' +
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-      msgBadge +
-      "</span>" +
-      '<span class="pp-pax-info-caption">Messages</span></span></button></div>' +
-      '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn" data-pp-open="general" aria-label="General Information">' +
-      '<span class="pp-pax-info-btn-stack">' +
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>' +
-      '<span class="pp-pax-info-caption">General Information</span></span></button></div>' +
-      '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn" data-pp-open="sessions" aria-label="Sessions Overview">' +
-      '<span class="pp-pax-info-btn-stack">' +
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
-      '<span class="pp-pax-info-caption">Sessions Overview</span></span></button></div>' +
-      '<div class="pp-pax-info-row">' +
-      '<button type="button" class="pp-pax-info-btn" data-pp-open="achievements" aria-label="Achievement photos">' +
-      '<span class="pp-pax-info-btn-stack">' +
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>' +
-      '<span class="pp-pax-info-caption">Achievement photos</span></span></button></div>' +
-      (hasAquatics
-        ? '<div class="pp-pax-info-row">' +
-          '<button type="button" class="pp-pax-info-btn" data-pp-open="swim" aria-label="Swimming term review">' +
-          '<span class="pp-pax-info-btn-stack">' +
-          '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>' +
-          '<span class="pp-pax-info-caption">Swimming term review</span></span></button></div>'
-        : "") +
-      "</div>"
+      '<div class="pp-pax-info-row pp-pax-info-row--parents">' +
+      infoBtnHtml("messages", "Messages", msgIcon, {
+        extraClass:
+          " pp-pax-info-btn--messages" + (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
+        unreadBadge: msgBadge,
+      }) +
+      infoBtnHtml(
+        "general",
+        "General Information",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>',
+      ) +
+      infoBtnHtml(
+        "booking",
+        "Booking 2026/27",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+        { subtitle: booking.hint },
+      ) +
+      "</div>" +
+      '<div class="pp-pax-info-row pp-pax-info-row--sessions">' +
+      infoBtnHtml(
+        "sessions",
+        "Sessions Overview",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+      ) +
+      infoBtnHtml(
+        "achievements",
+        "Achievement photos",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
+      ) +
+      infoBtnHtml(
+        "swim",
+        "Swimming term review",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>',
+        {
+          disabled: !swimAvailable,
+          subtitle: swimAvailable ? "" : "Not available yet",
+        },
+      ) +
+      "</div></div>"
     );
   }
 
@@ -361,7 +406,7 @@
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       heroHtml(data) +
       infoButtonsHtml(data, opts) +
-      '<p class="pp-muted pp-pax-hub-note">Choose a section — same layout instructors use when they tap your child&apos;s name.</p>' +
+      '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
   }
@@ -495,6 +540,56 @@
           });
       });
     });
+  }
+
+  function renderBooking(host, data, opts) {
+    var booking = bookingSummary(data);
+    var p = data.participant || {};
+    var contactId = p.contact_id || (opts && opts.contactId) || "";
+    var reenrolHref =
+      "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(String(contactId));
+    var body;
+    if (!booking.submitted || !booking.items.length) {
+      body =
+        '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
+        '<p class="pp-muted">Open the booking form to confirm weekly activities, Day Centre (if applicable), and funding for next year.</p>' +
+        '<a class="pp-btn pp-btn--primary" href="' +
+        esc(reenrolHref) +
+        '">Open re-enrolment form</a>';
+    } else {
+      body =
+        '<p class="pp-muted">Submitted ' +
+        esc(formatDate(booking.submitted_at)) +
+        ". The office will review your choices.</p>" +
+        '<ul class="pp-booking-list">' +
+        booking.items
+          .map(function (item) {
+            return (
+              '<li class="pp-booking-item">' +
+              '<div class="pp-booking-item__label">' +
+              esc(item.label || "Activity") +
+              "</div>" +
+              '<div class="pp-booking-item__choice">' +
+              esc(item.choice || "—") +
+              "</div></li>"
+            );
+          })
+          .join("") +
+        "</ul>" +
+        '<a class="pp-btn pp-btn--ghost" href="' +
+        esc(reenrolHref) +
+        '">Update booking choices</a>';
+    }
+    host.innerHTML = subviewShell(
+      data,
+      "booking",
+      '<h3 class="pp-pax-subview-title">Booking 2026/27</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Your selections for the next academic year.</p>' +
+        '<div class="pp-card pp-booking-card">' +
+        body +
+        "</div>",
+    );
+    bindBack(host, data, opts);
   }
 
   function renderSwim(host, data, opts) {
@@ -774,6 +869,7 @@
     } else if (view === "sessions") renderSessions(host, data, opts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
+    else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "messages") renderMessages(host, data, opts);
   }
 
@@ -785,6 +881,7 @@
     };
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        if (btn.disabled) return;
         var view = btn.getAttribute("data-pp-open");
         var section = sectionByView[view];
         if (

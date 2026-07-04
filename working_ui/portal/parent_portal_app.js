@@ -20,7 +20,14 @@
     if (!base) return patch;
     if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
-    if (Array.isArray(patch.swim_term_reviews)) base.swim_term_reviews = patch.swim_term_reviews;
+    if (Array.isArray(patch.swim_term_reviews)) {
+      base.swim_term_reviews = patch.swim_term_reviews;
+      if (patch.swim_term_reviews.length) base.swim_term_review_available = true;
+    }
+    if (patch.swim_term_review_available != null) {
+      base.swim_term_review_available = !!patch.swim_term_review_available;
+    }
+    if (patch.reenrolment) base.reenrolment = patch.reenrolment;
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
     if (patch.general && base.general) {
       Object.assign(base.general, patch.general);
@@ -89,6 +96,7 @@
 
   function participantRenderOpts(contactId) {
     return {
+      contactId: contactId,
       saveGeneralInfo: function (fields) {
         return fetch(fn("parent-portal-general-info-save"), {
           method: "POST",

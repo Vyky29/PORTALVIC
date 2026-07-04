@@ -283,12 +283,12 @@
     .re-banner--warn { background: var(--warnSoft); border: 1px solid rgba(184,134,11,.25); }
     .re-banner--info { background: var(--blueSoft); }
     .re-banner--deadline {
-      background: #dc2626;
-      border: 1px solid #b91c1c;
-      color: #fff;
+      background: #fef2f2;
+      border: 1px solid rgba(220, 38, 38, .22);
+      color: #9f1239;
     }
     .re-banner--deadline strong {
-      color: #fff;
+      color: #be123c;
       font-weight: 800;
     }
     .re-slot-list { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -326,7 +326,9 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      padding-top: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(45, 132, 179, .12);
       min-width: 0;
     }
     .re-slot-meta-block { min-width: 0; }
@@ -425,6 +427,32 @@
       overflow-wrap: break-word;
     }
     .re-billing-ref-note { margin: 10px 0 0; font-size: .82rem; }
+    .re-billing-ref-note--alert {
+      margin: 10px 0 0;
+      font-size: .82rem;
+      font-weight: 700;
+      color: #be123c;
+      overflow-wrap: break-word;
+    }
+    .re-btn--billing-edit-inline {
+      width: auto;
+      margin-top: 10px;
+      padding: 5px 12px;
+      min-height: 0;
+      font-size: .8rem;
+      font-weight: 700;
+      background: transparent;
+      border: 1px solid rgba(45, 132, 179, .28);
+      color: var(--blue);
+      border-radius: 8px;
+      box-shadow: none;
+    }
+    .re-btn--billing-edit-inline:hover,
+    .re-btn--billing-edit-inline:focus-visible {
+      background: rgba(45, 132, 179, .06);
+      border-color: rgba(45, 132, 179, .45);
+      outline: none;
+    }
     .re-billing-2627-saved {
       margin: 10px 0 0;
       padding: 10px 12px;
@@ -462,6 +490,23 @@
       min-width: 0;
     }
     .re-current-ref-note { margin: 0 0 12px; font-size: .82rem; overflow-wrap: break-word; }
+    .re-current-ref-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      min-width: 0;
+    }
+    .re-current-ref-grid__left,
+    .re-current-ref-grid__right { min-width: 0; }
+    .re-current-ref-grid__left .re-head-identity { margin: 0; }
+    .re-current-ref-empty { margin: 0; font-size: .88rem; }
+    @media (min-width: 640px) {
+      .re-current-ref-grid {
+        grid-template-columns: minmax(120px, 168px) minmax(0, 1fr);
+        gap: 18px 22px;
+      }
+    }
     .re-current-ref-list {
       list-style: none;
       margin: 0;
@@ -645,6 +690,18 @@
       border-color: rgba(45, 132, 179, .45);
       background: var(--blueSoft);
       box-shadow: 0 0 0 1px rgba(45, 132, 179, .12);
+    }
+    .re-radio--schedule-spotlight {
+      border-color: rgba(217, 119, 6, .38);
+      background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+    }
+    .re-radio--schedule-spotlight .re-radio--schedule__title {
+      color: #b45309;
+    }
+    .re-radio--schedule-spotlight:has(input:checked) {
+      border-color: rgba(217, 119, 6, .55);
+      background: linear-gradient(180deg, #fef3c7 0%, #fffbeb 100%);
+      box-shadow: 0 0 0 1px rgba(217, 119, 6, .15);
     }
     .re-radio--schedule__body {
       display: flex;
@@ -1079,7 +1136,12 @@
       margin-bottom: 0;
     }
     .re-form-grid__side,
-    .re-form-grid__main { min-width: 0; }
+    .re-form-grid__main,
+    .re-form-grid__current,
+    .re-form-grid__banner { min-width: 0; }
+    .re-form-grid__banner { margin-bottom: 4px; }
+    .re-form-grid__banner .re-banner { margin-bottom: 0; }
+    .re-form-grid__current .re-section { margin-bottom: 0; }
     @media (min-width: 900px) {
       :root { --max: min(1140px, 96vw); }
       .re-page { padding-top: 20px; }
@@ -1106,32 +1168,34 @@
       }
       .re-form-grid {
         display: grid;
-        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-        gap: 0 24px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
         align-items: start;
       }
       .re-form-grid__head {
         grid-column: 1 / -1;
-        margin-bottom: 4px;
-        padding-bottom: 12px;
+        margin-bottom: 0;
+        padding-bottom: 10px;
         border-bottom: 1px solid var(--line);
       }
       .re-form-grid__head .re-section-title { font-size: 1.05rem; }
-      .re-form-grid__side {
-        grid-column: 1;
-        position: sticky;
-        top: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+      .re-form-grid__current {
+        grid-column: 1 / -1;
+        padding: 14px 0 12px;
+        border-bottom: 1px solid var(--line);
       }
-      .re-form-grid__side .re-section { margin-bottom: 0; }
+      .re-form-grid__banner {
+        grid-column: 1 / -1;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
       .re-form-grid__main {
-        grid-column: 2;
+        grid-column: 1 / -1;
         display: flex;
         flex-direction: column;
         gap: 14px;
         min-width: 0;
+        padding-top: 14px;
       }
       .re-form-grid__main .re-section { margin-bottom: 0; }
       .re-form-grid__submit {
@@ -1238,8 +1302,8 @@
     </p>
   </main>
 
-  <script src="/portal/portal_calendar_2026_27.js?v=20260704-term-edges-crash"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260704-term-edges-crash-v2"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-current-arr"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-billing-flex"></script>
 </body>
 </html>

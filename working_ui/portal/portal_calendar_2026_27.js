@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-term-edges-crash";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-term-edges-crash-v2";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";

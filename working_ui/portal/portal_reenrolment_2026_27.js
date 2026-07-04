@@ -452,7 +452,7 @@
     return String(raw).trim();
   }
 
-  function renderCurrentArrangementsSide(data) {
+  function renderCurrentArrangementsRefListHtml(data) {
     var cur = (data && data.current_arrangements_2526) || {};
     var rows = [];
     function addRefRow(iconKey, label, val) {
@@ -516,13 +516,24 @@
       addRefRow("billing", "Payment method", formatCurrentPaymentMethodLabel(legacy.payment_method));
       addRefRow("wallet", "Funding", legacy.funding);
     }
+    if (!rows.length) {
+      return '<p class="re-muted re-current-ref-empty">No current arrangements on file — contact the office if this is wrong.</p>';
+    }
+    return '<ul class="re-current-ref-list">' + rows.join("") + "</ul>";
+  }
+
+  function renderCurrentArrangementsSection(data) {
     return (
       '<section class="re-section re-section--current-ref">' +
       reSectionTitle("h3", "current", "Current arrangements (2025/26)") +
-      '<p class="re-muted re-current-ref-note">Reference from this year&apos;s record. Confirm 2026/27 choices on the right.</p>' +
-      '<ul class="re-current-ref-list">' +
-      rows.join("") +
-      "</ul></section>"
+      '<p class="re-muted re-current-ref-note">Reference from this year&apos;s record — confirm 2026/27 choices below.</p>' +
+      '<div class="re-current-ref-grid">' +
+      '<div class="re-current-ref-grid__left">' +
+      renderParticipantHeadIdentity(data) +
+      "</div>" +
+      '<div class="re-current-ref-grid__right">' +
+      renderCurrentArrangementsRefListHtml(data) +
+      "</div></div></section>"
     );
   }
 
@@ -1122,7 +1133,8 @@
       esc(payText) +
       "</span></li>" +
       "</ul>" +
-      '<p class="re-muted re-billing-ref-note">This continues for 2026/27 unless you edit below.</p>' +
+      '<p class="re-billing-ref-note re-billing-ref-note--alert">This continues for 2026/27 unless you edit below.</p>' +
+      '<button type="button" class="re-btn re-btn--billing-edit-inline" id="reBillingEditBtn">Edit for 2026/27</button>' +
       "</div>"
     );
   }
@@ -1151,7 +1163,6 @@
       ">" +
       renderBilling2526Reference(fundingCurrent2526(data)) +
       renderBilling2627SummaryIfChanged(data) +
-      '<button type="button" class="re-btn re-btn--secondary re-btn--billing-edit" id="reBillingEditBtn">Edit for 2026/27</button>' +
       "</div>" +
       '<div id="reBillingArrangementEdit"' +
       (editing ? "" : " hidden") +
@@ -1177,7 +1188,7 @@
     if (b.editing) return;
     var cur = fundingCurrent2526(data);
     var payCode = normalizePayMethodChoice(b.payCode);
-    var scheduleDefault = mapScheduleCode(cur.payment_method, cur.funding);
+    var scheduleDefault = defaultScheduleForPay(payCode);
     var schedWrap = $("rePayScheduleWrap");
     if (schedWrap) schedWrap.innerHTML = renderPayScheduleFieldset(payCode, scheduleDefault);
     syncPrivatePayPanels();
@@ -1201,7 +1212,7 @@
     var annualTotal = resolveAnnualWeeklyTotal(data);
     var b = state.billing2627;
     var payCode = normalizePayMethodChoice(b.payCode);
-    var scheduleDefault = mapScheduleCode(fundingCurrent2526(data).payment_method, fundingCurrent2526(data).funding);
+    var scheduleDefault = defaultScheduleForPay(payCode);
 
     return (
       '<div class="re-funding-2627" data-annual-total="' +
@@ -1314,6 +1325,16 @@
     return "bank_transfer";
   }
 
+  function defaultScheduleForPay(payCode) {
+    if (payCode === "gocardless") return "term_3";
+    if (payCode === "bank_transfer") return "term_flexi";
+    return "term_3";
+  }
+
+  function isAllYearScheduleCode(code) {
+    return code === "monthly_10" || code === "yearly_1off";
+  }
+
   function mapScheduleCode(rawPay, fundingRaw) {
     var pay = mapPrivatePayMethodCode(rawPay, fundingRaw);
     var s = String(rawPay || "").toLowerCase();
@@ -1401,8 +1422,11 @@
         .map(function (o) {
           var checked = o.code === validDefault ? " checked" : "";
           var hint = scheduleOptionHint(o.code, payCode);
+          var spotlight = isAllYearScheduleCode(o.code) ? " re-radio--schedule-spotlight" : "";
           return (
-            '<label class="re-radio re-radio--schedule">' +
+            '<label class="re-radio re-radio--schedule' +
+            spotlight +
+            '">' +
             '<input type="radio" name="re_pay_schedule_2627" value="' +
             esc(o.code) +
             '"' +
@@ -1619,7 +1643,7 @@
             "</span></div>" +
             '<div class="re-slot-meta">' +
             '<div class="re-slot-meta-block">' +
-            '<span class="re-slot-meta-label">Sessions</span>' +
+            '<span class="re-slot-meta-label">Sessions 2026/27</span>' +
             '<span class="re-slot-meta-value">' +
             "Autumn " +
             esc(String(autumn)) +
@@ -1717,9 +1741,9 @@
   function renderTermDatesLead() {
     return (
       '<section class="re-section re-section--dates-lead">' +
-      reSectionTitle("h3", "calendar", "2026/27 dates") +
+      reSectionTitle("h3", "calendar", "ClubSENsational Calendar 2026/27") +
       '<p class="re-muted">Start here — view term dates, half terms and closures for the year ahead.</p>' +
-      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">View term dates 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">Open ClubSENsational Calendar 2026/27</button>' +
       "</section>"
     );
   }
@@ -2175,12 +2199,13 @@
       '<div class="re-form-grid">' +
       '<section class="re-section re-head-section re-form-grid__head">' +
       reSectionTitle("h2", "registers", "Re-enrolment " + esc(ACADEMIC_YEAR.replace("-", "/"))) +
-      renderParticipantHeadIdentity(data) +
-      renderReEnrolDeadlineBanner() +
       "</section>" +
-      '<aside class="re-form-grid__side">' +
-      renderCurrentArrangementsSide(data) +
-      "</aside>" +
+      '<div class="re-form-grid__current">' +
+      renderCurrentArrangementsSection(data) +
+      "</div>" +
+      '<div class="re-form-grid__banner">' +
+      renderReEnrolDeadlineBanner() +
+      "</div>" +
       '<div class="re-form-grid__main">' +
       renderTermDatesLead() +
       renderPrimaryServiceSection(data) +

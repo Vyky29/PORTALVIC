@@ -364,50 +364,53 @@
     .dc-cal-crash-day--off {
       background: var(--dc-red);
     }
-    .dc-cal__swatch--edge { background: var(--dc-green); box-shadow: inset 0 -3px 0 #2f6b00; }
-    .dc-cal__swatch--crash { background: var(--dc-red); box-shadow: inset 0 -3px 0 #a01414; }
+    .dc-cal__swatch--edge { background: var(--dc-green); box-shadow: inset 0 0 0 3px #14520a; }
+    .dc-cal__swatch--crash { background: var(--dc-red); box-shadow: inset 0 0 0 3px #ffffff; }
     @keyframes dcCalEdgePulse {
-      0%, 100% { opacity: 0.3; }
+      0%, 100% { opacity: 0.2; }
       50% { opacity: 1; }
     }
     @keyframes dcCalCrashPulse {
-      0%, 100% { opacity: 0.35; }
+      0%, 100% { opacity: 0.25; }
       50% { opacity: 1; }
     }
-    /* First / last day of each term — darker-green blinking underline. */
+    /* First / last day of each term — thick blinking dark-green ring (high contrast on light green). */
     #dcCalSessionsPanel .dc-cal-cell--term-edge {
       position: relative;
-      box-shadow: inset 0 0 0 2px #2f6b00;
+      background: #a9d65a;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--term-edge .dc-cal-day {
+      font-weight: 800;
     }
     #dcCalSessionsPanel .dc-cal-cell--term-edge::after {
       content: "";
       position: absolute;
-      left: 12%;
-      right: 12%;
-      bottom: 2px;
-      height: 3px;
-      border-radius: 2px;
-      background: #2f6b00;
-      animation: dcCalEdgePulse 1.1s ease-in-out infinite;
+      inset: 0;
+      border-radius: 5px;
+      border: 3px solid #14520a;
+      box-shadow: 0 0 0 1px #14520a inset;
+      animation: dcCalEdgePulse 1.05s ease-in-out infinite;
       pointer-events: none;
     }
-    /* Crash-course-week days — red, tappable, with a blinking darker-red underline. */
+    /* Crash-course-week days — red, tappable, with a thick blinking WHITE ring (stands out on red). */
     #dcCalSessionsPanel .dc-cal-cell--crash {
       position: relative;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
+    #dcCalSessionsPanel .dc-cal-cell--crash .dc-cal-day {
+      font-weight: 800;
+      color: #ffffff;
+    }
     #dcCalSessionsPanel .dc-cal-cell--crash::after {
       content: "";
       position: absolute;
-      left: 12%;
-      right: 12%;
-      bottom: 2px;
-      height: 3px;
-      border-radius: 2px;
-      background: #a01414;
-      animation: dcCalCrashPulse 0.85s ease-in-out infinite;
+      inset: 0;
+      border-radius: 5px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
+      animation: dcCalCrashPulse 0.8s ease-in-out infinite;
       pointer-events: none;
     }
     #dcCalSessionsPanel .dc-cal-cell--crash:focus-visible {
