@@ -361,19 +361,40 @@
     );
   }
 
+  function ppChildActionIcon(kind) {
+    if (kind === "reenrol") {
+      return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>' +
+        "</svg>"
+      );
+    }
+    return (
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="13" y2="14"/>' +
+      "</svg>"
+    );
+  }
+
   function childReenrolBtnHtml(c) {
     var cid = String(c.contact_id || "");
     var href = "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(cid);
     var submitted = !!(c.reenrolment && c.reenrolment.submitted);
+    var label = submitted ? "Re-enrol 2026/27 · Saved" : "Re-enrol 2026/27";
     return (
-      '<a class="pp-btn pp-child-reenrol-btn' +
+      '<a class="pp-child-action-btn pp-child-reenrol-btn' +
       (submitted ? " pp-child-reenrol-btn--saved" : "") +
       '" href="' +
       esc(href) +
       '">' +
-      esc(submitted ? "Re-enrol 2026/27 · Saved" : "Re-enrol 2026/27") +
+      '<span class="pp-child-action-ico" aria-hidden="true">' +
+      ppChildActionIcon("reenrol") +
+      "</span>" +
+      '<span class="pp-child-action-label">' +
+      esc(label) +
+      "</span>" +
       (submitted
-        ? '<span class="pp-child-reenrol-hint">Tap to edit — the club office is notified of changes</span>'
+        ? '<span class="pp-child-action-sub">Tap to edit — office notified</span>'
         : "") +
       "</a>"
     );
@@ -381,15 +402,16 @@
 
   function childSessionsBtnHtml(c) {
     var childUnread = unreadCountForContact(c.contact_id);
-    var label = "Messages, photos & feedback…";
-    if (childUnread > 0) {
-      label += " (" + childUnread + " new)";
-    }
+    var sub = childUnread > 0 ? childUnread + " new message" + (childUnread === 1 ? "" : "s") : "";
     return (
-      '<button type="button" class="pp-btn pp-btn--secondary pp-child-sessions-btn" data-contact-id="' +
+      '<button type="button" class="pp-child-action-btn pp-child-sessions-btn" data-contact-id="' +
       esc(String(c.contact_id || "")) +
       '">' +
-      esc(label) +
+      '<span class="pp-child-action-ico" aria-hidden="true">' +
+      ppChildActionIcon("messages") +
+      "</span>" +
+      '<span class="pp-child-action-label">Messages, photos &amp; feedback</span>' +
+      (sub ? '<span class="pp-child-action-sub">' + esc(sub) + "</span>" : "") +
       "</button>"
     );
   }
@@ -433,31 +455,31 @@
             if (childUnread > 0) {
               chips.push(unreadBadgeHtml(childUnread, "New messages for " + (c.display_name || "participant")));
             }
-            var meta = [];
-            if (c.dob_iso) meta.push("DOB " + esc(formatDob(c.dob_iso)));
-            if (c.city && c.city !== "—") meta.push(esc(c.city));
             var photoMissing = c.has_avatar === false;
+            var dobLine = c.dob_iso
+              ? '<p class="pp-muted pp-child-dob">DOB ' + esc(formatDob(c.dob_iso)) + "</p>"
+              : "";
             return (
               '<article class="pp-card pp-child-card' +
               (photoMissing ? " pp-child-card--no-photo" : "") +
               '" data-contact-id="' +
               esc(String(c.contact_id || "")) +
               '">' +
-              '<div class="pp-child-row">' +
-              '<div class="pp-child-main">' +
+              '<div class="pp-child-layout">' +
+              '<div class="pp-child-identity">' +
+              childAvatarHtml(c) +
               '<h3 class="pp-child-name">' +
               esc(c.display_name || "Participant") +
               "</h3>" +
-              (meta.length ? '<p class="pp-muted pp-child-meta">' + meta.join(" · ") + "</p>" : "") +
+              dobLine +
               (chips.length ? '<div class="pp-chip-row pp-child-status">' + chips.join("") + "</div>" : "") +
               "</div>" +
-              childAvatarHtml(c) +
-              "</div>" +
-              (photoMissing ? childPhotoMissingNoticeHtml() : "") +
               '<div class="pp-child-actions">' +
               childSessionsBtnHtml(c) +
               childReenrolBtnHtml(c) +
-              "</div></article>"
+              "</div></div>" +
+              (photoMissing ? childPhotoMissingNoticeHtml() : "") +
+              "</article>"
             );
           })
           .join("");
