@@ -1969,14 +1969,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -5241,14 +5241,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -8526,14 +8526,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -11929,14 +11929,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -15349,14 +15349,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -18368,14 +18368,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -18398,12 +18398,34 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-08",
               "weekday": "Wednesday",
-              "slots": []
+              "slots": [
+                {
+                  "time_slot": "11 to 4",
+                  "client_name": "Ikram",
+                  "service": "Day Centre",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
+                }
+              ]
             },
             {
               "sessionDate": "2026-07-10",
               "weekday": "Friday",
-              "slots": []
+              "slots": [
+                {
+                  "time_slot": "11 to 4",
+                  "client_name": "Ikram",
+                  "service": "Day Centre",
+                  "area": "Hub Room",
+                  "pool_note": "Hub Room",
+                  "venue": "SwimFarm",
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
+                }
+              ]
             },
             {
               "sessionDate": "2026-07-13",
@@ -20930,14 +20952,14 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Monday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
-                  "instructors": "MICHELLE",
-                  "participant_info": ""
+                  "instructors": "LULIA, MICHELLE",
+                  "participant_info": "1. Age: 31 years (born 17 June 1994)\n2. Medical: Epilepsy and Perthes disease (left). Regular medication taken at home. Emergency diazepam used if anxious. Dietary preference: halal or fish option. Health/Emergency Plan in place.\n3. Likes/Motivators: Swimming, walking, going to the hair salon, karaoke.\n4. Dislikes/Avoids: Loud rooms and busy environments with too many people.\n5. Known Triggers: Loud/unexpected noise; transitions/changes to routine; waiting/delays; sensory overload; being told \u201cno\u201d; physical proximity/touch; crowds/group settings.\n6. Regulation Strategies: Visual supports (first\u2013then, countdowns); quiet break space; supportive adult nearby; space and time alone to calm.\n7. Level of Support: Requires 2:1 support when regulated. When dysregulated, needs active adult support and continuous supervision.\n8. Communication: Mainly communicates through behaviour; verbal \u2013 limited words/scripts.\n9. Preferred Communication: Verbal + gestures supported with visuals; demonstrate first (show, then do); keep language simple and consistent.\n10. Mobility: Walks independently; needs adult assistance for transitions or moving between spaces.\n11. Personal Care: Reported as fully independent but may require physical assistance or supervision at times.\n12. Task Engagement: Needs 1:1 support to complete most activities; benefits from structured guidance and demonstration.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting; benefits from preparation and countdowns.\n14. Safety: No awareness of danger \u2013 constant supervision required, especially in the community and around water.\n15. Other Notes: Supported by a social worker (Sarah Kagaba). Space and reduced demands are important when anxiety increases."
                 }
               ]
             },
@@ -22267,8 +22289,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-01",
@@ -22375,8 +22397,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-02",
@@ -22492,8 +22514,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-03",
@@ -22645,8 +22667,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-05",
@@ -22834,8 +22856,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-08",
@@ -22942,8 +22964,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-09",
@@ -23203,8 +23225,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-12",
@@ -23392,8 +23414,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-15",
@@ -23500,8 +23522,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-16",
@@ -23761,8 +23783,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-19",
@@ -23950,8 +23972,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-22",
@@ -24058,8 +24080,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-23",
@@ -24166,8 +24188,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-24",
@@ -24328,8 +24350,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-26",
@@ -24517,8 +24539,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-29",
@@ -24625,8 +24647,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-06-30",
@@ -24742,8 +24764,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-01",
@@ -24895,8 +24917,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-03",
@@ -25084,8 +25106,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-06",
@@ -25192,8 +25214,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-07",
@@ -25309,8 +25331,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-08",
@@ -25462,8 +25484,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-10",
@@ -25651,8 +25673,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-13",
@@ -25759,8 +25781,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-14",
@@ -25876,8 +25898,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-15",
@@ -26029,8 +26051,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_key": "michelle",
         "staff_name": "Michelle",
         "venue": "SwimFarm",
-        "time_range": "11-4",
-        "raw_assignment": "Michelle 11-4"
+        "time_range": "10.45-4.15",
+        "raw_assignment": "Michelle 10.45-4.15"
       },
       {
         "session_date": "2026-07-17",

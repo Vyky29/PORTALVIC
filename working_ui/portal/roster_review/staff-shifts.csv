@@ -132,7 +132,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-01,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-01,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-01,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-01,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-01,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-01,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-01,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-01,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -144,7 +144,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-02,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-06-02,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-02,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-02,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-02,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-02,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-06-02,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-06-02,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -157,7 +157,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-03,Wednesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-03,Wednesday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-03,Wednesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-03,Wednesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-03,Wednesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-03,Wednesday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-03,Wednesday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-03,Wednesday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -174,7 +174,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-05,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-05,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-05,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-05,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-05,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-05,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-05,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-05,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30
@@ -195,7 +195,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-08,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-08,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-08,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-08,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-08,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-08,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-08,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-08,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -207,7 +207,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-09,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-06-09,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-09,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-09,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-09,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-09,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-06-09,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-06-09,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -236,7 +236,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-12,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-12,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-12,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-12,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-12,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-12,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-12,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-12,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30
@@ -257,7 +257,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-15,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-15,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-15,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-15,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-15,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-15,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-15,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-15,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -269,7 +269,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-16,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-06-16,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-16,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-16,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-16,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-16,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-06-16,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-06-16,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -298,7 +298,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-19,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-19,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-19,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-19,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-19,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-19,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-19,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-19,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30
@@ -319,7 +319,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-22,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-22,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-22,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-22,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-22,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-22,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-22,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-22,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -331,7 +331,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-23,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-06-23,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-23,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-23,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-23,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-23,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-06-23,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-06-23,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -343,7 +343,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-24,Wednesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-24,Wednesday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-24,Wednesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-24,Wednesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-24,Wednesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-24,Wednesday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-24,Wednesday,Raul,Acton,4.15-6.15,Raul 4.15-6.15
 2026-06-24,Wednesday,Roberto,SwimFarm,11-3,Roberto 11-3
@@ -361,7 +361,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-26,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-26,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-06-26,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-26,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-26,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-26,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-06-26,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-06-26,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30
@@ -382,7 +382,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-29,Monday,Dan,Northolt,4.30-6.30,Dan 4.30-6.30
 2026-06-29,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-06-29,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
-2026-06-29,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-29,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-29,Monday,Raul,SwimFarm Manager,1-4,Raul 1-4
 2026-06-29,Monday,Raul,SwimFarm HOME,11-1,Raul 11-1
 2026-06-29,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
@@ -395,7 +395,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-06-30,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-06-30,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-06-30,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-06-30,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-06-30,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-06-30,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-06-30,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-06-30,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -408,7 +408,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-01,Wednesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-07-01,Wednesday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-01,Wednesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-01,Wednesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-01,Wednesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-01,Wednesday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-01,Wednesday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-01,Wednesday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -444,7 +444,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-06,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-07-06,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-06,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-06,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-06,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-06,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-06,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-06,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -456,7 +456,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-07,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-07-07,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-07-07,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-07,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-07,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-07,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-07-07,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-07-07,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -469,7 +469,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-08,Wednesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-07-08,Wednesday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-08,Wednesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-08,Wednesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-08,Wednesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-08,Wednesday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-08,Wednesday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-08,Wednesday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -486,7 +486,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-10,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-07-10,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-10,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-10,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-10,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-10,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-10,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-10,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30
@@ -507,7 +507,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-13,Monday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-07-13,Monday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-13,Monday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-13,Monday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-13,Monday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-13,Monday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-13,Monday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-13,Monday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -519,7 +519,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-14,Tuesday,Aurora,Acton,4.30-6.30,Aurora 4.30-6.30
 2026-07-14,Tuesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-07-14,Tuesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-14,Tuesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-14,Tuesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-14,Tuesday,Roberto,SwimFarm,12.30-3,Roberto 12.30-3
 2026-07-14,Tuesday,Roberto,Acton,4-6.30,Roberto 4-6.30
 2026-07-14,Tuesday,Victor,SwimFarm,11-4,Victor 11-4
@@ -532,7 +532,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-15,Wednesday,Javier,Acton,4-6.30,Javier 4-6.30
 2026-07-15,Wednesday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-15,Wednesday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-15,Wednesday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-15,Wednesday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-15,Wednesday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-15,Wednesday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-15,Wednesday,Roberto,Northolt,4.30-6.30,Roberto 4.30-6.30
@@ -549,7 +549,7 @@ date,weekday,staff,venue,time_range,raw_assignment
 2026-07-17,Friday,Giuseppe,SwimFarm,4.15-6.15,Giuseppe 4.15-6.15
 2026-07-17,Friday,John,SwimFarm,4.15-6.15,John 4.15-6.15
 2026-07-17,Friday,Luliya,SwimFarm,11-4,Luliya 11-4
-2026-07-17,Friday,Michelle,SwimFarm,11-4,Michelle 11-4
+2026-07-17,Friday,Michelle,SwimFarm,10.45-4.15,Michelle 10.45-4.15
 2026-07-17,Friday,Raul,SwimFarm,11-4,Raul 11-4
 2026-07-17,Friday,Roberto,SwimFarm,11-3,Roberto 11-3
 2026-07-17,Friday,Roberto,Acton,4-6.30,Roberto 4-6.30

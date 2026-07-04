@@ -10398,6 +10398,16 @@
       "session_date": "2026-07-06"
     },
     {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-06"
+    },
+    {
       "client_name": "Emmanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
@@ -10424,16 +10434,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-06"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -10888,6 +10888,16 @@
       "session_date": "2026-07-08"
     },
     {
+      "client_name": "Ikram",
+      "day": "Wednesday",
+      "instructors": "MICHELLE",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-08"
+    },
+    {
       "client_name": "HOME",
       "day": "Wednesday",
       "instructors": "VICTOR",
@@ -11331,6 +11341,16 @@
       "client_name": "Ikram",
       "day": "Friday",
       "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-10"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Friday",
+      "instructors": "MICHELLE",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -13107,7 +13127,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-04T00:39:02Z",
+    "rosterMadreSyncedAt": "2026-07-04T00:49:55Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
