@@ -1420,12 +1420,11 @@
             "</p>" +
             (parts.detail ? '<p class="re-slot-service-detail">' + esc(parts.detail) + "</p>" : "") +
             "</div>" +
-            '<div class="re-slot-meta">' +
-            '<div class="re-slot-meta-block">' +
-            '<span class="re-slot-meta-label">Cost</span>' +
+            '<div class="re-slot-price-wrap">' +
             '<span class="re-slot-price">' +
             esc(price) +
             "</span></div>" +
+            '<div class="re-slot-meta">' +
             '<div class="re-slot-meta-block">' +
             '<span class="re-slot-meta-label">Sessions</span>' +
             '<span class="re-slot-meta-value">' +
@@ -1825,12 +1824,62 @@
     );
   }
 
+  function selectStaffCalendarTab(bodyEl, panelId) {
+    if (!bodyEl || !panelId) return;
+    var section = bodyEl.querySelector(".dc-cal");
+    if (!section) return;
+    var tab = section.querySelector('.dc-cal-tab[data-dc-cal-target="' + panelId + '"]');
+    if (tab) tab.click();
+  }
+
+  function setInfoModalFullscreen(on) {
+    var modal = $("reInfoModal");
+    if (!modal) return;
+    var dialog = modal.querySelector(".re-modal");
+    if (on) {
+      modal.classList.add("re-modal-backdrop--fullscreen");
+      if (dialog) dialog.classList.add("re-modal--fullscreen");
+      document.body.classList.add("re-modal-open");
+    } else {
+      modal.classList.remove("re-modal-backdrop--fullscreen");
+      if (dialog) dialog.classList.remove("re-modal--fullscreen");
+      document.body.classList.remove("re-modal-open");
+    }
+  }
+
+  function openStaffCalendarModal(title, calendarTab) {
+    var modal = ensureInfoModal();
+    var titleEl = $("reInfoModalTitle");
+    var bodyEl = $("reInfoModalBody");
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) {
+      bodyEl.innerHTML =
+        '<div class="portal-calendar-2026-27-preview" id="reStaffCalendarHost">' +
+        '<p class="re-cal-loading" role="status">Loading calendar…</p>' +
+        "</div>";
+    }
+    setInfoModalFullscreen(true);
+    modal.hidden = false;
+    var host = $("reStaffCalendarHost");
+    if (host && typeof global.portalLoadCalendar202627Into === "function") {
+      void global.portalLoadCalendar202627Into(host).then(function () {
+        selectStaffCalendarTab(bodyEl, calendarTab || "dcCalSessionsPanel");
+      });
+    } else if (host) {
+      host.innerHTML =
+        '<p class="re-muted" style="margin:12px;">Could not load calendar. Please refresh and try again.</p>';
+    }
+    var btn = $("reInfoModalClose");
+    if (btn) btn.focus();
+  }
+
   function openInfoModal(title, bodyHtml, afterOpen) {
     var modal = ensureInfoModal();
     var titleEl = $("reInfoModalTitle");
     var bodyEl = $("reInfoModalBody");
     if (titleEl) titleEl.textContent = title;
     if (bodyEl) bodyEl.innerHTML = bodyHtml;
+    setInfoModalFullscreen(false);
     modal.hidden = false;
     wireModalBodyLinks();
     if (typeof afterOpen === "function") afterOpen(bodyEl);
@@ -1844,9 +1893,9 @@
     bodyEl.querySelectorAll(".re-cal-offer-link[data-crash-idx]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var idx = Number(btn.getAttribute("data-crash-idx"));
-        openInfoModal("Half term offer — crash courses", renderCrashDatesModalBody(idx), function (el) {
-          if (!el || isNaN(idx)) return;
-          var block = el.querySelector("#reCrashBlock" + idx);
+        openStaffCalendarModal("Half term offer — crash courses", "dcCalCrashPanel");
+        requestAnimationFrame(function () {
+          var block = $("reInfoModalBody") && $("reInfoModalBody").querySelector("#reCrashBlock" + idx);
           if (block) block.scrollIntoView({ block: "nearest", behavior: "smooth" });
         });
       });
@@ -1856,6 +1905,7 @@
   function closeInfoModal() {
     var modal = $("reInfoModal");
     if (modal) modal.hidden = true;
+    setInfoModalFullscreen(false);
   }
 
   function ensureInfoModal() {
@@ -1867,17 +1917,21 @@
     backdrop.hidden = true;
     backdrop.setAttribute("role", "presentation");
     backdrop.innerHTML =
-      '<div class="re-modal re-modal--wide" role="dialog" aria-modal="true" aria-labelledby="reInfoModalTitle">' +
+      '<div class="re-modal" role="dialog" aria-modal="true" aria-labelledby="reInfoModalTitle">' +
+      '<div class="re-modal-head">' +
       '<h3 id="reInfoModalTitle"></h3>' +
+      '<button type="button" class="re-modal-close" id="reInfoModalClose">Close</button>' +
+      "</div>" +
       '<div id="reInfoModalBody"></div>' +
-      '<div class="re-modal-actions"><button type="button" class="re-btn re-btn--secondary" id="reInfoModalClose">Close</button></div>' +
       "</div>";
     document.body.appendChild(backdrop);
-    backdrop.addEventListener("click", function (ev) {
-      if (ev.target === backdrop) closeInfoModal();
-    });
     var closeBtn = $("reInfoModalClose");
     if (closeBtn) closeBtn.addEventListener("click", closeInfoModal);
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Escape") return;
+      var modal = $("reInfoModal");
+      if (modal && !modal.hidden) closeInfoModal();
+    });
     return backdrop;
   }
 
@@ -1885,19 +1939,19 @@
     var termBtn = $("reTermDatesBtn");
     if (termBtn) {
       termBtn.addEventListener("click", function () {
-        openInfoModal("Term dates 2026/27", renderTermDatesModalBody());
+        openStaffCalendarModal("Term dates 2026/27", "dcCalSessionsPanel");
       });
     }
     var dcBtn = $("reDayCentreDatesBtn");
     if (dcBtn) {
       dcBtn.addEventListener("click", function () {
-        openInfoModal("Day Centre dates 2026/27", renderDayCentreDatesModalBody());
+        openStaffCalendarModal("Day Centre dates 2026/27", "dcCalDayCentrePanel");
       });
     }
     var crashBtn = $("reCrashDatesBtn");
     if (crashBtn) {
       crashBtn.addEventListener("click", function () {
-        openInfoModal("Intensive course dates 2026/27", renderCrashDatesModalBody());
+        openStaffCalendarModal("Intensive course dates 2026/27", "dcCalCrashPanel");
       });
     }
   }

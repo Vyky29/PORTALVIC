@@ -249,7 +249,7 @@
       min-width: 0;
       background: #fafcfe;
     }
-    .re-slot-intro { min-width: 0; margin-bottom: 12px; }
+    .re-slot-intro { min-width: 0; margin-bottom: 0; }
     .re-slot-service-name {
       margin: 0;
       font-size: .94rem;
@@ -266,12 +266,17 @@
       color: var(--muted);
       overflow-wrap: break-word;
     }
+    .re-slot-price-wrap {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(45, 132, 179, .12);
+      min-width: 0;
+    }
     .re-slot-meta {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(45, 132, 179, .12);
+      padding-top: 10px;
       min-width: 0;
     }
     .re-slot-meta-block { min-width: 0; }
@@ -649,6 +654,12 @@
       justify-content: center;
       padding: 16px;
     }
+    .re-modal-backdrop--fullscreen {
+      padding: 0;
+      align-items: stretch;
+      justify-content: stretch;
+      background: #fff;
+    }
     .re-modal {
       width: min(420px, 100%);
       max-height: min(85dvh, 520px);
@@ -658,6 +669,108 @@
       padding: 18px 16px;
       box-shadow: 0 18px 48px rgba(23, 50, 71, .18);
       min-width: 0;
+    }
+    .re-modal--fullscreen {
+      width: 100%;
+      max-width: none;
+      height: 100%;
+      max-height: none;
+      border-radius: 0;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .re-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      min-width: 0;
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .re-modal-head h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--ink);
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .re-modal-close {
+      flex-shrink: 0;
+      border: 2px solid #162B5B;
+      border-radius: 10px;
+      padding: 8px 14px;
+      min-height: 40px;
+      background: #fff;
+      color: #162B5B;
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 800;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .re-modal-close:hover,
+    .re-modal-close:focus-visible {
+      background: #162B5B;
+      color: #fff;
+      outline: none;
+    }
+    .re-modal--fullscreen #reInfoModalBody {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0;
+    }
+    body.re-modal-open { overflow: hidden; }
+    .re-cal-loading {
+      margin: 16px 12px;
+      font-size: .9rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .portal-calendar-2026-27-preview {
+      min-width: 0;
+      background: #fff;
+    }
+    .re-modal--fullscreen .portal-calendar-2026-27-preview {
+      margin: 0;
+      max-height: none;
+      overflow: visible;
+      border: none;
+      border-radius: 0;
+    }
+    .portal-calendar-2026-27-preview--loading { min-height: 120px; }
+    .portal-calendar-2026-27-preview .dc-cal {
+      max-width: none;
+      margin: 0 auto;
+      padding: 12px 12px 28px;
+    }
+    .re-modal--fullscreen .dc-cal__back-wrap { display: none; }
+    .portal-calendar-2026-27-preview .dc-cal-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-tab {
+      font-size: clamp(0.72rem, 2.4vw, 0.88rem);
+      padding: 10px 6px;
+    }
+    .portal-calendar-2026-27-preview .dc-cal-term__months {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    }
+    .portal-calendar-2026-27-preview .dc-cal-panel[hidden],
+    .portal-calendar-2026-27-preview .dc-cal-panel__intro[hidden],
+    .portal-calendar-2026-27-preview .dc-cal__summary[hidden] {
+      display: none !important;
     }
     .re-modal h3 { margin: 0 0 10px; font-size: 1rem; color: var(--ink); overflow-wrap: break-word; }
     .re-modal p { margin: 0 0 10px; font-size: .9rem; overflow-wrap: break-word; }
@@ -988,7 +1101,8 @@
     </p>
   </main>
 
+  <script src="/portal/portal_calendar_2026_27.js?v=20260704-reenrol-cal"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-no-photo"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-staff-cal"></script>
 </body>
 </html>
