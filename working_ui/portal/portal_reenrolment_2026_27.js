@@ -865,6 +865,14 @@
       "<strong>2.5% admin fees on top of final price</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
+      '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
+      (payDefault === "gocardless" ? "" : " hidden") +
+      ">" +
+      "<strong>If a direct debit fails</strong>" +
+      "If a payment fails (for example insufficient funds or a cancelled mandate), you must pay within " +
+      "<strong>7 days</strong> by bank transfer, including any GoCardless failure charge. " +
+      "After <strong>two failed attempts in the same term</strong>, direct payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer." +
+      "</div>" +
       "</div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
@@ -1152,6 +1160,8 @@
     if (feeAmt && adminFeeApplies(payCode) && annual > 0) {
       feeAmt.textContent = " — indicative total with fee: " + money(moneyWithAdminFee(annual));
     } else if (feeAmt) feeAmt.textContent = "";
+    var failNote = $("reDirectPayFailNote");
+    if (failNote) failNote.hidden = payCode !== "gocardless";
     syncPaymentSchedulePreview();
   }
 
