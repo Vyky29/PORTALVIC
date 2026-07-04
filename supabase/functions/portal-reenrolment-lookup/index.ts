@@ -10,6 +10,7 @@ import {
 } from "../_shared/parent_portal_auth.ts";
 import {
   ageMatchesInput,
+  enrichWeeklySlotsFromRoster,
   namesMatch,
   normalizePersonName,
   parentNamesMatch,
@@ -179,6 +180,17 @@ Deno.serve(async (req) => {
       : null,
   });
 
+  const participantDisplayName = String(participantRow.display_name || "");
+  let weeklySlots = paymentCtx?.weeklySlots || [];
+  if (weeklySlots.length) {
+    try {
+      const rosterRows = await fetchRosterRowsForParticipant(supabase, participantDisplayName);
+      weeklySlots = enrichWeeklySlotsFromRoster(participantDisplayName, weeklySlots, rosterRows);
+    } catch (err) {
+      console.error("[portal-reenrolment-lookup] roster enrich", err);
+    }
+  }
+
   return json(200, {
     ok: true,
     academic_year: REENROL_ACADEMIC_YEAR,
@@ -207,7 +219,7 @@ Deno.serve(async (req) => {
     payment_status: paymentCtx?.paymentStatus || null,
     outstanding_amount: paymentCtx?.outstanding ?? null,
     service_raw: paymentCtx?.serviceRaw || null,
-    weekly_slots: paymentCtx?.weeklySlots || [],
+    weekly_slots: weeklySlots,
     day_centre: paymentCtx?.dayCentreSlots?.length
       ? {
           slots: paymentCtx.dayCentreSlots,
@@ -304,4 +316,25 @@ async function findPaymentContext(
   }
 
   return best;
+}
+
+async function fetchRosterRowsForParticipant(
+  supabase: ReturnType<typeof createClient>,
+  participantName: string,
+) {
+  const firstToken = normalizePersonName(participantName).split(" ")[0] || "";
+  if (!firstToken || firstToken.length < 2) return [];
+
+  const { data } = await supabase
+    .from("portal_roster_rows")
+    .select("client_name, day, time_slot, service, venue")
+    .eq("status", "active")
+    .ilike("client_name", `${firstToken}%`)
+    .gte("session_date", "2026-01-01")
+    .order("session_date", { ascending: false })
+    .limit(250);
+
+  return (data || []).filter((row) =>
+    namesMatch(participantName, String(row.client_name || ""))
+  );
 }

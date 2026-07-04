@@ -21,6 +21,8 @@ export type ParsedSlot = {
   ratio?: string;
   hoursLabel?: string;
   venue?: string;
+  timeSlot?: string;
+  displayLabel?: string;
 };
 
 const DAY_ALIASES: Record<string, string> = {
@@ -99,8 +101,21 @@ function termTotals(price: number | null, counts: { autumn: number; spring: numb
   };
 }
 
+function normalizeServiceSegment(raw: string): string {
+  return String(raw || "")
+    .replace(/[''′](?:\s*[''′])+/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripServiceToken(raw: string): string {
+  return String(raw || "")
+    .replace(/^['''\s]+|['''\s]+$/g, "")
+    .trim();
+}
+
 function parseOneSegment(segment: string, index: number): ParsedSlot | null {
-  const raw = String(segment || "").trim();
+  const raw = normalizeServiceSegment(segment);
   if (!raw || raw === "—" || raw === "-") return null;
 
   const dcMatch = raw.match(/day\s*centre/i);
@@ -144,11 +159,11 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
   }
 
   const m =
+    raw.match(/^(\d+)[''′]?\s*'?\s*(SW|CL)\s*\(([^)]+)\)/i) ||
     raw.match(
       /^(\d+)[''′]?\s*(.+?)\s*(?:\(([^)]+)\)|\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun))\s*$/i,
     ) ||
-    raw.match(/^(\d+)[''′]?\s*(.+?)\s*\(([^)]+)\)/i) ||
-    raw.match(/^(\d+)[''′]?\s*(SW|CL)\s*\(([^)]+)\)/i);
+    raw.match(/^(\d+)[''′]?\s*(.+?)\s*\(([^)]+)\)/i);
 
   if (!m) {
     if (/day centre/i.test(raw)) {
@@ -158,7 +173,7 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
   }
 
   const durationMin = Number(m[1]) || 30;
-  let serviceType = normalizeServiceType(m[2]);
+  let serviceType = normalizeServiceType(stripServiceToken(m[2]));
   if (serviceType === "SW") serviceType = "AQUATIC ACTIVITY";
   if (serviceType === "CL") serviceType = "CLIMBING ACTIVITY";
 
@@ -170,7 +185,7 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
   const counts = sessionCountsForDay(day);
   const price = unitPriceFor(serviceType, durationMin);
 
-  return {
+  const slot: ParsedSlot = {
     id: `slot-${index}`,
     raw,
     serviceType,
@@ -183,6 +198,115 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
     termTotals: termTotals(price, counts),
     ratio: ratio || undefined,
   };
+  slot.displayLabel = buildSlotDisplayLabel(slot);
+  return slot;
+}
+
+export function formatServiceTypeLabel(serviceType: string): string {
+  const t = normalizeServiceType(serviceType);
+  if (t.includes("AQUATIC") || t === "SW") return "Aquatic Activity";
+  if (t.includes("CLIMB") || t === "CL") return "Climbing Activity";
+  if (t.includes("PHYSICAL") || t.includes("FITNESS")) return "Physical Activity";
+  if (t.includes("BESPOKE")) return "Bespoke Programme";
+  if (t.includes("MULTI")) return "Multi-Activity";
+  if (t.includes("COUNSEL")) return "Counselling";
+  return t
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function dayPluralLabel(day: string): string {
+  const d = String(day || "").trim();
+  if (!d) return "";
+  if (/s$/i.test(d)) return d;
+  return `${d}s`;
+}
+
+export function formatTimeSlotLabel(timeSlot: string): string {
+  const s = String(timeSlot || "").trim();
+  if (!s) return "";
+  if (/\b(am|pm)\b/i.test(s)) return s;
+  const startRaw = s.split(/\s+to\s+/i)[0]?.trim() || "";
+  const start = Number.parseFloat(startRaw);
+  if (Number.isFinite(start) && start >= 1 && start <= 8) return `${s} pm`;
+  return s;
+}
+
+export function buildSlotDisplayLabel(slot: ParsedSlot): string {
+  const parts: string[] = [];
+  if (slot.durationMin) parts.push(`${slot.durationMin}'`);
+  parts.push(formatServiceTypeLabel(slot.serviceType));
+  let label = parts.join(" ");
+  if (slot.day) label += ` - ${dayPluralLabel(slot.day)}`;
+  if (slot.timeSlot) label += ` - ${formatTimeSlotLabel(slot.timeSlot)}`;
+  if (slot.venue) label += ` (${slot.venue})`;
+  return label.trim();
+}
+
+function serviceTypesMatch(parsedType: string, rosterService: string): boolean {
+  const p = normalizeServiceType(parsedType);
+  const r = normalizeServiceType(rosterService);
+  if (p.includes("AQUATIC") || p === "SW") {
+    return r.includes("AQUATIC") || r.includes("SWIM");
+  }
+  if (p.includes("CLIMB") || p === "CL") return r.includes("CLIMB");
+  if (p.includes("MULTI")) return r.includes("MULTI");
+  if (p.includes("BESPOKE")) return r.includes("BESPOKE");
+  if (p.includes("PHYSICAL")) return r.includes("PHYSICAL") || r.includes("FITNESS");
+  return p === r || r.includes(p) || p.includes(r);
+}
+
+function pickModeValue(counts: Map<string, number>): string | undefined {
+  let best = "";
+  let bestN = 0;
+  for (const [value, n] of counts.entries()) {
+    if (n > bestN) {
+      best = value;
+      bestN = n;
+    }
+  }
+  return best || undefined;
+}
+
+export function enrichWeeklySlotsFromRoster(
+  participantName: string,
+  slots: ParsedSlot[],
+  rosterRows: Array<{
+    client_name?: string;
+    day?: string;
+    time_slot?: string;
+    service?: string;
+    venue?: string;
+  }>,
+): ParsedSlot[] {
+  return slots.map((slot) => {
+    const matches = rosterRows.filter((row) => {
+      if (!namesMatch(participantName, String(row.client_name || ""))) return false;
+      if (normalizeDay(String(row.day || "")) !== slot.day) return false;
+      return serviceTypesMatch(slot.serviceType, String(row.service || ""));
+    });
+    if (!matches.length) {
+      return { ...slot, displayLabel: buildSlotDisplayLabel(slot) };
+    }
+    const timeCounts = new Map<string, number>();
+    const venueCounts = new Map<string, number>();
+    for (const row of matches) {
+      const ts = String(row.time_slot || "").trim();
+      const venue = String(row.venue || "").trim();
+      if (ts) timeCounts.set(ts, (timeCounts.get(ts) || 0) + 1);
+      if (venue) venueCounts.set(venue, (venueCounts.get(venue) || 0) + 1);
+    }
+    const enriched: ParsedSlot = {
+      ...slot,
+      timeSlot: pickModeValue(timeCounts),
+      venue: pickModeValue(venueCounts) || slot.venue,
+      displayLabel: undefined,
+    };
+    enriched.displayLabel = buildSlotDisplayLabel(enriched);
+    return enriched;
+  });
 }
 
 export function parseServiceString(service: string): ParsedSlot[] {
@@ -314,16 +438,28 @@ export function normalizePayMethod(raw: string): string {
   return s.replace(/\bbank transfer\b/i, "Bank Transfer");
 }
 
+function pickPaymentField(data: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const v = data[key];
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (s && s !== "—" && s !== "-") return s;
+  }
+  return "";
+}
+
 export function paymentRowToContext(row: Record<string, unknown>) {
   const data = (row.data && typeof row.data === "object" ? row.data : {}) as Record<string, unknown>;
-  const service = String(
-    data.service ||
-      data.Service ||
-      data.Services ||
-      data.services ||
-      row.service ||
-      "",
-  ).trim();
+  const sheet = String(row.sheet || "");
+  const service = pickPaymentField(data, [
+    "service",
+    "Service",
+    "Services",
+    "services",
+    "Programme",
+    "Programmes",
+    "Activity",
+  ]) || String(row.service || "").trim();
   const clientName = String(
     row.client_name || data.pax || data["Client Name"] || data.clientName || "",
   );
@@ -338,17 +474,32 @@ export function paymentRowToContext(row: Record<string, unknown>) {
       : null;
 
   const payMethod = normalizePayMethod(
-    String(
-      data.payMethod ||
-        data["Payment Method"] ||
-        data["Payment method"] ||
-        "",
-    ),
+    pickPaymentField(data, [
+      "payMethod",
+      "Pay method",
+      "Payment method",
+      "Payment Method",
+      "Method",
+    ]),
   );
-  const fund = normalizeFundingSource(
-    String(data.fund || data.Funding || data["Funding origin"] || data.Funder || ""),
+
+  let fundRaw = pickPaymentField(data, [
+    "fund",
+    "Fund",
+    "Funding",
+    "Funder",
+    "Funding origin",
+  ]);
+  let fundingSource = normalizeFundingSource(fundRaw);
+  if (!fundingSource) {
+    fundingSource = sheet === "LA"
+      ? "Local authority / NHS funded"
+      : "Privately Funded";
+  }
+
+  const vatInfo = normalizeInvoiceType(
+    pickPaymentField(data, ["vat", "VAT", "Vat"]),
   );
-  const vatInfo = normalizeInvoiceType(String(data.vat || data.VAT || ""));
 
   const slots = parseServiceString(service);
   const { weekly, dayCentre } = splitSlots(slots);
@@ -357,11 +508,11 @@ export function paymentRowToContext(row: Record<string, unknown>) {
     clientKey: String(row.client_key || ""),
     clientName,
     parentName,
-    sheet: String(row.sheet || ""),
+    sheet,
     paymentStatus: String(row.payment_status || data.st || data.Status || ""),
     outstanding,
     payMethod,
-    fundingSource: fund,
+    fundingSource,
     vat: vatInfo.label,
     vatCode: vatInfo.code,
     serviceRaw: service,

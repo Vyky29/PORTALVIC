@@ -272,6 +272,42 @@
     .re-modal h3 { margin: 0 0 10px; font-size: 1rem; color: var(--ink); overflow-wrap: break-word; }
     .re-modal p { margin: 0 0 10px; font-size: .9rem; overflow-wrap: break-word; }
     .re-modal-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+    .re-info-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      min-width: 0;
+    }
+    .re-info-btns .re-btn--secondary { flex: 1 1 140px; min-width: 0; margin-top: 0; }
+    .re-modal--wide { width: min(480px, 100%); }
+    .re-cal-block { margin: 0 0 14px; min-width: 0; }
+    .re-cal-block h4 { margin: 0 0 6px; font-size: .92rem; color: var(--ink); overflow-wrap: break-word; }
+    .re-cal-block ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; overflow-wrap: break-word; }
+    .re-cal-block li { margin-bottom: 4px; }
+    .re-cal-summary { font-size: .88rem; color: var(--muted); margin: 0 0 12px; overflow-wrap: break-word; }
+    .re-crash-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 0;
+      min-width: 0;
+    }
+    .re-crash-pill {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 44px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: var(--blueSoft);
+      border: 1px solid var(--line);
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .re-crash-pill--off { opacity: .45; }
+    .re-crash-pill__num { font-size: 1rem; line-height: 1.1; }
     .re-dc-list { margin: 8px 0; padding-left: 1.2rem; font-size: .9rem; overflow-wrap: break-word; }
     .re-link { color: var(--blue); font-weight: 700; }
     .re-declarations { border-top: 1px solid var(--line); padding-top: 12px; }
@@ -335,6 +371,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-funding"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-dc-funding"></script>
 </body>
 </html>

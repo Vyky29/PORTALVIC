@@ -140,9 +140,17 @@
   }
 
   function slotLabel(slot) {
+    if (slot.displayLabel) return esc(slot.displayLabel);
     var dur = slot.durationMin ? slot.durationMin + "'" : "";
-    var day = slot.day ? " (" + slot.day + ")" : "";
-    return esc(dur + " " + (slot.serviceType || "") + day);
+    var svc = String(slot.serviceType || "")
+      .replace(/\bAQUATIC ACTIVITY\b/i, "Aquatic Activity")
+      .replace(/\bCLIMBING ACTIVITY\b/i, "Climbing Activity")
+      .replace(/\bSW\b/i, "Aquatic Activity")
+      .replace(/^[''\s]+|[''\s]+$/g, "");
+    var day = slot.day ? " - " + slot.day + (slot.day.endsWith("s") ? "" : "s") : "";
+    var time = slot.timeSlot ? " - " + slot.timeSlot + (/\b(am|pm)\b/i.test(slot.timeSlot) ? "" : " pm") : "";
+    var venue = slot.venue ? " (" + slot.venue + ")" : "";
+    return esc((dur ? dur + " " : "") + svc + day + time + venue);
   }
 
   function participantDisplayName(data) {
@@ -394,8 +402,21 @@
     return "";
   }
 
+  function fundingCurrent2526(data) {
+    var f = (data && data.funding) || {};
+    if (f.current_2526) return f.current_2526;
+    return {
+      payment_method: f.payment_method || null,
+      funding: f.funding || f.method || null,
+      invoice_type: f.invoice_type || f.vat || null,
+      invoice_type_code:
+        f.invoice_type_code ||
+        (f.vat && String(f.vat).toLowerCase().indexOf("exempt") >= 0 ? "exempt" : "vat_included"),
+    };
+  }
+
   function renderFundingBlock(data) {
-    var cur = (data.funding && data.funding.current_2526) || {};
+    var cur = fundingCurrent2526(data);
     var annualTotal = data.annual_weekly_total != null ? data.annual_weekly_total : 0;
     var payDefault = mapPayMethodCode(cur.payment_method);
     var fundDefault = mapFundingCode(cur.funding);
@@ -420,7 +441,7 @@
         '<dl class="re-dl">' +
         currentRows.join("") +
         "</dl></div>"
-      : "";
+      : '<p class="re-muted">Current payment details were not found on file — choose your 2026/27 preferences below and the office will confirm.</p>';
 
     return (
       currentHtml +
@@ -593,7 +614,7 @@
   }
 
   function collectBillingChoices(data) {
-    var cur = (data.funding && data.funding.current_2526) || {};
+    var cur = fundingCurrent2526(data);
     var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
     var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
     var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
@@ -713,30 +734,257 @@
   }
 
   function renderInfoPanel(data) {
-    var crash = data.crash_info || {};
-    var prices = crash.indicativePrices || {};
+    var hasDc = !!(data && data.day_centre && data.day_centre.slots && data.day_centre.slots.length);
     return (
       '<section class="re-section re-section--info">' +
-      reSectionTitle("h3", "calendar", "Calendar &amp; crash courses") +
-      '<p class="re-muted">Term dates and session counts for 2026/27:</p>' +
-      '<p><a class="re-link" href="' +
-      esc(data.calendar_url || "/portal/day-centre-calendar-2026-27-section.html") +
-      '" target="_blank" rel="noopener">Open calendar 2026/27</a></p>' +
-      "<p>" +
-      esc(crash.note || "") +
-      "</p>" +
-      (prices["30min"] != null
-        ? '<p class="re-muted">Indicative crash prices: 30\' ' +
-          esc(money(prices["30min"])) +
-          " · 60' " +
-          esc(money(prices["60min"])) +
-          " · " +
-          esc(crash.venue || "Acton Centre") +
-          "</p>"
+      reSectionTitle("h3", "calendar", "Term dates, Day Centre &amp; crash courses") +
+      '<p class="re-muted">Session counts for weekly activities are shown above. Dates below are for information only.</p>' +
+      (hasDc
+        ? "<p><strong>Day Centre</strong> — SwimFarm (Mon–Fri pattern). Fees agreed with your funder.</p>"
         : "") +
-      '<p class="re-muted"><em>Crash course booking is a separate form — coming soon.</em></p>' +
+      "<p><strong>Crash courses</strong> — intensive swimming at Acton Centre (Mon–Thu, half terms). Booked separately.</p>" +
+      '<div class="re-info-btns">' +
+      '<button type="button" class="re-btn re-btn--secondary" id="reTermDatesBtn">Term dates 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Crash course dates</button>' +
+      "</div>" +
       "</section>"
     );
+  }
+
+  var RE_DAY_CENTRE_DATES_2627 = [
+    {
+      title: "Autumn Term 2026",
+      weeks: "16 weeks",
+      lines: [
+        "Opens: Tuesday 1 September 2026",
+        "Last day: Friday 18 December 2026",
+        "Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027",
+      ],
+    },
+    {
+      title: "Spring Term 2027",
+      weeks: "11 weeks",
+      lines: [
+        "Opens: Monday 4 January 2027",
+        "Last day: Thursday 25 March 2027",
+        "Easter closure: Friday 26 March – Sunday 11 April 2027",
+      ],
+    },
+    {
+      title: "Summer Term 2027",
+      weeks: "16 weeks",
+      lines: [
+        "Opens: Monday 12 April 2027",
+        "Main term ends: Friday 16 July 2027",
+        "Summer provision: Monday 19 July – Friday 30 July 2027",
+        "Last Day Centre day: Friday 30 July 2027",
+      ],
+    },
+  ];
+
+  var RE_TERM_DATES_2627 = [
+    {
+      title: "Autumn Term 2026",
+      sessions: "14 weekday · 13 weekend sessions",
+      lines: [
+        "Term starts: Saturday 5 September 2026",
+        "Half term: Monday 26 – Friday 30 October 2026",
+        "Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027",
+      ],
+    },
+    {
+      title: "Spring Term 2027",
+      sessions: "11 weekday · 9 weekend sessions",
+      lines: [
+        "Term starts: Monday 4 January 2027",
+        "Half term: Monday 15 – Friday 19 February 2027",
+        "Easter closure: Friday 26 March – Sunday 11 April 2027",
+      ],
+    },
+    {
+      title: "Summer Term 2027",
+      sessions: "13 weekday · 11 weekend sessions",
+      lines: [
+        "Term starts: Monday 12 April 2027",
+        "Half term: Monday 31 May – Friday 4 June 2027",
+        "Last sessions day: Friday 16 July 2027",
+      ],
+    },
+  ];
+
+  var RE_CRASH_DATES_2627 = [
+    {
+      title: "October half term 2026",
+      days: [
+        { dow: "Mon", num: "26" },
+        { dow: "Tue", num: "27" },
+        { dow: "Wed", num: "28" },
+        { dow: "Thu", num: "29" },
+        { dow: "Fri", num: "30", off: true },
+      ],
+    },
+    {
+      title: "February half term 2027",
+      days: [
+        { dow: "Mon", num: "15" },
+        { dow: "Tue", num: "16" },
+        { dow: "Wed", num: "17" },
+        { dow: "Thu", num: "18" },
+        { dow: "Fri", num: "19", off: true },
+      ],
+    },
+    {
+      title: "May half term 2027",
+      days: [
+        { dow: "Mon", num: "31", sub: "May" },
+        { dow: "Tue", num: "1", sub: "Jun" },
+        { dow: "Wed", num: "2", sub: "Jun" },
+        { dow: "Thu", num: "3", sub: "Jun" },
+        { dow: "Fri", num: "4", sub: "Jun", off: true },
+      ],
+    },
+  ];
+
+  function renderDayCentreDatesModalBody() {
+    return (
+      '<p class="re-cal-summary">Day Centre runs at SwimFarm on weekdays (Mon–Fri). Bank holidays and closures are excluded from your agreed pattern.</p>' +
+      RE_DAY_CENTRE_DATES_2627.map(function (term) {
+        return (
+          '<div class="re-cal-block">' +
+          "<h4>" +
+          esc(term.title) +
+          "</h4>" +
+          '<p class="re-muted" style="margin:0 0 6px;font-size:.84rem">' +
+          esc(term.weeks) +
+          "</p>" +
+          "<ul>" +
+          term.lines
+            .map(function (line) {
+              return "<li>" + esc(line) + "</li>";
+            })
+            .join("") +
+          "</ul></div>"
+        );
+      }).join("")
+    );
+  }
+
+  function renderTermDatesModalBody() {
+    return (
+      '<p class="re-cal-summary">Bank holidays are excluded from session counts shown on your activity cards.</p>' +
+      RE_TERM_DATES_2627.map(function (term) {
+        return (
+          '<div class="re-cal-block">' +
+          "<h4>" +
+          esc(term.title) +
+          "</h4>" +
+          '<p class="re-muted" style="margin:0 0 6px;font-size:.84rem">' +
+          esc(term.sessions) +
+          "</p>" +
+          "<ul>" +
+          term.lines
+            .map(function (line) {
+              return "<li>" + esc(line) + "</li>";
+            })
+            .join("") +
+          "</ul></div>"
+        );
+      }).join("")
+    );
+  }
+
+  function renderCrashDatesModalBody() {
+    return (
+      '<p class="re-cal-summary">Crash courses run Monday to Thursday during half terms at Acton Centre. Times TBC — booking is a separate form (coming soon).</p>' +
+      RE_CRASH_DATES_2627.map(function (block) {
+        return (
+          '<div class="re-cal-block">' +
+          "<h4>" +
+          esc(block.title) +
+          "</h4>" +
+          '<div class="re-crash-row">' +
+          block.days
+            .map(function (d) {
+              return (
+                '<span class="re-crash-pill' +
+                (d.off ? " re-crash-pill--off" : "") +
+                '">' +
+                "<span>" +
+                esc(d.dow) +
+                "</span>" +
+                '<span class="re-crash-pill__num">' +
+                esc(d.num) +
+                "</span>" +
+                (d.sub ? "<span>" + esc(d.sub) + "</span>" : "") +
+                "</span>"
+              );
+            })
+            .join("") +
+          "</div></div>"
+        );
+      }).join("")
+    );
+  }
+
+  function openInfoModal(title, bodyHtml) {
+    var modal = ensureInfoModal();
+    var titleEl = $("reInfoModalTitle");
+    var bodyEl = $("reInfoModalBody");
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.innerHTML = bodyHtml;
+    modal.hidden = false;
+    var btn = $("reInfoModalClose");
+    if (btn) btn.focus();
+  }
+
+  function closeInfoModal() {
+    var modal = $("reInfoModal");
+    if (modal) modal.hidden = true;
+  }
+
+  function ensureInfoModal() {
+    var existing = $("reInfoModal");
+    if (existing) return existing;
+    var backdrop = document.createElement("div");
+    backdrop.id = "reInfoModal";
+    backdrop.className = "re-modal-backdrop";
+    backdrop.hidden = true;
+    backdrop.setAttribute("role", "presentation");
+    backdrop.innerHTML =
+      '<div class="re-modal re-modal--wide" role="dialog" aria-modal="true" aria-labelledby="reInfoModalTitle">' +
+      '<h3 id="reInfoModalTitle"></h3>' +
+      '<div id="reInfoModalBody"></div>' +
+      '<div class="re-modal-actions"><button type="button" class="re-btn re-btn--secondary" id="reInfoModalClose">Close</button></div>' +
+      "</div>";
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeInfoModal();
+    });
+    var closeBtn = $("reInfoModalClose");
+    if (closeBtn) closeBtn.addEventListener("click", closeInfoModal);
+    return backdrop;
+  }
+
+  function bindInfoPanelHandlers() {
+    var termBtn = $("reTermDatesBtn");
+    if (termBtn) {
+      termBtn.addEventListener("click", function () {
+        openInfoModal("Term dates 2026/27", renderTermDatesModalBody());
+      });
+    }
+    var dcBtn = $("reDayCentreDatesBtn");
+    if (dcBtn) {
+      dcBtn.addEventListener("click", function () {
+        openInfoModal("Day Centre dates 2026/27", renderDayCentreDatesModalBody());
+      });
+    }
+    var crashBtn = $("reCrashDatesBtn");
+    if (crashBtn) {
+      crashBtn.addEventListener("click", function () {
+        openInfoModal("Crash course dates 2026/27", renderCrashDatesModalBody());
+      });
+    }
   }
 
   function renderForm(data) {
@@ -783,13 +1031,6 @@
       "</section>" +
       renderDayCentre(data.day_centre) +
       renderInfoPanel(data) +
-      '<section class="re-section">' +
-      reSectionTitle("h3", "contact", "Contact for this submission") +
-      '<label class="re-label">Email (optional)</label>' +
-      '<input id="reContactEmail" class="re-input" type="email" maxlength="200" autocomplete="email" />' +
-      '<label class="re-label">Mobile (optional)</label>' +
-      '<input id="reContactPhone" class="re-input" type="tel" maxlength="40" autocomplete="tel" />' +
-      "</section>" +
       '<section class="re-section re-declarations">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
@@ -812,10 +1053,7 @@
 
     bindPhotoHandlers();
     bindFundingHandlers();
-
-    var preEmail = (data.parent && data.parent.email) || "";
-    var emailEl = $("reContactEmail");
-    if (emailEl && preEmail) emailEl.value = preEmail;
+    bindInfoPanelHandlers();
   }
 
   function collectChoices() {
@@ -921,8 +1159,8 @@
       annual_weekly_total: data.annual_weekly_total,
       choices: collectChoices(),
       declarations: { accurate: true, terms: true },
-      contact_email: String($("reContactEmail") && $("reContactEmail").value || "").trim(),
-      contact_phone: String($("reContactPhone") && $("reContactPhone").value || "").trim(),
+      contact_email: (data.parent && data.parent.email) || null,
+      contact_phone: null,
       submitted_from: String(global.location.href || "").slice(0, 500),
     };
 
