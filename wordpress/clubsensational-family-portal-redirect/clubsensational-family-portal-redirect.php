@@ -2,11 +2,11 @@
 /**
  * Plugin Name: clubSENsational Family Portal Redirect
  * Description: Sends /parent and /parents (and subpaths) to the Vercel family portal.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: clubSENsational
  *
  * Upload this folder to wp-content/plugins/ and activate in WordPress admin.
- * Target host is filterable — default portalvic until family.clubsensational.org is live.
+ * Default target: family.clubsensational.org (Vercel portalvic).
  */
 
 if (!defined('ABSPATH')) {
@@ -26,7 +26,7 @@ function cs_family_portal_redirect(): void
         return;
     }
 
-    $base = rtrim(apply_filters('cs_family_portal_origin', 'https://portalvic.vercel.app/parent'), '/');
+    $base = rtrim(apply_filters('cs_family_portal_origin', 'https://family.clubsensational.org/parent'), '/');
     $query = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
 
     if ($path === 'parent' || $path === 'parents') {

@@ -31,7 +31,7 @@ const ADMIN_ORIGIN = String(
   process.env.PORTAL_ADMIN_ORIGIN || "https://portalvic.vercel.app",
 ).replace(/\/$/, "");
 const FAMILY_ORIGIN = String(
-  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://www.clubsensational.org",
+  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://family.clubsensational.org",
 ).replace(/\/$/, "");
 
 const EXCLUDE_FILES = new Set([

@@ -4,7 +4,7 @@
 
 | Audiencia | URL canónica | Host técnico |
 |-----------|--------------|--------------|
-| **Padres / familias** | **https://www.clubsensational.org/parent** | `portalvic` (Vercel) |
+| **Padres / familias** | **https://www.clubsensational.org/parent** → **https://family.clubsensational.org/parent** | `portalvic` (Vercel) |
 | **Instructores / leads** | https://clubsensational-staff.vercel.app | `clubsensational-staff` (Vercel) |
 | **Admin / CEO** | https://portalvic.vercel.app | `portalvic` (Vercel) |
 
@@ -57,11 +57,12 @@ add_filter('cs_family_portal_origin', function () {
 
 Los padres verán `portalvic.vercel.app` en la barra hasta usar subdominio o proxy.
 
-### Opción C — Subdominio en Vercel (URL limpia, recomendada a medio plazo)
+### Opción C — Subdominio en Vercel ✅ configurado (pendiente DNS)
 
-1. Vercel → proyecto **portalvic** → Domains → añadir `family.clubsensational.org`
-2. DNS: CNAME `family` → `cname.vercel-dns.com`
-3. Comunicar a familias: **https://family.clubsensational.org/parent**
+1. ~~Vercel → proyecto **portalvic** → Domains → `family.clubsensational.org`~~ **Hecho**
+2. **DNS (Wix):** registro **A** `family` → `76.76.21.21` — ver `docs/FAMILY-SUBDOMAIN-DNS.md`
+3. Actualizar plugin WordPress a v1.1.0 (redirige a family, no portalvic)
+4. Comunicar a familias: **https://www.clubsensational.org/parent** (redirect) o **https://family.clubsensational.org/parent** (directo)
 
 Actualizar `PORTAL_FAMILY_ORIGIN` en Vercel (portalvic + clubsensational-staff):
 
@@ -77,7 +78,7 @@ Requiere Cloudflare Worker o proxy inverso que envíe `/parent/*` a `portalvic.v
 
 | Variable | Proyecto | Valor por defecto |
 |----------|----------|-------------------|
-| `PORTAL_FAMILY_ORIGIN` | portalvic, clubsensational-staff | `https://www.clubsensational.org` |
+| `PORTAL_FAMILY_ORIGIN` | portalvic, clubsensational-staff | `https://family.clubsensational.org` |
 | `CLUBSENSATIONAL_FAMILY_ORIGIN` | (alias) | igual |
 
 ## Comprobar

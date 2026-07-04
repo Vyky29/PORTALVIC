@@ -24,12 +24,12 @@
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
   /** Family portal (parents) — not the staff app host. */
   window.PORTAL_FAMILY_ORIGIN =
-    window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
+    window.PORTAL_FAMILY_ORIGIN || "https://family.clubsensational.org";
   window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
     path = String(path || "").replace(/^\//, "");
     if (path === "parents") path = "parent";
     if (/^parents\//.test(path)) path = path.replace(/^parents\//, "parent/");
-    var base = String(window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org").replace(
+    var base = String(window.PORTAL_FAMILY_ORIGIN || "https://family.clubsensational.org").replace(
       /\/$/,
       ""
     );
