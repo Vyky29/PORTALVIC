@@ -153,8 +153,6 @@
       border-radius: 12px;
       background: #fff;
       overflow: hidden;
-      max-height: 360px;
-      overflow-y: auto;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
@@ -171,6 +169,13 @@
     }
     .re-dates-lead__preview .dc-cal--preview { padding: 8px; }
     .re-dates-lead__preview .dc-cal--preview .dc-cal-term { margin-bottom: 0; }
+    /* Preview only: all four months in one row, term info below the grids. */
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-term__months {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-month { padding: 6px 4px 8px; }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-term__info { margin-top: 12px; margin-bottom: 6px; }
     @media (min-width: 720px) {
       .re-dates-lead-grid {
         grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
@@ -1384,7 +1389,7 @@
     </p>
   </main>
 
-  <script src="/portal/portal_calendar_2026_27.js?v=20260704-autumn-preview"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260704-autumn-preview-v2"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
   <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-autumn-preview"></script>
 </body>

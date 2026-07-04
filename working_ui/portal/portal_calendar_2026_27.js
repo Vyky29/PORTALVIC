@@ -132,7 +132,17 @@
       if (styleEl) wrap.appendChild(styleEl.cloneNode(true));
       var panel = global.document.createElement("div");
       panel.id = "dcCalSessionsPanel";
-      panel.appendChild(article.cloneNode(true));
+      var art = article.cloneNode(true);
+      // Preview only: keep the title on top, but move the term info + week count
+      // BELOW the month grids (the full modal keeps its original order).
+      var months = art.querySelector(".dc-cal-term__months");
+      var info = art.querySelector(".dc-cal-term__info");
+      var weeks = art.querySelector(".dc-cal-term__weeks");
+      if (months) {
+        if (info) art.appendChild(info);
+        if (weeks) art.appendChild(weeks);
+      }
+      panel.appendChild(art);
       wrap.appendChild(panel);
       try {
         global.portalMarkCalendar202627Highlights(wrap);
