@@ -397,7 +397,8 @@
       margin-bottom: 14px;
       min-width: 0;
     }
-    .re-funding-current h4 { margin: 0 0 8px; font-size: .88rem; color: var(--muted); font-weight: 700; }
+    .re-funding-current h4 { margin: 0 0 8px; font-size: .88rem; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .re-funding-current__icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--blue); }
     .re-billing-arrangement { margin-bottom: 14px; min-width: 0; }
     .re-billing-ref-list {
       list-style: none;
@@ -410,8 +411,10 @@
     }
     .re-billing-ref-list li {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
       min-width: 0;
     }
     .re-billing-ref-label {
@@ -420,6 +423,7 @@
       color: var(--ink);
       overflow-wrap: break-word;
     }
+    .re-billing-ref-label::after { content: ":"; }
     .re-billing-ref-value {
       font-size: .88rem;
       color: var(--muted);

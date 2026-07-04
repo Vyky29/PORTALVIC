@@ -1118,7 +1118,7 @@
     var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
     return (
       '<div class="re-funding-current">' +
-      "<h4>Funding &amp; payment on file (2025/26)</h4>" +
+      '<h4><svg class="re-funding-current__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 14.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Funding &amp; payment on file (2025/26)</span></h4>' +
       '<ul class="re-billing-ref-list">' +
       "<li>" +
       '<span class="re-billing-ref-label">Funding</span>' +
