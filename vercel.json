@@ -3,6 +3,28 @@
   "outputDirectory": "dist/deploy",
   "redirects": [
     {
+      "source": "/parents",
+      "destination": "/parent",
+      "permanent": true
+    },
+    {
+      "source": "/parents/:path*",
+      "destination": "/parent/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/parents",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent",
+      "permanent": false
+    },
+    {
+      "source": "/parents/:path*",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/:path*",
+      "permanent": false
+    },
+    {
       "source": "/parent",
       "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
       "destination": "https://www.clubsensational.org/parent",

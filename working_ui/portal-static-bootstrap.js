@@ -27,6 +27,8 @@
     window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
   window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
     path = String(path || "").replace(/^\//, "");
+    if (path === "parents") path = "parent";
+    if (/^parents\//.test(path)) path = path.replace(/^parents\//, "parent/");
     var base = String(window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org").replace(
       /\/$/,
       ""
@@ -88,7 +90,9 @@
       var path = String(window.location.pathname || "").toLowerCase();
       if (
         path === "/parent" ||
+        path === "/parents" ||
         path.indexOf("/parent/") === 0 ||
+        path.indexOf("/parents/") === 0 ||
         path.indexOf("/parent_") === 0 ||
         path.indexOf("parent_portal") >= 0 ||
         path.indexOf("parent_reenrolment") >= 0 ||
@@ -100,6 +104,9 @@
           path.replace(/^\//, "") +
           String(window.location.search || "") +
           String(window.location.hash || "");
+        if (/^parents(?:\/|$)/.test(suffix)) {
+          suffix = suffix.replace(/^parents/, "parent");
+        }
         window.location.replace(window.portalFamilyPortalUrl(suffix));
       }
     } catch (_) {}
