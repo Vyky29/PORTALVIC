@@ -25,7 +25,7 @@
   vertical-align:top;
 }
 .section-card--today .session-line--symbol{
-  container-type:size;
+  container-type:inline-size;
   container-name:today-symbol;
   display:flex;
   align-items:center;
@@ -49,8 +49,8 @@
   min-width:0;
   max-width:100%;
   min-height:0;
-  max-height:100%;
-  height:100%;
+  height:auto;
+  flex:0 0 auto;
   margin:0;
   padding:0;
   background:transparent;
@@ -58,18 +58,18 @@
   overflow:visible;
 }
 .section-card--today .session-line--symbol .session-area-note-icon:not(:has(.session-venue-icon)){
-  width:min(100%, var(--today-area-icon, 40px), 90cqh, 96cqw);
-  height:min(var(--today-area-icon, 40px), 90cqh, calc(100% - 10px), 94cqh);
+  width:var(--today-area-icon, 40px);
+  height:calc(var(--today-area-icon, 40px) * var(--area-note-visible-ratio, 0.66));
   flex:0 0 auto;
   min-height:0;
-  max-width:min(100%, var(--today-area-icon, 40px), 90cqh, 96cqw);
-  max-height:min(var(--today-area-icon, 40px), 90cqh, calc(100% - 10px), 94cqh);
-  aspect-ratio:1;
+  max-width:var(--today-area-icon, 40px);
+  max-height:calc(var(--today-area-icon, 40px) * var(--area-note-visible-ratio, 0.66));
+  aspect-ratio:auto;
   align-self:center;
   flex-shrink:0;
   padding:0;
   box-sizing:border-box;
-  overflow:visible;
+  overflow:hidden;
 }
 .section-card--today .session-line--symbol .session-area-note-icon:has(.session-venue-icon){
   display:flex;
@@ -111,15 +111,16 @@
   padding:0;
   font-size:var(--today-area-label-fs, 8px);
   font-weight:600;
-  line-height:1.05;
+  line-height:1.1;
   letter-spacing:0;
   color:var(--area-note-accent, var(--muted, #64748b));
   text-align:center;
   max-width:100%;
   min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  overflow:visible;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal;
   border:none;
   background:transparent;
   flex:0 0 auto;
@@ -146,9 +147,9 @@
   box-sizing:border-box;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-icon:not(:has(.session-venue-icon)){
-  width:min(var(--today-area-icon, 36px), 90cqh);
-  height:min(var(--today-area-icon, 36px), 90cqh, calc(100% - 10px));
-  aspect-ratio:1;
+  width:var(--today-area-icon, 40px);
+  height:calc(var(--today-area-icon, 40px) * var(--area-note-visible-ratio, 0.66));
+  aspect-ratio:auto;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-label{
   font-size:var(--today-area-label-fs, 8px);
@@ -197,7 +198,7 @@
 /* TODAY session cards (staff + lead): crop baked PNG caption; HTML label under icon. */
 .section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label),
 .section-card--today .session-today-override-pool-note .session-area-note-stack:has(.session-area-note-label){
-  gap:0;
+  gap:var(--today-area-stack-gap, 2px);
   height:auto;
   flex:0 0 auto;
   align-self:center;
@@ -205,16 +206,16 @@
 }
 .section-card--today .session-line--symbol .session-area-note-stack:has(.session-area-note-label) .session-area-note-label,
 .section-card--today .session-today-override-pool-note .session-area-note-stack:has(.session-area-note-label) .session-area-note-label{
-  margin-top:1px;
-  line-height:1.05;
+  margin-top:0;
+  line-height:1.1;
 }
 .section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon{
   --area-note-visible-ratio:0.66;
   flex:0 0 auto;
-  width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
-  height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--area-note-visible-ratio));
-  max-width:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
-  max-height:calc(var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw)) * var(--area-note-visible-ratio));
+  width:var(--today-note-size, var(--today-area-icon, 40px));
+  height:calc(var(--today-note-size, var(--today-area-icon, 40px)) * var(--area-note-visible-ratio));
+  max-width:var(--today-note-size, var(--today-area-icon, 40px));
+  max-height:calc(var(--today-note-size, var(--today-area-icon, 40px)) * var(--area-note-visible-ratio));
   aspect-ratio:auto;
   overflow:hidden;
   align-items:flex-start;
@@ -223,9 +224,9 @@
 .section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon .session-area-note-img,
 .section-card--today .session-area-note-stack:has(.session-area-note-label) .session-area-note-icon .session-area-note-svg{
   width:100%;
-  height:var(--today-note-size, min(var(--today-area-icon, 48px), 94cqh, 96cqw));
+  height:var(--today-note-size, var(--today-area-icon, 40px));
   max-width:100%;
-  max-height:none;
+  max-height:var(--today-note-size, var(--today-area-icon, 40px));
   object-fit:contain;
   object-position:top center;
   display:block;
@@ -281,19 +282,19 @@
   display:block;
   width:auto;
   height:auto;
-  max-width:min(100%, 100cqw, calc(var(--today-area-icon, 52px) * 538 / 484));
-  max-height:min(100%, 100cqh, var(--today-area-icon, 52px));
+  max-width:min(100%, var(--today-area-icon, 40px));
+  max-height:var(--today-area-icon, 40px);
   min-width:0;
   min-height:0;
   object-fit:contain;
   object-position:center center;
-  flex-shrink:1;
+  flex-shrink:0;
 }
 .staff-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label,
 .lead-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label,
 .staff-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label,
 .lead-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label{
-  font-size:var(--today-area-label-fs, 10px);
+  font-size:var(--today-area-label-fs, 8px);
   font-weight:600;
   letter-spacing:0;
   text-transform:none;

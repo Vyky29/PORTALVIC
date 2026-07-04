@@ -220,8 +220,24 @@
     );
   }
 
-  /** Icon + label metrics for TODAY session rows (few sessions → larger symbols). */
-  function portalMeasureTodaySessionRowHeight(gridEl, sessionCount) {
+  /** Icon + label metrics for TODAY session rows — fixed tile size for every row count. */
+  function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl, nameFs) {
+    var areaIconPx = scrollMode ? 36 : 40;
+    var labelFs = scrollMode ? 7 : 8;
+    var stackGap = 2;
+    var symbolColMax = scrollMode ? 52 : 56;
+    var iconPx = scrollMode ? 28 : 32;
+    return {
+      iconPx: iconPx,
+      areaIconPx: areaIconPx,
+      labelFs: labelFs,
+      symbolColMax: symbolColMax,
+      stackGap: stackGap,
+      labelBlock: Math.ceil(labelFs * 1.12) + stackGap,
+    };
+  }
+
+  global.portalMeasureTodaySessionRowHeight = function portalMeasureTodaySessionRowHeight(gridEl, sessionCount) {
     if (!gridEl) return 0;
     try {
       var card = gridEl.querySelector(".today-grid-rows > .session-card");
@@ -229,66 +245,11 @@
         var measured = card.getBoundingClientRect().height;
         if (measured > 0) return measured;
       }
-      var ch = gridEl.clientHeight;
-      if (!ch) return 0;
-      var n = Math.max(1, sessionCount | 0);
-      var rowsFill = n === 1 ? 0.333333 : 1;
-      var gap = n >= 4 ? 3 : 5;
-      return (ch * rowsFill - gap * (n - 1)) / n;
+      return 0;
     } catch (_e) {
       return 0;
     }
-  }
-
-  function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl, nameFs) {
-    var n = Math.min(9, Math.max(1, sessionCount | 0));
-    var venueAspect = 538 / 484;
-    var nameFont = Math.max(12, Math.min(26, Number(nameFs) || 14));
-    var nameLineH = nameFont * 1.22;
-    if (scrollMode) {
-      var scrollH = Math.round(nameLineH * 2.05);
-      var scrollLabelFs = 8;
-      var scrollStackGap = 0;
-      return {
-        iconPx: 30,
-        areaIconPx: scrollH,
-        labelFs: scrollLabelFs,
-        symbolColMax: Math.min(88, Math.ceil(scrollH * venueAspect) + 4),
-        stackGap: scrollStackGap,
-        labelBlock: Math.ceil(scrollLabelFs * 1.12) + scrollStackGap,
-      };
-    }
-    var dense = n >= 6;
-    var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var rowPad = dense ? 4 : 6;
-    var nameMult = { 1: 2.85, 2: 2.65, 3: 2.45, 4: 2.25, 5: 2.05 };
-    var areaIconPx;
-    if (rowH > 0) {
-      /* Icon fills most of the row; label stays a fixed small caption below. */
-      areaIconPx = Math.round(rowH * 0.74 - 10);
-    } else {
-      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
-      areaIconPx = areaByCount[n] || 38;
-    }
-    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
-    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : 36;
-    areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
-    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
-    var labelFs = n <= 2 ? 8 : n <= 4 ? 8 : 7;
-    var stackGap = 0;
-    var labelBlock = Math.ceil(labelFs * 1.12) + stackGap;
-    return {
-      iconPx: iconPx,
-      areaIconPx: areaIconPx,
-      labelFs: labelFs,
-      symbolColMax: symbolColMax,
-      stackGap: stackGap,
-      labelBlock: labelBlock,
-    };
-  }
-
-  global.portalMeasureTodaySessionRowHeight = portalMeasureTodaySessionRowHeight;
+  };
 
   global.portalNormalizeAreaNoteKey = portalNormalizeAreaNoteKey;
   global.portalDisplayAreaNoteLabel = portalDisplayAreaNoteLabel;

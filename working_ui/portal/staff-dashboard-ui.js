@@ -702,6 +702,7 @@
       grid.style.setProperty('--today-name-fs', nameFs + 'px');
       grid.style.setProperty('--today-icon', iconPx + 'px');
       grid.style.setProperty('--today-area-icon', areaIconPx + 'px');
+      grid.style.setProperty('--today-note-size', areaIconPx + 'px');
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
       grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 0) + 'px');
       grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 0) + 'px');
