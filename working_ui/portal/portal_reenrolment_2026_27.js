@@ -1779,6 +1779,7 @@
       '<div class="re-dates-lead__intro">' +
       '<p class="re-muted">Start here — view term dates, half terms and closures for the year ahead.</p>' +
       '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">See dates</button>' +
+      '<p class="re-muted re-dates-lead__hint">Tap to open the full calendar for the whole year — every term, half term and closure.</p>' +
       "</div>" +
       '<div class="re-dates-lead__preview" id="reAutumnPreviewHost" role="button" tabindex="0" aria-label="Preview of Autumn term — open the full calendar">' +
       '<p class="re-cal-loading" role="status">Loading preview…</p>' +
