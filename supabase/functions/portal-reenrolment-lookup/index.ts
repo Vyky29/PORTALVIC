@@ -10,12 +10,14 @@ import {
 } from "../_shared/parent_portal_auth.ts";
 import {
   ageMatchesInput,
+  annualTotalForWeekly,
   enrichWeeklySlotsFromRoster,
   namesMatch,
   normalizePersonName,
   parentNamesMatch,
   paymentRowToContext,
   REENROL_ACADEMIC_YEAR,
+  weeklySlotsFromRosterRows,
 } from "../_shared/reenrolment_catalog.ts";
 import { participantIdentityMatches } from "../_shared/participant_identity.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
@@ -182,14 +184,22 @@ Deno.serve(async (req) => {
 
   const participantDisplayName = String(participantRow.display_name || "");
   let weeklySlots = paymentCtx?.weeklySlots || [];
-  if (weeklySlots.length) {
+  let rosterRows: Awaited<ReturnType<typeof fetchRosterRowsForParticipant>> = [];
+  try {
+    rosterRows = await fetchRosterRowsForParticipant(supabase, participantDisplayName);
+  } catch (err) {
+    console.error("[portal-reenrolment-lookup] roster fetch", err);
+  }
+  if (weeklySlots.length && rosterRows.length) {
     try {
-      const rosterRows = await fetchRosterRowsForParticipant(supabase, participantDisplayName);
       weeklySlots = enrichWeeklySlotsFromRoster(participantDisplayName, weeklySlots, rosterRows);
     } catch (err) {
       console.error("[portal-reenrolment-lookup] roster enrich", err);
     }
+  } else if (!weeklySlots.length && rosterRows.length) {
+    weeklySlots = weeklySlotsFromRosterRows(participantDisplayName, rosterRows);
   }
+  const annualWeeklyTotal = annualTotalForWeekly(weeklySlots);
 
   return json(200, {
     ok: true,
@@ -227,7 +237,7 @@ Deno.serve(async (req) => {
           note: "Day Centre fees are agreed with your funder — not shown here.",
         }
       : null,
-    annual_weekly_total: paymentCtx?.annualWeeklyTotal ?? 0,
+    annual_weekly_total: annualWeeklyTotal,
     crash_info: CRASH_INFO,
     calendar_url: "/portal/day-centre-calendar-2026-27-section.html",
     existing_submission: !!(prior && prior.length),
@@ -287,6 +297,7 @@ async function findPaymentContext(
   const firstName = String(participantRow.first_name || displayName.split(" ")[0] || "");
 
   let best: ReturnType<typeof paymentRowToContext> | null = null;
+  let bestScore = -1;
 
   for (const row of rows || []) {
     const clientName = String(row.client_name || "");
@@ -310,9 +321,12 @@ async function findPaymentContext(
     }
 
     const ctx = paymentRowToContext(row as Record<string, unknown>);
-    if (!ctx.serviceRaw && !ctx.weeklySlots.length && !ctx.dayCentreSlots.length) continue;
-    best = ctx;
-    break;
+    if (!ctx.weeklySlots.length && !ctx.dayCentreSlots.length) continue;
+    const score = ctx.annualWeeklyTotal + ctx.weeklySlots.length * 0.01;
+    if (score > bestScore) {
+      bestScore = score;
+      best = ctx;
+    }
   }
 
   return best;

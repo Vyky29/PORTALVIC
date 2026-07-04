@@ -1392,7 +1392,7 @@
     if (!p.client_name || !p.time_slot || !p.day) {
       if (p.client_name && !p.service) deps.toast("Select a service for this participante.");
       else if (p.client_name && p.service && !p.time_slot) deps.toast("No roster slot for that service on this date.");
-      else deps.toast("Participante and time slot are required.");
+      else deps.toast("Participant and time slot are required.");
       return;
     }
     if (/^no[\s_-]*client$/i.test(p.client_name)) {
@@ -1615,7 +1615,7 @@
       '<div class="trs-row trs-row--identity">' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
-      '<div class="trs-field"><label for="trsClient">Participante</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="Start typing name…" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participantes"></div></div></div>' +
+      '<div class="trs-field"><label for="trsClient">Participant</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="Start typing name…" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participants"></div></div></div>' +
       '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">Pick participante first</option></select></div>' +
       "</div>" +
       '<div class="trs-row trs-row--details" id="trsDetailsRow">' +

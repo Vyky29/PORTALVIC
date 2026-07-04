@@ -81,8 +81,14 @@ export function normalizeServiceType(raw: string): string {
 }
 
 function normalizeDay(raw: string): string {
-  const key = String(raw || "").toLowerCase().replace(/[^a-z]/g, "");
-  return DAY_ALIASES[key] || String(raw || "").trim();
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return "";
+  const fullKey = trimmed.toLowerCase().replace(/[^a-z]/g, "");
+  if (DAY_ALIASES[fullKey]) return DAY_ALIASES[fullKey];
+  const first = (trimmed.split(/\s+|[·/]/)[0] || "").trim();
+  const firstKey = first.toLowerCase().replace(/[^a-z]/g, "");
+  if (DAY_ALIASES[firstKey]) return DAY_ALIASES[firstKey];
+  return first || trimmed;
 }
 
 function sessionCountsForDay(day: string) {
@@ -156,6 +162,34 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
       hoursLabel: bespokeDc[2]?.trim(),
       venue: "SwimFarm",
     };
+  }
+
+  const shortSw = raw.match(/^(SW|CL)\s*\(([^)]+)\)/i);
+  if (shortSw) {
+    const durationMin = shortSw[1].toUpperCase() === "CL" ? 60 : 30;
+    const serviceType = shortSw[1].toUpperCase() === "CL" ? "CLIMBING ACTIVITY" : "AQUATIC ACTIVITY";
+    const dayRaw = shortSw[2] || "";
+    const dayPart = dayRaw.split(/[/+&·]/)[0]?.trim() || dayRaw;
+    const day = normalizeDay(dayPart.replace(/\s*1:1.*$/i, "").trim());
+    const ratio = dayRaw.match(/(\d:\d)/)?.[1];
+    const isWeekend = WEEKEND_DAYS.has(day);
+    const counts = sessionCountsForDay(day);
+    const price = unitPriceFor(serviceType, durationMin);
+    const slot: ParsedSlot = {
+      id: `slot-${index}`,
+      raw,
+      serviceType,
+      durationMin,
+      day,
+      isWeekend,
+      isDayCentre: false,
+      pricePerSession: price,
+      sessions: { ...counts },
+      termTotals: termTotals(price, counts),
+      ratio: ratio || undefined,
+    };
+    slot.displayLabel = buildSlotDisplayLabel(slot);
+    return slot;
   }
 
   const m =
@@ -448,6 +482,106 @@ function pickPaymentField(data: Record<string, unknown>, keys: string[]): string
   return "";
 }
 
+export function weeklySlotsFromRosterRows(
+  participantName: string,
+  rosterRows: Array<{
+    client_name?: string;
+    day?: string;
+    time_slot?: string;
+    service?: string;
+    venue?: string;
+  }>,
+): ParsedSlot[] {
+  const seen = new Set<string>();
+  const out: ParsedSlot[] = [];
+  let idx = 0;
+  for (const row of rosterRows) {
+    if (!namesMatch(participantName, String(row.client_name || ""))) continue;
+    const day = normalizeDay(String(row.day || ""));
+    const svc = String(row.service || "").trim();
+    if (!day || !svc || /day centre/i.test(svc)) continue;
+    const st = normalizeServiceType(svc);
+    let durationMin = 30;
+    let serviceType = "AQUATIC ACTIVITY";
+    if (st.includes("CLIMB") || st === "CL") {
+      durationMin = 60;
+      serviceType = "CLIMBING ACTIVITY";
+    } else if (st.includes("MULTI")) {
+      durationMin = 90;
+      serviceType = "MULTI SENSORY ACTIVITY";
+    } else if (st.includes("BESPOKE")) {
+      durationMin = 60;
+      serviceType = "BESPOKE PROGRAMME";
+    } else if (st.includes("PHYSICAL") || st.includes("FITNESS")) {
+      durationMin = 60;
+      serviceType = "PHYSICAL ACTIVITY";
+    } else if (st.includes("COUNSEL")) {
+      durationMin = 45;
+      serviceType = "COUNSELLING";
+    } else if (st.includes("AQUATIC") || st.includes("SWIM") || st === "SW") {
+      durationMin = 30;
+      serviceType = "AQUATIC ACTIVITY";
+    } else {
+      serviceType = st;
+    }
+    const key = `${day}|${normalizeServiceType(serviceType)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const isWeekend = WEEKEND_DAYS.has(day);
+    const counts = sessionCountsForDay(day);
+    const price = unitPriceFor(serviceType, durationMin);
+    const slot: ParsedSlot = {
+      id: `roster-${idx++}`,
+      raw: `${durationMin}' ${serviceType} (${day})`,
+      serviceType,
+      durationMin,
+      day,
+      isWeekend,
+      isDayCentre: false,
+      pricePerSession: price,
+      sessions: { ...counts },
+      termTotals: termTotals(price, counts),
+      timeSlot: String(row.time_slot || "").trim() || undefined,
+      venue: String(row.venue || "").trim() || undefined,
+    };
+    slot.displayLabel = buildSlotDisplayLabel(slot);
+    out.push(slot);
+  }
+  return out;
+}
+
+function parseCostPerSession(data: Record<string, unknown>): number | null {
+  const raw = pickPaymentField(data, [
+    "Cost",
+    "cost",
+    "Price",
+    "price",
+    "Rate",
+    "Session cost",
+    "Session price",
+  ]);
+  if (!raw) return null;
+  const m = String(raw).match(/£?\s*([\d]+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function applyCostFallbackToWeekly(
+  weekly: ParsedSlot[],
+  costPerSession: number | null,
+): ParsedSlot[] {
+  if (costPerSession == null || !weekly.length) return weekly;
+  return weekly.map((s) => {
+    if (s.pricePerSession != null) return s;
+    return {
+      ...s,
+      pricePerSession: costPerSession,
+      termTotals: termTotals(costPerSession, s.sessions),
+    };
+  });
+}
+
 export function paymentRowToContext(row: Record<string, unknown>) {
   const data = (row.data && typeof row.data === "object" ? row.data : {}) as Record<string, unknown>;
   const sheet = String(row.sheet || "");
@@ -502,7 +636,9 @@ export function paymentRowToContext(row: Record<string, unknown>) {
   );
 
   const slots = parseServiceString(service);
-  const { weekly, dayCentre } = splitSlots(slots);
+  const { weekly: weeklyRaw, dayCentre } = splitSlots(slots);
+  const costPerSession = parseCostPerSession(data);
+  const weekly = applyCostFallbackToWeekly(weeklyRaw, costPerSession);
 
   return {
     clientKey: String(row.client_key || ""),

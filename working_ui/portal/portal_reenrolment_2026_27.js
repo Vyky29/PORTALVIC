@@ -497,6 +497,24 @@
     return "";
   }
 
+  function sumAnnualWeeklyTotal(slots) {
+    if (!slots || !slots.length) return 0;
+    var sum = 0;
+    for (var i = 0; i < slots.length; i++) {
+      var t = slots[i] && slots[i].termTotals && slots[i].termTotals.annual;
+      if (Number.isFinite(Number(t))) sum += Number(t);
+    }
+    return Math.round(sum * 100) / 100;
+  }
+
+  function resolveAnnualWeeklyTotal(data) {
+    var fromSlots = sumAnnualWeeklyTotal(data && data.weekly_slots);
+    if (fromSlots > 0) return fromSlots;
+    var api = data && data.annual_weekly_total;
+    if (api != null && Number(api) > 0) return Number(api);
+    return fromSlots;
+  }
+
   function fundingCurrent2526(data) {
     var f = (data && data.funding) || {};
     if (f.current_2526) return f.current_2526;
@@ -512,7 +530,7 @@
 
   function renderFundingBlock(data) {
     var cur = fundingCurrent2526(data);
-    var annualTotal = data.annual_weekly_total != null ? data.annual_weekly_total : 0;
+    var annualTotal = resolveAnnualWeeklyTotal(data);
     var payDefault = mapPayMethodCode(cur.payment_method);
     var fundDefault = mapFundingCode(cur.funding);
     var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
@@ -728,7 +746,7 @@
         invoice_type_code: vatCode,
         invoice_type_label: vatCode === "exempt" ? "EXEMPT VAT" : "20% VAT included",
         billing_schedule: billing,
-        estimated_annual_total: data.annual_weekly_total != null ? data.annual_weekly_total : null,
+        estimated_annual_total: resolveAnnualWeeklyTotal(data),
       },
     };
   }
@@ -798,7 +816,7 @@
     );
   }
 
-  function renderDayCentre(dc) {
+  function renderDayCentreBlock(dc) {
     if (!dc || !dc.slots || !dc.slots.length) return "";
     var slots = dc.slots
       .map(function (s) {
@@ -810,12 +828,10 @@
       })
       .join("");
     return (
-      '<section class="re-section re-section--dc">' +
-      reSectionTitle("h3", "daycentre", "Day Centre — SwimFarm") +
       '<p class="re-muted">' +
       esc(dc.note || "Fees agreed with your funder — not shown here.") +
       "</p>" +
-      "<ul class=\"re-dc-list\">" +
+      '<ul class="re-dc-list">' +
       slots +
       "</ul>" +
       '<fieldset class="re-choice-fieldset">' +
@@ -823,26 +839,54 @@
       '<label class="re-radio"><input type="radio" name="dc_choice" value="continue" checked /> Continue Day Centre provision for 2026/27 (same pattern unless agreed otherwise)</label>' +
       '<label class="re-radio"><input type="radio" name="dc_choice" value="discuss" /> I need to discuss changes (days, hours or ratio)</label>' +
       '<label class="re-radio"><input type="radio" name="dc_choice" value="withdraw" /> Do not continue Day Centre</label>' +
-      "</fieldset>" +
+      "</fieldset>"
+    );
+  }
+
+  function renderDayCentre(dc) {
+    var inner = renderDayCentreBlock(dc);
+    if (!inner) return "";
+    return (
+      '<section class="re-section re-section--dc">' +
+      reSectionTitle("h3", "daycentre", "Day Centre — SwimFarm") +
+      inner +
       "</section>"
     );
   }
 
-  function renderInfoPanel(data) {
-    var hasDc = !!(data && data.day_centre && data.day_centre.slots && data.day_centre.slots.length);
+  function renderTermDatesLead() {
     return (
-      '<section class="re-section re-section--info">' +
-      reSectionTitle("h3", "calendar", "Term dates, Day Centre &amp; crash courses") +
-      '<p class="re-muted">Session counts for weekly activities are shown above. Dates below are for information only.</p>' +
-      (hasDc
-        ? "<p><strong>Day Centre</strong> — SwimFarm (Mon–Fri pattern). Fees agreed with your funder.</p>"
-        : "") +
-      "<p><strong>Crash courses</strong> — intensive swimming at Acton Centre (Mon–Thu, half terms). Booked separately.</p>" +
+      '<section class="re-section re-section--dates-lead">' +
+      reSectionTitle("h3", "calendar", "2026/27 dates") +
+      '<p class="re-muted">Start here — view term dates, half terms and closures for the year ahead.</p>' +
+      '<button type="button" class="re-btn re-btn--primary re-btn--dates-lead" id="reTermDatesBtn">View term dates 2026/27</button>' +
+      "</section>"
+    );
+  }
+
+  function renderExtendedOfferSection(data) {
+    var hasDc = !!(data && data.day_centre && data.day_centre.slots && data.day_centre.slots.length);
+    var dcBlock = hasDc
+      ? '<div class="re-offer-block re-offer-block--dc">' +
+        "<h4>Your Day Centre (SwimFarm)</h4>" +
+        renderDayCentreBlock(data.day_centre) +
+        "</div>"
+      : '<div class="re-offer-block">' +
+        "<h4>Day Centre (SwimFarm)</h4>" +
+        '<p class="re-muted">Weekday provision (Mon–Fri), separate from After-School &amp; Weekends. Contact the office if you would like to add Day Centre.</p>' +
+        "</div>";
+    return (
+      '<section class="re-section re-section--offer">' +
+      reSectionTitle("h3", "daycentre", "Day Centre &amp; crash courses") +
+      '<p class="re-muted">Many families combine <strong>After-School &amp; Weekends</strong> with weekday Day Centre and/or half-term crash courses. These are optional add-ons — see dates below.</p>' +
+      dcBlock +
+      '<div class="re-offer-block">' +
+      "<h4>Crash courses</h4>" +
+      '<p class="re-muted">Intensive swimming at Acton Centre, Monday–Thursday in the half terms. Booking is a separate form (coming soon).</p>' +
       '<div class="re-info-btns">' +
-      '<button type="button" class="re-btn re-btn--secondary" id="reTermDatesBtn">Term dates 2026/27</button>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Crash course dates</button>' +
-      "</div>" +
+      "</div></div>" +
       "</section>"
     );
   }
@@ -1086,6 +1130,9 @@
     var host = $("reFormHost");
     if (!host) return;
 
+    data.annual_weekly_total = resolveAnnualWeeklyTotal(data);
+    state.lookup = data;
+
     state.avatarUrl = resolveAvatarUrl(data);
     state.pendingPhotoFile = null;
     if (state.pendingPreviewUrl) {
@@ -1109,23 +1156,23 @@
       "</p>" +
       '<p class="re-muted">Review your current programme and confirm for September 2026.</p>' +
       "</section>" +
+      renderTermDatesLead() +
       renderPhotoSection(data) +
       '<section class="re-section">' +
       reSectionTitle("h3", "billing", "Funding &amp; billing") +
       renderFundingBlock(data) +
       "</section>" +
       '<section class="re-section">' +
-      reSectionTitle("h3", "services", "Weekly &amp; weekend activities") +
-      '<p class="re-muted">Prices per session · term session counts already exclude bank holidays.</p>' +
+      reSectionTitle("h3", "services", "After-School &amp; Weekends") +
+      '<p class="re-muted">Your weekly and weekend activities · prices per session · term counts exclude bank holidays.</p>' +
       renderWeeklySlots(data.weekly_slots || []) +
       (data.annual_weekly_total
         ? '<p class="re-year-total"><strong>Combined weekly/year total:</strong> ' +
           esc(money(data.annual_weekly_total)) +
-          " <span class=\"re-muted\">(excl. Day Centre)</span></p>"
+          ' <span class="re-muted">(excl. Day Centre)</span></p>'
         : "") +
       "</section>" +
-      renderDayCentre(data.day_centre) +
-      renderInfoPanel(data) +
+      renderExtendedOfferSection(data) +
       '<section class="re-section re-declarations">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +

@@ -25,7 +25,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260704-ops-alerts-header" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260704-ops-hub-en" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
@@ -20233,44 +20233,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '\u2014';
     }
 
-    function opsHubConnectedAsideInnerHtml(){
-      var list = opsHubConnectedStaffList();
-      if(!list.length){
-        return '<p class="muted ops-hub-aside-empty">Nobody else online right now. Names appear when staff have the portal open (visit heartbeat).</p>';
-      }
-      return (
-        '<div class="ops-hub-connected-list">'+
-        list.map(function(p){
-          return '<span class="ops-hub-connected-pill" title="Online now">'+esc(p.name || 'Staff')+'</span>';
-        }).join('')+
-        '</div>'
-      );
-    }
-
-    function opsHubAsideHtml(){
-      return (
-        '<aside class="ops-hub__aside" aria-label="Connected staff">'+
-          '<div class="ops-hub-aside-card ops-hub-aside-card--connected">'+
-            '<div class="ops-hub-aside-card__head">'+
-              '<h3 class="ops-hub-aside-card__title">Gente conectada</h3>'+
-              '<span class="ops-hub-aside-card__count" id="opsHubConnectedCount">0</span>'+
-            '</div>'+
-            '<div class="ops-hub-aside-card__body" id="opsHubConnectedHost">'+opsHubConnectedAsideInnerHtml()+'</div>'+
-          '</div>'+
-        '</aside>'
-      );
-    }
-
     function opsHubPatchLiveAside(){
-      if(state.view !== 'nav_hub' || state.navHubGroup) return;
-      var connHost = $('opsHubConnectedHost');
-      if(connHost) connHost.innerHTML = opsHubConnectedAsideInnerHtml();
-      var connCount = $('opsHubConnectedCount');
-      if(connCount){
-        var n = opsHubConnectedStaffList().length;
-        connCount.textContent = String(n);
-        connCount.hidden = n < 1;
-      }
+      /* Ops hub sidebar removed — online staff shown in header presence bar + glance strip only. */
     }
     window.opsHubPatchLiveAside = opsHubPatchLiveAside;
 
@@ -20314,7 +20278,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
         '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
         '<span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span></div>' +
-        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Gente conectada ahora</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Staff connected now</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
         '</div>'
       );
@@ -20388,7 +20352,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="ops-hub__main">' +
         '<div class="ops-hub__grid admin-dashboard-grid">'+cards+'</div>' +
         '</div>' +
-        opsHubAsideHtml() +
         '</div>' +
         '</div>'
       );
@@ -25360,16 +25323,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var col = $('adminSidebarCollapse');
       if(!col) return;
       if(!adminIsDesktopShell()){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
         return;
       }
       if(document.body.classList.contains('sidebar-desktop-pinned')){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
       } else {
-        col.textContent = 'Fijar menú ancho';
-        col.setAttribute('aria-label', 'Fijar menú lateral a ancho completo');
+        col.textContent = 'Pin full width';
+        col.setAttribute('aria-label', 'Pin sidebar to full width');
       }
     }
     function adminApplyDesktopSidebarFromStorage(){

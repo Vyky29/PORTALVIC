@@ -105,7 +105,7 @@
         "instalar"
       ],
       "voice_script": "Add CS Portal to your home screen so it opens full screen like an app. On iPhone use Share, then Add to Home Screen. On Android use the browser menu, then Install app.",
-      "content": "Add the portal to your home screen as CS Portal with the club icon, full-screen.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nYour iPhone may show the menu in Spanish (Añadir a pantalla de inicio) — it is the same option as Add to Home Screen in the guide.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out.",
+      "content": "Add the portal to your home screen as CS Portal with the club icon, full-screen.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out.",
       "steps": [
         {
           "voice": "On iPhone, open the portal in Safari. Tap Share at the bottom.",
@@ -132,7 +132,7 @@
       "demos": [
         {
           "demo": "install-share-sheet",
-          "caption": "English labels — same menu on every iPhone, even if your phone language is Spanish."
+          "caption": "Share menu — Add to Home Screen."
         }
       ],
       "illustrations": []
