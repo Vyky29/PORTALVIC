@@ -12,6 +12,7 @@
     home: null,
     messaging: { unreadTotal: 0, unreadByContact: {} },
     participant: { contactId: "", data: null, loaded: {} },
+    childPhotoPending: {},
   };
 
   function mergeParticipantBody(base, patch) {
@@ -319,15 +320,15 @@
     return (
       '<p class="pp-child-photo-missing" role="status">' +
       "<strong>No photo on file.</strong> " +
-      "Please add a photo so instructors can identify them at sessions. " +
+      "Please add a photo using <strong>Add photo</strong> below so instructors can identify them at sessions. " +
       "Shared with club staff only · stored in line with GDPR." +
       "</p>"
     );
   }
 
-  function childAvatarHtml(c) {
+  function childAvatarImgHtml(c, urlOverride) {
     var name = c.display_name || "Participant";
-    var url = String(c.avatar_url || "").trim();
+    var url = urlOverride != null ? String(urlOverride || "").trim() : String(c.avatar_url || "").trim();
     if (!url && c.has_avatar !== false && typeof global.portalParticipantPhotoUrl === "function") {
       url = global.portalParticipantPhotoUrl(name, "", c.contact_id) || "";
     }
@@ -359,6 +360,144 @@
       esc(initials) +
       "</div>"
     );
+  }
+
+  function childHasSavedPhoto(c) {
+    return c.has_avatar !== false;
+  }
+
+  function childPhotoBlockHtml(c) {
+    var cid = String(c.contact_id || "");
+    var hasSaved = childHasSavedPhoto(c);
+    return (
+      '<div class="pp-child-photo-block" data-contact-id="' +
+      esc(cid) +
+      '" data-has-photo="' +
+      (hasSaved ? "1" : "0") +
+      '">' +
+      '<div class="pp-child-photo-host">' +
+      childAvatarImgHtml(c, state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) +
+      "</div>" +
+      '<button type="button" class="pp-child-photo-edit"' +
+      (hasSaved ? "" : " hidden") +
+      '>Edit</button>' +
+      '<div class="pp-child-photo-tools"' +
+      (hasSaved ? " hidden" : "") +
+      ">" +
+      '<button type="button" class="pp-child-photo-add">Add photo</button>' +
+      '<button type="button" class="pp-child-photo-save" hidden>Save photo</button>' +
+      "</div>" +
+      '<input type="file" class="pp-child-photo-input" accept="image/jpeg,image/png,image/webp,image/*" hidden />' +
+      '<p class="pp-child-photo-status pp-muted" role="status" hidden></p>' +
+      "</div>"
+    );
+  }
+
+  function setChildPhotoStatus(block, msg, type) {
+    if (!block) return;
+    var el = block.querySelector(".pp-child-photo-status");
+    if (!el) return;
+    if (!msg) {
+      el.hidden = true;
+      el.textContent = "";
+      return;
+    }
+    el.hidden = false;
+    el.textContent = msg;
+    el.className = "pp-child-photo-status pp-muted" + (type ? " pp-child-photo-status--" + type : "");
+  }
+
+  function syncChildPhotoBlockUi(block, hasSaved) {
+    if (!block) return;
+    block.setAttribute("data-has-photo", hasSaved ? "1" : "0");
+    var edit = block.querySelector(".pp-child-photo-edit");
+    var tools = block.querySelector(".pp-child-photo-tools");
+    if (edit) edit.hidden = !hasSaved;
+    if (tools) tools.hidden = !!hasSaved;
+    if (hasSaved) {
+      var save = block.querySelector(".pp-child-photo-save");
+      if (save) save.hidden = true;
+      setChildPhotoStatus(block, "", "");
+    }
+  }
+
+  function refreshChildPhotoHost(block, c) {
+    if (!block) return;
+    var host = block.querySelector(".pp-child-photo-host");
+    if (!host) return;
+    var cid = String(c.contact_id || "");
+    var pending = state.childPhotoPending[cid];
+    var override = pending && pending.previewUrl ? pending.previewUrl : null;
+    var tmp = document.createElement("div");
+    tmp.innerHTML = childAvatarImgHtml(c, override);
+    host.innerHTML = "";
+    if (tmp.firstChild) host.appendChild(tmp.firstChild);
+  }
+
+  async function saveChildPhoto(block, c, file) {
+    var cid = String(c.contact_id || "");
+    var saveBtn = block.querySelector(".pp-child-photo-save");
+    if (saveBtn) saveBtn.disabled = true;
+    setChildPhotoStatus(block, "Saving…", "info");
+    try {
+      var fd = new FormData();
+      fd.append("contact_id", cid);
+      fd.append("source", "parent_portal_home");
+      fd.append("photo", file, file.name || "photo.jpg");
+      var res = await fetch(fn("portal-participant-avatar-save"), {
+        method: "POST",
+        headers: {
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.session.token,
+        },
+        body: fd,
+      });
+      var out = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !out.ok) {
+        setChildPhotoStatus(block, "Could not save photo — try again.", "error");
+        return;
+      }
+      var newUrl = out.avatar_url || "";
+      c.has_avatar = true;
+      c.avatar_url = newUrl;
+      if (state.home && state.home.children) {
+        state.home.children.forEach(function (ch) {
+          if (String(ch.contact_id) === cid) {
+            ch.has_avatar = true;
+            ch.avatar_url = newUrl;
+          }
+        });
+      }
+      if (state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) {
+        try {
+          URL.revokeObjectURL(state.childPhotoPending[cid].previewUrl);
+        } catch (_e) {}
+      }
+      delete state.childPhotoPending[cid];
+      var input = block.querySelector(".pp-child-photo-input");
+      if (input) input.value = "";
+      refreshChildPhotoHost(block, c);
+      syncChildPhotoBlockUi(block, true);
+      var card = block.closest(".pp-child-card");
+      if (card) card.classList.remove("pp-child-card--no-photo");
+      var notice = card && card.querySelector(".pp-child-photo-missing");
+      if (notice) notice.remove();
+      if (typeof global.portalRegisterParticipantStorageAvatar === "function" && newUrl) {
+        global.portalRegisterParticipantStorageAvatar(cid, c.display_name, newUrl);
+      }
+      setChildPhotoStatus(block, "", "");
+    } catch (_e) {
+      setChildPhotoStatus(block, "Network error saving photo.", "error");
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  function childAvatarHtml(c) {
+    return childPhotoBlockHtml(c);
   }
 
   function ppChildActionIcon(kind) {
@@ -410,7 +549,7 @@
       '<span class="pp-child-action-ico" aria-hidden="true">' +
       ppChildActionIcon("messages") +
       "</span>" +
-      '<span class="pp-child-action-label">Messages, photos &amp; feedback</span>' +
+      '<span class="pp-child-action-label">Messages, general info, sessions overview</span>' +
       (sub ? '<span class="pp-child-action-sub">' + esc(sub) + "</span>" : "") +
       "</button>"
     );
@@ -535,6 +674,71 @@
       host.innerHTML =
         '<p class="pp-muted">We could not load this participant right now. Try again in a moment.</p>';
     }
+  }
+
+  function childFromHome(contactId) {
+    var children = (state.home && state.home.children) || [];
+    for (var i = 0; i < children.length; i++) {
+      if (String(children[i].contact_id) === String(contactId)) return children[i];
+    }
+    return null;
+  }
+
+  function bindChildPhotoHandlers() {
+    var list = $("ppChildList");
+    if (!list) return;
+    list.addEventListener("click", function (e) {
+      var addBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-add") : null;
+      var editBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-edit") : null;
+      var saveBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-save") : null;
+      if (!addBtn && !editBtn && !saveBtn) return;
+      e.stopPropagation();
+      var block = (addBtn || editBtn || saveBtn).closest(".pp-child-photo-block");
+      if (!block) return;
+      var cid = block.getAttribute("data-contact-id") || "";
+      var c = childFromHome(cid);
+      if (!c) return;
+      if (saveBtn) {
+        var pending = state.childPhotoPending[cid];
+        if (pending && pending.file) void saveChildPhoto(block, c, pending.file);
+        return;
+      }
+      var input = block.querySelector(".pp-child-photo-input");
+      if (input) input.click();
+    });
+    list.addEventListener("change", function (e) {
+      var input =
+        e.target && e.target.classList && e.target.classList.contains("pp-child-photo-input") ? e.target : null;
+      if (!input) return;
+      var block = input.closest(".pp-child-photo-block");
+      if (!block) return;
+      var cid = block.getAttribute("data-contact-id") || "";
+      var c = childFromHome(cid);
+      if (!c) return;
+      var file = input.files && input.files[0];
+      if (!file) return;
+      if (!/^image\//.test(file.type || "")) {
+        setChildPhotoStatus(block, "Please choose a photo (JPG or PNG).", "error");
+        input.value = "";
+        return;
+      }
+      var hasSaved = block.getAttribute("data-has-photo") === "1";
+      if (state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) {
+        try {
+          URL.revokeObjectURL(state.childPhotoPending[cid].previewUrl);
+        } catch (_e) {}
+      }
+      var previewUrl = URL.createObjectURL(file);
+      state.childPhotoPending[cid] = { file: file, previewUrl: previewUrl };
+      refreshChildPhotoHost(block, c);
+      setChildPhotoStatus(block, "", "");
+      if (hasSaved) {
+        void saveChildPhoto(block, c, file);
+      } else {
+        var saveEl = block.querySelector(".pp-child-photo-save");
+        if (saveEl) saveEl.hidden = false;
+      }
+    });
   }
 
   function bindChildCards() {
@@ -696,6 +900,7 @@
     initBrand();
     bindEvents();
     bindChildCards();
+    bindChildPhotoHandlers();
     if (loadStoredSession()) {
       var ok = await loadHome();
       if (!ok) setStep("identify");

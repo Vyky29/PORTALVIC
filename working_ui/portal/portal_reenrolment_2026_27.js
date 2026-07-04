@@ -1940,7 +1940,6 @@
       "</aside>" +
       '<div class="re-form-grid__main">' +
       renderTermDatesLead() +
-      renderPhotoSection(data) +
       renderPrimaryServiceSection(data) +
       '<section class="re-section re-section--billing">' +
       reSectionTitle("h3", "billing", "Funding &amp; billing 2026/27") +
@@ -1975,8 +1974,6 @@
       submitBtn.addEventListener("click", onSubmit);
     }
 
-    bindPhotoHandlers();
-    syncPhotoSectionUi();
     bindFundingHandlers();
     bindInfoPanelHandlers();
   }
