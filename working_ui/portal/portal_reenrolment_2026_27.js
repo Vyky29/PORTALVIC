@@ -1224,6 +1224,7 @@
       (b.editing ? " hidden" : "") +
       ">" +
       '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose how you would like invoices timed — the programme total stays the same.</p>' +
+      '<p class="re-billing-plan-newnote"><strong>New for 2026/27:</strong> you can now confirm the <strong>whole year</strong> in one go. Most families are used to paying each term — that option is still here — but settling the year up front means nothing to re-confirm next term, which saves time for you and for our office.</p>' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       renderPayScheduleFieldset(payCode, scheduleDefault) +
@@ -1291,10 +1292,10 @@
 
   function scheduleOptionHint(code, payCode) {
     if (code === "yearly_1off") {
-      return "Confirm the full academic year in one step. One bank transfer on 1 September 2026 — same programme total.";
+      return "New this year — confirm the full academic year in one step. One bank transfer on 1 September 2026, same programme total, nothing to re-confirm each term.";
     }
     if (code === "monthly_10") {
-      return "Year agreement with 10 payments on the 1st of each month, September–June, by direct payment — same programme total.";
+      return "New this year — one year agreement with 10 payments on the 1st of each month, September–June, by direct payment. Same programme total, and no termly re-confirmation.";
     }
     if (code === "term_flexi") {
       return "Six bank transfers over the year — two per term: before half term starts, and during half-term week before the second half. Same programme total.";
@@ -1433,6 +1434,7 @@
             '<span class="re-radio--schedule__body">' +
             '<span class="re-radio--schedule__title">' +
             esc(o.label) +
+            (spotlight ? '<span class="re-schedule-new-badge">New</span>' : "") +
             "</span>" +
             (hint
               ? '<span class="re-radio--schedule__hint">' + esc(hint) + "</span>"
