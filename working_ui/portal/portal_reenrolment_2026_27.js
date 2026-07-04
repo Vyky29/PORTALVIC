@@ -665,7 +665,11 @@
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
       '<p class="re-muted re-pay-preview__note">' +
       esc(paymentPreviewNote(payCode, schedCode)) +
-      (fee ? " Each payment shown includes the £5 Direct Payment admin fee." : "") +
+      (fee
+        ? " Each payment shown includes the " +
+          money(RE_ADMIN_FEE_PER_INSTALLMENT) +
+          " Direct Payment admin fee."
+        : "") +
       "</p>" +
       '<ul class="re-pay-preview-list">' +
       rows
@@ -1083,7 +1087,7 @@
     return payCode === "gocardless" || payCode === "own_way_flexible";
   }
 
-  var RE_ADMIN_FEE_PER_INSTALLMENT = 5;
+  var RE_ADMIN_FEE_PER_INSTALLMENT = 2.5;
 
   function installmentCountForSchedule(scheduleCode) {
     if (scheduleCode === "monthly_10") return 10;
@@ -1243,7 +1247,9 @@
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
       (adminFeeApplies(payCode) ? "" : " hidden") +
       ">" +
-      "<strong>£5 admin fee per payment (Direct Payment)</strong>" +
+      "<strong>" +
+      money(RE_ADMIN_FEE_PER_INSTALLMENT) +
+      " admin fee per payment (Direct Payment)</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
@@ -1548,7 +1554,9 @@
       var n = installmentCountForSchedule(schedCode);
       var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
       feeAmt.textContent =
-        " — £5 × " +
+        " — " +
+        money(RE_ADMIN_FEE_PER_INSTALLMENT) +
+        " × " +
         n +
         " = " +
         money(feeTotal) +
