@@ -318,6 +318,20 @@
     .re-legal { text-align: center; font-size: .78rem; color: var(--muted); margin-top: 20px; overflow-wrap: break-word; }
     .re-legal a { color: var(--blue); }
     .re-done-icon { font-size: 2rem; text-align: center; margin-bottom: 8px; }
+    .re-pick-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; min-width: 0; }
+    .re-pick-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      width: 100%; min-width: 0; padding: 14px 16px; border: 1px solid var(--line);
+      border-radius: var(--radius); background: #fff; font: inherit; text-align: left;
+      cursor: pointer; transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .re-pick-card:hover, .re-pick-card:focus-visible {
+      border-color: var(--blue); background: var(--blueSoft); outline: none;
+      box-shadow: 0 0 0 1px rgba(45, 132, 179, .12);
+    }
+    .re-pick-card__name { font-weight: 800; color: var(--ink); overflow-wrap: break-word; min-width: 0; }
+    .re-pick-card__meta { font-size: .82rem; color: var(--muted); margin-top: 2px; overflow-wrap: break-word; }
+    .re-pick-card__cta { flex-shrink: 0; font-size: .78rem; font-weight: 800; color: var(--blue); white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -331,8 +345,9 @@
     <div id="reNotice" class="re-notice re-notice--info" hidden role="status"></div>
 
     <section id="reStepIdentify" class="re-card">
-      <h2>Find your record</h2>
-      <p class="re-muted">Enter the parent/carer name and participant details we have on file.</p>
+      <h2 id="reIdentifyTitle">Find your record</h2>
+      <p id="reIdentifySub" class="re-muted">Enter the parent/carer name and participant details we have on file.</p>
+      <div id="rePortalPickList" class="re-pick-list" hidden role="list"></div>
       <form id="reIdentifyForm">
         <label class="re-label" for="reParentFirst">Parent first name</label>
         <input id="reParentFirst" class="re-input" required autocomplete="given-name" maxlength="80" />
@@ -371,6 +386,6 @@
   </main>
 
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-dc-funding"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-portal-skip"></script>
 </body>
 </html>

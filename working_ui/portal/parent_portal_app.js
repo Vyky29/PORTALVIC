@@ -438,6 +438,16 @@
         ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
         : "") +
       '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
+
+    var reenrolBannerLink = $("ppReenrolBannerLink");
+    if (reenrolBannerLink) {
+      var reHref = "/parent/re-enrolment?from=portal";
+      if (children.length === 1 && children[0].contact_id) {
+        reHref +=
+          "&contact_id=" + encodeURIComponent(String(children[0].contact_id || ""));
+      }
+      reenrolBannerLink.setAttribute("href", reHref);
+    }
   }
 
   async function loadParticipantDetail(contactId) {

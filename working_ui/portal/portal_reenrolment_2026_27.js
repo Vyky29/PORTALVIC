@@ -131,6 +131,101 @@
     }
   }
 
+  function formatPickDob(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(String(iso).slice(0, 10) + "T12:00:00");
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function showPublicIdentifyForm() {
+    var title = $("reIdentifyTitle");
+    var sub = $("reIdentifySub");
+    var form = $("reIdentifyForm");
+    var pick = $("rePortalPickList");
+    if (title) title.textContent = "Find your record";
+    if (sub) {
+      sub.hidden = false;
+      sub.textContent = "Enter the parent/carer name and participant details we have on file.";
+    }
+    if (form) form.hidden = false;
+    if (pick) {
+      pick.hidden = true;
+      pick.innerHTML = "";
+    }
+  }
+
+  function showPortalParticipantPick(children) {
+    var title = $("reIdentifyTitle");
+    var sub = $("reIdentifySub");
+    var form = $("reIdentifyForm");
+    var pick = $("rePortalPickList");
+    if (title) title.textContent = "Choose participant";
+    if (sub) {
+      sub.hidden = false;
+      sub.textContent = "Select who you are re-enrolling for 2026/27.";
+    }
+    if (form) form.hidden = true;
+    if (!pick) return;
+    pick.hidden = false;
+    pick.innerHTML = (children || [])
+      .map(function (c) {
+        var name = String(c.display_name || "Participant");
+        var meta = c.dob_iso ? "DOB " + formatPickDob(c.dob_iso) : "";
+        return (
+          '<button type="button" class="re-pick-card" role="listitem" data-contact-id="' +
+          esc(String(c.contact_id || "")) +
+          '">' +
+          '<span style="min-width:0">' +
+          '<span class="re-pick-card__name">' +
+          esc(name) +
+          "</span>" +
+          (meta ? '<span class="re-pick-card__meta">' + esc(meta) + "</span>" : "") +
+          "</span>" +
+          '<span class="re-pick-card__cta">Continue →</span>' +
+          "</button>"
+        );
+      })
+      .join("");
+    pick.querySelectorAll("[data-contact-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cid = String(btn.getAttribute("data-contact-id") || "").trim();
+        if (!cid) return;
+        state.contactId = cid;
+        state.fromPortal = true;
+        hideNotice($("reNotice"));
+        showNotice($("reNotice"), "info", "Loading your programme…");
+        void onLookup(null);
+      });
+    });
+  }
+
+  async function fetchPortalChildren() {
+    if (!state.portalSession) return [];
+    try {
+      var res = await fetch(fn("parent-portal-home-load"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.portalSession,
+        },
+        body: "{}",
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) return [];
+      return Array.isArray(data.children) ? data.children : [];
+    } catch (_e) {
+      return [];
+    }
+  }
+
   function queryParams() {
     try {
       return new URLSearchParams(global.location.search || "");
@@ -1110,13 +1205,31 @@
         return {};
       });
       if (!res.ok || !data.ok) {
-        showNotice(
-          $("reNotice"),
-          "error",
-          data.error === "not_found"
-            ? "We could not match those details. Check spelling and age, or contact info@clubsensational.org."
-            : "Could not load your programme — please try again.",
-        );
+        if (state.fromPortal && state.portalSession) {
+          showNotice(
+            $("reNotice"),
+            "error",
+            data.error === "not_found"
+              ? "We could not load this participant from your family portal session. Go back and try again, or contact info@clubsensational.org."
+              : "Could not load your programme — please try again.",
+          );
+          if (state.contactId && !queryParams().get("contact_id")) {
+            var children = await fetchPortalChildren();
+            if (children.length > 1) {
+              showPortalParticipantPick(children);
+              return;
+            }
+          }
+          showPublicIdentifyForm();
+        } else {
+          showNotice(
+            $("reNotice"),
+            "error",
+            data.error === "not_found"
+              ? "We could not match those details. Check spelling and age, or contact info@clubsensational.org."
+              : "Could not load your programme — please try again.",
+          );
+        }
         return;
       }
       state.lookup = data;
@@ -1199,11 +1312,37 @@
     state.fromPortal = params.get("from") === "portal" || !!state.contactId;
     state.portalSession = readPortalSession();
 
-    if (state.fromPortal && state.portalSession && state.contactId) {
-      $("reStepIdentify").hidden = true;
+    if (!state.portalSession) {
+      showPublicIdentifyForm();
+      return;
+    }
+
+    state.fromPortal = true;
+
+    if (state.contactId) {
+      $("reIdentifyForm").hidden = true;
+      if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
       showNotice($("reNotice"), "info", "Loading your programme…");
       await onLookup(null);
+      return;
     }
+
+    var children = await fetchPortalChildren();
+    if (!children.length) {
+      showPublicIdentifyForm();
+      return;
+    }
+
+    if (children.length === 1 && children[0].contact_id) {
+      state.contactId = String(children[0].contact_id);
+      $("reIdentifyForm").hidden = true;
+      if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
+      showNotice($("reNotice"), "info", "Loading your programme…");
+      await onLookup(null);
+      return;
+    }
+
+    showPortalParticipantPick(children);
   }
 
   function bind() {
@@ -1216,6 +1355,7 @@
           global.location.href = "/parent/app";
         } else {
           setStep("identify");
+          showPublicIdentifyForm();
           hideNotice($("reFormNotice"));
         }
       });
@@ -1224,8 +1364,16 @@
 
   function init() {
     bind();
-    setStep("identify");
-    tryPortalAutoLoad();
+    if (readPortalSession()) {
+      if ($("reIdentifyForm")) $("reIdentifyForm").hidden = true;
+      if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
+      showNotice($("reNotice"), "info", "Loading your programme…");
+      setStep("identify");
+    } else {
+      setStep("identify");
+      showPublicIdentifyForm();
+    }
+    void tryPortalAutoLoad();
   }
 
   global.PortalReenrolment202627 = { init: init, state: state };
