@@ -600,7 +600,7 @@
     function amt(base) {
       var n = Number(base);
       if (!Number.isFinite(n) || n <= 0) return "—";
-      return money(fee ? moneyWithAdminFee(n) : n);
+      return money(fee ? n + RE_ADMIN_FEE_PER_INSTALLMENT : n);
     }
     var rows = [];
     if (schedCode === "yearly_1off") {
@@ -665,6 +665,7 @@
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
       '<p class="re-muted re-pay-preview__note">' +
       esc(paymentPreviewNote(payCode, schedCode)) +
+      (fee ? " Each payment shown includes the £5 Direct Payment admin fee." : "") +
       "</p>" +
       '<ul class="re-pay-preview-list">' +
       rows
@@ -1082,10 +1083,19 @@
     return payCode === "gocardless" || payCode === "own_way_flexible";
   }
 
-  function moneyWithAdminFee(base) {
-    var n = Number(base);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return Math.round(n * 1.025 * 100) / 100;
+  var RE_ADMIN_FEE_PER_INSTALLMENT = 5;
+
+  function installmentCountForSchedule(scheduleCode) {
+    if (scheduleCode === "monthly_10") return 10;
+    if (scheduleCode === "term_flexi") return 6;
+    if (scheduleCode === "term_3") return 3;
+    if (scheduleCode === "yearly_1off") return 1;
+    return 1;
+  }
+
+  function adminFeeTotalForSchedule(payCode, scheduleCode) {
+    if (!adminFeeApplies(payCode)) return 0;
+    return RE_ADMIN_FEE_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode);
   }
 
   function initBilling2627State(data) {
@@ -1233,7 +1243,7 @@
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
       (adminFeeApplies(payCode) ? "" : " hidden") +
       ">" +
-      "<strong>2.5% admin fees on top of final price</strong>" +
+      "<strong>£5 admin fee per payment (Direct Payment)</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
@@ -1513,17 +1523,41 @@
         schedWrap.hidden = true;
       }
     }
+    updateAdminFeeAmount();
+    var failNote = $("reDirectPayFailNote");
+    if (failNote) failNote.hidden = payCode !== "gocardless";
+    syncPaymentSchedulePreview();
+  }
+
+  function updateAdminFeeAmount() {
+    var b = state.billing2627 || {};
+    var payCode = normalizePayMethodChoice(b.payCode || "bank_transfer");
     var feeNote = $("reAdminFeeNote");
     var feeAmt = $("reAdminFeeAmount");
     var wrap = document.querySelector(".re-funding-2627");
     var annual = wrap ? Number(wrap.getAttribute("data-annual-total")) : 0;
     if (feeNote) feeNote.hidden = !adminFeeApplies(payCode);
-    if (feeAmt && adminFeeApplies(payCode) && annual > 0) {
-      feeAmt.textContent = " — indicative total with fee: " + money(moneyWithAdminFee(annual));
-    } else if (feeAmt) feeAmt.textContent = "";
-    var failNote = $("reDirectPayFailNote");
-    if (failNote) failNote.hidden = payCode !== "gocardless";
-    syncPaymentSchedulePreview();
+    if (!feeAmt) return;
+    if (adminFeeApplies(payCode) && annual > 0) {
+      var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
+      var schedCode = schedEl
+        ? schedEl.value
+        : payCode === "gocardless"
+          ? "monthly_10"
+          : "term_3";
+      var n = installmentCountForSchedule(schedCode);
+      var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
+      feeAmt.textContent =
+        " — £5 × " +
+        n +
+        " = " +
+        money(feeTotal) +
+        " per year (indicative total " +
+        money(annual + feeTotal) +
+        ")";
+    } else {
+      feeAmt.textContent = "";
+    }
   }
 
   function bindFundingHandlers() {
@@ -1559,7 +1593,10 @@
     });
     host.addEventListener("change", function (ev) {
       var t = ev.target;
-      if (t && t.name === "re_pay_schedule_2627") syncPaymentSchedulePreview();
+      if (t && t.name === "re_pay_schedule_2627") {
+        syncPaymentSchedulePreview();
+        updateAdminFeeAmount();
+      }
     });
     syncFundingPanels();
     syncPaymentSchedulePreview();
@@ -1598,8 +1635,12 @@
         invoice_type_code: vatCode,
         invoice_type_label: vatLabelForFunding(fundCode),
         admin_fee_applies: fee,
+        admin_fee_total: fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0,
         estimated_annual_total: annualTotal,
-        estimated_total_with_admin_fee: fee && annualTotal > 0 ? moneyWithAdminFee(annualTotal) : null,
+        estimated_total_with_admin_fee:
+          fee && annualTotal > 0
+            ? annualTotal + adminFeeTotalForSchedule(payCode, scheduleCode)
+            : null,
         billing_schedule:
           scheduleCode === "yearly_1off"
             ? "yearly"
