@@ -1653,9 +1653,7 @@
             '<span class="re-slot-meta-sub">' +
             esc(String(annualSessions)) +
             " sessions/year</span></div>" +
-            '<p class="re-slot-total"><strong>Year total:</strong> ' +
-            esc(money(slot.termTotals && slot.termTotals.annual)) +
-            "</p></div>" +
+            "</div>" +
             '<fieldset class="re-choice-fieldset">' +
             '<legend class="re-sr-only">Choice for ' +
             esc(slot.serviceType || "slot") +
@@ -1665,17 +1663,7 @@
             '" value="keep" checked /> Keep this slot for 2026/27</label>' +
             '<label class="re-radio"><input type="radio" name="choice_' +
             id +
-            '" value="change" /> Request a different day/time (limited availability)</label>' +
-            '<label class="re-radio"><input type="radio" name="choice_' +
-            id +
             '" value="withdraw" /> Do not continue this activity</label>' +
-            '<div class="re-change-note" hidden>' +
-            '<label class="re-label">Preferred alternative (if any)</label>' +
-            '<input type="text" class="re-input re-change-input" data-slot-id="' +
-            id +
-            '" maxlength="200" placeholder="e.g. Thursday 4pm — subject to availability" />' +
-            '<p class="re-muted re-warn-inline">If you release a slot, it may be taken by another family before a move is confirmed.</p>' +
-            "</div>" +
             "</fieldset>" +
             "</article>"
           );
