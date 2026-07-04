@@ -4,6 +4,145 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 
 const AVATAR_BUCKET = "participant-avatars";
 const DOC_BUCKET = "participant-documents";
+/** Internal admin copies — never deleted when parents change/remove live photo. */
+const ADMIN_ARCHIVE_PREFIX = "_admin-archive";
+
+function avatarExtension(contentType: string): "png" | "jpg" {
+  return String(contentType || "").toLowerCase().includes("png") ? "png" : "jpg";
+}
+
+function archivePathFor(contactId: string, ext: string, suffix = ""): string {
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  const tail = suffix ? `-${suffix}` : "";
+  return `${ADMIN_ARCHIVE_PREFIX}/${contactId}/${ts}${tail}.${ext}`;
+}
+
+async function copyAvatarToArchive(
+  admin: SupabaseClient,
+  fromPath: string,
+  contactId: string,
+  suffix = "prev",
+): Promise<string | null> {
+  const from = String(fromPath || "").trim();
+  if (!from || from.startsWith(`${ADMIN_ARCHIVE_PREFIX}/`)) return null;
+  const ext = from.toLowerCase().endsWith(".png") ? "png" : "jpg";
+  const dest = archivePathFor(contactId, ext, suffix);
+  const { error } = await admin.storage.from(AVATAR_BUCKET).copy(from, dest);
+  if (error) {
+    console.warn("[participant_avatar] archive copy", error.message);
+    return null;
+  }
+  return dest;
+}
+
+async function insertAvatarHistory(
+  admin: SupabaseClient,
+  contactId: string,
+  storagePath: string,
+  source: string,
+  isLive: boolean,
+): Promise<void> {
+  await admin.from("portal_participant_avatar_history").insert({
+    contact_id: contactId,
+    storage_path: storagePath,
+    source,
+    is_live: isLive,
+  });
+}
+
+export async function saveParticipantAvatarWithArchive(
+  admin: SupabaseClient,
+  contactId: string,
+  photoBytes: Uint8Array,
+  contentType: string,
+  source: string,
+): Promise<{ avatar_path: string; archive_path: string } | null> {
+  if (!photoBytes.length || !contactId) return null;
+
+  const ext = avatarExtension(contentType);
+  const livePath = `${contactId}/avatar.${ext}`;
+
+  const { data: existing } = await admin
+    .from("portal_participants")
+    .select("avatar_storage_path")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const prevPath = String(existing?.avatar_storage_path || "").trim();
+  if (prevPath && prevPath !== livePath) {
+    const prevArchive = await copyAvatarToArchive(admin, prevPath, contactId, "prev");
+    if (prevArchive) {
+      await insertAvatarHistory(admin, contactId, prevArchive, `${source}_archive`, false);
+    }
+  }
+
+  const { error: upErr } = await admin.storage.from(AVATAR_BUCKET).upload(livePath, photoBytes, {
+    contentType: contentType || (ext === "png" ? "image/png" : "image/jpeg"),
+    upsert: true,
+  });
+  if (upErr) {
+    console.warn("[participant_avatar] live upload", upErr.message);
+    return null;
+  }
+
+  const archivePath = archivePathFor(contactId, ext);
+  const { error: archErr } = await admin.storage.from(AVATAR_BUCKET).copy(livePath, archivePath);
+  if (archErr) {
+    console.warn("[participant_avatar] archive upload", archErr.message);
+  }
+
+  const nowIso = new Date().toISOString();
+  await admin
+    .from("portal_participants")
+    .update({
+      avatar_storage_path: livePath,
+      avatar_updated_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("contact_id", contactId);
+
+  await insertAvatarHistory(admin, contactId, livePath, source, true);
+  if (!archErr) {
+    await insertAvatarHistory(admin, contactId, archivePath, `${source}_archive`, false);
+  }
+
+  return { avatar_path: livePath, archive_path: archErr ? "" : archivePath };
+}
+
+export async function removeLiveParticipantAvatar(
+  admin: SupabaseClient,
+  contactId: string,
+  source: string,
+): Promise<boolean> {
+  const { data: existing } = await admin
+    .from("portal_participants")
+    .select("avatar_storage_path")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const prevPath = String(existing?.avatar_storage_path || "").trim();
+  if (prevPath) {
+    const prevArchive = await copyAvatarToArchive(admin, prevPath, contactId, "removed");
+    if (prevArchive) {
+      await insertAvatarHistory(admin, contactId, prevArchive, `${source}_removed`, false);
+    }
+  }
+
+  const { error } = await admin
+    .from("portal_participants")
+    .update({
+      avatar_storage_path: null,
+      avatar_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("contact_id", contactId);
+
+  if (error) {
+    console.warn("[participant_avatar] clear live", error.message);
+    return false;
+  }
+  return true;
+}
 
 export function participantAvatarPublicUrl(
   supabaseUrl: string,
@@ -128,26 +267,12 @@ export async function syncParentFormPhotoToParticipantAvatar(
 
   if (matches.length !== 1) return null;
   const contactId = matches[0].contact_id;
-  const ext = contentType.includes("png") ? "png" : "jpg";
-  const avatarPath = `${contactId}/avatar.${ext}`;
-
-  const { error: upErr } = await admin.storage.from(AVATAR_BUCKET).upload(avatarPath, photoBytes, {
-    contentType: contentType || (ext === "png" ? "image/png" : "image/jpeg"),
-    upsert: true,
-  });
-  if (upErr) {
-    console.warn("[participant_avatar] upload", upErr.message);
-    return null;
-  }
-
-  await admin
-    .from("portal_participants")
-    .update({
-      avatar_storage_path: avatarPath,
-      avatar_updated_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("contact_id", contactId);
-
-  return avatarPath;
+  const result = await saveParticipantAvatarWithArchive(
+    admin,
+    contactId,
+    photoBytes,
+    contentType,
+    "parent_form",
+  );
+  return result?.avatar_path ?? null;
 }

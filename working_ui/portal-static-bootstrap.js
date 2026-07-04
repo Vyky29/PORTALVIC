@@ -22,6 +22,19 @@
   /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  /** Family portal (parents) — not the staff app host. */
+  window.PORTAL_FAMILY_ORIGIN =
+    window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
+  window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
+    path = String(path || "").replace(/^\//, "");
+    var base = String(window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org").replace(
+      /\/$/,
+      ""
+    );
+    if (!path || path === "parent") return base + "/parent";
+    if (/^parent(?:\/|$)/.test(path)) return base + "/" + path;
+    return base + "/parent/" + path;
+  };
   /** visualVIC Routines Planner (prod). */
   window.ROUTINES_PLANNER_URL =
     window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/planner";
@@ -58,12 +71,39 @@
       var host = String(window.location.hostname || "").toLowerCase();
       if (!host || host === "localhost" || host === "127.0.0.1") return false;
       if (/portalvic\.vercel\.app$/i.test(host)) return false;
+      if (/clubsensational-staff\.vercel\.app$/i.test(host)) return false;
       if (/vercel\.app$/i.test(host)) return false;
+      if (/clubsensational\.org$/i.test(host)) return false;
       return true;
     } catch (_) {
       return false;
     }
   };
+
+  /** Staff app must not host the family portal — send parents to clubsensational.org/parent. */
+  (function portalRedirectFamilyOffStaffHost() {
+    try {
+      var host = String(window.location.hostname || "").toLowerCase();
+      if (!/clubsensational-staff\.vercel\.app$/i.test(host)) return;
+      var path = String(window.location.pathname || "").toLowerCase();
+      if (
+        path === "/parent" ||
+        path.indexOf("/parent/") === 0 ||
+        path.indexOf("/parent_") === 0 ||
+        path.indexOf("parent_portal") >= 0 ||
+        path.indexOf("parent_reenrolment") >= 0 ||
+        path.indexOf("parent_registration") >= 0 ||
+        path.indexOf("climbing_registration") >= 0 ||
+        path === "/re-enrolment"
+      ) {
+        var suffix =
+          path.replace(/^\//, "") +
+          String(window.location.search || "") +
+          String(window.location.hash || "");
+        window.location.replace(window.portalFamilyPortalUrl(suffix));
+      }
+    } catch (_) {}
+  })();
 
   (function portalRedirectGeneralInductionOffWrongHost() {
     try {

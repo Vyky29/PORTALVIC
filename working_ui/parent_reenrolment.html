@@ -8,7 +8,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f4f8fb" />
-  <link rel="canonical" href="https://portalvic.vercel.app/parent/re-enrolment" />
+  <link rel="canonical" href="https://www.clubsensational.org/parent/re-enrolment" />
   <title>Re-enrolment 2026/27 — clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="/portal/portal_brand.js?v=20260704-reenrol"></script>
@@ -97,7 +97,54 @@
     }
     .re-btn--primary { width: 100%; background: var(--blue); color: var(--white); margin-top: 12px; }
     .re-btn--primary:disabled { opacity: .55; cursor: not-allowed; }
-    .re-btn--ghost { background: transparent; color: var(--blue); padding-left: 0; min-height: 40px; }
+    .re-btn--secondary {
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      min-height: 44px;
+      padding: 0 14px;
+      font-size: .88rem;
+    }
+    .re-btn--ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      min-height: 44px;
+      padding: 0 10px;
+      font-size: .88rem;
+      text-decoration: underline;
+    }
+    .re-photo-section { background: var(--blueSoft); border-radius: 14px; padding: 14px; }
+    .re-photo-row { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+    .re-photo-avatar {
+      flex-shrink: 0;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .re-photo-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .re-photo-init {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--blue);
+      line-height: 1;
+    }
+    .re-photo-actions { flex: 1; min-width: 0; }
+    .re-photo-actions h3 { margin: 0 0 6px; font-size: 1rem; color: var(--ink); }
+    .re-photo-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .re-photo-save { width: auto; margin-top: 0; min-height: 44px; padding: 0 16px; }
+    .re-photo-status { margin: 8px 0 0; min-height: 1.2em; overflow-wrap: break-word; }
+    .re-photo-status--ok { color: var(--success); font-weight: 700; }
+    .re-photo-status--error { color: var(--danger); font-weight: 700; }
+    .re-photo-status--warn { color: var(--warn); font-weight: 700; }
+    .re-photo-status--info { color: var(--blue); font-weight: 600; }
+    .re-participant-name { margin: 0 0 6px; font-size: 1.15rem; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
     .re-muted { color: var(--muted); font-size: .88rem; margin: 0 0 8px; overflow-wrap: break-word; }
     .re-notice {
       padding: 12px 14px;
@@ -202,6 +249,7 @@
     </p>
   </main>
 
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260704-reenrol-photo"></script>
 </body>
 </html>

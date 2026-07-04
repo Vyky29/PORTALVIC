@@ -17,6 +17,7 @@ import {
   REENROL_ACADEMIC_YEAR,
 } from "../_shared/reenrolment_catalog.ts";
 import { participantIdentityMatches } from "../_shared/participant_identity.ts";
+import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 
 const CRASH_INFO = {
   note:
@@ -103,7 +104,7 @@ Deno.serve(async (req) => {
   if (parentPersonId && contactIdParam) {
     const { data: pRow } = await supabase
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id")
+      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path")
       .eq("contact_id", contactIdParam)
       .eq("parent_person_id", parentPersonId)
       .maybeSingle();
@@ -135,7 +136,7 @@ Deno.serve(async (req) => {
 
     const { data: participants } = await supabase
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id")
+      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path")
       .in("parent_person_id", parentIds);
 
     participantRow = (participants || []).find((p) => {
@@ -169,6 +170,15 @@ Deno.serve(async (req) => {
     .limit(1)
     .maybeSingle();
 
+  const avatar = await resolveParticipantAvatarUrls(supabase, url, {
+    contact_id: String(participantRow.contact_id),
+    display_name: String(participantRow.display_name || ""),
+    dob_iso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
+    avatar_storage_path: participantRow.avatar_storage_path
+      ? String(participantRow.avatar_storage_path)
+      : null,
+  });
+
   return json(200, {
     ok: true,
     academic_year: REENROL_ACADEMIC_YEAR,
@@ -176,6 +186,8 @@ Deno.serve(async (req) => {
       contact_id: participantRow.contact_id,
       display_name: participantRow.display_name,
       dob_iso: participantRow.dob_iso,
+      avatar_url: avatar.avatar_url,
+      avatar_source: avatar.avatar_source,
     },
     parent: {
       parent_person_id: parentPersonId,

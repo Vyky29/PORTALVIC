@@ -15,6 +15,9 @@
     fromPortal: false,
     portalSession: "",
     contactId: "",
+    avatarUrl: "",
+    pendingPhotoFile: null,
+    pendingPreviewUrl: "",
   };
 
   function $(id) {
@@ -93,6 +96,240 @@
     var dur = slot.durationMin ? slot.durationMin + "'" : "";
     var day = slot.day ? " (" + slot.day + ")" : "";
     return esc(dur + " " + (slot.serviceType || "") + day);
+  }
+
+  function participantDisplayName(data) {
+    return (data && data.participant && data.participant.display_name) || "";
+  }
+
+  function resolveAvatarUrl(data) {
+    var p = data && data.participant;
+    if (p && p.avatar_url) return String(p.avatar_url);
+    var name = participantDisplayName(data);
+    var cid = p && p.contact_id;
+    if (typeof global.portalParticipantPhotoUrl === "function") {
+      return global.portalParticipantPhotoUrl(name, "", cid) || "";
+    }
+    return "";
+  }
+
+  function participantInitials(name) {
+    if (typeof global.portalParticipantInitials === "function") {
+      return global.portalParticipantInitials(name);
+    }
+    name = String(name || "").trim();
+    if (!name) return "?";
+    var parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function currentAvatarPreviewUrl() {
+    if (state.pendingPreviewUrl) return state.pendingPreviewUrl;
+    return state.avatarUrl || "";
+  }
+
+  function renderPhotoSection(data) {
+    var name = participantDisplayName(data);
+    var url = currentAvatarPreviewUrl();
+    var initials = esc(participantInitials(name));
+    var imgHtml = url
+      ? '<img class="re-photo-img" src="' +
+        esc(url) +
+        '" alt="" width="96" height="96" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false" />' +
+        '<span class="re-photo-init" hidden aria-hidden="true">' +
+        initials +
+        "</span>"
+      : '<span class="re-photo-init" aria-hidden="true">' + initials + "</span>";
+
+    return (
+      '<section class="re-section re-photo-section">' +
+      '<div class="re-photo-row">' +
+      '<div class="re-photo-avatar" id="rePhotoAvatar">' +
+      imgHtml +
+      "</div>" +
+      '<div class="re-photo-actions">' +
+      "<h3>Participant photo</h3>" +
+      '<p class="re-muted">Used in the family portal and internal records. Previous photos are kept for admin use.</p>' +
+      '<input type="file" id="rePhotoInput" accept="image/jpeg,image/png,image/webp,image/*" hidden />' +
+      '<div class="re-photo-btns">' +
+      '<button type="button" class="re-btn re-btn--secondary" id="rePhotoChooseBtn">Change photo</button>' +
+      '<button type="button" class="re-btn re-btn--ghost" id="rePhotoRemoveBtn">Remove</button>' +
+      '<button type="button" class="re-btn re-btn--primary re-photo-save" id="rePhotoSaveBtn">Save photo</button>' +
+      "</div>" +
+      '<p class="re-muted re-photo-status" id="rePhotoStatus" role="status"></p>' +
+      "</div>" +
+      "</div>" +
+      "</section>"
+    );
+  }
+
+  function refreshPhotoAvatarDom() {
+    var host = $("rePhotoAvatar");
+    if (!host) return;
+    var name = participantDisplayName(state.lookup);
+    var url = currentAvatarPreviewUrl();
+    var initials = esc(participantInitials(name));
+    if (url) {
+      host.innerHTML =
+        '<img class="re-photo-img" src="' +
+        esc(url) +
+        '" alt="" width="96" height="96" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false" />' +
+        '<span class="re-photo-init" hidden aria-hidden="true">' +
+        initials +
+        "</span>";
+    } else {
+      host.innerHTML = '<span class="re-photo-init" aria-hidden="true">' + initials + "</span>";
+    }
+  }
+
+  function setPhotoStatus(msg, type) {
+    var el = $("rePhotoStatus");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.className = "re-muted re-photo-status" + (type ? " re-photo-status--" + type : "");
+  }
+
+  function avatarFormFields() {
+    var data = state.lookup || {};
+    var parent = data.parent || {};
+    var fd = new FormData();
+    fd.append("contact_id", String((data.participant && data.participant.contact_id) || ""));
+    fd.append("source", state.fromPortal ? "parent_portal_reenrol" : "re_enrolment");
+    if (state.fromPortal && state.portalSession) {
+      /* session via header */
+    } else {
+      fd.append("parent_first_name", parent.first_name || ($("reParentFirst") && $("reParentFirst").value) || "");
+      fd.append("parent_last_name", parent.last_name || ($("reParentLast") && $("reParentLast").value) || "");
+      fd.append("participant_name", participantDisplayName(data) || ($("reParticipantName") && $("reParticipantName").value) || "");
+      var age = $("reParticipantAge") && $("reParticipantAge").value;
+      if (age) fd.append("participant_age", age);
+    }
+    return fd;
+  }
+
+  function avatarFetchHeaders() {
+    var headers = {
+      apikey: anonKey(),
+      Authorization: "Bearer " + anonKey(),
+    };
+    if (state.portalSession) headers["x-parent-portal-session"] = state.portalSession;
+    return headers;
+  }
+
+  async function saveParticipantPhoto() {
+    setPhotoStatus("");
+    if (!state.pendingPhotoFile && !state.lookup) return;
+    if (!state.pendingPhotoFile) {
+      setPhotoStatus("Choose a photo first.", "warn");
+      return;
+    }
+    var btn = $("rePhotoSaveBtn");
+    if (btn) btn.disabled = true;
+    try {
+      var fd = avatarFormFields();
+      fd.append("photo", state.pendingPhotoFile, state.pendingPhotoFile.name || "photo.jpg");
+      var res = await fetch(fn("portal-participant-avatar-save"), {
+        method: "POST",
+        headers: avatarFetchHeaders(),
+        body: fd,
+      });
+      var out = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !out.ok) {
+        setPhotoStatus("Could not save photo — try again.", "error");
+        return;
+      }
+      state.avatarUrl = out.avatar_url || state.avatarUrl;
+      state.pendingPhotoFile = null;
+      if (state.pendingPreviewUrl) {
+        try {
+          URL.revokeObjectURL(state.pendingPreviewUrl);
+        } catch (_e) {}
+        state.pendingPreviewUrl = "";
+      }
+      if (state.lookup && state.lookup.participant) {
+        state.lookup.participant.avatar_url = state.avatarUrl;
+      }
+      refreshPhotoAvatarDom();
+      setPhotoStatus("Photo saved.", "ok");
+    } catch (_e) {
+      setPhotoStatus("Network error saving photo.", "error");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function removeParticipantPhoto() {
+    setPhotoStatus("");
+    var btn = $("rePhotoRemoveBtn");
+    if (btn) btn.disabled = true;
+    try {
+      var fd = avatarFormFields();
+      fd.append("remove", "1");
+      var res = await fetch(fn("portal-participant-avatar-save"), {
+        method: "POST",
+        headers: avatarFetchHeaders(),
+        body: fd,
+      });
+      var out = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !out.ok) {
+        setPhotoStatus("Could not remove photo.", "error");
+        return;
+      }
+      state.avatarUrl = "";
+      state.pendingPhotoFile = null;
+      if (state.pendingPreviewUrl) {
+        try {
+          URL.revokeObjectURL(state.pendingPreviewUrl);
+        } catch (_e) {}
+        state.pendingPreviewUrl = "";
+      }
+      if (state.lookup && state.lookup.participant) {
+        state.lookup.participant.avatar_url = null;
+      }
+      refreshPhotoAvatarDom();
+      setPhotoStatus("Live photo removed. Previous copies stay in admin archive.", "ok");
+    } catch (_e) {
+      setPhotoStatus("Network error.", "error");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function bindPhotoHandlers() {
+    var input = $("rePhotoInput");
+    var choose = $("rePhotoChooseBtn");
+    var save = $("rePhotoSaveBtn");
+    var remove = $("rePhotoRemoveBtn");
+    if (choose && input) {
+      choose.addEventListener("click", function () {
+        input.click();
+      });
+      input.addEventListener("change", function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 8 * 1024 * 1024) {
+          setPhotoStatus("Photo must be under 8 MB.", "error");
+          input.value = "";
+          return;
+        }
+        state.pendingPhotoFile = file;
+        if (state.pendingPreviewUrl) {
+          try {
+            URL.revokeObjectURL(state.pendingPreviewUrl);
+          } catch (_e) {}
+        }
+        state.pendingPreviewUrl = URL.createObjectURL(file);
+        refreshPhotoAvatarDom();
+        setPhotoStatus("Preview ready — tap Save photo.", "info");
+      });
+    }
+    if (save) save.addEventListener("click", saveParticipantPhoto);
+    if (remove) remove.addEventListener("click", removeParticipantPhoto);
   }
 
   function renderOutstandingBanner(data) {
@@ -248,22 +485,32 @@
     var host = $("reFormHost");
     if (!host) return;
 
-    var existing =
-      data.existing_submission &&
-      '<div class="re-banner re-banner--info">You already submitted a re-enrolment for this participant. Submitting again will replace your latest choices in our records.</div>';
+    state.avatarUrl = resolveAvatarUrl(data);
+    state.pendingPhotoFile = null;
+    if (state.pendingPreviewUrl) {
+      try {
+        URL.revokeObjectURL(state.pendingPreviewUrl);
+      } catch (_e) {}
+      state.pendingPreviewUrl = "";
+    }
+
+    var existing = data.existing_submission
+      ? '<div class="re-banner re-banner--info">You already submitted a re-enrolment for this participant. Submitting again will replace your latest choices in our records.</div>'
+      : "";
 
     host.innerHTML =
       existing +
       renderOutstandingBanner(data) +
-      '<section class="re-section">' +
+      '<section class="re-section re-head-section">' +
       "<h2>Re-enrolment " +
       esc(ACADEMIC_YEAR.replace("-", "/")) +
       "</h2>" +
-      "<p><strong>" +
-      esc((data.participant && data.participant.display_name) || "") +
-      "</strong></p>" +
+      '<p class="re-participant-name">' +
+      esc(participantDisplayName(data)) +
+      "</p>" +
       '<p class="re-muted">Review your current programme and confirm for September 2026.</p>' +
       "</section>" +
+      renderPhotoSection(data) +
       '<section class="re-section">' +
       "<h3>Funding &amp; billing</h3>" +
       renderFundingBlock(data) +
@@ -306,6 +553,8 @@
 
     var submitBtn = $("reSubmitBtn");
     if (submitBtn) submitBtn.addEventListener("click", onSubmit);
+
+    bindPhotoHandlers();
 
     var preEmail = (data.parent && data.parent.email) || "";
     var emailEl = $("reContactEmail");
