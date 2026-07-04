@@ -7,6 +7,8 @@
 
   var ACADEMIC_YEAR = "2026-27";
   var SESSION_KEY = "clubsens_parent_portal_session_v1";
+  var RE_ENROL_DEADLINE_ISO = "2026-07-17";
+  var RE_ENROL_DEADLINE_LABEL = "Friday 17 July 2026";
 
   var state = {
     step: "identify",
@@ -60,6 +62,24 @@
       '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="16" y2="15"/>',
     crash:
       '<path d="M2 12c2.5-5 7-8 10-8s7.5 3 10 8"/><path d="M5 16.5c2.5 3.5 6 5.5 9.5 5.5"/><circle cx="12" cy="13" r="2"/>',
+    current:
+      '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>',
+    user:
+      '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    age:
+      '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h8"/>',
+    clock:
+      '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    mapPin:
+      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
+    instructor:
+      '<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>',
+    wallet:
+      '<path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 100 4h4v-4h-4z"/>',
+    building:
+      '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/>',
+    receipt:
+      '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/>',
   };
 
   function reIconSvg(key) {
@@ -78,6 +98,17 @@
     if (!inner) return "";
     return (
       '<span class="re-cal-line__ico" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg></span>"
+    );
+  }
+
+  function reRefIconSvg(key) {
+    var inner = RE_ICON_SVGS[key];
+    if (!inner) return "";
+    return (
+      '<span class="re-ref-ico" aria-hidden="true">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
       inner +
       "</svg></span>"
@@ -286,32 +317,43 @@
   function renderCurrentArrangementsSide(data) {
     var cur = (data && data.current_arrangements_2526) || {};
     var rows = [];
-    function add(label, val) {
+    function addRefRow(iconKey, label, val) {
       val = val != null ? String(val).trim() : "";
-      if (val) rows.push("<dt>" + esc(label) + "</dt><dd>" + esc(val) + "</dd>");
+      if (!val) return;
+      rows.push(
+        '<li class="re-current-ref-row">' +
+        reRefIconSvg(iconKey) +
+        '<div class="re-ref-body">' +
+        '<span class="re-ref-label">' +
+        esc(label) +
+        "</span>" +
+        '<span class="re-ref-value">' +
+        esc(val) +
+        "</span></div></li>",
+      );
     }
-    add("Participant", cur.participant_name || participantDisplayName(data));
-    add("Age", cur.age ? cur.age + " years" : "");
-    add("Service", cur.service);
-    add("Slot", cur.slot);
-    add("Venue", cur.venue);
-    add("Instructor", cur.instructor);
-    add("Payment method", cur.payment_method);
-    add("Funding", cur.funding);
-    add("Invoice", cur.invoice_type);
+    addRefRow("user", "Participant", cur.participant_name || participantDisplayName(data));
+    addRefRow("age", "Age", cur.age ? cur.age + " years" : "");
+    addRefRow("services", "Service", cur.service);
+    addRefRow("clock", "Slot", cur.slot);
+    addRefRow("mapPin", "Venue", cur.venue);
+    addRefRow("instructor", "Instructor", cur.instructor);
+    addRefRow("billing", "Payment method", cur.payment_method);
+    addRefRow("wallet", "Funding", cur.funding);
+    addRefRow("receipt", "Invoice", cur.invoice_type);
     if (!rows.length) {
       var legacy = fundingCurrent2526(data);
-      add("Payment method", legacy.payment_method);
-      add("Funding", legacy.funding);
-      add("Invoice", legacy.invoice_type);
+      addRefRow("billing", "Payment method", legacy.payment_method);
+      addRefRow("wallet", "Funding", legacy.funding);
+      addRefRow("receipt", "Invoice", legacy.invoice_type);
     }
     return (
       '<section class="re-section re-section--current-ref">' +
       reSectionTitle("h3", "current", "Your current arrangements (2025/26)") +
       '<p class="re-muted re-current-ref-note">Reference from this year&apos;s record. Confirm 2026/27 choices on the right.</p>' +
-      '<dl class="re-dl re-current-ref-dl">' +
+      '<ul class="re-current-ref-list">' +
       rows.join("") +
-      "</dl></section>"
+      "</ul></section>"
     );
   }
 
@@ -322,6 +364,42 @@
       var t = s.termTotals && s.termTotals[term];
       return sum + (Number.isFinite(Number(t)) ? Number(t) : 0);
     }, 0);
+  }
+
+  function isReEnrolSubmissionOpen() {
+    var end = new Date(RE_ENROL_DEADLINE_ISO + "T23:59:59");
+    return Date.now() <= end.getTime();
+  }
+
+  function renderReEnrolDeadlineBanner() {
+    if (isReEnrolSubmissionOpen()) {
+      return (
+        '<div class="re-banner re-banner--deadline">' +
+        "<strong>Submit by " +
+        esc(RE_ENROL_DEADLINE_LABEL) +
+        "</strong> — the last day of After-School &amp; Weekends for 2025/26. " +
+        "Payments are separate: bank transfers are due on the <strong>1st of each month</strong> from September; direct payment follows the schedule you choose below." +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="re-banner re-banner--warn">' +
+      "<strong>Re-enrolment closed on " +
+      esc(RE_ENROL_DEADLINE_LABEL) +
+      ".</strong> Contact info@clubsensational.org if you still need to confirm 2026/27." +
+      "</div>"
+    );
+  }
+
+  function dueOnFirst(monthYear) {
+    return "1 " + monthYear;
+  }
+
+  function paymentPreviewNote(payCode) {
+    if (payCode === "bank_transfer") {
+      return "Same programme total — bank transfers due on the 1st of each month from September 2026. The office confirms your final invoice plan before term starts.";
+    }
+    return "Same programme total — compare due dates below. The office confirms your final invoice plan before September 2026.";
   }
 
   function renderPaymentSchedulePreviewHtml(data) {
@@ -345,23 +423,23 @@
     if (schedCode === "yearly_1off") {
       rows.push({
         label: "Full year (1 payment)",
-        due: "Before Saturday 5 September 2026",
+        due: dueOnFirst("September 2026"),
         amount: amt(annual),
       });
     } else if (schedCode === "term_3") {
       rows.push({
         label: "Autumn term",
-        due: "Before Saturday 5 September 2026",
+        due: dueOnFirst("September 2026"),
         amount: amt(termProgrammeTotal(data, "autumn")),
       });
       rows.push({
         label: "Spring term",
-        due: "Before Monday 4 January 2027",
+        due: dueOnFirst("December 2026"),
         amount: amt(termProgrammeTotal(data, "spring")),
       });
       rows.push({
         label: "Summer term",
-        due: "Before Monday 12 April 2027",
+        due: dueOnFirst("March 2027"),
         amount: amt(termProgrammeTotal(data, "summer")),
       });
     } else if (schedCode === "monthly_10") {
@@ -381,7 +459,7 @@
       months.forEach(function (label, i) {
         rows.push({
           label: "Payment " + (i + 1) + " · " + label,
-          due: "1 " + label,
+          due: dueOnFirst(label),
           amount: amt(monthly),
         });
       });
@@ -390,7 +468,9 @@
     return (
       '<div class="re-pay-preview">' +
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
-      '<p class="re-muted re-pay-preview__note">Same programme total — compare due dates below. The office confirms your final invoice plan before September 2026.</p>' +
+      '<p class="re-muted re-pay-preview__note">' +
+      esc(paymentPreviewNote(payCode)) +
+      "</p>" +
       '<ul class="re-pay-preview-list">' +
       rows
         .map(function (r) {
@@ -724,11 +804,9 @@
   function renderBilling2627Block(data) {
     var cur = fundingCurrent2526(data);
     var annualTotal = resolveAnnualWeeklyTotal(data);
-    var fundDefault = mapFundingCode(cur.funding);
-    var payDefault = mapPrivatePayMethodCode(cur.payment_method, cur.funding);
+    var fundDefault = normalizeFundingChoice(mapFundingCode(cur.funding));
+    var payDefault = normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding));
     var scheduleDefault = mapScheduleCode(cur.payment_method, cur.funding);
-    var vatDefault = cur.invoice_type_code === "exempt" ? "exempt" : "vat_included";
-    if (isDirectPayments(fundDefault)) vatDefault = "exempt";
 
     return (
       '<div class="re-funding-2627" data-annual-total="' +
@@ -737,21 +815,18 @@
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
       "</p>" +
+      '<p class="re-muted re-billing-prefill">We have pre-selected funding and payment from your 2025/26 record where available. Change anything that will be different for 2026/27.</p>' +
       '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose how you would like invoices timed — the programme total stays the same.</p>' +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">Funding</legend>' +
+      '<legend class="re-label">Funding 2026/27</legend>' +
       renderFundingRadios(fundDefault) +
       "</fieldset>" +
-      '<p id="reDirectPaymentsNote" class="re-muted re-funding-note"' +
-      (isDirectPayments(fundDefault) ? "" : " hidden") +
-      ">You receive LA Direct Payments and pay the club yourself — same payment choices as privately funded families, but <strong>EXEMPT VAT</strong>.</p>" +
-      '<div id="rePanelPrivate" class="re-funding-panel"' +
-      (isParentPaysPanel(fundDefault) ? "" : " hidden") +
-      ">" +
+      '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
-      '<legend class="re-label">Preferred payment method</legend>' +
+      '<legend class="re-label">Payment method 2026/27</legend>' +
       renderPrivatePayMethodRadios(payDefault) +
       "</fieldset>" +
+      renderVatFixedBlock(fundDefault) +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       renderPayScheduleFieldset(payDefault, scheduleDefault) +
       "</div>" +
@@ -762,45 +837,55 @@
       "<strong>2.5% admin fees on top of final price</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
-      '<p id="reOwnWayUpfrontNote" class="re-muted re-funding-note"' +
-      (payDefault === "own_way_upfront" ? "" : " hidden") +
-      ">You pay ahead of schedule in your own way — no change unless you tell the office.</p>" +
-      '<fieldset id="reVatChoiceFieldset" class="re-choice-fieldset re-funding-field"' +
-      (isDirectPayments(fundDefault) ? " hidden" : "") +
-      '>' +
-      '<legend class="re-label">Invoice type</legend>' +
-      '<label class="re-radio"><input type="radio" name="re_vat_2627" value="vat_included"' +
-      (vatDefault === "vat_included" ? " checked" : "") +
-      ' /> 20% VAT included</label>' +
-      '<label class="re-radio"><input type="radio" name="re_vat_2627" value="exempt"' +
-      (vatDefault === "exempt" ? " checked" : "") +
-      ' /> EXEMPT VAT</label>' +
-      "</fieldset>" +
-      '<div id="reVatDirectBlock" class="re-funding-vat-fixed"' +
-      (isDirectPayments(fundDefault) ? "" : " hidden") +
-      '><span class="re-label">Invoice type</span><p class="re-funded-vat">EXEMPT VAT</p></div>' +
       "</div>" +
-      '<div id="rePanelFunded" class="re-funding-panel re-funding-panel--funded"' +
-      (isFunderPaid(fundDefault) ? "" : " hidden") +
-      ">" +
-      renderFundedInvoicePanel(data, fundDefault, cur, annualTotal) +
-      "</div>" +
-      '<p class="re-muted re-funding-foot">The office will confirm your invoice schedule before September 2026.</p>' +
+      '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
+      esc(RE_ENROL_DEADLINE_LABEL) +
+      ". First payments from September — see schedule above.</p>" +
       "</div>"
     );
   }
 
+  function normalizeFundingChoice(code) {
+    if (code === "la_nhs") return "la_direct_payments";
+    if (code === "la_direct_payments" || code === "privately_funded") return code;
+    return "privately_funded";
+  }
+
+  function normalizePayMethodChoice(code) {
+    return code === "gocardless" ? "gocardless" : "bank_transfer";
+  }
+
+  function vatLabelForFunding(fundCode) {
+    return isDirectPayments(fundCode) ? "EXEMPT VAT" : "20% VAT included";
+  }
+
+  function renderVatFixedBlock(fundCode) {
+    var exempt = isDirectPayments(fundCode);
+    return (
+      '<div id="reVatFixedBlock" class="re-funding-vat-fixed">' +
+      '<span class="re-label">Invoice type</span>' +
+      '<p class="re-funded-vat">' +
+      esc(vatLabelForFunding(fundCode)) +
+      "</p>" +
+      '<p class="re-muted re-funding-note">' +
+      (exempt
+        ? "Using LA Direct Payments from your EHCP care package — exempt VAT applies automatically."
+        : "Private funding — 20% VAT included on invoices. This is set automatically.") +
+      "</p></div>"
+    );
+  }
+
   var RE_PRIVATE_PAY_METHODS = [
-    { code: "bank_transfer", label: "1 · Bank transfer" },
-    { code: "gocardless", label: "4 · GoCardless" },
-    { code: "own_way_upfront", label: "Own way (upfront — pay ahead)" },
-    { code: "own_way_flexible", label: "Flexible payments (when you choose)" },
+    { code: "bank_transfer", label: "Bank transfer" },
+    { code: "gocardless", label: "Direct payment" },
   ];
 
   var RE_FUNDING_OPTIONS = [
-    { code: "privately_funded", label: "Privately funded" },
-    { code: "la_direct_payments", label: "Local authority (Direct Payments)" },
-    { code: "la_nhs", label: "Local authority / NHS funded" },
+    { code: "privately_funded", label: "Privately" },
+    {
+      code: "la_direct_payments",
+      label: "Using funds from LA (Direct Payments from your EHCP care package)",
+    },
   ];
 
   var RE_SCHEDULE_OPTIONS = {
@@ -816,35 +901,32 @@
 
   function scheduleOptionHint(code, payCode) {
     if (code === "yearly_1off") {
-      return "Confirm the full academic year in one step. One bank transfer before September — same programme total.";
+      return "Confirm the full academic year in one step. One bank transfer on 1 September 2026 — same programme total.";
     }
     if (code === "monthly_10") {
-      return "Year agreement with payments spread September–June via GoCardless — same programme total.";
+      return "Year agreement with 10 payments on the 1st of each month, September–June, by direct payment — same programme total.";
     }
     if (code === "term_3" && payCode === "gocardless") {
-      return "Three term payments via GoCardless. You confirm again before each term — same programme total over the year.";
+      return "Three term payments on 1 September, 1 December and 1 March by direct payment — same programme total over the year.";
     }
     if (code === "term_3") {
-      return "Three separate invoices (Autumn, Spring, Summer). You confirm again before each term — same programme total over the year.";
+      return "Three bank transfers on 1 September, 1 December and 1 March — one invoice per term, same programme total over the year.";
     }
     return "";
   }
 
   function mapPrivatePayMethodCode(raw, fundingRaw) {
-    if (isFunderPaid(mapFundingCode(fundingRaw))) return "bank_transfer";
     var s = String(raw || "").toLowerCase();
     if (!s) return "bank_transfer";
-    if (s.includes("gocardless")) return "gocardless";
-    if (s.includes("flexible") || s.includes("when you") || s.includes("when they")) {
-      return "own_way_flexible";
+    if (
+      s.includes("gocardless") ||
+      s.includes("direct debit") ||
+      s.includes("direct payment") ||
+      s.includes("monthly") ||
+      s.includes("installment")
+    ) {
+      return "gocardless";
     }
-    if (s.includes("own way") || s.includes("upfront") || s.includes("ahead")) {
-      return "own_way_upfront";
-    }
-    if (s.includes("la invoice") || s.includes("bacs") || s.includes("nhs") || s.includes("direct payment")) {
-      return "bank_transfer";
-    }
-    if (s.includes("bank")) return "bank_transfer";
     return "bank_transfer";
   }
 
@@ -921,10 +1003,7 @@
     })
       ? scheduleDefault
       : opts[0].code;
-    var title =
-      payCode === "bank_transfer"
-        ? "How would you like to pay?"
-        : "How would you like to pay via GoCardless?";
+    var title = "How would you like to pay?";
     return (
       '<fieldset class="re-choice-fieldset re-funding-field re-pay-schedule">' +
       '<legend class="re-label">' +
@@ -1006,16 +1085,10 @@
   function syncFundingPanels() {
     var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
     var fundCode = fundEl ? fundEl.value : "privately_funded";
-    var privatePanel = $("rePanelPrivate");
-    var fundedPanel = $("rePanelFunded");
-    var directNote = $("reDirectPaymentsNote");
-    var vatChoice = $("reVatChoiceFieldset");
-    var vatDirect = $("reVatDirectBlock");
-    if (privatePanel) privatePanel.hidden = !isParentPaysPanel(fundCode);
-    if (fundedPanel) fundedPanel.hidden = !isFunderPaid(fundCode);
-    if (directNote) directNote.hidden = !isDirectPayments(fundCode);
-    if (vatChoice) vatChoice.hidden = isDirectPayments(fundCode);
-    if (vatDirect) vatDirect.hidden = !isDirectPayments(fundCode);
+    var vatBlock = $("reVatFixedBlock");
+    if (vatBlock) {
+      vatBlock.outerHTML = renderVatFixedBlock(fundCode);
+    }
     syncPrivatePayPanels();
     syncPaymentSchedulePreview();
   }
@@ -1038,14 +1111,12 @@
     }
     var feeNote = $("reAdminFeeNote");
     var feeAmt = $("reAdminFeeAmount");
-    var upfrontNote = $("reOwnWayUpfrontNote");
     var wrap = document.querySelector(".re-funding-2627");
     var annual = wrap ? Number(wrap.getAttribute("data-annual-total")) : 0;
     if (feeNote) feeNote.hidden = !adminFeeApplies(payCode);
     if (feeAmt && adminFeeApplies(payCode) && annual > 0) {
       feeAmt.textContent = " — indicative total with fee: " + money(moneyWithAdminFee(annual));
     } else if (feeAmt) feeAmt.textContent = "";
-    if (upfrontNote) upfrontNote.hidden = payCode !== "own_way_upfront";
     syncPaymentSchedulePreview();
   }
 
@@ -1070,34 +1141,14 @@
   function collectBillingChoices(data) {
     var cur = fundingCurrent2526(data);
     var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
-    var fundCode = fundEl ? fundEl.value : mapFundingCode(cur.funding);
+    var fundCode = normalizeFundingChoice(fundEl ? fundEl.value : mapFundingCode(cur.funding));
     var annualTotal = resolveAnnualWeeklyTotal(data);
-    var vatEl = document.querySelector('input[name="re_vat_2627"]:checked');
-
-    if (isFunderPaid(fundCode)) {
-      var fundedPay = mapFundedPayMethodCode(cur);
-      return {
-        current_2526: cur,
-        choices_2627: {
-          billing_mode: "funder_paid",
-          funding_code: fundCode,
-          funding_label: fundingLabel(fundCode, cur.funding),
-          payment_method_code: fundedPay,
-          payment_method_label: fundedPayMethodLabel(fundedPay),
-          payment_schedule_code: "admin_monthly",
-          payment_schedule_label: "Admin monthly (LA/NHS invoiced — full year total on record)",
-          invoice_type_code: "exempt",
-          invoice_type_label: "EXEMPT VAT",
-          admin_fee_applies: false,
-          estimated_annual_total: annualTotal,
-          annual_invoice_total: annualTotal,
-        },
-      };
-    }
 
     var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
     var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
-    var payCode = payEl ? payEl.value : mapPrivatePayMethodCode(cur.payment_method, cur.funding);
+    var payCode = normalizePayMethodChoice(
+      payEl ? payEl.value : mapPrivatePayMethodCode(cur.payment_method, cur.funding),
+    );
     var scheduleCode =
       schedEl && (payCode === "bank_transfer" || payCode === "gocardless")
         ? schedEl.value
@@ -1106,11 +1157,7 @@
           : payCode === "bank_transfer"
             ? "term_3"
             : null;
-    var vatCode = isDirectPayments(fundCode)
-      ? "exempt"
-      : vatEl
-        ? vatEl.value
-        : cur.invoice_type_code || "vat_included";
+    var vatCode = isDirectPayments(fundCode) ? "exempt" : "vat_included";
     var fee = adminFeeApplies(payCode);
     return {
       current_2526: cur,
@@ -1123,7 +1170,7 @@
         payment_schedule_code: scheduleCode,
         payment_schedule_label: scheduleCode ? scheduleLabel(scheduleCode) : null,
         invoice_type_code: vatCode,
-        invoice_type_label: vatCode === "exempt" ? "EXEMPT VAT" : "20% VAT included",
+        invoice_type_label: vatLabelForFunding(fundCode),
         admin_fee_applies: fee,
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee: fee && annualTotal > 0 ? moneyWithAdminFee(annualTotal) : null,
@@ -1651,6 +1698,7 @@
 
     host.innerHTML =
       existing +
+      renderReEnrolDeadlineBanner() +
       renderOutstandingBanner(data) +
       '<div class="re-form-grid">' +
       '<section class="re-section re-head-section re-form-grid__head">' +
@@ -1658,7 +1706,9 @@
       '<p class="re-participant-name">' +
       esc(participantDisplayName(data)) +
       "</p>" +
-      '<p class="re-muted">Review your current programme and confirm for September 2026.</p>' +
+      '<p class="re-muted">Review your current programme and confirm for September 2026. Submit by ' +
+      esc(RE_ENROL_DEADLINE_LABEL) +
+      " — payments follow from September.</p>" +
       "</section>" +
       '<aside class="re-form-grid__side">' +
       renderCurrentArrangementsSide(data) +
@@ -1692,7 +1742,13 @@
     });
 
     var submitBtn = $("reSubmitBtn");
-    if (submitBtn) submitBtn.addEventListener("click", onSubmit);
+    if (submitBtn) {
+      if (!isReEnrolSubmissionOpen()) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Re-enrolment closed";
+      }
+      submitBtn.addEventListener("click", onSubmit);
+    }
 
     bindPhotoHandlers();
     bindFundingHandlers();
@@ -1793,6 +1849,14 @@
 
   async function onSubmit() {
     hideNotice($("reFormNotice"));
+    if (!isReEnrolSubmissionOpen()) {
+      showNotice(
+        $("reFormNotice"),
+        "error",
+        "Re-enrolment closed on " + RE_ENROL_DEADLINE_LABEL + ". Email info@clubsensational.org for help.",
+      );
+      return;
+    }
     if (!$("reDeclAccurate") || !$("reDeclAccurate").checked || !$("reDeclTerms") || !$("reDeclTerms").checked) {
       showNotice($("reFormNotice"), "error", "Please tick both confirmation boxes.");
       return;
