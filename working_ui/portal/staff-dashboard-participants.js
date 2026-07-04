@@ -915,7 +915,87 @@
       const bEndMin = be == null ? bs : be;
       return as < bEndMin && bs < aEndMin;
     }
-    function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm){
+    function portalShadowingVenuesMatch(ovVenue, sessionVenue){
+      const o = String(ovVenue || '').trim().toLowerCase();
+      const s = String(sessionVenue || '').trim().toLowerCase();
+      if(!o || !s) return true;
+      return o === s;
+    }
+    function portalShadowingRowAppliesToHostSession(row, staffId, staffDisplayName, sessionStart, sessionEnd, sessionVenue){
+      if(!row || String(row.status || 'active') !== 'active') return false;
+      if(String(row.override_type || '').trim() !== 'session_add') return false;
+      let pl = row.payload;
+      try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = row.payload; }
+      if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') return false;
+      const trainer = String(pl && pl.trainer || '').trim();
+      const hosts = portalSessionAddSplitNames(trainer);
+      const hostMatch = hosts.length
+        ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, staffId, staffDisplayName); })
+        : portalStaffNameMatchesShadowHost(trainer, staffId, staffDisplayName);
+      if(!hostMatch) return false;
+      if(!portalShadowingVenuesMatch(row.anchor_venue, sessionVenue)) return false;
+      const ovStart = portalHmFromDbTime(row.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(row.anchor_end) || ovStart;
+      if(sessionStart && ovStart && !portalHmRangeOverlaps(sessionStart, sessionEnd, ovStart, ovEnd)) return false;
+      return true;
+    }
+    function portalShadowingHostAlertTimeSlotLabel(row, staffId, staffDisplayName){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const iso = normaliseIsoDate(row && row.session_date);
+      if(!sid || !iso) return '';
+      const dayWord = typeof portalWeekdayLongEnGB === 'function'
+        ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
+        : '';
+      if(!dayWord) return '';
+      const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+      const isReal = function(s){
+        if(baseReal) return baseReal(s, iso);
+        const st = String(s && s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s && s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available');
+      };
+      const sessions = typeof portalBaseClientSessionsForCalendarDate === 'function'
+        ? portalBaseClientSessionsForCalendarDate(dayWord, iso, sid, isReal)
+        : [];
+      const ovStart = portalHmFromDbTime(row && row.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(row && row.anchor_end) || ovStart;
+      const ovLo = portalHmToMinutes(ovStart);
+      const ovHi = portalHmToMinutes(ovEnd || ovStart);
+      let minBand = Infinity;
+      let maxBand = -Infinity;
+      for(let i = 0; i < sessions.length; i++){
+        const s = sessions[i];
+        if(!s) continue;
+        const base = s.__portalBaseSession || s;
+        const start = String(base.start || s.start || '').trim();
+        const end = String(base.end || s.end || start).trim();
+        const venue = String(base.sessionVenue || s.sessionVenue || base.venue || s.venue || '').trim();
+        if(!start) continue;
+        if(!portalShadowingRowAppliesToHostSession(row, sid, staffDisplayName, start, end, venue)) continue;
+        const sLo = portalHmToMinutes(start);
+        const sHi = portalHmToMinutes(end || start);
+        if(!Number.isFinite(sLo) || !Number.isFinite(sHi)) continue;
+        const bandLo = Number.isFinite(ovLo) ? Math.max(sLo, ovLo) : sLo;
+        const bandHi = Number.isFinite(ovHi) ? Math.min(sHi, ovHi) : sHi;
+        if(bandLo > bandHi) continue;
+        if(bandLo < minBand) minBand = bandLo;
+        if(bandHi > maxBand) maxBand = bandHi;
+      }
+      if(Number.isFinite(minBand) && Number.isFinite(maxBand) && maxBand >= minBand){
+        const pad = function(n){ return String(n).padStart(2, '0'); };
+        const hm = function(total){
+          const m = Math.max(0, Math.round(total));
+          return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+        };
+        return portalFormatRosterBandLabel(hm(minBand), hm(maxBand));
+      }
+      if(typeof rosterSlotTimeLabel === 'function'){
+        return rosterSlotTimeLabel({ start: ovStart, end: ovEnd });
+      }
+      return ovStart && ovEnd ? (ovStart + ' to ' + ovEnd) : (ovStart || ovEnd || '');
+    }
+    function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm, sessionVenue){
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !staffId) return [];
       const out = [];
@@ -934,6 +1014,7 @@
           ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, staffId, staffDisplayName); })
           : portalStaffNameMatchesShadowHost(trainer, staffId, staffDisplayName);
         if(!hostMatch) return;
+        if(!portalShadowingVenuesMatch(ov.anchor_venue, sessionVenue)) return;
         const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
         const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
         if(startHm && ovStart && !portalHmRangeOverlaps(startHm, endHm, ovStart, ovEnd)) return;
@@ -973,8 +1054,9 @@
         const base = s.__portalBaseSession || s;
         const start = String(base.start || s.start || '').trim();
         const end = String(base.end || s.end || start).trim();
+        const venue = String(base.sessionVenue || s.sessionVenue || base.venue || s.venue || '').trim();
         if(!start) continue;
-        const labels = portalShadowingObserverChipsForHost(iso, sid, dn, start, end);
+        const labels = portalShadowingObserverChipsForHost(iso, sid, dn, start, end, venue);
         for(let j = 0; j < labels.length; j++){
           const lab = labels[j];
           if(!lab || seen[lab]) continue;
@@ -1029,8 +1111,18 @@
         : '';
       const subParts = [];
       if(shadowerName) subParts.push(shadowerName + ' shadowing you');
-      const slotSub = typeof portalSessionAddQuickMenuSub === 'function' ? portalSessionAddQuickMenuSub(row) : '';
-      if(slotSub) subParts.push(slotSub);
+      const timeLabel = portalShadowingHostAlertTimeSlotLabel(row, sid, staffDisplayName);
+      if(timeLabel) subParts.push(timeLabel);
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      const locRaw = String(pl && pl.location || '').trim().toLowerCase();
+      const locLabel = locRaw === 'both' ? 'Room & Pool'
+        : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+      if(locLabel) subParts.push(locLabel);
+      const host = portalShadowingTrainerDisplayName(pl && pl.trainer);
+      if(host) subParts.push(host);
       const sid = portalNormKeyStr(staffId);
       return {
         id: portalShadowingHostOverrideDismissKey(row, sid),
@@ -1077,7 +1169,14 @@
         const cid = String(it.clientId || '').trim().toLowerCase();
         if(skipIds[cid]) return it;
         const base = it.__portalBaseSession || {};
-        const labels = portalShadowingObserverChipsForHost(sessionDateIso, sid, dn, base.start, base.end);
+        const labels = portalShadowingObserverChipsForHost(
+          sessionDateIso,
+          sid,
+          dn,
+          base.start,
+          base.end,
+          base.sessionVenue || it.sessionVenue || base.venue || it.venue
+        );
         if(!labels.length) return it;
         return Object.assign({}, it, {
           portalShadowingHostAlert: true,
