@@ -258,6 +258,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "roberto": {
       "2026-06-01": [
         "acat",
+        "timi",
         "fadi",
         "yunis",
         "amar_rai",
@@ -300,6 +301,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-08": [
         "acat",
+        "timi",
         "fadi",
         "yunis",
         "amar_rai",
@@ -341,6 +343,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-15": [
         "acat",
+        "timi",
         "fadi",
         "yunis",
         "amar_rai",
@@ -383,6 +386,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-22": [
         "acat",
+        "timi",
         "fadi",
         "yunis",
         "amar_rai",
