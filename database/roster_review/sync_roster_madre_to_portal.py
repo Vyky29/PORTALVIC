@@ -8,6 +8,7 @@ Keeps May dated rows (session_date < 2026-06-01) from the bundle; replaces summe
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -339,6 +340,49 @@ def patch_bundles(seed: dict, adapter_rows: list[dict], merges: list[dict], omit
         print(f"Patched bundle {path.relative_to(ROOT)} ({len(obj['rows'])} rows)")
 
 
+# Roster/shift data files that ship to the browser. Their `?v=` in the HTML that
+# loads them must change whenever the content changes, or phones keep serving a
+# stale cached roster (staff see the old timetable until the next full reset).
+CACHE_BUST_DATA_FILES = [
+    ROOT / "working_ui" / "portal" / "staff_dashboard_spreadsheet_bundle.js",
+    ROOT / "working_ui" / "portal" / "term_from_timetable.js",
+]
+CACHE_BUST_SCRIPT_NAMES = [
+    "staff_dashboard_spreadsheet_bundle.js",
+    "term_from_timetable.js",
+]
+CACHE_BUST_HTML_ROOT = ROOT / "working_ui"
+# Never rewrite read-only / archived copies.
+CACHE_BUST_SKIP_DIRS = ("backup_ui", "pre_split_backup", "archive")
+
+
+def bump_roster_cache_version() -> None:
+    """Content-hash the generated roster data and stamp it onto every
+    `?v=` that loads those files across working_ui HTML. Deterministic:
+    the token only changes when the roster content changes, so devices
+    fetch the fresh roster on next load without any sign-out."""
+    h = hashlib.md5()
+    for path in CACHE_BUST_DATA_FILES:
+        if path.exists():
+            h.update(path.read_bytes())
+    token = "roster-" + h.hexdigest()[:10]
+
+    name_re = "|".join(re.escape(n) for n in CACHE_BUST_SCRIPT_NAMES)
+    pattern = re.compile(r"((?:" + name_re + r")\?v=)[^\"'\s)&#]+")
+
+    changed = 0
+    for html in CACHE_BUST_HTML_ROOT.rglob("*.html"):
+        rel_parts = html.relative_to(ROOT).parts
+        if any(skip in rel_parts for skip in CACHE_BUST_SKIP_DIRS):
+            continue
+        text = html.read_text(encoding="utf-8")
+        new_text = pattern.sub(lambda m: m.group(1) + token, text)
+        if new_text != text:
+            html.write_text(new_text, encoding="utf-8")
+            changed += 1
+    print(f"Roster cache-bust token {token} → updated {changed} HTML file(s)")
+
+
 def main() -> None:
     if not MADRE.exists():
         raise SystemExit(f"Missing MADRE file: {MADRE}")
@@ -359,6 +403,8 @@ def main() -> None:
 
     subprocess.run([sys.executable, str(BOOT)], cwd=str(ROOT), check=True)
     subprocess.run(["node", str(BUILD_JS)], cwd=str(ROOT), check=True)
+
+    bump_roster_cache_version()
     print("Done. Commit + push → Vercel redeploy.")
 
 
