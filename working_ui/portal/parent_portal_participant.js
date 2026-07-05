@@ -336,7 +336,9 @@
       );
     }
     return (
-      '<div class="pp-gen-profile" role="list">' +
+      '<div class="pp-gen-profile" role="list" style="--pp-gen-rows:' +
+      Math.ceil(categories.length / 2) +
+      '">' +
       categories
         .map(function (cat) {
           return (
