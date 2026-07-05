@@ -624,33 +624,6 @@ body.portal-force-landscape{
   min-width:0;
   max-width:100%;
 }
-.pcso-table--parent .pcso-author-stack--photo{
-  flex-direction:row;
-  align-items:center;
-  gap:6px;
-}
-.pcso-table--parent .pcso-author-photo-wrap{
-  flex:0 0 auto;
-  width:36px;
-  height:36px;
-  border-radius:50%;
-  overflow:hidden;
-  background:#eef2f5;
-}
-.pcso-table--parent .pcso-author-photo{
-  display:block;
-  width:36px;
-  height:36px;
-  object-fit:cover;
-}
-.pcso-table--parent .pcso-author-text{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:2px;
-  min-width:0;
-  max-width:100%;
-}
 .pcso-table--parent thead .pcso-tbl__comments{
   text-align:center;
 }
