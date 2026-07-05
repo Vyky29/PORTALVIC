@@ -357,11 +357,50 @@
       p.charAt(0) === "n" ||
       p.indexOf("absent") >= 0 ||
       p.indexOf("did not") >= 0 ||
-      p === "dna"
+      p === "dna" ||
+      /\b(no[\s-]?show|noshow|absence|cancel)/.test(p) ||
+      /\b(make[\s-]?up|makeup|replaced|slot.?given)\b/.test(p)
     );
   }
 
-  function attendanceKpiHtml(list) {
+  function attendanceKpiHtml(list, summary) {
+    if (summary && Number(summary.total) > 0) {
+      var present = Number(summary.attended) || 0;
+      var absent = Number(summary.absent) || 0;
+      var total = Number(summary.total) || present + absent;
+      var pctPresent = total ? Math.round((present / total) * 100) : 0;
+      var pctAbsent = Math.max(0, 100 - pctPresent);
+      return (
+        '<div class="pcso-att-kpi" role="img" aria-label="' +
+        present +
+        " attended, " +
+        absent +
+        " absent, " +
+        total +
+        ' sessions">' +
+        '<div class="pcso-att-bar">' +
+        (present > 0
+          ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--present" style="width:' + pctPresent + '%"></span>'
+          : "") +
+        (absent > 0
+          ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--absent" style="width:' + pctAbsent + '%"></span>'
+          : "") +
+        "</div>" +
+        '<div class="pcso-att-legend">' +
+        '<span class="pcso-att-legend__item pcso-att-legend__item--present"><strong>' +
+        present +
+        "</strong> attended</span>" +
+        '<span class="pcso-att-legend__item pcso-att-legend__item--absent"><strong>' +
+        absent +
+        "</strong> absent</span>" +
+        "</div>" +
+        '<div class="pcso-att-foot">' +
+        pctPresent +
+        "% · " +
+        total +
+        " sessions</div></div>"
+      );
+    }
     var total = list.length;
     if (!total) return '<p class="pcso-kpi-empty">No sessions yet.</p>';
     var absent = 0;
@@ -403,6 +442,67 @@
     );
   }
 
+  function gaugeValueColor(pct) {
+    var p = Number(pct) || 0;
+    if (p >= 75) return "#15803d";
+    if (p >= 50) return "#65a30d";
+    if (p >= 25) return "#ea580c";
+    return "#dc2626";
+  }
+
+  function polarGauge(cx, cy, r, deg) {
+    var rad = (deg * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+  }
+
+  function gaugeArc(cx, cy, r, degStart, degEnd) {
+    var s = polarGauge(cx, cy, r, degStart);
+    var e = polarGauge(cx, cy, r, degEnd);
+    var large = Math.abs(degEnd - degStart) > 180 ? 1 : 0;
+    return (
+      "M " +
+      s.x.toFixed(2) +
+      " " +
+      s.y.toFixed(2) +
+      " A " +
+      r +
+      " " +
+      r +
+      " 0 " +
+      large +
+      " 1 " +
+      e.x.toFixed(2) +
+      " " +
+      e.y.toFixed(2)
+    );
+  }
+
+  function gaugeTickLabels(cx, cy, labelR) {
+    var specs = [
+      { tick: 0, deg: 180, anchor: "end", dy: 5 },
+      { tick: 25, deg: 135, anchor: "middle", dy: -5 },
+      { tick: 50, deg: 90, anchor: "middle", dy: -9 },
+      { tick: 75, deg: 45, anchor: "middle", dy: -5 },
+      { tick: 100, deg: 0, anchor: "start", dy: 5 },
+    ];
+    var out = "";
+    for (var ti = 0; ti < specs.length; ti++) {
+      var spec = specs[ti];
+      var lp = polarGauge(cx, cy, labelR, spec.deg);
+      out +=
+        '<text x="' +
+        lp.x.toFixed(1) +
+        '" y="' +
+        (lp.y + spec.dy).toFixed(1) +
+        '" text-anchor="' +
+        spec.anchor +
+        '" class="pcso-gauge__tick">' +
+        spec.tick +
+        "%</text>";
+    }
+    return out;
+  }
+
   function engagementGaugeHtml(list) {
     const vals = [];
     list.forEach(function (r) {
@@ -414,26 +514,71 @@
     }
     const avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
     const pctInt = Math.min(100, Math.max(0, Math.round((avg / 5) * 100)));
-    const ang = Math.PI - (pctInt / 100) * Math.PI;
-    const cx = 100, cy = 94, r = 70;
-    const nx = cx + r * Math.cos(ang);
-    const ny = cy - r * Math.sin(ang);
-    const tier = pctInt >= 75 ? "g" : pctInt >= 50 ? "y" : pctInt >= 25 ? "o" : "r";
+    const avgText = avg.toFixed(1);
+    const cx = 120;
+    const cy = 118;
+    const r = 76;
+    const strokeW = 22;
+    const labelR = r + 28;
+    const needleDeg = 180 - (pctInt / 100) * 180;
+    const needleReach = r - 6;
+    const tip = polarGauge(cx, cy, needleReach, needleDeg);
+    const valCol = gaugeValueColor(pctInt);
+    const tickLabels = gaugeTickLabels(cx, cy, labelR);
+    const segColors = ["#e85d5d", "#f59e0b", "#a3e635", "#16a34a"];
+    const segEnds = [
+      [180, 135],
+      [135, 90],
+      [90, 45],
+      [45, 0],
+    ];
+    var arcPaths = "";
+    for (var si = 0; si < segEnds.length; si++) {
+      arcPaths +=
+        '<path d="' +
+        gaugeArc(cx, cy, r, segEnds[si][0], segEnds[si][1]) +
+        '" fill="none" stroke="' +
+        segColors[si] +
+        '" stroke-width="' +
+        strokeW +
+        '" stroke-linecap="round"/>';
+    }
     return (
-      '<div class="pcso-gauge">' +
-      '<svg class="pcso-gauge__svg" viewBox="0 0 200 100" role="img" aria-label="Engagement ' + pctInt + ' percent">' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--r" d="M 30 94 A 70 70 0 0 1 58.8 30.6"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--o" d="M 58.8 30.6 A 70 70 0 0 1 100 24"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--y" d="M 100 24 A 70 70 0 0 1 141.2 30.6"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--g" d="M 141.2 30.6 A 70 70 0 0 1 170 94"/>' +
-      '<line class="pcso-gauge__needle" x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '"/>' +
-      '<circle class="pcso-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="5"/>' +
+      '<div class="pcso-gauge pcso-gauge--modern" role="img" aria-label="Engagement ' +
+      esc(String(pctInt)) +
+      " percent, average " +
+      esc(avgText) +
+      ' out of 5">' +
+      '<svg class="pcso-gauge__svg" viewBox="0 0 240 152" aria-hidden="true">' +
+      arcPaths +
+      tickLabels +
+      '<line x1="' +
+      cx +
+      '" y1="' +
+      cy +
+      '" x2="' +
+      tip.x.toFixed(2) +
+      '" y2="' +
+      tip.y.toFixed(2) +
+      '" class="pcso-gauge__needle"/>' +
+      '<circle cx="' +
+      cx +
+      '" cy="' +
+      cy +
+      '" r="10" class="pcso-gauge__hub"/>' +
+      '<circle cx="' +
+      cx +
+      '" cy="' +
+      cy +
+      '" r="3.5" class="pcso-gauge__hub-dot"/>' +
       "</svg>" +
-      '<div class="pcso-gauge__stats">' +
-      '<span class="pcso-gauge__pct pcso-gauge__pct--' + tier + '">' + pctInt + "%</span>" +
-      '<span class="pcso-gauge__avg">' + avg.toFixed(1) + " / 5 avg</span>" +
-      '<span class="pcso-gauge__foot">' + vals.length + " sessions with scores</span>" +
-      "</div></div>"
+      '<p class="pcso-gauge__pct" style="color:' +
+      valCol +
+      '">' +
+      esc(String(pctInt)) +
+      '%</p><p class="pcso-gauge__avg">' +
+      esc(avgText) +
+      " / 5 avg</p></div>"
     );
   }
 
@@ -536,8 +681,8 @@
     var term = clean(termLabel || TERM_LABEL);
     var includeAttendance = !!(opts && opts.includeAttendance);
     var attendanceCard = includeAttendance
-      ? '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
-        attendanceKpiHtml(feedback) +
+      ? '<article class="pcso-kpi-card pcso-kpi-card--att"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
+        attendanceKpiHtml(feedback, opts && opts.attendanceSummary) +
         "</article>"
       : "";
     return (
@@ -545,13 +690,13 @@
       (includeAttendance ? " pcso-kpi-grid--4" : "") +
       '" role="region" aria-label="Session summary">' +
       attendanceCard +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
+      '<article class="pcso-kpi-card pcso-kpi-card--eng"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
       engagementGaugeHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(term) + ")</p></header>" +
+      '<article class="pcso-kpi-card pcso-kpi-card--emo"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(term) + ")</p></header>" +
       emotionKpiHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(term) + ")</p></header>" +
+      '<article class="pcso-kpi-card pcso-kpi-card--indep"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(term) + ")</p></header>" +
       independenceKpiHtml(feedback) +
       "</article></div>"
     );
@@ -848,7 +993,7 @@
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = sessions.map(mapParentSessionRow);
     hostEl.innerHTML =
-      kpiSlabHtml(feedback, term, { includeAttendance: true }) +
+      kpiSlabHtml(feedback, term, { includeAttendance: true, attendanceSummary: opts && opts.attendance_summary }) +
       '<section class="pcso-feed-section">' +
       '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4></div>' +
       parentFeedbackTableHtml(feedback) +

@@ -27,6 +27,10 @@ import {
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
 } from "../_shared/participant_identity.ts";
+import {
+  buildParentAttendanceSummary,
+  PARENT_SESSION_TERM_START_ISO,
+} from "../_shared/parent_attendance_summary.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 
@@ -386,6 +390,33 @@ Deno.serve(async (req) => {
     });
   }
 
+  let attendanceSummary = { attended: 0, absent: 0, total: 0, makeup_absent: 0 };
+  if (wantSessions && clientSlugs.length) {
+    const { data: overrideRows, error: ovErr } = await supabase
+      .from("schedule_overrides")
+      .select("session_date, anchor_start, anchor_client_id, override_type, status, payload")
+      .eq("status", "active")
+      .in("override_type", ["client_replace_in_slot", "client_absence_announced"])
+      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .in("anchor_client_id", clientSlugs);
+    if (ovErr) {
+      console.error("[parent-portal-participant-detail] schedule_overrides error", ovErr);
+    }
+    attendanceSummary = buildParentAttendanceSummary(
+      rawFeedback,
+      overrideRows || [],
+      clientSlugs,
+      PARENT_SESSION_TERM_START_ISO,
+    );
+  } else if (wantSessions && rawFeedback.length) {
+    attendanceSummary = buildParentAttendanceSummary(
+      rawFeedback,
+      [],
+      clientSlugs,
+      PARENT_SESSION_TERM_START_ISO,
+    );
+  }
+
   let achievements: Record<string, unknown>[] = [];
 
   if (wantAchievements) {
@@ -561,6 +592,7 @@ Deno.serve(async (req) => {
         editable: true,
       },
       sessions: sessionsOut,
+      attendance_summary: attendanceSummary,
       achievements,
       swim_term_reviews: swimTermReviews,
       swim_term_review_available: swimTermReviewAvailable,

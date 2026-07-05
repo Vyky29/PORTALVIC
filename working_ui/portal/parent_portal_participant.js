@@ -320,12 +320,71 @@
     return categories;
   }
 
+  function profileCategoryIconKey(title) {
+    var t = String(title || "").toLowerCase();
+    if (t.indexOf("medical") >= 0) return "medical";
+    if (t.indexOf("communication") >= 0) return "communication";
+    if (t.indexOf("behaviour") >= 0 || t.indexOf("behavior") >= 0) return "behaviour";
+    if (t.indexOf("independence") >= 0) return "independence";
+    if (t.indexOf("daily") >= 0 || t.indexOf("participation") >= 0) return "participation";
+    return "default";
+  }
+
+  function profileCategoryIconSvg(key) {
+    var base =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">';
+    switch (key) {
+      case "medical":
+        return base + '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>';
+      case "communication":
+        return (
+          base +
+          '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' +
+          '<path d="M8 10h.01M12 10h.01M16 10h.01"/></svg>'
+        );
+      case "behaviour":
+        return (
+          base +
+          '<circle cx="12" cy="12" r="10"/>' +
+          '<polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>'
+        );
+      case "independence":
+        return (
+          base +
+          '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>' +
+          '<circle cx="12" cy="7" r="4"/></svg>'
+        );
+      case "participation":
+        return (
+          base +
+          '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
+          '<line x1="16" y1="2" x2="16" y2="6"/>' +
+          '<line x1="8" y1="2" x2="8" y2="6"/>' +
+          '<line x1="3" y1="10" x2="21" y2="10"/>' +
+          '<path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>'
+        );
+      default:
+        return (
+          base +
+          '<circle cx="12" cy="12" r="10"/>' +
+          '<line x1="12" y1="16" x2="12" y2="12"/>' +
+          '<line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+        );
+    }
+  }
+
   function generalProfileCategoryHtml(cat) {
+    var iconKey = profileCategoryIconKey(cat.title);
     return (
       '<section class="pp-gen-profile__cat" role="listitem">' +
       '<h5 class="pp-gen-profile__cat-title">' +
+      '<span class="pp-gen-profile__cat-ico pp-gen-profile__cat-ico--' +
+      iconKey +
+      '" aria-hidden="true">' +
+      profileCategoryIconSvg(iconKey) +
+      '</span><span class="pp-gen-profile__cat-txt">' +
       esc(cat.title) +
-      "</h5>" +
+      "</span></h5>" +
       cat.values
         .map(function (val) {
           return '<p class="pp-gen-profile__value">' + esc(val) + "</p>";
@@ -745,6 +804,7 @@
     ) {
       global.PortalClientSessionsOverview.renderParent(sessionsHost, {
         sessions: data.sessions || [],
+        attendance_summary: data.attendance_summary || null,
         term_label: data.term_label || (data.general && data.general.term_label) || "",
         hideAchievements: true,
       });
