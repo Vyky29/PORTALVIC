@@ -833,7 +833,7 @@
       color: var(--ink);
       overflow-wrap: break-word;
     }
-    .re-funding-fee strong {
+    .re-funding-fee > strong:first-child {
       display: block;
       font-size: .82rem;
       letter-spacing: .03em;
@@ -844,12 +844,14 @@
     .re-funding-fee[hidden] { display: none !important; }
     .re-funding-fee--fail {
       margin-top: 8px;
-      background: #fff;
-      border-color: rgba(45, 132, 179, .2);
+      background: #fef2f2;
+      border-color: rgba(190, 18, 60, .30);
+      color: #7f1d1d;
     }
-    .re-funding-fee--fail strong:first-child {
-      color: var(--blue);
+    .re-funding-fee--fail > strong:first-child {
+      color: #be123c;
     }
+    .re-funding-fee--fail strong { color: #be123c; }
     .re-funding-note { margin: 8px 0 0; }
     .re-funding-note[hidden] { display: none !important; }
     .re-funding-foot { margin: 12px 0 0; }
