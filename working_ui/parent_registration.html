@@ -349,7 +349,7 @@
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/portal/parent_form_submit.js"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260705-portal-edit"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260705-portal-save-fix"></script>
 </head>
 <body>
   <div class="page">
@@ -938,12 +938,33 @@
         return;
       }
 
-      var JsPDF = window.jspdf && window.jspdf.jsPDF;
-      if (!JsPDF) { alert('Could not load PDF generator. Check your connection and try again.'); return; }
-
       var btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.textContent = 'Sending…';
+      btn.textContent = portalMode ? 'Saving…' : 'Sending…';
+
+      if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
+        portalMode
+          .afterSubmitSuccess()
+          .then(function () {
+            btn.disabled = true;
+            btn.textContent = 'Saved';
+          })
+          .catch(function (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.textContent = 'Save updates';
+            alert('Could not save your updates. Please check your connection and try again.');
+          });
+        return;
+      }
+
+      var JsPDF = window.jspdf && window.jspdf.jsPDF;
+      if (!JsPDF) {
+        alert('Could not load PDF generator. Check your connection and try again.');
+        btn.disabled = false;
+        btn.textContent = 'Submit form';
+        return;
+      }
 
       try {
         var doc = new JsPDF({ unit: 'mm', format: 'a4' });

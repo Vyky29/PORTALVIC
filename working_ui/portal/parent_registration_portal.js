@@ -221,7 +221,7 @@
     }
     if (notice) {
       notice.innerHTML =
-        "Update any answers that have changed. All sections are required unless noted. Submit to save — a PDF copy is kept on your device.";
+        "Update any answers that have changed. All sections are required unless noted. Tap Save updates when you are done.";
     }
     if (submitBtn) submitBtn.textContent = "Save updates";
 
