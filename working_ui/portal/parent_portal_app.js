@@ -334,12 +334,35 @@
     );
   }
 
+  function childPhotoCandidates(c, urlOverride) {
+    var name = c.display_name || "Participant";
+    var contactId = c.contact_id || "";
+    if (urlOverride != null) {
+      var pending = String(urlOverride || "").trim();
+      return pending ? [pending] : [];
+    }
+    if (c.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
+      global.portalRegisterParticipantStorageAvatar(contactId, name, c.avatar_url);
+    }
+    if (typeof global.portalParticipantPhotoPathCandidates === "function") {
+      return global.portalParticipantPhotoPathCandidates(name, c.avatar_url || "", contactId);
+    }
+    if (typeof global.portalParticipantPhotoUrl === "function") {
+      var one = global.portalParticipantPhotoUrl(name, c.avatar_url || "", contactId);
+      return one ? [one] : [];
+    }
+    return c.avatar_url ? [String(c.avatar_url)] : [];
+  }
+
+  function childHasResolvedPhoto(c) {
+    return childPhotoCandidates(c).length > 0;
+  }
+
   function childAvatarImgHtml(c, urlOverride) {
     var name = c.display_name || "Participant";
-    var url = urlOverride != null ? String(urlOverride || "").trim() : String(c.avatar_url || "").trim();
-    if (!url && c.has_avatar !== false && typeof global.portalParticipantPhotoUrl === "function") {
-      url = global.portalParticipantPhotoUrl(name, "", c.contact_id) || "";
-    }
+    var candidates = childPhotoCandidates(c, urlOverride);
+    var url = candidates.length ? candidates[0] : "";
+    var fallbacks = candidates.slice(1).join("|");
     var initials =
       typeof global.portalParticipantInitials === "function"
         ? global.portalParticipantInitials(name)
@@ -355,7 +378,9 @@
         '">' +
         '<img src="' +
         esc(url) +
-        '" alt="" width="80" height="80" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');" />' +
+        '" alt="" width="80" height="80" loading="lazy" decoding="async" draggable="false"' +
+        (fallbacks ? ' data-photo-fallbacks="' + esc(fallbacks) + '"' : "") +
+        ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');}" />' +
         '<span class="pp-child-photo__init" aria-hidden="true">' +
         esc(initials) +
         "</span></div>"
@@ -371,7 +396,8 @@
   }
 
   function childHasSavedPhoto(c) {
-    return c.has_avatar !== false;
+    if (c.has_avatar === true || c.avatar_url) return true;
+    return childHasResolvedPhoto(c);
   }
 
   function childPhotoBlockHtml(c) {
@@ -609,7 +635,7 @@
             if (childUnread > 0) {
               chips.push(unreadBadgeHtml(childUnread, "New messages for " + (c.display_name || "participant")));
             }
-            var photoMissing = c.has_avatar === false;
+            var photoMissing = !childHasResolvedPhoto(c) && !c.avatar_url;
             var dobLine = c.dob_iso
               ? '<p class="pp-muted pp-child-dob">DOB ' + esc(formatDob(c.dob_iso)) + "</p>"
               : "";
