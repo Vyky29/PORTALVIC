@@ -1142,7 +1142,7 @@
     return payCode === "gocardless" || payCode === "own_way_flexible";
   }
 
-  var RE_ADMIN_FEE_PER_INSTALLMENT = 2.5;
+  var RE_ADMIN_FEE_PER_INSTALLMENT = 1.5;
 
   function installmentCountForSchedule(scheduleCode) {
     if (scheduleCode === "monthly_term") return 11;
@@ -1188,9 +1188,7 @@
     var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
     var feeNote =
       '<p class="re-billing-ref-note re-billing-ref-fee">' +
-      "<strong>Fees:</strong> in 2025/26 a " +
-      money(5) +
-      " admin fee applied per booking (invoice). For 2026/27, if you continue with Direct Payment (GoCardless), each installment adds a " +
+      "<strong>Fees:</strong> for 2026/27, if you continue with Direct Payment (GoCardless), each installment adds a " +
       money(RE_ADMIN_FEE_PER_INSTALLMENT) +
       " fee to cover costs. Bank transfer has no fee." +
       "</p>";
@@ -1209,8 +1207,8 @@
       esc(payText) +
       "</span></li>" +
       "</ul>" +
-      feeNote +
       '<p class="re-billing-ref-note re-billing-ref-note--alert">This continues for 2026/27 unless you edit below.</p>' +
+      feeNote +
       '<button type="button" class="re-btn re-btn--billing-edit-inline" id="reBillingEditBtn">Edit for 2026/27</button>' +
       "</div>"
     );
