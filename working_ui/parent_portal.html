@@ -828,28 +828,6 @@
     }
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
-    .pp-team-participant {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 8px;
-      margin: 2px 0 14px;
-    }
-    .pp-team-participant .pp-pax-photo {
-      width: 108px;
-      height: 108px;
-      border-width: 3px;
-    }
-    .pp-team-participant .pp-pax-photo--init { font-size: 30px; }
-    .pp-team-participant__name {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--ink);
-      overflow-wrap: break-word;
-    }
-    .pp-team-title { text-align: center; margin-bottom: 12px; }
     .pp-team-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -1342,7 +1320,7 @@
     <section id="ppStepParticipant" hidden>
       <div class="pp-participant-head">
         <div style="min-width:0">
-          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal — all children">← All children</button>
+          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal home menu">← Home (Menu)</button>
           <h2 id="ppParticipantTitle">Participant</h2>
         </div>
         <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
@@ -1362,7 +1340,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-team-header-grid"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-team-title"></script>
   <script src="/portal/parent_portal_app.js?v=20260704-home-action-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

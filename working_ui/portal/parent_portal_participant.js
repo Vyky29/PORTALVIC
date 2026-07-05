@@ -418,6 +418,10 @@
 
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: false });
+    setParticipantPageTitle(
+      (data && data.participant && data.participant.display_name) ||
+        "Participant",
+    );
     void ensureClientsInfoEmbedLoaded();
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
@@ -729,10 +733,15 @@
     );
   }
 
+  function setParticipantPageTitle(text) {
+    var doc = global.document;
+    var el = doc && doc.getElementById("ppParticipantTitle");
+    if (el) el.textContent = text;
+  }
+
   function renderTeam(host, data, opts) {
     var p = (data && data.participant) || {};
     var pName = p.display_name || "Participant";
-    var first = firstNameOf(data);
     var members = teamMembers(data);
     var colClass =
       members.length >= 3
@@ -750,19 +759,12 @@
       "&apos;s sections</button>" +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
-      '<header class="pp-team-participant">' +
-      participantPhotoHtml(p) +
-      '<h3 class="pp-team-participant__name">' +
-      esc(pName) +
-      "</h3></header>" +
-      '<h3 class="pp-pax-subview-title pp-team-title">' +
-      esc(first) +
-      "&apos;s Team</h3>" +
       '<div class="pp-team-grid' +
       colClass +
       '">' +
       members.map(teamMemberCardHtml).join("") +
       "</div></div></div>";
+    setParticipantPageTitle(pName + "\u2019s Team");
     bindBack(host, data, opts);
   }
 
