@@ -10373,7 +10373,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -10398,19 +10398,19 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "ACAT",
+      "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "ROBERTO",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12",
+      "time_slot": "11 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "ACAT",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 12",
@@ -10434,16 +10434,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-06"
-    },
-    {
-      "client_name": "Emmanuel",
-      "day": "Monday",
-      "instructors": "YOUSSEF",
-      "service": "Aquatic Activity",
-      "area": "Big pool",
-      "time_slot": "12 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -10893,7 +10883,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-08"
     },
@@ -10903,7 +10893,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12",
+      "time_slot": "11 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-08"
     },
@@ -10934,16 +10924,6 @@
       "service": "Day Centre",
       "area": "HOME",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-08"
-    },
-    {
-      "client_name": "Emmanuel",
-      "day": "Wednesday",
-      "instructors": "YOUSSEF",
-      "service": "Aquatic Activity",
-      "area": "Big pool",
-      "time_slot": "12 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-08"
     },
@@ -11353,7 +11333,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-10"
     },
@@ -11373,7 +11353,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12",
+      "time_slot": "11 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-10"
     },
@@ -11408,16 +11388,6 @@
       "session_date": "2026-07-10"
     },
     {
-      "client_name": "Emmanuel",
-      "day": "Friday",
-      "instructors": "YOUSSEF",
-      "service": "Aquatic Activity",
-      "area": "Big pool",
-      "time_slot": "12 to 1",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-10"
-    },
-    {
       "client_name": "Fadi",
       "day": "Friday",
       "instructors": "ROBERTO",
@@ -11434,6 +11404,16 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-10"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-10"
     },
@@ -11588,16 +11568,6 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Adaam Ah",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "1.15 to 2",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
       "client_name": "Eiji",
       "day": "Sunday",
       "instructors": "ALEX",
@@ -11668,16 +11638,6 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Jack S",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "10.15 to 11",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
       "client_name": "Arthur Ma",
       "day": "Sunday",
       "instructors": "AURORA",
@@ -11721,16 +11681,6 @@
       "client_name": "Hazem",
       "day": "Sunday",
       "instructors": "JAVIER",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "11 to 11.45",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
-      "client_name": "Gabriel",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
       "service": "Multi-Activity",
       "area": "Big Pool",
       "time_slot": "11 to 11.45",
@@ -11801,16 +11751,6 @@
       "client_name": "Eiji",
       "day": "Sunday",
       "instructors": "JAVIER",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "11.45 to 12.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
-      "client_name": "Arthur Mo",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
       "service": "Multi-Activity",
       "area": "Big Pool",
       "time_slot": "11.45 to 12.30",
@@ -11888,12 +11828,12 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Amaar Ah",
+      "client_name": "Fadi",
       "day": "Sunday",
       "instructors": "ROBERTO",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "12.30 to 1.15",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12.30 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-12"
     },
@@ -11911,16 +11851,6 @@
       "client_name": "Max",
       "day": "Sunday",
       "instructors": "JAVIER",
-      "service": "Aquatic Activity",
-      "area": "Teaching Pool",
-      "time_slot": "2 to 2.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
-      "client_name": "Rodin",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "2 to 2.30",
@@ -11968,16 +11898,6 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Yoan",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Teaching Pool",
-      "time_slot": "2.30 to 3.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
       "client_name": "Simon",
       "day": "Sunday",
       "instructors": "AURORA",
@@ -11991,16 +11911,6 @@
       "client_name": "Shire",
       "day": "Sunday",
       "instructors": "JAVIER",
-      "service": "Aquatic Activity",
-      "area": "Small Pool",
-      "time_slot": "9 to 9.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
-      "client_name": "Yusuf Ah",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Small Pool",
       "time_slot": "9 to 9.30",
@@ -12058,22 +11968,12 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Yusuf Ah",
-      "day": "Sunday",
-      "instructors": "ROBERTO",
-      "service": "Multi-Activity",
-      "area": "Big Pool",
-      "time_slot": "9.30 to 10.15",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-12"
-    },
-    {
       "client_name": "Fadi",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
@@ -12098,6 +11998,16 @@
       "session_date": "2026-07-13"
     },
     {
+      "client_name": "Emmanuel",
+      "day": "Monday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
       "client_name": "ACAT",
       "day": "Monday",
       "instructors": "ROBERTO",
@@ -12108,29 +12018,19 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Emmanuel",
-      "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 12.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-13"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 12.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-13"
-    },
-    {
       "client_name": "Ikram",
       "day": "Monday",
       "instructors": "LULIYA",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-13"
+    },
+    {
+      "client_name": "Ikram",
+      "day": "Monday",
+      "instructors": "MICHELLE",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
@@ -12148,32 +12048,12 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Emmanuel",
-      "day": "Monday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Big pool",
-      "time_slot": "12,30 to 1.20",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-13"
-    },
-    {
       "client_name": "Fadi",
       "day": "Monday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-13"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
@@ -12598,6 +12478,26 @@
       "session_date": "2026-07-14"
     },
     {
+      "client_name": "Fadi",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-15"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-15"
+    },
+    {
       "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "LULIYA",
@@ -12608,7 +12508,7 @@
       "session_date": "2026-07-15"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -12623,16 +12523,6 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-15"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Wednesday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-15"
@@ -13038,9 +12928,29 @@
       "session_date": "2026-07-16"
     },
     {
+      "client_name": "Fadi",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-17"
+    },
+    {
       "client_name": "Timi",
       "day": "Friday",
       "instructors": "VICTOR",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-17"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 1",
@@ -13058,7 +12968,7 @@
       "session_date": "2026-07-17"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -13078,22 +12988,22 @@
       "session_date": "2026-07-17"
     },
     {
-      "client_name": "Ikram",
-      "day": "Friday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-17"
-    },
-    {
       "client_name": "Fadi",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-17"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-17"
     },
@@ -13153,7 +13063,7 @@
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13180,20 +13090,20 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12.30",
+      "time_slot": "11 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
     {
-      "client_name": "Ikram",
+      "client_name": "ACAT",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12.30",
+      "time_slot": "11 to 12",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13208,12 +13118,22 @@
       "session_date": "2026-07-20"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "MICHELLE",
       "service": "Day Centre",
-      "area": "Big pool",
-      "time_slot": "12,30 to 1.20",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-20"
+    },
+    {
+      "client_name": "Timi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13224,16 +13144,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-20"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13298,6 +13208,26 @@
       "session_date": "2026-07-21"
     },
     {
+      "client_name": "Fadi",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-22"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-22"
+    },
+    {
       "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "LULIYA",
@@ -13308,7 +13238,7 @@
       "session_date": "2026-07-22"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -13323,16 +13253,6 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-22"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Wednesday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-22"
@@ -13398,9 +13318,29 @@
       "session_date": "2026-07-23"
     },
     {
+      "client_name": "Fadi",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-24"
+    },
+    {
       "client_name": "Timi",
       "day": "Friday",
       "instructors": "VICTOR",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-24"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 1",
@@ -13418,7 +13358,7 @@
       "session_date": "2026-07-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -13438,16 +13378,6 @@
       "session_date": "2026-07-24"
     },
     {
-      "client_name": "Ikram",
-      "day": "Friday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-24"
-    },
-    {
       "client_name": "Fadi",
       "day": "Friday",
       "instructors": "ROBERTO",
@@ -13458,12 +13388,22 @@
       "session_date": "2026-07-24"
     },
     {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-24"
+    },
+    {
       "client_name": "Fadi",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "1.30 to 3",
+      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -13490,20 +13430,20 @@
     {
       "client_name": "Emmanuel",
       "day": "Monday",
-      "instructors": "MICHELLE",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12.30",
+      "time_slot": "11 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "Ikram",
+      "client_name": "ACAT",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
-      "time_slot": "11 to 12.30",
+      "time_slot": "11 to 12",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -13518,12 +13458,22 @@
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "MICHELLE",
       "service": "Day Centre",
-      "area": "Big pool",
-      "time_slot": "12,30 to 1.20",
+      "area": "Hub Room",
+      "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-27"
+    },
+    {
+      "client_name": "Timi",
+      "day": "Monday",
+      "instructors": "ROBERTO",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "12 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -13534,16 +13484,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-27"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Monday",
-      "instructors": "MICHELLE",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12.30 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -13608,6 +13548,26 @@
       "session_date": "2026-07-28"
     },
     {
+      "client_name": "Fadi",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-29"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Wednesday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-29"
+    },
+    {
       "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "LULIYA",
@@ -13618,7 +13578,7 @@
       "session_date": "2026-07-29"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -13633,16 +13593,6 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-29"
-    },
-    {
-      "client_name": "Ikram",
-      "day": "Wednesday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
       "time_slot": "11 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
@@ -13708,9 +13658,29 @@
       "session_date": "2026-07-30"
     },
     {
+      "client_name": "Fadi",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-31"
+    },
+    {
       "client_name": "Timi",
       "day": "Friday",
       "instructors": "VICTOR",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "11 to 1",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-31"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 1",
@@ -13728,7 +13698,7 @@
       "session_date": "2026-07-31"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Ikram",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -13748,22 +13718,22 @@
       "session_date": "2026-07-31"
     },
     {
-      "client_name": "Ikram",
-      "day": "Friday",
-      "instructors": "YOUSSEF",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-31"
-    },
-    {
       "client_name": "Fadi",
       "day": "Friday",
       "instructors": "ROBERTO",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "12.30 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-31"
+    },
+    {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "YOUSSEF",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "3 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-31"
     }
@@ -13787,7 +13757,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-05T03:56:56Z",
+    "rosterMadreSyncedAt": "2026-07-05T04:02:00Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
