@@ -9,6 +9,8 @@
   var SESSION_KEY = "clubsens_parent_portal_session_v1";
   var RE_ENROL_DEADLINE_ISO = "2026-07-17";
   var RE_ENROL_DEADLINE_LABEL = "Friday 17 July 2026";
+  /** Bank transfer: the first payment of the year must reach us before term starts. */
+  var RE_BANK_FIRST_DUE = "by 15 August 2026";
 
   /** Bank transfer · flexi term: 2 payments per term (before half term + half-term week). */
   var RE_PAY_FLEXI_TERM = [
@@ -16,7 +18,7 @@
       term: "autumn",
       termLabel: "Autumn term",
       halves: [
-        { halfLabel: "1st half", due: "1 September 2026" },
+        { halfLabel: "1st half", due: RE_BANK_FIRST_DUE },
         { halfLabel: "2nd half", due: "Monday 26 October 2026" },
       ],
     },
@@ -591,7 +593,7 @@
         "Review your current programme and confirm for September 2026. " +
         "<strong>Submit by " +
         esc(RE_ENROL_DEADLINE_LABEL) +
-        "</strong> — payments follow from September." +
+        "</strong> — payments follow from mid-August (bank transfer) or September (Direct Payment)." +
         "</div>"
       );
     }
@@ -610,15 +612,15 @@
 
   function paymentPreviewNote(payCode, schedCode) {
     if (payCode === "gocardless" && schedCode === "monthly_term") {
-      return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; the first payment is collected at the end of August so it reaches us on 1 September, then on the 1st of each month.";
+      return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
-      return "Same programme total — two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
+      return "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
     }
     if (payCode === "bank_transfer") {
-      return "Same programme total — bank transfers due on the 1st of each month from September 2026. The office confirms your final invoice plan before term starts.";
+      return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. The office confirms your final invoice plan.";
     }
-    return "Same programme total — compare due dates below. The office confirms your final invoice plan before September 2026.";
+    return "Same programme total — compare due dates below. The office confirms your final invoice plan before term starts.";
   }
 
   function renderPaymentSchedulePreviewHtml(data) {
@@ -638,17 +640,19 @@
       if (!Number.isFinite(n) || n <= 0) return "—";
       return money(fee ? n + RE_ADMIN_FEE_PER_INSTALLMENT : n);
     }
+    var bankFirstDue =
+      payCode === "bank_transfer" ? RE_BANK_FIRST_DUE : dueOnFirst("September 2026");
     var rows = [];
     if (schedCode === "yearly_1off") {
       rows.push({
         label: "Full year (1 payment)",
-        due: dueOnFirst("September 2026"),
+        due: bankFirstDue,
         amount: amt(annual),
       });
     } else if (schedCode === "term_3") {
       rows.push({
         label: "Autumn term",
-        due: dueOnFirst("September 2026"),
+        due: bankFirstDue,
         amount: amt(termProgrammeTotal(data, "autumn")),
       });
       rows.push({
@@ -1330,7 +1334,7 @@
       "</div></div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
-      ". First payments from September — see schedule above.</p>" +
+      ". First payments from mid-August (bank transfer) or September (Direct Payment) — see schedule above.</p>" +
       "</div>"
     );
   }
@@ -1378,22 +1382,22 @@
 
   function scheduleOptionHint(code, payCode) {
     if (code === "yearly_1off") {
-      return "New this year — confirm the full academic year in one step. One bank transfer on 1 September 2026, same programme total, nothing to re-confirm each term.";
+      return "New this year — confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total, nothing to re-confirm each term.";
     }
     if (code === "monthly_term") {
-      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; the first payment is collected at the end of August so it reaches us on 1 September, then on the 1st of each month. Same programme total, nothing to re-confirm each term.";
+      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total, nothing to re-confirm each term.";
     }
     if (code === "monthly_10") {
       return "New this year — one year agreement with 10 payments on the 1st of each month, September–June, by direct payment. Same programme total, and no termly re-confirmation.";
     }
     if (code === "term_flexi") {
-      return "Six bank transfers over the year — two per term: before half term starts, and during half-term week before the second half. Same programme total.";
+      return "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total.";
     }
     if (code === "term_3" && payCode === "gocardless") {
       return "Three term payments on 1 September, 1 December and 1 March by direct payment — same programme total over the year.";
     }
     if (code === "term_3") {
-      return "Three bank transfers on 1 September, 1 December and 1 March — one invoice per term, same programme total over the year.";
+      return "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year.";
     }
     return "";
   }
