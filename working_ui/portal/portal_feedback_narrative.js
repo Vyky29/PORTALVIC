@@ -155,8 +155,23 @@
     if (!result) return false;
     var e = result.error ? String(result.error) : "";
     if (e === "openai_failed" || e === "no_openai" || e === "openai_bad_response") return true;
-    // 503 = key missing; other statuses handled by explicit error codes above.
     return result.status === 503;
+  }
+
+  function isRecoverableApiError(result) {
+    if (!result || result.ok) return false;
+    if (result.error === "session_expired") return false;
+    if (isAiDownError(result)) return true;
+    var err = result.error ? String(result.error) : "";
+    if (err === "validate_failed" || err === "filter_failed") return true;
+    var status = result.status || 0;
+    return status === 404 || status >= 500;
+  }
+
+  function narrativeLengthHint() {
+    var len = narrativeText().length;
+    if (len >= MIN_NARRATIVE_CHARS) return "";
+    return "Add at least " + MIN_NARRATIVE_CHARS + " characters (" + len + "/" + MIN_NARRATIVE_CHARS + ").";
   }
 
   /** Silent, one-shot check so staff can submit without tapping anything when the
@@ -177,7 +192,7 @@
         .then(function (result) {
           if (result && result.ok) {
             applyValidationResult(result);
-          } else if (isAiDownError(result)) {
+          } else if (isRecoverableApiError(result)) {
             enterAiDegraded(true);
           }
         })
@@ -292,19 +307,24 @@
   function syncSubmitGate() {
     if (!els.submitBtn) return;
     if (els.submitBtn.textContent === "Submitting") return;
+    var len = narrativeText().length;
+    var hint = global.document.getElementById("fbSubmitHint");
     if (state.aiUnavailable) {
-      els.submitBtn.disabled = narrativeText().length < MIN_NARRATIVE_CHARS;
-      var hintDown = global.document.getElementById("fbSubmitHint");
-      if (hintDown) hintDown.textContent = AI_DOWN_SUBMIT_MSG;
+      els.submitBtn.disabled = len < MIN_NARRATIVE_CHARS;
+      if (hint) {
+        hint.textContent =
+          len < MIN_NARRATIVE_CHARS ? narrativeLengthHint() : AI_DOWN_SUBMIT_MSG;
+      }
       return;
     }
     var needsValidate =
       validationRequired() &&
       (!state.validated || narrativeText() !== state.validationSnapshot);
     els.submitBtn.disabled = !state.filtered || !state.liveAiUsed || needsValidate;
-    var hint = global.document.getElementById("fbSubmitHint");
     if (hint) {
-      if (needsValidate) {
+      if (len < MIN_NARRATIVE_CHARS) {
+        hint.textContent = narrativeLengthHint();
+      } else if (needsValidate) {
         hint.textContent = "Check narrative (Reception, Session, Handover) before filtering or submit.";
       } else if (!state.filtered) {
         hint.textContent = isTypedMode()
@@ -560,7 +580,7 @@
         global.alert("Your session expired. Sign in again, then Check narrative.");
         return;
       }
-      if (isAiDownError(result)) {
+      if (isRecoverableApiError(result)) {
         enterAiDegraded(false);
         return;
       }
@@ -613,7 +633,7 @@
         }
         return;
       }
-      if (isAiDownError(result)) {
+      if (isRecoverableApiError(result)) {
         enterAiDegraded(opts.silent);
         return;
       }
@@ -689,13 +709,19 @@
     }
     if (!state.filtered && !state.validated) {
       scheduleAiDownDetect();
+      syncSubmitGate();
       return;
     }
-    if (narrativeText() !== state.narrativeSnapshot) {
+    var narrative = narrativeText();
+    if (state.filtered && narrative !== state.narrativeSnapshot) {
       resetFilteredState();
       resetValidatedState();
       setStatus("Narrative changed — check and filter again.");
+    } else if (!state.filtered && state.validated && narrative !== state.validationSnapshot) {
+      resetValidatedState();
+      setStatus("Narrative changed — check again.");
     }
+    syncSubmitGate();
   }
 
   function getSubmitAuditMeta() {
