@@ -750,12 +750,23 @@ export function enforceAppVersion() {
   if (!(window.location.pathname || "").toLowerCase().includes("login")) {
     let dest = "login.html?updated=1";
     try {
+      // Hubs re-route by role after login, so a `next` back to them is pointless.
+      // Standalone forms/subpages (venue report, feedback, cancellation, …) should
+      // send the user back to where they were before the one-time version reset.
+      const here = window.location.href;
+      const path = (window.location.pathname || "").toLowerCase();
+      const isHubDashboard =
+        /(?:^|\/)(?:staff_dashboard|admin_dashboard|ceo_dashboard|office_portal|portal_choose)\.html$/i.test(
+          path
+        ) ||
+        path === "/" ||
+        path === "";
       if (
-        portalUrlIsCsCliqPage(window.location.href) ||
-        portalUrlIsOnboardingFormPage(window.location.href)
+        portalUrlIsCsCliqPage(here) ||
+        portalUrlIsOnboardingFormPage(here) ||
+        !isHubDashboard
       ) {
-        dest = portalLoginUrlWithReturn(window.location.href);
-        const login = new URL(dest, window.location.href);
+        const login = new URL(portalLoginUrlWithReturn(here), here);
         login.searchParams.set("updated", "1");
         dest = login.href;
       }
