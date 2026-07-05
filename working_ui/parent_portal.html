@@ -1215,9 +1215,15 @@
     .pp-gen-profile {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      gap: 6px;
+      gap: 10px;
       min-width: 0;
       align-items: start;
+    }
+    .pp-gen-profile__col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
     }
     .pp-gen-profile__cat { min-width: 0; }
     .pp-gen-profile__cat-title {
@@ -1353,9 +1359,7 @@
       }
       .pp-gen-profile {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-flow: column;
-        grid-template-rows: repeat(var(--pp-gen-rows, 3), auto);
-        gap: 6px 14px;
+        gap: 14px;
         align-items: start;
       }
       .pp-participant-body .pcso-table--parent .pcso-tbl__parent-msg {
@@ -1525,7 +1529,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-parent-attendance"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-gen-tight"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-gen-cols"></script>
   <script src="/portal/parent_portal_app.js?v=20260705-dob-age"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

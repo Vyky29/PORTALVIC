@@ -320,6 +320,21 @@
     return categories;
   }
 
+  function generalProfileCategoryHtml(cat) {
+    return (
+      '<section class="pp-gen-profile__cat" role="listitem">' +
+      '<h5 class="pp-gen-profile__cat-title">' +
+      esc(cat.title) +
+      "</h5>" +
+      cat.values
+        .map(function (val) {
+          return '<p class="pp-gen-profile__value">' + esc(val) + "</p>";
+        })
+        .join("") +
+      "</section>"
+    );
+  }
+
   function generalProfileReadHtml(data) {
     data = data || {};
     var blob = resolveGeneralInfoBlob(data);
@@ -335,28 +350,19 @@
         '<p class="pp-muted">No general information on file yet. Tap Edit info to add details your instructors should know.</p>'
       );
     }
+    var splitAt = Math.ceil(categories.length / 2);
+    var left = categories.slice(0, splitAt);
+    var right = categories.slice(splitAt);
     return (
-      '<div class="pp-gen-profile" role="list" style="--pp-gen-rows:' +
-      Math.ceil(categories.length / 2) +
-      '">' +
-      categories
-        .map(function (cat) {
-          return (
-            '<section class="pp-gen-profile__cat" role="listitem">' +
-            '<h5 class="pp-gen-profile__cat-title">' +
-            esc(cat.title) +
-            "</h5>" +
-            cat.values
-              .map(function (val) {
-                return (
-                  '<p class="pp-gen-profile__value">' + esc(val) + "</p>"
-                );
-              })
-              .join("") +
-            "</section>"
-          );
-        })
-        .join("") +
+      '<div class="pp-gen-profile" role="list">' +
+      '<div class="pp-gen-profile__col">' +
+      left.map(generalProfileCategoryHtml).join("") +
+      "</div>" +
+      (right.length
+        ? '<div class="pp-gen-profile__col">' +
+          right.map(generalProfileCategoryHtml).join("") +
+          "</div>"
+        : "") +
       "</div>"
     );
   }
