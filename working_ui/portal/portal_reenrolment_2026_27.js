@@ -2426,7 +2426,6 @@
       '<section class="re-section re-declarations re-form-grid__submit">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
       '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
-      '<label class="re-check"><input id="reDeclTerms" type="checkbox" /> I understand that slot changes are subject to availability and club terms apply.</label>' +
       '<button id="reSubmitBtn" class="re-btn re-btn--primary re-btn--submit" type="button">Submit re-enrolment</button>' +
       "</section>" +
       "</div>";
@@ -2556,8 +2555,8 @@
       );
       return;
     }
-    if (!$("reDeclAccurate") || !$("reDeclAccurate").checked || !$("reDeclTerms") || !$("reDeclTerms").checked) {
-      showNotice($("reFormNotice"), "error", "Please tick both confirmation boxes.");
+    if (!$("reDeclAccurate") || !$("reDeclAccurate").checked) {
+      showNotice($("reFormNotice"), "error", "Please tick the confirmation box.");
       return;
     }
     if (state.billing2627 && state.billing2627.editing) {
@@ -2590,7 +2589,7 @@
       day_centre: data.day_centre,
       annual_weekly_total: data.annual_weekly_total,
       choices: collectChoices(),
-      declarations: { accurate: true, terms: true },
+      declarations: { accurate: true },
       contact_email: (data.parent && data.parent.email) || null,
       contact_phone: null,
       submitted_from: String(global.location.href || "").slice(0, 500),
