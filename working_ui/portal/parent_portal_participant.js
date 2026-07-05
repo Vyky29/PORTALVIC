@@ -231,7 +231,7 @@
       "</div>" +
       '<div class="pp-hub-hero__info">' +
       '<div class="pp-hub-hero__info-head">' +
-      '<h4 class="pp-hub-hero__info-title">General information</h4>' +
+      '<h4 class="pp-hub-hero__info-title"><svg class="pp-hub-hero__info-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg><span>General information</span></h4>' +
       '<button type="button" class="pp-btn pp-btn--ghost pp-hub-edit-btn" data-pp-open-edit="general">Edit info</button>' +
       "</div>" +
       '<div class="pp-hub-hero__info-fields">' +
@@ -318,11 +318,6 @@
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
       }) +
-      infoBtnHtml(
-        "general",
-        "General Information",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>',
-      ) +
       infoBtnHtml(
         "booking",
         "Booking 2026/27",
