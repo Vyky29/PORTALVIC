@@ -368,7 +368,7 @@
     @media (min-width: 640px) {
       .re-slot-card {
         display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.2fr);
+        grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 0.9fr);
         gap: 16px;
         align-items: start;
       }
@@ -389,7 +389,13 @@
     .re-slot-col--service { text-align: center; }
     .re-slot-col--sessions { text-align: center; }
     .re-slot-col--choice { text-align: right; }
-    .re-slot-col--choice .re-radio { justify-content: flex-end; }
+    .re-slot-col--choice .re-radio {
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+    .re-slot-col--choice .re-radio__icon { order: 2; margin-top: 0; }
+    .re-slot-col--choice .re-radio input { order: 3; margin-top: 0; }
     .re-slot-intro { min-width: 0; margin-bottom: 0; }
     .re-slot-service-name {
       margin: 0;
