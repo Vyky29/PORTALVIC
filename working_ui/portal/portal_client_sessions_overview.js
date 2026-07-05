@@ -932,6 +932,13 @@
     );
   }
 
+  function achievementPhotoAspect(a) {
+    var w = Number(a && a.width) || 0;
+    var h = Number(a && a.height) || 0;
+    if (w > 0 && h > 0) return { w: w, h: h, landscape: w >= h };
+    return null;
+  }
+
   function achievementsGalleryHtml(items, opts) {
     var list = Array.isArray(items) ? items : [];
     var parentDownloads = !!(opts && opts.parentDownloads);
@@ -946,6 +953,16 @@
           var photoId = clean(a.id);
           var isDownloaded = String(a.status || "").toLowerCase() === "downloaded";
           var dlLabel = isDownloaded ? "Saved" : "Download";
+          var aspect = achievementPhotoAspect(a);
+          var itemClass =
+            "pp-ach-item" +
+            (aspect ? (aspect.landscape ? " pp-ach-item--landscape" : " pp-ach-item--portrait") : "");
+          var linkStyle = aspect
+            ? ' style="aspect-ratio:' + aspect.w + " / " + aspect.h + ';"'
+            : "";
+          var imgDims = aspect
+            ? ' width="' + aspect.w + '" height="' + aspect.h + '"'
+            : ' width="160" height="120"';
           var dlBtn = parentDownloads && photoId
             ? '<button type="button" class="pp-ach-dl-btn' +
               (isDownloaded ? " pp-ach-dl-btn--saved" : "") +
@@ -958,11 +975,26 @@
               "</button>"
             : "";
           return (
-            '<figure class="pp-ach-item" role="listitem">' +
-            '<a href="' + esc(a.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
-            '<img src="' + esc(a.url || "") + '" alt="Achievement photo, ' + esc(when) + '" loading="lazy" width="160" height="160" />' +
+            '<figure class="' +
+            itemClass +
+            '" role="listitem">' +
+            '<a href="' +
+            esc(a.url || "#") +
+            '" target="_blank" rel="noopener noreferrer"' +
+            linkStyle +
+            ">" +
+            '<img src="' +
+            esc(a.url || "") +
+            '" alt="Achievement photo, ' +
+            esc(when) +
+            '" loading="lazy"' +
+            imgDims +
+            ' />' +
             "</a>" +
-            '<figcaption class="pp-ach-cap">' + esc(when) + dlBtn + "</figcaption></figure>"
+            '<figcaption class="pp-ach-cap">' +
+            esc(when) +
+            dlBtn +
+            "</figcaption></figure>"
           );
         })
         .join("") +

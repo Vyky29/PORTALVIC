@@ -426,7 +426,7 @@ Deno.serve(async (req) => {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type")
           .in("status", [...PARENT_ACH_STATUSES])
           .in("client_id", clientSlugs)
           .order("session_date", { ascending: false })
@@ -437,7 +437,7 @@ Deno.serve(async (req) => {
       achQueries.push(
         supabase
           .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
+          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type")
           .in("status", [...PARENT_ACH_STATUSES])
           .ilike("client_name", nm)
           .order("session_date", { ascending: false })
@@ -474,6 +474,9 @@ Deno.serve(async (req) => {
           session_feedback_id: row.session_feedback_id,
           status: clean(row.status, 40),
           downloaded_at: row.parent_downloaded_at ? String(row.parent_downloaded_at) : null,
+          width: Number(row.width) > 0 ? Number(row.width) : null,
+          height: Number(row.height) > 0 ? Number(row.height) : null,
+          media_type: clean(row.media_type, 20) || "photo",
           url: signed.signedUrl,
         };
       }),

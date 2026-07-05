@@ -693,44 +693,73 @@
     return global.innerWidth > global.innerHeight;
   }
 
+  function deviceOrientationAngle() {
+    try {
+      if (
+        global.screen &&
+        global.screen.orientation &&
+        typeof global.screen.orientation.angle === "number"
+      ) {
+        return ((global.screen.orientation.angle % 360) + 360) % 360;
+      }
+    } catch (_e) {}
+    if (typeof global.orientation === "number" && !isNaN(global.orientation)) {
+      return ((global.orientation % 360) + 360) % 360;
+    }
+    return null;
+  }
+
+  /** Draw video frame upright — matches preview, including iOS landscape capture. */
+  function drawVideoFrameToCanvas(video, vw, vh, rotDeg, mirrorFront) {
+    rotDeg = ((Math.round(Number(rotDeg) || 0) % 360) + 360) % 360;
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    if (rotDeg === 90 || rotDeg === 270) {
+      canvas.width = vh;
+      canvas.height = vw;
+    } else {
+      canvas.width = vw;
+      canvas.height = vh;
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotDeg * Math.PI) / 180);
+    if (mirrorFront) ctx.scale(-1, 1);
+    ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
+    return canvas;
+  }
+
+  function captureRotationDegrees(video) {
+    var vw = video.videoWidth;
+    var vh = video.videoHeight;
+    if (!vw || !vh) return 0;
+
+    var videoLandscape = vw > vh;
+    var screenLandscape = deviceIsLandscape();
+    var angle = deviceOrientationAngle();
+
+    if (deviceIsIos()) {
+      if (angle === 0) return videoLandscape ? 270 : 0;
+      if (angle === 90) return videoLandscape ? 90 : 0;
+      if (angle === 180) return videoLandscape ? 90 : 180;
+      if (angle === 270) return videoLandscape ? 270 : 0;
+      if (videoLandscape && !screenLandscape) return 270;
+      if (!videoLandscape && screenLandscape) return 90;
+      return 0;
+    }
+
+    if (screenLandscape && !videoLandscape) return 90;
+    if (!screenLandscape && videoLandscape) return 270;
+    return 0;
+  }
+
   /** Draw video frame respecting how the user is holding the phone. */
   function captureCanvasFromVideo(video) {
     var vw = video.videoWidth;
     var vh = video.videoHeight;
     if (!vw || !vh) return null;
-
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    var videoLandscape = vw > vh;
-    var wantLandscape = deviceIsLandscape();
     var front = state.facingMode === "user";
-
-    if (wantLandscape && !videoLandscape) {
-      canvas.width = vh;
-      canvas.height = vw;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(Math.PI / 2);
-      if (front) ctx.scale(-1, 1);
-      ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
-    } else if (!wantLandscape && videoLandscape) {
-      canvas.width = vh;
-      canvas.height = vw;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(-Math.PI / 2);
-      if (front) ctx.scale(-1, 1);
-      ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
-    } else {
-      canvas.width = vw;
-      canvas.height = vh;
-      if (front) {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(video, 0, 0, vw, vh);
-    }
-    return canvas;
+    return drawVideoFrameToCanvas(video, vw, vh, captureRotationDegrees(video), front);
   }
 
   function triggerSnapFlash() {
@@ -1182,45 +1211,44 @@
     return encodeCanvasToJpeg(canvas);
   }
 
-  function resizeBlobToJpeg(blob) {
+  function loadOrientedImageSource(blob) {
     if (typeof createImageBitmap === "function") {
-      return createImageBitmap(blob)
-        .then(function (bitmap) {
-          return drawSourceToJpegCanvas(bitmap, bitmap.width, bitmap.height).finally(function () {
-            try {
-              bitmap.close();
-            } catch (_close) {}
-          });
+      return createImageBitmap(blob, { imageOrientation: "from-image" })
+        .catch(function () {
+          return createImageBitmap(blob);
         })
         .catch(function () {
-          return resizeBlobToJpegViaImage(blob);
+          return resizeBlobToJpegViaImageElement(blob);
         });
     }
-    return resizeBlobToJpegViaImage(blob);
+    return resizeBlobToJpegViaImageElement(blob);
   }
 
-  function resizeBlobToJpegViaImage(blob) {
+  function resizeBlobToJpegViaImageElement(blob) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
       var url = URL.createObjectURL(blob);
       img.onload = function () {
-        try {
-          drawSourceToJpegCanvas(img, img.naturalWidth || img.width, img.naturalHeight || img.height)
-            .then(resolve)
-            .catch(reject)
-            .finally(function () {
-              URL.revokeObjectURL(url);
-            });
-        } catch (err) {
-          URL.revokeObjectURL(url);
-          reject(err);
-        }
+        resolve(img);
+        URL.revokeObjectURL(url);
       };
       img.onerror = function () {
         URL.revokeObjectURL(url);
         reject(new Error("image_load_failed"));
       };
       img.src = url;
+    });
+  }
+
+  function resizeBlobToJpeg(blob) {
+    return loadOrientedImageSource(blob).then(function (source) {
+      var w = Number(source.width || source.naturalWidth) || 0;
+      var h = Number(source.height || source.naturalHeight) || 0;
+      return drawSourceToJpegCanvas(source, w, h).finally(function () {
+        try {
+          if (source && typeof source.close === "function") source.close();
+        } catch (_close) {}
+      });
     });
   }
 
