@@ -1891,11 +1891,19 @@
     var weeklyHtml = hasWeekly
       ? renderWeeklySlots(data.weekly_slots || [])
       : '<p class="re-muted">No weekly or weekend activities on file — contact the office if this is wrong.</p>';
+    var dcDecision = hasDc
+      ? '<div class="re-offer-block re-offer-block--dc">' +
+        "<h4>Your Day Centre (SwimFarm)</h4>" +
+        renderDayCentreBlock(data.day_centre) +
+        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
+        "</div>"
+      : "";
     return (
       '<section class="re-section re-section--services">' +
       reSectionTitle("h3", "services", primaryServiceSectionTitle(data)) +
       '<p class="re-muted">Your weekly and weekend activities · prices per session · term counts exclude bank holidays.</p>' +
       weeklyHtml +
+      dcDecision +
       "</section>"
     );
   }
@@ -1921,41 +1929,47 @@
     );
   }
 
-  function renderExtendedOfferSection(data) {
+  function renderOtherServicesInfoHtml(data) {
     var hasDc = hasDayCentreEnrolled(data);
-    var hasWeekly = hasWeeklySlots(data);
-    var dcBlock;
-    if (hasDc && hasWeekly) {
-      dcBlock =
-        '<div class="re-offer-block re-offer-block--dc">' +
-        "<h4>Your Day Centre (SwimFarm)</h4>" +
-        renderDayCentreBlock(data.day_centre) +
-        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
-        "</div>";
-    } else if (hasDc && !hasWeekly) {
-      dcBlock =
-        '<div class="re-offer-block">' +
-        "<h4>Day Centre (SwimFarm)</h4>" +
-        '<p class="re-muted">Weekday provision (Mon–Fri) at SwimFarm. Your 2026/27 choices are above.</p>' +
-        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
-        "</div>";
-    } else {
-      dcBlock =
+    var cards = "";
+    if (!hasDc) {
+      cards +=
         '<div class="re-offer-block">' +
         "<h4>Day Centre (SwimFarm)</h4>" +
         '<p class="re-muted">Weekday provision (Mon–Fri), separate from After-School &amp; Weekends. Contact the office if you would like to add Day Centre.</p>' +
         '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
         "</div>";
     }
-    return (
-      '<section class="re-section re-section--offer">' +
-      dcBlock +
+    cards +=
       '<div class="re-offer-block">' +
       "<h4>Intensive courses and camps</h4>" +
       '<p class="re-muted">Intensive swimming at Acton Centre, Monday–Thursday in the half terms. Booking is a separate form (coming soon).</p>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Intensive course dates</button>' +
-      "</div></section>"
+      "</div>";
+    return (
+      '<section class="re-section re-section--offer re-done-offer">' +
+      '<h3 class="re-done-offer__title">Other services you might like</h3>' +
+      '<p class="re-muted">These run separately from your re-enrolment, on their own dates.</p>' +
+      cards +
+      "</section>"
     );
+  }
+
+  function bindDoneOfferHandlers() {
+    var host = $("reDoneOffer");
+    if (!host) return;
+    var dcBtn = host.querySelector("#reDayCentreDatesBtn");
+    if (dcBtn) {
+      dcBtn.addEventListener("click", function () {
+        openStaffCalendarModal("Day Centre dates 2026/27", "dcCalDayCentrePanel");
+      });
+    }
+    var crashBtn = host.querySelector("#reCrashDatesBtn");
+    if (crashBtn) {
+      crashBtn.addEventListener("click", function () {
+        openStaffCalendarModal("Intensive course dates 2026/27", "dcCalCrashPanel");
+      });
+    }
   }
 
   var RE_DAY_CENTRE_DATES_2627 = [
@@ -2416,7 +2430,6 @@
       reSectionTitle("h3", "billing", "Funding &amp; billing 2026/27") +
       renderBilling2627Block(data) +
       "</section>" +
-      renderExtendedOfferSection(data) +
       "</div>" +
       '<section class="re-section re-declarations re-form-grid__submit">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
@@ -2610,6 +2623,11 @@
       }
       if ($("reDoneMsg")) {
         $("reDoneMsg").textContent = out.message || "Thank you — your re-enrolment has been sent to the club office.";
+      }
+      var offerHost = $("reDoneOffer");
+      if (offerHost) {
+        offerHost.innerHTML = renderOtherServicesInfoHtml(data);
+        bindDoneOfferHandlers();
       }
       setStep("done");
       global.scrollTo(0, 0);

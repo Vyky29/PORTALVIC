@@ -223,6 +223,8 @@
       overflow-wrap: break-word;
     }
     .re-offer-block .re-muted { margin: 0 0 8px; }
+    .re-done-offer { text-align: left; margin: 18px 0 8px; }
+    .re-done-offer__title { margin: 0 0 4px; font-size: 1rem; color: var(--ink); }
     .re-section--info { border-top: 1px dashed var(--line); padding-top: 12px; }
     .re-label { display: block; margin: 10px 0 4px; font-size: .88rem; font-weight: 700; color: var(--ink); }
     .re-input {
@@ -1475,6 +1477,7 @@
       <h2>Submitted</h2>
       <p id="reDoneMsg">Thank you — your re-enrolment has been sent to the club office.</p>
       <p class="re-muted">We will confirm places and any slot changes by email or message. Outstanding balances remain payable separately.</p>
+      <div id="reDoneOffer"></div>
       <a class="re-btn re-btn--primary" href="/parent/app">Open family portal</a>
     </section>
 
@@ -1486,6 +1489,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260705-preview-service-tones"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-total-withdraw"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-offer-after-submit"></script>
 </body>
 </html>
