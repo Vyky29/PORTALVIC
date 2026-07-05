@@ -119,7 +119,9 @@
    * (same markup/styles as the full calendar). For the re-enrolment lead card.
    */
   global.portalBuildCalendar202627AutumnPreview =
-    async function portalBuildCalendar202627AutumnPreview() {
+    async function portalBuildCalendar202627AutumnPreview(opts) {
+      var dayColors = (opts && opts.dayColors) || null;
+      var hasDayColors = !!(dayColors && Object.keys(dayColors).length);
       var html = await fetchCalendarSectionHtml();
       var doc = new DOMParser().parseFromString(html, "text/html");
       var root = doc.querySelector(".dc-cal");
@@ -150,11 +152,48 @@
       });
       panel.appendChild(art);
       wrap.appendChild(panel);
-      try {
-        global.portalMarkCalendar202627Highlights(wrap);
-      } catch (_) {}
+      if (hasDayColors) {
+        // Per-child preview: only the days this participant has booked keep a
+        // coloured background (one tone per service). Other running days lose
+        // their green background; closures / half term stay red.
+        try {
+          global.portalMarkPreviewSessionDays(wrap, dayColors);
+        } catch (_) {}
+      } else {
+        try {
+          global.portalMarkCalendar202627Highlights(wrap);
+        } catch (_) {}
+      }
       return wrap;
     };
+
+  /**
+   * Preview-only: recolour session cells for a single participant.
+   * dayColors maps a Monday-based weekday index (Mon=0 … Sun=6) to a CSS colour.
+   * Green (running) cells on a booked weekday get that colour; other green cells
+   * lose their background; red (closed / half-term) cells are untouched.
+   */
+  global.portalMarkPreviewSessionDays = function portalMarkPreviewSessionDays(root, dayColors) {
+    if (!root || !root.querySelectorAll) return;
+    var grids = root.querySelectorAll(".dc-cal-grid");
+    Array.prototype.forEach.call(grids, function (grid) {
+      var cells = grid.children;
+      for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        if (!cell || !cell.classList) continue;
+        if (!cell.classList.contains("dc-cal-cell--green")) continue;
+        var col = i % 7;
+        var bg = dayColors[col];
+        if (bg) {
+          cell.classList.add("dc-cal-cell--mine");
+          cell.style.background = bg;
+        } else {
+          cell.classList.remove("dc-cal-cell--green");
+          cell.classList.add("dc-cal-cell--open");
+        }
+      }
+    });
+  };
 
   async function importDocumentsModule() {
     var v = "20260702-html-cal";

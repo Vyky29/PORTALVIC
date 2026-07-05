@@ -452,6 +452,36 @@
     return String(raw).trim();
   }
 
+  // Palette used to tint each booked service — the same tone is shown as a
+  // legend dot next to the service and on that service's days in the preview.
+  var RE_SERVICE_TONES = [
+    "#1f9d63",
+    "#2d7fb8",
+    "#b4820b",
+    "#7c4dbf",
+    "#c2410c",
+  ];
+
+  function reDayNameToCol(day) {
+    var s = String(day || "").trim().toLowerCase().slice(0, 3);
+    var map = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
+    return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : null;
+  }
+
+  function reBuildServiceTones(slots) {
+    var items = [];
+    var colMap = {};
+    (slots || []).forEach(function (slot) {
+      var parts = formatCurrentServiceParts(slot);
+      if (!parts) return;
+      var tone = RE_SERVICE_TONES[items.length % RE_SERVICE_TONES.length];
+      var col = reDayNameToCol(slot && slot.day);
+      items.push({ service: parts.service, detail: parts.detail, tone: tone, col: col });
+      if (col != null && colMap[col] == null) colMap[col] = tone;
+    });
+    return { items: items, colMap: colMap };
+  }
+
   function renderCurrentArrangementsRefListHtml(data) {
     var cur = (data && data.current_arrangements_2526) || {};
     var rows = [];
@@ -471,11 +501,7 @@
       );
     }
     function addRefServicesBlock(slots) {
-      var items = [];
-      (slots || []).forEach(function (slot) {
-        var parts = formatCurrentServiceParts(slot);
-        if (parts) items.push(parts);
-      });
+      var items = reBuildServiceTones(slots).items;
       if (!items.length && cur.slot) {
         String(cur.slot)
           .split(" · ")
@@ -497,6 +523,11 @@
               '<li class="re-ref-service-item">' +
               '<span class="re-ref-service-name">' +
               esc(item.service) +
+              (item.tone
+                ? '<span class="re-ref-service-dot" style="background:' +
+                  item.tone +
+                  '" aria-hidden="true"></span>'
+                : "") +
               "</span>" +
               (item.detail
                 ? '<span class="re-ref-service-detail">' + esc(item.detail) + "</span>"
@@ -2253,8 +2284,11 @@
         }
       });
       if (typeof global.portalBuildCalendar202627AutumnPreview === "function") {
+        var previewTones = reBuildServiceTones(
+          (state.lookup && state.lookup.weekly_slots) || [],
+        );
         global
-          .portalBuildCalendar202627AutumnPreview()
+          .portalBuildCalendar202627AutumnPreview({ dayColors: previewTones.colMap })
           .then(function (node) {
             previewHost.innerHTML = "";
             previewHost.appendChild(node);

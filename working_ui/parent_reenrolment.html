@@ -184,6 +184,17 @@
       font-size: clamp(0.38rem, 1vw, 0.52rem);
       line-height: 1;
     }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-cell--open {
+      background: transparent !important;
+    }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-cell--open .dc-cal-day {
+      color: var(--muted);
+      opacity: .5;
+      font-weight: 600;
+    }
+    .re-dates-lead__preview .dc-cal--preview .dc-cal-cell--mine .dc-cal-day {
+      color: #fff;
+    }
     .re-dates-lead__preview .dc-cal--preview .dc-cal-term__info { margin-top: 12px; margin-bottom: 6px; }
     @media (min-width: 720px) {
       .re-dates-lead-grid {
@@ -642,6 +653,15 @@
       line-height: 1.35;
       color: var(--ink);
       overflow-wrap: break-word;
+    }
+    .re-ref-service-dot {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      margin-left: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, .06);
     }
     .re-ref-service-detail {
       display: block;
@@ -1400,8 +1420,8 @@
     </p>
   </main>
 
-  <script src="/portal/portal_calendar_2026_27.js?v=20260704-autumn-preview-v4"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260705-preview-service-tones"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-dd-monthly-term"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-preview-service-tones"></script>
 </body>
 </html>
