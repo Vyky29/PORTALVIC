@@ -350,6 +350,43 @@
     return "other";
   }
 
+  function attendanceIsAbsent(raw) {
+    var p = String(raw == null ? "" : raw).trim().toLowerCase();
+    if (!p) return false;
+    return (
+      p.charAt(0) === "n" ||
+      p.indexOf("absent") >= 0 ||
+      p.indexOf("did not") >= 0 ||
+      p === "dna"
+    );
+  }
+
+  function attendanceKpiHtml(list) {
+    var total = list.length;
+    if (!total) return '<p class="pcso-kpi-empty">No sessions yet.</p>';
+    var absent = 0;
+    list.forEach(function (r) {
+      if (attendanceIsAbsent(r.attendance)) absent++;
+    });
+    var present = total - absent;
+    var pct = Math.round((present / total) * 100);
+    var hi = "#4ade80";
+    var lo = "#15803d";
+    var track = "#ecfdf5";
+    var deg = Math.min(359.98, Math.round(pct * 3.6 * 10) / 10);
+    var bg =
+      deg <= 0.05
+        ? track
+        : "conic-gradient(from -90deg, " + lo + " 0deg, " + hi + " " + deg + "deg, " + track + " " + deg + "deg 360deg)";
+    return (
+      '<div class="pcso-emo-kpi">' +
+      '<div class="pcso-emo-donut" style="background:' + bg + '">' +
+      '<div class="pcso-emo-donut__inner">' + pct + "%</div></div>" +
+      '<div class="pcso-emo-kpi__lbl">Attended</div>' +
+      '<div class="pcso-emo-kpi__sub">' + present + " of " + total + " sessions</div></div>"
+    );
+  }
+
   function engagementGaugeHtml(list) {
     const vals = [];
     list.forEach(function (r) {
@@ -462,10 +499,19 @@
     );
   }
 
-  function kpiSlabHtml(feedback, termLabel) {
+  function kpiSlabHtml(feedback, termLabel, opts) {
     var term = clean(termLabel || TERM_LABEL);
+    var includeAttendance = !!(opts && opts.includeAttendance);
+    var attendanceCard = includeAttendance
+      ? '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
+        attendanceKpiHtml(feedback) +
+        "</article>"
+      : "";
     return (
-      '<div class="pcso-kpi-grid" role="region" aria-label="Session summary">' +
+      '<div class="pcso-kpi-grid' +
+      (includeAttendance ? " pcso-kpi-grid--4" : "") +
+      '" role="region" aria-label="Session summary">' +
+      attendanceCard +
       '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
       engagementGaugeHtml(feedback) +
       "</article>" +
@@ -629,28 +675,18 @@
       row.engagement_rating != null && row.engagement_rating !== ""
         ? esc(String(row.engagement_rating))
         : '<span class="muted">—</span>';
-    var msg = clean(row.parent_message);
-    var msgCell;
-    if (row.message_pending) {
-      msgCell = '<span class="pcso-pending" title="Review in progress">Preparing summary…</span>';
-    } else if (msg) {
-      msgCell = '<p class="pcso-parent-msg">' + esc(msg) + "</p>";
-    } else {
-      msgCell = '<span class="muted">—</span>';
-    }
     return (
       "<tr>" +
       '<td class="pcso-tbl__date">' +
       '<div class="pcso-tbl__date-main">' + esc(dateLine) + "</div>" +
-      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
       '<td class="pcso-tbl__svc">' +
       '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
+      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
-      '<td class="pcso-tbl__parent-msg">' + msgCell + "</td>" +
       "</tr>"
     );
   }
@@ -664,11 +700,10 @@
       '<table class="pcso-table pcso-table--parent">' +
       "<thead><tr>" +
       '<th scope="col" class="pcso-tbl__date">Date</th>' +
-      '<th scope="col" class="pcso-tbl__svc">Service</th>' +
+      '<th scope="col" class="pcso-tbl__svc">Service &amp; time</th>' +
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__parent-msg">Session summary</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
@@ -721,6 +756,7 @@
       service: clean(r.service),
       session_time: clean(r.session_time),
       completed_by_name: "",
+      attendance: clean(r.attendance),
       engagement_rating: r.engagement_rating,
       client_emotions: clean(r.client_emotions),
       engagement_patterns: clean(r.independence),
@@ -739,10 +775,9 @@
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = sessions.map(mapParentSessionRow);
     hostEl.innerHTML =
-      kpiSlabHtml(feedback, term) +
+      kpiSlabHtml(feedback, term, { includeAttendance: true }) +
       '<section class="pcso-feed-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4>' +
-      '<p class="pcso-feed-note">Summaries are prepared for families — internal staff notes are not shown.</p></div>' +
+      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4></div>' +
       parentFeedbackTableHtml(feedback) +
       "</section>" +
       (hideAchievements

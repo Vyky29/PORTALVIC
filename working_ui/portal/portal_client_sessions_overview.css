@@ -51,6 +51,9 @@ body.portal-sessions-overview-open{
   margin:0 0 10px;
   min-width:0;
 }
+.pcso-kpi-grid--4{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
 .pcso-kpi-card{
   border:1px solid rgba(23,50,71,.1);
   border-radius:12px;
@@ -260,6 +263,7 @@ body.portal-sessions-overview-open{
 
 @media (max-width: 420px) and (orientation: portrait){
   .pcso-kpi-grid{grid-template-columns:1fr;gap:8px}
+  .pcso-kpi-grid--4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 @media (max-width: 900px) and (orientation: portrait){
@@ -337,9 +341,13 @@ body.portal-force-landscape{
   white-space:pre-wrap;
 }
 .pcso-table--parent .pcso-tbl__date{
-  min-width:88px;
-  max-width:120px;
+  width:20%;
+  min-width:76px;
 }
+.pcso-table--parent .pcso-tbl__svc{width:34%}
+.pcso-table--parent .pcso-tbl__eng{width:11%}
+.pcso-table--parent .pcso-tbl__emo{width:16%}
+.pcso-table--parent .pcso-tbl__indep{width:19%}
 .pcso-tbl__date-main{
   font-weight:700;
   color:var(--ink,#173247);

@@ -692,7 +692,7 @@
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Engagement, emotions, independence and session summaries checked for families.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Attendance, engagement, emotions and independence across the term.</p>' +
         '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
