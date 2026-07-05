@@ -92,4 +92,46 @@
     tick();
   }
   bootstrapLiveMadreWhenReady();
+
+  // Keep already-open staff dashboards in sync with the live MADRE without a
+  // manual reload or logout. The refresh forces loadLiveMadre(), so tabs that
+  // stayed open pick up newer portal_madre_document revisions on tab focus and
+  // on a slow periodic backstop. A 60s min-gap avoids network spam.
+  function setupLiveMadreAutoRefresh() {
+    if (typeof document === "undefined") return;
+    var MIN_GAP_MS = 60 * 1000;
+    var PERIODIC_MS = 8 * 60 * 1000;
+    var lastAt = 0;
+    function supaClient() {
+      return (
+        (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client) || null
+      );
+    }
+    function maybeRefresh(force) {
+      try {
+        if (document.visibilityState !== "visible") return;
+        var client = supaClient();
+        if (!client) return;
+        var now = Date.now();
+        if (!force && now - lastAt < MIN_GAP_MS) return;
+        lastAt = now;
+        Promise.resolve(refreshPortalRosterRowsFromSupabase(client)).catch(
+          function () {}
+        );
+      } catch (_) {}
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") maybeRefresh(false);
+    });
+    window.addEventListener("focus", function () {
+      maybeRefresh(false);
+    });
+    window.addEventListener("pageshow", function (ev) {
+      if (ev && ev.persisted) maybeRefresh(true);
+    });
+    setInterval(function () {
+      maybeRefresh(false);
+    }, PERIODIC_MS);
+  }
+  setupLiveMadreAutoRefresh();
 })();
