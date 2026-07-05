@@ -882,15 +882,29 @@
     /* Second-row buttons: corporate-yellow icon, black caption, white card. */
     .pp-pax-info-btn--accent .pp-pax-info-icon { color: #f4b740; }
     .pp-pax-info-btn--accent .pp-pax-info-caption { color: var(--ink); }
-    /* Bottom row now holds four buttons (Sessions, Achievements, Swim, Team). */
+    /* Bottom row: Team, Sessions, Achievements, Swim. */
     .pp-pax-info-row--sessions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* Top row: Messages + Booking — same tile size as row 2, centred as a pair. */
     .pp-pax-info-row--parents {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      max-width: min(100%, 520px);
-      margin-inline: auto;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
+      min-width: 0;
+    }
+    .pp-pax-info-row--parents .pp-pax-info-btn {
+      flex: 0 1 calc((100% - 10px) / 2);
+      width: calc((100% - 10px) / 2);
+      max-width: calc((100% - 10px) / 2);
     }
     @media (min-width: 560px) {
       .pp-pax-info-row--sessions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pp-pax-info-row--parents .pp-pax-info-btn {
+        flex: 0 1 calc((100% - 30px) / 4);
+        width: calc((100% - 30px) / 4);
+        max-width: calc((100% - 30px) / 4);
+      }
     }
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
