@@ -1,5 +1,7 @@
 /** Re-enrolment 2026/27 — service catalogue, session counts, parsing. */
 
+import { canonicalParticipantClientId } from "./participant_identity.ts";
+
 export const REENROL_ACADEMIC_YEAR = "2026-27";
 
 export const SESSION_COUNTS = {
@@ -117,8 +119,117 @@ function normalizeServiceSegment(raw: string): string {
 
 function stripServiceToken(raw: string): string {
   return String(raw || "")
+    .replace(/^[_\s'']+|[_\s'']+$/g, "")
     .replace(/^['''\s]+|['''\s]+$/g, "")
     .trim();
+}
+
+/** Spreadsheet / LA codes → canonical service type for labels and pricing. */
+export function canonicalizeServiceTypeToken(raw: string): string {
+  const t = normalizeServiceType(raw);
+  if (!t) return t;
+  if (t === "SW" || t.includes("AQUATIC") || t.includes("SWIM")) return "AQUATIC ACTIVITY";
+  if (t === "CL" || t.includes("CLIMB")) return "CLIMBING ACTIVITY";
+  if (
+    t === "S&C" ||
+    t === "S & C" ||
+    t.includes("S&C") ||
+    (t.includes("SPLASH") && t.includes("CONNECT")) ||
+    t.includes("MULTI") ||
+    t === "MA"
+  ) {
+    return "MULTI-ACTIVITY";
+  }
+  if (t === "BS" || t.includes("BESPOKE") || t.includes("FITFUN")) return "BESPOKE PROGRAMME";
+  if (t.includes("PHYSICAL") || t.includes("FITNESS") || t === "FIT") return "PHYSICAL ACTIVITY";
+  if (t.includes("COUNSEL")) return "COUNSELLING";
+  return t;
+}
+
+function slotDedupeKey(slot: ParsedSlot): string {
+  return `${slot.day}|${normalizeServiceType(slot.serviceType)}`;
+}
+
+const DAY_ORDER = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+export function sortWeeklySlotsByDay(slots: ParsedSlot[]): ParsedSlot[] {
+  return [...slots].sort((a, b) => {
+    const ai = DAY_ORDER.indexOf(a.day);
+    const bi = DAY_ORDER.indexOf(b.day);
+    const aOrd = ai < 0 ? 99 : ai;
+    const bOrd = bi < 0 ? 99 : bi;
+    if (aOrd !== bOrd) return aOrd - bOrd;
+    return String(a.serviceType || "").localeCompare(String(b.serviceType || ""));
+  });
+}
+
+function normalizeParsedSlotService(slot: ParsedSlot): ParsedSlot {
+  const serviceType = canonicalizeServiceTypeToken(slot.serviceType);
+  const durationMin =
+    serviceType.includes("MULTI") && (!slot.durationMin || slot.durationMin < 60)
+      ? 90
+      : serviceType.includes("AQUATIC") && (!slot.durationMin || slot.durationMin > 45)
+      ? 30
+      : slot.durationMin;
+  const price = slot.pricePerSession ?? unitPriceFor(serviceType, durationMin);
+  const out: ParsedSlot = {
+    ...slot,
+    serviceType,
+    durationMin,
+    pricePerSession: price,
+    termTotals: termTotals(price, slot.sessions),
+    displayLabel: undefined,
+  };
+  out.displayLabel = buildSlotDisplayLabel(out);
+  return out;
+}
+
+/** Roster defines days/services; payment rows supply pricing when they match. */
+export function mergeWeeklySlotsFromRosterAndPayment(
+  participantName: string,
+  rosterSlots: ParsedSlot[],
+  paymentSlots: ParsedSlot[],
+  rosterRows: Array<{
+    client_name?: string;
+    day?: string;
+    time_slot?: string;
+    service?: string;
+    venue?: string;
+    instructors?: string;
+  }>,
+): ParsedSlot[] {
+  const normalizedPayment = (paymentSlots || []).map(normalizeParsedSlotService);
+  let merged = (rosterSlots || []).map(normalizeParsedSlotService);
+
+  if (!merged.length && normalizedPayment.length) {
+    merged = normalizedPayment;
+  } else if (merged.length && normalizedPayment.length) {
+    merged = merged.map((slot) => {
+      const payMatch = normalizedPayment.find((p) =>
+        serviceTypesMatch(slot.serviceType, p.serviceType) &&
+        (!p.day || !slot.day || normalizeDay(p.day) === slot.day)
+      );
+      if (!payMatch || payMatch.pricePerSession == null) return slot;
+      return normalizeParsedSlotService({
+        ...slot,
+        pricePerSession: payMatch.pricePerSession,
+        termTotals: payMatch.termTotals,
+      });
+    });
+  }
+
+  if (merged.length && rosterRows.length) {
+    merged = enrichWeeklySlotsFromRoster(participantName, merged, rosterRows);
+  }
+  return sortWeeklySlotsByDay(merged);
 }
 
 function parseOneSegment(segment: string, index: number): ParsedSlot | null {
@@ -208,9 +319,7 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
   }
 
   const durationMin = Number(m[1]) || 30;
-  let serviceType = normalizeServiceType(stripServiceToken(m[2]));
-  if (serviceType === "SW") serviceType = "AQUATIC ACTIVITY";
-  if (serviceType === "CL") serviceType = "CLIMBING ACTIVITY";
+  let serviceType = canonicalizeServiceTypeToken(stripServiceToken(m[2]));
 
   const dayRaw = m[3] || "";
   const dayPart = dayRaw.split(/[/+&·]/)[0]?.trim() || dayRaw;
@@ -242,8 +351,16 @@ export function formatServiceTypeLabel(serviceType: string): string {
   if (t.includes("AQUATIC") || t === "SW") return "Aquatic Activity";
   if (t.includes("CLIMB") || t === "CL") return "Climbing Activity";
   if (t.includes("PHYSICAL") || t.includes("FITNESS")) return "Physical Activity";
-  if (t.includes("BESPOKE")) return "Bespoke Programme";
-  if (t.includes("MULTI")) return "Multi-Activity";
+  if (t.includes("BESPOKE") || t === "BS") return "Bespoke Programme";
+  if (t.includes("MULTI") || t === "MA") return "Multi-Activity";
+  if (
+    t === "S&C" ||
+    t === "S & C" ||
+    t.includes("S&C") ||
+    (t.includes("SPLASH") && t.includes("CONNECT"))
+  ) {
+    return "Multi-Activity";
+  }
   if (t.includes("COUNSEL")) return "Counselling";
   return t
     .split(" ")
@@ -403,6 +520,9 @@ export function namesMatch(want: string, got: string): boolean {
     if (wt.length === 1 || gt.length === 1) return true;
     if (wt[wt.length - 1] === gt[gt.length - 1]) return true;
   }
+  const wSlug = canonicalParticipantClientId(want);
+  const gSlug = canonicalParticipantClientId(got);
+  if (wSlug && gSlug && wSlug === gSlug) return true;
   return false;
 }
 
@@ -513,9 +633,9 @@ export function weeklySlotsFromRosterRows(
     if (st.includes("CLIMB") || st === "CL") {
       durationMin = 60;
       serviceType = "CLIMBING ACTIVITY";
-    } else if (st.includes("MULTI")) {
+    } else if (st.includes("MULTI") || st.includes("S&C") || st === "S & C") {
       durationMin = 90;
-      serviceType = "MULTI SENSORY ACTIVITY";
+      serviceType = "MULTI-ACTIVITY";
     } else if (st.includes("BESPOKE")) {
       durationMin = 60;
       serviceType = "BESPOKE PROGRAMME";
@@ -529,9 +649,10 @@ export function weeklySlotsFromRosterRows(
       durationMin = 30;
       serviceType = "AQUATIC ACTIVITY";
     } else {
-      serviceType = st;
+      serviceType = canonicalizeServiceTypeToken(st);
     }
-    const key = `${day}|${normalizeServiceType(serviceType)}`;
+    serviceType = canonicalizeServiceTypeToken(serviceType);
+    const key = slotDedupeKey({ day, serviceType } as ParsedSlot);
     if (seen.has(key)) continue;
     seen.add(key);
     const isWeekend = WEEKEND_DAYS.has(day);

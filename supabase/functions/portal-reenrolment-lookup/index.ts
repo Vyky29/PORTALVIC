@@ -12,6 +12,7 @@ import {
   ageMatchesInput,
   annualTotalForWeekly,
   buildCurrentArrangements2526,
+  mergeWeeklySlotsFromRosterAndPayment,
   enrichWeeklySlotsFromRoster,
   namesMatch,
   normalizePersonName,
@@ -20,7 +21,11 @@ import {
   REENROL_ACADEMIC_YEAR,
   weeklySlotsFromRosterRows,
 } from "../_shared/reenrolment_catalog.ts";
-import { participantIdentityMatches } from "../_shared/participant_identity.ts";
+import {
+  canonicalParticipantClientId,
+  participantIdentityMatches,
+  resolveParticipantLookupNames,
+} from "../_shared/participant_identity.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 
 const CRASH_INFO = {
@@ -184,21 +189,34 @@ Deno.serve(async (req) => {
   });
 
   const participantDisplayName = String(participantRow.display_name || "");
-  let weeklySlots = paymentCtx?.weeklySlots || [];
+  const paymentWeeklySlots = paymentCtx?.weeklySlots || [];
   let rosterRows: Awaited<ReturnType<typeof fetchRosterRowsForParticipant>> = [];
   try {
-    rosterRows = await fetchRosterRowsForParticipant(supabase, participantDisplayName);
+    rosterRows = await fetchRosterRowsForParticipant(supabase, participantDisplayName, participantRow);
   } catch (err) {
     console.error("[portal-reenrolment-lookup] roster fetch", err);
   }
-  if (weeklySlots.length && rosterRows.length) {
-    try {
-      weeklySlots = enrichWeeklySlotsFromRoster(participantDisplayName, weeklySlots, rosterRows);
-    } catch (err) {
-      console.error("[portal-reenrolment-lookup] roster enrich", err);
+  let weeklySlots = paymentWeeklySlots;
+  try {
+    const rosterSlots = rosterRows.length
+      ? weeklySlotsFromRosterRows(participantDisplayName, rosterRows)
+      : [];
+    if (rosterSlots.length) {
+      weeklySlots = mergeWeeklySlotsFromRosterAndPayment(
+        participantDisplayName,
+        rosterSlots,
+        paymentWeeklySlots,
+        rosterRows,
+      );
+    } else if (paymentWeeklySlots.length && rosterRows.length) {
+      weeklySlots = enrichWeeklySlotsFromRoster(
+        participantDisplayName,
+        paymentWeeklySlots,
+        rosterRows,
+      );
     }
-  } else if (!weeklySlots.length && rosterRows.length) {
-    weeklySlots = weeklySlotsFromRosterRows(participantDisplayName, rosterRows);
+  } catch (err) {
+    console.error("[portal-reenrolment-lookup] roster merge", err);
   }
   const annualWeeklyTotal = annualTotalForWeekly(weeklySlots);
   const dayCentreSlots = paymentCtx?.dayCentreSlots || [];
@@ -349,20 +367,49 @@ async function findPaymentContext(
 async function fetchRosterRowsForParticipant(
   supabase: ReturnType<typeof createClient>,
   participantName: string,
+  participantRow?: Record<string, unknown>,
 ) {
-  const firstToken = normalizePersonName(participantName).split(" ")[0] || "";
-  if (!firstToken || firstToken.length < 2) return [];
+  const identity = {
+    displayName: participantName,
+    firstName: String(participantRow?.first_name || participantName.split(/\s+/)[0] || ""),
+    lastName: String(participantRow?.last_name || ""),
+    contactId: String(participantRow?.contact_id || ""),
+  };
+  const prefixes = new Set<string>();
+  for (const nm of resolveParticipantLookupNames(identity)) {
+    const tok = normalizePersonName(nm).split(" ")[0] || "";
+    if (tok.length >= 2) prefixes.add(tok);
+  }
+  const slugTok = canonicalParticipantClientId(participantName).split("_")[0] || "";
+  if (slugTok.length >= 2) prefixes.add(slugTok);
 
-  const { data } = await supabase
-    .from("portal_roster_rows")
-    .select("client_name, day, time_slot, service, venue, instructors")
-    .eq("status", "active")
-    .ilike("client_name", `${firstToken}%`)
-    .gte("session_date", "2026-01-01")
-    .order("session_date", { ascending: false })
-    .limit(250);
+  if (!prefixes.size) return [];
 
-  return (data || []).filter((row) =>
-    namesMatch(participantName, String(row.client_name || ""))
-  );
+  const seenRow = new Set<string>();
+  const merged: Array<Record<string, unknown>> = [];
+  for (const prefix of [...prefixes].slice(0, 5)) {
+    const { data } = await supabase
+      .from("portal_roster_rows")
+      .select("client_name, day, time_slot, service, venue, instructors")
+      .eq("status", "active")
+      .ilike("client_name", `${prefix}%`)
+      .gte("session_date", "2026-01-01")
+      .order("session_date", { ascending: false })
+      .limit(250);
+
+    for (const row of data || []) {
+      const name = String(row.client_name || "");
+      const key = `${name}|${row.day}|${row.time_slot}|${row.service}`;
+      if (seenRow.has(key)) continue;
+      if (
+        !participantIdentityMatches(identity, name, name) &&
+        !namesMatch(participantName, name)
+      ) {
+        continue;
+      }
+      seenRow.add(key);
+      merged.push(row);
+    }
+  }
+  return merged;
 }

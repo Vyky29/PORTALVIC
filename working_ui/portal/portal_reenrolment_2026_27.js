@@ -412,10 +412,10 @@
       .trim()
       .toUpperCase();
     if (t.includes("AQUATIC") || t === "SW") return "Aquatic Activity";
-    if (t.includes("MULTI")) return "Multi-Activity";
+    if (t.includes("MULTI") || t === "S&C" || t === "S & C" || t.includes("S&C")) return "Multi-Activity";
     if (t.includes("CLIMB") || t === "CL") return "Climbing Activity";
-    if (t.includes("PHYSICAL") || t.includes("FITNESS")) return "Physical Activity";
-    if (t.includes("BESPOKE")) return "Bespoke Programme";
+    if (t.includes("PHYSICAL") || t.includes("FITNESS") || t === "FIT") return "Physical Activity";
+    if (t.includes("BESPOKE") || t === "BS") return "Bespoke Programme";
     if (t.includes("COUNSEL")) return "Counselling";
     return String(serviceType || "")
       .trim()

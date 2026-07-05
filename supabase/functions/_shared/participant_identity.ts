@@ -10,6 +10,7 @@ export function slugifyParticipantKey(raw: string): string {
 
 const ROSTER_SPELLING_ALIASES: Record<string, string> = {
   aadam_ah: "adaam_ah",
+  aadam_ahmed: "adaam_ah",
   abodi_p: "abodi_pa",
   adam_pi: "adam_p",
   amar_ra: "amar_rai",
