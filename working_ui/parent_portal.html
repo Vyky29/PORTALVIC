@@ -828,6 +828,27 @@
     }
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
+    .pp-hub-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .pp-hub-hero .pp-pax-photo {
+      width: 96px;
+      height: 96px;
+      border-width: 3px;
+    }
+    .pp-hub-hero .pp-pax-photo--init { font-size: 28px; }
+    .pp-hub-hero__name {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
     .pp-team-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -1340,7 +1361,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-hub-title"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-hub-hero"></script>
   <script src="/portal/parent_portal_app.js?v=20260705-hub-title"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

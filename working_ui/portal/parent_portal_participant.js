@@ -218,6 +218,17 @@
     return chips.join("");
   }
 
+  function hubHeroHtml(data) {
+    var p = data.participant || {};
+    return (
+      '<header class="pp-hub-hero">' +
+      participantPhotoHtml(p) +
+      '<h3 class="pp-hub-hero__name">' +
+      esc(p.display_name || "Participant") +
+      "</h3></header>"
+    );
+  }
+
   function heroHtml(data) {
     var p = data.participant || {};
     return (
@@ -425,7 +436,7 @@
     void ensureClientsInfoEmbedLoaded();
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
-      heroHtml(data) +
+      hubHeroHtml(data) +
       infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
