@@ -246,25 +246,54 @@ body.portal-sessions-overview-open{
 }
 
 .pcso-ind-bars{
-  display:flex;align-items:flex-start;justify-content:center;gap:6px;
-  min-height:72px;flex:1;padding-top:4px;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  gap:6px;
+  flex:1;
+  min-height:0;
+  width:100%;
 }
 .pcso-ind-bar{
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  min-width:0;flex:1;max-width:48px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:0;
+  flex:1;
+  max-width:48px;
+  min-height:0;
 }
 .pcso-ind-bar__pct{
-  font-size:9px;font-weight:700;color:var(--ink);margin-bottom:3px;
-  min-height:1.1em;line-height:1.1;
+  font-size:9px;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:3px;
+  min-height:1.1em;
+  line-height:1.1;
+  flex-shrink:0;
 }
 .pcso-ind-bar__track{
-  width:100%;height:44px;background:rgba(23,50,71,.06);border-radius:6px 6px 4px 4px;
-  display:flex;align-items:flex-end;overflow:hidden;flex-shrink:0;
+  width:100%;
+  flex:1;
+  min-height:44px;
+  background:rgba(23,50,71,.06);
+  border-radius:6px 6px 4px 4px;
+  display:flex;
+  align-items:flex-end;
+  overflow:hidden;
 }
 .pcso-ind-bar__fill{width:100%;border-radius:4px 4px 0 0;min-height:0}
 .pcso-ind-bar__lbl{
-  margin-top:4px;font-size:8px;line-height:1.15;text-align:center;color:var(--muted);
-  overflow-wrap:break-word;min-width:0;min-height:2.3em;display:block;
+  margin-top:4px;
+  font-size:8px;
+  line-height:1.15;
+  text-align:center;
+  color:var(--muted);
+  overflow-wrap:break-word;
+  min-width:0;
+  min-height:2.3em;
+  display:block;
+  flex-shrink:0;
 }
 
 /* Feedback table — fit full width on mobile (no horizontal scroll) */
@@ -398,8 +427,7 @@ body.portal-sessions-overview-open{
   .pcso-gauge__tick{font-size:8px}
   .pcso-emo-donut{width:44px;height:44px}
   .pcso-emo-donut__inner{width:28px;height:28px;font-size:10px}
-  .pcso-ind-bars{min-height:58px}
-  .pcso-ind-bar__track{height:36px}
+  .pcso-ind-bar__track{min-height:36px}
   .pcso-table th,.pcso-table td{padding:5px 3px}
 }
 
@@ -777,6 +805,25 @@ body.portal-force-landscape{
   overflow:visible;
   text-overflow:clip;
   line-height:1.1;
+}
+.pp-participant-body .pcso-kpi-card--indep{
+  min-height:0;
+}
+.pp-participant-body .pcso-ind-bars{
+  align-items:stretch;
+  flex:1;
+  min-height:0;
+}
+.pp-participant-body .pcso-ind-bar{
+  height:100%;
+}
+.pp-participant-body .pcso-ind-bar__track{
+  flex:1;
+  min-height:56px;
+  height:auto;
+}
+.pp-participant-body .pcso-ind-bar__lbl{
+  min-height:2.4em;
 }
 .pp-participant-body .pcso-table-wrap{
   overflow-x:auto;

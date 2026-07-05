@@ -705,6 +705,34 @@ button{
     if(!typed || !ctxName) return false;
     return slugify(typed) !== slugify(ctxName);
   }
+  function incidentUsesSlotLateGate(){
+    if(getIncidentSubjectType() === "staff") return false;
+    if(incidentParticipantOverridden()) return false;
+    return !!clean(context.portalSessionKey);
+  }
+  function readIncidentFormValue(fd, name){
+    const isStaff = getIncidentSubjectType() === "staff";
+    if(name === "incidentTime"){
+      const el = isStaff ? document.getElementById("myselfIncidentTime") : document.getElementById("incidentTime");
+      return el ? clean(el.value) : (fd ? clean(fd.get("incidentTime")) : "");
+    }
+    if(name === "participantManual"){
+      const el = isStaff ? document.getElementById("myselfParticipant") : document.getElementById("participantManual");
+      return el ? clean(el.value) : (fd ? clean(fd.get("participantManual")) : "");
+    }
+    if(name === "statementDuring"){
+      const el = isStaff ? document.getElementById("myselfWhatHappened") : document.getElementById("statementDuring");
+      return el ? clean(el.value) : (fd ? clean(fd.get("statementDuring")) : "");
+    }
+    return fd ? clean(fd.get(name)) : "";
+  }
+  async function incidentLateApproved(sessionDateIso){
+    if(typeof portalIsPastSessionDateIso !== "function") return true;
+    if(!portalIsPastSessionDateIso(sessionDateIso)) return true;
+    if(!incidentUsesSlotLateGate()) return true;
+    if(typeof portalFormLateSubmissionApproved !== "function") return false;
+    return !!(await portalFormLateSubmissionApproved(clean(context.portalSessionKey), "incident"));
+  }
   function onParticipantManualChanged(){
     ensureIncidentSessionDateHiddenInput(null);
     if(incidentParticipantOverridden()){
@@ -1381,7 +1409,7 @@ button{
   async function syncIncidentLateApprovalBanner(iso){
     const banner = document.getElementById("portalLateApprovalBanner");
     if(!banner || typeof portalIsPastSessionDateIso !== "function") return;
-    if(!portalIsPastSessionDateIso(iso)){
+    if(!incidentUsesSlotLateGate() || !portalIsPastSessionDateIso(iso)){
       banner.hidden = true;
       banner.textContent = "";
       return;
@@ -1661,11 +1689,11 @@ button{
     }
     if(!resolveIncidentService(fd)) missing.push("service");
     if(!/^\d{4}-\d{2}-\d{2}$/.test(resolveIncidentSessionDate(fd))) missing.push("session date");
-    if(!normalizeIncidentTimeForSubmit(fd.get("incidentTime"))) missing.push("time of incident (HH:MM)");
+    if(!normalizeIncidentTimeForSubmit(readIncidentFormValue(fd, "incidentTime"))) missing.push("time of incident (HH:MM)");
     if(isStaff){
-      if(!clean(fd.get("statementDuring"))) missing.push("what happened");
+      if(!readIncidentFormValue(fd, "statementDuring")) missing.push("what happened");
     }else{
-      if(!clean(fd.get("participantManual"))) missing.push("participant name");
+      if(!readIncidentFormValue(fd, "participantManual")) missing.push("participant name");
       if(!clean(fd.get("incidentCategory"))) missing.push("incident category");
     }
     if(!allowPin && !clean(context.submittedByUserId)) missing.push("authenticated staff user");
@@ -1808,14 +1836,9 @@ button{
       return;
     }
     const sessionDatePre = resolveIncidentSessionDate(null);
-    if(typeof portalIsPastSessionDateIso === "function" && portalIsPastSessionDateIso(sessionDatePre)){
-      const okLate = typeof portalFormLateSubmissionApproved === "function"
-        ? await portalFormLateSubmissionApproved(clean(context.portalSessionKey), "incident")
-        : false;
-      if(!okLate){
-        alert("Admin approval is required for a late incident report on this session date. Request it from your dashboard first.");
-        return;
-      }
+    if(!(await incidentLateApproved(sessionDatePre))){
+      alert("Admin approval is required for a late incident report on this session date. Request it from your dashboard first.");
+      return;
     }
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting";
@@ -1840,7 +1863,7 @@ button{
 
       const isStaffSubject = getIncidentSubjectType() === "staff";
       const participantChanged = incidentParticipantOverridden();
-      const clientName = clean(fd.get("participantManual")) || null;
+      const clientName = readIncidentFormValue(fd, "participantManual") || null;
       const service = resolveIncidentService(fd);
       const sessionDate = resolveIncidentSessionDate(fd);
       const notifyFlag = false;
@@ -1855,10 +1878,12 @@ button{
           : (participantChanged
             ? (slugify(clientName) || clean(context.clientId) || null)
             : (clean(context.clientId) || slugify(clientName) || null)),
-        client_name: isStaffSubject ? (clientName || null) : (clientName || ""),
+        client_name: isStaffSubject
+          ? (clientName || clean(context.submittedByName) || "Staff incident")
+          : (clientName || ""),
         session_date: sessionDate,
-        session_time: isStaffSubject ? null : (clean(context.sessionTime) || null),
-        incident_time: normalizeIncidentTimeForSubmit(fd.get("incidentTime")),
+        session_time: isStaffSubject || participantChanged ? null : (clean(context.sessionTime) || null),
+        incident_time: normalizeIncidentTimeForSubmit(readIncidentFormValue(fd, "incidentTime")),
         service: service,
         location: clean(fd.get("incidentLocation")) || null,
         portal_session_key: isStaffSubject || participantChanged ? null : (clean(context.portalSessionKey) || null),
@@ -1866,7 +1891,7 @@ button{
         staff_involved: clean(fd.get("staffInvolved")) || null,
         witness: clean(fd.get("witness")) || null,
         statement_before: clean(fd.get("statementBefore")) || null,
-        statement_during: clean(fd.get("statementDuring")) || null,
+        statement_during: readIncidentFormValue(fd, "statementDuring") || null,
         statement_after: clean(fd.get("statementAfter")) || null,
         injuries_client: clean(fd.get("injuriesClient")) || null,
         injuries_staff: clean(fd.get("injuriesStaff")) || null,
