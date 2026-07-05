@@ -27,6 +27,7 @@ import {
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
+  slugifyParticipantKey,
 } from "../_shared/participant_identity.ts";
 import {
   buildParentAttendanceSummary,
@@ -151,6 +152,91 @@ function canonicalProgrammeName(raw: unknown): string {
   if (/\bclimb(ing)?\b/.test(p)) return "Climbing Activity";
   if (/\baquatic|swim|pool/.test(p)) return "Aquatic Activity";
   return t.length > 48 ? t.slice(0, 45) + "…" : t;
+}
+
+const DAY_ORDER: Record<string, number> = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+};
+
+/** Minutes-from-midnight of a "4.30 to 5.15" style slot start, for stable ordering. */
+function slotStartMinutes(raw: unknown): number {
+  const first = clean(raw, 40).split(/to|-|—/i)[0] || "";
+  const m = first.trim().match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+  if (!m) return 9999;
+  return parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+}
+
+/**
+ * Parent-safe services list from the roster-review snapshot (portal_participant_service_lines).
+ * Each roster line becomes one entry: "90' Multi-Activity · Sunday · 12.30 to 1.15".
+ * Instructor / venue / area are intentionally omitted for the parent view.
+ */
+function buildServicesDetail(sessions: unknown): Array<{ label: string; day: string; time: string }> {
+  const list = Array.isArray(sessions) ? sessions : [];
+  return list
+    .map((raw) => {
+      const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+      const svc = clean(s.service, 80) || "Service";
+      const dur = Number(s.durationMin);
+      const label = Number.isFinite(dur) && dur > 0 ? `${dur}' ${svc}` : svc;
+      return { label, day: clean(s.day, 20), time: clean(s.timeSlot, 40) };
+    })
+    .sort((a, b) => {
+      const da = DAY_ORDER[a.day.toLowerCase()] || 8;
+      const db = DAY_ORDER[b.day.toLowerCase()] || 8;
+      if (da !== db) return da - db;
+      return slotStartMinutes(a.time) - slotStartMinutes(b.time);
+    });
+}
+
+/**
+ * Look up the child's roster-review service snapshot. Keyed by the same canonical
+ * participant slug used across the portal (participant_identity.ts) so spelling
+ * variants (e.g. "Aadam Ahmed" ↔ roster "Adaam Ah") still resolve.
+ */
+async function fetchRosterServiceLines(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+): Promise<{ count: number; detail: Array<{ label: string; day: string; time: string }> } | null> {
+  const slugs = [
+    ...new Set(
+      resolveParticipantClientSlugs(identityInput)
+        .map((s) => slugifyParticipantKey(s))
+        .filter(Boolean),
+    ),
+  ];
+  if (!slugs.length) return null;
+
+  const { data, error } = await supabase
+    .from("portal_participant_service_lines")
+    .select("client_name, sessions, services_count")
+    .in("client_key", slugs)
+    .limit(6);
+
+  if (error) {
+    console.error("[parent-portal-participant-detail] service lines error", error);
+    return null;
+  }
+
+  let best: Record<string, unknown> | null = null;
+  for (const row of data || []) {
+    if (!best || Number(row.services_count || 0) > Number(best.services_count || 0)) best = row;
+  }
+  if (!best) return null;
+
+  const detail = buildServicesDetail(best.sessions);
+  return { count: detail.length || Number(best.services_count || 0), detail };
 }
 
 function formatDobDisplay(iso: unknown): string {
@@ -521,6 +607,18 @@ Deno.serve(async (req) => {
 
   const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
 
+  // Roster-review service snapshot: the parent-facing "number of services" must match the
+  // roster (admin roster review), not what happens to have feedback. Loaded for the hub (general).
+  let rosterServicesCount = 0;
+  let rosterServicesDetail: Array<{ label: string; day: string; time: string }> = [];
+  if (wantGeneral) {
+    const lines = await fetchRosterServiceLines(supabase, identityInput);
+    if (lines) {
+      rosterServicesCount = lines.count;
+      rosterServicesDetail = lines.detail;
+    }
+  }
+
   let reenrolmentSummary = buildReenrolmentParentSummary(null, null);
   if (wantGeneral) {
     const { data: reenrolRow } = await supabase
@@ -609,6 +707,8 @@ Deno.serve(async (req) => {
       },
       general: {
         services,
+        services_count: rosterServicesCount,
+        services_detail: rosterServicesDetail,
         has_aquatics: hasAquatics,
         aquatic_only_no_photos: aquaticOnlyNoPhotos,
         term_label: TERM_LABEL,

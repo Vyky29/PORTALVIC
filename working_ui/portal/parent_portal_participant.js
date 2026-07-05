@@ -575,6 +575,44 @@
     );
   }
 
+  function servicesCardHtml(data) {
+    var g = (data && data.general) || {};
+    var detail = Array.isArray(g.services_detail) ? g.services_detail : [];
+    var count = Number(g.services_count || detail.length || 0);
+    // No roster-review snapshot for this child yet — don't show an empty/confusing card.
+    if (!count && !detail.length) return "";
+    var svcIco =
+      '<svg class="pp-services__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+    var items = detail.length
+      ? detail
+          .map(function (s) {
+            var when = [s.day, s.time].filter(Boolean).join(" · ");
+            return (
+              '<div class="pp-services__item">' +
+              '<span class="pp-services__name">' +
+              esc(s.label || "Service") +
+              "</span>" +
+              (when ? '<span class="pp-services__when">' + esc(when) + "</span>" : "") +
+              "</div>"
+            );
+          })
+          .join("")
+      : '<p class="pp-services__empty">Services are listed once the term roster is confirmed.</p>';
+    return (
+      '<section class="pp-services" aria-label="Booked services">' +
+      '<div class="pp-services__head">' +
+      svcIco +
+      '<h4 class="pp-services__title">Booked services</h4>' +
+      '<span class="pp-services__count">' +
+      count +
+      (count === 1 ? " service" : " services") +
+      "</span></div>" +
+      '<div class="pp-services__list">' +
+      items +
+      "</div></section>"
+    );
+  }
+
   function heroHtml(data) {
     var p = data.participant || {};
     return (
@@ -758,6 +796,7 @@
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data) +
+      servicesCardHtml(data) +
       infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
