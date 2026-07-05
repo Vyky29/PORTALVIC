@@ -667,6 +667,13 @@
       incidentsSectionHtml(incidents);
   }
 
+  function parentCommentsCell(row) {
+    if (row.message_pending) {
+      return '<span class="pcso-pending">Preparing…</span>';
+    }
+    return noteCell(row.parent_message, 160);
+  }
+
   function parentFeedbackTableRow(row) {
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
@@ -687,6 +694,7 @@
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
+      '<td class="pcso-tbl__comments">' + parentCommentsCell(row) + "</td>" +
       "</tr>"
     );
   }
@@ -704,6 +712,7 @@
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
+      '<th scope="col" class="pcso-tbl__comments">Comments</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"

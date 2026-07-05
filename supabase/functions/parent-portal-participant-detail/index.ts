@@ -377,18 +377,39 @@ Deno.serve(async (req) => {
     for (const row of rawFeedback) {
       const id = String(row.id);
       const patterns = row.engagement_patterns;
+      const positiveText = clean(row.positive_feedback, 2500);
+      const sessionBase = {
+        id,
+        session_date: isoFromAny(row.session_date),
+        service: clean(row.service, 200),
+        session_time: clean(row.session_time, 80),
+        attendance: clean(row.attendance, 40),
+        engagement_rating: row.engagement_rating,
+        client_emotions: clean(row.client_emotions, 200),
+        independence: independenceLabel(patterns),
+      };
+
+      if (!positiveText) {
+        sessionsOut.push({
+          ...sessionBase,
+          parent_message: null,
+          message_pending: false,
+        });
+        continue;
+      }
+
       const sanitizeInput = {
         clientName: displayName,
-        sessionDate: isoFromAny(row.session_date),
-        service: clean(row.service, 200),
-        positiveFeedback: clean(row.positive_feedback, 2500),
-        relevantInformation: clean(row.relevant_information, 2500),
+        sessionDate: sessionBase.session_date,
+        service: sessionBase.service,
+        positiveFeedback: positiveText,
+        relevantInformation: "",
         engagementRating:
           row.engagement_rating != null && row.engagement_rating !== ""
             ? Number(row.engagement_rating)
             : null,
-        clientEmotions: clean(row.client_emotions, 200),
-        independenceLabel: independenceLabel(patterns),
+        clientEmotions: sessionBase.client_emotions,
+        independenceLabel: sessionBase.independence,
       };
 
       const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
@@ -406,14 +427,7 @@ Deno.serve(async (req) => {
         const shareStatus = String(cache.share_status || "hidden");
         const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
         sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
+          ...sessionBase,
           parent_message: shareStatus === "approved" ? parentMessage : null,
           message_pending: false,
         });
@@ -431,27 +445,13 @@ Deno.serve(async (req) => {
         const shareStatus = String(cache.share_status || "hidden");
         const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
         sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
+          ...sessionBase,
           parent_message: shareStatus === "approved" ? parentMessage : null,
           message_pending: false,
         });
       } else {
         sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
+          ...sessionBase,
           parent_message: null,
           message_pending: true,
         });

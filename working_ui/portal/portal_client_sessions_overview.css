@@ -341,22 +341,30 @@ body.portal-force-landscape{
   white-space:pre-wrap;
 }
 .pcso-table--parent .pcso-tbl__date{
-  width:20%;
+  width:16%;
   min-width:76px;
 }
-.pcso-table--parent .pcso-tbl__svc{width:34%}
-.pcso-table--parent .pcso-tbl__eng{width:11%}
-.pcso-table--parent .pcso-tbl__emo{width:16%}
-.pcso-table--parent .pcso-tbl__indep{width:19%}
+.pcso-table--parent .pcso-tbl__svc{width:24%}
+.pcso-table--parent .pcso-tbl__eng{width:9%}
+.pcso-table--parent .pcso-tbl__emo{width:14%}
+.pcso-table--parent .pcso-tbl__indep{width:16%}
+.pcso-table--parent .pcso-tbl__comments,
+.pcso-table--parent .pcso-tbl__parent-msg{
+  width:21%;
+  min-width:120px;
+  max-width:280px;
+}
 .pcso-tbl__date-main{
   font-weight:700;
   color:var(--ink,#173247);
   font-size:12px;
   overflow-wrap:break-word;
 }
-.pcso-table--parent .pcso-tbl__parent-msg{
-  min-width:140px;
-  max-width:280px;
+.pcso-tbl__comments{
+  color:var(--muted);
+  overflow-wrap:break-word;
+  line-height:1.35;
+  min-width:0;
 }
 .pp-ach-grid{
   display:grid;
@@ -440,7 +448,8 @@ body.portal-force-landscape{
   .pp-participant-body .pcso-table--parent{
     width:100%;
   }
-  .pp-participant-body .pcso-table--parent .pcso-tbl__parent-msg{
+  .pp-participant-body .pcso-table--parent .pcso-tbl__parent-msg,
+  .pp-participant-body .pcso-table--parent .pcso-tbl__comments{
     max-width:none;
   }
   .pp-ach-view .pp-ach-grid{

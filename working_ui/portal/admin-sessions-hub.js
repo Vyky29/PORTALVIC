@@ -6053,7 +6053,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Positive</th><th>Relevant</th><th>Reviewed by:</th>";
+    "<th>Filtered feedback</th><th>Relevant</th><th>Reviewed by:</th>";
 
   AdminSessionsHub.prototype.indexParentShares = function () {
     var map = {};
@@ -6070,6 +6070,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var id = fb && (fb.id || fb.session_feedback_id);
     if (!id || !this._parentShareByFbId) return null;
     return this._parentShareByFbId[String(id)] || null;
+  };
+
+  /** Parent-safe filtered text for the Session Feedback grid (never raw relevant_information). */
+  AdminSessionsHub.prototype.filteredFeedbackForRow = function (fb) {
+    if (!clean(fb && fb.positive_feedback)) return { text: "", state: "empty" };
+    var share = this.parentShareForFeedback(fb);
+    if (!share) return { text: "", state: "pending" };
+    var status = String(share.share_status || "");
+    var msg = String(share.parent_message || "").trim();
+    if (status === "pending") return { text: "", state: "pending" };
+    if (status === "hidden" && !msg) return { text: "", state: "hidden" };
+    if (msg) return { text: msg, state: status === "approved" ? "approved" : "ready" };
+    return { text: "", state: "empty" };
   };
 
   /**
@@ -6102,8 +6115,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var id = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
         if (!id || seen[id]) continue;
         var pos = clean(fb && fb.positive_feedback);
-        var rel = clean(fb && fb.relevant_information);
-        if (!pos && !rel) continue;
+        if (!pos) continue;
         if (!shareNeedsGeneration(have[id])) continue;
         seen[id] = true;
         missing.push(id);
@@ -6116,8 +6128,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } else {
         hub._generatedShareKey = missing.slice().sort().join(",");
       }
-      var batch = missing.slice(0, 30);
-      global.portalAdminGenerateParentFeedbackShares(batch)
+      var missingIds = missing.slice();
+      function generateShareBatch(offset) {
+        var chunk = missingIds.slice(offset, offset + 120);
+        if (!chunk.length) return Promise.resolve({ ok: true });
+        return global.portalAdminGenerateParentFeedbackShares(chunk).then(function (res) {
+          if (!res || !res.ok) return res;
+          if (offset + 120 < missingIds.length) return generateShareBatch(offset + 120);
+          return res;
+        });
+      }
+      generateShareBatch(0)
         .then(function (res) {
           if (!res || !res.ok) return;
           var refetch =
@@ -6691,7 +6712,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
-    var pos = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
+    var filt = terminal ? { text: "", state: "empty" } : hub.filteredFeedbackForRow(fb);
     var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
@@ -6733,7 +6754,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (terminal ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
+      (terminal
+        ? cellNa()
+        : filt.state === "pending"
+          ? '<span class="ash-cell-muted">Preparing\u2026</span>'
+          : filt.state === "hidden"
+            ? '<span class="ash-cell-muted">Hidden from families</span>'
+            : filt.text
+              ? cellNoteHtml(filt.text)
+              : "\u2014") +
       "</td>" +
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +

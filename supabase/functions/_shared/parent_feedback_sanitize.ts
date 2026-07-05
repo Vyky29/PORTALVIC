@@ -1,7 +1,7 @@
 const DEFAULT_MODEL = "gpt-4o-mini";
 
 /** Bump when parent-summary instructions change so cached shares regenerate. */
-export const PARENT_SUMMARY_PROMPT_VERSION = "20260630-specialist-v2";
+export const PARENT_SUMMARY_PROMPT_VERSION = "20260705-positive-only-v3";
 
 export const STALE_PARENT_SUMMARY_MODELS = new Set([
   "fallback-no-openai",
@@ -51,13 +51,11 @@ function specialistRuleFallback(input: SanitizeInput): SanitizeResult {
   const name = str(input.clientName, 80) || "They";
   const firstName = name.split(/\s+/)[0] || name;
   const positive = str(input.positiveFeedback, 2000);
-  const relevant = str(input.relevantInformation, 1500);
-  const combined = [positive, relevant].filter(Boolean).join(" ");
-  if (combined.length < 15) {
+  if (positive.length < 15) {
     return { share_status: "hidden", parent_message: "", review_model: "fallback-empty" };
   }
 
-  let body = positive || relevant;
+  let body = positive;
   const reframes: [RegExp, string][] = [
     [
       /physical activit(?:y|ies) where (?:he|she|they) (?:complained a lot because )?(?:didn't|did not|doesn't|didnt) want to do it/gi,
@@ -87,7 +85,7 @@ function specialistRuleFallback(input: SanitizeInput): SanitizeResult {
   body = body.charAt(0).toUpperCase() + body.slice(1);
   const parts = [`${firstName} joined us for today's session. ${body}`];
 
-  const lower = combined.toLowerCase();
+  const lower = positive.toLowerCase();
   if (/physical activit|go home|end of|leaving|didn't want|complain|frustrat|ready to leave/.test(lower)) {
     parts.push(
       "Physical activity often falls at the end of the session before going home; some young people find it harder to stay engaged indoors at that point, while community or outdoor activities earlier in the day may feel easier and they can appear more regulated.",
@@ -155,7 +153,7 @@ export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<
           "Use engagement, emotions and independence only in gentle general terms (e.g. 'needed a little support', 'was mostly regulated'). " +
           "NEVER include: staff or instructor names (first or full), names of other children, internal staff jargon, safeguarding allegations, " +
           "detailed incident specifics, billing, LA/EHCP admin, or anything clearly for managers only. " +
-          "staff_relevant_notes_internal is for context only — use it to inform your specialist interpretation; never quote it directly. " +
+          "Relevant internal notes are never shared with families — only staff_positive_notes may inform parent_message. " +
           "If the notes contain any real session activity, share_status MUST be approved with a helpful parent_message — reframe challenges rather than hiding. " +
           "Use hidden only when notes are essentially empty or unusable.",
       },
@@ -169,7 +167,6 @@ export async function sanitizeFeedbackForParents(input: SanitizeInput): Promise<
           emotions: str(input.clientEmotions, 200),
           independence: str(input.independenceLabel, 200),
           staff_positive_notes: str(input.positiveFeedback, 2500),
-          staff_relevant_notes_internal: str(input.relevantInformation, 2500),
         }),
       },
     ],
@@ -229,7 +226,6 @@ export async function feedbackSourceFingerprint(input: SanitizeInput): Promise<s
     [
       PARENT_SUMMARY_PROMPT_VERSION,
       input.positiveFeedback,
-      input.relevantInformation,
       String(input.engagementRating ?? ""),
       input.clientEmotions,
       input.independenceLabel,
