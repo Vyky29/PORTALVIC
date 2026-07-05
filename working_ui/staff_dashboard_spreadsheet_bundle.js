@@ -3600,7 +3600,7 @@
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Small Pool",
+      "area": "Big Pool",
       "time_slot": "2.30 to 3.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-07"
@@ -5150,7 +5150,7 @@
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Small Pool",
+      "area": "Big Pool",
       "time_slot": "2.30 to 3.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-14"
@@ -6790,7 +6790,7 @@
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Small Pool",
+      "area": "Big Pool",
       "time_slot": "2.30 to 3.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-21"
@@ -8560,7 +8560,7 @@
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Small Pool",
+      "area": "Big Pool",
       "time_slot": "2.30 to 3.30",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
@@ -10210,7 +10210,7 @@
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Small Pool",
+      "area": "Big Pool",
       "time_slot": "2.30 to 3.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-05"
@@ -13645,7 +13645,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-05T10:09:18Z",
+    "rosterMadreSyncedAt": "2026-07-05T10:11:13Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

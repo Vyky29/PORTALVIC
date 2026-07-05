@@ -1511,7 +1511,7 @@
         try{
           await new Promise(function(resolve, reject){
             var s = document.createElement('script');
-            s.src = '/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-fb2e72b3b9';
+            s.src = '/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-865fb0df00';
             s.onload = function(){ resolve(); };
             s.onerror = function(){ reject(new Error('roster bundle')); };
             document.head.appendChild(s);
@@ -1644,7 +1644,7 @@
         var shared = (window.PORTAL_SHARED_JS_BASE || '/portal-shared-js').replace(/\/$/, '');
         try{
           await loadScript(shared + '/clients_info_embed.js?v=20260609-autofill');
-          await loadScript('/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-fb2e72b3b9');
+          await loadScript('/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-865fb0df00');
           await loadScript(shared + '/participant_services.js?v=20260609-autofill');
           await loadScript(shared + '/portal_field_autocomplete.js?v=20260609-autofill');
           if(typeof window.portalWireFieldSuggest !== 'function') return;

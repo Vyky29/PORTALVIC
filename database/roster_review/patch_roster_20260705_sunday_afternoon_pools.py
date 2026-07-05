@@ -10,7 +10,7 @@ for the same children (e.g. Rodin, Zakariya) are untouched.
 
 Client -> pool (confirmed):
   Rodin  -> Big Pool
-  Yoan   -> Small Pool
+  Yoan   -> Big Pool
   Max    -> Small Pool
   Shaan  -> Small Pool
   Zakariya (afternoon aquatic) -> Big Pool
@@ -30,7 +30,7 @@ MADRE = ROOT / "working_ui" / "portal" / "roster_term_master.json"
 AFTERNOON_TIMES = {"2 to 2.30", "2.30 to 3", "2.30 to 3.30"}
 CLIENT_POOL = {
     "Rodin": "Big Pool",
-    "Yoan": "Small Pool",
+    "Yoan": "Big Pool",
     "Max": "Small Pool",
     "Shaan": "Small Pool",
     "Zakariya": "Big Pool",
