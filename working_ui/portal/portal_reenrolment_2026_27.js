@@ -1320,14 +1320,6 @@
       renderPayScheduleFieldset(payCode, scheduleDefault) +
       "</div>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
-      '<div id="reAdminFeeNote" class="re-funding-fee"' +
-      (adminFeeApplies(payCode) ? "" : " hidden") +
-      ">" +
-      "<strong>" +
-      money(RE_ADMIN_FEE_PER_INSTALLMENT) +
-      " admin fee per payment (Direct Payment)</strong>" +
-      '<span id="reAdminFeeAmount"></span>' +
-      "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
       (payCode === "gocardless" ? "" : " hidden") +
       ">" +
