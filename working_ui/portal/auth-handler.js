@@ -106,7 +106,7 @@ export {
 } from "./supabase-client.js?v=20260707-login-cache";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
-export const APP_VERSION = "2026-06-08-global-refresh-feedback-cache";
+export const APP_VERSION = "2026-07-05-sunday-roster-reset";
 export const PORTAL_APP_VERSION = APP_VERSION;
 const PORTAL_APP_VERSION_STORAGE_KEY = "cs_portal_app_version";
 const PORTAL_AUTH_VERSION_KEYS = [
