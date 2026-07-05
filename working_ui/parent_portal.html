@@ -818,16 +818,9 @@
     }
     .pp-booking-card .pp-btn { margin-top: 4px; }
     .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
-    /* Parent buttons — corporate yellow. */
-    .pp-pax-info-btn--parent {
-      background: linear-gradient(180deg, #ffd24d 0%, #f4b740 100%);
-      border-color: #e2a52b;
-      box-shadow: 0 2px 10px rgba(226,165,43,.24);
-    }
-    .pp-pax-info-btn--parent .pp-pax-info-icon,
-    .pp-pax-info-btn--parent.pp-pax-info-btn--messages .pp-pax-info-icon { color: #6b4a00; }
-    .pp-pax-info-btn--parent .pp-pax-info-caption { color: #3a2a00; }
-    .pp-pax-info-btn--parent .pp-pax-info-subcaption { color: #6b4e00; }
+    /* Second-row buttons: corporate-yellow icon, black caption, white card. */
+    .pp-pax-info-btn--accent .pp-pax-info-icon { color: #f4b740; }
+    .pp-pax-info-btn--accent .pp-pax-info-caption { color: var(--ink); }
     /* Bottom row now holds four buttons (Sessions, Achievements, Swim, Team). */
     .pp-pax-info-row--sessions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     @media (min-width: 560px) {
@@ -1342,7 +1335,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-team-roberto-luliya"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-hub-buttons-accent"></script>
   <script src="/portal/parent_portal_app.js?v=20260704-home-action-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

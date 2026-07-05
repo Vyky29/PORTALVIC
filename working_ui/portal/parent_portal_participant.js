@@ -292,7 +292,7 @@
       '<div class="pp-pax-info-row pp-pax-info-row--parents">' +
       infoBtnHtml("messages", "Messages", msgIcon, {
         extraClass:
-          " pp-pax-info-btn--parent pp-pax-info-btn--messages" +
+          " pp-pax-info-btn--messages" +
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
       }) +
@@ -300,25 +300,32 @@
         "general",
         "General Information",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>',
-        { extraClass: " pp-pax-info-btn--parent" },
       ) +
       infoBtnHtml(
         "booking",
         "Booking 2026/27",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-        { subtitle: booking.hint, extraClass: " pp-pax-info-btn--parent" },
+        { subtitle: booking.hint },
       ) +
       "</div>" +
       '<div class="pp-pax-info-row pp-pax-info-row--sessions">' +
       infoBtnHtml(
+        "team",
+        teamCaption,
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        { extraClass: " pp-pax-info-btn--accent pp-pax-info-btn--team" },
+      ) +
+      infoBtnHtml(
         "sessions",
         "Sessions Overview",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+        { extraClass: " pp-pax-info-btn--accent" },
       ) +
       infoBtnHtml(
         "achievements",
         "Achievement photos",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
+        { extraClass: " pp-pax-info-btn--accent" },
       ) +
       infoBtnHtml(
         "swim",
@@ -327,13 +334,8 @@
         {
           disabled: !swimAvailable,
           subtitle: swimAvailable ? "" : "Not available yet",
+          extraClass: " pp-pax-info-btn--accent",
         },
-      ) +
-      infoBtnHtml(
-        "team",
-        teamCaption,
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-        { extraClass: " pp-pax-info-btn--parent pp-pax-info-btn--team" },
       ) +
       "</div></div>"
     );
