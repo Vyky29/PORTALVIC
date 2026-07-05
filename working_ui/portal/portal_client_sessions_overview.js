@@ -667,12 +667,28 @@
       incidentsSectionHtml(incidents);
   }
 
+  function parentEngagementCell(row) {
+    if (row.engagement_rating == null || row.engagement_rating === "") {
+      return '<span class="muted">—</span>';
+    }
+    var n = esc(String(row.engagement_rating));
+    return (
+      '<span class="pcso-eng-score">' +
+      n +
+      ' <span class="pcso-th-star pcso-eng-star" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="13" height="13" focusable="false">' +
+      '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
+      "</svg></span></span>"
+    );
+  }
+
   function parentCommentsCell(row) {
     if (row.message_pending) {
       return '<span class="pcso-pending">Preparing…</span>';
     }
     var text = clean(row.comment || row.parent_message);
-    return noteCell(text, 160);
+    if (!text || text === "—") return '<span class="muted">—</span>';
+    return '<span class="pcso-comment-text" title="' + esc(text) + '">' + esc(text) + "</span>";
   }
 
   function parentAuthorCell(row) {
@@ -680,7 +696,7 @@
     var role = clean(row.feedback_by_role);
     if (!name && !role) return '<span class="muted">—</span>';
     return (
-      '<div class="pcso-tbl__author">' +
+      '<div class="pcso-author-stack">' +
       (name ? '<div class="pcso-tbl__author-name">' + esc(name) + "</div>" : "") +
       (role ? '<div class="pcso-tbl__author-role">' + esc(role) + "</div>" : "") +
       "</div>"
@@ -691,10 +707,7 @@
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
-    const eng =
-      row.engagement_rating != null && row.engagement_rating !== ""
-        ? esc(String(row.engagement_rating))
-        : '<span class="muted">—</span>';
+    const indep = esc(clean(row.engagement_patterns) || "—");
     return (
       "<tr>" +
       '<td class="pcso-tbl__date">' +
@@ -704,11 +717,11 @@
       '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
       (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
-      '<td class="pcso-tbl__eng">' + eng + "</td>" +
+      '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
-      '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
-      '<td class="pcso-tbl__author">' + parentAuthorCell(row) + "</td>" +
+      '<td class="pcso-tbl__indep"><span class="pcso-indep-text" title="' + indep + '">' + indep + "</span></td>" +
       '<td class="pcso-tbl__comments">' + parentCommentsCell(row) + "</td>" +
+      '<td class="pcso-tbl__author">' + parentAuthorCell(row) + "</td>" +
       "</tr>"
     );
   }
@@ -723,11 +736,11 @@
       "<thead><tr>" +
       '<th scope="col" class="pcso-tbl__date">Date</th>' +
       '<th scope="col" class="pcso-tbl__svc">Service &amp; time</th>' +
-      '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
-      '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
+      '<th scope="col" class="pcso-tbl__eng">Engagement</th>' +
+      '<th scope="col" class="pcso-tbl__emo">Regulation</th>' +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__author">Written by</th>' +
       '<th scope="col" class="pcso-tbl__comments">Comments</th>' +
+      '<th scope="col" class="pcso-tbl__author">Written by</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
