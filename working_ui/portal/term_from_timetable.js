@@ -295,7 +295,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-07": [
         "adaam_ah",
-        "jack_s",
+        "samer",
         "gabriel",
         "arthur_mo",
         "amaar_ah",
@@ -336,7 +336,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-14": [
         "adaam_ah",
-        "jack_s",
+        "samer",
         "gabriel",
         "arthur_mo",
         "amaar_ah",
@@ -378,7 +378,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ],
       "2026-06-21": [
         "adaam_ah",
-        "jack_s",
+        "samer",
         "gabriel",
         "arthur_mo",
         "amaar_ah",
@@ -422,7 +422,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "max",
         "shaan",
         "shire",
-        "samer"
+        "jack_s"
       ],
       "2026-06-09": [
         "ayman",
@@ -446,7 +446,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "max",
         "shaan",
         "shire",
-        "samer"
+        "jack_s"
       ],
       "2026-06-16": [
         "ayman",
@@ -478,7 +478,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "patrick",
         "shaan",
         "shire",
-        "samer"
+        "jack_s"
       ]
     }
   },

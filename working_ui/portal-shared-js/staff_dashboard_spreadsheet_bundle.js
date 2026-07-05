@@ -3266,7 +3266,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -3296,7 +3296,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Multi-Activity",
@@ -3636,7 +3636,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "BISMARK",
       "service": "Multi-Activity",
@@ -3666,7 +3666,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -4826,7 +4826,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -4846,7 +4846,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Multi-Activity",
@@ -5196,7 +5196,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "BISMARK",
       "service": "Multi-Activity",
@@ -5226,7 +5226,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -6446,7 +6446,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -6486,7 +6486,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Multi-Activity",
@@ -6846,7 +6846,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "GODSWAY",
       "service": "Multi-Activity",
@@ -6856,7 +6856,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -8226,7 +8226,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -8256,7 +8256,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Multi-Activity",
@@ -8596,7 +8596,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "BISMARK",
       "service": "Multi-Activity",
@@ -8626,7 +8626,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -9866,7 +9866,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -9906,7 +9906,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "ROBERTO",
       "service": "Multi-Activity",
@@ -10266,7 +10266,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "GODSWAY",
       "service": "Multi-Activity",
@@ -10276,7 +10276,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -11546,7 +11546,7 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -11866,7 +11866,7 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Jack S",
+      "client_name": "Samer",
       "day": "Sunday",
       "instructors": "BISMARK",
       "service": "Multi-Activity",
@@ -11886,7 +11886,7 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -13645,7 +13645,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-05T04:38:06Z",
+    "rosterMadreSyncedAt": "2026-07-05T04:41:11Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

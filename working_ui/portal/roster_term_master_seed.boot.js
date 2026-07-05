@@ -468,13 +468,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "BISMARK",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -912,13 +912,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GIUSEPPE",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -1181,13 +1181,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -1850,13 +1850,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -2761,13 +2761,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "BISMARK",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -3158,13 +3158,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "LULIA",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -3427,13 +3427,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -3998,13 +3998,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -5121,13 +5121,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GIUSEPPE",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -5202,13 +5202,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GODSWAY",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -5457,13 +5457,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -6212,13 +6212,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -7052,13 +7052,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "BISMARK",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -7496,13 +7496,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GIUSEPPE",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -7765,13 +7765,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -8510,13 +8510,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -9865,13 +9865,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GIUSEPPE",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -9946,13 +9946,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GODSWAY",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -10200,13 +10200,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -10915,13 +10915,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -12000,13 +12000,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Jack S",
+                  "client_name": "Samer",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "BISMARK",
-                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
+                  "participant_info": ""
                 },
                 {
                   "time_slot": "10.15 to 11",
@@ -12300,13 +12300,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "10.15 to 11",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
                   "venue": "SwimFarm",
                   "instructors": "GIUSEPPE",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "11 to 11.45",
@@ -12569,13 +12569,13 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "JAVIER",
-                  "participant_info": ""
+                  "participant_info": "1. Age: 26 years (born November 1997)\n2. Medical: Dairy allergy. No regular medication. No diagnosed medical conditions. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), puzzles, pattern-based games, iPad/tablet apps, music, lights, bubbles, watching old Disney movies.\n4. Dislikes/Avoids: Loud noise, loud people.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), group settings or crowds.\n6. Regulation Strategies: Preferred toy/object, quiet space or break, supportive adult nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts; uses gestures/non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Short, simple sentences to explain what is needed and what is happening.\n10. Mobility: Walks independently.\n11. Personal Care: \u2014\n12. Task Engagement: Can follow a simple routine independently.\n13. Transitions/Flexibility: Can adapt to changes but struggles with unexpected changes or waiting.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Gets very upset when distressed."
                 },
                 {
                   "time_slot": "10.15 to 11",
