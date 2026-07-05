@@ -878,6 +878,11 @@
     .pp-pax-info-btn--accent .pp-pax-info-caption { color: var(--ink); }
     /* Bottom row now holds four buttons (Sessions, Achievements, Swim, Team). */
     .pp-pax-info-row--sessions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pp-pax-info-row--parents {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: min(100%, 520px);
+      margin-inline: auto;
+    }
     @media (min-width: 560px) {
       .pp-pax-info-row--sessions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
