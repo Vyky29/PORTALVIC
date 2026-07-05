@@ -341,18 +341,40 @@ body.portal-force-landscape{
   white-space:pre-wrap;
 }
 .pcso-table--parent .pcso-tbl__date{
-  width:16%;
-  min-width:76px;
+  width:14%;
+  min-width:72px;
 }
-.pcso-table--parent .pcso-tbl__svc{width:24%}
-.pcso-table--parent .pcso-tbl__eng{width:9%}
-.pcso-table--parent .pcso-tbl__emo{width:14%}
-.pcso-table--parent .pcso-tbl__indep{width:16%}
+.pcso-table--parent .pcso-tbl__svc{width:20%}
+.pcso-table--parent .pcso-tbl__eng{width:8%}
+.pcso-table--parent .pcso-tbl__emo{width:12%}
+.pcso-table--parent .pcso-tbl__indep{width:14%}
+.pcso-table--parent .pcso-tbl__author{
+  width:13%;
+  min-width:88px;
+  max-width:120px;
+}
 .pcso-table--parent .pcso-tbl__comments,
 .pcso-table--parent .pcso-tbl__parent-msg{
-  width:21%;
-  min-width:120px;
-  max-width:280px;
+  width:19%;
+  min-width:100px;
+  max-width:240px;
+}
+.pcso-tbl__author-name{
+  font-weight:700;
+  color:var(--ink,#173247);
+  font-size:12px;
+  overflow-wrap:break-word;
+  line-height:1.25;
+}
+.pcso-tbl__author-role{
+  margin-top:3px;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  color:var(--muted,#728290);
+  overflow-wrap:break-word;
+  line-height:1.25;
 }
 .pcso-tbl__date-main{
   font-weight:700;

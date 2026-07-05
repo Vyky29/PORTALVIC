@@ -13,10 +13,9 @@ import {
   resolveParentPortalSession,
 } from "../_shared/parent_portal_session.ts";
 import {
-  feedbackSourceFingerprint,
-  sanitizeFeedbackForParents,
-  parentSummaryModelNeedsRefresh,
-} from "../_shared/parent_feedback_sanitize.ts";
+  feedbackAuthorFirstName,
+  resolveFeedbackAuthorRole,
+} from "../_shared/parent_feedback_author_role.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
   lookupClientsInfoSheetForParticipant,
@@ -32,9 +31,7 @@ import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_sum
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
-/** Max uncached feedback rows to review per parent page load (parallel batches). */
-const SANITIZE_BATCH = 30;
-const SANITIZE_CONCURRENCY = 5;
+/** Max feedback rows returned per parent page load. */
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
 
@@ -179,28 +176,15 @@ function independenceLabel(raw: unknown): string {
   return clean(raw, 400);
 }
 
-async function sanitizeFeedbackBatch(
-  items: Array<{
-    id: string;
-    contactId: string;
-    fingerprint: string;
-    input: Parameters<typeof sanitizeFeedbackForParents>[0];
-  }>,
-  limit: number,
-): Promise<Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>> {
-  const out = new Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>();
-  const queue = items.slice(0, limit);
-  for (let i = 0; i < queue.length; i += SANITIZE_CONCURRENCY) {
-    const chunk = queue.slice(i, i + SANITIZE_CONCURRENCY);
-    const results = await Promise.all(
-      chunk.map(async (item) => {
-        const reviewed = await sanitizeFeedbackForParents(item.input);
-        return { id: item.id, reviewed };
-      }),
-    );
-    for (const row of results) out.set(row.id, row.reviewed);
-  }
-  return out;
+function parentCommentFromRow(
+  positiveText: string,
+  cache: Record<string, unknown> | undefined,
+): { comment: string | null; pending: boolean } {
+  if (!positiveText) return { comment: null, pending: false };
+  const status = cache ? String(cache.share_status || "") : "";
+  if (status === "hidden") return { comment: null, pending: false };
+  if (status === "pending") return { comment: null, pending: true };
+  return { comment: positiveText, pending: false };
 }
 
 Deno.serve(async (req) => {
@@ -364,142 +348,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    let sanitizeBudget = SANITIZE_BATCH;
-    const pendingSanitize: Array<{
-      id: string;
-      contactId: string;
-      fingerprint: string;
-      input: Parameters<typeof sanitizeFeedbackForParents>[0];
-      row: Record<string, unknown>;
-      patterns: unknown;
-    }> = [];
-
     for (const row of rawFeedback) {
       const id = String(row.id);
       const patterns = row.engagement_patterns;
       const positiveText = clean(row.positive_feedback, 2500);
-      const sessionBase = {
+      const service = clean(row.service, 200);
+      const staffName = clean(row.completed_by_name, 120);
+      const cache = cacheById.get(id);
+      const commentPack = parentCommentFromRow(positiveText, cache);
+
+      sessionsOut.push({
         id,
         session_date: isoFromAny(row.session_date),
-        service: clean(row.service, 200),
+        service,
         session_time: clean(row.session_time, 80),
         attendance: clean(row.attendance, 40),
         engagement_rating: row.engagement_rating,
         client_emotions: clean(row.client_emotions, 200),
         independence: independenceLabel(patterns),
-      };
-
-      if (!positiveText) {
-        sessionsOut.push({
-          ...sessionBase,
-          parent_message: null,
-          message_pending: false,
-        });
-        continue;
-      }
-
-      const sanitizeInput = {
-        clientName: displayName,
-        sessionDate: sessionBase.session_date,
-        service: sessionBase.service,
-        positiveFeedback: positiveText,
-        relevantInformation: "",
-        engagementRating:
-          row.engagement_rating != null && row.engagement_rating !== ""
-            ? Number(row.engagement_rating)
-            : null,
-        clientEmotions: sessionBase.client_emotions,
-        independenceLabel: sessionBase.independence,
-      };
-
-      const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
-      const cache = cacheById.get(id);
-
-      const adminEdited = !!(cache && cache.admin_edited_at);
-      const wasStaleSummary = parentSummaryModelNeedsRefresh(cache?.review_model);
-      if (
-        cache &&
-        (adminEdited ||
-          (cache.source_fingerprint === fingerprint &&
-            cache.share_status !== "pending" &&
-            !wasStaleSummary))
-      ) {
-        const shareStatus = String(cache.share_status || "hidden");
-        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-        sessionsOut.push({
-          ...sessionBase,
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      } else if (sanitizeBudget > 0) {
-        sanitizeBudget--;
-        pendingSanitize.push({
-          id,
-          contactId,
-          fingerprint,
-          input: sanitizeInput,
-          row,
-          patterns,
-        });
-      } else if (cache) {
-        const shareStatus = String(cache.share_status || "hidden");
-        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-        sessionsOut.push({
-          ...sessionBase,
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      } else {
-        sessionsOut.push({
-          ...sessionBase,
-          parent_message: null,
-          message_pending: true,
-        });
-      }
-    }
-
-    if (pendingSanitize.length) {
-      const reviewedMap = await sanitizeFeedbackBatch(pendingSanitize, pendingSanitize.length);
-      for (const item of pendingSanitize) {
-        const row = item.row;
-        const patterns = item.patterns;
-        const reviewed = reviewedMap.get(item.id) || {
-          share_status: "hidden" as const,
-          parent_message: "",
-          review_model: "missing",
-        };
-        const shareStatus = reviewed.share_status;
-        const parentMessage = reviewed.parent_message || null;
-
-        const upsertRow = {
-          session_feedback_id: item.id,
-          contact_id: item.contactId,
-          source_fingerprint: item.fingerprint,
-          parent_message: parentMessage,
-          share_status: shareStatus,
-          review_model: reviewed.review_model,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { error: upsertErr } = await supabase
-          .from("portal_parent_feedback_share")
-          .upsert(upsertRow, { onConflict: "session_feedback_id" });
-        if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
-
-        sessionsOut.push({
-          id: item.id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      }
+        feedback_by_name: feedbackAuthorFirstName(staffName),
+        feedback_by_role: staffName ? resolveFeedbackAuthorRole(staffName, service) : "",
+        comment: commentPack.comment,
+        parent_message: commentPack.comment,
+        message_pending: commentPack.pending,
+      });
     }
 
     sessionsOut.sort((a, b) => {

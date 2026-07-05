@@ -671,7 +671,20 @@
     if (row.message_pending) {
       return '<span class="pcso-pending">Preparing…</span>';
     }
-    return noteCell(row.parent_message, 160);
+    var text = clean(row.comment || row.parent_message);
+    return noteCell(text, 160);
+  }
+
+  function parentAuthorCell(row) {
+    var name = clean(row.feedback_by_name);
+    var role = clean(row.feedback_by_role);
+    if (!name && !role) return '<span class="muted">—</span>';
+    return (
+      '<div class="pcso-tbl__author">' +
+      (name ? '<div class="pcso-tbl__author-name">' + esc(name) + "</div>" : "") +
+      (role ? '<div class="pcso-tbl__author-role">' + esc(role) + "</div>" : "") +
+      "</div>"
+    );
   }
 
   function parentFeedbackTableRow(row) {
@@ -694,6 +707,7 @@
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
+      '<td class="pcso-tbl__author">' + parentAuthorCell(row) + "</td>" +
       '<td class="pcso-tbl__comments">' + parentCommentsCell(row) + "</td>" +
       "</tr>"
     );
@@ -712,6 +726,7 @@
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
+      '<th scope="col" class="pcso-tbl__author">Written by</th>' +
       '<th scope="col" class="pcso-tbl__comments">Comments</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
@@ -764,12 +779,15 @@
       client_name: "",
       service: clean(r.service),
       session_time: clean(r.session_time),
-      completed_by_name: "",
+      completed_by_name: clean(r.feedback_by_name || r.completed_by_name),
       attendance: clean(r.attendance),
       engagement_rating: r.engagement_rating,
       client_emotions: clean(r.client_emotions),
       engagement_patterns: clean(r.independence),
-      parent_message: clean(r.parent_message),
+      feedback_by_name: clean(r.feedback_by_name),
+      feedback_by_role: clean(r.feedback_by_role),
+      comment: clean(r.comment || r.parent_message),
+      parent_message: clean(r.comment || r.parent_message),
       message_pending: !!r.message_pending,
       positive_feedback: "",
       relevant_information: "",

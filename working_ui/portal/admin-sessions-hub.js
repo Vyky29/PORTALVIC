@@ -6072,17 +6072,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return this._parentShareByFbId[String(id)] || null;
   };
 
-  /** Parent-safe filtered text for the Session Feedback grid (never raw relevant_information). */
+  /** Parent-safe filtered text = staff narrative extract (positive_feedback), not AI summary. */
   AdminSessionsHub.prototype.filteredFeedbackForRow = function (fb) {
-    if (!clean(fb && fb.positive_feedback)) return { text: "", state: "empty" };
+    var text = clean(fb && fb.positive_feedback);
+    if (!text) return { text: "", state: "empty" };
     var share = this.parentShareForFeedback(fb);
-    if (!share) return { text: "", state: "pending" };
-    var status = String(share.share_status || "");
-    var msg = String(share.parent_message || "").trim();
-    if (status === "pending") return { text: "", state: "pending" };
-    if (status === "hidden" && !msg) return { text: "", state: "hidden" };
-    if (msg) return { text: msg, state: status === "approved" ? "approved" : "ready" };
-    return { text: "", state: "empty" };
+    if (share && String(share.share_status || "") === "hidden") {
+      return { text: "", state: "hidden" };
+    }
+    return { text: text, state: "ready" };
   };
 
   /**
@@ -6756,13 +6754,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal
         ? cellNa()
-        : filt.state === "pending"
-          ? '<span class="ash-cell-muted">Preparing\u2026</span>'
-          : filt.state === "hidden"
-            ? '<span class="ash-cell-muted">Hidden from families</span>'
-            : filt.text
-              ? cellNoteHtml(filt.text)
-              : "\u2014") +
+        : filt.state === "hidden"
+          ? '<span class="ash-cell-muted">Hidden from families</span>'
+          : filt.text
+            ? cellNoteHtml(filt.text)
+            : "\u2014") +
       "</td>" +
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
