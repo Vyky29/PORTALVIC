@@ -222,6 +222,78 @@
  ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
  }
 
+ var nationalityFetchStarted = false;
+
+ function resolveSharedClientForProfile() {
+ try {
+ var boot = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client;
+ if (boot && boot.auth) return Promise.resolve(boot);
+ } catch (_) {}
+ var bases = [];
+ var sharedBase =
+ global.PORTAL_SHARED_JS_BASE ||
+ (typeof location !== "undefined" ? location.origin + "/portal-shared-js" : "/portal-shared-js");
+ bases.push("/portal/supabase-client.js");
+ bases.push(String(sharedBase).replace(/\/$/, "") + "/supabase-client.js");
+ function tryImport(i) {
+ if (i >= bases.length) return Promise.resolve(null);
+ return import(bases[i])
+ .then(function (mod) {
+ var client =
+ (mod.getSharedSupabaseClient && mod.getSharedSupabaseClient()) ||
+ (mod.getSupabaseClient && mod.getSupabaseClient());
+ return client || tryImport(i + 1);
+ })
+ .catch(function () {
+ return tryImport(i + 1);
+ });
+ }
+ return tryImport(0);
+ }
+
+ /** Best-effort: read the signed-in staff nationality so the transcriber language
+  * is correct on every portal form without per-form wiring. Safe no-op if signed out. */
+ function ensureStaffNationalityFromDb() {
+ if (nationalityFetchStarted) return Promise.resolve();
+ if (ui.staffNationality) {
+ nationalityFetchStarted = true;
+ return Promise.resolve();
+ }
+ nationalityFetchStarted = true;
+ return resolveSharedClientForProfile()
+ .then(function (client) {
+ if (!client || !client.auth) return;
+ return client.auth.getUser().then(function (res) {
+ var user = res && res.data && res.data.user;
+ if (!user || !user.id) return;
+ return client
+ .from("staff_profiles")
+ .select("nationality, full_name, username")
+ .eq("id", user.id)
+ .maybeSingle()
+ .then(function (r) {
+ var prof = r && r.data;
+ if (!prof) return;
+ if (!prof.nationality && !prof.full_name && !prof.username) return;
+ try {
+ global.__PORTAL_SUPABASE__ = global.__PORTAL_SUPABASE__ || {};
+ global.__PORTAL_SUPABASE__.staff_profile = {
+ nationality: String(prof.nationality || ""),
+ full_name: String(prof.full_name || ""),
+ username: String(prof.username || ""),
+ };
+ } catch (_) {}
+ applyStaffProfile({
+ nationality: String(prof.nationality || ""),
+ full_name: String(prof.full_name || ""),
+ username: String(prof.username || ""),
+ });
+ });
+ });
+ })
+ .catch(function () {});
+ }
+
  function supabaseFnUrl() {
  var base = String(
  (global.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co").replace(/\/$/, "")
@@ -961,11 +1033,10 @@
  probeWhisperAvailability();
  }
 
- if (!whisperProbeDone) {
- probeWhisperAvailability().then(runCapture);
- return;
- }
- runCapture();
+ var probeReady = whisperProbeDone
+ ? Promise.resolve()
+ : probeWhisperAvailability();
+ Promise.all([probeReady, ensureStaffNationalityFromDb()]).then(runCapture);
  }
 
  function startMediaRecorderCapture(textarea, btn, statusEl) {
@@ -1337,6 +1408,7 @@
  initDone = true;
  }
  applyStaffLanguages(opts.staffName || "");
+ ensureStaffNationalityFromDb();
  var targets = [];
  if (opts.auto || opts.fields === "auto") {
  targets = collectLongTextareas(opts.root || global.document);
@@ -1375,6 +1447,6 @@
  setStaffProfile: setStaffProfile,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-lang-by-nationality-v3",
+ captureVersion: "voice-lang-by-nationality-auto-v4",
  };
 })(typeof window !== "undefined" ? window : this);
