@@ -369,21 +369,37 @@
       if (attendanceIsAbsent(r.attendance)) absent++;
     });
     var present = total - absent;
-    var pct = Math.round((present / total) * 100);
-    var hi = "#4ade80";
-    var lo = "#15803d";
-    var track = "#ecfdf5";
-    var deg = Math.min(359.98, Math.round(pct * 3.6 * 10) / 10);
-    var bg =
-      deg <= 0.05
-        ? track
-        : "conic-gradient(from -90deg, " + lo + " 0deg, " + hi + " " + deg + "deg, " + track + " " + deg + "deg 360deg)";
+    var pctPresent = Math.round((present / total) * 100);
+    var pctAbsent = Math.max(0, 100 - pctPresent);
     return (
-      '<div class="pcso-emo-kpi">' +
-      '<div class="pcso-emo-donut" style="background:' + bg + '">' +
-      '<div class="pcso-emo-donut__inner">' + pct + "%</div></div>" +
-      '<div class="pcso-emo-kpi__lbl">Attended</div>' +
-      '<div class="pcso-emo-kpi__sub">' + present + " of " + total + " sessions</div></div>"
+      '<div class="pcso-att-kpi" role="img" aria-label="' +
+      present +
+      " attended, " +
+      absent +
+      " absent, " +
+      total +
+      ' sessions">' +
+      '<div class="pcso-att-bar">' +
+      (present > 0
+        ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--present" style="width:' + pctPresent + '%"></span>'
+        : "") +
+      (absent > 0
+        ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--absent" style="width:' + pctAbsent + '%"></span>'
+        : "") +
+      "</div>" +
+      '<div class="pcso-att-legend">' +
+      '<span class="pcso-att-legend__item pcso-att-legend__item--present"><strong>' +
+      present +
+      "</strong> attended</span>" +
+      '<span class="pcso-att-legend__item pcso-att-legend__item--absent"><strong>' +
+      absent +
+      "</strong> absent</span>" +
+      "</div>" +
+      '<div class="pcso-att-foot">' +
+      pctPresent +
+      "% · " +
+      total +
+      " sessions</div></div>"
     );
   }
 
@@ -422,42 +438,59 @@
   }
 
   function emotionKpiHtml(list) {
-    const counts = {};
+    const buckets = { happy: 0, anxious: 0, withdrawn: 0, outcontrol: 0 };
     let total = 0;
     list.forEach(function (r) {
       const em = clean(r.client_emotions);
       if (!em || em === "—") return;
       em.split(/[,;]+/).map(clean).filter(Boolean).forEach(function (tok) {
-        counts[tok] = (counts[tok] || 0) + 1;
-        total++;
+        const pal = emotionPalette(tok);
+        if (pal === "happy" || pal === "anxious" || pal === "withdrawn" || pal === "outcontrol") {
+          buckets[pal]++;
+          total++;
+        }
       });
     });
-    const keys = Object.keys(counts).sort(function (a, b) {
-      return counts[b] - counts[a];
-    });
-    if (!keys.length) return '<p class="pcso-kpi-empty">No emotion tags yet.</p>';
-    const top = keys[0];
-    const pct = total ? Math.round((counts[top] / total) * 100) : 0;
-    const pal = emotionPalette(top);
-    const colors = {
-      happy: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" },
-      anxious: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" },
-      withdrawn: { hi: "#60a5fa", lo: "#1d4ed8", track: "#eff6ff" },
-      outcontrol: { hi: "#fb7185", lo: "#b91c1c", track: "#fff1f2" },
-      default: { hi: "#94a3b8", lo: "#475569", track: "#f1f5f9" },
-    };
-    const c = colors[pal] || colors.default;
-    const deg = Math.min(359.98, Math.round(pct * 3.6 * 10) / 10);
-    const bg =
-      deg <= 0.05
-        ? c.track
-        : "conic-gradient(from -90deg, " + c.lo + " 0deg, " + c.hi + " " + deg + "deg, " + c.track + " " + deg + "deg 360deg)";
+    const order = [
+      { key: "happy", label: "Happy", colors: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" } },
+      { key: "anxious", label: "Anxious", colors: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" } },
+      { key: "withdrawn", label: "Withdrawn", colors: { hi: "#60a5fa", lo: "#1d4ed8", track: "#eff6ff" } },
+      { key: "outcontrol", label: "Out of ctrl", colors: { hi: "#fb7185", lo: "#b91c1c", track: "#fff1f2" } },
+    ];
+    const items = order
+      .map(function (o) {
+        const n = buckets[o.key] || 0;
+        const pct = total ? Math.round((n / total) * 100) : 0;
+        const c = o.colors;
+        const deg = n > 0 ? Math.min(359.98, Math.round(pct * 3.6 * 10) / 10) : 0;
+        const bg =
+          deg <= 0.05
+            ? c.track
+            : "conic-gradient(from -90deg, " + c.lo + " 0deg, " + c.hi + " " + deg + "deg, " + c.track + " " + deg + "deg 360deg)";
+        return (
+          '<div class="pcso-emo-grid__item">' +
+          '<div class="pcso-emo-grid__face">' +
+          emotionFaceSvg(o.key) +
+          "</div>" +
+          '<div class="pcso-emo-donut pcso-emo-donut--sm" style="background:' +
+          bg +
+          '">' +
+          '<div class="pcso-emo-donut__inner pcso-emo-donut__inner--sm">' +
+          pct +
+          "%</div></div>" +
+          '<span class="pcso-emo-grid__lbl">' +
+          esc(o.label) +
+          "</span></div>"
+        );
+      })
+      .join("");
     return (
-      '<div class="pcso-emo-kpi">' +
-      '<div class="pcso-emo-donut" style="background:' + bg + '">' +
-      '<div class="pcso-emo-donut__inner">' + pct + "%</div></div>" +
-      '<div class="pcso-emo-kpi__lbl">' + esc(top) + "</div>" +
-      '<div class="pcso-emo-kpi__sub">' + counts[top] + " tags</div></div>"
+      '<div class="pcso-emo-grid" role="img" aria-label="Regulation and emotions">' +
+      items +
+      "</div>" +
+      '<div class="pcso-emo-grid__foot">' +
+      (total ? total + " tags total" : "No emotion tags yet") +
+      "</div>"
     );
   }
 
