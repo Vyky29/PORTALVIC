@@ -324,6 +324,35 @@
     }
   }
 
+  function ageFromDobIso(iso) {
+    if (!iso) return null;
+    try {
+      var s = String(iso).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+      var p = s.split("-").map(Number);
+      var dob = new Date(p[0], p[1] - 1, p[2]);
+      var now = new Date();
+      var age = now.getFullYear() - dob.getFullYear();
+      var m = now.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
+      if (age < 0) return null;
+      return age;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function childIdentityMetaHtml(c) {
+    if (!c || !c.dob_iso) return "";
+    var age = ageFromDobIso(c.dob_iso);
+    return (
+      '<p class="pp-muted pp-child-dob">Date of birth: ' +
+      esc(formatDob(c.dob_iso)) +
+      "</p>" +
+      (age != null ? '<p class="pp-muted pp-child-age">Age: ' + esc(String(age)) + "</p>" : "")
+    );
+  }
+
   function childPhotoMissingNoticeHtml() {
     return (
       '<p class="pp-child-photo-missing" role="status">' +
@@ -636,9 +665,7 @@
               chips.push(unreadBadgeHtml(childUnread, "New messages for " + (c.display_name || "participant")));
             }
             var photoMissing = !childHasResolvedPhoto(c) && !c.avatar_url;
-            var dobLine = c.dob_iso
-              ? '<p class="pp-muted pp-child-dob">DOB ' + esc(formatDob(c.dob_iso)) + "</p>"
-              : "";
+            var identityMeta = childIdentityMetaHtml(c);
             return (
               '<article class="pp-card pp-child-card' +
               (photoMissing ? " pp-child-card--no-photo" : "") +
@@ -651,7 +678,7 @@
               '<h3 class="pp-child-name">' +
               esc(c.display_name || "Participant") +
               "</h3>" +
-              dobLine +
+              identityMeta +
               (chips.length ? '<div class="pp-chip-row pp-child-status">' + chips.join("") + "</div>" : "") +
               "</div>" +
               '<div class="pp-child-actions">' +

@@ -24,6 +24,40 @@
     }
   }
 
+  function ageFromDobIso(iso) {
+    if (!iso) return null;
+    try {
+      var s = String(iso).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+      var p = s.split("-").map(Number);
+      var dob = new Date(p[0], p[1] - 1, p[2]);
+      var now = new Date();
+      var age = now.getFullYear() - dob.getFullYear();
+      var m = now.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
+      if (age < 0) return null;
+      return age;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function participantIdentityMetaHtml(p) {
+    p = p || {};
+    var dobIso = p.dob_iso || "";
+    var dobText = p.dob_display || (dobIso ? formatDate(dobIso) : "");
+    var age = ageFromDobIso(dobIso);
+    var html = "";
+    if (dobText) {
+      html +=
+        '<p class="pp-muted pp-pax-meta">Date of birth: ' + esc(dobText) + "</p>";
+    }
+    if (age != null) {
+      html += '<p class="pp-muted pp-pax-meta">Age: ' + esc(String(age)) + "</p>";
+    }
+    return html;
+  }
+
   function normName(v) {
     return String(v || "")
       .toLowerCase()
@@ -461,6 +495,7 @@
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
+      participantIdentityMetaHtml(p) +
       "</div>" +
       '<div class="pp-hub-hero__info">' +
       '<div class="pp-hub-hero__info-head">' +
@@ -482,9 +517,7 @@
       '<h3 class="pp-pax-name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
-      (p.dob_display || p.dob_iso
-        ? '<p class="pp-muted pp-pax-dob">DOB ' + esc(p.dob_display || formatDate(p.dob_iso)) + "</p>"
-        : "") +
+      participantIdentityMetaHtml(p) +
       '<div class="pp-chip-row">' +
       statusChips(p) +
       "</div></div></header>"

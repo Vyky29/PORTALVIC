@@ -537,6 +537,12 @@
       line-height: 1.35;
       overflow-wrap: break-word;
     }
+    .pp-child-age {
+      margin: 2px 0 0;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
     .pp-child-photo {
       width: 80px;
       height: 80px;
@@ -915,6 +921,13 @@
       color: var(--ink);
       overflow-wrap: break-word;
     }
+    .pp-pax-meta {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-meta + .pp-pax-meta { margin-top: 2px; }
     .pp-hub-hero__info { min-width: 0; }
     .pp-hub-hero__info-head {
       display: flex;
@@ -1494,8 +1507,8 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-parent-attendance"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-parent-attendance"></script>
-  <script src="/portal/parent_portal_app.js?v=20260705-child-photos"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-dob-age"></script>
+  <script src="/portal/parent_portal_app.js?v=20260705-dob-age"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
