@@ -14,6 +14,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { verifyPortalStaff } from "../_shared/portal_staff_auth.ts";
 import { logSessionFeedbackNarrativeAudit } from "../_shared/session_feedback_narrative_audit.ts";
+import {
+  canonicalParticipantFirstName,
+  enforceParticipantFirstNameInText,
+  participantFirstNameSpellingOk,
+} from "../_shared/participant_feedback_name.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -40,8 +45,7 @@ function str(v: unknown, max = 12000): string {
 }
 
 function firstName(full: string): string {
-  const parts = str(full, 200).split(/\s+/).filter(Boolean);
-  return parts[0] || str(full, 80) || "Participant";
+  return canonicalParticipantFirstName(full) || "Participant";
 }
 
 function genderLabel(raw: unknown): "male" | "female" | "" {
@@ -72,9 +76,12 @@ function validateFilterOutput(
     return "generic_participant_label";
   }
   if (participantFirst) {
-    const nameInOutput =
-      positive.includes(participantFirst) || relevant.includes(participantFirst);
-    if (!nameInOutput) return "missing_participant_name";
+    if (!participantFirstNameSpellingOk(positive, participantName)) {
+      return "wrong_participant_name_spelling";
+    }
+    if (!participantFirstNameSpellingOk(relevant, participantName)) {
+      return "wrong_participant_name_spelling";
+    }
   }
   const inventedChecks: { phrase: RegExp; narrativeNeed: RegExp }[] = [
     { phrase: /seahorse/i, narrativeNeed: /seahorse/i },
@@ -120,6 +127,9 @@ function buildMessages(body: Record<string, unknown>, strictRetry = false) {
     "",
     "Naming and pronouns (strict):",
     "- Use the participant's FIRST NAME throughout — never write \"the participant\", \"the client\", or \"the child\".",
+    participantFirst
+      ? `- Spell the first name EXACTLY as in context: "${participantFirst}" — same letters, same order (not Yousef/Yousuf if the roster says ${participantFirst}).`
+      : "",
     "- If gender is male: he, him, his only — never they/them/their.",
     "- If gender is female: she, her, hers only — never they/them/their.",
     "- If gender is unknown: repeat the first name instead of generic labels or singular they.",
@@ -311,9 +321,17 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: result.error }, 502);
   }
 
+  function enforcedPair(positive: string, relevant: string) {
+    return {
+      positive: enforceParticipantFirstNameInText(positive, participantName),
+      relevant: enforceParticipantFirstNameInText(relevant, participantName),
+    };
+  }
+
+  let enforced = enforcedPair(result.positive_feedback, result.relevant_information);
   let validationError = validateFilterOutput(
-    result.positive_feedback,
-    result.relevant_information,
+    enforced.positive,
+    enforced.relevant,
     narrative,
     participantName,
   );
@@ -326,6 +344,7 @@ Deno.serve(async (req) => {
     const retry = await callOpenAi(apiKey, buildMessages(body, true), 0.25);
     if (retry.ok) {
       result = retry;
+      enforced = enforcedPair(result.positive_feedback, result.relevant_information);
       if (retry.usage) {
         filterMeta = {
           model: retry.model,
@@ -337,8 +356,8 @@ Deno.serve(async (req) => {
         };
       }
       validationError = validateFilterOutput(
-        result.positive_feedback,
-        result.relevant_information,
+        enforced.positive,
+        enforced.relevant,
         narrative,
         participantName,
       );
@@ -348,18 +367,18 @@ Deno.serve(async (req) => {
   if (validationError) {
     await auditFilter(
       validationError,
-      result.positive_feedback,
-      result.relevant_information,
+      enforced.positive,
+      enforced.relevant,
       filterMeta,
     );
     return json({ ok: false, error: validationError }, 422);
   }
 
-  await auditFilter("ok", result.positive_feedback, result.relevant_information, filterMeta);
+  await auditFilter("ok", enforced.positive, enforced.relevant, filterMeta);
 
   return json({
     ok: true,
-    positive_feedback: result.positive_feedback,
-    relevant_information: result.relevant_information,
+    positive_feedback: enforced.positive,
+    relevant_information: enforced.relevant,
   });
 });

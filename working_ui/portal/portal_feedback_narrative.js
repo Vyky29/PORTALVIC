@@ -462,6 +462,18 @@
   }
 
   function applyFilterResult(positive, relevant, liveAi) {
+    var ctx = readFormContext();
+    var participantName = ctx.participant_name || "";
+    if (global.PortalParticipantFeedbackName && participantName) {
+      positive = global.PortalParticipantFeedbackName.enforceParticipantFirstNameInText(
+        positive,
+        participantName,
+      );
+      relevant = global.PortalParticipantFeedbackName.enforceParticipantFirstNameInText(
+        relevant,
+        participantName,
+      );
+    }
     if (els.positive) els.positive.value = positive;
     if (els.relevant) els.relevant.value = relevant;
     state.filtered = true;

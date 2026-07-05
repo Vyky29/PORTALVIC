@@ -16,6 +16,7 @@ import {
   feedbackAuthorFirstName,
   resolveFeedbackAuthorRole,
 } from "../_shared/parent_feedback_author_role.ts";
+import { enforceParticipantFirstNameInText } from "../_shared/participant_feedback_name.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
   lookupClientsInfoSheetForParticipant,
@@ -351,7 +352,10 @@ Deno.serve(async (req) => {
     for (const row of rawFeedback) {
       const id = String(row.id);
       const patterns = row.engagement_patterns;
-      const positiveText = clean(row.positive_feedback, 2500);
+      const positiveText = enforceParticipantFirstNameInText(
+        clean(row.positive_feedback, 2500),
+        clean(row.client_name, 200),
+      );
       const service = clean(row.service, 200);
       const staffName = clean(row.completed_by_name, 120);
       const cache = cacheById.get(id);

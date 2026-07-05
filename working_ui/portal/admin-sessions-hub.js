@@ -6074,7 +6074,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   /** Parent-safe filtered text = staff narrative extract (positive_feedback), not AI summary. */
   AdminSessionsHub.prototype.filteredFeedbackForRow = function (fb) {
+    var clientName = clean(fb && fb.client_name);
     var text = clean(fb && fb.positive_feedback);
+    if (text && clientName && global.PortalParticipantFeedbackName) {
+      text = global.PortalParticipantFeedbackName.enforceParticipantFirstNameInText(text, clientName);
+    }
     if (!text) return { text: "", state: "empty" };
     var share = this.parentShareForFeedback(fb);
     if (share && String(share.share_status || "") === "hidden") {
