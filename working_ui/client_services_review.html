@@ -4,6 +4,29 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Revisión de clientes y servicios</title>
+<!-- Admin-only gate: bridge auto-runs bootstrapDashboardSupabase({page:"admin"}),
+     which redirects to login (with return) for no session and to the role home
+     for non-admins. Content stays hidden until an admin session is confirmed. -->
+<style id="csr-auth-gate">
+  html:not(.portal-auth-ready) body > *:not(#csr-gate-loader){visibility:hidden!important}
+  html:not(.portal-auth-ready) body{background:#edf4fb!important}
+  #csr-gate-loader{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;background:#edf4fb;
+    font:600 14px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;color:#1e3a5f}
+  html.portal-auth-ready #csr-gate-loader{display:none!important}
+  #csr-gate-loader .sp{width:36px;height:36px;border:3px solid #c5d9ea;border-top-color:#2563eb;
+    border-radius:50%;animation:csrSpin .75s linear infinite}
+  @keyframes csrSpin{to{transform:rotate(360deg)}}
+</style>
+<script src="/portal/portal-admin-supabase-bridge.js?v=20260707-login-cache"></script>
+<script>
+  (function(){
+    function ready(){ document.documentElement.classList.add('portal-auth-ready'); }
+    window.addEventListener('portal:supabase-ready', ready, { once:true });
+    /* Safety: never leave a blank screen if bootstrap stalls on a slow network. */
+    setTimeout(ready, 12000);
+  })();
+</script>
 <style>
   :root{
     --bg:#0f1720; --panel:#ffffff; --ink:#0f1c2e; --muted:#64748b; --line:#e2e8f0;
@@ -111,6 +134,10 @@
 </style>
 </head>
 <body>
+<div id="csr-gate-loader" role="status" aria-live="polite" aria-busy="true">
+  <div class="sp" aria-hidden="true"></div>
+  <span>Comprobando acceso…</span>
+</div>
 <header class="top">
   <div class="top-inner">
     <div class="title">
