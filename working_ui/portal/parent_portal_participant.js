@@ -836,7 +836,7 @@
         global.PortalClientSessionsOverview &&
         typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
           ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
-          : '<p class="pp-muted">No session photos for this participant yet. Photos appear here after instructors capture them during sessions.</p>';
+          : '<p class="pp-muted">No session photos for this participant yet.</p>';
     }
     var subNote = aquaticOnly && !achievements.length
       ? "Achievement photos are not available for Aquatic Activity at Acton or Northolt."

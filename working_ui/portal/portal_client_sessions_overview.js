@@ -880,11 +880,29 @@
     var name = clean(row.feedback_by_name);
     var role = clean(row.feedback_by_role);
     if (!name && !role) return '<span class="muted">—</span>';
+    var photoHtml = "";
+    if (
+      typeof global.PortalParentTeam !== "undefined" &&
+      typeof global.PortalParentTeam.memberFromFeedbackName === "function"
+    ) {
+      var member = global.PortalParentTeam.memberFromFeedbackName(name);
+      var avatarUrl = member && (member.avatar_url || member.photo_url);
+      if (avatarUrl) {
+        photoHtml =
+          '<img class="pcso-author-photo" src="' +
+          esc(avatarUrl) +
+          '" alt="" width="36" height="36" loading="lazy" decoding="async" draggable="false" onerror="this.remove();" />';
+      }
+    }
     return (
-      '<div class="pcso-author-stack">' +
+      '<div class="pcso-author-stack' +
+      (photoHtml ? " pcso-author-stack--photo" : "") +
+      '">' +
+      (photoHtml ? '<div class="pcso-author-photo-wrap">' + photoHtml + "</div>" : "") +
+      '<div class="pcso-author-text">' +
       (name ? '<div class="pcso-tbl__author-name">' + esc(name) + "</div>" : "") +
       (role ? '<div class="pcso-tbl__author-role">' + esc(role) + "</div>" : "") +
-      "</div>"
+      "</div></div>"
     );
   }
 

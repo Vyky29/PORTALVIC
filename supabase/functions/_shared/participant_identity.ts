@@ -25,6 +25,7 @@ const ROSTER_SPELLING_ALIASES: Record<string, string> = {
 
 const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
   adam_a: "adam_ab",
+  adam_abed: "adam_ab",
   abodi: "abodi_pa",
   junaid: "junaid_f",
   khalid_ab: "khalid",
@@ -55,6 +56,36 @@ export function rosterParticipantSlugAlias(slug: string): string {
   if (!s) return s;
   return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] ||
     CLIENT_INFO_SHEET_ALIASES[s] || PORTAL_PARTICIPANT_SLUG_ALIASES[s] || s;
+}
+
+/** Legacy roster client_id values that map to the same canonical participant slug. */
+function legacyClientIdVariantsByCanonical(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  const add = (legacy: string, canon: string) => {
+    if (!legacy || !canon || legacy === canon) return;
+    if (!out[canon]) out[canon] = [];
+    if (!out[canon].includes(legacy)) out[canon].push(legacy);
+  };
+  for (const [legacy, canon] of Object.entries(ROSTER_SPELLING_ALIASES)) add(legacy, canon);
+  for (const [legacy, canon] of Object.entries(CLIENT_INFO_SLUG_ALIASES)) add(legacy, canon);
+  for (const [legacy, canon] of Object.entries(CLIENT_INFO_SHEET_ALIASES)) add(legacy, canon);
+  for (const [legacy, canon] of Object.entries(PORTAL_PARTICIPANT_SLUG_ALIASES)) add(legacy, canon);
+  return out;
+}
+
+/** Include historical client_id spellings so parent achievement queries find every folder photo. */
+export function expandParticipantClientSlugs(slugs: string[]): string[] {
+  const legacyByCanon = legacyClientIdVariantsByCanonical();
+  const out = new Set<string>();
+  for (const raw of slugs) {
+    const slug = slugifyParticipantKey(raw);
+    if (!slug) continue;
+    const canon = rosterParticipantSlugAlias(slug);
+    out.add(slug);
+    out.add(canon);
+    for (const legacy of legacyByCanon[canon] || []) out.add(legacy);
+  }
+  return [...out].filter(Boolean);
 }
 
 export function canonicalParticipantClientId(nameRaw: string): string {

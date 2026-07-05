@@ -17,7 +17,8 @@ import {
 } from "../_shared/participant_identity.ts";
 
 const ACH_BUCKET = "participant-achievements";
-const PARENT_DOWNLOAD_STATUSES = ["attached", "downloaded"] as const;
+/** Same rows parents see in the gallery (matches admin participant folder). */
+const PARENT_DOWNLOAD_STATUSES = ["draft", "attached", "archived_unused", "downloaded"] as const;
 
 function clean(v: unknown, max = 4000): string {
   return String(v ?? "")
@@ -118,6 +119,22 @@ Deno.serve(async (req) => {
 
     if (updErr) {
       console.error("[parent-portal-achievement-download] update", updErr);
+      return parentPortalJsonInvalid(500);
+    }
+    downloadedAt = now;
+  } else if (photo.status !== "downloaded") {
+    const { error: updErr } = await supabase
+      .from("portal_participant_achievement_photos")
+      .update({
+        status: "downloaded",
+        parent_downloaded_at: now,
+        parent_downloaded_by_contact_id: contactId,
+      })
+      .eq("id", photoId)
+      .in("status", ["draft", "archived_unused"]);
+
+    if (updErr) {
+      console.error("[parent-portal-achievement-download] update draft", updErr);
       return parentPortalJsonInvalid(500);
     }
     downloadedAt = now;

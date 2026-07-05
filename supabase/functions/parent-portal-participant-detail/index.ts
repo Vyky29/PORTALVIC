@@ -23,6 +23,7 @@ import {
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
 import {
+  expandParticipantClientSlugs,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
@@ -36,6 +37,11 @@ import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_sum
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
+/** Same folder rows as admin participant gallery (exclude lead inbox). */
+const PARENT_ACH_STATUSES = ["draft", "attached", "archived_unused", "downloaded"] as const;
+const LEAD_INBOX_CLIENT_ID = "_inbox";
+/** Max achievement rows returned per parent page load. */
+const PARENT_ACH_QUERY_LIMIT = 500;
 /** Max feedback rows returned per parent page load. */
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
@@ -420,54 +426,71 @@ Deno.serve(async (req) => {
   let achievements: Record<string, unknown>[] = [];
 
   if (wantAchievements) {
-    const PARENT_ACH_STATUSES = ["attached", "downloaded"] as const;
-    const achQueries = [];
-    if (clientSlugs.length) {
-      achQueries.push(
-        supabase
-          .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type")
-          .in("status", [...PARENT_ACH_STATUSES])
-          .in("client_id", clientSlugs)
-          .order("session_date", { ascending: false })
-          .limit(60),
-      );
-    }
-    for (const nm of lookupNames.slice(0, 4)) {
-      achQueries.push(
-        supabase
-          .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type")
-          .in("status", [...PARENT_ACH_STATUSES])
-          .ilike("client_name", nm)
-          .order("session_date", { ascending: false })
-          .limit(60),
-      );
-    }
-
+    const achSelect =
+      "id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type";
+    const expandedSlugs = expandParticipantClientSlugs(clientSlugs);
     const achRows: Record<string, unknown>[] = [];
     const seenAch = new Set<string>();
-    const achResults = await Promise.all(achQueries);
-    for (const { data } of achResults) {
-      for (const row of data || []) {
-        if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
-        const aid = String(row.id || "");
+
+    const mergeAchievementRows = (rows: unknown[] | null | undefined) => {
+      for (const row of rows || []) {
+        if (!row || typeof row !== "object") continue;
+        const rec = row as Record<string, unknown>;
+        if (!participantIdentityMatches(
+          identityInput,
+          String(rec.client_name || ""),
+          String(rec.client_id || ""),
+        )) continue;
+        if (clean(rec.client_id, 80).toLowerCase() === LEAD_INBOX_CLIENT_ID) continue;
+        const aid = String(rec.id || "");
         if (!aid || seenAch.has(aid)) continue;
         seenAch.add(aid);
-        achRows.push(row);
+        achRows.push(rec);
       }
+    };
+
+    if (expandedSlugs.length) {
+      const { data, error } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .in("client_id", expandedSlugs)
+        .order("session_date", { ascending: false })
+        .limit(PARENT_ACH_QUERY_LIMIT);
+      if (error) {
+        console.error("[parent-portal-participant-detail] achievements by client_id error", error);
+      }
+      mergeAchievementRows(data);
+    }
+
+    for (const nm of lookupNames.slice(0, 6)) {
+      const { data, error } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .ilike("client_name", nm)
+        .order("session_date", { ascending: false })
+        .limit(PARENT_ACH_QUERY_LIMIT);
+      if (error) {
+        console.error("[parent-portal-participant-detail] achievements by client_name error", error);
+        continue;
+      }
+      mergeAchievementRows(data);
     }
 
     achRows.sort((a, b) => String(b.session_date || "").localeCompare(String(a.session_date || "")));
 
     const signedRows = await Promise.all(
-      achRows.slice(0, 40).map(async (row) => {
+      achRows.map(async (row) => {
         const path = clean(row.storage_path, 500);
         if (!path) return null;
         const { data: signed, error: signErr } = await supabase.storage
           .from(ACH_BUCKET)
           .createSignedUrl(path, 3600);
-        if (signErr || !signed?.signedUrl) return null;
+        if (signErr || !signed?.signedUrl) {
+          console.error("[parent-portal-participant-detail] achievement sign error", signErr, path);
+          return null;
+        }
         return {
           id: row.id,
           session_date: row.session_date,

@@ -579,11 +579,60 @@
     if (cid === "105" || /amaar/i.test(String(p.display_name || ""))) return "amaar_ah";
     if (cid === "125" || /aydaan/i.test(String(p.display_name || ""))) return "aydaan_ah";
     if (cid === "124" || /aadam/i.test(String(p.display_name || ""))) return "adaam_ah";
-    var slug = slugifyParticipantName(p.display_name || p.first_name || "");
+    var name = p.display_name || p.first_name || "";
+    if (
+      typeof global.PortalParticipantIdentity !== "undefined" &&
+      typeof global.PortalParticipantIdentity.canonicalClientId === "function"
+    ) {
+      return global.PortalParticipantIdentity.canonicalClientId(name);
+    }
+    var slug = slugifyParticipantName(name);
     if (slug === "amaar_ahmed") return "amaar_ah";
     if (slug === "aydaan_ahmed") return "aydaan_ah";
     if (slug === "aadam_ahmed") return "adaam_ah";
+    if (slug === "adam_abed") return "adam_ab";
     return slug;
+  }
+
+  function staffKeyFromFeedbackName(name) {
+    var k = String(name || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ");
+    if (!k) return "";
+    k = k.split(/\s+/)[0] || "";
+    if (k === "yousef" || k === "yusef") k = "youssef";
+    if (k === "lulia") k = "luliya";
+    return k;
+  }
+
+  function memberFromFeedbackName(name) {
+    return catalogMember(staffKeyFromFeedbackName(name));
+  }
+
+  function teamFromSessions(data) {
+    var sessions = (data && data.sessions) || [];
+    if (!Array.isArray(sessions) || !sessions.length) return [];
+    var seen = {};
+    var out = [];
+    sessions.forEach(function (session) {
+      var date = String((session && session.session_date) || "").slice(0, 10);
+      if (!date || date < TEAM_FEEDBACK_SINCE) return;
+      var key = staffKeyFromFeedbackName(
+        (session && (session.feedback_by_name || session.completed_by_name)) || "",
+      );
+      if (!key || seen[key]) return;
+      var card = catalogMember(key);
+      if (!card) return;
+      seen[key] = true;
+      out.push(card);
+    });
+    out.sort(function (a, b) {
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+    return out;
   }
 
   function catalogMember(key) {
@@ -610,6 +659,8 @@
         return mergeTeamMember(catalogMember(m.staff_key || m.key || m.username), m);
       }).filter(Boolean);
     }
+    var fromSessions = teamFromSessions(data);
+    if (fromSessions.length) return fromSessions;
     var keys = demoKeysForParticipant(data);
     var seen = {};
     var out = [];
@@ -629,5 +680,7 @@
     resolveTeam: resolveTeam,
     participantSlug: participantSlug,
     catalogMember: catalogMember,
+    memberFromFeedbackName: memberFromFeedbackName,
+    staffKeyFromFeedbackName: staffKeyFromFeedbackName,
   };
 })(typeof window !== "undefined" ? window : global);
