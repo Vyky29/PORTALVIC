@@ -64,6 +64,10 @@ body.portal-sessions-overview-open{
   display:flex;
   flex-direction:column;
 }
+.pcso-kpi-card__head{
+  text-align:center;
+  min-width:0;
+}
 .pcso-kpi-card__head h4{
   margin:0;
   font-size:11px;
