@@ -2376,6 +2376,12 @@
         if(dashboardData && dashboardData.portalFeedbackServerSynced) srvPart = '1';
         const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
         if(srv && srv.feedback) srvPart += ':' + srv.feedback.size;
+        /* Co-instructor ABSENT quick marks (e.g. Bespoke shared Tinashe) resolve a day even when
+           no feedback row / own memory changed. Without them here the rebuild is skipped and the
+           term cell stays orange after the peer absent sync arrives. */
+        if(srv && srv.absent) srvPart += ':a' + srv.absent.size;
+        const apk = dashboardData && dashboardData.portalServerAbsentQuickMarkKeys;
+        if(apk && typeof apk.size === 'number') srvPart += ':q' + apk.size;
       }catch(_){}
       let ovHydrated = '0';
       try{

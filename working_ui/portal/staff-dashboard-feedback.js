@@ -1518,6 +1518,10 @@
             (keys.absentKeys || []).map(function(k){ return String(k || '').trim(); }).filter(Boolean)
           );
         }
+        /* Peer absent/feedback keys just changed — bust the reminder + outstanding caches so the
+           term calendar colour, halo and "Outstanding feedbacks" count recompute against them
+           (otherwise a co-instructor's Absent stays orange until an unrelated cache miss). */
+        if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
         if(typeof mod.portalBuildServerResolvedRosterKeySets === 'function' && dashboardData){
           dashboardData.portalServerResolvedRosterKeys = mod.portalBuildServerResolvedRosterKeySets(rosterKeys, keys, mergeFanOutOpts);
         }

@@ -1143,6 +1143,18 @@
           dismissedSig = String(portalQuickMenuLoadDismissedOverrideKeys().length);
         }
       }catch(_){}
+      /* Peer resolution (co-instructor absent quick marks + shared feedback keys) arrives
+         asynchronously after first paint. It must be part of the cache key or the term
+         calendar / outstanding count / halo keep a stale ORANGE for a session a co-instructor
+         already resolved as Absent (e.g. Bespoke shared Tinashe). */
+      var absentPeerSig = '0';
+      var sharedFbSig = '0';
+      try{
+        var apk = dashboardData && dashboardData.portalServerAbsentQuickMarkKeys;
+        absentPeerSig = String(apk && typeof apk.size === 'number' ? apk.size : 0);
+        var sfk = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
+        sharedFbSig = String(sfk && typeof sfk.size === 'number' ? sfk.size : 0);
+      }catch(_){}
       return [
         dashboardData && dashboardData.portalIdentityResolved ? '1' : '0',
         dashboardData && dashboardData.portalFeedbackPipelineReady ? '1' : '0',
@@ -1151,6 +1163,8 @@
         String(fbKeys),
         String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
         dismissedSig,
+        absentPeerSig,
+        sharedFbSig,
       ].join('|');
     }
     function portalInvalidateReminderStateCache(){
