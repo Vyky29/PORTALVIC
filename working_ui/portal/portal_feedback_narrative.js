@@ -41,6 +41,7 @@
     filtered: false,
     filtering: false,
     liveAiUsed: false,
+    aiUnavailable: false,
     narrativeSnapshot: "",
     filterPositiveSnapshot: "",
     filterRelevantSnapshot: "",
@@ -143,6 +144,43 @@
     return state.inputMode !== "voice";
   }
 
+  var AI_DOWN_SUBMIT_MSG =
+    "AI is temporarily unavailable — you can still submit. Your text is saved as written and an admin will filter it for the family later.";
+
+  /** True when the edge function failed because OpenAI/Whisper is unreachable or out of quota. */
+  function isAiDownError(result) {
+    if (!result) return false;
+    var e = result.error ? String(result.error) : "";
+    if (e === "openai_failed" || e === "no_openai" || e === "openai_bad_response") return true;
+    // 503 = key missing; other statuses handled by explicit error codes above.
+    return result.status === 503;
+  }
+
+  /** Let staff submit the raw narrative when AI cannot filter it (nothing is lost). */
+  function enterAiDegraded(fromSilent) {
+    var narrative = narrativeText();
+    if (narrative.length < MIN_NARRATIVE_CHARS) {
+      setStatus("Add more detail to the session narrative first.");
+      return;
+    }
+    state.aiUnavailable = true;
+    state.filtered = true;
+    state.liveAiUsed = false;
+    state.narrativeSnapshot = narrative;
+    state.filterPositiveSnapshot = narrative;
+    state.filterRelevantSnapshot = narrative;
+    if (els.positive) els.positive.value = narrative;
+    if (els.relevant) els.relevant.value = narrative;
+    setAiFieldsRequired(false);
+    showAiOutput(true);
+    state.filtering = false;
+    if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
+    syncFilterButton();
+    syncSubmitGate();
+    setStatus(AI_DOWN_SUBMIT_MSG);
+    return true;
+  }
+
   function validationRequired() {
     return isTypedMode();
   }
@@ -225,6 +263,12 @@
   function syncSubmitGate() {
     if (!els.submitBtn) return;
     if (els.submitBtn.textContent === "Submitting") return;
+    if (state.aiUnavailable) {
+      els.submitBtn.disabled = narrativeText().length < MIN_NARRATIVE_CHARS;
+      var hintDown = global.document.getElementById("fbSubmitHint");
+      if (hintDown) hintDown.textContent = AI_DOWN_SUBMIT_MSG;
+      return;
+    }
     var needsValidate =
       validationRequired() &&
       (!state.validated || narrativeText() !== state.validationSnapshot);
@@ -263,6 +307,7 @@
   function resetFilteredState() {
     state.filtered = false;
     state.liveAiUsed = false;
+    state.aiUnavailable = false;
     state.narrativeSnapshot = "";
     state.filterPositiveSnapshot = "";
     state.filterRelevantSnapshot = "";
@@ -367,6 +412,7 @@
     if (els.relevant) els.relevant.value = relevant;
     state.filtered = true;
     state.liveAiUsed = !!liveAi;
+    if (liveAi) state.aiUnavailable = false;
     state.narrativeSnapshot = narrativeText();
     state.filterPositiveSnapshot = positive;
     state.filterRelevantSnapshot = relevant;
@@ -480,6 +526,10 @@
         global.alert("Your session expired. Sign in again, then Check narrative.");
         return;
       }
+      if (isAiDownError(result)) {
+        enterAiDegraded(false);
+        return;
+      }
       setStatus("Could not check narrative — try again.");
       return;
     }
@@ -524,7 +574,13 @@
       var err = result.error || "filter_failed";
       if (err === "session_expired") {
         setStatus("Sign in on the portal, then tap Filter with AI again.");
-        global.alert("Your session expired. Sign in again, then Filter with AI.");
+        if (!opts.silent) {
+          global.alert("Your session expired. Sign in again, then Filter with AI.");
+        }
+        return;
+      }
+      if (isAiDownError(result)) {
+        enterAiDegraded(opts.silent);
         return;
       }
       if (
@@ -582,6 +638,21 @@
       syncModeNote();
       syncValidateButton();
     }
+    if (state.aiUnavailable) {
+      var nv = narrativeText();
+      // Keep the saved fields mirrored to the narrative unless staff edited them.
+      if (els.positive && clean(els.positive.value) === clean(state.filterPositiveSnapshot)) {
+        els.positive.value = nv;
+        state.filterPositiveSnapshot = nv;
+      }
+      if (els.relevant && clean(els.relevant.value) === clean(state.filterRelevantSnapshot)) {
+        els.relevant.value = nv;
+        state.filterRelevantSnapshot = nv;
+      }
+      state.narrativeSnapshot = nv;
+      syncSubmitGate();
+      return;
+    }
     if (!state.filtered && !state.validated) return;
     if (narrativeText() !== state.narrativeSnapshot) {
       resetFilteredState();
@@ -595,6 +666,8 @@
     var relevant = clean(els.relevant && els.relevant.value);
     return {
       input_mode: state.inputMode,
+      ai_unavailable: !!state.aiUnavailable,
+      ai_filter_pending: !!state.aiUnavailable,
       validate_count: state.counts.validate,
       filter_count: state.counts.filter,
       positive_edited_after_filter:
@@ -615,6 +688,12 @@
     if (narrative.length < MIN_NARRATIVE_CHARS) {
       global.alert("Please add more detail to the session narrative before submitting.");
       return false;
+    }
+    if (state.aiUnavailable) {
+      // AI filter/validation unavailable: submit the raw narrative so nothing is lost.
+      if (els.positive && !clean(els.positive.value)) els.positive.value = narrative;
+      if (els.relevant && !clean(els.relevant.value)) els.relevant.value = narrative;
+      return true;
     }
     if (validationRequired()) {
       if (!state.validated || narrative !== state.validationSnapshot) {
