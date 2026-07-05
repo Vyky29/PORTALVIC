@@ -85,6 +85,8 @@
       '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
     termStart:
       '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 14 11 16 15 12"/>',
+    heart:
+      '<path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/>',
     halfTerm:
       '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
     closure:
@@ -1122,6 +1124,44 @@
     });
   }
 
+  function firstNameFromDisplay(name) {
+    return String(name || "").trim().split(/\s+/)[0] || "";
+  }
+
+  function dayCentreWithdrawn(data) {
+    if (!hasDayCentreEnrolled(data)) return false;
+    var dc = document.querySelector('input[name="dc_choice"]:checked');
+    return dc ? dc.value === "withdraw" : false;
+  }
+
+  function noSessionsKept(data) {
+    var hasWeekly = hasWeeklySlots(data);
+    var hasDc = hasDayCentreEnrolled(data);
+    if (!hasWeekly && !hasDc) return false;
+    var keptWeekly = hasWeekly && keptWeeklySlots(data).length > 0;
+    var keptDc = hasDc && !dayCentreWithdrawn(data);
+    return !keptWeekly && !keptDc;
+  }
+
+  function renderReenrolFarewellHtml(data) {
+    var first = firstNameFromDisplay(participantDisplayName(data));
+    var firstEsc = esc(first);
+    return (
+      '<div class="re-farewell" id="reFarewell" hidden>' +
+      '<div class="re-farewell__card">' +
+      '<span class="re-farewell__icon">' +
+      reIconSvg("heart") +
+      "</span>" +
+      "<h4>Thank you for being part of ClubSENsational</h4>" +
+      "<p>You've chosen not to continue any activities for 2026/27, so there is nothing to pay.</p>" +
+      "<p>Thank you for your trust and support" +
+      (first ? " during the time " + firstEsc + " has spent with us" : " over this time") +
+      ". It has been a pleasure having you with us. We wish you and your family all the very best, and we truly hope our paths cross again in the future — our door is always open.</p>" +
+      '<p class="re-farewell__cta">Just confirm and submit below to let us know.</p>' +
+      "</div></div>"
+    );
+  }
+
   function resolveAnnualWeeklyTotal(data) {
     var slots = (data && data.weekly_slots) || [];
     if (slots.length) return sumAnnualWeeklyTotal(keptWeeklySlots(data));
@@ -1310,6 +1350,7 @@
       '<div class="re-funding-2627" data-annual-total="' +
       esc(String(annualTotal)) +
       '">' +
+      '<div id="rePayEverything">' +
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
       "</p>" +
@@ -1335,6 +1376,8 @@
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
       ". First payments from mid-August (bank transfer) or September (Direct Payment) — see schedule above.</p>" +
+      "</div>" +
+      renderReenrolFarewellHtml(data) +
       "</div>"
     );
   }
@@ -1659,6 +1702,17 @@
     }
     updateAdminFeeAmount();
     syncPaymentSchedulePreview();
+    syncFarewellVisibility();
+  }
+
+  function syncFarewellVisibility() {
+    var data = state.lookup;
+    if (!data) return;
+    var farewell = noSessionsKept(data);
+    var payEl = document.getElementById("rePayEverything");
+    var byeEl = document.getElementById("reFarewell");
+    if (payEl) payEl.hidden = farewell;
+    if (byeEl) byeEl.hidden = !farewell;
   }
 
   function bindFundingHandlers() {
@@ -1707,10 +1761,15 @@
           state.weeklyChoices[id] = t.value;
         }
         refreshProgrammeTotalsFromChoices();
+        return;
+      }
+      if (t && t.name === "dc_choice") {
+        refreshProgrammeTotalsFromChoices();
       }
     });
     syncFundingPanels();
     syncPaymentSchedulePreview();
+    syncFarewellVisibility();
   }
 
   function collectBillingChoices(data) {

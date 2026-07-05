@@ -815,6 +815,43 @@
       overflow-wrap: break-word;
     }
     .re-funding-total strong { color: var(--blue); }
+    .re-farewell { margin: 0; min-width: 0; }
+    .re-farewell__card {
+      background: linear-gradient(180deg, #eef9f1 0%, #ffffff 100%);
+      border: 1px solid rgba(31, 143, 79, .28);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .re-farewell__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: rgba(31, 143, 79, .12);
+      color: #1f8f4f;
+    }
+    .re-farewell__icon .re-title-ico,
+    .re-farewell__icon svg { width: 26px; height: 26px; }
+    .re-farewell h4 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--ink);
+      font-weight: 800;
+      overflow-wrap: break-word;
+    }
+    .re-farewell p {
+      margin: 0 0 8px;
+      font-size: .9rem;
+      line-height: 1.5;
+      color: var(--text);
+      overflow-wrap: break-word;
+    }
+    .re-farewell p:last-child { margin-bottom: 0; }
+    .re-farewell__cta { font-weight: 700; color: #1f8f4f; }
     .re-billing-plan-intro {
       margin: 0 0 12px;
       font-size: .86rem;
@@ -1489,6 +1526,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260705-preview-service-tones"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-pay-timing"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-withdraw-farewell"></script>
 </body>
 </html>
