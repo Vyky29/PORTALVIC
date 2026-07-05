@@ -43,6 +43,13 @@ const DAY_ALIASES: Record<string, string> = {
   friday: "Friday",
   saturday: "Saturday",
   sunday: "Sunday",
+  mondays: "Monday",
+  tuesdays: "Tuesday",
+  wednesdays: "Wednesday",
+  thursdays: "Thursday",
+  fridays: "Friday",
+  saturdays: "Saturday",
+  sundays: "Sunday",
 };
 
 const WEEKEND_DAYS = new Set(["Saturday", "Sunday"]);
@@ -598,6 +605,65 @@ export function normalizePayMethod(raw: string): string {
   return s.replace(/\bbank transfer\b/i, "Bank Transfer");
 }
 
+function retargetSlotDay(slot: ParsedSlot, day: string): ParsedSlot {
+  const isWeekend = WEEKEND_DAYS.has(day);
+  const counts = sessionCountsForDay(day);
+  const price = slot.pricePerSession ?? unitPriceFor(slot.serviceType, slot.durationMin);
+  return {
+    ...slot,
+    day,
+    isWeekend,
+    sessions: { ...counts },
+    pricePerSession: price,
+    termTotals: termTotals(price, counts),
+    displayLabel: undefined,
+  };
+}
+
+/** Read explicit day hints from payment Services / Sessions columns. */
+function extractDayHintFromPayment(serviceRaw: string, data: Record<string, unknown>): string {
+  const sessions = pickPaymentField(data, ["Sessions", "sessions", "Session", "Term"]);
+  const blob = `${serviceRaw} ${sessions}`.toLowerCase();
+  const paren = String(serviceRaw || "").match(/\(([^)]+)\)/);
+  if (paren) {
+    const dayPart = paren[1].split(/[/+&·,]/)[0]?.trim() || "";
+    const fromParen = normalizeDay(dayPart.replace(/\s*1:1.*$/i, "").trim());
+    if (fromParen && DAY_ORDER.includes(fromParen)) return fromParen;
+  }
+  if (/\bsun(day|s)?\b/.test(blob)) return "Sunday";
+  if (/\bsat(urday|s)?\b/.test(blob)) return "Saturday";
+  return "";
+}
+
+function applyPaymentDayHints(
+  weekly: ParsedSlot[],
+  serviceRaw: string,
+  data: Record<string, unknown>,
+): ParsedSlot[] {
+  const hint = extractDayHintFromPayment(serviceRaw, data);
+  return weekly.map((slot) => {
+    let out = slot;
+    const st = normalizeServiceType(slot.serviceType);
+    const isMulti = st.includes("MULTI");
+    if (hint && DAY_ORDER.includes(hint) && hint !== slot.day) {
+      if (isMulti && slot.durationMin >= 60) {
+        out = retargetSlotDay(slot, hint);
+      } else if (!slot.day || !DAY_ORDER.includes(slot.day)) {
+        out = retargetSlotDay(slot, hint);
+      }
+    }
+    if (isMulti && slot.durationMin >= 60 && /\(\s*sun\b/i.test(String(serviceRaw || ""))) {
+      out = retargetSlotDay(out, "Sunday");
+    }
+    out.displayLabel = buildSlotDisplayLabel(out);
+    return out;
+  });
+}
+
+export function paymentClientKeyForParticipant(displayName: string): string {
+  return canonicalParticipantClientId(displayName).replace(/_/g, "-");
+}
+
 function pickPaymentField(data: Record<string, unknown>, keys: string[]): string {
   for (const key of keys) {
     const v = data[key];
@@ -825,7 +891,8 @@ export function paymentRowToContext(row: Record<string, unknown>) {
   const slots = parseServiceString(service);
   const { weekly: weeklyRaw, dayCentre } = splitSlots(slots);
   const costPerSession = parseCostPerSession(data);
-  const weekly = applyCostFallbackToWeekly(weeklyRaw, costPerSession);
+  const weeklyRawWithHints = applyPaymentDayHints(weeklyRaw, service, data);
+  const weekly = applyCostFallbackToWeekly(weeklyRawWithHints, costPerSession);
 
   return {
     clientKey: String(row.client_key || ""),

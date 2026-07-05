@@ -13,6 +13,7 @@ import {
   annualTotalForWeekly,
   buildCurrentArrangements2526,
   mergeWeeklySlotsFromRosterAndPayment,
+  paymentClientKeyForParticipant,
   enrichWeeklySlotsFromRoster,
   namesMatch,
   normalizePersonName,
@@ -319,14 +320,30 @@ async function findPaymentContext(
   parentFirst: string,
   parentLast: string,
 ) {
+  const displayName = String(participantRow.display_name || "");
+  const firstName = String(participantRow.first_name || displayName.split(" ")[0] || "");
+  const contactId = String(participantRow.contact_id || "");
+  const preferredKey = paymentClientKeyForParticipant(displayName);
+
+  if (preferredKey) {
+    const { data: keyed } = await supabase
+      .from("client_payments")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+      .eq("client_key", preferredKey)
+      .maybeSingle();
+    if (keyed) {
+      const keyedCtx = paymentRowToContext(keyed as Record<string, unknown>);
+      if (keyedCtx.weeklySlots.length || keyedCtx.dayCentreSlots.length) {
+        return keyedCtx;
+      }
+    }
+  }
+
   const { data: rows } = await supabase
     .from("client_payments")
     .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
     .order("imported_at", { ascending: false })
     .limit(400);
-
-  const displayName = String(participantRow.display_name || "");
-  const firstName = String(participantRow.first_name || displayName.split(" ")[0] || "");
 
   let best: ReturnType<typeof paymentRowToContext> | null = null;
   let bestScore = -1;
@@ -338,9 +355,9 @@ async function findPaymentContext(
 
     const nameOk =
       participantIdentityMatches(
-        { displayName, firstName },
+        { displayName, firstName, contactId },
         pax || clientName,
-        pax || clientName,
+        String(row.client_key || pax || clientName),
       ) || namesMatch(displayName, clientName) || namesMatch(firstName, pax);
 
     if (!nameOk) continue;
@@ -354,7 +371,9 @@ async function findPaymentContext(
 
     const ctx = paymentRowToContext(row as Record<string, unknown>);
     if (!ctx.weeklySlots.length && !ctx.dayCentreSlots.length) continue;
-    const score = ctx.annualWeeklyTotal + ctx.weeklySlots.length * 0.01;
+    let score = ctx.annualWeeklyTotal + ctx.weeklySlots.length * 0.01;
+    if (String(row.client_key || "") === preferredKey) score += 1_000_000;
+    if (String(row.sheet || "") === "LA") score += 100;
     if (score > bestScore) {
       bestScore = score;
       best = ctx;
