@@ -208,7 +208,9 @@
     var back = $("reBackLink");
     if (back) {
       back.textContent =
-        state.fromPortal || state.portalSession ? "← Back to portal" : "← Back";
+        state.fromPortal || state.portalSession
+          ? "← Back to Home (Menu)"
+          : "← Back";
     }
     var modalBack = $("reInfoModalPortalBack");
     if (modalBack) modalBack.href = parentPortalHref();
@@ -227,7 +229,7 @@
     if (head && !$("reInfoModalPortalBack")) {
       head.insertAdjacentHTML(
         "afterbegin",
-        '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to portal</a>',
+        '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to Home (Menu)</a>',
       );
     }
     syncPortalBackUi();
@@ -2272,7 +2274,7 @@
     backdrop.innerHTML =
       '<div class="re-modal" role="dialog" aria-modal="true" aria-labelledby="reInfoModalTitle">' +
       '<div class="re-modal-head">' +
-      '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to portal</a>' +
+      '<a class="re-modal-back-portal" id="reInfoModalPortalBack" href="/parent/app">← Back to Home (Menu)</a>' +
       '<h3 id="reInfoModalTitle"></h3>' +
       "</div>" +
       '<div id="reInfoModalBody"></div>' +
