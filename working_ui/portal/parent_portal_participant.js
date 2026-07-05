@@ -403,11 +403,11 @@
       esc(viewName) +
       '">' +
       '<div class="pp-pax-sticky-hero">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to sections for ' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to hub for ' +
       esc(pName) +
       '">← ' +
       esc(pName) +
-      "&apos;s sections</button>" +
+      "&apos;s Hub</button>" +
       heroHtml(data) +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
@@ -752,11 +752,11 @@
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="team">' +
       '<div class="pp-pax-sticky-hero pp-team-backbar">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to sections for ' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to hub for ' +
       esc(pName) +
       '">← ' +
       esc(pName) +
-      "&apos;s sections</button>" +
+      "&apos;s Hub</button>" +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
       '<div class="pp-team-grid' +
