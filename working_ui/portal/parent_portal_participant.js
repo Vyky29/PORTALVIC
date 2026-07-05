@@ -647,25 +647,20 @@
   // added to data.team so they stay part of the participant's team here.
   var DEMO_TEAM = [
     {
-      name: "Sofia Martins",
-      nationality: "Portuguese",
-      flag: "🇵🇹",
-      speaks: ["Portuguese", "English", "Spanish"],
-      bio: "Calm and patient in the water and always smiling. Off-poolside she loves hiking, cooking and a good playlist — she brings that easy-going energy to every session.",
+      name: "Roberto",
+      nationality: "Italian",
+      flag: "🇮🇹",
+      speaks: ["Italian", "Spanish", "English"],
+      avatar_url: "/portal/staff_photos/roberto.png",
+      bio: "Roberto brings big Italian energy and a warm smile to every session. Patient and encouraging, he loves football, good food and music — and he has a real gift for helping children feel relaxed and confident in the water.",
     },
     {
-      name: "James O'Connor",
-      nationality: "Irish",
-      flag: "🇮🇪",
-      speaks: ["English"],
-      bio: "Full of energy and great at making sessions fun. A big football fan who loves the outdoors and never runs out of encouragement.",
-    },
-    {
-      name: "Aisha Rahman",
-      nationality: "British",
+      name: "Luliya",
+      nationality: "English",
       flag: "🇬🇧",
-      speaks: ["English", "Bengali", "Arabic (a little)"],
-      bio: "Warm, gentle and super encouraging. She loves arts and crafts, swimming and helping children feel proud of every small win.",
+      speaks: ["Somali", "English"],
+      avatar_url: "/portal/staff_photos/luliya.png",
+      bio: "Luliya is calm, kind and a wonderful listener. She loves arts and crafts, reading and swimming, and is brilliant at making every child feel safe, seen and proud of their progress.",
     },
   ];
 
