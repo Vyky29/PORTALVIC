@@ -469,6 +469,13 @@
         return;
       }
       var newUrl = out.avatar_url || "";
+      if (newUrl) {
+        // The backend overwrites the same storage path (<cid>/avatar.jpg via
+        // upsert), so the returned URL is identical every time and the browser
+        // would keep showing the cached (old) image. Bust the cache so the
+        // freshly uploaded photo actually loads.
+        newUrl += (newUrl.indexOf("?") >= 0 ? "&" : "?") + "v=" + Date.now();
+      }
       c.has_avatar = true;
       c.avatar_url = newUrl;
       if (state.home && state.home.children) {
