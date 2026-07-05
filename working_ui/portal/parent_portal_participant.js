@@ -220,12 +220,23 @@
 
   function hubHeroHtml(data) {
     var p = data.participant || {};
+    var fields = data.general && data.general.fields ? data.general.fields : [];
     return (
       '<header class="pp-hub-hero">' +
+      '<div class="pp-hub-hero__id">' +
       participantPhotoHtml(p) +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
-      "</h3></header>"
+      "</h3>" +
+      "</div>" +
+      '<div class="pp-hub-hero__info">' +
+      '<div class="pp-hub-hero__info-head">' +
+      '<h4 class="pp-hub-hero__info-title">General information</h4>' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-edit-btn" data-pp-open-edit="general">Edit info</button>' +
+      "</div>" +
+      '<div class="pp-hub-hero__info-fields">' +
+      generalReadHtml(fields) +
+      "</div></div></header>"
     );
   }
 
@@ -428,12 +439,11 @@
   }
 
   function renderHub(host, data, opts) {
-    ensureGeneralFields(data, { allowPlaceholders: false });
+    ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(
       ((data && data.participant && data.participant.display_name) ||
         "Participant") + "\u2019s Hub",
     );
-    void ensureClientsInfoEmbedLoaded();
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data) +
@@ -441,6 +451,14 @@
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
+    void ensureGeneralFieldsAsync(data).then(function () {
+      var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
+      if (fieldsHost) {
+        fieldsHost.innerHTML = generalReadHtml(
+          (data.general && data.general.fields) || [],
+        );
+      }
+    });
   }
 
   function renderGeneral(host, data, opts) {
@@ -1038,6 +1056,14 @@
       achievements: "achievements",
       swim: "swim",
     };
+    host.querySelectorAll("[data-pp-open-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.getAttribute("data-pp-open-edit") !== "general") return;
+        void ensureGeneralFieldsAsync(data).then(function () {
+          renderGeneral(host, data, Object.assign({}, opts, { editing: true }));
+        });
+      });
+    });
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (btn.disabled) return;

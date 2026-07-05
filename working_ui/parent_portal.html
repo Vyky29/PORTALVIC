@@ -829,12 +829,18 @@
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
     .pp-hub-hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .pp-hub-hero__id {
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
       gap: 8px;
-      margin-bottom: 14px;
     }
     .pp-hub-hero .pp-pax-photo {
       width: 96px;
@@ -848,6 +854,35 @@
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
+    }
+    .pp-hub-hero__info { min-width: 0; }
+    .pp-hub-hero__info-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .pp-hub-hero__info-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .pp-hub-edit-btn {
+      width: auto;
+      min-height: 34px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      .pp-hub-hero {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 22px;
+      }
+      .pp-hub-hero__id { padding-right: 6px; }
     }
     .pp-team-grid {
       display: grid;
@@ -1361,7 +1396,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-hub-hero"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-hub-hero-info"></script>
   <script src="/portal/parent_portal_app.js?v=20260705-hub-title"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
