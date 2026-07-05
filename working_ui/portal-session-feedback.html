@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260703-ios-gallery-upload-fix"></script>
-<script src="/portal/portal_feedback_voice_input.js?v=20260703-voice-auto-filter"></script>
+<script src="/portal/portal_feedback_voice_input.js?v=20260705-voice-lang-by-nationality"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/portal_feedback_narrative.js?v=20260703-validate-filter"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
@@ -2214,6 +2214,22 @@ button{
       if(ar){
         instructorAppRole = ar.charAt(0).toUpperCase() + ar.slice(1).toLowerCase();
       }
+      try{
+        if(prof){
+          window.__PORTAL_SUPABASE__ = window.__PORTAL_SUPABASE__ || {};
+          window.__PORTAL_SUPABASE__.staff_profile = {
+            nationality: clean(prof.nationality),
+            full_name: clean(prof.full_name),
+            username: clean(prof.username),
+          };
+          if(window.PortalFeedbackVoiceInput &&
+             typeof window.PortalFeedbackVoiceInput.setStaffProfile === "function"){
+            window.PortalFeedbackVoiceInput.setStaffProfile(
+              window.__PORTAL_SUPABASE__.staff_profile
+            );
+          }
+        }
+      }catch(_){}
     }catch(_){}
     if(clean(instructorDisplayName)) return;
     try{
@@ -2597,7 +2613,7 @@ button{
   async function lookupStaffProfileForAuth(supabase, authUser) {
     const profileResp = await supabase
       .from("staff_profiles")
-      .select("id, app_role, full_name, username")
+      .select("id, app_role, full_name, username, nationality")
       .eq("id", authUser.id)
       .maybeSingle();
     if (profileResp.error) throw profileResp.error;
@@ -2612,7 +2628,7 @@ button{
     const token = (guess.split(" ")[0] || guess).replace(/,/g, "");
     const alt = await supabase
       .from("staff_profiles")
-      .select("id, app_role, full_name, username, is_active")
+      .select("id, app_role, full_name, username, is_active, nationality")
       .eq("is_active", true)
       .or("username.ilike." + token + ",full_name.ilike.%" + token + "%")
       .limit(12);

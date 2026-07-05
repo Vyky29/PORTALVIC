@@ -31,6 +31,9 @@
  raul: 1,
  carlos: 1,
  andres: 1,
+ berta: 1,
+ teflon: 1,
+ palankas: 1,
  };
 
  var activeRec = null;
@@ -59,8 +62,31 @@
  var ui = {
  staffGroup: "english",
  staffName: "",
+ staffNationality: "",
  resolvedLang: "en-GB",
  };
+
+ function groupFromNationality(nationality) {
+ var nat = String(nationality || "").trim().toLowerCase();
+ if (!nat) return "";
+ if (
+ /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland|irish|ireland)$/.test(
+ nat
+ ) ||
+ nat.indexOf("british") >= 0 ||
+ nat.indexOf("united kingdom") >= 0 ||
+ nat.indexOf("english") >= 0
+ ) {
+ return "english";
+ }
+ if (nat.indexOf("spanish") >= 0 || nat.indexOf("spain") >= 0 || nat.indexOf("espa") >= 0) {
+ return "spanish";
+ }
+ if (nat.indexOf("italian") >= 0 || nat.indexOf("italy") >= 0 || nat.indexOf("italia") >= 0) {
+ return "italian";
+ }
+ return "";
+ }
 
  function getSpeechRecognition() {
  return global.SpeechRecognition || global.webkitSpeechRecognition || null;
@@ -141,27 +167,13 @@
 
  function resolveStaffVoiceGroup(staffName) {
   var tokens = nameTokens(staffName);
+  var fromNat = groupFromNationality(ui.staffNationality);
+  if (fromNat) return fromNat;
   try {
     var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
     if (prof && prof.nationality) {
-      var nat = String(prof.nationality || "")
-        .trim()
-        .toLowerCase();
-      if (
-        /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland)$/.test(
-          nat
-        ) ||
-        nat.includes("british") ||
-        nat.includes("united kingdom")
-      ) {
-        return "english";
-      }
-      if (nat.includes("spanish") || nat.includes("spain") || nat.includes("espa")) {
-        return "spanish";
-      }
-      if (nat.includes("italian") || nat.includes("italy") || nat.includes("italia")) {
-        return "italian";
-      }
+      var g = groupFromNationality(prof.nationality);
+      if (g) return g;
     }
     if (prof) {
       tokens = tokens.concat(nameTokens(prof.full_name || prof.username || ""));
@@ -197,6 +209,15 @@
 
  function applyStaffLanguages(staffName) {
  ui.staffName = String(staffName || "");
+ ui.staffGroup = resolveStaffVoiceGroup(ui.staffName);
+ ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
+ }
+
+ function applyStaffProfile(profile) {
+ if (!profile) return;
+ ui.staffNationality = String(profile.nationality || "");
+ var nm = String(profile.full_name || profile.username || ui.staffName || "");
+ ui.staffName = nm;
  ui.staffGroup = resolveStaffVoiceGroup(ui.staffName);
  ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
  }
@@ -1342,13 +1363,18 @@
  applyStaffLanguages(staffName || "");
  }
 
+ function setStaffProfile(profile) {
+ applyStaffProfile(profile);
+ }
+
  global.PortalFeedbackVoiceInput = {
  init: init,
  attach: attachVoiceFields,
  rescan: rescan,
  setStaffName: setStaffName,
+ setStaffProfile: setStaffProfile,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-record-fix-empty-chunks-v2",
+ captureVersion: "voice-lang-by-nationality-v3",
  };
 })(typeof window !== "undefined" ? window : this);
