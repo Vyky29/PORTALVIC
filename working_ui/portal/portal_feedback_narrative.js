@@ -52,6 +52,9 @@
 
   var els = {};
 
+  var aiHealthProbeStarted = false;
+  var aiDetectTimer = null;
+
   function configure(options) {
     if (!options) return;
     if (options.getClient) cfg.getClient = options.getClient;
@@ -154,6 +157,32 @@
     if (e === "openai_failed" || e === "no_openai" || e === "openai_bad_response") return true;
     // 503 = key missing; other statuses handled by explicit error codes above.
     return result.status === 503;
+  }
+
+  /** Silent, one-shot check so staff can submit without tapping anything when the
+   * AI is down. If AI is up we apply the validation result (auto Check narrative);
+   * if it's down/out of quota we unlock Submit with the raw narrative. */
+  function scheduleAiDownDetect() {
+    if (aiHealthProbeStarted) return;
+    if (aiDetectTimer) global.clearTimeout(aiDetectTimer);
+    aiDetectTimer = global.setTimeout(function () {
+      if (aiHealthProbeStarted) return;
+      if (!isTypedMode()) return;
+      if (state.aiUnavailable || state.validated || state.filtered || state.validating) return;
+      var narrative = narrativeText();
+      if (narrative.length < MIN_NARRATIVE_CHARS) return;
+      aiHealthProbeStarted = true;
+      var context = readFormContext();
+      callValidateEdge(narrative, context)
+        .then(function (result) {
+          if (result && result.ok) {
+            applyValidationResult(result);
+          } else if (isAiDownError(result)) {
+            enterAiDegraded(true);
+          }
+        })
+        .catch(function () {});
+    }, 1200);
   }
 
   /** Let staff submit the raw narrative when AI cannot filter it (nothing is lost). */
@@ -322,6 +351,11 @@
   function resetAllAiState() {
     resetValidatedState();
     resetFilteredState();
+    aiHealthProbeStarted = false;
+    if (aiDetectTimer) {
+      global.clearTimeout(aiDetectTimer);
+      aiDetectTimer = null;
+    }
     setStatus("");
   }
 
@@ -653,7 +687,10 @@
       syncSubmitGate();
       return;
     }
-    if (!state.filtered && !state.validated) return;
+    if (!state.filtered && !state.validated) {
+      scheduleAiDownDetect();
+      return;
+    }
     if (narrativeText() !== state.narrativeSnapshot) {
       resetFilteredState();
       resetValidatedState();
