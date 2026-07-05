@@ -657,7 +657,7 @@
       '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
   }
 
-  async function loadParticipantDetail(contactId) {
+  async function loadParticipantDetail(contactId, openView) {
     var host = $("ppParticipantDetail");
     var title = $("ppParticipantTitle");
     if (!host || !contactId) return;
@@ -678,7 +678,15 @@
       var refreshBtn = $("ppParticipantRefresh");
       if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
 
-      renderParticipantView(host, body, contactId);
+      if (
+        openView &&
+        global.ParentPortalParticipant &&
+        typeof global.ParentPortalParticipant.openView === "function"
+      ) {
+        global.ParentPortalParticipant.openView(host, body, participantRenderOpts(contactId), openView);
+      } else {
+        renderParticipantView(host, body, contactId);
+      }
     } catch (err) {
       if (err && (err.status === 401 || err.status === 403)) {
         clearSession();
@@ -1113,6 +1121,29 @@
     }
   }
 
+  function readParticipantDeepLink() {
+    try {
+      return new URLSearchParams(global.location.search || "");
+    } catch (_e) {
+      return new URLSearchParams();
+    }
+  }
+
+  function maybeOpenParticipantFromUrl() {
+    var params = readParticipantDeepLink();
+    var contactId = params.get("contact_id") || params.get("contact") || "";
+    if (!contactId) return;
+    var view = params.get("view") || "";
+    void loadParticipantDetail(contactId, view || "");
+    try {
+      var clean = new URL(global.location.href);
+      clean.searchParams.delete("contact_id");
+      clean.searchParams.delete("contact");
+      clean.searchParams.delete("view");
+      global.history.replaceState({}, "", clean.pathname + clean.search + clean.hash);
+    } catch (_e2) {}
+  }
+
   async function bootstrap() {
     initBrand();
     bindEvents();
@@ -1121,6 +1152,7 @@
     if (loadStoredSession()) {
       var ok = await loadHome();
       if (!ok) setStep("identify");
+      else maybeOpenParticipantFromUrl();
     } else {
       setStep("identify");
     }

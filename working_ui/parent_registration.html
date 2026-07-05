@@ -329,13 +329,31 @@
       line-height:1.5;
       overflow-wrap:break-word;
     }
+    .portal-reg-bar {
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .portal-reg-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue);
+      text-decoration: none;
+      overflow-wrap: break-word;
+    }
+    .portal-reg-back:hover,
+    .portal-reg-back:focus-visible { text-decoration: underline; }
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/portal/parent_form_submit.js"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260705-portal-edit"></script>
 </head>
 <body>
   <div class="page">
+    <div id="portalRegBar" class="portal-reg-bar" hidden></div>
     <div class="topbar">
       <div class="title-block">
         <h1>Client details &amp; support form</h1>
@@ -807,6 +825,10 @@
       form.querySelectorAll('[name="'+name+'"]:checked').forEach(function(el){ out.push(el.value); });
       return out.join('; ');
     }
+    var formHelpers = { val: val, radio: radio, checks: checks };
+    if (window.ParentRegistrationPortal) {
+      ParentRegistrationPortal.initPortalRegistrationMode(form, formHelpers);
+    }
     function fmtDate(iso){
       if (!iso) return '';
       var p = iso.split('-');
@@ -908,7 +930,9 @@
       e.preventDefault();
       if (!validateCheckboxGroups()) return;
       if (!form.checkValidity()) { form.reportValidity(); return; }
-      if (!photoDataUrl) {
+      var portalMode = window.__portalRegistrationMode;
+      var photoOptional = portalMode && photoInput && !photoInput.hasAttribute('required');
+      if (!photoDataUrl && !photoOptional) {
         alert('Please add a participant photo (face or ID).');
         photoInput.focus();
         return;
@@ -1010,6 +1034,15 @@
           throw new Error('Portal upload is not configured.');
         }
         var photoFile = photoInput.files && photoInput.files[0];
+        var submitPayload = window.ParentRegistrationPortal
+          ? ParentRegistrationPortal.collectFullPayload(form, formHelpers)
+          : {
+              relationship: radio('relationship'),
+              participant_gender: val('participant_gender'),
+              participant_school: val('participant_school'),
+              ehcp: radio('ehcp'),
+              social_worker: radio('social_worker')
+            };
         window.portalSubmitParentForm({
           form_type: 'client_registration',
           participant_name: val('participant_name'),
@@ -1021,14 +1054,11 @@
           pdf_filename: filename,
           photo: photoFile || null,
           photo_filename: photoFile ? photoFile.name : undefined,
-          payload: {
-            relationship: radio('relationship'),
-            participant_gender: val('participant_gender'),
-            participant_school: val('participant_school'),
-            ehcp: radio('ehcp'),
-            social_worker: radio('social_worker')
-          }
+          payload: submitPayload
         }).then(function(){
+          if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
+            return portalMode.afterSubmitSuccess();
+          }
           if (window.portalFinishParentSubmit) {
             window.portalFinishParentSubmit({
               formEl: form,
@@ -1040,8 +1070,10 @@
         }).catch(function(err){
           console.error(err);
           btn.disabled = false;
-          btn.textContent = 'Submit form';
-          alert('Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
+          btn.textContent = portalMode ? 'Save updates' : 'Submit form';
+          alert(portalMode
+            ? 'Could not save your updates. Please check your connection and try again.'
+            : 'Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
         });
       } catch (err) {
         console.error(err);

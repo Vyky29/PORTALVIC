@@ -390,10 +390,15 @@
  }).then(function (res) {
  return res.json().then(function (data) {
  if (res.status === 401 || res.status === 403) {
- throw new Error("webspeech_fallback");
+ throw new Error("not_signed_in");
  }
- if (data && data.fallback === "webspeech") {
- throw new Error("webspeech_fallback");
+ var errCode = data && data.error ? String(data.error) : "";
+ // OpenAI/Whisper unreachable (missing key, quota exhausted, upstream failure).
+ if (errCode === "no_openai" || errCode === "transcribe_failed" || res.status === 503 || res.status === 502) {
+ throw new Error("ai_unavailable");
+ }
+ if (errCode === "empty_transcript") {
+ throw new Error("empty_transcript");
  }
  if (!res.ok || !data || !data.ok) throw new Error("transcribe_failed");
  return String(data.english || "").trim();
@@ -862,7 +867,8 @@
  : "No audio recorded — check mic permission, speak clearly, then tap mic again.",
  { autoClearMs: VOICE_ERROR_CLEAR_MS }
  );
- if (preferWebSpeechCapture() && !tooSoon) {
+ // ES/IT staff must not fall to live Spanish dictation (it stays untranslated).
+ if (preferWebSpeechCapture() && !tooSoon && !s.needsTranslate) {
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  }
  return;
@@ -884,8 +890,9 @@
  }
  return;
  }
- if (preferWebSpeechCapture()) {
  cleanupSessionUi(s);
+ // English staff can dictate live; ES/IT need Whisper translation, so ask to retry.
+ if (preferWebSpeechCapture() && !s.needsTranslate) {
  if (s.statusEl) {
  s.statusEl.textContent =
  "Live dictation - speak now, then tap mic again to finish.";
@@ -893,21 +900,36 @@
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  return;
  }
- cleanupSessionUi(s);
  setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
  autoClearMs: VOICE_ERROR_CLEAR_MS,
  });
  })
  .catch(function (err) {
  cleanupSessionUi(s);
- if (
- preferWebSpeechCapture() &&
- err &&
- (err.message === "not_signed_in" ||
- err.message === "webspeech_fallback" ||
- err.message === "no_openai" ||
- err.message === "transcribe_failed")
- ) {
+ if (s.textarea) s.textarea.value = s.prefix;
+ var reason = (err && err.message) || "transcribe_failed";
+
+ if (reason === "not_signed_in") {
+ setVoiceStatus(
+ s.statusEl,
+ "Sign in to the portal to use voice — or type your feedback in English below.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+
+ // OpenAI/Whisper down or out of quota: do NOT drop ES/IT staff into
+ // untranslated Spanish dictation — tell them to type in English.
+ if (reason === "ai_unavailable") {
+ if (s.needsTranslate) {
+ setVoiceStatus(
+ s.statusEl,
+ "Voice transcription is temporarily unavailable — please type your feedback in English below.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+ if (preferWebSpeechCapture()) {
  if (s.statusEl) {
  s.statusEl.textContent =
  "Live dictation - speak now, then tap mic again to finish.";
@@ -915,9 +937,30 @@
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  return;
  }
- if (s.textarea) s.textarea.value = s.prefix;
- var msg = "Could not transcribe - type feedback below or try again.";
- if (s.statusEl) s.statusEl.textContent = msg;
+ setVoiceStatus(
+ s.statusEl,
+ "Voice transcription is temporarily unavailable — please type your feedback below.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+
+ // Empty/other: English staff can dictate live; ES/IT retry Whisper.
+ if (preferWebSpeechCapture() && !s.needsTranslate) {
+ if (s.statusEl) {
+ s.statusEl.textContent =
+ "Live dictation - speak now, then tap mic again to finish.";
+ }
+ startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
+ return;
+ }
+ setVoiceStatus(
+ s.statusEl,
+ reason === "empty_transcript"
+ ? "No speech detected - tap mic and try again."
+ : "Could not transcribe - type feedback in English below or try again.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
  });
  }
 
@@ -1008,7 +1051,16 @@
  startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
- if (translate && webSpeechFallback()) return;
+ // ES/IT need Whisper translation (signed in). Without a session, live
+ // dictation would leave untranslated Spanish, so ask to sign in / type EN.
+ if (translate) {
+ if (statusEl) {
+ statusEl.textContent =
+ "Sign in to the portal to use voice — or type your feedback in English below.";
+ }
+ return;
+ }
+ if (webSpeechFallback()) return;
  if (statusEl) {
  statusEl.textContent = "Sign in to the portal to use voice input.";
  }
@@ -1447,6 +1499,6 @@
  setStaffProfile: setStaffProfile,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-lang-by-nationality-auto-v4",
+ captureVersion: "voice-ai-down-message-v5",
  };
 })(typeof window !== "undefined" ? window : this);

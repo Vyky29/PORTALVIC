@@ -117,8 +117,242 @@
       { num: "2", label: "Communication", value: "" },
       { num: "3", label: "Likes / motivators", value: "" },
       { num: "4", label: "Triggers / support strategies", value: "" },
-      { num: "5", label: "Emergency contact", value: "" },
     ];
+  }
+
+  function resolveGeneralInfoBlob(data) {
+    var g = (data && data.general) || {};
+    if (g.general_info_sheet) return String(g.general_info_sheet).trim();
+    var p = (data && data.participant) || {};
+    return lookupClientsInfoSeed(p.display_name, p.first_name, p.last_name) || "";
+  }
+
+  function parseClientsInfoNumberedSections(blob) {
+    var text = String(blob || "")
+      .replace(/\r\n|\r/g, "\n")
+      .trim();
+    if (!text) return {};
+    var re = /(?:^|\s)(\d{1,2})\.\s+/g;
+    var matches = [];
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      matches.push({ num: parseInt(m[1], 10), after: m.index + m[0].length, start: m.index });
+    }
+    var strips = {
+      1: /^Age:\s*/i,
+      2: /^Medical:\s*/i,
+      3: /^Likes\/Motivators:\s*/i,
+      4: /^Dislikes\/Avoids:\s*/i,
+      5: /^Known Triggers:\s*/i,
+      6: /^Regulation Strategies:\s*/i,
+      7: /^Level of Support:\s*/i,
+      8: /^Communication:\s*/i,
+      9: /^Preferred Communication:\s*/i,
+      10: /^Mobility:\s*/i,
+      11: /^Personal Care:\s*/i,
+      12: /^Task Engagement:\s*/i,
+      13: /^Transitions\/Flexibility:\s*/i,
+      14: /^Safety:\s*/i,
+      15: /^Other Notes:\s*/i,
+    };
+    var out = {};
+    for (var i = 0; i < matches.length; i++) {
+      var num = matches[i].num;
+      var chunkStart = matches[i].after;
+      var chunkEnd = i + 1 < matches.length ? matches[i + 1].start : text.length;
+      var chunk = text.slice(chunkStart, chunkEnd).trim().replace(/\s+/g, " ");
+      var rx = strips[num];
+      if (rx) chunk = chunk.replace(rx, "").trim();
+      if (num >= 1 && num <= 15 && chunk) out[num] = chunk;
+    }
+    return out;
+  }
+
+  function profileValuesNonEmpty(arr) {
+    return (arr || [])
+      .map(function (v) {
+        return String(v == null ? "" : v).trim();
+      })
+      .filter(function (v) {
+        return v && v !== "—";
+      });
+  }
+
+  function splitMedicalSection(raw) {
+    var t = String(raw || "")
+      .trim()
+      .replace(/\s+/g, " ");
+    if (!t) return { conditions: "", medication: "" };
+    var medication = "";
+    var conditions = t;
+    if (/\bno regular medication\b/i.test(t)) {
+      medication = "No regular medication";
+      conditions = t.replace(/\bno regular medication\b\.?\s*/gi, " ").replace(/\s+/g, " ").trim();
+    } else {
+      var medMatch = t.match(
+        /(?:regular medication|medication)[:\s]+([^.]+(?:\.|$))/i,
+      );
+      if (medMatch) {
+        medication = medMatch[1].trim().replace(/\.$/, "");
+        conditions = t.replace(medMatch[0], " ").replace(/\s+/g, " ").trim();
+      }
+    }
+    conditions = conditions.replace(/^[\s.,]+|[\s.,]+$/g, "");
+    if (!conditions) conditions = t;
+    return { conditions: conditions, medication: medication };
+  }
+
+  function buildParentProfileCategories(sec) {
+    sec = sec || {};
+    var categories = [];
+    var med = splitMedicalSection(sec[2]);
+    var medicalValues = profileValuesNonEmpty([med.conditions, med.medication]);
+    if (medicalValues.length) {
+      categories.push({ title: "Medical needs", values: medicalValues });
+    }
+    var commValues = profileValuesNonEmpty([sec[8]]);
+    if (commValues.length) {
+      categories.push({
+        title: "Communication & Interaction Profile",
+        values: commValues,
+      });
+    }
+    var behValues = profileValuesNonEmpty([sec[5]]);
+    if (behValues.length) {
+      categories.push({
+        title: "Behaviour Profile & Support Preferences",
+        values: behValues,
+      });
+    }
+    var indValues = profileValuesNonEmpty([sec[10], sec[11], sec[12]]);
+    if (indValues.length) {
+      categories.push({ title: "Independence", values: indValues });
+    }
+    var dailyValues = profileValuesNonEmpty([sec[12], sec[13]]);
+    if (dailyValues.length) {
+      categories.push({ title: "Daily Participation", values: dailyValues });
+    }
+    return categories;
+  }
+
+  function fieldValueByLabel(fields, labels) {
+    fields = fields || [];
+    labels = labels || [];
+    for (var i = 0; i < fields.length; i++) {
+      var lab = String((fields[i] && fields[i].label) || "")
+        .trim()
+        .toLowerCase();
+      if (!lab) continue;
+      for (var j = 0; j < labels.length; j++) {
+        if (lab === String(labels[j]).toLowerCase()) {
+          return String((fields[i] && fields[i].value) || "").trim();
+        }
+      }
+    }
+    return "";
+  }
+
+  function buildParentProfileCategoriesFromFields(fields) {
+    fields = fields || [];
+    var categories = [];
+    var medical = fieldValueByLabel(fields, [
+      "Medical / allergies",
+      "Medical",
+    ]);
+    if (medical) {
+      var medParts = splitMedicalSection(medical);
+      var medVals = profileValuesNonEmpty([medParts.conditions, medParts.medication]);
+      if (medVals.length) {
+        categories.push({ title: "Medical needs", values: medVals });
+      }
+    }
+    var comm = fieldValueByLabel(fields, ["Communication"]);
+    if (comm) {
+      categories.push({
+        title: "Communication & Interaction Profile",
+        values: [comm],
+      });
+    }
+    var triggers = fieldValueByLabel(fields, [
+      "Triggers / support strategies",
+      "Known Triggers",
+    ]);
+    if (triggers) {
+      categories.push({
+        title: "Behaviour Profile & Support Preferences",
+        values: [triggers],
+      });
+    }
+    return categories;
+  }
+
+  function generalProfileReadHtml(data) {
+    data = data || {};
+    var blob = resolveGeneralInfoBlob(data);
+    var sec = parseClientsInfoNumberedSections(blob);
+    var categories = buildParentProfileCategories(sec);
+    if (!categories.length) {
+      categories = buildParentProfileCategoriesFromFields(
+        (data.general && data.general.fields) || [],
+      );
+    }
+    if (!categories.length) {
+      return (
+        '<p class="pp-muted">No general information on file yet. Tap Edit info to add details your instructors should know.</p>'
+      );
+    }
+    return (
+      '<div class="pp-gen-profile" role="list">' +
+      categories
+        .map(function (cat) {
+          return (
+            '<section class="pp-gen-profile__cat" role="listitem">' +
+            '<h5 class="pp-gen-profile__cat-title">' +
+            esc(cat.title) +
+            "</h5>" +
+            cat.values
+              .map(function (val) {
+                return (
+                  '<p class="pp-gen-profile__value">' + esc(val) + "</p>"
+                );
+              })
+              .join("") +
+            "</section>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function generalReadHtml(fields, data) {
+    if (data) return generalProfileReadHtml(data);
+    if (!fields.length) {
+      return '<p class="pp-muted">No general information on file yet. Tap Edit to add details your instructors should know.</p>';
+    }
+    var filtered = fields.filter(function (f) {
+      var lab = String((f && f.label) || "")
+        .trim()
+        .toLowerCase();
+      return lab !== "emergency contact";
+    });
+    return (
+      '<div class="pp-gen-list" role="list">' +
+      filtered
+        .map(function (f) {
+          return (
+            '<div class="pp-gen-row" role="listitem">' +
+            '<div class="pp-gen-row__label">' +
+            esc(f.label) +
+            "</div>" +
+            '<div class="pp-gen-row__value">' +
+            esc(f.value || "—") +
+            "</div></div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
   }
 
   function ensureGeneralFields(data, opts) {
@@ -220,7 +454,6 @@
 
   function hubHeroHtml(data) {
     var p = data.participant || {};
-    var fields = data.general && data.general.fields ? data.general.fields : [];
     return (
       '<header class="pp-hub-hero">' +
       '<div class="pp-hub-hero__id">' +
@@ -235,7 +468,7 @@
       '<button type="button" class="pp-btn pp-btn--ghost pp-hub-edit-btn" data-pp-open-edit="general">Edit info</button>' +
       "</div>" +
       '<div class="pp-hub-hero__info-fields">' +
-      generalReadHtml(fields) +
+      generalProfileReadHtml(data) +
       "</div></div></header>"
     );
   }
@@ -358,30 +591,13 @@
     );
   }
 
-  function generalReadHtml(fields) {
-    if (!fields.length) {
-      return '<p class="pp-muted">No general information on file yet. Tap Edit to add details your instructors should know.</p>';
-    }
-    return (
-      '<div class="pp-gen-list" role="list">' +
-      fields
-        .map(function (f) {
-          return (
-            '<div class="pp-gen-row" role="listitem">' +
-            '<div class="pp-gen-row__label">' +
-            esc(f.label) +
-            "</div>" +
-            '<div class="pp-gen-row__value">' +
-            esc(f.value || "—") +
-            "</div></div>"
-          );
-        })
-        .join("") +
-      "</div>"
-    );
-  }
-
   function generalEditHtml(fields) {
+    fields = (fields || []).filter(function (f) {
+      var lab = String((f && f.label) || "")
+        .trim()
+        .toLowerCase();
+      return lab !== "emergency contact";
+    });
     return (
       '<form class="pp-gen-form" id="ppGenForm">' +
       fields
@@ -449,30 +665,26 @@
     void ensureGeneralFieldsAsync(data).then(function () {
       var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
       if (fieldsHost) {
-        fieldsHost.innerHTML = generalReadHtml(
-          (data.general && data.general.fields) || [],
-        );
+        fieldsHost.innerHTML = generalProfileReadHtml(data);
       }
     });
   }
 
   function renderGeneral(host, data, opts) {
-    var fields = data.general && data.general.fields ? data.general.fields : [];
-    var editing = !!(opts && opts.editing);
+    var editHref = registrationEditUrl(data, opts, "general");
     host.innerHTML = subviewShell(
       data,
       "general",
       '<h3 class="pp-pax-subview-title">General Information</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Updates here are shared with instructors and admin.</p>' +
-        '<div id="ppGenNotice" class="pp-notice pp-notice--info" hidden role="status"></div>' +
         '<div class="pp-card pp-gen-card">' +
-        (editing ? generalEditHtml(fields) : generalReadHtml(fields)) +
+        generalProfileReadHtml(data) +
         "</div>" +
-        (editing
-          ? ""
-          : '<button type="button" class="pp-btn pp-btn--primary" id="ppGenEditBtn">Edit information</button>'),
+        '<a class="pp-btn pp-btn--primary" id="ppGenEditBtn" href="' +
+        esc(editHref) +
+        '">Edit information</a>',
     );
-    bindGeneral(host, data, opts, editing);
+    bindGeneral(host, data, opts);
   }
 
   function renderSessions(host, data, opts) {
@@ -585,6 +797,26 @@
           });
       });
     });
+  }
+
+  function registrationEditUrl(data, opts, returnView) {
+    var p = (data && data.participant) || {};
+    var contactId = p.contact_id || (opts && opts.contactId) || "";
+    var returnPath =
+      "/parent/app?contact_id=" + encodeURIComponent(String(contactId));
+    if (returnView) {
+      returnPath += "&view=" + encodeURIComponent(String(returnView));
+    }
+    return (
+      "/parent/registration?from=portal&contact_id=" +
+      encodeURIComponent(String(contactId)) +
+      "&return=" +
+      encodeURIComponent(returnPath)
+    );
+  }
+
+  function navigateToRegistrationEdit(data, opts, returnView) {
+    global.location.href = registrationEditUrl(data, opts, returnView);
   }
 
   function renderBooking(host, data, opts) {
@@ -1054,9 +1286,7 @@
     host.querySelectorAll("[data-pp-open-edit]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (btn.getAttribute("data-pp-open-edit") !== "general") return;
-        void ensureGeneralFieldsAsync(data).then(function () {
-          renderGeneral(host, data, Object.assign({}, opts, { editing: true }));
-        });
+        navigateToRegistrationEdit(data, opts);
       });
     });
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
@@ -1092,69 +1322,8 @@
     });
   }
 
-  function bindGeneral(host, data, opts, editing) {
+  function bindGeneral(host, data, opts) {
     bindBack(host, data, opts);
-    var notice = host.querySelector("#ppGenNotice");
-    var editBtn = host.querySelector("#ppGenEditBtn");
-    if (editBtn) {
-      editBtn.addEventListener("click", function () {
-        renderGeneral(host, data, Object.assign({}, opts, { editing: true }));
-      });
-    }
-    var cancelBtn = host.querySelector("#ppGenCancelBtn");
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", function () {
-        renderGeneral(host, data, Object.assign({}, opts, { editing: false }));
-      });
-    }
-    var form = host.querySelector("#ppGenForm");
-    if (form && typeof opts.saveGeneralInfo === "function") {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var fields = [];
-        form.querySelectorAll("textarea[data-gen-label]").forEach(function (ta) {
-          fields.push({
-            num: ta.getAttribute("data-gen-num") || "",
-            label: ta.getAttribute("data-gen-label") || "",
-            value: ta.value,
-          });
-        });
-        var saveBtn = host.querySelector("#ppGenSaveBtn");
-        if (saveBtn) {
-          saveBtn.disabled = true;
-          saveBtn.setAttribute("aria-busy", "true");
-        }
-        void opts
-          .saveGeneralInfo(fields)
-          .then(function (updated) {
-            if (updated && updated.general) {
-              data.general = updated.general;
-            } else {
-              data.general.fields = fields;
-              data.general.general_info_sheet = rebuildGeneralInfoSheet(fields);
-            }
-            if (notice) {
-              notice.hidden = false;
-              notice.className = "pp-notice pp-notice--info";
-              notice.textContent = "Your updates were saved. Instructors will see the new information.";
-            }
-            renderGeneral(host, data, Object.assign({}, opts, { editing: false }));
-          })
-          .catch(function () {
-            if (notice) {
-              notice.hidden = false;
-              notice.className = "pp-notice pp-notice--error";
-              notice.textContent = "Could not save — please try again.";
-            }
-          })
-          .finally(function () {
-            if (saveBtn) {
-              saveBtn.disabled = false;
-              saveBtn.removeAttribute("aria-busy");
-            }
-          });
-      });
-    }
   }
 
   function render(hostEl, data, opts) {
@@ -1163,5 +1332,5 @@
     renderHub(hostEl, data, opts);
   }
 
-  global.ParentPortalParticipant = { render: render };
+  global.ParentPortalParticipant = { render: render, openView: openSubview };
 })(typeof window !== "undefined" ? window : globalThis);
