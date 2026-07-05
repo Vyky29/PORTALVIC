@@ -363,6 +363,28 @@
       min-width: 0;
       background: #fafcfe;
     }
+    .re-slot-col { min-width: 0; }
+    /* From tablet up: service (wider) | sessions | decision, three columns. */
+    @media (min-width: 640px) {
+      .re-slot-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .re-slot-card .re-slot-meta {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+        border-left: 1px solid rgba(45, 132, 179, .14);
+        padding-left: 16px;
+      }
+      .re-slot-card .re-slot-col--choice {
+        margin-top: 0;
+        border-left: 1px solid rgba(45, 132, 179, .14);
+        padding-left: 16px;
+      }
+    }
     .re-slot-intro { min-width: 0; margin-bottom: 0; }
     .re-slot-service-name {
       margin: 0;
@@ -1434,6 +1456,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260705-preview-service-tones"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-fee-context-note"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260705-slot-3col"></script>
 </body>
 </html>

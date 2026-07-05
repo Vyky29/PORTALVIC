@@ -1747,6 +1747,7 @@
             '<article class="re-slot-card" data-slot-id="' +
             id +
             '">' +
+            '<div class="re-slot-col re-slot-col--service">' +
             '<div class="re-slot-intro">' +
             '<p class="re-slot-service-name">' +
             esc(parts.service) +
@@ -1757,7 +1758,8 @@
             '<span class="re-slot-price">' +
             esc(price) +
             "</span></div>" +
-            '<div class="re-slot-meta">' +
+            "</div>" +
+            '<div class="re-slot-col re-slot-col--sessions re-slot-meta">' +
             '<div class="re-slot-meta-block">' +
             '<span class="re-slot-meta-label">Sessions 2026/27</span>' +
             '<span class="re-slot-meta-value">' +
@@ -1772,7 +1774,7 @@
             esc(String(annualSessions)) +
             " sessions/year</span></div>" +
             "</div>" +
-            '<fieldset class="re-choice-fieldset">' +
+            '<fieldset class="re-choice-fieldset re-slot-col re-slot-col--choice">' +
             '<legend class="re-sr-only">Choice for ' +
             esc(slot.serviceType || "slot") +
             "</legend>" +
