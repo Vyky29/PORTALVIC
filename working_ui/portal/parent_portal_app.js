@@ -667,7 +667,7 @@
       if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
         global.portalRegisterParticipantStorageAvatar(p.contact_id, p.display_name, p.avatar_url);
       }
-      if (title) title.textContent = p.display_name || "Participant";
+      if (title) title.textContent = (p.display_name || "Participant") + "\u2019s Hub";
       var refreshBtn = $("ppParticipantRefresh");
       if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
 

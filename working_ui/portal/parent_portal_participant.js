@@ -419,8 +419,8 @@
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: false });
     setParticipantPageTitle(
-      (data && data.participant && data.participant.display_name) ||
-        "Participant",
+      ((data && data.participant && data.participant.display_name) ||
+        "Participant") + "\u2019s Hub",
     );
     void ensureClientsInfoEmbedLoaded();
     host.innerHTML =
