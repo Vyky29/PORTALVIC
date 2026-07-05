@@ -2295,7 +2295,21 @@
         const item = list[i];
         if(!item || !item.sessionKey) continue;
         if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin') continue;
-        if(item.noSessionFeedbackRequired) continue;
+        /* A client session known Absent/Cancelled (e.g. Bespoke shared Tinashe resolved by a
+           co-instructor) is flagged noSessionFeedbackRequired. It is a RESOLVED accountable
+           session — count it as handled instead of skipping, otherwise an all-absent day has
+           accountable=0 → "not all resolved" → the term cell stays orange while the halo (which
+           only checks the pending count) is already green. */
+        if(item.noSessionFeedbackRequired){
+          const rr = typeof getEffectiveSessionReviewRecord === 'function'
+            ? (getEffectiveSessionReviewRecord(item) || {})
+            : {};
+          const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+          if(rr.absent || rr.cancelled || rr.feedbackDone || pill === 'ABSENT' || pill === 'CANCELLED'){
+            accountable++;
+          }
+          continue;
+        }
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;
