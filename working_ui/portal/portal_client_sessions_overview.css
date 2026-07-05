@@ -740,23 +740,32 @@ body.portal-force-landscape{
 }
 .pp-participant-body .pcso-emo-grid{
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:3px 2px;
+  gap:5px 4px;
+  width:100%;
+  padding:0 1px;
+}
+.pp-participant-body .pcso-emo-grid__item{
+  width:100%;
+  min-width:0;
 }
 .pp-participant-body .pcso-emo-donut--sm{
-  width:34px;
-  height:34px;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  aspect-ratio:1;
+  margin:0 auto;
 }
 .pp-participant-body .pcso-emo-donut__inner--sm{
-  width:22px;
-  height:22px;
-  font-size:8px;
+  width:64%;
+  height:64%;
+  font-size:clamp(9px,2.6vw,12px);
 }
 .pp-participant-body .pcso-emo-grid__face svg{
-  width:12px;
-  height:12px;
+  width:clamp(13px,3.6vw,17px);
+  height:clamp(13px,3.6vw,17px);
 }
 .pp-participant-body .pcso-emo-grid__lbl{
-  font-size:7px;
+  font-size:clamp(7px,2.1vw,9px);
   letter-spacing:-0.01em;
   white-space:normal;
   overflow:visible;
