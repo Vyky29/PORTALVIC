@@ -248,7 +248,21 @@
   function ensure(cfg) {
     var id = String((cfg && cfg.id) || "").trim();
     if (!id) return null;
-    return registry[id] || mount(cfg);
+    var existing = registry[id];
+    if (existing) {
+      // A re-render (innerHTML replacement) can detach the input this instance was
+      // bound to; the fresh input in the DOM then has no listeners/options and the
+      // combo looks dead ("No options loaded" / never opens). Re-mount in that case.
+      var inp = document.getElementById(id + "Input");
+      if (inp && inp.isConnected && inp.getAttribute("data-portal-search-combo-bound") === "1") {
+        return existing;
+      }
+      try {
+        existing.destroy();
+      } catch (_drop) {}
+      delete registry[id];
+    }
+    return mount(cfg);
   }
 
   function get(id) {
