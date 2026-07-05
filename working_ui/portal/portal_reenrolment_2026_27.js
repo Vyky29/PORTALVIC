@@ -571,8 +571,8 @@
   }
 
   function termProgrammeTotal(data, term) {
-    var slots = (data && data.weekly_slots) || [];
     if (term === "annual") return resolveAnnualWeeklyTotal(data);
+    var slots = keptWeeklySlots(data);
     return slots.reduce(function (sum, s) {
       var t = s.termTotals && s.termTotals[term];
       return sum + (Number.isFinite(Number(t)) ? Number(t) : 0);
@@ -1105,12 +1105,25 @@
     return Math.round(sum * 100) / 100;
   }
 
+  function weeklySlotChoice(slot, idx) {
+    var id = esc(slot && slot.id ? slot.id : "slot-" + idx);
+    var choices = state.weeklyChoices || {};
+    return choices[id] === "withdraw" ? "withdraw" : "keep";
+  }
+
+  function keptWeeklySlots(data) {
+    var slots = (data && data.weekly_slots) || [];
+    return slots.filter(function (s, i) {
+      return weeklySlotChoice(s, i) !== "withdraw";
+    });
+  }
+
   function resolveAnnualWeeklyTotal(data) {
-    var fromSlots = sumAnnualWeeklyTotal(data && data.weekly_slots);
-    if (fromSlots > 0) return fromSlots;
+    var slots = (data && data.weekly_slots) || [];
+    if (slots.length) return sumAnnualWeeklyTotal(keptWeeklySlots(data));
     var api = data && data.annual_weekly_total;
     if (api != null && Number(api) > 0) return Number(api);
-    return fromSlots;
+    return 0;
   }
 
   function fundingCurrent2526(data) {
@@ -1635,6 +1648,23 @@
     }
   }
 
+  function refreshProgrammeTotalsFromChoices() {
+    var data = state.lookup;
+    var wrap = document.querySelector(".re-funding-2627");
+    if (wrap && data) {
+      var total = resolveAnnualWeeklyTotal(data);
+      wrap.setAttribute("data-annual-total", String(total));
+      var totalEl = wrap.querySelector(".re-funding-total");
+      if (totalEl) {
+        totalEl.innerHTML =
+          "<strong>Estimated programme total 2026/27:</strong> " +
+          esc(money(total));
+      }
+    }
+    updateAdminFeeAmount();
+    syncPaymentSchedulePreview();
+  }
+
   function bindFundingHandlers() {
     var host = $("reFormHost");
     if (!host || host.__reBillingBound) {
@@ -1671,6 +1701,16 @@
       if (t && t.name === "re_pay_schedule_2627") {
         syncPaymentSchedulePreview();
         updateAdminFeeAmount();
+        return;
+      }
+      if (t && t.name && t.name.indexOf("choice_") === 0) {
+        var card = t.closest ? t.closest(".re-slot-card") : null;
+        if (card) {
+          var id = card.getAttribute("data-slot-id");
+          if (!state.weeklyChoices) state.weeklyChoices = {};
+          state.weeklyChoices[id] = t.value;
+        }
+        refreshProgrammeTotalsFromChoices();
       }
     });
     syncFundingPanels();
