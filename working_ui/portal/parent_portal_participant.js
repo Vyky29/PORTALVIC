@@ -286,24 +286,27 @@
     var swimAvailable = !!data.swim_term_review_available;
     var msgIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    var teamCaption = firstNameOf(data) + "'s Team";
     return (
       '<div class="pp-pax-info-buttons">' +
       '<div class="pp-pax-info-row pp-pax-info-row--parents">' +
       infoBtnHtml("messages", "Messages", msgIcon, {
         extraClass:
-          " pp-pax-info-btn--messages" + (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
+          " pp-pax-info-btn--parent pp-pax-info-btn--messages" +
+          (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
       }) +
       infoBtnHtml(
         "general",
         "General Information",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>',
+        { extraClass: " pp-pax-info-btn--parent" },
       ) +
       infoBtnHtml(
         "booking",
         "Booking 2026/27",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-        { subtitle: booking.hint },
+        { subtitle: booking.hint, extraClass: " pp-pax-info-btn--parent" },
       ) +
       "</div>" +
       '<div class="pp-pax-info-row pp-pax-info-row--sessions">' +
@@ -325,6 +328,12 @@
           disabled: !swimAvailable,
           subtitle: swimAvailable ? "" : "Not available yet",
         },
+      ) +
+      infoBtnHtml(
+        "team",
+        teamCaption,
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        { extraClass: " pp-pax-info-btn--parent pp-pax-info-btn--team" },
       ) +
       "</div></div>"
     );
@@ -627,6 +636,125 @@
     bindBack(host, data, opts);
   }
 
+  function firstNameOf(data) {
+    var p = (data && data.participant) || {};
+    var n = String(p.display_name || p.first_name || "Participant").trim();
+    return n.split(/\s+/)[0] || n;
+  }
+
+  // Demo team — replaced by real profiles once each staff member's card is on
+  // file. When admin does a "change of instructor" override, that instructor is
+  // added to data.team so they stay part of the participant's team here.
+  var DEMO_TEAM = [
+    {
+      name: "Sofia Martins",
+      nationality: "Portuguese",
+      flag: "🇵🇹",
+      speaks: ["Portuguese", "English", "Spanish"],
+      bio: "Calm and patient in the water and always smiling. Off-poolside she loves hiking, cooking and a good playlist — she brings that easy-going energy to every session.",
+    },
+    {
+      name: "James O'Connor",
+      nationality: "Irish",
+      flag: "🇮🇪",
+      speaks: ["English"],
+      bio: "Full of energy and great at making sessions fun. A big football fan who loves the outdoors and never runs out of encouragement.",
+    },
+    {
+      name: "Aisha Rahman",
+      nationality: "British",
+      flag: "🇬🇧",
+      speaks: ["English", "Bengali", "Arabic (a little)"],
+      bio: "Warm, gentle and super encouraging. She loves arts and crafts, swimming and helping children feel proud of every small win.",
+    },
+  ];
+
+  function teamMembers(data) {
+    if (data && Array.isArray(data.team) && data.team.length) return data.team;
+    return DEMO_TEAM;
+  }
+
+  function teamInitials(name) {
+    var parts = String(name || "").trim().split(/\s+/);
+    var a = (parts[0] || "")[0] || "";
+    var b = (parts[1] || "")[0] || "";
+    return (a + b).toUpperCase() || "?";
+  }
+
+  function teamMemberPhotoHtml(m) {
+    var name = (m && m.name) || "Staff";
+    var url = (m && (m.avatar_url || m.photo_url)) || "";
+    if (url) {
+      return (
+        '<div class="pp-team-photo pp-team-photo--img"><img src="' +
+        esc(url) +
+        '" alt="" width="72" height="72" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-team-photo--img\');" /><span class="pp-team-photo__init" aria-hidden="true">' +
+        esc(teamInitials(name)) +
+        "</span></div>"
+      );
+    }
+    return (
+      '<div class="pp-team-photo pp-team-photo--init" aria-hidden="true">' +
+      esc(teamInitials(name)) +
+      "</div>"
+    );
+  }
+
+  function teamMemberCardHtml(m) {
+    m = m || {};
+    var speaks = Array.isArray(m.speaks) ? m.speaks : [];
+    var speaksHtml = speaks.length
+      ? '<div class="pp-team-card__speaks"><span class="pp-team-card__speaks-label">Speaks</span><span class="pp-team-chips">' +
+        speaks
+          .map(function (l) {
+            return '<span class="pp-team-chip">' + esc(l) + "</span>";
+          })
+          .join("") +
+        "</span></div>"
+      : "";
+    var natHtml = m.nationality
+      ? '<p class="pp-team-card__nat">' +
+        (m.flag ? '<span class="pp-team-flag" aria-hidden="true">' + esc(m.flag) + "</span>" : "") +
+        esc(m.nationality) +
+        "</p>"
+      : "";
+    return (
+      '<article class="pp-team-card">' +
+      teamMemberPhotoHtml(m) +
+      '<div class="pp-team-card__body">' +
+      '<h4 class="pp-team-card__name">' +
+      esc(m.name || "Team member") +
+      "</h4>" +
+      natHtml +
+      speaksHtml +
+      (m.bio ? '<p class="pp-team-card__bio">' + esc(m.bio) + "</p>" : "") +
+      "</div></article>"
+    );
+  }
+
+  function renderTeam(host, data, opts) {
+    var first = firstNameOf(data);
+    var members = teamMembers(data);
+    var isDemo = !(data && Array.isArray(data.team) && data.team.length);
+    host.innerHTML = subviewShell(
+      data,
+      "team",
+      '<h3 class="pp-pax-subview-title">' +
+        esc(first) +
+        "&apos;s Team</h3>" +
+        '<p class="pp-muted pp-pax-subview-note">The people who work with ' +
+        esc(first) +
+        " — who they are and the languages they can speak.</p>" +
+        (isDemo
+          ? '<div class="pp-notice pp-notice--info" role="note">Preview — we&apos;re completing each staff member&apos;s profile. This is an example of what you&apos;ll see here.</div>'
+          : "") +
+        '<div class="pp-team-grid">' +
+        members.map(teamMemberCardHtml).join("") +
+        "</div>",
+    );
+    bindBack(host, data, opts);
+  }
+
   function formatMessageWhen(iso) {
     if (!iso) return "";
     try {
@@ -875,6 +1003,7 @@
     } else if (view === "sessions") renderSessions(host, data, opts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
+    else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "messages") renderMessages(host, data, opts);
   }
