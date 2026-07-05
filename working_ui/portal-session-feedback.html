@@ -33,7 +33,7 @@
 <script src="/portal/portal_participant_achievements.js?v=20260703-ios-gallery-upload-fix"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260705c-submit-gate"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260705d-ai-down-submit"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -2988,13 +2988,24 @@ button{
     }
     let positiveFeedback = (data.get("positiveFeedback") || "").toString();
     let relevantInformation = (data.get("relevantInformation") || "").toString();
-    if(!clean(positiveFeedback)){
-      alert("Please run Filter with AI to fill Positive feedback.");
-      return;
+    let aiFilterPending = false;
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+        typeof window.PortalFeedbackNarrative.getSubmitAuditMeta === "function"){
+      const auditMeta = window.PortalFeedbackNarrative.getSubmitAuditMeta() || {};
+      aiFilterPending = !!(auditMeta.ai_filter_pending || auditMeta.ai_unavailable);
     }
-    if(!clean(relevantInformation)){
-      alert("Please run Filter with AI to fill Relevant information.");
-      return;
+    if(!aiFilterPending){
+      if(!clean(positiveFeedback)){
+        alert("Please run Filter with AI to fill Positive feedback.");
+        return;
+      }
+      if(!clean(relevantInformation)){
+        alert("Please run Filter with AI to fill Relevant information.");
+        return;
+      }
+    } else {
+      positiveFeedback = "";
+      relevantInformation = "";
     }
     const engagementRatingRaw = (data.get("engagementRating") || "").toString();
     const engagementRatingParsed = parseInt(engagementRatingRaw, 10);

@@ -924,7 +924,7 @@
  if (s.needsTranslate) {
  setVoiceStatus(
  s.statusEl,
- "Voice transcription is temporarily unavailable — please type your feedback in English below.",
+ "Voice transcription is temporarily unavailable — type your session narrative in English (80+ characters), then Submit. Admin will release to parents later.",
  { autoClearMs: VOICE_ERROR_CLEAR_MS }
  );
  return;
@@ -939,7 +939,7 @@
  }
  setVoiceStatus(
  s.statusEl,
- "Voice transcription is temporarily unavailable — please type your feedback below.",
+ "Voice transcription is temporarily unavailable — type your session narrative below (80+ characters), then Submit without Filter with AI.",
  { autoClearMs: VOICE_ERROR_CLEAR_MS }
  );
  return;

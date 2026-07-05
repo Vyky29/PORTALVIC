@@ -4883,9 +4883,8 @@
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
-        announcement: portalActiveAnnouncementItems().length > 0 || !!(
-          typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem()
-        ),
+        /* Calendar 2026/27 is informational (Reference) — not a signature-required pending item. */
+        announcement: portalActiveAnnouncementItems().length > 0,
         feedback: hasFeedback || hasReminderOther,
         schedule: !!scheduleMode,
         scheduleMode: scheduleMode,

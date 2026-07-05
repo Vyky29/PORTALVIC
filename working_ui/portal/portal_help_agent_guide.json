@@ -258,8 +258,8 @@
         "narrativa",
         "filtro ia"
       ],
-      "voice_script": "Always open feedback from the orange session card — it pre-fills the participant. Rate engagement, emotions and independence. Write your session narrative covering reception, session and handover. Tap Filter with AI, review what it wrote, then Submit. The card turns green. Mark Absent if they did not attend.",
-      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nHow to complete feedback:\n1. Rate **Engagement** (1–5 stars).\n2. Select **Participant emotions / regulation** — all that apply.\n3. Select **Independence** — all that apply.\n4. Write your **Session narrative** in English. Cover **Reception** (arrival, parent handover), **Session** (plan, strategies, challenges, what worked), and **Handover** (what you told the family). Type or use the microphone — optional in Settings; aim ~1 minute, max 2.\n5. Tap **Filter with AI**. AI fills **Positive feedback** (sent to the family app) and **Relevant information** (internal admin only).\n6. Review both fields. If you edit the narrative, run **Filter with AI** again before Submit.\n7. Tap **Submit**. The card turns green.\n\nSubmit is blocked until Filter with AI has run successfully.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the participant card if they did not attend — card turns green without separate feedback.\n\nSubmit before timesheet deadline so hours turn green for pay.\n\nWho needs their own feedback:\n• Day Centre and shared Bespoke (e.g. Ikram, Emmanuel, Fadi, Timi with co-instructors): if a colleague already submitted for that client during the shared block, your card can show green — you do not need a second report.\n• Multi-Activity, Aquatic/Teaching pool and Climbing: each instructor submits their own feedback for their slot (often 45 minutes). A colleague's submission does not complete yours — e.g. afternoon MA at Acton when you and another staff split the hour.\n• Linked services (e.g. Aquatic then Multi-Activity): each worker who ran their part of the session submits for their time only.\n\nMicrophone in Settings is optional for voice narrative or voice typing.",
+      "voice_script": "Open feedback from the orange session card. Rate engagement, emotions and independence. Write or record your session narrative — at least 80 characters. Typed: Check narrative, then Filter with AI. Voice: tap mic to record, tap again to stop, wait for English text, then Filter with AI. If AI is down, type 80 characters and Submit without check or filter — admin releases to parents later. Mark Absent if they did not attend.",
+      "content": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nHow to complete feedback:\n1. Rate **Engagement** (1–5 stars).\n2. Select **Participant emotions / regulation** — all that apply.\n3. Select **Independence** — all that apply.\n4. **Session narrative** in English — Reception, Session and Handover. Minimum **80 characters**.\n   • **Typed:** tap **Check narrative** (Reception, Session, Handover), then **Filter with AI**.\n   • **Voice:** tap the microphone to start — you will not see text while you speak. Tap again to stop. After a few seconds your words appear as English text in Session narrative, then run **Filter with AI**.\n5. **Filter with AI** fills **Positive feedback** (parent app) and **Relevant information** (admin only — parents never see this).\n6. Review both fields. Edit narrative → Check narrative and Filter with AI again.\n7. Tap **Submit**. The card turns green.\n\n**If AI is not working**\nType your Session narrative (80+ characters). You can **Submit without Check narrative or Filter with AI**. That feedback stays in the **admin queue only** — it does **not** go to the parent app until admin opens **Session feedback → Take action → Filter and release to parent portal**.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself.\n\nMark Absent from the session card if the participant did not attend.\n\nSubmit before timesheet deadline so hours turn green for pay.",
       "steps": [
         {
           "voice": "When feedback is pending, the session card is orange with a Pending pill.",
@@ -281,6 +281,12 @@
           "focus": "filter",
           "caption": "Filter with AI — then Submit",
           "audio": "/portal/help-audio/feedback-03-filter.mp3"
+        },
+        {
+          "voice": "If AI is not working, type at least 80 characters and Submit without Check narrative or Filter with AI. Admin filters and releases to parents from Session feedback.",
+          "demo": "feedback-narrative-form",
+          "focus": "ai-down",
+          "caption": "AI down — typed submit (admin release only)"
         },
         {
           "voice": "After submit, the session card turns green.",
@@ -558,8 +564,8 @@
         "emergency contact",
         "perfil"
       ],
-      "voice_script": "Update my profile is your annual check-in for personal and emergency details. Open it from Quick menu when prompted.",
-      "content": "Quick menu → Update my profile for annual check-in of personal and emergency details. Complete once a year when prompted or any time from Quick menu.",
+      "voice_script": "Annual profile check-in — open from Quick menu when prompted. Fields in red must be filled. Use Calendar 2026/27 when answering next-year availability. If you submitted before 3 July 2026, you may need to complete it again.",
+      "content": "Quick menu → **Annual profile check-in** (or Update my profile).\n\nComplete every section — fields marked **red** must be filled via **Edit**, then **Confirm** each section before **Submit**.\n\nIf you submitted **before 3 July 2026**, your answers may not have saved — please complete the form again.\n\nWhen we ask about **next-year availability**, open **Calendar 2026/27** (Quick menu → Reference) first so you can see term dates and when you would normally work.\n\nThe notice clears automatically once your form is saved correctly.",
       "demos": [
         {
           "demo": "profile-form",

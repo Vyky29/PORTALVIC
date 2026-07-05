@@ -50,7 +50,7 @@
     "Health Questionaire", "Job application", "Interviews",
   ];
 
-  var ANNUAL_PROFILE_CAMPAIGN_START_MS = Date.parse("2026-01-01T00:00:00Z");
+  var ANNUAL_PROFILE_CAMPAIGN_START_MS = Date.parse("2026-07-03T00:00:00Z");
 
   var state = {
     rootEl: null,
@@ -587,7 +587,7 @@
     var complete = annualProfileComplete(r.profile_last_confirmed_at);
     var meta = profileKvRow(
       "Check-in status",
-      complete ? "Done — " + fmtDateTime(r.profile_last_confirmed_at) : "Pending — not confirmed in 2026 yet",
+      complete ? "Done — " + fmtDateTime(r.profile_last_confirmed_at) : "Pending — not confirmed since 3 Jul 2026 fix",
     );
     if (r.profile_last_updated_at && r.profile_last_updated_at !== r.profile_last_confirmed_at) {
       meta += profileKvRow("Last updated", fmtDateTime(r.profile_last_updated_at));

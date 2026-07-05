@@ -148,7 +148,7 @@
   }
 
   var AI_DOWN_SUBMIT_MSG =
-    "AI is temporarily unavailable — you can still submit. Your text is saved as written and an admin will filter it for the family later.";
+    "AI is temporarily unavailable — type at least 80 characters, then Submit without Check narrative or Filter with AI. This stays in admin only until Session feedback → Take action → Filter and release to parent portal.";
 
   /** True when the edge function failed because OpenAI/Whisper is unreachable or out of quota. */
   function isAiDownError(result) {
@@ -200,7 +200,7 @@
     }, 1200);
   }
 
-  /** Let staff submit the raw narrative when AI cannot filter it (nothing is lost). */
+  /** Typed submit at 80+ chars when AI is down — admin filters before parent release. */
   function enterAiDegraded(fromSilent) {
     var narrative = narrativeText();
     if (narrative.length < MIN_NARRATIVE_CHARS) {
@@ -208,20 +208,20 @@
       return;
     }
     state.aiUnavailable = true;
-    state.filtered = true;
+    state.filtered = false;
     state.liveAiUsed = false;
     state.narrativeSnapshot = narrative;
-    state.filterPositiveSnapshot = narrative;
-    state.filterRelevantSnapshot = narrative;
-    if (els.positive) els.positive.value = narrative;
-    if (els.relevant) els.relevant.value = narrative;
+    state.filterPositiveSnapshot = "";
+    state.filterRelevantSnapshot = "";
+    if (els.positive) els.positive.value = "";
+    if (els.relevant) els.relevant.value = "";
     setAiFieldsRequired(false);
-    showAiOutput(true);
+    showAiOutput(false);
     state.filtering = false;
     if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
     syncFilterButton();
     syncSubmitGate();
-    setStatus(AI_DOWN_SUBMIT_MSG);
+    if (!fromSilent) setStatus(AI_DOWN_SUBMIT_MSG);
     return true;
   }
 
@@ -693,17 +693,7 @@
       syncValidateButton();
     }
     if (state.aiUnavailable) {
-      var nv = narrativeText();
-      // Keep the saved fields mirrored to the narrative unless staff edited them.
-      if (els.positive && clean(els.positive.value) === clean(state.filterPositiveSnapshot)) {
-        els.positive.value = nv;
-        state.filterPositiveSnapshot = nv;
-      }
-      if (els.relevant && clean(els.relevant.value) === clean(state.filterRelevantSnapshot)) {
-        els.relevant.value = nv;
-        state.filterRelevantSnapshot = nv;
-      }
-      state.narrativeSnapshot = nv;
+      state.narrativeSnapshot = narrativeText();
       syncSubmitGate();
       return;
     }
@@ -753,9 +743,6 @@
       return false;
     }
     if (state.aiUnavailable) {
-      // AI filter/validation unavailable: submit the raw narrative so nothing is lost.
-      if (els.positive && !clean(els.positive.value)) els.positive.value = narrative;
-      if (els.relevant && !clean(els.relevant.value)) els.relevant.value = narrative;
       return true;
     }
     if (validationRequired()) {

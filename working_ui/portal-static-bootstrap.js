@@ -296,7 +296,8 @@
     };
 
   /** Annual profile check-in campaign — hide hub menu once confirmed on/after this date (UTC). */
-  window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-01-01";
+  /** Annual profile check-in — valid completion only on/after red-field fix (3 Jul 2026 UTC). */
+  window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-07-03";
   /** Fixed announcement row id (portal_staff_announcements) for the 2026 annual profile campaign. */
   window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID = "a0260001-0001-4000-8000-0000000a2601";
   /** Day Centre Calendar 2026/27 — sign saves PDF to My Documents. */

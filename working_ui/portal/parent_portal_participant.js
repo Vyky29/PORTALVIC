@@ -945,31 +945,12 @@
     return n.split(/\s+/)[0] || n;
   }
 
-  // Demo team — replaced by real profiles once each staff member's card is on
-  // file. When admin does a "change of instructor" override, that instructor is
-  // added to data.team so they stay part of the participant's team here.
-  var DEMO_TEAM = [
-    {
-      name: "Roberto",
-      nationality: "Italian",
-      flag: "🇮🇹",
-      speaks: ["Italian", "Spanish", "English"],
-      avatar_url: "/portal/staff_photos/roberto.png",
-      bio: "Roberto brings big Italian energy and a warm smile to every session. Patient and encouraging, he loves football, good food and music — and he has a real gift for helping children feel relaxed and confident in the water.",
-    },
-    {
-      name: "Luliya",
-      nationality: "English",
-      flag: "🇬🇧",
-      speaks: ["Somali", "English"],
-      avatar_url: "/portal/staff_photos/luliya.png",
-      bio: "Luliya is calm, kind and a wonderful listener. She loves arts and crafts, reading and swimming, and is brilliant at making every child feel safe, seen and proud of their progress.",
-    },
-  ];
-
   function teamMembers(data) {
+    if (typeof global.PortalParentTeam !== "undefined" && typeof global.PortalParentTeam.resolveTeam === "function") {
+      return global.PortalParentTeam.resolveTeam(data);
+    }
     if (data && Array.isArray(data.team) && data.team.length) return data.team;
-    return DEMO_TEAM;
+    return [];
   }
 
   function teamInitials(name) {
@@ -1041,11 +1022,22 @@
     var pName = p.display_name || "Participant";
     var members = teamMembers(data);
     var colClass =
-      members.length >= 3
-        ? " pp-team-grid--3"
-        : members.length === 2
-          ? " pp-team-grid--2"
-          : " pp-team-grid--1";
+      members.length >= 4
+        ? " pp-team-grid--2"
+        : members.length >= 3
+          ? " pp-team-grid--3"
+          : members.length === 2
+            ? " pp-team-grid--2"
+            : " pp-team-grid--1";
+    var sinceLabel =
+      typeof global.PortalParentTeam !== "undefined" && global.PortalParentTeam.TEAM_FEEDBACK_SINCE
+        ? global.PortalParentTeam.TEAM_FEEDBACK_SINCE
+        : "2026-06-01";
+    var bodyHtml = members.length
+      ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
+      : '<p class="pp-muted">No instructors on file yet for sessions since ' +
+        esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
+        ".</p>";
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="team">' +
       '<div class="pp-pax-sticky-hero pp-team-backbar">' +
@@ -1056,11 +1048,9 @@
       "&apos;s Hub</button>" +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
-      '<div class="pp-team-grid' +
-      colClass +
-      '">' +
-      members.map(teamMemberCardHtml).join("") +
-      "</div></div></div>";
+      '<p class="pp-muted pp-team-intro">Instructors who have submitted session feedback since 1 June 2026.</p>' +
+      bodyHtml +
+      "</div></div>";
     setParticipantPageTitle(pName + "\u2019s Team");
     bindBack(host, data, opts);
   }
