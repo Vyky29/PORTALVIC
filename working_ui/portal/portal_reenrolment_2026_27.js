@@ -1184,6 +1184,14 @@
   function renderBilling2526Reference(cur) {
     var fundText = billing2526FundingLabel(cur);
     var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
+    var feeNote =
+      '<p class="re-billing-ref-note re-billing-ref-fee">' +
+      "<strong>Fees:</strong> in 2025/26 a " +
+      money(5) +
+      " admin fee applied per booking (invoice). For 2026/27, if you continue with Direct Payment (GoCardless), each installment adds a " +
+      money(RE_ADMIN_FEE_PER_INSTALLMENT) +
+      " fee to cover costs. Bank transfer has no fee." +
+      "</p>";
     return (
       '<div class="re-funding-current">' +
       '<h4><svg class="re-funding-current__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 14.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Funding &amp; payment on file (2025/26)</span></h4>' +
@@ -1199,6 +1207,7 @@
       esc(payText) +
       "</span></li>" +
       "</ul>" +
+      feeNote +
       '<p class="re-billing-ref-note re-billing-ref-note--alert">This continues for 2026/27 unless you edit below.</p>' +
       '<button type="button" class="re-btn re-btn--billing-edit-inline" id="reBillingEditBtn">Edit for 2026/27</button>' +
       "</div>"
