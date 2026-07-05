@@ -692,6 +692,203 @@
     return null;
   }
 
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        resolve(fr.result);
+      };
+      fr.onerror = function () {
+        reject(fr.error || new Error("read error"));
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  function loadImageEl(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        reject(new Error("image error"));
+      };
+      img.src = src;
+    });
+  }
+
+  // Circular crop/reposition step so the parent can place the face inside the
+  // circle before upload. Resolves with a square JPEG File, or null if cancelled.
+  function openPhotoCropper(file) {
+    return new Promise(function (resolve) {
+      readFileAsDataUrl(file)
+        .then(loadImageEl)
+        .then(function (img) {
+          buildPhotoCropper(img, file, resolve);
+        })
+        .catch(function () {
+          resolve(file);
+        });
+    });
+  }
+
+  function buildPhotoCropper(img, file, done) {
+    var V = 264;
+    var OUT = 512;
+    var natW = img.naturalWidth || img.width || 1;
+    var natH = img.naturalHeight || img.height || 1;
+    var minScale = Math.max(V / natW, V / natH);
+    var maxScale = minScale * 4;
+    var scale = minScale;
+    var ox = (V - natW * scale) / 2;
+    var oy = (V - natH * scale) / 2;
+
+    var overlay = document.createElement("div");
+    overlay.className = "pp-crop-overlay";
+    overlay.innerHTML =
+      '<div class="pp-crop-modal" role="dialog" aria-modal="true" aria-label="Position the face in the circle">' +
+      '<h3 class="pp-crop-title">Position the face</h3>' +
+      '<p class="pp-crop-hint">Drag to move and use the slider to zoom. Put the face inside the circle — the rest is cropped out.</p>' +
+      '<div class="pp-crop-stage"><div class="pp-crop-viewport"><img class="pp-crop-img" alt="" draggable="false" /><div class="pp-crop-ring" aria-hidden="true"></div></div></div>' +
+      '<input type="range" class="pp-crop-zoom" min="1" max="4" step="0.01" value="1" aria-label="Zoom" />' +
+      '<div class="pp-crop-actions"><button type="button" class="pp-btn pp-btn--ghost pp-crop-cancel">Cancel</button><button type="button" class="pp-btn pp-crop-use">Use photo</button></div>' +
+      "</div>";
+    document.body.appendChild(overlay);
+
+    var imgEl = overlay.querySelector(".pp-crop-img");
+    var vp = overlay.querySelector(".pp-crop-viewport");
+    var zoom = overlay.querySelector(".pp-crop-zoom");
+    vp.style.width = V + "px";
+    vp.style.height = V + "px";
+    imgEl.src = img.src;
+
+    function clamp() {
+      var dw = natW * scale;
+      var dh = natH * scale;
+      var minOx = Math.min(0, V - dw);
+      var minOy = Math.min(0, V - dh);
+      if (ox > 0) ox = 0;
+      if (ox < minOx) ox = minOx;
+      if (oy > 0) oy = 0;
+      if (oy < minOy) oy = minOy;
+    }
+    function apply() {
+      imgEl.style.width = natW * scale + "px";
+      imgEl.style.height = natH * scale + "px";
+      imgEl.style.transform = "translate(" + ox + "px," + oy + "px)";
+    }
+    clamp();
+    apply();
+
+    var dragging = false;
+    var sx0 = 0;
+    var sy0 = 0;
+    var ox0 = 0;
+    var oy0 = 0;
+    function ptDown(e) {
+      dragging = true;
+      var p = e.touches ? e.touches[0] : e;
+      sx0 = p.clientX;
+      sy0 = p.clientY;
+      ox0 = ox;
+      oy0 = oy;
+      if (e.cancelable) e.preventDefault();
+    }
+    function ptMove(e) {
+      if (!dragging) return;
+      var p = e.touches ? e.touches[0] : e;
+      ox = ox0 + (p.clientX - sx0);
+      oy = oy0 + (p.clientY - sy0);
+      clamp();
+      apply();
+      if (e.cancelable) e.preventDefault();
+    }
+    function ptUp() {
+      dragging = false;
+    }
+    vp.addEventListener("mousedown", ptDown);
+    window.addEventListener("mousemove", ptMove);
+    window.addEventListener("mouseup", ptUp);
+    vp.addEventListener("touchstart", ptDown, { passive: false });
+    window.addEventListener("touchmove", ptMove, { passive: false });
+    window.addEventListener("touchend", ptUp);
+
+    zoom.addEventListener("input", function () {
+      var mult = parseFloat(zoom.value) || 1;
+      var newScale = minScale * mult;
+      if (newScale < minScale) newScale = minScale;
+      if (newScale > maxScale) newScale = maxScale;
+      var cx = V / 2;
+      var cy = V / 2;
+      var relX = (cx - ox) / scale;
+      var relY = (cy - oy) / scale;
+      scale = newScale;
+      ox = cx - relX * scale;
+      oy = cy - relY * scale;
+      clamp();
+      apply();
+    });
+
+    function cleanup() {
+      window.removeEventListener("mousemove", ptMove);
+      window.removeEventListener("mouseup", ptUp);
+      window.removeEventListener("touchmove", ptMove);
+      window.removeEventListener("touchend", ptUp);
+      overlay.remove();
+    }
+
+    overlay.querySelector(".pp-crop-cancel").addEventListener("click", function () {
+      cleanup();
+      done(null);
+    });
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) {
+        cleanup();
+        done(null);
+      }
+    });
+    overlay.querySelector(".pp-crop-use").addEventListener("click", function () {
+      try {
+        var srcX = -ox / scale;
+        var srcY = -oy / scale;
+        var srcSize = V / scale;
+        var canvas = document.createElement("canvas");
+        canvas.width = OUT;
+        canvas.height = OUT;
+        var ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, OUT, OUT);
+        canvas.toBlob(
+          function (blob) {
+            cleanup();
+            if (!blob) {
+              done(file);
+              return;
+            }
+            var name = String(file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg";
+            var out;
+            try {
+              out = new File([blob], name, { type: "image/jpeg" });
+            } catch (_e) {
+              out = blob;
+              try {
+                out.name = name;
+              } catch (_e2) {}
+            }
+            done(out);
+          },
+          "image/jpeg",
+          0.9,
+        );
+      } catch (_e) {
+        cleanup();
+        done(file);
+      }
+    });
+  }
+
   function bindChildPhotoHandlers() {
     var list = $("ppChildList");
     if (!list) return;
@@ -731,21 +928,26 @@
         return;
       }
       var hasSaved = block.getAttribute("data-has-photo") === "1";
-      if (state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) {
-        try {
-          URL.revokeObjectURL(state.childPhotoPending[cid].previewUrl);
-        } catch (_e) {}
-      }
-      var previewUrl = URL.createObjectURL(file);
-      state.childPhotoPending[cid] = { file: file, previewUrl: previewUrl };
-      refreshChildPhotoHost(block, c);
+      input.value = "";
       setChildPhotoStatus(block, "", "");
-      if (hasSaved) {
-        void saveChildPhoto(block, c, file);
-      } else {
-        var saveEl = block.querySelector(".pp-child-photo-save");
-        if (saveEl) saveEl.hidden = false;
-      }
+      openPhotoCropper(file).then(function (finalFile) {
+        if (!finalFile) return;
+        if (state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) {
+          try {
+            URL.revokeObjectURL(state.childPhotoPending[cid].previewUrl);
+          } catch (_e) {}
+        }
+        var previewUrl = URL.createObjectURL(finalFile);
+        state.childPhotoPending[cid] = { file: finalFile, previewUrl: previewUrl };
+        refreshChildPhotoHost(block, c);
+        setChildPhotoStatus(block, "", "");
+        if (hasSaved) {
+          void saveChildPhoto(block, c, finalFile);
+        } else {
+          var saveEl = block.querySelector(".pp-child-photo-save");
+          if (saveEl) saveEl.hidden = false;
+        }
+      });
     });
   }
 
