@@ -13098,16 +13098,6 @@
       "session_date": "2026-07-20"
     },
     {
-      "client_name": "ACAT",
-      "day": "Monday",
-      "instructors": "ROBERTO",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 12",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-20"
-    },
-    {
       "client_name": "Ikram",
       "day": "Monday",
       "instructors": "LULIYA",
@@ -13124,16 +13114,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-20"
-    },
-    {
-      "client_name": "Timi",
-      "day": "Monday",
-      "instructors": "ROBERTO",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13438,16 +13418,6 @@
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "ACAT",
-      "day": "Monday",
-      "instructors": "ROBERTO",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 12",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-27"
-    },
-    {
       "client_name": "Ikram",
       "day": "Monday",
       "instructors": "LULIYA",
@@ -13464,16 +13434,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-27"
-    },
-    {
-      "client_name": "Timi",
-      "day": "Monday",
-      "instructors": "ROBERTO",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "12 to 12.30",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -13757,7 +13717,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-05T04:02:00Z",
+    "rosterMadreSyncedAt": "2026-07-05T04:26:13Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
