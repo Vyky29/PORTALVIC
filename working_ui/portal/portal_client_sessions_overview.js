@@ -655,7 +655,7 @@
       { key: "independent", label: "Independent", color: "#ddd6fe" },
       { key: "prompts", label: "With prompts", color: "#c4b5fd" },
       { key: "regular", label: "Regular support", color: "#a78bfa" },
-      { key: "full", label: "Full support", color: "#7c3aed" },
+      { key: "full", label: "Full support", labelLines: ["Full", "Support"], color: "#7c3aed" },
     ];
     return (
       '<div class="pcso-ind-bars" role="img" aria-label="Independence distribution">' +
@@ -664,12 +664,19 @@
           const n = buckets[o.key] || 0;
           const pct = (n / total) * 100;
           const h = n > 0 ? Math.max(10, Math.round(pct)) : 0;
+          const lbl =
+            o.labelLines && o.labelLines.length
+              ? '<span class="pcso-ind-bar__lbl">' +
+                o.labelLines.map(function (line) { return esc(line); }).join("<br>") +
+                "</span>"
+              : '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span>";
           return (
             '<div class="pcso-ind-bar">' +
             '<span class="pcso-ind-bar__pct">' + Math.round(pct) + "%</span>" +
             '<div class="pcso-ind-bar__track" title="' + esc(o.label + ": " + n) + '">' +
             '<div class="pcso-ind-bar__fill" style="height:' + h + "%;background:" + o.color + '"></div></div>' +
-            '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span></div>"
+            lbl +
+            "</div>"
           );
         })
         .join("") +
