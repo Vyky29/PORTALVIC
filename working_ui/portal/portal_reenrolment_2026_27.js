@@ -1732,12 +1732,19 @@
     if (!slots || !slots.length) {
       return '<p class="re-muted">No weekly or weekend activities on file — contact the office if this is wrong.</p>';
     }
+    var toneCounter = 0;
     return (
       '<div class="re-slot-list">' +
       slots
         .map(function (slot, idx) {
           var id = esc(slot.id || "slot-" + idx);
-          var parts = formatWeeklySlotCardParts(slot) || { service: slotLabel(slot), detail: "" };
+          var rawParts = formatWeeklySlotCardParts(slot);
+          var tone = null;
+          if (rawParts) {
+            tone = RE_SERVICE_TONES[toneCounter % RE_SERVICE_TONES.length];
+            toneCounter += 1;
+          }
+          var parts = rawParts || { service: slotLabel(slot), detail: "" };
           var price = slot.pricePerSession != null ? money(slot.pricePerSession) + " / session" : "—";
           var autumn = slot.sessions && slot.sessions.autumn;
           var spring = slot.sessions && slot.sessions.spring;
@@ -1751,6 +1758,11 @@
             '<div class="re-slot-intro">' +
             '<p class="re-slot-service-name">' +
             esc(parts.service) +
+            (tone
+              ? '<span class="re-slot-service-dot" style="background:' +
+                tone +
+                '" aria-hidden="true"></span>'
+              : "") +
             "</p>" +
             (parts.detail ? '<p class="re-slot-service-detail">' + esc(parts.detail) + "</p>" : "") +
             "</div>" +
