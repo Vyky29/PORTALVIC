@@ -827,12 +827,39 @@
       .pp-pax-info-row--sessions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     /* Participant's Team cards. */
-    .pp-team-grid {
+    .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
+    .pp-team-participant {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      margin: 2px 0 14px;
+    }
+    .pp-team-participant .pp-pax-photo {
+      width: 108px;
+      height: 108px;
+      border-width: 3px;
+    }
+    .pp-team-participant .pp-pax-photo--init { font-size: 30px; }
+    .pp-team-participant__name {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-team-title { text-align: center; margin-bottom: 12px; }
+    .pp-team-grid {
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 12px;
       margin-top: 12px;
       min-width: 0;
+    }
+    @media (min-width: 640px) {
+      .pp-team-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .pp-team-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     .pp-team-card {
       display: flex;
@@ -1335,7 +1362,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260704-cyrus-match"></script>
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260703-ach-dl"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260705-hub-buttons-accent"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260705-team-header-grid"></script>
   <script src="/portal/parent_portal_app.js?v=20260704-home-action-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

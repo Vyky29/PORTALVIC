@@ -730,25 +730,39 @@
   }
 
   function renderTeam(host, data, opts) {
+    var p = (data && data.participant) || {};
+    var pName = p.display_name || "Participant";
     var first = firstNameOf(data);
     var members = teamMembers(data);
-    var isDemo = !(data && Array.isArray(data.team) && data.team.length);
-    host.innerHTML = subviewShell(
-      data,
-      "team",
-      '<h3 class="pp-pax-subview-title">' +
-        esc(first) +
-        "&apos;s Team</h3>" +
-        '<p class="pp-muted pp-pax-subview-note">The people who work with ' +
-        esc(first) +
-        " — who they are and the languages they can speak.</p>" +
-        (isDemo
-          ? '<div class="pp-notice pp-notice--info" role="note">Preview — we&apos;re completing each staff member&apos;s profile. This is an example of what you&apos;ll see here.</div>'
-          : "") +
-        '<div class="pp-team-grid">' +
-        members.map(teamMemberCardHtml).join("") +
-        "</div>",
-    );
+    var colClass =
+      members.length >= 3
+        ? " pp-team-grid--3"
+        : members.length === 2
+          ? " pp-team-grid--2"
+          : " pp-team-grid--1";
+    host.innerHTML =
+      '<div class="pp-pax-shell" data-pp-view="team">' +
+      '<div class="pp-pax-sticky-hero pp-team-backbar">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to sections for ' +
+      esc(pName) +
+      '">← ' +
+      esc(pName) +
+      "&apos;s sections</button>" +
+      "</div>" +
+      '<div class="pp-pax-subview-body">' +
+      '<header class="pp-team-participant">' +
+      participantPhotoHtml(p) +
+      '<h3 class="pp-team-participant__name">' +
+      esc(pName) +
+      "</h3></header>" +
+      '<h3 class="pp-pax-subview-title pp-team-title">' +
+      esc(first) +
+      "&apos;s Team</h3>" +
+      '<div class="pp-team-grid' +
+      colClass +
+      '">' +
+      members.map(teamMemberCardHtml).join("") +
+      "</div></div></div>";
     bindBack(host, data, opts);
   }
 
