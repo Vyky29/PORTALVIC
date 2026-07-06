@@ -241,9 +241,12 @@ function buildServicesDetail(sessions: unknown): Array<{ label: string; day: str
 
   return [...groups.values()]
     .map((g) => {
-      const dur = g.startMin != null && g.endMin != null && g.endMin > g.startMin
+      const spanDur = g.startMin != null && g.endMin != null && g.endMin > g.startMin
         ? g.endMin - g.startMin
         : null;
+      // Multi-Activity is a single 90' service billed per day, even when the
+      // roster splits it into two 45' halves — always show it as 90'.
+      const dur = g.svc === "Multi-Activity" ? 90 : spanDur;
       const label = dur ? `${dur}' ${g.svc}` : g.svc;
       const time = g.startTok && g.endTok ? `${g.startTok} to ${g.endTok}` : g.rawTime;
       return { label, day: g.day, time, _order: DAY_ORDER[g.day.toLowerCase()] || 8, _start: g.startMin ?? 9999 };
