@@ -6,6 +6,11 @@
   "use strict";
 
   var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260703-bundle-iife";
+  // Optional "Notes" (relevant_information) only became a genuinely separate,
+  // worker-written optional field on 7 Jul 2026. Before that date,
+  // relevant_information was the AI "internal relevant" split of the feedback and
+  // belongs WITH the feedback (Feedback filtered tab), not the Notes tab.
+  var NOTES_FIRST_DATE_ISO = "2026-07-07";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -5883,6 +5888,7 @@
   };
 
   AdminSessionsHub.prototype.feedbackNotesRows = function (noteKind) {
+    var hub = this;
     var kind = noteKind || this.tab;
     if (usesWeekDayPickerTab(kind) && clean(this.selectedDay)) {
       return this.feedbackNotesRowsForDay(kind, this.selectedDay);
@@ -5890,7 +5896,8 @@
     return this.feedbackInRange().filter(function (fb) {
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
       if (kind === "positive") return !!clean(fb.positive_feedback);
-      if (kind === "relevant") return !!clean(fb.relevant_information);
+      if (kind === "relevant")
+        return !!clean(fb.relevant_information) && hub.feedbackRowDate(fb) >= NOTES_FIRST_DATE_ISO;
       return false;
     });
   };
@@ -5907,7 +5914,8 @@
         if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
         if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
         if (kind === "positive") return !!clean(fb.positive_feedback);
-        if (kind === "relevant") return !!clean(fb.relevant_information);
+        if (kind === "relevant")
+          return !!clean(fb.relevant_information) && hub.feedbackRowDate(fb) >= NOTES_FIRST_DATE_ISO;
         return false;
       })
       .sort(feedbackSortNewestFirst);
@@ -6819,6 +6827,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note ash-cell-raw-feedback">' +
       (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
       "</td>";
+    // Feedback (filtered) tab, "Session feedback" column:
+    //  - from 7 Jul 2026: show only the session-feedback narrative (notes live
+    //    on the Notes tab, not here);
+    //  - up to 6 Jul 2026: keep the old positive_feedback + relevant_information
+    //    together, as they were captured before the notes split.
+    var rowDateForModel =
+      (typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
+      clean(fb.session_date);
+    var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
+    var filteredRawText;
+    if (isLegacyNotesRow) {
+      filteredRawText =
+        [clean(fb.positive_feedback), clean(fb.relevant_information)]
+          .filter(Boolean)
+          .join("\n\n") || "\u2014";
+    } else {
+      filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+    }
+    var filteredRawCell =
+      '<td class="ash-cell-note ash-cell-raw-feedback">' +
+      (terminal ? cellNa() : cellNoteHtml(filteredRawText === "\u2014" ? "" : filteredRawText)) +
+      "</td>";
     // Filtered feedback = the parent-safe version released to families.
     // Operational release control (Filter with AI + Save & release).
     var filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
@@ -6849,9 +6879,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         notesCell +
         reviewedByCell;
     } else if (variant === "filtered") {
-      // Filtered view: raw narrative + parent-safe filtered version only.
+      // Filtered view: raw session feedback + parent-safe filtered version only.
+      // Legacy rows keep positive+relevant together; new rows show the narrative
+      // (notes excluded — they live on the Notes tab).
       cells =
-        participantCell + serviceCell + rawFeedbackCell + filteredCell + reviewedByCell;
+        participantCell + serviceCell + filteredRawCell + filteredCell + reviewedByCell;
     } else {
       cells =
         participantCell +
