@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260703-announcement-picker-fix" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260706-global-search-live" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -26161,6 +26161,94 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       /* Legacy narrow-preview toggle removed — portal switch lives in admin topbar. */
     }
 
+    /** All live participant names from the roster directory + session feedback (static export + live payload). */
+    function adminAllLiveParticipantNames(){
+      var seen = {}; var out = [];
+      function add(n){
+        var s = String(n||'').trim();
+        if(!s) return;
+        var low = s.toLowerCase();
+        if(low==='closed'||low==='available'||low==='no participant'||low==='no client'||low==='noclient'||low==='no_client') return;
+        if(seen[low]) return;
+        seen[low]=1; out.push(s);
+      }
+      try{
+        var pack = adminMergeSpreadsheetSessionsForSlotLookup();
+        var notes = (pack && pack.notes) || {};
+        Object.keys(notes).forEach(function(cid){ add(notes[cid] && notes[cid].name); });
+      }catch(_e1){}
+      try{ adminSessionFeedbackPortalRows().forEach(function(r){ add(r.clientName); }); }catch(_e2){}
+      try{
+        var ops = window.PortalDayOps;
+        var p = ops && typeof ops.getPayload==='function' ? ops.getPayload() : null;
+        if(p && Array.isArray(p.session_feedback)) p.session_feedback.forEach(function(r){ add(r.client_name); });
+      }catch(_e3){}
+      return out;
+    }
+    /** Best live-participant name match: exact → starts-with (any word) → contains. */
+    function adminFindLiveParticipantName(q){
+      var qq = String(q||'').trim().toLowerCase();
+      if(!qq) return '';
+      var names = adminAllLiveParticipantNames();
+      var starts=null, incl=null;
+      for(var i=0;i<names.length;i++){
+        var nl = names[i].toLowerCase();
+        if(nl === qq) return names[i];
+        if(!starts){
+          if(nl.indexOf(qq)===0) starts=names[i];
+          else{
+            var words = nl.split(/\s+/);
+            for(var w=0;w<words.length;w++){ if(words[w].indexOf(qq)===0){ starts=names[i]; break; } }
+          }
+        }
+        if(!incl && nl.indexOf(qq)>=0) incl=names[i];
+      }
+      return starts || incl || '';
+    }
+    /** Open a live roster participant by display name: mock drawer when linked, else synthetic (feedback-backed) drawer. */
+    function adminOpenLiveParticipantByName(name){
+      var disp = String(name||'').trim();
+      if(!disp) return false;
+      var cid = '';
+      try{ cid = resolveAdminClientDrawerIdFromDisplayName(disp) || ''; }catch(_e){}
+      if(cid && MOCK.clientsById && MOCK.clientsById[cid]){
+        state.drawerIsSynthetic = false;
+        setView('clients');
+        setTimeout(function(){ openClientDrawer(cid); }, 0);
+        return true;
+      }
+      var syn = null;
+      try{ syn = buildSyntheticClientFromPortalRosterSlot(disp, {}); }catch(_e2){ syn = null; }
+      if(!syn){
+        syn = { name: disp, sub: 'Roster participant', sessionsAttended:0, attendancePct:0, cancellations:0, incidents:0, emotional:[], engagement:[], positives:[], notes:[], pattern:'', attendanceTerm:{ booked:0, attended:0, late:0, cancelled:0 }, recentSessions:[], activitiesWorked:[], lastEngagementLabel:'', lastEmotionalLabel:'', incidentHistory:[], recommendedNext:'' };
+      }
+      state.drawerIsSynthetic = true;
+      try{ openClientDrawerBody(syn, null, {}); }catch(_e3){ return false; }
+      return true;
+    }
+    /** Best live-staff match from the roster staff profiles → { rosterId, name }. */
+    function adminFindLiveStaff(q){
+      var qq = String(q||'').trim().toLowerCase();
+      if(!qq) return null;
+      try{
+        var src = window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles;
+        if(src){
+          var keys = Object.keys(src);
+          var starts=null, incl=null;
+          for(var i=0;i<keys.length;i++){
+            if(String(keys[i]||'').trim().toLowerCase()==='teflon') continue;
+            var nm = String((src[keys[i]]||{}).staffName||'').trim();
+            var nl = nm.toLowerCase();
+            if(!nl) continue;
+            if(nl===qq) return { rosterId: keys[i], name: nm };
+            if(!starts && (nl.indexOf(qq)===0 || nl.split(/\s+/).some(function(w){ return w.indexOf(qq)===0; }))) starts={ rosterId: keys[i], name: nm };
+            if(!incl && nl.indexOf(qq)>=0) incl={ rosterId: keys[i], name: nm };
+          }
+          return starts || incl || null;
+        }
+      }catch(_e){}
+      return null;
+    }
     function globalSearch(){
       var q = ($('globalSearch').value||'').trim().toLowerCase();
       if(!q) return;
@@ -26168,8 +26256,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hit){ setView('clients'); setTimeout(function(){ openClientDrawer(hit); }, 0); return; }
       var st = MOCK.staff.find(function(s){ return s.name.toLowerCase().indexOf(q)>=0; });
       if(st){ setView('staffhr'); setTimeout(function(){ openStaffDrawer(st.id); }, 0); return; }
-      setView('dashboard');
-      alert('Demo: no exact match — try a participant or staff name from mock data.');
+      var liveName = adminFindLiveParticipantName(q);
+      if(liveName && adminOpenLiveParticipantByName(liveName)) return;
+      var liveStaff = adminFindLiveStaff(q);
+      if(liveStaff){
+        try{ openStaffDrawerByRosterKey(liveStaff.rosterId, { label: liveStaff.name }); return; }catch(_eStaff){}
+      }
+      alert('No match for "'+q+'" — try a participant or staff name from your roster or directory.');
     }
 
     function initOpWorkflowMock(){
