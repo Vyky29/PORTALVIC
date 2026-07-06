@@ -58,7 +58,9 @@ execute function public.portal_service_lines_set_updated();
 -- New-table Data API access is revoked by default (auto_expose_new_tables flip). Grant explicitly.
 revoke all on public.portal_participant_service_lines from public, anon;
 grant select, insert, update, delete on public.portal_participant_service_lines to service_role;
-grant select on public.portal_participant_service_lines to authenticated;
+-- authenticated is further restricted to admin/ceo by RLS; grants let the admin roster
+-- review "Publish to portal" button upsert directly with the admin's session.
+grant select, insert, update on public.portal_participant_service_lines to authenticated;
 
 alter table public.portal_participant_service_lines enable row level security;
 

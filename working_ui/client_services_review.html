@@ -122,6 +122,16 @@
   .add-row{margin-top:2px}
   .muted{color:var(--muted);font-size:12px}
   .empty{padding:30px;text-align:center;color:var(--muted)}
+  #csr-toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+    max-width:min(560px,92vw);z-index:99998;opacity:0;pointer-events:none;
+    background:#0f1c2e;color:#fff;border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:600;
+    box-shadow:0 10px 30px rgba(15,28,46,.28);transition:opacity .2s ease,transform .2s ease;
+    overflow-wrap:anywhere
+  }
+  #csr-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #csr-toast.err{background:#7f1d1d}
+  #csr-toast.ok{background:#14532d}
   @media (max-width:720px){
     thead{display:none}
     tbody tr.client{display:block;margin-bottom:14px}
@@ -138,6 +148,7 @@
   <div class="sp" aria-hidden="true"></div>
   <span>Comprobando acceso…</span>
 </div>
+<div id="csr-toast" role="status" aria-live="polite"></div>
 <header class="top">
   <div class="top-inner">
     <div class="title">
@@ -153,7 +164,8 @@
     <button class="btn ghost sm" id="collapseAll">Cerrar edición</button>
     <button class="btn sm" id="importBtn">Importar</button>
     <button class="btn sm" id="csvBtn">Exportar CSV</button>
-    <button class="btn brand sm" id="jsonBtn">Exportar JSON</button>
+    <button class="btn sm" id="jsonBtn">Exportar JSON</button>
+    <button class="btn brand sm" id="publishBtn" title="Guarda estos servicios en Supabase para que los padres vean el número correcto">↑ Publicar al portal</button>
     <input id="importFile" type="file" accept="application/json" style="display:none" />
   </div>
 </header>
@@ -388,6 +400,73 @@
     var csv = rows.map(function(r){ return r.map(function(x){ var v=String(x==null?'':x); return /[",\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v; }).join(','); }).join('\n');
     download('clientes_servicios_revisado.csv', '\ufeff'+csv, 'text/csv');
   });
+  // ---- Publish to parent portal (Supabase upsert with the admin session) ----
+  var toastTimer = null;
+  function showToast(msg, kind){
+    var el = document.getElementById('csr-toast');
+    if(!el) return;
+    el.textContent = msg;
+    el.className = 'show ' + (kind==='err'?'err':(kind==='ok'?'ok':''));
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.className = el.className.replace('show','').trim(); }, kind==='err'?7000:4500);
+  }
+  function slugKey(name){
+    return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  }
+  function normName(name){
+    return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function getAdminClient(){
+    try{ return (window.portalAdminGetSupabaseClient && window.portalAdminGetSupabaseClient()) || null; }catch(_){ return null; }
+  }
+  function buildPublishPayload(){
+    var seen = Object.create(null);
+    return STATE.clients.map(function(c){
+      var name = String(c.name||'').trim();
+      if(!name) return null;
+      var key = slugKey(name);
+      if(!key || seen[key]) return null; // avoid duplicate client_key in the same batch
+      seen[key] = true;
+      var sessions = (c.sessions||[]).map(function(s){
+        return {
+          service:String(s.service||'').trim(), day:String(s.day||'').trim(),
+          timeSlot:String(s.timeSlot||'').trim(), durationMin:slotMinutes(s.timeSlot),
+          instructor:String(s.instructor||'').trim(), venue:String(s.venue||'').trim(),
+          area:String(s.area||'').trim(), weeks:(s.weeks!=null?s.weeks:null)
+        };
+      });
+      return {
+        client_key:key, client_name:name, client_name_norm:normName(name),
+        sessions:sessions, services_count:sessions.length, source:'roster_review',
+        term_label:'Summer Term 2026',
+        range_from:(SEED.range&&SEED.range.from)||null, range_to:(SEED.range&&SEED.range.to)||null,
+        validated:!!c.validated
+      };
+    }).filter(function(r){ return r && r.client_key; });
+  }
+  document.getElementById('publishBtn').addEventListener('click', function(){
+    var client = getAdminClient();
+    if(!client || typeof client.from !== 'function'){
+      showToast('Sesión admin no lista todavía. Espera unos segundos y reintenta.', 'err');
+      return;
+    }
+    var payload = buildPublishPayload();
+    if(!payload.length){ showToast('No hay clientes para publicar.', 'err'); return; }
+    if(!confirm('¿Publicar '+payload.length+' clientes al portal de padres?\n\nEsto actualiza el número de servicios que ven los padres.')) return;
+    var btn = this; var prev = btn.textContent; btn.disabled = true; btn.textContent = 'Publicando…';
+    client.from('portal_participant_service_lines').upsert(payload, { onConflict:'client_key' })
+      .then(function(res){
+        if(res.error) throw res.error;
+        showToast('Publicado: '+payload.length+' clientes actualizados en el portal.', 'ok');
+      })
+      .catch(function(err){
+        console.error('[publish]', err);
+        showToast('Error al publicar: '+((err&&err.message)||'desconocido'), 'err');
+      })
+      .then(function(){ btn.disabled = false; btn.textContent = prev; });
+  });
+
   document.getElementById('importBtn').addEventListener('click', function(){ document.getElementById('importFile').click(); });
   document.getElementById('importFile').addEventListener('change', function(ev){
     var f = ev.target.files && ev.target.files[0]; if(!f) return;
