@@ -45,6 +45,15 @@
     "Thank you for your patience and understanding as we improve our communication system.\n\n" +
     "The ClubSENsational Team";
 
+  // Short version used ONLY for the WhatsApp channel (Meta templates cap at ~1024
+  // chars and flatten formatting, so the long email body will not send there).
+  var DEFAULT_WA_BODY =
+    "\uD83D\uDCF1 ClubSENsational \u2013 Contact Update\n\n" +
+    "Due to a technical issue with our old WhatsApp, our NEW WhatsApp number is +44 7886 292726. Please save it \u2014 it is now the best way to reach us for absences, session updates and general enquiries, and it is monitored 7 days a week. This WhatsApp number does not accept phone calls.\n\n" +
+    "\uD83D\uDCDE For urgent matters or new bookings, please call our usual number: +44 7592 558671.\n\n" +
+    "Until the end of August you may also receive calls from our admin number +44 1313 816434 \u2014 no need to save it, it is the ClubSENsational team.\n\n" +
+    "Thank you,\nThe ClubSENsational Team";
+
   function configure(options) {
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
@@ -208,8 +217,13 @@
     var channel = (document.querySelector('input[name="pbcastChannel"]:checked') || {}).value || "email";
     var subject = String(($("pbcastSubject") && $("pbcastSubject").value) || "").trim();
     var body = String(($("pbcastBody") && $("pbcastBody").value) || "").trim();
+    var waBody = String(($("pbcastWaBody") && $("pbcastWaBody").value) || "").trim();
     if (!body) { cfg.toast("Message body is empty", "err"); return; }
     if (!subject) { cfg.toast("Subject is required for email", "err"); return; }
+    if (channel === "both" && waBody && waBody.replace(/\s+/g, " ").length > 1024) {
+      cfg.toast("WhatsApp text is over 1024 characters — shorten it.", "err");
+      return;
+    }
 
     var waCount = sel.filter(function (r) { return r.hasMobile; }).length;
     var confirmMsg = "Send this message to " + sel.length + " inbox(es)?\n\n" +
@@ -252,6 +266,7 @@
           parentWhatsapp: thisChannel === "both" ? phoneDigits(r.mobile) : null,
           subject: subject,
           body: body,
+          whatsappBody: waBody || undefined,
           clientDisplay: r.children || null,
         });
       } catch (e) {
@@ -291,6 +306,16 @@
     var root = $("pbcastRoot");
     if (!root || root.getAttribute("data-bound") === "1") return;
     root.setAttribute("data-bound", "1");
+
+    var waBody = $("pbcastWaBody");
+    var waLen = $("pbcastWaLen");
+    function updateWaLen() {
+      if (!waBody || !waLen) return;
+      var n = String(waBody.value || "").replace(/\s+/g, " ").trim().length;
+      waLen.textContent = n + " / 1024 characters" + (n > 1024 ? " — too long for WhatsApp template" : "");
+      waLen.style.color = n > 1024 ? "#b91c1c" : "";
+    }
+    if (waBody) { waBody.addEventListener("input", updateWaLen); updateWaLen(); }
 
     var search = $("pbcastSearch");
     if (search) search.addEventListener("input", function () { state.query = search.value; renderTable(); });
@@ -339,7 +364,10 @@
       '<label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="pbcastChannel" value="email" checked /> <span>Email only</span></label>' +
       '<label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="pbcastChannel" value="both" /> <span>Email + WhatsApp</span></label>' +
       "</div>" +
-      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:anywhere">WhatsApp uses the approved Meta template (env <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code>); if none is set it falls back to SMS. Email always sends via SMTP.</p>' +
+      '<label class="muted" for="pbcastWaBody" style="display:block;margin-top:10px">WhatsApp text <span style="font-size:12px">(short — used only for the WhatsApp channel; the email uses the full body above)</span></label>' +
+      '<textarea id="pbcastWaBody" class="txa" style="min-height:150px;max-width:100%">' + esc(DEFAULT_WA_BODY) + "</textarea>" +
+      '<p id="pbcastWaLen" class="muted" style="margin:4px 0 0;font-size:12px"></p>' +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:anywhere">WhatsApp uses the approved Meta template (env <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code>), which caps at ~1024 characters and sends as a single paragraph; if none is set it falls back to SMS. Email always sends via SMTP with full formatting.</p>' +
       "</fieldset>" +
       "</fieldset>" +
 
