@@ -1095,6 +1095,34 @@
       font-weight: 800;
     }
     .pp-btn--whatsapp:disabled { opacity: .65; }
+    .pp-msgs-filter {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .pp-msgs-filter-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .pp-msgs-filter-btn[data-pp-msgs-filter="whatsapp"].is-active {
+      background: #1ebe57;
+      border-color: #1aad4f;
+      color: #fff;
+    }
+    .pp-msgs-filter-btn[data-pp-msgs-filter="email"].is-active {
+      background: #2d84b3;
+      border-color: #256d95;
+      color: #fff;
+    }
     .pp-pax-msgs-thread {
       display: flex;
       flex-direction: column;

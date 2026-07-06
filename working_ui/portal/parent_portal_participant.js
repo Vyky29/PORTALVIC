@@ -1291,48 +1291,107 @@
     );
   }
 
+  function messageMatchesChannelFilter(m, filter) {
+    if (!filter || filter === "all") return true;
+    var ch = messageDeliveryChannel(m);
+    if (filter === "email") return ch === "email";
+    // WhatsApp tab shows the two-way chat: everything that is not a pure email.
+    return ch !== "email";
+  }
+
+  function messagesFilterBarHtml(active) {
+    function btn(key, label) {
+      var on = active === key;
+      return (
+        '<button type="button" class="pp-msgs-filter-btn' +
+        (on ? " is-active" : "") +
+        '" data-pp-msgs-filter="' +
+        key +
+        '" aria-pressed="' +
+        (on ? "true" : "false") +
+        '">' +
+        esc(label) +
+        "</button>"
+      );
+    }
+    return (
+      '<div class="pp-msgs-filter" role="group" aria-label="Filter messages by channel">' +
+      btn("whatsapp", "WhatsApp") +
+      btn("email", "Email") +
+      "</div>"
+    );
+  }
+
   function renderMessages(host, data, opts) {
+    var state = { messages: [], waBiz: null, filter: "whatsapp" };
     var body =
       '<h3 class="pp-pax-subview-title">Messages</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email.</p>' +
+      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email. Use the buttons to see each channel on its own.</p>' +
+      messagesFilterBarHtml(state.filter) +
       '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
       messagesComposeHtml(null);
     host.innerHTML = subviewShell(data, "messages", body);
     bindBack(host, data, opts);
-    bindMessages(host, data, opts);
+
+    function renderThread(keepScroll) {
+      var threadHost = host.querySelector("#ppMsgsThreadHost");
+      if (!threadHost) return;
+      var filtered = state.messages.filter(function (m) {
+        return messageMatchesChannelFilter(m, state.filter);
+      });
+      threadHost.innerHTML = messagesThreadHtml(filtered, state.waBiz);
+      if (keepScroll !== false) threadHost.scrollTop = threadHost.scrollHeight;
+    }
+
+    function updateWaNote() {
+      var waNote = host.querySelector(".pp-pax-msgs-wa-note");
+      if (waNote && state.waBiz && state.waBiz.wa_me_url) {
+        var b = state.waBiz;
+        waNote.innerHTML =
+          'Prefer WhatsApp? <a href="' +
+          esc(b.wa_me_url) +
+          '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
+          (b.display ? " (" + esc(b.display) + ")" : "") +
+          ". Replies there appear here too.";
+      }
+    }
+
+    host.querySelectorAll("[data-pp-msgs-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var next = btn.getAttribute("data-pp-msgs-filter") || "whatsapp";
+        if (next === state.filter) return;
+        state.filter = next;
+        host.querySelectorAll("[data-pp-msgs-filter]").forEach(function (b) {
+          var on = b.getAttribute("data-pp-msgs-filter") === state.filter;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        renderThread();
+      });
+    });
+
+    bindMessages(host, data, opts, state, renderThread);
+
     if (typeof opts.loadMessages === "function") {
       void opts
         .loadMessages({ markRead: true })
         .then(function (payload) {
-          var threadHost = host.querySelector("#ppMsgsThreadHost");
-          if (!threadHost) return;
-          threadHost.innerHTML = messagesThreadHtml(
-            (payload && payload.messages) || [],
-            (payload && payload.whatsapp_business) || null,
-          );
-          var waNote = host.querySelector(".pp-pax-msgs-wa-note");
-          if (waNote && payload && payload.whatsapp_business && payload.whatsapp_business.wa_me_url) {
-            var b = payload.whatsapp_business;
-            waNote.innerHTML =
-              'Prefer WhatsApp? <a href="' +
-              esc(b.wa_me_url) +
-              '" target="_blank" rel="noopener noreferrer">Open our business chat</a>' +
-              (b.display ? " (" + esc(b.display) + ")" : "") +
-              ". Replies there appear here too.";
-          }
-          threadHost.scrollTop = threadHost.scrollHeight;
+          state.messages = (payload && payload.messages) || [];
+          state.waBiz = (payload && payload.whatsapp_business) || null;
+          renderThread();
+          updateWaNote();
         })
         .catch(function () {
-        var threadHost = host.querySelector("#ppMsgsThreadHost");
-        if (threadHost) {
-          threadHost.innerHTML =
-            '<p class="pp-muted">Could not load messages — try Refresh or go back and open again.</p>';
-        }
-      });
+          var threadHost = host.querySelector("#ppMsgsThreadHost");
+          if (threadHost) {
+            threadHost.innerHTML =
+              '<p class="pp-muted">Could not load messages — try Refresh or go back and open again.</p>';
+          }
+        });
     }
   }
 
-  function bindMessages(host, data, opts) {
+  function bindMessages(host, data, opts, state, renderThread) {
     var form = host.querySelector("#ppMsgsForm");
     if (!form || typeof opts.sendMessage !== "function") return;
     form.addEventListener("submit", function (e) {
@@ -1362,6 +1421,14 @@
         })
         .then(function (payload) {
           if (!payload || !payload.messages) return;
+          if (state) {
+            state.messages = payload.messages;
+            if (payload.whatsapp_business) state.waBiz = payload.whatsapp_business;
+          }
+          if (typeof renderThread === "function") {
+            renderThread();
+            return;
+          }
           var threadHost = host.querySelector("#ppMsgsThreadHost");
           if (!threadHost) return;
           threadHost.innerHTML = messagesThreadHtml(
