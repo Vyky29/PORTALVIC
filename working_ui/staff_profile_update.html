@@ -2378,6 +2378,16 @@
       sec.setAttribute('aria-expanded', 'true');
       setSectionStatus(sec, 'editing');
       state.currentlyEditing = sec.id;
+      // Address: if the address on file is incomplete, jump straight to the
+      // editable fields (preselect "My address has changed") so the user can
+      // actually complete/change it instead of being stuck on a disabled Confirm.
+      if (sec.id === 'sectionAddress' && !sectionProfileHasRequiredData(sec)) {
+        const changedRadio = sec.querySelector('input[name="addressChange"][value="changed"]');
+        if (changedRadio) {
+          changedRadio.checked = true;
+          sec.querySelectorAll('[data-conditional-for]').forEach(refreshConditional);
+        }
+      }
       // Toggle action buttons
       sec.querySelectorAll('[data-action]').forEach((btn) => {
         const a = btn.dataset.action;
@@ -2569,8 +2579,12 @@
           if (!(edits.address_line1 || '').trim()) return 'Enter address line 1.';
           if (!(edits.address_city || '').trim()) return 'Enter town / city.';
           if (!(edits.address_postcode || '').trim()) return 'Enter postcode.';
-        } else if (!fmtAddress(state.profile)) {
-          return 'No address on file — choose "My address has changed" and enter your address.';
+        } else {
+          // "Unchanged" is only valid when the address on file is complete.
+          const p = state.profile;
+          if (!(isNonEmpty(p.address?.line1) && isNonEmpty(p.address?.city) && isNonEmpty(p.address?.postcode))) {
+            return 'The address on file is incomplete. Choose "My address has changed" and enter address line 1, town / city and postcode.';
+          }
         }
       }
       if (sec.id === 'sectionEmergency') {
