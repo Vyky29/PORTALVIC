@@ -222,6 +222,26 @@
     return pre + (sess.service||'—');
   }
 
+  /** Canonical programme name for billing grouping (mirror of the Edge Function). */
+  function canonProg(raw){
+    var t = String(raw||'').trim();
+    var p = t.toLowerCase().replace(/\s+/g,' ');
+    if(/multi[\s_-]*activity|splash[\s&+]+connect/.test(p)) return 'Multi-Activity';
+    if(/\bfitness\b|physical\s+act/.test(p)) return 'Physical Activity';
+    if(/\bclimb(ing)?\b/.test(p)) return 'Climbing Activity';
+    if(/\baquatic|swim|pool/.test(p)) return 'Aquatic Activity';
+    return t;
+  }
+  /** Billable services = distinct (programme + weekday); staff/cover splits collapse to one. */
+  function billableCount(sessions){
+    var set = Object.create(null);
+    (sessions||[]).forEach(function(s){
+      if(!s || !String(s.service||'').trim()) return;
+      set[(canonProg(s.service)+'|'+String(s.day||'')).toLowerCase()] = true;
+    });
+    return Object.keys(set).length;
+  }
+
   function optionsHtml(list, current){
     var out = '<option value=""></option>';
     var found=false;
@@ -276,9 +296,12 @@
       return '<div class="svc'+(ed?' editing':'')+'">'+ (ed? sessionEditHtml(ci,si,sess) : sessionViewHtml(ci,si,sess)) +'</div>';
     }).join('');
     if(!svc) svc = '<div class="muted">Sin servicios — añade uno.</div>';
+    var rawLines = client.sessions?client.sessions.length:0;
+    var bill = billableCount(client.sessions);
     var badges = ''+
       (val? '<span class="chip ok">✓ Validado</span>' : '<span class="chip warn">Pendiente</span>')+
-      '<span class="chip count">'+(client.sessions?client.sessions.length:0)+' servicio(s)</span>';
+      '<span class="chip count" title="'+rawLines+' líneas de rota (turnos/covers)">'+bill+' servicio(s)'+
+        (rawLines!==bill? ' · '+rawLines+' líneas' : '')+'</span>';
     return ''+
       '<tr class="client'+(val?' validated':'')+(dirty?' dirty':'')+'" data-ci="'+ci+'">'+
         '<td class="cell-name">'+

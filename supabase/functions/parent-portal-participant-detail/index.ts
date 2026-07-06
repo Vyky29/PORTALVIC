@@ -164,35 +164,83 @@ const DAY_ORDER: Record<string, number> = {
   sunday: 7,
 };
 
-/** Minutes-from-midnight of a "4.30 to 5.15" style slot start, for stable ordering. */
-function slotStartMinutes(raw: unknown): number {
-  const first = clean(raw, 40).split(/to|-|—/i)[0] || "";
-  const m = first.trim().match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
-  if (!m) return 9999;
-  return parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + minutes. */
+function parseSlotTokens(
+  raw: unknown,
+): { startTok: string; endTok: string; start: number | null; end: number | null } | null {
+  const parts = clean(raw, 40).split(/to|-|—/i);
+  if (parts.length !== 2) return null;
+  const startTok = parts[0].trim();
+  const endTok = parts[1].trim();
+  const toMin = (t: string): number | null => {
+    const m = t.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+  };
+  let a = toMin(startTok);
+  let b = toMin(endTok);
+  if (a != null && b != null && b <= a) b += 720; // informal 12h pm wrap (e.g. "12.30 to 3")
+  return { startTok, endTok, start: a, end: b };
 }
 
 /**
- * Parent-safe services list from the roster-review snapshot (portal_participant_service_lines).
- * Each roster line becomes one entry: "90' Multi-Activity · Sunday · 12.30 to 1.15".
- * Instructor / venue / area are intentionally omitted for the parent view.
+ * Parent-safe services list from the roster-review snapshot.
+ *
+ * Collapses to ONE entry per (programme + weekday): the roster splits a single
+ * booked service into staff/cover lines (e.g. Day Centre 12.30–3 stored as 3 rows,
+ * or a 90-min Multi-Activity as two 45-min teaching slots). Parents and accounting
+ * see the same service once per day, spanning the outer time bounds
+ * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor/venue/area omitted.
  */
 function buildServicesDetail(sessions: unknown): Array<{ label: string; day: string; time: string }> {
   const list = Array.isArray(sessions) ? sessions : [];
-  return list
-    .map((raw) => {
-      const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-      const svc = clean(s.service, 80) || "Service";
-      const dur = Number(s.durationMin);
-      const label = Number.isFinite(dur) && dur > 0 ? `${dur}' ${svc}` : svc;
-      return { label, day: clean(s.day, 20), time: clean(s.timeSlot, 40) };
+  type Group = {
+    svc: string;
+    day: string;
+    startTok: string;
+    endTok: string;
+    startMin: number | null;
+    endMin: number | null;
+    rawTime: string;
+  };
+  const groups = new Map<string, Group>();
+
+  for (const raw of list) {
+    const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    const svc = canonicalProgrammeName(s.service) || clean(s.service, 80) || "Service";
+    const day = clean(s.day, 20);
+    const key = (svc + "|" + day).toLowerCase();
+    let g = groups.get(key);
+    if (!g) {
+      g = { svc, day, startTok: "", endTok: "", startMin: null, endMin: null, rawTime: clean(s.timeSlot, 40) };
+      groups.set(key, g);
+    }
+    const tok = parseSlotTokens(s.timeSlot);
+    if (tok) {
+      if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
+        g.startMin = tok.start;
+        g.startTok = tok.startTok;
+      }
+      if (tok.end != null && (g.endMin == null || tok.end > g.endMin)) {
+        g.endMin = tok.end;
+        g.endTok = tok.endTok;
+      }
+      if (!g.startTok && tok.startTok) g.startTok = tok.startTok;
+      if (!g.endTok && tok.endTok) g.endTok = tok.endTok;
+    }
+  }
+
+  return [...groups.values()]
+    .map((g) => {
+      const dur = g.startMin != null && g.endMin != null && g.endMin > g.startMin
+        ? g.endMin - g.startMin
+        : null;
+      const label = dur ? `${dur}' ${g.svc}` : g.svc;
+      const time = g.startTok && g.endTok ? `${g.startTok} to ${g.endTok}` : g.rawTime;
+      return { label, day: g.day, time, _order: DAY_ORDER[g.day.toLowerCase()] || 8, _start: g.startMin ?? 9999 };
     })
-    .sort((a, b) => {
-      const da = DAY_ORDER[a.day.toLowerCase()] || 8;
-      const db = DAY_ORDER[b.day.toLowerCase()] || 8;
-      if (da !== db) return da - db;
-      return slotStartMinutes(a.time) - slotStartMinutes(b.time);
-    });
+    .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
+    .map(({ label, day, time }) => ({ label, day, time }));
 }
 
 /**
