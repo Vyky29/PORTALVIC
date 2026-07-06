@@ -531,6 +531,53 @@ function exitAfterSuccessWithDelay() {
   setTimeout(exitAfterSuccess, delayMs);
 }
 
+// Lead feedback is internal (no admin AI filter). The lead only chooses how to
+// enter the free-text notes: Written (typed) or Voice (mic). Default Written —
+// the mic bars stay hidden until Voice is picked.
+let leadInputMode = "written";
+
+function setLeadVoiceBarsVisible(on) {
+  try {
+    document.querySelectorAll(".portal-fb-voice-bar").forEach(function (bar) {
+      bar.style.display = on ? "" : "none";
+    });
+    if (!on) {
+      document.querySelectorAll(".portal-fb-voice-timer").forEach(function (t) {
+        t.hidden = true;
+      });
+    }
+  } catch (_e) {}
+}
+
+function markLeadIoButtons(mode) {
+  document.querySelectorAll("[data-lr-io]").forEach(function (btn) {
+    const on = btn.getAttribute("data-lr-io") === mode;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.style.borderColor = on ? "#2d84b3" : "var(--line,#d9dee5)";
+    btn.style.background = on ? "rgba(45,132,179,.08)" : "#fff";
+    btn.style.boxShadow = on ? "0 0 0 3px rgba(45,132,179,.12)" : "none";
+  });
+}
+
+function chooseLeadInputMode(mode) {
+  leadInputMode = mode === "voice" ? "voice" : "written";
+  markLeadIoButtons(leadInputMode);
+  setLeadVoiceBarsVisible(leadInputMode === "voice");
+}
+
+function wireLeadInputChoice() {
+  const btns = Array.prototype.slice.call(document.querySelectorAll("[data-lr-io]"));
+  if (!btns.length) return;
+  btns.forEach(function (btn) {
+    if (btn.dataset.lrIoWired === "1") return;
+    btn.dataset.lrIoWired = "1";
+    btn.addEventListener("click", function () {
+      chooseLeadInputMode(btn.getAttribute("data-lr-io"));
+    });
+  });
+  chooseLeadInputMode(leadInputMode);
+}
+
 async function initVoiceInput(staffName) {
   if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
   try {
@@ -544,6 +591,9 @@ async function initVoiceInput(staffName) {
   } catch (voiceErr) {
     console.warn("[lead-report] voice input", voiceErr);
   }
+  // Newly wrapped textareas add fresh mic bars — re-apply the current choice so
+  // they stay hidden while the lead is in Written mode.
+  setLeadVoiceBarsVisible(leadInputMode === "voice");
 }
 
 export async function bootPortalLeadFeedback() {
@@ -970,6 +1020,7 @@ export async function bootPortalLeadFeedback() {
 
   applyServiceContext({ keepVenue: !!ctx.venue });
   await initVoiceInput(ctx.submittedByName);
+  wireLeadInputChoice();
 
   clearBtn.addEventListener("click", () => {
     form.reset();

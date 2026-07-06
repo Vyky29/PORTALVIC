@@ -254,6 +254,20 @@
                 <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required full support" /><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout session</span></span></span></label>
               </div>
             </div>
+            <div class="field lr-io-choice">
+              <label>How do you want to give this feedback?</label>
+              <p class="small" style="margin:0 0 10px">Internal notes — <strong>Voice</strong> adds a microphone, <strong>Written</strong> is typed. Not shared with families.</p>
+              <div class="lr-io-choice-row" role="group" aria-label="Feedback input method" style="display:flex;gap:12px;flex-wrap:wrap">
+                <button type="button" class="lr-io-btn" data-lr-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+                  <span aria-hidden="true" style="font-size:22px;line-height:1">⌨️</span>
+                  <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
+                </button>
+                <button type="button" class="lr-io-btn" data-lr-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+                  <span aria-hidden="true" style="font-size:22px;line-height:1">🎤</span>
+                  <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
+                </button>
+              </div>
+            </div>
             <div class="field">
               <label for="lrPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Positive feedback <span class="req">*</span></label>
               <textarea id="lrPositiveFeedback" name="lrPositiveFeedback" placeholder="What went well in the session"></textarea>
@@ -284,6 +298,20 @@
               <input id="lrActivityName" name="lrActivityName" type="text" maxlength="200" placeholder="Name of the activity" />
             </div>
 
+            <div class="field lr-io-choice">
+              <label>How do you want to give this feedback?</label>
+              <p class="small" style="margin:0 0 10px">Internal notes — <strong>Voice</strong> adds a microphone, <strong>Written</strong> is typed. Not shared with families.</p>
+              <div class="lr-io-choice-row" role="group" aria-label="Feedback input method" style="display:flex;gap:12px;flex-wrap:wrap">
+                <button type="button" class="lr-io-btn" data-lr-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+                  <span aria-hidden="true" style="font-size:22px;line-height:1">⌨️</span>
+                  <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
+                </button>
+                <button type="button" class="lr-io-btn" data-lr-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+                  <span aria-hidden="true" style="font-size:22px;line-height:1">🎤</span>
+                  <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
+                </button>
+              </div>
+            </div>
             <div class="field">
               <label for="lrSessionSummary"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> How did the session go? <span class="req">*</span></label>
               <p class="small">Short summary — what you did and how the group responded.</p>
@@ -307,7 +335,7 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <script type="module">
-    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260706-service-enable-early")
+    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260706-voice-written-choice")
       .then(function (mod) {
         return mod.bootPortalLeadFeedback();
       })
