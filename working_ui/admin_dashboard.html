@@ -17948,7 +17948,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260706-v26-sessions-hub-rework';
+    var PORTAL_ADMIN_HUB_BUILD = '20260707-v27-narrative-raw-perf';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18166,6 +18166,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         engagement_patterns: adminSfStr(r.independence) || null,
         positive_feedback: adminSfStr(r.positive) || '',
         relevant_information: adminSfStr(r.relevantParent) || '',
+        session_narrative: adminSfStr(r.sessionNarrative) || adminSfStr(r.session_narrative) || '',
         completed_by_name: adminSfStr(r.instructor) || adminSfStr(r.completedBy) || '—',
         session_time: adminSfStr(r.sessionTime) || adminSfStr(r.time) || '',
         created_at: adminSfStr(r.submittedAt) || adminSfStr(r.created_at) || null,
@@ -18214,6 +18215,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : adminSfStr(patterns) || null,
         positive_feedback: adminSfStr(row.positive_feedback) || '',
         relevant_information: adminSfStr(row.relevant_information) || '',
+        session_narrative: adminSfStr(row.session_narrative) || '',
         completed_by_name: adminSfStr(row.completed_by_name) || '—',
         session_time: st,
         created_at: row.created_at || null,

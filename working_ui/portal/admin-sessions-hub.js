@@ -4746,14 +4746,20 @@
   function bindAdminSessionsHubRosterSourceListener() {
     if (global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__) return;
     global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__ = true;
-    global.addEventListener("portal:staff-dashboard-source-updated", function () {
+    // The roster source can fire several times in quick succession (initial load
+    // + live MADRE refresh + portal_roster_rows). Each full hub render over ~865
+    // feedback rows costs ~1-2s, so coalesce bursts into a single render.
+    var deb = null;
+    function runRosterUpdate() {
       if (!global.document) return;
       var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
       for (var i = 0; i < roots.length; i++) {
         var hub = roots[i]._ashHubInstance;
         if (!hub || typeof hub.refreshRosterRowsFromResolvedSource !== "function") continue;
         hub.refreshRosterRowsFromResolvedSource();
-        if (hub.root && hub.root.isConnected) hub.render();
+        // Only re-render hubs whose panel is actually on screen — hidden tabs
+        // re-render lazily when the admin opens them.
+        if (hub.root && hub.root.isConnected && hubRootIsVisible(hub.root)) hub.render();
       }
       if (
         global.PortalDayOps &&
@@ -4761,7 +4767,29 @@
       ) {
         void global.PortalDayOps.refreshSessionFeedback();
       }
+    }
+    global.addEventListener("portal:staff-dashboard-source-updated", function () {
+      if (deb) clearTimeout(deb);
+      deb = setTimeout(function () {
+        deb = null;
+        try {
+          runRosterUpdate();
+        } catch (e) {
+          console.warn("[AdminSessionsHub] roster update", e);
+        }
+      }, 350);
     });
+  }
+
+  function hubRootIsVisible(root) {
+    try {
+      if (!root) return false;
+      // offsetParent is null when the element or an ancestor is display:none
+      // (i.e. the hub is on a hidden tab panel).
+      return root.offsetParent !== null || root.getClientRects().length > 0;
+    } catch (_visErr) {
+      return true;
+    }
   }
 
   AdminSessionsHub.prototype.feedbackCountForDate = function (iso) {
@@ -6739,7 +6767,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
-    var rawFeedback = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
+    // Raw "Session feedback" = the narrative the instructor submitted
+    // (reception / session / handover). Falls back to positive_feedback for
+    // older rows saved before the narrative column existed.
+    var rawFeedback = terminal
+      ? "N/A"
+      : clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
     var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
