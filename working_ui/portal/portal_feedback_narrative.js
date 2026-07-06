@@ -48,10 +48,29 @@
     filterRelevantSnapshot: "",
     contextKey: "",
     voiceAutoFilterPending: false,
+    adminFilters: false,
     counts: { validate: 0, filter: 0 },
   };
 
   var els = {};
+
+  // Admin-filters mode: instructors submit the RAW narrative only (no Check /
+  // Filter with AI). The admin runs the AI filter + releases to the family.
+  // Off by default; enable with window.PORTAL_FEEDBACK_ADMIN_FILTERS = true
+  // or the ?adminFilters=1 URL param (for preview).
+  function resolveAdminFiltersFlag() {
+    try {
+      if (global.PORTAL_FEEDBACK_ADMIN_FILTERS === true) return true;
+      if (global.PORTAL_FEEDBACK_ADMIN_FILTERS === false) return false;
+      var qs = global.location && global.location.search
+        ? new global.URLSearchParams(global.location.search)
+        : null;
+      if (qs && (qs.get("adminFilters") === "1" || qs.get("adminfilters") === "1")) {
+        return true;
+      }
+    } catch (_e) {}
+    return false;
+  }
 
   var aiHealthProbeStarted = false;
   var aiDetectTimer = null;
@@ -234,7 +253,9 @@
   function enableManualEntry() {
     var narrative = narrativeText();
     if (narrative.length < MIN_NARRATIVE_CHARS) {
-      setStatus("Add more detail to the session narrative first (at least " + MIN_NARRATIVE_CHARS + " characters).");
+      var msg = "Write the session narrative first (Reception, Session, Handover — at least " + MIN_NARRATIVE_CHARS + " characters), then you can enter Session Feedback and Notes manually.";
+      setStatus(msg);
+      try { global.alert(msg); } catch (_e) {}
       syncSubmitGate();
       return false;
     }
@@ -340,6 +361,15 @@
     if (els.submitBtn.textContent === "Submitting") return;
     var len = narrativeText().length;
     var hint = global.document.getElementById("fbSubmitHint");
+    if (state.adminFilters) {
+      els.submitBtn.disabled = len < MIN_NARRATIVE_CHARS;
+      if (hint) {
+        hint.textContent = len < MIN_NARRATIVE_CHARS
+          ? narrativeLengthHint()
+          : "Write the session narrative, then Submit.";
+      }
+      return;
+    }
     if (state.aiUnavailable) {
       els.submitBtn.disabled = len < MIN_NARRATIVE_CHARS;
       if (hint) {
@@ -777,8 +807,11 @@
     var relevant = clean(els.relevant && els.relevant.value);
     return {
       input_mode: state.inputMode,
+      admin_filters: !!state.adminFilters,
       ai_unavailable: !!state.aiUnavailable,
-      ai_filter_pending: !!state.aiUnavailable,
+      // In admin-filters mode the parent-facing text is prepared later by the
+      // office, so submit stores the raw narrative only (positive/relevant cleared).
+      ai_filter_pending: !!state.aiUnavailable || !!state.adminFilters,
       manual_entry: !!state.manualMode,
       validate_count: state.counts.validate,
       filter_count: state.counts.filter,
@@ -800,6 +833,10 @@
     if (narrative.length < MIN_NARRATIVE_CHARS) {
       global.alert("Please add more detail to the session narrative before submitting.");
       return false;
+    }
+    if (state.adminFilters) {
+      // Raw submit: no Check / Filter required from the instructor.
+      return true;
     }
     if (state.aiUnavailable) {
       return true;
@@ -883,6 +920,31 @@
     });
   }
 
+  function hideEl(el) {
+    if (el) {
+      el.hidden = true;
+      el.style.display = "none";
+    }
+  }
+
+  function applyAdminFiltersMode() {
+    // Hide everything the instructor no longer needs: the AI check/filter
+    // buttons, the manual-entry link, and the Positive/Relevant output boxes.
+    if (els.filterBtn) hideEl(els.filterBtn.closest(".fb-filter-row") || els.filterBtn);
+    if (els.validateBtn) hideEl(els.validateBtn);
+    if (els.aiSection) hideEl(els.aiSection);
+    if (els.validatePanel) hideEl(els.validatePanel);
+    var manualRow = global.document.querySelector(".fb-manual-entry-row");
+    if (manualRow) hideEl(manualRow);
+    setAiFieldsRequired(false);
+    if (els.modeNote) {
+      els.modeNote.textContent =
+        "Write the session (Reception · Session · Handover) and submit. The office prepares the family-facing summary.";
+    }
+    var hint = global.document.getElementById("fbSubmitHint");
+    if (hint) hint.textContent = "Write the session narrative, then Submit.";
+  }
+
   function init(options) {
     configure(options);
 
@@ -899,6 +961,8 @@
     els.modeNote = global.document.getElementById("fbNarrativeModeNote");
 
     if (!els.narrative || !els.filterBtn) return;
+
+    state.adminFilters = resolveAdminFiltersFlag();
 
     if (els.narrative) {
       els.narrative.addEventListener("input", function () {
@@ -949,6 +1013,7 @@
     syncValidateButton();
     syncFilterButton();
     syncSubmitGate();
+    if (state.adminFilters) applyAdminFiltersMode();
   }
 
   global.PortalFeedbackNarrative = {

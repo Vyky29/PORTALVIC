@@ -34,7 +34,7 @@
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260706-advisory-check"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260706-admin-filters-p1"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -1251,12 +1251,12 @@ button{
         <div id="fbAiOutputSection" class="fb-ai-output" hidden>
           <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, check and filter again.</p>
           <div class="field field--ai-positive">
-            <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
+            <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Session Feedback <span class="req">*</span></label>
             <textarea id="fbPositiveFeedback" name="positiveFeedback" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
             <p class="small field-note">Goes to the <strong>family app</strong> when you submit — no admin rewrite.</p>
           </div>
           <div class="field field--ai-relevant">
-            <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Relevant information <span class="req">*</span></label>
+            <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Notes (Relevant information) <span class="req">*</span></label>
             <textarea id="fbRelevantInformation" name="relevantInformation" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
             <p class="small field-note">Internal only — admin tables, not shown to families as session feedback.</p>
           </div>
