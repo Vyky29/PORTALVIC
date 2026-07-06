@@ -6053,7 +6053,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Filtered feedback</th><th>Relevant</th><th>Reviewed by:</th>";
+    "<th>Family summary</th><th>Relevant</th><th>Reviewed by:</th>";
 
   AdminSessionsHub.prototype.indexParentShares = function () {
     var map = {};
@@ -6722,7 +6722,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
-    var filt = terminal ? { text: "", state: "empty" } : hub.filteredFeedbackForRow(fb);
     var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
@@ -6763,15 +6762,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
-      '<td class="ash-cell-note">' +
-      (terminal
-        ? cellNa()
-        : filt.state === "hidden"
-          ? '<span class="ash-cell-muted">Hidden from families</span>'
-          : filt.text
-            ? cellNoteHtml(filt.text)
-            : "\u2014") +
-      "</td>" +
+      // Operational family-summary release control (Filter with AI + Save &
+      // release). Lives here in Session feedback (operational), NOT in the
+      // Family messages comms page. Falls back to the read-only filtered text
+      // for terminal rows / when no editable cell can be shown.
+      hub.htmlFamilySummaryCell(fb, esc, terminal) +
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
