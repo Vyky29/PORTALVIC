@@ -1468,11 +1468,18 @@
       color: var(--navy, #173247);
     }
     .ash-family-summary__filter:disabled { opacity: 0.65; cursor: default; }
-    .ash-cell-note-email { text-align: center; white-space: nowrap; }
-    .ash-note-email-btn {
+    .ash-cell-note-share { min-width: 0; }
+    .ash-note-share-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+      min-width: 0;
+    }
+    .ash-note-share-btn {
       border: 1px solid var(--navy, #173247);
       border-radius: 999px;
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
@@ -1480,8 +1487,14 @@
       color: var(--navy, #173247);
       white-space: nowrap;
       max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .ash-note-email-btn:hover { background: var(--navy, #173247); color: #fff; }
+    .ash-note-share-btn:hover { background: var(--navy, #173247); color: #fff; }
+    .ash-note-share-btn--wa { border-color: #128c7e; color: #0b6b60; }
+    .ash-note-share-btn--wa:hover { background: #128c7e; color: #fff; }
+    .ash-note-share-btn--ann { border-color: #b45309; color: #b45309; }
+    .ash-note-share-btn--ann:hover { background: #b45309; color: #fff; }
     .ash-family-summary__relevant { overflow-wrap: anywhere; }
     .ash-family-summary__hint { font-size: 11px; color: var(--muted, #728290); overflow-wrap: break-word; }
     .ash-family-summary__tag {

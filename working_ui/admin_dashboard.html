@@ -25039,6 +25039,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       portalBindComposeSendHandler({ needTitle:true, typ:kind, editId:editId });
     }
+    // Exposed so other modules (e.g. the sessions hub "Notes" tab) can prefill a
+    // staff dashboard announcement from a relevant-information note.
+    window.openComposeModalAnnouncementOrReminder = openComposeModalAnnouncementOrReminder;
     function openComposeModal(preset){
       var p0 = String(preset || '').trim().toLowerCase();
       if(p0 === 'announcement' || p0 === 'reminder'){

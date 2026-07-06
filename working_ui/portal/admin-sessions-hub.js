@@ -7047,15 +7047,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         hub.renderPanels();
         return;
       }
-      var noteEmailBtn = t.closest("[data-ash-note-email]");
-      if (noteEmailBtn) {
+      var noteShareBtn = t.closest("[data-ash-note-share]");
+      if (noteShareBtn) {
         ev.preventDefault();
         ev.stopPropagation();
-        var neWho = noteEmailBtn.getAttribute("data-ash-note-email") || "";
-        var neSvc = noteEmailBtn.getAttribute("data-ash-note-email-svc") || "";
-        var neDate = noteEmailBtn.getAttribute("data-ash-note-email-date") || "";
-        var neBy = noteEmailBtn.getAttribute("data-ash-note-email-by") || "";
-        var neText = noteEmailBtn.getAttribute("data-ash-note-email-text") || "";
+        var shareMode = noteShareBtn.getAttribute("data-ash-note-share") || "email";
+        var neWho = noteShareBtn.getAttribute("data-ash-note-who") || "";
+        var neSvc = noteShareBtn.getAttribute("data-ash-note-svc") || "";
+        var neDate = noteShareBtn.getAttribute("data-ash-note-date") || "";
+        var neBy = noteShareBtn.getAttribute("data-ash-note-by") || "";
+        var neText = noteShareBtn.getAttribute("data-ash-note-text") || "";
         var subject = "Relevant information" + (neWho ? " \u2013 " + neWho : "");
         var bodyLines = [];
         if (neWho) bodyLines.push("Participant: " + neWho);
@@ -7065,13 +7066,36 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         bodyLines.push("");
         bodyLines.push("Relevant information:");
         bodyLines.push(neText);
-        bodyLines.push("");
-        bodyLines.push("(Shared from the sessions hub for your awareness.)");
+        var body = bodyLines.join("\r\n");
+        if (shareMode === "whatsapp") {
+          // Share to WhatsApp — no fixed number, so the admin picks the CEO chat.
+          var waText = subject + "\r\n\r\n" + body;
+          var waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(waText);
+          window.open(waUrl, "_blank", "noopener");
+          return;
+        }
+        if (shareMode === "announce") {
+          // Post to the staff dashboard as an announcement (workers, not CEOs).
+          if (typeof global.openComposeModalAnnouncementOrReminder === "function") {
+            var annBody = body + "\r\n\r\n(Shared from the sessions hub for your awareness.)";
+            global.openComposeModalAnnouncementOrReminder(false, {
+              title: subject,
+              body: annBody,
+            });
+          } else {
+            window.alert(
+              "Announcements composer is not available on this page. Open Announcements from the dashboard to post this."
+            );
+          }
+          return;
+        }
+        // Default: email to the CEOs (admin picks recipients).
+        var mailBody = body + "\r\n\r\n(Shared from the sessions hub for your awareness.)";
         var mailto =
           "mailto:?subject=" +
           encodeURIComponent(subject) +
           "&body=" +
-          encodeURIComponent(bodyLines.join("\r\n"));
+          encodeURIComponent(mailBody);
         try {
           window.location.href = mailto;
         } catch (_mailErr) {
@@ -8629,19 +8653,29 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
         var emailCell = "";
         if (kind === "relevant") {
-          var canEmail = !!noteText;
-          emailCell =
-            '<td class="ash-cell-note-email">' +
-            (canEmail
-              ? '<button type="button" class="ash-btn ash-btn--ghost ash-note-email-btn" ' +
-                'data-ash-note-email="' + esc(fb.client_name || "") + '" ' +
-                'data-ash-note-email-svc="' + esc(svcLabel) + '" ' +
-                'data-ash-note-email-date="' + esc(sessionDay || "") + '" ' +
-                'data-ash-note-email-by="' + esc(fb.completed_by_name || "") + '" ' +
-                'data-ash-note-email-text="' + esc(noteText) + '" ' +
-                'title="Generate an email to inform CEOs or other staff">Generate email</button>'
-              : '<span class="ash-cell-muted">\u2014</span>') +
-            "</td>";
+          if (noteText) {
+            var shareData =
+              'data-ash-note-who="' + esc(fb.client_name || "") + '" ' +
+              'data-ash-note-svc="' + esc(svcLabel) + '" ' +
+              'data-ash-note-date="' + esc(sessionDay || "") + '" ' +
+              'data-ash-note-by="' + esc(fb.completed_by_name || "") + '" ' +
+              'data-ash-note-text="' + esc(noteText) + '"';
+            emailCell =
+              '<td class="ash-cell-note-share">' +
+              '<div class="ash-note-share-wrap">' +
+              '<button type="button" class="ash-note-share-btn" data-ash-note-share="email" ' +
+              shareData +
+              ' title="Email this to the CEOs">Email CEOs</button>' +
+              '<button type="button" class="ash-note-share-btn ash-note-share-btn--wa" data-ash-note-share="whatsapp" ' +
+              shareData +
+              ' title="Share this on WhatsApp to the CEOs">WhatsApp</button>' +
+              '<button type="button" class="ash-note-share-btn ash-note-share-btn--ann" data-ash-note-share="announce" ' +
+              shareData +
+              ' title="Post as a dashboard announcement for staff">Announce to staff</button>' +
+              "</div></td>";
+          } else {
+            emailCell = '<td class="ash-cell-note-share"><span class="ash-cell-muted">\u2014</span></td>';
+          }
         }
         return (
           '<tr class="ash-fb-row' +
@@ -8702,7 +8736,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<th>Participant</th><th>Service</th><th>" +
       esc(noteLabel) +
       "</th><th>Reviewed by:</th>" +
-      (kind === "relevant" ? "<th>Email</th>" : "") +
+      (kind === "relevant" ? "<th>Send to</th>" : "") +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
