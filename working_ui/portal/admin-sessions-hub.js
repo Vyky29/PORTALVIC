@@ -6055,6 +6055,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "</th><th>Regulation</th><th>Independence</th>" +
     "<th>Session feedback</th><th>Filtered feedback</th><th>Notes</th><th>Reviewed by:</th>";
 
+  // Register tab: raw session feedback exactly as staff submitted it. No filtered
+  // column — filtering lives on the "Feedback (filtered)" tab.
+  AdminSessionsHub.REGISTER_TABLE_HEAD =
+    '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
+    AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
+    "</th><th>Regulation</th><th>Independence</th>" +
+    "<th>Session feedback</th><th>Notes</th><th>Reviewed by:</th>";
+
+  // Feedback (filtered) tab: only the raw narrative next to the parent-safe
+  // filtered version generated on review. No engagement / emotions / independence / notes.
+  AdminSessionsHub.FILTERED_TABLE_HEAD =
+    "<th>Participant</th><th>Service</th><th>Session feedback</th><th>Filtered feedback</th><th>Reviewed by:</th>";
+
   AdminSessionsHub.prototype.indexParentShares = function () {
     var map = {};
     var rows = (this.payload && this.payload.parent_feedback_shares) || [];
@@ -6638,6 +6651,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     opts = opts || {};
     var esc = escFn || this.escapeHtml;
+    // Column variants: 'register' (raw only, no filtered column),
+    // 'filtered' (participant/service/raw/filtered/reviewed only), or default (full).
+    var variant = opts.variant || "full";
+    var awaitMidColspan = variant === "filtered" ? 2 : variant === "register" ? 5 : 6;
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
@@ -6656,7 +6673,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(clean(awaitSlot.service) || "\u2014") +
           awaitTime +
           "</td>" +
-          '<td colspan="6" class="ash-td-center">' +
+          '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6679,7 +6696,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(awaitSvc) +
         awaitTime +
         "</td>" +
-        '<td colspan="6" class="ash-td-center">' +
+        '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
         '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6738,8 +6755,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? ' class="ash-fb-row' + reviewCls + '" data-ash-fb-row="' + rowIdx + '" tabindex="0" role="button"'
         : ' class="ash-fb-row' + reviewCls + '"';
 
-    return (
-      "<tr" + rowAttr + ">" +
+    var participantCell =
       '<td><span class="ash-link">' +
       esc(clientLabel) +
       "</span>" +
@@ -6748,44 +6764,75 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : absent
           ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
           : "") +
-      "</td>" +
+      "</td>";
+    var serviceCell =
       "<td>" +
       esc(svcLabel) +
       svcTimeSub +
       (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
-      "</td>" +
+      "</td>";
+    var engagementCell =
       "<td>" +
       (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
-      "</td>" +
-      "<td>" +
-      (terminal ? cellNa() : emotionFacesHtml(fb, esc)) +
-      "</td>" +
+      "</td>";
+    var emotionCell = "<td>" + (terminal ? cellNa() : emotionFacesHtml(fb, esc)) + "</td>";
+    var independenceCell =
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
-      "</td>" +
-      // Raw "Session feedback" (positive_feedback) exactly as the instructor
-      // submitted it — informative only, not edited or released here.
+      "</td>";
+    // Raw "Session feedback" (positive_feedback) exactly as the instructor
+    // submitted it — informative only, not edited or released here.
+    var rawFeedbackCell =
       '<td class="ash-cell-note ash-cell-raw-feedback">' +
       (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
-      "</td>" +
-      // Filtered feedback = the parent-safe version released to families.
-      // Operational release control (Filter with AI + Save & release). Lives
-      // here in Session feedback (operational), NOT in the Family messages
-      // comms page. Falls back to read-only text for terminal rows.
-      hub.htmlFamilySummaryCell(fb, esc, terminal) +
-      // Notes (Relevant information) — internal, informative only. Never
-      // filtered or released to families.
+      "</td>";
+    // Filtered feedback = the parent-safe version released to families.
+    // Operational release control (Filter with AI + Save & release).
+    var filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
+    // Notes (Relevant information) — internal, informative only. Never
+    // filtered or released to families.
+    var notesCell =
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
-      "</td>" +
+      "</td>";
+    var reviewedByCell =
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
       '</div><div class="ash-cell-sub">' +
       esc(reviewDate) +
       (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
-      "</div></td>" +
-      "</tr>"
-    );
+      "</div></td>";
+
+    var cells;
+    if (variant === "register") {
+      // Raw register: no filtered column.
+      cells =
+        participantCell +
+        serviceCell +
+        engagementCell +
+        emotionCell +
+        independenceCell +
+        rawFeedbackCell +
+        notesCell +
+        reviewedByCell;
+    } else if (variant === "filtered") {
+      // Filtered view: raw narrative + parent-safe filtered version only.
+      cells =
+        participantCell + serviceCell + rawFeedbackCell + filteredCell + reviewedByCell;
+    } else {
+      cells =
+        participantCell +
+        serviceCell +
+        engagementCell +
+        emotionCell +
+        independenceCell +
+        rawFeedbackCell +
+        filteredCell +
+        notesCell +
+        reviewedByCell;
+    }
+
+    return "<tr" + rowAttr + ">" + cells + "</tr>";
   };
 
   AdminSessionsHub.prototype.htmlFeedbackLogRow = function (fb, escFn) {
@@ -6998,6 +7045,38 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (hub._modalFb) hub.markFeedbackHandled(hub._modalFb);
         hub.closeModal();
         hub.renderPanels();
+        return;
+      }
+      var noteEmailBtn = t.closest("[data-ash-note-email]");
+      if (noteEmailBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var neWho = noteEmailBtn.getAttribute("data-ash-note-email") || "";
+        var neSvc = noteEmailBtn.getAttribute("data-ash-note-email-svc") || "";
+        var neDate = noteEmailBtn.getAttribute("data-ash-note-email-date") || "";
+        var neBy = noteEmailBtn.getAttribute("data-ash-note-email-by") || "";
+        var neText = noteEmailBtn.getAttribute("data-ash-note-email-text") || "";
+        var subject = "Relevant information" + (neWho ? " \u2013 " + neWho : "");
+        var bodyLines = [];
+        if (neWho) bodyLines.push("Participant: " + neWho);
+        if (neSvc) bodyLines.push("Service / session: " + neSvc);
+        if (neDate) bodyLines.push("Session date: " + neDate);
+        if (neBy) bodyLines.push("Recorded by: " + neBy);
+        bodyLines.push("");
+        bodyLines.push("Relevant information:");
+        bodyLines.push(neText);
+        bodyLines.push("");
+        bodyLines.push("(Shared from the sessions hub for your awareness.)");
+        var mailto =
+          "mailto:?subject=" +
+          encodeURIComponent(subject) +
+          "&body=" +
+          encodeURIComponent(bodyLines.join("\r\n"));
+        try {
+          window.location.href = mailto;
+        } catch (_mailErr) {
+          window.open(mailto, "_blank");
+        }
         return;
       }
       var filterFamilyBtn = t.closest("[data-ash-family-filter]");
@@ -7434,7 +7513,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     else if (this.tab === "absents") shell.innerHTML = this.htmlAbsents();
     else if (this.tab === "incidents") shell.innerHTML = this.htmlIncidents();
     else if (this.tab === "cancellations") shell.innerHTML = this.htmlCancellations();
-    else if (this.tab === "positive") shell.innerHTML = this.htmlFeedbackNotes("positive");
+    else if (this.tab === "positive") shell.innerHTML = this.htmlFeedbackFiltered();
     else if (this.tab === "relevant") shell.innerHTML = this.htmlFeedbackNotes("relevant");
     else if (this.tab === "feedback") shell.innerHTML = this.htmlFeedback();
     else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
@@ -8548,6 +8627,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var sessionDay = formatFbDateShort(fb.session_date);
         var reviewDate = formatFbDate(submittedAt);
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
+        var emailCell = "";
+        if (kind === "relevant") {
+          var canEmail = !!noteText;
+          emailCell =
+            '<td class="ash-cell-note-email">' +
+            (canEmail
+              ? '<button type="button" class="ash-btn ash-btn--ghost ash-note-email-btn" ' +
+                'data-ash-note-email="' + esc(fb.client_name || "") + '" ' +
+                'data-ash-note-email-svc="' + esc(svcLabel) + '" ' +
+                'data-ash-note-email-date="' + esc(sessionDay || "") + '" ' +
+                'data-ash-note-email-by="' + esc(fb.completed_by_name || "") + '" ' +
+                'data-ash-note-email-text="' + esc(noteText) + '" ' +
+                'title="Generate an email to inform CEOs or other staff">Generate email</button>'
+              : '<span class="ash-cell-muted">\u2014</span>') +
+            "</td>";
+        }
         return (
           '<tr class="ash-fb-row' +
           reviewCls +
@@ -8574,13 +8669,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(reviewDate) +
           (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
           "</div></td>" +
+          emailCell +
           "</tr>"
         );
       })
       .join("");
 
     if (!tableRows) {
-      tableRows = '<tr><td colspan="4"><div class="ash-empty">' + esc(emptyMsg) + "</div></td></tr>";
+      tableRows =
+        '<tr><td colspan="' +
+        (kind === "relevant" ? 5 : 4) +
+        '"><div class="ash-empty">' +
+        esc(emptyMsg) +
+        "</div></td></tr>";
     }
 
     return (
@@ -8601,6 +8702,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<th>Participant</th><th>Service</th><th>" +
       esc(noteLabel) +
       "</th><th>Reviewed by:</th>" +
+      (kind === "relevant" ? "<th>Email</th>" : "") +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
@@ -8626,16 +8728,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return hub.htmlFeedbackTableRow(fb, esc, {
           rowIdx: awaiting ? null : rowIdx,
           clickable: !awaiting,
+          variant: "register",
         });
       })
       .join("");
 
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       tableRows =
-        '<tr><td colspan="9"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
     } else if (!tableRows) {
       tableRows =
-        '<tr><td colspan="9"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
     var weekBlock =
@@ -8672,20 +8775,74 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       truncateHtml +
       noteFilterHtml +
       this.feedbackFilterRowHtml() +
-      '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback"><thead><tr>' +
-      AdminSessionsHub.FEEDBACK_TABLE_HEAD +
+      '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
+      AdminSessionsHub.REGISTER_TABLE_HEAD +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
       (hub.opts && hub.opts.showFullWeekDayStrip
         ? ""
-        : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Overview</strong> for the roster table.</p>') +
+        : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Sessions overview</strong> for the roster table.</p>') +
       this.htmlFeedbackTermWeekLog({
         title: "Session feedback log",
         flatWeeks: true,
         weekJumpOnly: true,
         hint:
           'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.',
+      })
+    );
+  };
+
+  /**
+   * "Feedback (filtered)" tab. Same day selection as Register, but only two
+   * working columns: the raw session narrative and the parent-safe filtered
+   * version (Filter with AI + Save & release). No engagement / emotions /
+   * independence / notes — that detail lives on Register.
+   */
+  AdminSessionsHub.prototype.htmlFeedbackFiltered = function () {
+    var esc = this.escapeHtml;
+    var hub = this;
+    var rows = this.feedbackRowsForSelectedDay();
+
+    var tableRows = rows
+      .map(function (fb, rowIdx) {
+        var awaiting = fb && fb._ashAwaitingSlot;
+        return hub.htmlFeedbackTableRow(fb, esc, {
+          rowIdx: awaiting ? null : rowIdx,
+          clickable: !awaiting,
+          variant: "filtered",
+        });
+      })
+      .join("");
+
+    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
+      tableRows =
+        '<tr><td colspan="5"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+    } else if (!tableRows) {
+      tableRows =
+        '<tr><td colspan="5"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+    }
+
+    var weekBlock =
+      hub.opts && hub.opts.showFullWeekDayStrip
+        ? this.htmlWeekHeader()
+        : this.htmlFeedbackWeekDaysRow();
+
+    return (
+      '<p class="ash-feedback-filter-hint" style="margin-top:0">Most feedback is already AI-filtered on submit — only review and re-filter where the raw narrative still needs a parent-safe version.</p>' +
+      weekBlock +
+      this.feedbackFilterRowHtml() +
+      '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--filtered"><thead><tr>' +
+      AdminSessionsHub.FILTERED_TABLE_HEAD +
+      "</tr></thead><tbody data-ash-client-filter-tbody>" +
+      tableRows +
+      "</tbody></table></div>" +
+      this.htmlFeedbackTermWeekLog({
+        title: "Session feedback log",
+        flatWeeks: true,
+        weekJumpOnly: true,
+        hint:
+          'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top.',
       })
     );
   };

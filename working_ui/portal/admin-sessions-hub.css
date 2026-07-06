@@ -1468,6 +1468,20 @@
       color: var(--navy, #173247);
     }
     .ash-family-summary__filter:disabled { opacity: 0.65; cursor: default; }
+    .ash-cell-note-email { text-align: center; white-space: nowrap; }
+    .ash-note-email-btn {
+      border: 1px solid var(--navy, #173247);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: var(--navy, #173247);
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .ash-note-email-btn:hover { background: var(--navy, #173247); color: #fff; }
     .ash-family-summary__relevant { overflow-wrap: anywhere; }
     .ash-family-summary__hint { font-size: 11px; color: var(--muted, #728290); overflow-wrap: break-word; }
     .ash-family-summary__tag {

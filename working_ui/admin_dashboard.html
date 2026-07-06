@@ -20,7 +20,7 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260706-v10-family-release" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260706-v26-sessions-hub-rework" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
@@ -82,7 +82,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260704-roster-504"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260704-madre-504"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260610-aquatic-half-hour-b"></script>
@@ -16742,10 +16742,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     var C4K_SESSIONS_HUB_TABS = [
-      { id:'overview', label:'Overview', iconId:'c4k_sessions', mode:'panel' },
-      { id:'feedback', label:'Feedback', iconId:'c4k_registers', mode:'panel' },
-      { id:'positive', label:'Positive', iconId:'c4k_reviews', mode:'panel' },
-      { id:'relevant', label:'Relevant', iconId:'c4k_relevant', mode:'panel' },
+      { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel' },
+      { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel' },
+      { id:'positive', label:'Feedback (filtered)', iconId:'c4k_reviews', mode:'panel' },
+      { id:'relevant', label:'Notes', iconId:'c4k_relevant', mode:'panel' },
       { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
       { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
       { id:'absents', label:'Absents', iconId:'absents', mode:'panel' },
@@ -16754,10 +16754,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Weekly roster, session status, and feedback by day.' },
-      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'SESSION FEEDBACKS', sub:'All instructor session feedback, ratings, and notes.' },
-      positive:{ iconId:'c4k_reviews', tone:'positive', title:'POSITIVE FEEDBACK', sub:'Highlights and strengths recorded for attended sessions.' },
-      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'RELEVANT INFORMATION', sub:'Important context and relevant notes to review.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'All sessions per day and their status (awaiting feedback, submitted…).' },
+      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
+      positive:{ iconId:'c4k_reviews', tone:'positive', title:'FEEDBACK (FILTERED)', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
+      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
       absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Clients marked absent by staff for the selected day.' },
       cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
       incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
@@ -17948,7 +17948,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260706-v25-session-feedback-columns';
+    var PORTAL_ADMIN_HUB_BUILD = '20260706-v26-sessions-hub-rework';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

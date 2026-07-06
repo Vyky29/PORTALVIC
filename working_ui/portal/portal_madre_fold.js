@@ -145,23 +145,27 @@
     if (LOAD_INFLIGHT && !force) {
       return LOAD_INFLIGHT;
     }
-    // Raw REST GET with cache:"no-store" + a cache-buster param. The Supabase JS
-    // client's .select() is subject to browser HTTP caching, which could serve a
+    // Raw REST GET with cache:"no-store" + no-cache request headers. The Supabase
+    // JS client's .select() is subject to browser HTTP caching, which could serve a
     // stale portal_madre_document revision — the roster would briefly show correct
     // (bundle) then flip to an old cached MADRE. no-store guarantees the freshest row.
     function fetchDocRow() {
       var base = String(supabaseUrl() || "").replace(/\/+$/, "");
       if (!base) return Promise.resolve(null);
       return authHeaders(client).then(function (h) {
+        // Bust the browser HTTP cache with request headers only. Do NOT append a
+        // query param (e.g. _ts): PostgREST treats unknown params as column filters
+        // and returns HTTP 400 ("column _ts does not exist"), which would make the
+        // live MADRE fetch fail and silently fall back to the stale bundle.
         var headers = Object.assign({}, h, {
           Accept: "application/vnd.pgrst.object+json",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
         });
         var url =
           base +
           "/rest/v1/portal_madre_document?select=document,revision,updated_at&term_key=eq." +
-          encodeURIComponent(TERM_KEY) +
-          "&_ts=" +
-          Date.now();
+          encodeURIComponent(TERM_KEY);
         return fetch(url, {
           method: "GET",
           cache: "no-store",
