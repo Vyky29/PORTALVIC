@@ -20402,9 +20402,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessionsRow1 =
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedback / Register', 'Session feedback, filtered & notes', false, 'feedback', 'sessions_hub_feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Feedback (filtered)', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
