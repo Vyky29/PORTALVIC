@@ -100,21 +100,26 @@
             var area = String(s.pool_note || s.area || "").trim();
             var cn = normalizeMadreDashboardClient(s.client_name, area);
             var up = cn.toUpperCase();
+            // "NO PARTICIPANT" is a STANDING OPEN SLOT: the instructor works that block
+            // but nobody is booked. Emit it as an empty-client roster row so the roster
+            // merge + dashboard render the yellow "No Participant" card (and an override
+            // can later fill it, e.g. a make-up). CLOSED / NO CLIENT are genuine
+            // non-slots and stay dropped.
+            var isNoParticipant = up === "NO PARTICIPANT";
             if (
               !cn ||
               up === "CLOSED" ||
               up === "NO CLIENT" ||
-              up === "NO PARTICIPANT" ||
               up === "NO_CLIENT"
             ) {
               return;
             }
             rows.push({
-              client_name: cn,
+              client_name: isNoParticipant ? "" : cn,
               day: d.weekday,
               instructors: staffName,
               service: String(s.service || "").trim(),
-              area: cn === "HOME" ? "HOME" : area,
+              area: !isNoParticipant && cn === "HOME" ? "HOME" : area,
               time_slot: String(s.time_slot || "").trim(),
               venue: String(s.venue || "SwimFarm").trim(),
               session_date: d.sessionDate,

@@ -2087,7 +2087,7 @@
               sessionEndTs,
               noSessionFeedbackRequired: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'red',
+              portalOverrideCardTone: 'yellow',
               portalOverrideSymbolText: 'No Participant'
             }, meta);
           }

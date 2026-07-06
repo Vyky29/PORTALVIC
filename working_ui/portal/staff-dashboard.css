@@ -3798,6 +3798,18 @@
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident:hover{
       border-color:rgba(200,110,45,.52);
     }
+    /* Make-up wins over the yellow "admin-adjusted" tint: a make-up session is
+       inherently an admin change, so the whole card stays pink (never yellow)
+       until feedback review states take over. */
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:linear-gradient(180deg,#fde3ee 0%,#fbcfe0 100%);
+      border-color:#c2185b;
+      box-shadow:0 1px 6px rgba(194,24,91,.16);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:#a01047;
+      box-shadow:0 4px 14px rgba(194,24,91,.22);
+    }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
@@ -5008,10 +5020,12 @@
       font-weight:700;
       line-height:1.1;
       color:#000;
-      white-space:normal;
-      overflow:visible;
-      overflow-wrap:anywhere;
-      text-overflow:unset;
+      /* Time must stay on ONE line: portalFitTodayTimeLabels() auto-shrinks the
+         font so long labels ("12 to 12.30") fit; ellipsis is only a safety net. */
+      white-space:nowrap;
+      overflow:hidden;
+      overflow-wrap:normal;
+      text-overflow:ellipsis;
       min-width:0;
       text-align:center;
     }

@@ -1230,6 +1230,10 @@
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
       const isTrialSym = symNorm === 'trial';
+      // Make-up / trial cards carry their own pink/purple identity and must NOT also
+      // show the yellow "Updated by admin" chip — that chip is reserved for a plain
+      // move-slot admin change.
+      const isMakeUpOrTrialItem = isMakeUpSym || isTrialSym || !!item.portalOverrideMakeUpTag || !!item.portalOverrideTrialTag;
       const chips = [];
       const push = function(html){ if(html) chips.push(html); };
 
@@ -1262,7 +1266,7 @@
         push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }
 
-      if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+      if(!isMakeUpOrTrialItem && item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
         const ended = isSessionEndedForFeedback(item);
         const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
@@ -1271,7 +1275,7 @@
         }
       }
 
-      if(!chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+      if(!isMakeUpOrTrialItem && !chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
         push(portalSessionUpdatedChipHtml());
       }
       return chips.join('');
