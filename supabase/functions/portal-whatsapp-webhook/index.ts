@@ -44,6 +44,15 @@ type MetaStatusUpdate = {
   errors?: Array<{ code?: number; title?: string; message?: string }>;
 };
 
+type MetaMedia = {
+  id?: string;
+  mime_type?: string;
+  sha256?: string;
+  caption?: string;
+  filename?: string;
+  animated?: boolean;
+};
+
 type MetaInboundMessage = {
   from?: string;
   id?: string;
@@ -53,7 +62,15 @@ type MetaInboundMessage = {
   button?: { text?: string; payload?: string };
   interactive?: { type?: string; button_reply?: { title?: string }; list_reply?: { title?: string } };
   context?: { from?: string; id?: string };
+  reaction?: { message_id?: string; emoji?: string };
+  image?: MetaMedia;
+  sticker?: MetaMedia;
+  video?: MetaMedia;
+  audio?: MetaMedia;
+  document?: MetaMedia;
 };
+
+const MEDIA_BUCKET = "wa-inbound-media";
 
 function str(v: unknown, max = 8000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -95,6 +112,10 @@ async function verifyMetaSignature(
 function extractMessageBody(msg: MetaInboundMessage): string {
   const type = str(msg.type, 32).toLowerCase();
   if (type === "text") return str(msg.text?.body, 12000);
+  if (type === "reaction") {
+    // Store the actual emoji so the panel shows the reaction icon.
+    return str(msg.reaction?.emoji, 32) || "[reaction removed]";
+  }
   if (type === "button") {
     return str(msg.button?.text || msg.button?.payload, 12000);
   }
@@ -103,7 +124,92 @@ function extractMessageBody(msg: MetaInboundMessage): string {
     if (ir?.button_reply?.title) return str(ir.button_reply.title, 12000);
     if (ir?.list_reply?.title) return str(ir.list_reply.title, 12000);
   }
+  if (type === "image") return str(msg.image?.caption, 12000) || "[image]";
+  if (type === "video") return str(msg.video?.caption, 12000) || "[video]";
+  if (type === "document") {
+    return str(msg.document?.caption || msg.document?.filename, 12000) || "[document]";
+  }
+  if (type === "sticker") return "[sticker]";
+  if (type === "audio") return "[audio]";
   return `[${type || "message"}]`;
+}
+
+function mediaRefForMessage(msg: MetaInboundMessage): { id: string; mime: string } | null {
+  const type = str(msg.type, 32).toLowerCase();
+  let m: MetaMedia | undefined;
+  if (type === "image") m = msg.image;
+  else if (type === "sticker") m = msg.sticker;
+  else if (type === "video") m = msg.video;
+  else if (type === "audio") m = msg.audio;
+  else if (type === "document") m = msg.document;
+  if (m && m.id) return { id: str(m.id, 200), mime: str(m.mime_type, 120) };
+  return null;
+}
+
+function extFromMime(mime: string): string {
+  const m = String(mime || "").toLowerCase();
+  if (m.includes("webp")) return "webp";
+  if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+  if (m.includes("png")) return "png";
+  if (m.includes("gif")) return "gif";
+  if (m.includes("mp4")) return "mp4";
+  if (m.includes("3gpp") || m.includes("3gp")) return "3gp";
+  if (m.includes("ogg")) return "ogg";
+  if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+  if (m.includes("amr")) return "amr";
+  if (m.includes("pdf")) return "pdf";
+  return "bin";
+}
+
+// Download inbound media from the Meta Graph API and store it in the public
+// Storage bucket. Returns the public URL + mime, or null on any failure.
+async function fetchAndStoreMedia(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  mediaId: string,
+  fallbackMime: string,
+  waMessageId: string,
+  baseUrl: string,
+  token: string,
+): Promise<{ media_url: string; media_mime: string } | null> {
+  try {
+    const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!metaRes.ok) {
+      console.warn("[portal-whatsapp-webhook] media meta lookup failed", mediaId, metaRes.status);
+      return null;
+    }
+    const metaJson = await metaRes.json();
+    const url = str(metaJson?.url, 2000);
+    const mime = str(metaJson?.mime_type, 120) || fallbackMime || "application/octet-stream";
+    if (!url) return null;
+
+    const binRes = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!binRes.ok) {
+      console.warn("[portal-whatsapp-webhook] media download failed", mediaId, binRes.status);
+      return null;
+    }
+    const bytes = new Uint8Array(await binRes.arrayBuffer());
+    const safeId = waMessageId.replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 120);
+    const path = `${safeId}.${extFromMime(mime)}`;
+
+    const up = await admin.storage.from(MEDIA_BUCKET).upload(path, bytes, {
+      contentType: mime,
+      upsert: true,
+    });
+    if (up.error) {
+      console.warn("[portal-whatsapp-webhook] media upload failed", mediaId, up.error.message);
+      return null;
+    }
+    return {
+      media_url: `${baseUrl}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`,
+      media_mime: mime,
+    };
+  } catch (e) {
+    console.warn("[portal-whatsapp-webhook] media store error", mediaId, e instanceof Error ? e.message : String(e));
+    return null;
+  }
 }
 
 function contactNameForMessage(
@@ -155,6 +261,7 @@ async function storeInboundMessages(
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const graphToken = str(Deno.env.get("META_WHATSAPP_TOKEN"), 500);
 
   let inserted = 0;
   for (const msg of messages) {
@@ -165,6 +272,22 @@ async function storeInboundMessages(
     const phone = normalizeParentPhoneE164(fromRaw) || `+${fromRaw.replace(/\D/g, "")}`;
     const bodyText = extractMessageBody(msg);
     const contactName = contactNameForMessage(value.contacts, fromRaw);
+
+    // Stickers, images, video, audio and documents: pull the file from Meta and
+    // store it so the admin panel can render it (not just show "[sticker]").
+    let mediaUrl: string | null = null;
+    let mediaMime: string | null = null;
+    const mediaRef = mediaRefForMessage(msg);
+    if (mediaRef && graphToken) {
+      const stored = await fetchAndStoreMedia(
+        admin, mediaRef.id, mediaRef.mime, waMessageId, baseUrl, graphToken,
+      );
+      if (stored) {
+        mediaUrl = stored.media_url;
+        mediaMime = stored.media_mime;
+      }
+    }
+
     const row = {
       wa_message_id: waMessageId,
       from_phone: phone,
@@ -172,6 +295,8 @@ async function storeInboundMessages(
       message_type: str(msg.type, 32).toLowerCase() || "text",
       body_text: bodyText || null,
       context_wa_id: str(msg.context?.id, 200) || null,
+      media_url: mediaUrl,
+      media_mime: mediaMime,
       created_at: messageCreatedAt(msg),
       meta: {
         phone_number_id: metaPhoneId || null,

@@ -178,6 +178,34 @@
   color: #1d4ed8;
 }
 
+.portal-pnlog-bubble__img {
+  display: block;
+  max-width: min(200px, 100%);
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  object-fit: contain;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.portal-pnlog-bubble__audio {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble__file {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-bubble__reaction {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
 .portal-pnlog-empty {
   margin: 0;
   max-width: 42rem;

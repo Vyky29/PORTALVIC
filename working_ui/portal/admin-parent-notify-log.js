@@ -412,6 +412,8 @@
         t.events.push({
           dir: "in", when: row.created_at, body: row.body_text,
           channel: "whatsapp", fromApp: fromApp, inboundId: row.id, row: row,
+          messageType: String(row.message_type || "").toLowerCase(),
+          mediaUrl: row.media_url || "", mediaMime: String(row.media_mime || ""),
         });
         t.hasInbound = true;
         t.lastInboundId = String(row.id || "");
@@ -484,6 +486,23 @@
     return parts.join(" ").toLowerCase().indexOf(q) >= 0;
   }
 
+  function renderMedia(ev) {
+    if (!ev || !ev.mediaUrl) return "";
+    var url = esc(ev.mediaUrl);
+    var mime = String(ev.mediaMime || "").toLowerCase();
+    if (mime.indexOf("image") === 0) {
+      return '<a href="' + url + '" target="_blank" rel="noopener"><img class="portal-pnlog-bubble__img" src="' +
+        url + '" alt="' + esc(ev.messageType || "image") + '" loading="lazy" /></a>';
+    }
+    if (mime.indexOf("video") === 0) {
+      return '<video class="portal-pnlog-bubble__img" src="' + url + '" controls playsinline></video>';
+    }
+    if (mime.indexOf("audio") === 0) {
+      return '<audio class="portal-pnlog-bubble__audio" src="' + url + '" controls></audio>';
+    }
+    return '<a class="portal-pnlog-bubble__file" href="' + url + '" target="_blank" rel="noopener">Open attachment</a>';
+  }
+
   function renderBubble(ev) {
     var side = ev.dir === "in" ? "in" : "out";
     var metaBits = [];
@@ -499,10 +518,22 @@
       ev.channel === "email" && ev.subject
         ? '<div class="portal-pnlog-bubble__subject">' + esc(ev.subject) + "</div>"
         : "";
+    var mediaHtml = ev.dir === "in" ? renderMedia(ev) : "";
+    var bodyStr = String(ev.body || "");
+    var isReaction = ev.messageType === "reaction";
+    var isMediaPlaceholder =
+      ev.mediaUrl && /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
+    var contentHtml = "";
+    if (isReaction) {
+      contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(bodyStr) + "</div>";
+    } else if (bodyStr && !isMediaPlaceholder) {
+      contentHtml = '<div class="portal-pnlog-bubble__text">' + esc(bodyStr) + "</div>";
+    }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' + side + '">' +
       subjectLine +
-      '<div class="portal-pnlog-bubble__text">' + esc(String(ev.body || "")) + "</div>" +
+      mediaHtml +
+      contentHtml +
       '<div class="portal-pnlog-bubble__meta">' + metaBits.join(" ") + "</div>" +
       "</div>"
     );
@@ -707,7 +738,7 @@
       var inboundRes = await client
         .from("portal_parent_whatsapp_inbound")
         .select(
-          "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, meta"
+          "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, media_url, media_mime, meta"
         )
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
