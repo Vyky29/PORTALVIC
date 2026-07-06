@@ -164,9 +164,21 @@ const DAY_ORDER: Record<string, number> = {
   sunday: 7,
 };
 
-/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + minutes. */
+/**
+ * Roster convention: afternoon times are written 12h without am/pm ("1.30" = 13:30).
+ * Mirror of portal-roster-rows-merge.js hourTo24 so absolute minutes are correct.
+ */
+function hourTo24(hour: number, day: string): number {
+  const isSunday = String(day || "").toLowerCase() === "sunday";
+  if (!isSunday && hour < 8) return hour + 12;
+  if (isSunday && hour >= 1 && hour <= 7) return hour + 12;
+  return hour;
+}
+
+/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + day-aware minutes. */
 function parseSlotTokens(
   raw: unknown,
+  day: string,
 ): { startTok: string; endTok: string; start: number | null; end: number | null } | null {
   const parts = clean(raw, 40).split(/to|-|—/i);
   if (parts.length !== 2) return null;
@@ -175,12 +187,9 @@ function parseSlotTokens(
   const toMin = (t: string): number | null => {
     const m = t.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
     if (!m) return null;
-    return parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+    return hourTo24(parseInt(m[1], 10), day) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
   };
-  let a = toMin(startTok);
-  let b = toMin(endTok);
-  if (a != null && b != null && b <= a) b += 720; // informal 12h pm wrap (e.g. "12.30 to 3")
-  return { startTok, endTok, start: a, end: b };
+  return { startTok, endTok, start: toMin(startTok), end: toMin(endTok) };
 }
 
 /**
@@ -215,7 +224,7 @@ function buildServicesDetail(sessions: unknown): Array<{ label: string; day: str
       g = { svc, day, startTok: "", endTok: "", startMin: null, endMin: null, rawTime: clean(s.timeSlot, 40) };
       groups.set(key, g);
     }
-    const tok = parseSlotTokens(s.timeSlot);
+    const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
         g.startMin = tok.start;
