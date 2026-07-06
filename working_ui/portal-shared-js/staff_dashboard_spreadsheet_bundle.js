@@ -10413,7 +10413,7 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "12.30 to 4",
+      "time_slot": "1 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-06"
     },
@@ -12013,7 +12013,7 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "12.30 to 4",
+      "time_slot": "1 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-13"
     },
@@ -13083,7 +13083,7 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "12.30 to 4",
+      "time_slot": "1 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-20"
     },
@@ -13403,7 +13403,7 @@
       "instructors": "RAUL",
       "service": "Day Centre",
       "area": "Hub \u00b7 Manager",
-      "time_slot": "12.30 to 4",
+      "time_slot": "1 to 4",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
