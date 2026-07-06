@@ -333,6 +333,13 @@
 
   function syncModeNote() {
     if (!els.modeNote) return;
+    if (state.adminFilters) {
+      els.modeNote.textContent =
+        state.inputMode === "voice"
+          ? "Voice: tap the mic and speak the session (Reception · Session · Handover). It's transcribed to English. Review, then Submit — the office prepares the family summary."
+          : "Written: type the session (Reception · Session · Handover) in English, then Submit. The office prepares the family summary.";
+      return;
+    }
     if (state.inputMode === "voice") {
       els.modeNote.textContent =
         "Voice: when you finish recording, Filter with AI runs automatically. You can still edit Positive or Relevant before Submit.";
@@ -927,6 +934,55 @@
     }
   }
 
+  function showEl(el, display) {
+    if (el) {
+      el.hidden = false;
+      el.style.display = display || "";
+    }
+  }
+
+  function setVoiceBarVisible(on) {
+    // The voice module wraps the narrative textarea and inserts a mic bar.
+    var bar = global.document.querySelector(".portal-fb-voice-bar");
+    if (bar) bar.style.display = on ? "" : "none";
+  }
+
+  function wireInputChoice() {
+    var choice = global.document.getElementById("fbInputChoice");
+    var field = global.document.getElementById("fbNarrativeField");
+    var voiceBtn = global.document.getElementById("fbIoVoice");
+    var writtenBtn = global.document.getElementById("fbIoWritten");
+    if (!choice || !field || !voiceBtn || !writtenBtn) return;
+
+    showEl(choice);
+    // Hide the narrative until the instructor picks voice or written.
+    hideEl(field);
+
+    function mark(btn, on) {
+      if (!btn) return;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.style.borderColor = on ? "#2d84b3" : "var(--line,#d9dee5)";
+      btn.style.background = on ? "rgba(45,132,179,.08)" : "#fff";
+      btn.style.boxShadow = on ? "0 0 0 3px rgba(45,132,179,.12)" : "none";
+    }
+
+    function choose(mode) {
+      state.inputMode = mode === "voice" ? "voice" : "typed";
+      mark(voiceBtn, mode === "voice");
+      mark(writtenBtn, mode !== "voice");
+      showEl(field);
+      setVoiceBarVisible(mode === "voice");
+      syncModeNote();
+      syncSubmitGate();
+      try {
+        if (mode !== "voice" && els.narrative) els.narrative.focus();
+      } catch (_e) {}
+    }
+
+    voiceBtn.addEventListener("click", function () { choose("voice"); });
+    writtenBtn.addEventListener("click", function () { choose("written"); });
+  }
+
   function applyAdminFiltersMode() {
     // Hide everything the instructor no longer needs: the AI check/filter
     // buttons, the manual-entry link, and the Positive/Relevant output boxes.
@@ -943,6 +999,7 @@
     }
     var hint = global.document.getElementById("fbSubmitHint");
     if (hint) hint.textContent = "Write the session narrative, then Submit.";
+    wireInputChoice();
   }
 
   function init(options) {
