@@ -76,7 +76,46 @@
     outcome: "all",
     pollTimer: null,
     realtimeChannel: null,
+    openKeys: Object.create(null),
   };
+
+  // Admin-side read tracking (no DB column): remember, per WhatsApp thread, the
+  // timestamp of the latest inbound the admin has already opened. A thread is
+  // "unread" while its newest reply is more recent than what was last seen.
+  var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
+
+  function readSeenMap() {
+    try {
+      var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
+      var obj = raw ? JSON.parse(raw) : null;
+      return obj && typeof obj === "object" ? obj : {};
+    } catch (_e) {
+      return {};
+    }
+  }
+
+  function markThreadSeen(key, iso) {
+    if (!key) return;
+    try {
+      var map = readSeenMap();
+      var prev = map[key] || "";
+      var next = String(iso || "");
+      if (!next || next > prev) {
+        map[key] = next || prev || new Date().toISOString();
+        if (global.localStorage) {
+          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
+        }
+      }
+    } catch (_e) {
+      // localStorage unavailable — unread flag just won't persist.
+    }
+  }
+
+  function isThreadUnread(t) {
+    if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
+    var seen = readSeenMap()[t.key] || "";
+    return String(t.lastInboundAt) > seen;
+  }
 
   var KIND_LABELS = {
     payment_due: "Payment reminder",
@@ -428,6 +467,7 @@
           key: key, channel: "whatsapp", name: "", client: "",
           phone: key, email: "", events: [], lastAt: "",
           hasInbound: false, hasFailed: false, hasSent: false, lastInboundId: "",
+          lastInboundAt: "",
         };
       }
       return wa[key];
@@ -460,6 +500,8 @@
         });
         t.hasInbound = true;
         t.lastInboundId = String(row.id || "");
+        var inAt = String(row.created_at || "");
+        if (inAt > t.lastInboundAt) t.lastInboundAt = inAt;
         if (row.contact_name && !t.name) t.name = String(row.contact_name).trim();
         return;
       }
@@ -591,11 +633,18 @@
         ? "+" + esc(t.phone) + (t.client ? " · " + esc(t.client) : "")
         : esc(t.email) + (t.client ? " · " + esc(t.client) : "");
     var count = t.events.length;
+    var unread = isThreadUnread(t);
+    var isOpen = !!state.openKeys[t.key];
     var chips =
       '<span class="portal-pnlog-chip portal-pnlog-chip--muted">' +
       count + (count === 1 ? " msg" : " msgs") +
       "</span>";
-    if (t.hasInbound) chips = statusChip("reply", "whatsapp") + " " + chips;
+    if (unread) {
+      chips =
+        '<span class="portal-pnlog-chip portal-pnlog-chip--unread">● Unread</span> ' + chips;
+    } else if (t.hasInbound) {
+      chips = statusChip("reply", "whatsapp") + " " + chips;
+    }
     if (t.hasFailed) {
       chips += ' <span class="portal-pnlog-chip portal-pnlog-chip--bad">Failed</span>';
     }
@@ -607,11 +656,16 @@
             : 'data-thread-phone="' + esc(t.phone) + '"') +
           ">Reply</button>"
         : "";
-    var openAttr = t.hasInbound ? " open" : "";
+    // Unread threads start collapsed (photo 2 + alert); admin opens to read
+    // (photo 3). Manually-opened threads stay open across the 15s auto-refresh.
+    var openAttr = isOpen ? " open" : "";
     return (
       '<details class="portal-pnlog-row portal-pnlog-row--' +
       (t.channel === "whatsapp" ? "in" : "out") +
-      '"' + openAttr + ">" +
+      (unread ? " portal-pnlog-row--unread" : "") +
+      '"' + openAttr +
+      ' data-thread-key="' + esc(t.key) + '"' +
+      ' data-last-inbound-at="' + esc(t.lastInboundAt || "") + '">' +
       '<summary class="portal-pnlog-row__head">' +
       '<span class="portal-pnlog-row__main">' +
       '<span class="portal-pnlog-row__who">' + who + "</span>" +
@@ -655,6 +709,12 @@
     var showEm = ch === "all" || ch === "both" || ch === "email";
     var waThreads = grouped.whatsapp.filter(threadMatches);
     var emThreads = grouped.email.filter(threadMatches);
+    var unreadCount = 0;
+    if (showWa) {
+      waThreads.forEach(function (t) {
+        if (isThreadUnread(t)) unreadCount += 1;
+      });
+    }
     if (countEl) {
       var parts = [];
       if (showWa) parts.push(waThreads.length + " WhatsApp");
@@ -662,7 +722,9 @@
       countEl.textContent =
         parts.join(" · ") + " conversation" +
         ((showWa ? waThreads.length : 0) + (showEm ? emThreads.length : 0) === 1 ? "" : "s") +
+        (unreadCount ? " · " + unreadCount + " unread" : "") +
         " · grouped by family, newest first";
+      countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
     if ((!showWa || !waThreads.length) && (!showEm || !emThreads.length)) {
       host.innerHTML =
@@ -674,6 +736,31 @@
     if (showEm) cols += renderColumn("Email", "email", emThreads);
     host.innerHTML = '<div class="portal-pnlog-cols">' + cols + "</div>";
     bindReplyActions();
+    bindThreadToggles(host);
+  }
+
+  // <details> "toggle" events do not bubble, so bind each freshly-rendered row.
+  // Opening a thread marks it read (clears the unread alert) and keeps it open
+  // across the auto-refresh; closing forgets the open state.
+  function bindThreadToggles(host) {
+    var rows = host.querySelectorAll("details.portal-pnlog-row[data-thread-key]");
+    rows.forEach(function (row) {
+      row.addEventListener("toggle", function () {
+        var key = row.getAttribute("data-thread-key") || "";
+        if (!key) return;
+        if (row.open) {
+          state.openKeys[key] = true;
+          markThreadSeen(key, row.getAttribute("data-last-inbound-at") || "");
+          if (row.classList.contains("portal-pnlog-row--unread")) {
+            row.classList.remove("portal-pnlog-row--unread");
+            var chip = row.querySelector(".portal-pnlog-chip--unread");
+            if (chip) chip.remove();
+          }
+        } else {
+          delete state.openKeys[key];
+        }
+      });
+    });
   }
 
   function findInboundRow(id) {
@@ -702,6 +789,12 @@
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
+      var ownerRow = btn.closest("details.portal-pnlog-row[data-thread-key]");
+      if (ownerRow) {
+        var okey = ownerRow.getAttribute("data-thread-key") || "";
+        markThreadSeen(okey, ownerRow.getAttribute("data-last-inbound-at") || "");
+        ownerRow.classList.remove("portal-pnlog-row--unread");
+      }
       var id = btn.getAttribute("data-inbound-id");
       if (id) {
         var row = findInboundRow(id);

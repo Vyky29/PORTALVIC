@@ -327,6 +327,28 @@
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
 }
 
+/* Unread inbound: keep the card collapsed but flag it clearly. */
+.portal-pnlog-row--unread {
+  border-color: rgba(22, 163, 74, 0.55);
+  border-left-width: 4px;
+  background: rgba(220, 252, 231, 0.55);
+}
+
+.portal-pnlog-row--unread .portal-pnlog-row__who {
+  font-weight: 800;
+}
+
+.portal-pnlog-chip--unread {
+  background: #16a34a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.portal-pnlog-count--has-unread {
+  color: #15803d;
+  font-weight: 700;
+}
+
 .portal-pnlog-reply-btn--head {
   flex: 0 0 auto;
   margin-top: 2px;
