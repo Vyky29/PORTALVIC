@@ -25,13 +25,25 @@
     query: "",
   };
 
-  var DEFAULT_SUBJECT = "ClubSENsational — save our WhatsApp & contact number";
+  var DEFAULT_SUBJECT = "Important Update – ClubSENsational Contact Numbers";
   var DEFAULT_BODY =
-    "Dear parents and carers,\n\n" +
-    "We want to make sure you always have the best way to reach ClubSENsational.\n\n" +
-    "You can message us on WhatsApp on +44 7886 292726 for anything about your child's sessions — bookings, absences, questions or updates. Your messages come straight to our team and we reply there.\n\n" +
-    "Please save this number so you always have it to hand. Our email (info@clubsensational.org) stays the same.\n\n" +
-    "Thank you,\nClubSENsational";
+    "\uD83D\uDCF1 Important Update – ClubSENsational Contact Numbers\n\n" +
+    "Dear Parents,\n\n" +
+    "We'd like to let you know about an update to our communication channels.\n\n" +
+    "Due to a technical issue with our original WhatsApp number, we have made some changes to ensure we continue providing a fast and reliable service.\n\n" +
+    "\u2705 Existing ClubSENsational families\n" +
+    "Please contact us via our new WhatsApp number:\n" +
+    "\uD83D\uDCF2 +44 7886 292726\n\n" +
+    "This WhatsApp number is monitored Monday to Sunday, allowing the whole ClubSENsational team to access and respond to messages promptly. It is the best way to contact us for absences, session updates, general enquiries, or any non-urgent matters.\n\n" +
+    "Please note that this number does not accept phone calls.\n\n" +
+    "\uD83D\uDCDE If you need to speak to us directly or have an urgent matter, please call our usual ClubSENsational number:\n" +
+    "+44 7592 558671\n\n" +
+    "This number will continue to be used for urgent parent calls and new bookings.\n\n" +
+    "Until the end of August, while we complete this transition, you may also receive calls from our administration number:\n" +
+    "\uD83D\uDCDE +44 1313 816434\n\n" +
+    "There is no need to save this number—if you receive a call from it, it will be from the ClubSENsational team.\n\n" +
+    "Thank you for your patience and understanding as we improve our communication system.\n\n" +
+    "The ClubSENsational Team";
 
   function configure(options) {
     if (!options) return;
