@@ -259,8 +259,8 @@
               <textarea id="lrPositiveFeedback" name="lrPositiveFeedback" placeholder="What went well in the session"></textarea>
             </div>
             <div class="field">
-              <label for="lrRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> Relevant information <span class="req">*</span></label>
-              <textarea id="lrRelevantInformation" name="lrRelevantInformation" placeholder="Follow-up, safeguarding notes, or write None"></textarea>
+              <label for="lrRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> Relevant information (optional)</label>
+              <textarea id="lrRelevantInformation" name="lrRelevantInformation" placeholder="Follow-up or safeguarding notes — leave blank if none"></textarea>
             </div>
           </div>
 
@@ -307,7 +307,7 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <script type="module">
-    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260621-lead-success-banner")
+    import("/portal-shared-js/portal_lead_feedback_app.js?v=20260706-relevant-optional")
       .then(function (mod) {
         return mod.bootPortalLeadFeedback();
       })

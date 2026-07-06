@@ -34,7 +34,7 @@
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260705e-name-spelling"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260706-manual-entry"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -1022,6 +1022,20 @@ button{
   min-width:0;
   overflow-wrap:break-word;
 }
+.fb-manual-entry-row{ overflow-wrap:break-word; }
+.fb-manual-entry-btn{
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  color:#1d4ed8;
+  font-weight:700;
+  font-size:inherit;
+  font-family:inherit;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.fb-manual-entry-btn:hover{ color:#153bb0; }
 .fb-ai-output{
   margin-top:4px;
 }
@@ -1228,6 +1242,10 @@ button{
             <button type="button" class="btnFilterAi" id="btnFilterFeedbackAi" disabled>Filter with AI</button>
             <p id="filterAiStatus" class="small field-note fb-filter-status" role="status" aria-live="polite"></p>
           </div>
+          <p class="small field-note fb-manual-entry-row" style="margin:8px 0 0">
+            AI not working?
+            <button type="button" class="btnLink fb-manual-entry-btn" id="btnManualFeedbackEntry">Enter Positive & Relevant manually</button>
+          </p>
         </div>
 
         <div id="fbAiOutputSection" class="fb-ai-output" hidden>

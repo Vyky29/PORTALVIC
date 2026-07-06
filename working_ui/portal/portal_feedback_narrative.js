@@ -42,6 +42,7 @@
     filtering: false,
     liveAiUsed: false,
     aiUnavailable: false,
+    manualMode: false,
     narrativeSnapshot: "",
     filterPositiveSnapshot: "",
     filterRelevantSnapshot: "",
@@ -150,6 +151,9 @@
   var AI_DOWN_SUBMIT_MSG =
     "AI is temporarily unavailable — type at least 80 characters, then Submit without Check narrative or Filter with AI. This stays in admin only until Session feedback → Take action → Filter and release to parent portal.";
 
+  var MANUAL_ENTRY_HINT =
+    "Manual mode: write Positive feedback and Relevant information yourself, then Submit. Positive goes to the family app as written.";
+
   /** True when the edge function failed because OpenAI/Whisper is unreachable or out of quota. */
   function isAiDownError(result) {
     if (!result) return false;
@@ -222,6 +226,33 @@
     syncFilterButton();
     syncSubmitGate();
     if (!fromSilent) setStatus(AI_DOWN_SUBMIT_MSG);
+    return true;
+  }
+
+  /** User-initiated escape hatch: write Positive + Relevant by hand and submit
+   * without the AI filter (e.g. AI keeps rejecting). A lead is never blocked. */
+  function enableManualEntry() {
+    var narrative = narrativeText();
+    if (narrative.length < MIN_NARRATIVE_CHARS) {
+      setStatus("Add more detail to the session narrative first (at least " + MIN_NARRATIVE_CHARS + " characters).");
+      syncSubmitGate();
+      return false;
+    }
+    state.manualMode = true;
+    state.aiUnavailable = false;
+    state.filtered = false;
+    state.liveAiUsed = false;
+    state.narrativeSnapshot = narrative;
+    setAiFieldsRequired(false);
+    showAiOutput(true);
+    if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
+    state.filtering = false;
+    syncFilterButton();
+    setStatus(MANUAL_ENTRY_HINT);
+    syncSubmitGate();
+    if (els.positive && !clean(els.positive.value)) {
+      try { els.positive.focus(); } catch (_e) {}
+    }
     return true;
   }
 
@@ -317,6 +348,17 @@
       }
       return;
     }
+    if (state.manualMode) {
+      var mPos = clean(els.positive && els.positive.value);
+      var mRel = clean(els.relevant && els.relevant.value);
+      els.submitBtn.disabled = len < MIN_NARRATIVE_CHARS || !mPos || !mRel;
+      if (hint) {
+        if (len < MIN_NARRATIVE_CHARS) hint.textContent = narrativeLengthHint();
+        else if (!mPos || !mRel) hint.textContent = MANUAL_ENTRY_HINT;
+        else hint.textContent = "Ready to submit (entered manually — no AI filter).";
+      }
+      return;
+    }
     var needsValidate =
       validationRequired() &&
       (!state.validated || narrativeText() !== state.validationSnapshot);
@@ -360,6 +402,7 @@
     state.narrativeSnapshot = "";
     state.filterPositiveSnapshot = "";
     state.filterRelevantSnapshot = "";
+    state.manualMode = false;
     if (els.positive) els.positive.value = "";
     if (els.relevant) els.relevant.value = "";
     setAiFieldsRequired(false);
@@ -709,6 +752,11 @@
       syncSubmitGate();
       return;
     }
+    if (state.manualMode) {
+      state.narrativeSnapshot = narrativeText();
+      syncSubmitGate();
+      return;
+    }
     if (!state.filtered && !state.validated) {
       scheduleAiDownDetect();
       syncSubmitGate();
@@ -733,6 +781,7 @@
       input_mode: state.inputMode,
       ai_unavailable: !!state.aiUnavailable,
       ai_filter_pending: !!state.aiUnavailable,
+      manual_entry: !!state.manualMode,
       validate_count: state.counts.validate,
       filter_count: state.counts.filter,
       positive_edited_after_filter:
@@ -755,6 +804,24 @@
       return false;
     }
     if (state.aiUnavailable) {
+      return true;
+    }
+    if (state.manualMode) {
+      var mCtx = readFormContext();
+      var mPositive = clean(els.positive && els.positive.value);
+      var mRelevant = clean(els.relevant && els.relevant.value);
+      if (isDemoTemplateOutput(mPositive, mRelevant, mCtx.participant_name)) {
+        global.alert("Positive/Relevant match the training demo — write your own before submitting.");
+        return false;
+      }
+      if (!mPositive) {
+        global.alert("Positive feedback is empty — write it yourself, then Submit.");
+        return false;
+      }
+      if (!mRelevant) {
+        global.alert("Relevant information is empty — write it (or 'None'), then Submit.");
+        return false;
+      }
       return true;
     }
     if (validationRequired()) {
@@ -855,6 +922,25 @@
       filterWithAi();
     });
 
+    els.manualBtn = global.document.getElementById("btnManualFeedbackEntry");
+    if (els.manualBtn) {
+      els.manualBtn.addEventListener("click", function () {
+        enableManualEntry();
+      });
+    }
+
+    // In manual mode the submit gate depends on the typed Positive/Relevant.
+    if (els.positive) {
+      els.positive.addEventListener("input", function () {
+        if (state.manualMode) syncSubmitGate();
+      });
+    }
+    if (els.relevant) {
+      els.relevant.addEventListener("input", function () {
+        if (state.manualMode) syncSubmitGate();
+      });
+    }
+
     if (!global.__portalFeedbackVoiceDoneBound) {
       global.__portalFeedbackVoiceDoneBound = true;
       global.addEventListener("portal:feedback-voice-transcript-done", function () {
@@ -879,6 +965,7 @@
     validateBeforeSubmit: validateBeforeSubmit,
     validateNarrative: validateNarrative,
     filterWithAi: filterWithAi,
+    enableManualEntry: enableManualEntry,
     syncSubmitGate: syncSubmitGate,
     onSessionContextChange: onSessionContextChange,
     getSessionNarrativeForSubmit: getSessionNarrativeForSubmit,

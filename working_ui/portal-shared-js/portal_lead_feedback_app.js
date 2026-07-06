@@ -1043,12 +1043,12 @@ export async function bootPortalLeadFeedback() {
         return;
       }
       brief = clean(document.getElementById("lrPositiveFeedback")?.value || "");
-      const rel = clean(document.getElementById("lrRelevantInformation")?.value || "");
-      if (!brief || !rel) {
-        alert("Please complete positive feedback and relevant information.");
+      if (!brief) {
+        alert("Please complete positive feedback.");
         return;
       }
-      other = rel;
+      // Relevant information is optional — never block a lead on it. Empty = "None".
+      other = clean(document.getElementById("lrRelevantInformation")?.value || "") || "None";
     } else if (isDayCentreService(svc)) {
       const names = collectDayCentreNames();
       if (!names.length) {
