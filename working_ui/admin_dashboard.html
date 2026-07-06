@@ -20404,7 +20404,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Feedback (filtered)', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
-        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
       var sessionsRow2 =
@@ -20485,7 +20484,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
-        portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html');
+        portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html')+
+        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback');
       function opsAdminGridHtml(row1, row2, gridCls, row2ExtraCls){
         var cls = gridCls || 'dash-hub__grid--3';
         var html =
