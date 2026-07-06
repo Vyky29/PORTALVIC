@@ -1339,9 +1339,38 @@
     if (!state.billing2627 || !state.billing2627.editing) refreshBillingPaySection(state.lookup);
   }
 
+  function funderShortLabel(cur) {
+    var s = String((cur && cur.funding) || "").toLowerCase();
+    if (s.indexOf("nhs") >= 0) return "NHS";
+    return "Local Authority";
+  }
+
+  function renderFunderPaidBilling2627Block(data, fundCode, cur, annualTotal) {
+    return (
+      '<div class="re-funding-2627 re-funding-2627--funder" data-annual-total="' +
+      esc(String(annualTotal)) +
+      '">' +
+      '<div id="rePayEverything">' +
+      '<div class="re-funder-paid">' +
+      '<p class="re-funder-paid__lead"><strong>This place is funded by your ' +
+      esc(funderShortLabel(cur)) +
+      ".</strong> There is nothing for you to pay us directly — we invoice your funder.</p>" +
+      renderFundedInvoicePanel(data, fundCode, cur, annualTotal) +
+      '<p class="re-muted re-funding-foot">If your funding changes for 2026/27, contact info@clubsensational.org so we can update your record before term.</p>' +
+      "</div></div>" +
+      renderReenrolFarewellHtml(data) +
+      "</div>"
+    );
+  }
+
   function renderBilling2627Block(data) {
     initBilling2627State(data);
     var annualTotal = resolveAnnualWeeklyTotal(data);
+    var cur = fundingCurrent2526(data);
+    var rawFundCode = mapFundingCode(cur.funding);
+    if (isFunderPaid(rawFundCode)) {
+      return renderFunderPaidBilling2627Block(data, rawFundCode, cur, annualTotal);
+    }
     var b = state.billing2627;
     var payCode = normalizePayMethodChoice(b.payCode);
     var scheduleDefault = defaultScheduleForPay(payCode);
@@ -1585,13 +1614,18 @@
   function renderFundedInvoicePanel(data, fundCode, cur, annualTotal) {
     var payCode = mapFundedPayMethodCode(cur);
     var funderLabel = fundingLabel(fundCode, cur.funding);
+    var hasAmount = Number.isFinite(Number(annualTotal)) && Number(annualTotal) > 0;
     return (
       '<div class="re-funded-invoice">' +
       "<h4>Annual invoice total 2026/27</h4>" +
-      '<p class="re-funded-invoice__amount">' +
-      esc(money(annualTotal)) +
-      "</p>" +
-      '<p class="re-muted">For your records — this is the full-year total we invoice to your LA or NHS funder. The club bills your funder monthly on our admin schedule; you do not pay us directly.</p>' +
+      (hasAmount
+        ? '<p class="re-funded-invoice__amount">' + esc(money(annualTotal)) + "</p>"
+        : '<p class="re-funded-invoice__amount re-funded-invoice__amount--agreed">Fees agreed with your funder</p>') +
+      '<p class="re-muted">For your records — ' +
+      (hasAmount
+        ? "this is the full-year total we invoice to your LA or NHS funder. "
+        : "your fees are agreed directly with your LA or NHS funder. ") +
+      "The club bills your funder on our admin schedule; you do not pay us directly.</p>" +
       "</div>" +
       '<dl class="re-dl re-funded-meta">' +
       "<dt>Funder pays</dt><dd>" +
@@ -1775,8 +1809,31 @@
   function collectBillingChoices(data) {
     var cur = fundingCurrent2526(data);
     var b = state.billing2627 || {};
-    var fundCode = normalizeFundingChoice(b.fundCode || mapFundingCode(cur.funding));
+    var rawFundCode = mapFundingCode(cur.funding);
     var annualTotal = resolveAnnualWeeklyTotal(data);
+    if (isFunderPaid(rawFundCode)) {
+      var funderPay = mapFundedPayMethodCode(cur);
+      return {
+        current_2526: cur,
+        choices_2627: {
+          billing_mode: "funder_invoice",
+          funding_code: rawFundCode,
+          funding_label: cur.funding || "LA / NHS funded",
+          payment_method_code: funderPay,
+          payment_method_label: fundedPayMethodLabel(funderPay),
+          payment_schedule_code: null,
+          payment_schedule_label: null,
+          invoice_type_code: "exempt",
+          invoice_type_label: "EXEMPT VAT",
+          admin_fee_applies: false,
+          admin_fee_total: 0,
+          estimated_annual_total: annualTotal,
+          estimated_total_with_admin_fee: null,
+          billing_schedule: "funder",
+        },
+      };
+    }
+    var fundCode = normalizeFundingChoice(b.fundCode || rawFundCode);
 
     var payCode = normalizePayMethodChoice(
       b.payCode || mapPrivatePayMethodCode(cur.payment_method, cur.funding),
