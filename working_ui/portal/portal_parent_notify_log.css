@@ -37,6 +37,147 @@
   min-width: 0;
 }
 
+/* Two-column layout: WhatsApp | Email */
+.portal-pnlog-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+  align-items: start;
+}
+
+@media (max-width: 780px) {
+  .portal-pnlog-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.portal-pnlog-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal-pnlog-col__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.portal-pnlog-col--whatsapp .portal-pnlog-col__title {
+  background: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+}
+
+.portal-pnlog-col--email .portal-pnlog-col__title {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.portal-pnlog-col__count {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.08);
+  color: inherit;
+  border-radius: 999px;
+  padding: 1px 8px;
+  min-width: 0;
+}
+
+.portal-pnlog-col__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Chat thread bubbles */
+.portal-pnlog-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble {
+  max-width: 88%;
+  min-width: 0;
+  padding: 8px 11px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portal-pnlog-bubble--in {
+  align-self: flex-start;
+  background: #fff;
+  border-bottom-left-radius: 4px;
+}
+
+.portal-pnlog-bubble--out {
+  align-self: flex-end;
+  background: rgba(220, 252, 231, 0.9);
+  border-color: rgba(22, 163, 74, 0.25);
+  border-bottom-right-radius: 4px;
+}
+
+.portal-pnlog-col--email .portal-pnlog-bubble--out {
+  background: rgba(219, 234, 254, 0.9);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.portal-pnlog-bubble__subject {
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble__text {
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-height: min(38vh, 320px);
+  overflow: auto;
+}
+
+.portal-pnlog-bubble__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #64748b;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble__time {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.portal-pnlog-chip--read {
+  background: rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
+}
+
 .portal-pnlog-empty {
   margin: 0;
   max-width: 42rem;

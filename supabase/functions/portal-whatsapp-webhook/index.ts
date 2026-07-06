@@ -33,6 +33,15 @@ type MetaChangeValue = {
   metadata?: { phone_number_id?: string; display_phone_number?: string };
   contacts?: Array<{ profile?: { name?: string }; wa_id?: string }>;
   messages?: MetaInboundMessage[];
+  statuses?: MetaStatusUpdate[];
+};
+
+type MetaStatusUpdate = {
+  id?: string;
+  status?: string;
+  timestamp?: string;
+  recipient_id?: string;
+  errors?: Array<{ code?: number; title?: string; message?: string }>;
 };
 
 type MetaInboundMessage = {
@@ -184,6 +193,75 @@ async function storeInboundMessages(
   return inserted;
 }
 
+function statusTimestamp(ts: string | undefined): string {
+  const n = parseInt(str(ts, 16), 10);
+  if (Number.isFinite(n) && n > 0) return new Date(n * 1000).toISOString();
+  return new Date().toISOString();
+}
+
+/** Apply Meta delivery-status callbacks (sent -> delivered -> read / failed) to the outbound log. */
+async function storeStatusUpdates(value: MetaChangeValue): Promise<number> {
+  const statuses = value.statuses;
+  if (!statuses?.length) return 0;
+
+  const baseUrl = str(Deno.env.get("SUPABASE_URL"), 300);
+  const serviceRole = str(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), 500);
+  if (!baseUrl || !serviceRole) return 0;
+
+  const admin = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  let updated = 0;
+  for (const st of statuses) {
+    const msgId = str(st.id, 200);
+    const status = str(st.status, 32).toLowerCase();
+    if (!msgId || !status) continue;
+    const at = statusTimestamp(st.timestamp);
+
+    if (status === "read") {
+      // Read implies delivered — never downgrade once read.
+      const { error } = await admin
+        .from("portal_parent_notify_log")
+        .update({ whatsapp_status: "read", whatsapp_read_at: at })
+        .eq("whatsapp_message_id", msgId);
+      if (!error) {
+        await admin
+          .from("portal_parent_notify_log")
+          .update({ whatsapp_delivered_at: at })
+          .eq("whatsapp_message_id", msgId)
+          .is("whatsapp_delivered_at", null);
+        updated += 1;
+      } else {
+        console.warn("[portal-whatsapp-webhook] read update failed", msgId, error.message);
+      }
+    } else if (status === "delivered") {
+      const { error } = await admin
+        .from("portal_parent_notify_log")
+        .update({ whatsapp_status: "delivered", whatsapp_delivered_at: at })
+        .eq("whatsapp_message_id", msgId)
+        .neq("whatsapp_status", "read");
+      if (!error) updated += 1;
+      else console.warn("[portal-whatsapp-webhook] delivered update failed", msgId, error.message);
+    } else if (status === "failed") {
+      const errText = (st.errors || [])
+        .map((e) => `${e.code ?? ""} ${e.title ?? ""} ${e.message ?? ""}`.trim())
+        .filter(Boolean)
+        .join(" | ")
+        .slice(0, 500) || "whatsapp_failed";
+      const { error } = await admin
+        .from("portal_parent_notify_log")
+        .update({ whatsapp_status: "failed", error_detail: errText })
+        .eq("whatsapp_message_id", msgId)
+        .in("whatsapp_status", ["sent", "pending", "delivered"]);
+      if (!error) updated += 1;
+      else console.warn("[portal-whatsapp-webhook] failed update failed", msgId, error.message);
+    }
+    // status === "sent" is already recorded at send time; ignore.
+  }
+  return updated;
+}
+
 Deno.serve(async (req) => {
   const verifyToken = str(Deno.env.get("META_WHATSAPP_WEBHOOK_VERIFY_TOKEN"), 200);
   const appSecret = str(Deno.env.get("META_WHATSAPP_APP_SECRET"), 200);
@@ -231,17 +309,26 @@ Deno.serve(async (req) => {
   }
 
   let total = 0;
+  let statusUpdates = 0;
   for (const entry of payload.entry || []) {
     for (const change of entry.changes || []) {
       if (change.field !== "messages") continue;
       const value = change.value;
-      if (!value?.messages?.length) continue;
-      total += await storeInboundMessages(value, phoneNumberIdFilter);
+      if (!value) continue;
+      if (value.messages?.length) {
+        total += await storeInboundMessages(value, phoneNumberIdFilter);
+      }
+      if (value.statuses?.length) {
+        statusUpdates += await storeStatusUpdates(value);
+      }
     }
   }
 
   if (total > 0) {
     console.log("[portal-whatsapp-webhook] stored inbound messages:", total);
+  }
+  if (statusUpdates > 0) {
+    console.log("[portal-whatsapp-webhook] applied delivery statuses:", statusUpdates);
   }
 
   return new Response("ok", { status: 200 });
