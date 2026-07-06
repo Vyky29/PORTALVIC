@@ -5,6 +5,49 @@
   "use strict";
 
   var FETCH_LIMIT = 200;
+  var MEDIA_BUCKET = "wa-inbound-media";
+  var MEDIA_SIGNED_TTL = 3600;
+  var signedMediaCache = Object.create(null);
+
+  // The media bucket is private: mint short-lived signed URLs for the admin's
+  // authenticated session (RLS lets portal admins read the objects). Cache by
+  // path so the 15s auto-refresh does not re-sign and flicker every image.
+  async function resolveMediaSignedUrls(client, rows) {
+    if (!client || !client.storage || !rows || !rows.length) return;
+    var now = Date.now();
+    var need = [];
+    rows.forEach(function (r) {
+      var path = r && r.media_path ? String(r.media_path) : "";
+      if (!path) return;
+      var cached = signedMediaCache[path];
+      if (cached && cached.exp - now > 300000) {
+        r.media_url = cached.url;
+      } else if (need.indexOf(path) < 0) {
+        need.push(path);
+      }
+    });
+    if (need.length) {
+      try {
+        var res = await client.storage.from(MEDIA_BUCKET).createSignedUrls(need, MEDIA_SIGNED_TTL);
+        if (res && res.data) {
+          res.data.forEach(function (item) {
+            if (item && item.path && item.signedUrl && !item.error) {
+              signedMediaCache[item.path] = {
+                url: item.signedUrl,
+                exp: now + MEDIA_SIGNED_TTL * 1000,
+              };
+            }
+          });
+        }
+      } catch (_e) {
+        // Media just won't render this cycle; text/placeholder still shows.
+      }
+    }
+    rows.forEach(function (r) {
+      var path = r && r.media_path ? String(r.media_path) : "";
+      if (path && signedMediaCache[path]) r.media_url = signedMediaCache[path].url;
+    });
+  }
 
   var cfg = {
     esc: function (s) {
@@ -738,7 +781,7 @@
       var inboundRes = await client
         .from("portal_parent_whatsapp_inbound")
         .select(
-          "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, media_url, media_mime, meta"
+          "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, media_url, media_path, media_mime, meta"
         )
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
@@ -751,6 +794,7 @@
         }
       } else {
         inbound = inboundRes.data || [];
+        await resolveMediaSignedUrls(client, inbound);
       }
 
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);

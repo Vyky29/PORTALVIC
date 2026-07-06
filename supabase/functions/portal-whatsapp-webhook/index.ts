@@ -161,17 +161,17 @@ function extFromMime(mime: string): string {
   return "bin";
 }
 
-// Download inbound media from the Meta Graph API and store it in the public
-// Storage bucket. Returns the public URL + mime, or null on any failure.
+// Download inbound media from the Meta Graph API and store it in the PRIVATE
+// Storage bucket. Returns the object path + mime, or null on any failure.
+// The admin panel mints short-lived signed URLs from the path at view time.
 async function fetchAndStoreMedia(
   // deno-lint-ignore no-explicit-any
   admin: any,
   mediaId: string,
   fallbackMime: string,
   waMessageId: string,
-  baseUrl: string,
   token: string,
-): Promise<{ media_url: string; media_mime: string } | null> {
+): Promise<{ media_path: string; media_mime: string } | null> {
   try {
     const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -203,7 +203,7 @@ async function fetchAndStoreMedia(
       return null;
     }
     return {
-      media_url: `${baseUrl}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`,
+      media_path: path,
       media_mime: mime,
     };
   } catch (e) {
@@ -274,16 +274,17 @@ async function storeInboundMessages(
     const contactName = contactNameForMessage(value.contacts, fromRaw);
 
     // Stickers, images, video, audio and documents: pull the file from Meta and
-    // store it so the admin panel can render it (not just show "[sticker]").
-    let mediaUrl: string | null = null;
+    // store it (private bucket) so the admin panel can render it via a signed
+    // URL, not just show "[sticker]".
+    let mediaPath: string | null = null;
     let mediaMime: string | null = null;
     const mediaRef = mediaRefForMessage(msg);
     if (mediaRef && graphToken) {
       const stored = await fetchAndStoreMedia(
-        admin, mediaRef.id, mediaRef.mime, waMessageId, baseUrl, graphToken,
+        admin, mediaRef.id, mediaRef.mime, waMessageId, graphToken,
       );
       if (stored) {
-        mediaUrl = stored.media_url;
+        mediaPath = stored.media_path;
         mediaMime = stored.media_mime;
       }
     }
@@ -295,7 +296,7 @@ async function storeInboundMessages(
       message_type: str(msg.type, 32).toLowerCase() || "text",
       body_text: bodyText || null,
       context_wa_id: str(msg.context?.id, 200) || null,
-      media_url: mediaUrl,
+      media_path: mediaPath,
       media_mime: mediaMime,
       created_at: messageCreatedAt(msg),
       meta: {
