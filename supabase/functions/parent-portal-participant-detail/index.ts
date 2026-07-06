@@ -337,10 +337,18 @@ function parentCommentFromRow(
   positiveText: string,
   cache: Record<string, unknown> | undefined,
 ): { comment: string | null; pending: boolean } {
-  if (!positiveText) return { comment: null, pending: false };
   const status = cache ? String(cache.share_status || "") : "";
+  // Admin-released text (parent_message) is the source of truth when a share
+  // row exists. Falls back to positive_feedback for older rows with no share.
+  const adminMsg = cache ? clean(cache.parent_message, 2500) : "";
   if (status === "hidden") return { comment: null, pending: false };
   if (status === "pending") return { comment: null, pending: true };
+  if (status === "approved") {
+    const text = adminMsg || positiveText;
+    return { comment: text || null, pending: false };
+  }
+  // No share row yet: legacy passthrough on positive_feedback.
+  if (!positiveText) return { comment: null, pending: false };
   return { comment: positiveText, pending: false };
 }
 

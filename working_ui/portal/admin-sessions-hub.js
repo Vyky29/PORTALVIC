@@ -6206,9 +6206,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(msg) +
       "</textarea>" +
       (hint ? '<span class="ash-family-summary__hint">' + esc(hint) + "</span>" : "") +
+      '<span class="ash-family-summary__relevant" data-ash-family-relevant="' +
+      esc(fbId) +
+      '" style="display:none;font-size:11px;color:#6b7280;white-space:pre-wrap"></span>' +
+      '<div class="ash-family-summary__btns" style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" class="ash-family-summary__filter" data-ash-family-filter="' +
+      esc(fbId) +
+      '">Filter with AI</button>' +
       '<button type="button" class="ash-family-summary__save" data-ash-family-save="' +
       esc(fbId) +
-      '">Save</button>' +
+      '">Save &amp; release</button>' +
+      "</div>" +
       "</div></td>"
     );
   };
@@ -6989,6 +6997,52 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         hub.renderPanels();
         return;
       }
+      var filterFamilyBtn = t.closest("[data-ash-family-filter]");
+      if (filterFamilyBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var ffid = filterFamilyBtn.getAttribute("data-ash-family-filter") || "";
+        var fwrap = filterFamilyBtn.closest(".ash-family-summary");
+        var fta = fwrap && fwrap.querySelector("[data-ash-family-msg]");
+        if (!ffid || !fta || typeof global.portalAdminFilterFeedbackNarrative !== "function") {
+          window.alert("Filter with AI is not available here.");
+          return;
+        }
+        filterFamilyBtn.disabled = true;
+        filterFamilyBtn.textContent = "Filtering…";
+        void global
+          .portalAdminFilterFeedbackNarrative(ffid, "")
+          .then(function (res) {
+            filterFamilyBtn.disabled = false;
+            filterFamilyBtn.textContent = "Filter with AI";
+            if (!res || !res.ok) {
+              var err = (res && res.error) || "error";
+              window.alert(
+                err === "no_narrative"
+                  ? "This feedback has no session narrative to filter."
+                  : "Could not filter with AI (" + err + "). Try again."
+              );
+              return;
+            }
+            fta.value = res.positive || "";
+            var rel = fwrap.querySelector("[data-ash-family-relevant]");
+            if (rel) {
+              if (res.relevant) {
+                rel.textContent = "Internal notes (AI): " + res.relevant;
+                rel.style.display = "";
+              } else {
+                rel.textContent = "";
+                rel.style.display = "none";
+              }
+            }
+          })
+          .catch(function () {
+            filterFamilyBtn.disabled = false;
+            filterFamilyBtn.textContent = "Filter with AI";
+            window.alert("Filter with AI failed. Try again.");
+          });
+        return;
+      }
       var saveFamilyBtn = t.closest("[data-ash-family-save]");
       if (saveFamilyBtn) {
         ev.preventDefault();
@@ -7002,9 +7056,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         void hub
           .saveParentShare(fid, ta.value)
           .then(function () {
-            saveFamilyBtn.textContent = "Saved";
+            saveFamilyBtn.textContent = "Released";
             setTimeout(function () {
-              saveFamilyBtn.textContent = "Save";
+              saveFamilyBtn.textContent = "Save & release";
               saveFamilyBtn.disabled = false;
             }, 1200);
             var tag = wrap.querySelector(".ash-family-summary__tag");
@@ -7016,7 +7070,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             }
           })
           .catch(function () {
-            saveFamilyBtn.textContent = "Save";
+            saveFamilyBtn.textContent = "Save & release";
             saveFamilyBtn.disabled = false;
             window.alert("Could not save family summary. Try again.");
           });

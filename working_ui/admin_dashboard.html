@@ -17948,7 +17948,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260705-v22-participant-name-spelling';
+    var PORTAL_ADMIN_HUB_BUILD = '20260706-v23-admin-filter-release';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18612,6 +18612,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(edge.error) return { ok: false, error: edge.error };
       return { ok: true, share: edge.data && edge.data.share };
+    };
+    window.portalAdminFilterFeedbackNarrative = async function(feedbackId, participantName){
+      var id = String(feedbackId || '').trim();
+      if(!id) return { ok: false, error: 'missing_id' };
+      var narrative = '';
+      var pname = String(participantName || '').trim();
+      try{
+        var client = await adminEnsureSupabaseClient();
+        if(client){
+          var sel = await client.from('session_feedback')
+            .select('session_narrative, client_name')
+            .eq('id', id)
+            .maybeSingle();
+          if(sel && sel.data){
+            narrative = String(sel.data.session_narrative || '').trim();
+            if(!pname) pname = String(sel.data.client_name || '').trim();
+          }
+        }
+      }catch(_e){ return { ok: false, error: 'narrative_lookup_failed' }; }
+      if(narrative.length < 40) return { ok: false, error: 'no_narrative' };
+      var edge = await adminEdgePost('portal-feedback-narrative-filter', {
+        narrative_en: narrative,
+        participant_name: pname
+      });
+      if(edge.error) return { ok: false, error: edge.error };
+      var d = edge.data || {};
+      if(!d.ok) return { ok: false, error: d.error || 'filter_failed' };
+      return {
+        ok: true,
+        positive: String(d.positive_feedback || ''),
+        relevant: String(d.relevant_information || '')
+      };
     };
     window.portalAdminGenerateParentFeedbackShares = async function(feedbackIds){
       var ids = (feedbackIds || []).map(function(x){ return String(x || '').trim(); }).filter(Boolean);
