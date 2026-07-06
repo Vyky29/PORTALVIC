@@ -1248,11 +1248,11 @@
                 </label>
               </div>
               <div class="conditional" id="addressChangeFields" data-conditional-for="addressChange" data-show-when="changed">
-                <div class="field"><label for="editAddr1">Address line 1</label><input id="editAddr1" type="text" autocomplete="address-line1" maxlength="120" data-edit-input="address_line1" /></div>
+                <div class="field" data-edit-field="address_line1"><label for="editAddr1">Address line 1</label><input id="editAddr1" type="text" autocomplete="address-line1" maxlength="120" data-edit-input="address_line1" /><span class="field-error">Enter address line 1.</span></div>
                 <div class="field"><label for="editAddr2">Address line 2 <span style="color:var(--mutedSoft);font-weight:500;">(optional)</span></label><input id="editAddr2" type="text" autocomplete="address-line2" maxlength="120" data-edit-input="address_line2" /></div>
                 <div class="field-grid field-grid--2">
-                  <div class="field"><label for="editCity">Town / city</label><input id="editCity" type="text" autocomplete="address-level2" maxlength="80" data-edit-input="address_city" /></div>
-                  <div class="field"><label for="editPostcode">Postcode</label><input id="editPostcode" type="text" autocomplete="postal-code" maxlength="16" data-edit-input="address_postcode" /></div>
+                  <div class="field" data-edit-field="address_city"><label for="editCity">Town / city</label><input id="editCity" type="text" autocomplete="address-level2" maxlength="80" data-edit-input="address_city" /><span class="field-error">Enter your town / city.</span></div>
+                  <div class="field" data-edit-field="address_postcode"><label for="editPostcode">Postcode</label><input id="editPostcode" type="text" autocomplete="postal-code" maxlength="16" data-edit-input="address_postcode" /><span class="field-error">Enter your postcode.</span></div>
                 </div>
               </div>
             </form>
@@ -2386,6 +2386,9 @@
         if (changedRadio) {
           changedRadio.checked = true;
           sec.querySelectorAll('[data-conditional-for]').forEach(refreshConditional);
+          // Immediately flag the empty required fields (e.g. blank Town / city)
+          // in red and focus the first one so the missing bit is obvious.
+          validateSectionEdits(sec, collectSectionEdits(sec));
         }
       }
       // Toggle action buttons
@@ -2527,6 +2530,26 @@
         if (!phone) {
           phoneField?.classList.add('has-error');
           ok = false;
+        }
+      } else if (sec.id === 'sectionAddress') {
+        const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
+        if (changed === 'changed') {
+          let firstEmpty = null;
+          [
+            ['address_line1', edits.address_line1],
+            ['address_city', edits.address_city],
+            ['address_postcode', edits.address_postcode],
+          ].forEach(([key, val]) => {
+            if (!(val || '').trim()) {
+              const f = sec.querySelector(`[data-edit-field="${key}"]`);
+              f?.classList.add('has-error');
+              if (!firstEmpty) firstEmpty = f;
+              ok = false;
+            }
+          });
+          if (firstEmpty) {
+            try { firstEmpty.querySelector('input')?.focus(); } catch (_e) {}
+          }
         }
       }
       return ok;
