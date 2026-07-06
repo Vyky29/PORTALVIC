@@ -17948,7 +17948,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260706-v24-feedback-family-release';
+    var PORTAL_ADMIN_HUB_BUILD = '20260706-v25-session-feedback-columns';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -20400,7 +20400,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessionsRow1 =
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedback / Register', 'Session feedback, filtered & notes', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');

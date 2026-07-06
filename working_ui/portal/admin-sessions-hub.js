@@ -6053,7 +6053,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Family summary</th><th>Relevant</th><th>Reviewed by:</th>";
+    "<th>Session feedback</th><th>Filtered feedback</th><th>Notes</th><th>Reviewed by:</th>";
 
   AdminSessionsHub.prototype.indexParentShares = function () {
     var map = {};
@@ -6656,7 +6656,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(clean(awaitSlot.service) || "\u2014") +
           awaitTime +
           "</td>" +
-          '<td colspan="5" class="ash-td-center">' +
+          '<td colspan="6" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6679,7 +6679,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(awaitSvc) +
         awaitTime +
         "</td>" +
-        '<td colspan="5" class="ash-td-center">' +
+        '<td colspan="6" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
         '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -6722,6 +6722,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
         : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
+    var rawFeedback = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
     var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
@@ -6762,11 +6763,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
-      // Operational family-summary release control (Filter with AI + Save &
-      // release). Lives here in Session feedback (operational), NOT in the
-      // Family messages comms page. Falls back to the read-only filtered text
-      // for terminal rows / when no editable cell can be shown.
+      // Raw "Session feedback" (positive_feedback) exactly as the instructor
+      // submitted it — informative only, not edited or released here.
+      '<td class="ash-cell-note ash-cell-raw-feedback">' +
+      (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
+      "</td>" +
+      // Filtered feedback = the parent-safe version released to families.
+      // Operational release control (Filter with AI + Save & release). Lives
+      // here in Session feedback (operational), NOT in the Family messages
+      // comms page. Falls back to read-only text for terminal rows.
       hub.htmlFamilySummaryCell(fb, esc, terminal) +
+      // Notes (Relevant information) — internal, informative only. Never
+      // filtered or released to families.
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
@@ -8624,10 +8632,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
     } else if (!tableRows) {
       tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+        '<tr><td colspan="9"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
     var weekBlock =
