@@ -2762,7 +2762,12 @@
       for (const id of REQUIRED_SECTIONS) {
         const sec = $(id);
         if (!sec || sectionProfileHasRequiredData(sec)) continue;
-        show(profileNotice, 'error', 'One or more required sections are missing answers. Open each section, tap Edit, and confirm again.');
+        const title = (sec.querySelector('.ps-title')?.textContent || 'a required section').trim();
+        show(profileNotice, 'error', `Please complete “${title}” — tap Edit, fill in the fields, then Confirm.`);
+        // Open the incomplete section in edit mode and take the user to it.
+        sec.setAttribute('aria-expanded', 'true');
+        unlockSection(sec);
+        try { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
         updateConfirmedSummary();
         return;
       }
