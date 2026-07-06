@@ -47,12 +47,14 @@
 
   // Short version used ONLY for the WhatsApp channel (Meta templates cap at ~1024
   // chars and flatten formatting, so the long email body will not send there).
+  // Short pointer sent over WhatsApp (Meta template): keeps it to one concise
+  // paragraph and refers parents to the full email. No closing sign-off here —
+  // the approved template already appends "Thank you, ClubSENsational".
   var DEFAULT_WA_BODY =
-    "\uD83D\uDCF1 ClubSENsational \u2013 Contact Update\n\n" +
-    "Due to a technical issue with our old WhatsApp, our NEW WhatsApp number is +44 7886 292726. Please save it \u2014 it is now the best way to reach us for absences, session updates and general enquiries, and it is monitored 7 days a week. This WhatsApp number does not accept phone calls.\n\n" +
-    "\uD83D\uDCDE For urgent matters or new bookings, please call our usual number: +44 7592 558671.\n\n" +
-    "Until the end of August you may also receive calls from our admin number +44 1313 816434 \u2014 no need to save it, it is the ClubSENsational team.\n\n" +
-    "Thank you,\nThe ClubSENsational Team";
+    "Following our email about our contact numbers: this is the new ClubSENsational WhatsApp number, +44 7886 292726. " +
+    "It is monitored Monday to Sunday for messages only (this number does not take calls). " +
+    "Please save it and message us here for absences, session updates and enquiries. " +
+    "For urgent matters or new bookings, please call +44 7592 558671.";
 
   function configure(options) {
     if (!options) return;
