@@ -136,29 +136,47 @@
     if (LOAD_INFLIGHT && !force) {
       return LOAD_INFLIGHT;
     }
-    function fetchOnce(retried) {
-      return client
-        .from("portal_madre_document")
-        .select("document, revision, updated_at")
-        .eq("term_key", TERM_KEY)
-        .maybeSingle()
-        .then(function (res) {
-          if (res.error) {
-            var msg = String(res.error.message || res.error);
-            if (!retried && isRetryableSupabaseError(msg)) {
-              return delay(1200).then(function () {
-                return fetchOnce(true);
-              });
-            }
-            console.warn("[portal_madre_document]", res.error);
-            return null;
+    // Raw REST GET with cache:"no-store" + a cache-buster param. The Supabase JS
+    // client's .select() is subject to browser HTTP caching, which could serve a
+    // stale portal_madre_document revision — the roster would briefly show correct
+    // (bundle) then flip to an old cached MADRE. no-store guarantees the freshest row.
+    function fetchDocRow() {
+      var base = String(supabaseUrl() || "").replace(/\/+$/, "");
+      if (!base) return Promise.resolve(null);
+      return authHeaders(client).then(function (h) {
+        var headers = Object.assign({}, h, {
+          Accept: "application/vnd.pgrst.object+json",
+        });
+        var url =
+          base +
+          "/rest/v1/portal_madre_document?select=document,revision,updated_at&term_key=eq." +
+          encodeURIComponent(TERM_KEY) +
+          "&_ts=" +
+          Date.now();
+        return fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          headers: headers,
+        }).then(function (resp) {
+          if (resp.status === 406) return null; // no row for single-object accept
+          if (!resp.ok) {
+            var e = new Error("HTTP " + resp.status);
+            e.httpStatus = resp.status;
+            throw e;
           }
-          if (!res.data || !res.data.document) return null;
+          return resp.json();
+        });
+      });
+    }
+    function fetchOnce(retried) {
+      return fetchDocRow()
+        .then(function (row) {
+          if (!row || !row.document) return null;
           CACHE = {
-            document: res.data.document,
-            revision: res.data.revision,
-            updated_at: res.data.updated_at,
-            rows: madreToAdapterRows(res.data.document),
+            document: row.document,
+            revision: row.revision,
+            updated_at: row.updated_at,
+            rows: madreToAdapterRows(row.document),
           };
           CACHE_AT = Date.now();
           global.PORTAL_MADRE_LIVE = CACHE;
