@@ -25,12 +25,12 @@
     query: "",
   };
 
-  var DEFAULT_SUBJECT = "Our WhatsApp & contact number";
+  var DEFAULT_SUBJECT = "ClubSENsational — save our WhatsApp & contact number";
   var DEFAULT_BODY =
-    "Dear Parents and Carers,\n\n" +
-    "We're writing to let you know the best number to reach ClubSENsational on WhatsApp is:\n\n" +
-    "+44 7886 292726\n\n" +
-    "Please save it so you can message us any time about bookings, absences, or questions — your replies come straight through to our team. Our email (info@clubsensational.org) stays the same.\n\n" +
+    "Dear parents and carers,\n\n" +
+    "We want to make sure you always have the best way to reach ClubSENsational.\n\n" +
+    "You can message us on WhatsApp on +44 7886 292726 for anything about your child's sessions — bookings, absences, questions or updates. Your messages come straight to our team and we reply there.\n\n" +
+    "Please save this number so you always have it to hand. Our email (info@clubsensational.org) stays the same.\n\n" +
     "Thank you,\nClubSENsational";
 
   function configure(options) {
