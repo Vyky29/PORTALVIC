@@ -621,6 +621,13 @@ export async function bootPortalLeadFeedback() {
     serviceEl.appendChild(opt);
   });
 
+  // The service list is static and does not depend on the roster/scope load,
+  // so make the dropdown usable right away. This guarantees a lead (e.g. John)
+  // can always pick a service even if a later step (auth, roster, scope) is
+  // slow or throws before the finally-block re-enable runs.
+  serviceEl.disabled = false;
+  serviceEl.removeAttribute("aria-busy");
+
   if (venueInput && ctx.venue) venueInput.value = ctx.venue;
   if (timeInput && ctx.sessionTime) timeInput.value = ctx.sessionTime;
   if (sessionKeyHidden && ctx.portalSessionKey) sessionKeyHidden.value = ctx.portalSessionKey;
