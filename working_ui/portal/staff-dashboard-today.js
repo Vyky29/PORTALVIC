@@ -2146,6 +2146,10 @@
             showPoolSymbol,
             showSpecialty: showSpec,
             specialtyLabel: specialtyInfoTitle(activity),
+            // Multi-part Day Centre block (morning centre + pool hour): rendered as a
+            // combined card. Only present when the roster slot defines segments and the
+            // slot isn't being replaced by an override.
+            segments: (!hasReplaceOv && Array.isArray(s.segments) && s.segments.length) ? s.segments : undefined,
             general: generalBody,
             specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
             openSheet: true,

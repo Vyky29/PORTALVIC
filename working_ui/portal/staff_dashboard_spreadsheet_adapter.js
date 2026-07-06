@@ -598,6 +598,9 @@
         rosterArea,
         timeSlotLabel,
       };
+      if (Array.isArray(row.segments) && row.segments.length) {
+        baseSession.segments = row.segments;
+      }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
         instructorsRaw &&

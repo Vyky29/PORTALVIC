@@ -836,7 +836,8 @@
         const card = document.createElement('button');
         card.type = 'button';
         const reviewCls = sessionReviewRowClass(item);
-        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '');
+        const segCls = (Array.isArray(item.segments) && item.segments.length) ? ' session-card--segments' : '';
+        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls;
         card.setAttribute('role', 'listitem');
         if(item.sessionKey) card.setAttribute('data-session-key', String(item.sessionKey));
         const poolAria = (item.areaLabel && String(item.areaLabel).trim())

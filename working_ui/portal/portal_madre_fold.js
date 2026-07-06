@@ -123,6 +123,10 @@
               time_slot: String(s.time_slot || "").trim(),
               venue: String(s.venue || "SwimFarm").trim(),
               session_date: d.sessionDate,
+              // Optional per-slot breakdown (e.g. Day Centre morning + Big Pool hour).
+              // Display-only: the slot stays ONE session for feedback / pay.
+              segments:
+                Array.isArray(s.segments) && s.segments.length ? s.segments : undefined,
             });
           });
         });

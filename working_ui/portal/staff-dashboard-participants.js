@@ -1391,7 +1391,33 @@
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
+    function todaySessionSegmentRowsHtml(item){
+      return (item.segments || []).map(function(seg){
+        const tRaw = String((seg && (seg.time_slot || seg.time)) || '').trim();
+        const t = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(tRaw) : tRaw);
+        const note = escapeHtml(String((seg && (seg.label || seg.note || seg.area)) || '').trim());
+        return '<div class="session-seg-row"><span class="session-seg-time">' + t + '</span><span class="session-seg-note">' + note + '</span></div>';
+      }).join('');
+    }
+    /** Combined card: participant name on the far left, then a time / note mini-table
+     *  (e.g. Emmanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
+    function todaySessionSegmentedCardInnerHtml(item){
+      const nameCore = `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
+      const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
+      const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
+      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
+      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
+      const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
+      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      return `<div class="session-card-body session-card-body--segments">`
+        + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
+        + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
+        + `</div>`;
+    }
     function todaySessionCardInnerHtml(item){
+      if(item && Array.isArray(item.segments) && item.segments.length){
+        return todaySessionSegmentedCardInnerHtml(item);
+      }
       const timeRaw = String(item.time || '').trim();
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const hideDutyVenue = item && (item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin');
