@@ -490,7 +490,9 @@
 
   function applyValidationResult(result) {
     state.validationResult = result;
-    state.validated = !!(result && result.all_complete);
+    // Advisory check: running it counts as validated. A flagged section is
+    // guidance (shown in the checklist), not a hard block — never wall a submit.
+    state.validated = !!result;
     state.validationSnapshot = narrativeText();
     state.counts.validate += 1;
     renderValidationChecklist(result);
@@ -500,7 +502,7 @@
     if (result && result.all_complete) {
       setStatus("All three sections covered — tap Filter with AI when ready.");
     } else {
-      setStatus("Add what's missing in your narrative, then Check narrative again.");
+      setStatus("Highlighted sections could use more detail — you can still Filter with AI and submit.");
     }
   }
 
@@ -658,12 +660,8 @@
       if (!state.validated || narrative !== state.validationSnapshot) {
         setStatus("Check narrative first (Reception, Session, Handover).");
         if (!opts.silent) {
-          global.alert("Typed feedback: tap Check narrative and fix missing sections before Filter with AI.");
+          global.alert("Typed feedback: tap Check narrative once before Filter with AI.");
         }
-        return;
-      }
-      if (!state.validationResult || !state.validationResult.all_complete) {
-        setStatus("Complete all three sections before filtering.");
         return;
       }
     }
@@ -826,11 +824,7 @@
     }
     if (validationRequired()) {
       if (!state.validated || narrative !== state.validationSnapshot) {
-        global.alert("Check narrative first — Reception, Session and Handover must be covered.");
-        return false;
-      }
-      if (!state.validationResult || !state.validationResult.all_complete) {
-        global.alert("Your narrative is still missing sections. Check narrative and add detail.");
+        global.alert("Tap Check narrative once (Reception, Session, Handover) before submitting.");
         return false;
       }
     }
