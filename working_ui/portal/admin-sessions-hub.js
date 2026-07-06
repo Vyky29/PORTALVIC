@@ -11,6 +11,21 @@
   // relevant_information was the AI "internal relevant" split of the feedback and
   // belongs WITH the feedback (Feedback filtered tab), not the Notes tab.
   var NOTES_FIRST_DATE_ISO = "2026-07-07";
+  // Explicit exceptions that predate the cutoff but ARE genuine optional notes.
+  // Key = "<session_date>|<client_name lowercased/trimmed>". Bismark's Tinashe
+  // narrative (6 Jul 2026) was the first entry of the new flow, so its note
+  // belongs on the Notes tab once filtered.
+  var NOTES_DATE_EXCEPTIONS = {
+    "2026-07-06|tinashe": true,
+  };
+  function feedbackNoteDateAllowed(hub, fb) {
+    var d =
+      (hub && typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
+      clean(fb && fb.session_date);
+    if (d >= NOTES_FIRST_DATE_ISO) return true;
+    var name = clean(fb && fb.client_name).toLowerCase();
+    return !!NOTES_DATE_EXCEPTIONS[d + "|" + name];
+  }
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -5897,7 +5912,7 @@
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
       if (kind === "positive") return !!clean(fb.positive_feedback);
       if (kind === "relevant")
-        return !!clean(fb.relevant_information) && hub.feedbackRowDate(fb) >= NOTES_FIRST_DATE_ISO;
+        return !!clean(fb.relevant_information) && feedbackNoteDateAllowed(hub, fb);
       return false;
     });
   };
@@ -5915,7 +5930,7 @@
         if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
         if (kind === "positive") return !!clean(fb.positive_feedback);
         if (kind === "relevant")
-          return !!clean(fb.relevant_information) && hub.feedbackRowDate(fb) >= NOTES_FIRST_DATE_ISO;
+          return !!clean(fb.relevant_information) && feedbackNoteDateAllowed(hub, fb);
         return false;
       })
       .sort(feedbackSortNewestFirst);
@@ -6838,10 +6853,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
     var filteredRawText;
     if (isLegacyNotesRow) {
+      // Legacy: keep positive + relevant together; but if they're still empty
+      // (a raw narrative awaiting filtering, e.g. Bismark's), show the narrative
+      // so it can be filtered here.
       filteredRawText =
         [clean(fb.positive_feedback), clean(fb.relevant_information)]
           .filter(Boolean)
-          .join("\n\n") || "\u2014";
+          .join("\n\n") ||
+        clean(fb.session_narrative) ||
+        "\u2014";
     } else {
       filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
     }
