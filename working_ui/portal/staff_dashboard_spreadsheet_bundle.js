@@ -12040,7 +12040,7 @@
     {
       "client_name": "Yunis",
       "day": "Monday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
@@ -12100,7 +12100,7 @@
     {
       "client_name": "Amar Rai",
       "day": "Monday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "5 to 6",
@@ -12170,7 +12170,7 @@
     {
       "client_name": "Yamik",
       "day": "Monday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
@@ -12520,7 +12520,7 @@
     {
       "client_name": "Vithura",
       "day": "Wednesday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
@@ -12610,7 +12610,7 @@
     {
       "client_name": "Amar Rai",
       "day": "Wednesday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "5 to 6",
@@ -12680,7 +12680,7 @@
     {
       "client_name": "Amber",
       "day": "Wednesday",
-      "instructors": "ROBERTO",
+      "instructors": "ROBERTO, LULIYA",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
