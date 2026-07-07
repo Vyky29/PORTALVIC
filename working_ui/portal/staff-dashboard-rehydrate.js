@@ -1076,7 +1076,20 @@
           void rehydrateFromProfile();
         }
       });
-      window.addEventListener("portal:staff-dashboard-source-updated", portalRebootstrapSessionsForPinnedStaff);
+      var _portalSourceUpdatedT = 0;
+      window.addEventListener("portal:staff-dashboard-source-updated", function(){
+        /* Bursts of source-update events (roster + machine bundle + exports all
+           land within a few ms on load) each triggered a full ~200ms rebootstrap,
+           which is what filled the console with "handler took 200ms" [Violation]
+           perf notices. The rebootstrap re-derives everything from the current
+           source, so coalescing the burst into a single run is safe and just
+           removes the redundant repeat passes. */
+        if(_portalSourceUpdatedT) clearTimeout(_portalSourceUpdatedT);
+        _portalSourceUpdatedT = setTimeout(function(){
+          _portalSourceUpdatedT = 0;
+          try{ portalRebootstrapSessionsForPinnedStaff(); }catch(_){}
+        }, 120);
+      });
       var _portalFeedbackReadyMergeT = 0;
       window.addEventListener("portal:feedback-data-ready", function(){
         try{
