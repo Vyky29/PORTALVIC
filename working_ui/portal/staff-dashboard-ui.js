@@ -1499,11 +1499,13 @@
       const cell = calendarDateForWeekListDay(item.day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
       const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const offRequested = iso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+        && portalStaffDayOffIsTimeOffRequested(iso, sid);
       if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(item.day, sid)){
-        return 'off';
+        return offRequested ? 'off-requested' : 'off';
       }
       const dayFlags = portalDayOverrideBadgeFlags(item.day, iso);
-      if(weekRowTotalClients(item) <= 0) return 'off';
+      if(weekRowTotalClients(item) <= 0) return offRequested ? 'off-requested' : 'off';
       if(weekListHasPendingFeedbackForDay(item.day)) return 'work-feedback';
       if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(rel === 'past') return 'work-done';
@@ -1545,12 +1547,21 @@
       const ariaBits = [];
       const cell = calendarDateForWeekListDay(day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
+      const weekRowSid = String(
+        (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+        || STAFF_DASHBOARD_ID
+        || ''
+      ).trim().toLowerCase();
+      const isOffRequested = iso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+        && portalStaffDayOffIsTimeOffRequested(iso, weekRowSid);
+      const offEmptyLabel = isOffRequested ? 'Off · requested' : 'Off';
+      const offAriaLabel = isOffRequested ? 'off, time off requested' : 'off';
       const dayFlags = portalDayOverrideBadgeFlags(day, iso);
       segments.forEach((seg, i) => {
         if(seg.count <= 0){
           if(i === 0 && segments.length === 1){
-            parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
-            ariaBits.push('off');
+            parts.push('<span class="week-venue-seg week-venue-seg--empty">' + offEmptyLabel + '</span>');
+            ariaBits.push(offAriaLabel);
           }
           return;
         }
@@ -1565,8 +1576,8 @@
         ariaBits.push(`${seg.count} ${ariaPhrase} ${ariaVenue}`);
       });
       if(!parts.length){
-        parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
-        ariaBits.push('off');
+        parts.push('<span class="week-venue-seg week-venue-seg--empty">' + offEmptyLabel + '</span>');
+        ariaBits.push(offAriaLabel);
       }
       const tone = weekRowVisualKind(item);
       const weekStaffId = String(

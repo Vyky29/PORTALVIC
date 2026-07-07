@@ -4607,6 +4607,14 @@
       border:2px solid rgba(185,28,28,.55);
       background:linear-gradient(180deg,#fff5f5 0%,#ffe8e8 100%);
       box-shadow:0 0 0 1px rgba(217,83,79,.32),0 4px 12px rgba(217,83,79,.14);
+      animation:todayOffRequestedPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes todayOffRequestedPulse{
+      0%,100%{border-color:rgba(185,28,28,.5);box-shadow:0 0 0 1px rgba(217,83,79,.3),0 4px 12px rgba(217,83,79,.14)}
+      50%{border-color:rgba(220,38,38,.95);box-shadow:0 0 0 3px rgba(220,38,38,.55),0 8px 22px rgba(220,38,38,.32)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .today-day-panel--off-requested{animation:none}
     }
     .today-day-panel--loading{
       align-items:center;
@@ -6456,6 +6464,29 @@
       border-color:rgba(197,48,48,.32);
       box-shadow:0 4px 16px rgba(180,40,40,.1);
     }
+    .calendar-day.calendar-day--week-row--off-requested{
+      background:linear-gradient(180deg,#fff5f5 0%,#ffe3e3 100%);
+      border:2px solid rgba(185,28,28,.55);
+      box-shadow:0 0 0 1px rgba(217,83,79,.3),0 2px 10px rgba(184,50,50,.18);
+      animation:weekRowOffRequestedPulse 1.4s ease-in-out infinite;
+    }
+    .calendar-day.calendar-day--week-row--off-requested:hover{
+      border-color:rgba(220,38,38,.85);
+      box-shadow:0 0 0 2px rgba(220,38,38,.4),0 6px 18px rgba(184,50,50,.22);
+    }
+    .calendar-day--week-row--off-requested .week-day-icon{
+      background:linear-gradient(180deg,#e04545,#b83232);
+      color:#fff;
+      box-shadow:0 0 0 1px rgba(130,30,30,.4),0 2px 10px rgba(184,50,50,.22);
+    }
+    .calendar-day--week-row--off-requested .week-venue-seg--empty{color:rgba(140,36,36,.92)}
+    @keyframes weekRowOffRequestedPulse{
+      0%,100%{border-color:rgba(185,28,28,.5);box-shadow:0 0 0 1px rgba(217,83,79,.28),0 2px 10px rgba(184,50,50,.16)}
+      50%{border-color:rgba(220,38,38,.95);box-shadow:0 0 0 3px rgba(220,38,38,.5),0 8px 20px rgba(220,38,38,.28)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .calendar-day.calendar-day--week-row--off-requested{animation:none}
+    }
     .calendar-day--week-row .week-day-icon{
       width:44px;
       height:44px;
@@ -7327,9 +7358,11 @@
     .term-cal-day.term-cal-day--ov-pulse-both{
       animation:termOvPulseBothCell 2.2s ease-in-out infinite;
     }
-    .term-cal-day.term-cal-day--ov-pulse-outstanding,
-    .term-cal-day.term-cal-day--ov-pulse-day-off{
+    .term-cal-day.term-cal-day--ov-pulse-outstanding{
       animation:none;
+    }
+    .term-cal-day.term-cal-day--ov-pulse-day-off{
+      animation:termOvPulseDayOffCell 1.6s ease-in-out infinite;
     }
     .term-cal-day.term-cal-day--ov-pulse-shift-removed{
       animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;
