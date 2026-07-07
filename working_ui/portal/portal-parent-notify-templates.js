@@ -392,6 +392,60 @@
     );
   }
 
+  /**
+   * Resolve which cancellation-policy wording to use.
+   * Returns 'facility' (venue/pool cause → offer refund/credit/make-up),
+   * 'illness' (participant not ready / unwell → charged as usual, refund with
+   * a doctor's note), or 'neutral' (unknown → no financial promise, admin edits).
+   * Override with opts.cancelPolicy.
+   */
+  function cancelPolicyBucket(ov, opts) {
+    var explicit = String((opts && opts.cancelPolicy) || "")
+      .trim()
+      .toLowerCase();
+    if (explicit === "facility" || explicit === "club" || explicit === "venue") {
+      return "facility";
+    }
+    if (
+      explicit === "illness" ||
+      explicit === "participant" ||
+      explicit === "charged"
+    ) {
+      return "illness";
+    }
+    if (explicit === "neutral" || explicit === "none") return "neutral";
+    var payload = (ov && ov.payload) || {};
+    var raw = String(
+      payload.reason_category ||
+        payload.cancel_reason_category ||
+        (ov && ov.reason_category) ||
+        (ov && ov.reason) ||
+        "",
+    ).trim();
+    var low = raw.toLowerCase();
+    if (!low) return "neutral";
+    // Structured dropdown prefixes (cancellation.html) are unambiguous.
+    if (/^illness\b/.test(low)) return "illness";
+    if (/^unforeseen circumstances\b/.test(low)) return "facility";
+    // Clear venue/pool (our-side) causes.
+    if (
+      /(fire (alarm|drill)|evacuat|flood|power ?cut|venue incident|pool clos|closure|leak|contaminat|burst|no (hot )?water|heating)/.test(
+        low,
+      )
+    ) {
+      return "facility";
+    }
+    // Clear participant-side / illness causes.
+    if (
+      /(fever|diarrh|seizure|cold|flu|unwell|sick|poorly|not ready|no engagement|no access|refus)/.test(
+        low,
+      )
+    ) {
+      return "illness";
+    }
+    return "neutral";
+  }
+
   /** kind: session_cancelled — client_cancelled / slot_clear_client cancelled */
   function cancelled(slot, ov, meta, opts) {
     opts = opts || {};
@@ -401,9 +455,23 @@
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue : "";
     var reason = ov && ov.reason ? String(ov.reason).trim() : "";
-    var reasonPart = reason
-      ? "\n\nNote from the team: " + reason
-      : "";
+    var bucket = cancelPolicyBucket(ov, opts);
+    // Skip echoing the reason for illness (it is the family's own info and reads
+    // clinical coming from us); keep it for facility/neutral where it explains
+    // the our-side cause.
+    var reasonPart =
+      reason && bucket !== "illness" ? "\n\nNote from the team: " + reason : "";
+    var policyPart;
+    if (bucket === "facility") {
+      policyPart =
+        "We are sorry for the inconvenience. As this session was cancelled on our side, we can offer a refund, a credit towards a future session, or a make-up session if one is available — whichever works best for you. Please reply and let us know your preference.";
+    } else if (bucket === "illness") {
+      policyPart =
+        "As sessions are booked and paid in advance, this session is charged as usual. If the cancellation was due to illness, you are welcome to send us a doctor's note and we will look into a refund or credit for you.";
+    } else {
+      policyPart =
+        "Please reply and we will confirm the options available for this cancellation.";
+    }
     return (
       greet(meta && meta.parentCarerName) +
       "This is ClubSENsational.\n\n" +
@@ -415,7 +483,7 @@
       " has been cancelled." +
       reasonPart +
       "\n\n" +
-      "We are sorry for the inconvenience. We can offer a refund, a credit towards a future session, or a make-up session if one is available — whichever works best for you. Please reply and let us know your preference." +
+      policyPart +
       signOff()
     );
   }
@@ -542,6 +610,7 @@
     makeup: makeup,
     trial: trial,
     cancelled: cancelled,
+    cancelPolicyBucket: cancelPolicyBucket,
     bookingConfirmation: bookingConfirmation,
     subjectForKind: subjectForKind,
     kindFromOverrideType: kindFromOverrideType,
