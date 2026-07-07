@@ -1395,8 +1395,18 @@
       return (item.segments || []).map(function(seg){
         const tRaw = String((seg && (seg.time_slot || seg.time)) || '').trim();
         const t = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(tRaw) : tRaw);
-        const note = escapeHtml(String((seg && (seg.label || seg.note || seg.area)) || '').trim());
-        return '<div class="session-seg-row"><span class="session-seg-time">' + t + '</span><span class="session-seg-note">' + note + '</span></div>';
+        const noteRaw = String((seg && (seg.label || seg.note || seg.area)) || '').trim();
+        // Show the venue/area as the same PNG-icon + title used by single-session
+        // cards (e.g. Day Centre, Big Pool) instead of a plain text label. Fall back
+        // to text when the label has no matching area-note icon.
+        let noteHtml = '';
+        if(noteRaw && typeof portalAreaNoteTodayColumnHtml === 'function'){
+          noteHtml = portalAreaNoteTodayColumnHtml(noteRaw) || '';
+        }
+        if(!noteHtml){
+          noteHtml = '<span class="session-seg-note-text">' + escapeHtml(noteRaw) + '</span>';
+        }
+        return '<div class="session-seg-row"><span class="session-seg-time">' + t + '</span><span class="session-seg-note">' + noteHtml + '</span></div>';
       }).join('');
     }
     /** Combined card: participant name on the far left, then a time / note mini-table
