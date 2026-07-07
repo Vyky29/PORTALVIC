@@ -500,11 +500,21 @@
               const iso = String((r && r.off_date) || '').trim().slice(0, 10);
               if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) offSet[iso] = true;
             });
-            window.__PORTAL_STAFF_AWAY_DATES_DB__ = Object.keys(offSet).sort();
-            const ownerId = typeof portalAuthStaffRosterId === 'function'
-              ? portalAuthStaffRosterId()
-              : String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-            window.__PORTAL_STAFF_AWAY_OWNER_ID__ = String(ownerId || '').trim().toLowerCase();
+            const nextAway = Object.keys(offSet).sort();
+            const prevAway = window.__PORTAL_STAFF_AWAY_DATES_DB__;
+            // Anti-flicker: this cache refresh runs several times per load. A
+            // transient empty result (mid token refresh, or a different stored
+            // session picked up by the localStorage scan) must NOT wipe an
+            // already-loaded day-off list, or Today oscillates shift <-> "Day off
+            // (Time Off Requested)". Only replace when we actually got rows, or on
+            // the first load. Admin "Undo" removals apply on the next page load.
+            if(nextAway.length || !Array.isArray(prevAway) || !prevAway.length){
+              window.__PORTAL_STAFF_AWAY_DATES_DB__ = nextAway;
+              const ownerId = typeof portalAuthStaffRosterId === 'function'
+                ? portalAuthStaffRosterId()
+                : String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+              window.__PORTAL_STAFF_AWAY_OWNER_ID__ = String(ownerId || '').trim().toLowerCase();
+            }
           }
         }catch(_offDates){}
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
