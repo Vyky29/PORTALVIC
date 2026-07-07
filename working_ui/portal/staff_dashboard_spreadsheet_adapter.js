@@ -27,13 +27,28 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 4", area: "Day Centre" },
     ],
+    // Cover split (e.g. Wed 8 Jul): Luliya/Youssef take 11-3, Victor takes 3-4.
+    "ikram|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
   };
-  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot) {
+  // Days on which a participant's combined Day Centre block should NOT be split
+  // into the Big Pool segments (it stays a single plain "Day Centre" card).
+  // Ikram only goes to the Big Pool on Mon/Wed; Tuesday is Day Centre only.
+  var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
+    "ikram|11to4": ["tuesday"],
+  };
+  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
     const svc = String(service || "").trim().toLowerCase();
     if (svc !== "day centre") return null;
     const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
     const name = String(nameLower || "").trim().toLowerCase();
-    const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[name + "|" + slot];
+    const key = name + "|" + slot;
+    const skipDays = PORTAL_COMBINED_SEGMENTS_SKIP_DAYS[key];
+    if (skipDays && skipDays.indexOf(String(day || "").trim().toLowerCase()) !== -1) return null;
+    const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[key];
     return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
   }
 
@@ -637,7 +652,7 @@
         // and then revert to a single block after the live roster refresh.
         // Synthesize the same display-only breakdown so the combined card is stable
         // regardless of source. The slot stays ONE session for feedback / pay.
-        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel);
+        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
         if (synthSegments) baseSession.segments = synthSegments;
       }
       const instructorsRaw = String(row.instructors || "").trim();

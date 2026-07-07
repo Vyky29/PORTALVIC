@@ -5009,8 +5009,8 @@
       padding:2px 2px 2px 2px;
     }
     .section-card--today .session-card--segments .session-line--name-lead{
-      flex:0 0 auto;
-      max-width:46%;
+      flex:0 0 30%;
+      max-width:32%;
       align-self:stretch;
       display:flex;
       align-items:center;
@@ -5028,13 +5028,14 @@
     .section-card--today .session-card--segments .session-seg-list{
       flex:1 1 auto;
       min-width:0;
-      /* Each segment is its own centred column (icon → title → time). Columns sit
-         side by side and wrap when there isn't room, so nothing gets clipped. */
+      /* Each segment is its own centred column (icon → title → time). The three
+         columns sit side by side on ONE row (no wrap) so the card reads like a
+         4-column table: name | seg | seg | seg. */
       display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
+      flex-wrap:nowrap;
+      justify-content:space-around;
       align-items:flex-start;
-      gap:10px 16px;
+      gap:4px 8px;
       padding-left:2px;
     }
     .section-card--today .session-card--segments .session-seg-row{
@@ -5045,7 +5046,7 @@
       text-align:center;
       gap:3px;
       min-width:0;
-      flex:0 1 auto;
+      flex:1 1 0;
     }
     .section-card--today .session-card--segments .session-seg-time{
       font-weight:800;
