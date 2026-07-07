@@ -330,7 +330,10 @@
       const svgAnn = noticeIconSvg('announcement');
       function appendAnnouncementSubcategory(subtitle, btn, variant){
         const wrap = document.createElement('div');
-        wrap.className = 'portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--' + (variant === 'pending' ? 'pending' : 'signed');
+        const variantClass = variant === 'pending'
+          ? 'pending'
+          : (variant === 'reference' ? 'reference' : 'signed');
+        wrap.className = 'portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--' + variantClass;
         const st = document.createElement('p');
         st.className = 'portal-quickmenu-announcement-subtitle';
         st.textContent = subtitle;
@@ -353,6 +356,21 @@
       const calendarItem = typeof portalCalendar202627NoticeItem === 'function'
         ? portalCalendar202627NoticeItem()
         : null;
+      // Reference (Calendar 2026/27) sits ABOVE the signature/announcement
+      // blocks so the always-there term calendar is the first thing in the
+      // Alerts/Notifications sheet, before any pending "Need your signature".
+      if(calendarItem){
+        appendAnnouncementSubcategory(
+          'Reference',
+          buildAnnouncementQuickRow(
+            'portalOpenCalendar202627',
+            'Calendar 2026/27',
+            'Term dates — Day Centre, after-schools & crash courses',
+            'menu-btn--calendar-ref'
+          ),
+          'reference'
+        );
+      }
       if(activeAnnouncementCount > 0){
         appendAnnouncementSubcategory(
           'Need your signature',
@@ -363,18 +381,6 @@
             'menu-btn--announcement-attention'
           ),
           'pending'
-        );
-      }
-      if(calendarItem){
-        appendAnnouncementSubcategory(
-          'Reference',
-          buildAnnouncementQuickRow(
-            'portalOpenCalendar202627',
-            'Calendar 2026/27',
-            'Term dates — Day Centre, after-schools & crash courses',
-            'menu-btn--calendar-ref'
-          ),
-          'signed'
         );
       }
       const signedHistoryRows = typeof portalSignedMessageHistoryRows === 'function'

@@ -2855,6 +2855,7 @@
       padding-bottom:16px;
       margin-bottom:4px;
     }
+    #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--reference{order:0}
     #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--pending{order:1}
     #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--signed{order:2}
     .portal-quickmenu-announcement-sub{
