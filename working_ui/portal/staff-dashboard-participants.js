@@ -2637,17 +2637,12 @@
               : '';
           }else{
             title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+            // Show the time of the shift that was actually added (this override's own
+            // slot, e.g. 4.30 to 6.30) — NOT the whole day's merged payroll band, which
+            // widened a partial new shift to the full 11–6.30 window.
             sub = typeof portalOverrideQuickMenuDetailSub === 'function'
               ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
               : '';
-            if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
-              const staffForBand = String(row && row.anchor_staff_id || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim();
-              const band = window.portalStaffPayrollShiftBandLabel(staffForBand, isoNav, venue);
-              if(band){
-                const svc = typeof portalOverrideQuickMenuServiceLabel === 'function' ? portalOverrideQuickMenuServiceLabel(row) : '';
-                sub = [svc, band].filter(Boolean).join(' · ');
-              }
-            }
           }
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
@@ -2899,6 +2894,14 @@
     }
     function portalRefreshNewShiftOverrideCardSub(item){
       if(!item || !item.iso) return item;
+      // The card already carries the added shift's own time slot (e.g. 4.30 to 6.30).
+      // Only fill in a time if it is missing — never replace it with the full-day
+      // merged payroll band, which would widen a partial new shift to 11–6.30.
+      const subHasTime = String(item.sub || '').split(' · ').some(function(p){
+        const bit = String(p || '').trim();
+        return /\d/.test(bit) && /\bto\b/i.test(bit);
+      });
+      if(subHasTime) return item;
       const iso = String(item.iso || '').trim();
       const staffId = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
       let slot = '';
