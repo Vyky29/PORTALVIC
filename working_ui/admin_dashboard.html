@@ -347,6 +347,7 @@
       { id:'reenrol_payments', label:'Programme payments', hubLabel:'Payments' },
       { id:'invoices', label:'Xero / finance', hubLabel:'Create invoice' },
       { id:'c4k_sessions', label:'Sessions overview' },
+      { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
@@ -389,7 +390,7 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','operations_admin','operator'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
@@ -409,6 +410,7 @@
       portal_nav_client_services:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>',
       c4k_services:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      session_disruptions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="16"/><line x1="12" y1="18.5" x2="12" y2="18.5"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
       term_roster_edit:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4"/><path d="M10 16h4"/>',
       roster_spreadsheets:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
@@ -19315,6 +19317,118 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
 
+    /* ---- Session Disruption reports (POL-048): admin review + validate ---- */
+    function portalSdEsc(v){ return esc(String(v == null ? '' : v)); }
+    function portalSdFmtDate(iso){
+      var s = String(iso || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return portalSdEsc(iso || '—');
+      try{
+        return new Date(s + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+      }catch(_){ return portalSdEsc(s); }
+    }
+    function portalSdFmtDateTime(iso){
+      var s = String(iso || '');
+      if(!s) return '—';
+      try{
+        return new Date(s).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      }catch(_){ return portalSdEsc(s.slice(0,16)); }
+    }
+    function viewSessionDisruptions(){
+      return ''+
+        '<section class="card card-pad">'+
+          '<div class="card-h" style="align-items:flex-start"><div style="min-width:0">'+
+            '<h2 style="margin:0">Session disruptions</h2>'+
+            '<p class="muted" style="margin:6px 0 0;max-width:52rem;overflow-wrap:break-word">Staff absence / disruption reports (POL-048). Review each one and <strong>Validate</strong> the day — the worker\u2019s dashboard then shows <em>Day off (Time Off Requested)</em> in place of that shift. Undo removes the day off again.</p>'+
+          '</div><button type="button" class="btn btn--ghost btn--sm" id="sdRefreshBtn">Refresh</button></div>'+
+          '<div id="sdReportsRoot" class="card-pad" style="padding:12px 0 0"><p class="muted" style="margin:0">Loading reports\u2026</p></div>'+
+        '</section>';
+    }
+    function portalSdRenderRows(rows){
+      var root = document.getElementById('sdReportsRoot');
+      if(!root) return;
+      if(!rows || !rows.length){
+        root.innerHTML = '<p class="muted" style="margin:0">No session disruption reports in the last 120 days.</p>';
+        return;
+      }
+      var pending = rows.filter(function(r){ return !r.validated_at; }).length;
+      var body = rows.map(function(r){
+        var validated = !!r.validated_at;
+        var reason = portalSdEsc(r.reason_category || '');
+        if(r.reason_description) reason += '<div class="muted" style="font-size:12px;overflow-wrap:break-word">'+portalSdEsc(r.reason_description)+'</div>';
+        var ret = portalSdEsc(r.expected_return || '');
+        if(r.return_date) ret += ' \u00b7 '+portalSdFmtDate(r.return_date);
+        var status = validated
+          ? '<span class="chip chip--ok" title="Validated by '+portalSdEsc(r.validated_by_name || '')+' on '+portalSdFmtDateTime(r.validated_at)+'">Validated</span>'
+          : '<span class="chip chip--urg">Pending</span>';
+        var action = validated
+          ? '<button type="button" class="btn btn--ghost btn--sm" data-sd-undo="'+portalSdEsc(r.id)+'">Undo</button>'
+          : '<button type="button" class="btn btn--pri btn--sm" data-sd-validate="'+portalSdEsc(r.id)+'">Validate day</button>';
+        return '<tr>'+
+          '<td style="white-space:nowrap">'+portalSdFmtDate(r.session_date)+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word"><strong>'+portalSdEsc(r.submitted_by_name || '')+'</strong>'+(r.role_label ? '<div class="muted" style="font-size:12px">'+portalSdEsc(r.role_label)+'</div>' : '')+'</td>'+
+          '<td style="white-space:nowrap">'+portalSdEsc(r.disruption_type || '')+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+portalSdEsc(r.venue || '')+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+reason+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+ret+'</td>'+
+          '<td style="white-space:nowrap">'+status+'</td>'+
+          '<td class="toolbar" style="white-space:nowrap">'+action+'</td>'+
+        '</tr>';
+      }).join('');
+      root.innerHTML = ''+
+        '<p class="muted" style="margin:0 0 8px">'+rows.length+' report'+(rows.length===1?'':'s')+' \u00b7 '+pending+' pending validation.</p>'+
+        '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>'+
+          '<th>Absence date</th><th>Staff</th><th>Type</th><th>Venue</th><th>Reason</th><th>Expected return</th><th>Status</th><th>Action</th>'+
+        '</tr></thead><tbody>'+body+'</tbody></table></div>';
+      portalSdBindRowActions();
+    }
+    async function portalSdLoad(){
+      var root = document.getElementById('sdReportsRoot');
+      try{
+        var res = await adminEdgePost('portal-admin-session-disruption-list', {});
+        if(res.error || !res.data || !res.data.ok){
+          if(root) root.innerHTML = '<p class="muted" style="margin:0;color:var(--danger,#b00)">Could not load reports'+(res.error ? ' ('+portalSdEsc(res.error)+')' : '')+'.</p>';
+          return;
+        }
+        window.__PORTAL_SESSION_DISRUPTION_REPORTS__ = res.data.rows || [];
+        portalSdRenderRows(window.__PORTAL_SESSION_DISRUPTION_REPORTS__);
+      }catch(e){
+        if(root) root.innerHTML = '<p class="muted" style="margin:0;color:var(--danger,#b00)">Could not load reports.</p>';
+      }
+    }
+    function portalSdBindRowActions(){
+      var root = document.getElementById('sdReportsRoot');
+      if(!root) return;
+      root.querySelectorAll('[data-sd-validate]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdValidate(b.getAttribute('data-sd-validate'), 'validate', b); });
+      });
+      root.querySelectorAll('[data-sd-undo]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdValidate(b.getAttribute('data-sd-undo'), 'undo', b); });
+      });
+    }
+    async function portalSdValidate(reportId, action, btn){
+      if(!reportId) return;
+      if(action === 'undo' && !window.confirm('Remove the validated day off for this report?')) return;
+      var prev = btn ? btn.textContent : '';
+      if(btn){ btn.disabled = true; btn.textContent = action === 'undo' ? 'Removing\u2026' : 'Validating\u2026'; }
+      try{
+        var res = await adminEdgePost('portal-admin-session-disruption-validate', { report_id: reportId, action: action });
+        if(res.error || !res.data || !res.data.ok){
+          if(btn){ btn.disabled = false; btn.textContent = prev; }
+          window.alert('Action failed'+(res.error ? ': '+res.error : (res.data && res.data.error ? ': '+res.data.error : '.')));
+          return;
+        }
+        await portalSdLoad();
+      }catch(e){
+        if(btn){ btn.disabled = false; btn.textContent = prev; }
+        window.alert('Action failed. Please try again.');
+      }
+    }
+    function portalSessionDisruptionsBind(){
+      var btn = document.getElementById('sdRefreshBtn');
+      if(btn) btn.addEventListener('click', portalSdLoad);
+      portalSdLoad();
+    }
+
     function renderView(id){
       var html;
       if(id==='nav_hub') return viewNavHubDashboard();
@@ -19325,6 +19439,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='c4k_services') html = viewC4kServices();
       else if(id==='c4k_sessions') html = viewC4kSessions();
       else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
+      else if(id==='session_disruptions') html = viewSessionDisruptions();
       else if(id==='c4k_payments') html = viewC4kPaymentsView();
       else if(id==='reenrol_payments') html = viewReenrolPayments();
       else if(id==='logs') html = viewLogs();
@@ -22940,6 +23055,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
+      if(id==='session_disruptions') portalSessionDisruptionsBind();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='portal_push_devices') bindPortalPushDevicesModule();
       if(id==='portal_parent_notify_log') bindPortalParentNotifyLogModule();

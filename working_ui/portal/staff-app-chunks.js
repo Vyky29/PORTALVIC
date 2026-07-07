@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260704-area-note-fixed";
+  var VER = "20260707-dayoff-validated";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",

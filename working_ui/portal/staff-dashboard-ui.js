@@ -1893,6 +1893,28 @@
           if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
         });
       });
+      // Union validated staff-requested days off from staff_unavailability
+      // (self-read via RLS; populated when admin validates a Session Disruption
+      // report). Only applies to the logged-in owner's own card so a lead viewing
+      // a teammate never inherits the viewer's days off.
+      try{
+        const dbDates = window.__PORTAL_STAFF_AWAY_DATES_DB__;
+        if(Array.isArray(dbDates) && dbDates.length){
+          const ownerId = String(window.__PORTAL_STAFF_AWAY_OWNER_ID__ || '').trim().toLowerCase();
+          const ownerKeys = ownerId
+            ? (typeof portalTermStaffProfileLookupKeys === 'function'
+                ? portalTermStaffProfileLookupKeys(ownerId)
+                : [ownerId])
+            : [];
+          const isOwner = ownerKeys.some(function(k){ return keys.indexOf(k) >= 0; });
+          if(isOwner){
+            dbDates.forEach(function(d){
+              const iso = String(d || '').trim().slice(0, 10);
+              if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+            });
+          }
+        }
+      }catch(_dbAway){}
       return out.sort();
     }
     /** Day off / time off requested by staff (term timetable away list only — not admin overrides). */

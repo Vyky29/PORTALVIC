@@ -486,6 +486,27 @@
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           return;
         }
+        // Validated staff-requested days off (Session Disruption reports upsert
+        // into staff_unavailability once admin validates). RLS lets a person read
+        // their own rows; these render as "Day off (Time Off Requested)" and
+        // replace the day's shift on the staff dashboard.
+        try{
+          const off = await box.client.from('staff_unavailability')
+            .select('off_date,staff_id')
+            .eq('staff_id', sess.user.id);
+          if(!off.error && Array.isArray(off.data)){
+            const offSet = Object.create(null);
+            off.data.forEach(function(r){
+              const iso = String((r && r.off_date) || '').trim().slice(0, 10);
+              if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) offSet[iso] = true;
+            });
+            window.__PORTAL_STAFF_AWAY_DATES_DB__ = Object.keys(offSet).sort();
+            const ownerId = typeof portalAuthStaffRosterId === 'function'
+              ? portalAuthStaffRosterId()
+              : String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+            window.__PORTAL_STAFF_AWAY_OWNER_ID__ = String(ownerId || '').trim().toLowerCase();
+          }
+        }catch(_offDates){}
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
