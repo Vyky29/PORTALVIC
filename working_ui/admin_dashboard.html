@@ -23585,7 +23585,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // participant and all three services show (single-token "Yusuf" otherwise fails
       // the booked-services matcher and the Aquatic segment goes missing).
       'yusef': 'yusuf ahmed',
-      'yusuf': 'yusuf ahmed'
+      'yusuf': 'yusuf ahmed',
+      // Confirmed same-person spelling variants: roster/short names pinned to the full
+      // registration name so they merge with their contact record instead of duplicating.
+      // (Adaam Ah is the "Aadam Ahmed" brother — kept distinct from Amaar/Aydaan Ah.)
+      'adaam ah': 'aadam ahmed',
+      'abodi p': 'aboodi patel',
+      'abodi pa': 'aboodi patel',
+      'amar ra': 'amar rai singh',
+      'amar rai': 'amar rai singh',
+      'tom': 'thomas (tom) eriksson',
+      'mohammed': 'mohamed mohamud'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')
