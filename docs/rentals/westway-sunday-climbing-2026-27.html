@@ -54,6 +54,12 @@
     height: 46px;
     flex: 0 0 auto;
   }
+  .brand-logo {
+    height: 62px;
+    width: auto;
+    flex: 0 0 auto;
+    display: block;
+  }
   .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
   .brand-name { font-size: 18px; font-weight: 800; letter-spacing: .2px; }
   .brand-name .sen { color: var(--amber); }
@@ -224,17 +230,23 @@
     word-break: normal;
     min-width: 0;
   }
-  table.dates td.res { line-height: 1.7; }
+  table.dates td.res { line-height: 1.6; }
+  table.dates td.res .res-line {
+    display: block;
+    white-space: nowrap;
+    margin-bottom: 3px;
+  }
+  table.dates td.res .res-line:last-child { margin-bottom: 0; }
   table.dates td.res .pill {
     font-size: 9.5px;
     padding: 2px 7px;
-    margin-bottom: 2px;
   }
   table.dates td.res .res-t {
     font-size: 9px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    margin-left: 4px;
   }
 
   @page { size: A4; margin: 0; }
@@ -251,14 +263,7 @@
 <body>
   <section class="page">
   <header class="doc-head">
-    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#0e7c86" stroke-width="7"/>
-      <path d="M50 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#e8912d" stroke-width="7" transform="translate(-20 0)"/>
-    </svg>
-    <div class="brand-text">
-      <span class="brand-name">club<span class="sen">SEN</span>sational</span>
-      <span class="brand-sub">Autism Consultancy Services</span>
-    </div>
+    <img class="brand-logo" src="clubsensational-logo.png" alt="clubSENsational — Autism Consultancy Services" />
     <div class="doc-meta">
       <div class="doc-year">Academic Year 2026 / 27</div>
       <span class="doc-tag">After School &amp; Weekends</span>

@@ -126,14 +126,7 @@ ${bodyPages}
 
 function header(tag){
   return `  <header class="doc-head">
-    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#0e7c86" stroke-width="7"/>
-      <path d="M50 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#e8912d" stroke-width="7" transform="translate(-20 0)"/>
-    </svg>
-    <div class="brand-text">
-      <span class="brand-name">club<span class="sen">SEN</span>sational</span>
-      <span class="brand-sub">Autism Consultancy Services</span>
-    </div>
+    <img class="brand-logo" src="clubsensational-logo.png" alt="clubSENsational — Autism Consultancy Services" />
     <div class="doc-meta">
       <div class="doc-year">Academic Year 2026 / 27</div>
       <span class="doc-tag">${esc(tag || "Rental Reference")}</span>

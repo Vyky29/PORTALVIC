@@ -56,10 +56,10 @@ function resourceCellHtml(resources, dayTime) {
   return (resources || [])
     .map((r) => {
       const time = r.time || dayTime;
-      const t = time ? ` <span class="res-t">${time}</span>` : "";
-      return `<span class="pill pill--${r.cls}">${esc(r.label)}</span>${t}`;
+      const t = time ? `<span class="res-t">${time}</span>` : "";
+      return `<span class="res-line"><span class="pill pill--${r.cls}">${esc(r.label)}</span>${t}</span>`;
     })
-    .join("<br>");
+    .join("");
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -96,7 +96,7 @@ function esc(s) {
 }
 
 function termBlockHtml(v, term) {
-  let html = `\n  <div class="term-block">\n    <div class="term-head"><span class="term-name">${esc(term.name)} ${term.year}</span><span class="term-span">${termSpanLabel(term)}</span></div>\n    <table class="dates">\n      <thead><tr><th style="width:12%">Day</th><th style="width:14%">Session time</th><th style="width:23%">Resource to book</th><th style="width:6%" class="center">Wks</th><th>Dates to book</th></tr></thead>\n      <tbody>\n`;
+  let html = `\n  <div class="term-block">\n    <div class="term-head"><span class="term-name">${esc(term.name)} ${term.year}</span><span class="term-span">${termSpanLabel(term)}</span></div>\n    <table class="dates">\n      <thead><tr><th style="width:11%">Day</th><th style="width:13%">Session time</th><th style="width:28%">Resource to book</th><th style="width:6%" class="center">Wks</th><th>Dates to book</th></tr></thead>\n      <tbody>\n`;
   v.days.forEach((day) => {
     const dates = datesFor(term, day.dow);
     html += `        <tr><td class="day">${day.name}</td><td class="time">${day.time}</td><td class="res">${resourceCellHtml(day.resources, day.time)}</td><td class="center count">${dates.length}</td><td class="list">${dates.join(" · ")}</td></tr>\n`;
@@ -148,14 +148,7 @@ function fmtLong(isoStr) {
 
 function headerHtml(label) {
   return `  <header class="doc-head">
-    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#0e7c86" stroke-width="7"/>
-      <path d="M50 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20z" fill="none" stroke="#e8912d" stroke-width="7" transform="translate(-20 0)"/>
-    </svg>
-    <div class="brand-text">
-      <span class="brand-name">club<span class="sen">SEN</span>sational</span>
-      <span class="brand-sub">Autism Consultancy Services</span>
-    </div>
+    <img class="brand-logo" src="clubsensational-logo.png" alt="clubSENsational — Autism Consultancy Services" />
     <div class="doc-meta">
       <div class="doc-year">Academic Year 2026 / 27</div>
       <span class="doc-tag">After School &amp; Weekends</span>
