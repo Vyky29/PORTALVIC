@@ -341,7 +341,23 @@
     return "";
   }
 
+  /* Remember the last non-empty key we resolved. Several topbar re-syncs fire on
+     frequent events (avatar/orbit refresh, source-updated, identity-resolved) and
+     STAFF_DASHBOARD_ID can be momentarily "" during those passes; without this,
+     one empty pass would re-apply the DEFAULT icon set (Photo/Venue/PickUp) over
+     the staff's real profile (e.g. Youssef's Photo/Review/PickUp/Plan). */
+  var __portalLastGoodStaffKey = "";
+
   function resolveCurrentStaffKey() {
+    var resolved = resolveCurrentStaffKeyRaw();
+    if (resolved) {
+      __portalLastGoodStaffKey = resolved;
+      return resolved;
+    }
+    return __portalLastGoodStaffKey;
+  }
+
+  function resolveCurrentStaffKeyRaw() {
     try {
       var sid = global.STAFF_DASHBOARD_ID;
       if (sid) {
