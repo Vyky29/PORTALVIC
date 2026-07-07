@@ -310,16 +310,17 @@
     return (
       greet(meta && meta.parentCarerName) +
       "This is ClubSENsational.\n\n" +
-      "We are confirming that " +
+      "Our team has marked " +
       client +
-      " will not attend today's session" +
+      " as absent from today's session" +
       whenPart +
       venuePart +
       "." +
       reasonPart +
       "\n\n" +
-      "This session will not be charged unless your booking terms say otherwise. " +
-      "If you had not told us already, please reply so we can update our records." +
+      "We hope everything is well with " +
+      client +
+      " and we look forward to seeing them at the next session." +
       signOff()
     );
   }
@@ -386,7 +387,7 @@
       whenPart +
       venuePart +
       "\n\n" +
-      "Please arrive a few minutes early if you can. Reply if this time does not work or if you need directions or parking details again." +
+      "Please arrive a few minutes early if you can." +
       signOff()
     );
   }
@@ -414,7 +415,7 @@
       " has been cancelled." +
       reasonPart +
       "\n\n" +
-      "If you did not request this or need to rebook, please reply and we will help." +
+      "We are sorry for the inconvenience. We can offer a refund, a credit towards a future session, or a make-up session if one is available — whichever works best for you. Please reply and let us know your preference." +
       signOff()
     );
   }
