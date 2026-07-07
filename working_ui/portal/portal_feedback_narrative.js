@@ -952,11 +952,16 @@
     var field = global.document.getElementById("fbNarrativeField");
     var voiceBtn = global.document.getElementById("fbIoVoice");
     var writtenBtn = global.document.getElementById("fbIoWritten");
+    var micHint = global.document.getElementById("fbVoiceMicHint");
+    var notesField = global.document.getElementById("fbSessionNotesField");
     if (!choice || !field || !voiceBtn || !writtenBtn) return;
 
     showEl(choice);
-    // Hide the narrative until the instructor picks voice or written.
+    // Hide the narrative (and its mic hint + optional Notes) until the
+    // instructor picks voice or written.
     hideEl(field);
+    hideEl(micHint);
+    hideEl(notesField);
 
     function mark(btn, on) {
       if (!btn) return;
@@ -971,6 +976,10 @@
       mark(voiceBtn, mode === "voice");
       mark(writtenBtn, mode !== "voice");
       showEl(field);
+      // Mic tips only make sense for Voice; Notes (optional) shows for both.
+      if (mode === "voice") showEl(micHint);
+      else hideEl(micHint);
+      showEl(notesField);
       setVoiceBarVisible(mode === "voice");
       syncModeNote();
       syncSubmitGate();

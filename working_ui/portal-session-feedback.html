@@ -35,7 +35,7 @@
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
 <script>window.PORTAL_FEEDBACK_ADMIN_FILTERS = true;</script>
-<script src="/portal/portal_feedback_narrative.js?v=20260706-admin-filters-io"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260707-notes-optional-io"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -1227,13 +1227,13 @@ button{
           <label>How do you want to give this feedback?</label>
           <p class="small field-note" style="margin:0 0 10px">Both save the same session narrative — <strong>Voice</strong> adds a microphone, <strong>Written</strong> is typed.</p>
           <div class="fb-io-choice-row" role="group" aria-label="Feedback input method" style="display:flex;gap:12px;flex-wrap:wrap">
-            <button type="button" class="fb-io-btn" id="fbIoVoice" data-fb-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+            <button type="button" class="fb-io-btn" id="fbIoVoice" data-fb-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
               <span aria-hidden="true" style="font-size:22px;line-height:1">🎤</span>
-              <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
             </button>
-            <button type="button" class="fb-io-btn" id="fbIoWritten" data-fb-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:left">
+            <button type="button" class="fb-io-btn" id="fbIoWritten" data-fb-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
               <span aria-hidden="true" style="font-size:22px;line-height:1">⌨️</span>
-              <span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
             </button>
           </div>
         </div>
@@ -1246,7 +1246,7 @@ button{
             <li><strong>Session</strong> — plan, strategies, challenges, what worked.</li>
             <li><strong>Handover</strong> — what you told the family.</li>
           </ul>
-          <p class="small field-note" style="margin:0 0 8px">Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
+          <p class="small field-note" id="fbVoiceMicHint" style="margin:0 0 8px" hidden>Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
           <p class="small field-note fb-narrative-mode-note" id="fbNarrativeModeNote" style="margin:0 0 8px"></p>
           <textarea id="fbSessionNarrative" name="sessionNarrative" rows="10" required placeholder="Reception: how they arrived…&#10;&#10;Session: plan, strategies, challenges, what worked…&#10;&#10;Handover: what you told the family…"></textarea>
           <div id="fbNarrativeValidatePanel" class="fb-validate-panel" hidden>
@@ -1262,6 +1262,12 @@ button{
             AI not working?
             <button type="button" class="btnLink fb-manual-entry-btn" id="btnManualFeedbackEntry">Enter Positive & Relevant manually</button>
           </p>
+        </div>
+
+        <div class="field field--session-notes" id="fbSessionNotesField" hidden>
+          <label for="fbSessionNotes"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Notes <span class="fb-optional-tag" style="font-weight:600;color:var(--muted,#6b7280)">(optional)</span></label>
+          <p class="small field-note" style="margin-top:0">Anything the office should know that is <strong>not</strong> part of the family feedback — concerns, follow-ups, admin. Leave empty if there's nothing to add. Internal only.</p>
+          <textarea id="fbSessionNotes" name="sessionNotes" rows="4" placeholder="Optional — e.g. parent asked to be called, equipment issue, follow-up for next session…"></textarea>
         </div>
 
         <div id="fbAiOutputSection" class="fb-ai-output" hidden>
@@ -3039,8 +3045,12 @@ button{
         return;
       }
     } else {
+      // Admin-filters flow: the office turns the raw narrative into the
+      // family-facing feedback later, so there's no instructor Positive here.
+      // The optional Notes the instructor typed ARE the raw relevant_information
+      // that lands on the admin Notes tab (empty when nothing was added).
       positiveFeedback = "";
-      relevantInformation = "";
+      relevantInformation = clean((data.get("sessionNotes") || "").toString());
     }
     const engagementRatingRaw = (data.get("engagementRating") || "").toString();
     const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
