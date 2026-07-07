@@ -15684,12 +15684,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ratioChip = ratio
           ? '<span title="Support ratio" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(ratioHi?'#fee2e2':'#eef2ff')+';color:'+(ratioHi?'#991b1b':'#3730a3')+'">'+esc(ratio)+'</span>'
           : '';
-        var funding = adminParticipantFunding(p.name);
-        var fundingChip = funding
-          ? '<span title="Funding" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#ecfeff;color:#155e75;max-width:100%;overflow-wrap:break-word">'+esc(funding)+'</span>'
+        var fundInfo = adminParticipantFundingInfo(p);
+        var fundingChip = fundInfo.source
+          ? '<span title="Funding source" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(fundInfo.isLA?'#ecfeff':'#f0fdf4')+';color:'+(fundInfo.isLA?'#155e75':'#166534')+';max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.source)+'</span>'
           : '';
-        var chipsRow = (bkChip || ratioChip || fundingChip)
-          ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;min-width:0">'+bkChip+ratioChip+fundingChip+'</div>'
+        var methodChip = fundInfo.method
+          ? '<span title="Payment method" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.method)+'</span>'
+          : '';
+        var chipsRow = (bkChip || ratioChip || fundingChip || methodChip)
+          ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;min-width:0">'+bkChip+ratioChip+fundingChip+methodChip+'</div>'
           : '';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
@@ -23665,6 +23668,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!__adminFundingByNorm) __adminFundingByNorm = adminBuildNormLookup(ADMIN_PARTICIPANT_FUNDING_RAW);
       var n = adminPortalNormalizedPersonName(name);
       return (n && __adminFundingByNorm[n]) ? __adminFundingByNorm[n] : '';
+    }
+    /**
+     * Funding source + payment method for a participant, read live from
+     * CLIENTS_PAYMENTS_PORTAL_SOURCE (Clients Payments export) by matching child
+     * name + carer. Falls back to the curated ADMIN_PARTICIPANT_FUNDING_RAW map
+     * when no payment row matches. Returns { source, method, isLA }.
+     */
+    function adminParticipantFundingInfo(p){
+      var info = null;
+      try{
+        info = (typeof adminClientsPaymentsPortalFundingForParticipant === 'function')
+          ? adminClientsPaymentsPortalFundingForParticipant(p) : null;
+      }catch(_e){ info = null; }
+      if(info && (info.fund || info.payMethod)){
+        var blob = ((info.fund||'')+' '+(info.payMethod||'')+' '+(info.next||'')).toLowerCase();
+        var isLA = /nhs|local authority|direct payment|remittance|invoice|\bpo\b|\bila\b|\bsbs\b|\bcwd\b|funder/.test(blob);
+        var method = String(info.payMethod||'').replace(/^\s*\d+\s*[-\u2013]\s*/, '').trim();
+        return { source: isLA ? 'LA/NHS funds' : 'Private funds', method: method, isLA: isLA };
+      }
+      var manual = adminParticipantFunding(p && p.name);
+      if(manual){
+        var manualLA = /nhs|\bla\b|local authority|exempt/i.test(manual) && !/private|bank/i.test(manual);
+        return { source: manual, method: '', isLA: manualLA };
+      }
+      return { source: '', method: '', isLA: false };
     }
     /** Collapse runs of the same letter so instructor typos line up (aadam→adam, haneff→hanef, sammer→samer). */
     function adminPortalCollapseRepeats(t){
