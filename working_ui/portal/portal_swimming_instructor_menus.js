@@ -213,12 +213,12 @@
     },
     youssef: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: true,
-      sixIcon: true,
+      sixIcon: false,
     },
     roberto: {
       photo: true,
