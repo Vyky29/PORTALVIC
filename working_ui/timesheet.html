@@ -260,7 +260,7 @@
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=roster-865fb0df00"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260625-payroll-june"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260625-ma-bespoke-band"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260707-youssef-acton-pm"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -1472,6 +1472,12 @@
         (session && (session.rosterService || session.service || session.activity)) || ""
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+      // Youssef's Acton weekday afternoon shift is paid entirely at the Swimming
+      // rate (£24) — including the Room 2 Multi-Activity slot — so it never splits
+      // into a Support-rate group.
+      if (isYoussefRosterKey() && sessionIsActonAfternoon(session)) {
+        return "Swimming Instructor";
+      }
       if (timesheetIsLuliaSession(session)) {
         if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
         if (/aquatic/.test(svc)) return "Swimming Instructor";
@@ -1553,6 +1559,37 @@
     function weekdayMaBespokePayableHours(dayName, rosterKey, role, computedHours, dayRows) {
       if (!isWeekdayMaBespokePayBand(dayName, role, dayRows, rosterKey)) return computedHours;
       return WEEKDAY_MA_BESPOKE_PAY_HOURS;
+    }
+
+    /** Youssef's Acton weekday afternoon shift: fixed 4:30–6:30 (2h), all at the
+     *  Swimming rate (£24). The 4–4.30 slot is excluded, No-Participant gaps
+     *  inside 4:30–6:30 stay paid, there is no ±15 buffer, and it never splits
+     *  into a Support-rate group (e.g. the Room 2 Multi-Activity slot on Wed). */
+    const YOUSSEF_ACTON_AFTERNOON_PAY_HOURS = 2;
+    function isYoussefRosterKey(rosterKey) {
+      const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      return k === "youssef" || k === "yousef" || k === "yusef";
+    }
+    function sessionIsActonAfternoon(session) {
+      const venue = String((session && session.venue) || "").toLowerCase();
+      if (venue.indexOf("acton") < 0) return false;
+      const a = hmToMinutes(String((session && session.start) || "").trim());
+      return Number.isFinite(a) && a >= 16 * 60; // 4pm onwards
+    }
+    function isYoussefActonAfternoonBand(dayName, rosterKey, dayRows) {
+      if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
+      if (!isYoussefRosterKey(rosterKey)) return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.every(function (s) {
+        return sessionIsActonAfternoon(s);
+      });
+    }
+    function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows) {
+      if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows)) return computedHours;
+      return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
 
     function isMichelleDayCentrePayBand(rosterKey, dateObj, role, dayRows) {
@@ -1797,6 +1834,17 @@
       const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
+      // Keep Youssef's Acton afternoon slots in one group so the day stays a
+      // single 2h Swimming shift (no per-service split / double buffer).
+      if (
+        dayName &&
+        dayName !== "Sunday" &&
+        dayName !== "Saturday" &&
+        isYoussefRosterKey(key) &&
+        sessionIsActonAfternoon(session)
+      ) {
+        return "__youssef_acton_afternoon__";
+      }
       if (
         String(role || "").trim() === "Support Worker" &&
         dayName &&
@@ -1937,6 +1985,7 @@
       hours = michelleDayCentrePayableHours(rosterKey, dateObj, dominantRole, hours, rows);
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
+      hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows);
       const role = dominantRole || "";
       const rate = rateForRole(role);
       return {
