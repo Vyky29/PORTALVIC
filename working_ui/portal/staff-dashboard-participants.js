@@ -1261,7 +1261,9 @@
       } else if(pillText && pillNorm !== 'UPDATED'){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
-      } else if(sym && !isMakeUpSym){
+      } else if(sym && !isMakeUpSym && symNorm !== 'no participant'){
+        // "No Participant" open slots show their yellow card + big red name only —
+        // the redundant grey chip is suppressed.
         const tx = escapeHtml(sym);
         push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }

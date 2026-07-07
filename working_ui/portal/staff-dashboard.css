@@ -4959,14 +4959,16 @@
       background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
+    /* No Participant = open slot awaiting a booking → yellow card (matches the
+       "changed by admin" yellow), no chip. Distinct from Closed (red). */
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(45,132,179,.34);
-      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      box-shadow:0 1px 4px rgba(23,50,71,.07);
+      border-color:rgba(200,165,45,.5);
+      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
+      box-shadow:0 1px 6px rgba(200,165,45,.12);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(45,132,179,.48);
-      box-shadow:0 4px 14px rgba(23,50,71,.1);
+      border-color:rgba(150,110,20,.62);
+      box-shadow:0 4px 14px rgba(180,140,30,.2);
     }
     .section-card--today .session-card.session-card--available .session-meta-name{
       color:#b91c1c;
