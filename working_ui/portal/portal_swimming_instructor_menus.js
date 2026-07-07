@@ -303,19 +303,6 @@
     );
   }
 
-  /* stf00x import codes → roster key (mirrors PORTAL_STAFF_CODE_TO_ROSTER_KEY in
-     portal-shared-js/auth-map.js). Needed so a staff whose STAFF_DASHBOARD_ID is
-     their import code (e.g. "stf005" for Youssef) still resolves to their explicit
-     topbar profile instead of silently falling back to the DEFAULT icon set. */
-  var STF_CODE_TO_ROSTER_KEY = {
-    stf001: "sandra", stf002: "roberto", stf003: "dan", stf004: "angel",
-    stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "giuseppe",
-    stf009: "godsway", stf010: "javier", stf011: "aurora", stf012: "berta",
-    stf013: "victor", stf014: "carlos", stf015: "alex", stf017: "javi",
-    stf018: "raul", stf019: "sevitha", stf020: "teflon", stf021: "lulia",
-    stf022: "andres",
-  };
-
   function canonicalStaffRosterKey(value) {
     var k = String(value || "")
       .trim()
@@ -324,9 +311,10 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
-    if (STF_CODE_TO_ROSTER_KEY[k]) return STF_CODE_TO_ROSTER_KEY[k];
-    if (k === "luliya" || k === "lulya" || k === "aida") return "lulia";
+    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "stf006") return "john";
+    if (k === "stf012") return "berta";
     if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
     if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
