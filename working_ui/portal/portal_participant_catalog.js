@@ -1,11 +1,13 @@
 /**
- * Participant directory — dedupe tiles, exclude roster group rows (ACAT), merge profile fields.
+ * Participant directory — dedupe tiles, exclude non-participant roster rows, merge profile fields.
+ * HOME/MANAGER are director dashboard cards and Q6 College is an ended outreach booking, so they
+ * are excluded. ACAT is an active booking and is intentionally kept as a participant.
  */
 (function (global) {
   "use strict";
 
-  var EXCLUDE_IDS = { closed: true, available: true, acat: true, home: true, manager: true };
-  var EXCLUDE_NAME_RE = /^(acat|acat group|home|manager)$/i;
+  var EXCLUDE_IDS = { closed: true, available: true, home: true, manager: true, "q6 college": true, q6college: true };
+  var EXCLUDE_NAME_RE = /^(home|manager|q6 college|q6college)$/i;
 
   function normalizeParticipantDisplayName(name) {
     return String(name || "")
