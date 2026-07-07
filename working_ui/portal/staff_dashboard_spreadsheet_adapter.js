@@ -54,6 +54,8 @@
   // Ikram only goes to the Big Pool on Mon/Wed; Tuesday is Day Centre only.
   var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
     "ikram|11to4": ["tuesday"],
+    // Fadi swims (Big Pool) only Mon/Wed/Fri; Tue/Thu are plain Day Centre 12.30-3.
+    "fadi|12.30to3": ["tuesday", "thursday"],
   };
   function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
     const svc = String(service || "").trim().toLowerCase();
