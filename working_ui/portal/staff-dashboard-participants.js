@@ -1408,7 +1408,7 @@
         if(!noteHtml){
           noteHtml = '<span class="session-seg-note-text">' + escapeHtml(noteRaw) + '</span>';
         }
-        return '<div class="session-seg-row"><span class="session-seg-time">' + t + '</span><span class="session-seg-note">' + noteHtml + '</span></div>';
+        return '<div class="session-seg-row"><span class="session-seg-note">' + noteHtml + '</span><span class="session-seg-time">' + t + '</span></div>';
       }).join('');
     }
     /** Combined card: participant name on the far left, then a time / note mini-table

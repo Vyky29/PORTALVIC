@@ -5019,18 +5019,24 @@
     .section-card--today .session-card--segments .session-seg-list{
       flex:1 1 auto;
       min-width:0;
-      /* Single grid (not per-row) so every segment's time shares one column and
-         lines up, with the venue icon+title in the second column. */
-      display:grid;
-      grid-template-columns:auto minmax(0,1fr);
-      column-gap:10px;
-      row-gap:6px;
-      align-items:center;
+      /* Each segment is its own centred column (icon → title → time). Columns sit
+         side by side and wrap when there isn't room, so nothing gets clipped. */
+      display:flex;
+      flex-wrap:wrap;
       justify-content:center;
+      align-items:flex-start;
+      gap:10px 16px;
       padding-left:2px;
     }
     .section-card--today .session-card--segments .session-seg-row{
-      display:contents;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      gap:3px;
+      min-width:0;
+      flex:0 1 auto;
     }
     .section-card--today .session-card--segments .session-seg-time{
       font-weight:800;
@@ -5038,9 +5044,6 @@
       font-size:12.5px;
       line-height:1.15;
       white-space:nowrap;
-      /* Centre the time within its (shared) cell and against the taller icon block. */
-      justify-self:center;
-      align-self:center;
       text-align:center;
     }
     .section-card--today .session-card--segments .session-seg-note{
@@ -5050,7 +5053,7 @@
       line-height:1.15;
       min-width:0;
       overflow-wrap:break-word;
-      align-self:center;
+      text-align:center;
     }
     .section-card--today .session-card--segments .session-seg-note-text{
       display:inline-block;
