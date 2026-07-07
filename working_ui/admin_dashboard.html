@@ -69,7 +69,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260706-unread-collapse"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260707-topbar-unread-badge"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260706-unread-collapse" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
@@ -191,6 +191,10 @@
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <span class="admin-date" id="topDate"></span>
+          <button type="button" class="admin-icon-btn" id="btnFamilyMsgs" aria-label="Family messages &amp; replies" title="Family messages &amp; replies">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
+          </button>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
             <span class="admin-badge" id="alertBadge">0</span>
@@ -26843,6 +26847,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         e.stopPropagation();
         toggleAlerts();
       });
+      var btnFamilyMsgsEl = $('btnFamilyMsgs');
+      if(btnFamilyMsgsEl) btnFamilyMsgsEl.addEventListener('click', function(e){
+        e.stopPropagation();
+        setView('portal_parent_notify_log');
+        closeSidebarMob();
+      });
+      if(!window.__portalAdminFamilyMsgBadgeBound){
+        window.__portalAdminFamilyMsgBadgeBound = true;
+        window.portalAdminRefreshFamilyMsgBadge = function portalAdminRefreshFamilyMsgBadge(){
+          var badge = $('familyMsgBadge');
+          if(!badge) return;
+          var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+          if(!client || !window.PortalParentNotifyLog || typeof window.PortalParentNotifyLog.unreadCount !== 'function') return;
+          Promise.resolve(window.PortalParentNotifyLog.unreadCount(client)).then(function(n){
+            n = (typeof n === 'number' && n > 0) ? n : 0;
+            badge.textContent = n > 99 ? '99+' : String(n);
+            badge.classList.toggle('is-empty', n < 1);
+            var btn = $('btnFamilyMsgs');
+            if(btn) btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+          }).catch(function(){});
+        };
+        window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshFamilyMsgBadge(); });
+        window.addEventListener('portal:family-msg-seen', function(){ window.portalAdminRefreshFamilyMsgBadge(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
+        });
+        setInterval(function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
+        }, 30000);
+        setTimeout(function(){ window.portalAdminRefreshFamilyMsgBadge(); }, 1500);
+      }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){
         alertsPopEl.dataset.activityJumpBound = '1';

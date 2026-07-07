@@ -105,6 +105,9 @@
         if (global.localStorage) {
           global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
         }
+        try {
+          global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
+        } catch (_ev) {}
       }
     } catch (_e) {
       // localStorage unavailable — unread flag just won't persist.
@@ -1002,10 +1005,43 @@
     void loadRows(false);
   }
 
+  // Lightweight unread badge count for the topbar button: how many WhatsApp
+  // family threads have an inbound reply newer than what the admin last opened.
+  // Uses the SAME per-phone key + localStorage "seen" map as the list, so the
+  // badge and the "N unread" line stay in sync without loading the full view.
+  async function fetchUnreadCount(client) {
+    client = client || (cfg.getClient && cfg.getClient());
+    if (!client || typeof client.from !== "function") return 0;
+    try {
+      var res = await client
+        .from("portal_parent_whatsapp_inbound")
+        .select("id, from_phone, created_at")
+        .order("created_at", { ascending: false })
+        .limit(FETCH_LIMIT);
+      if (res.error) return 0;
+      var lastByPhone = {};
+      (res.data || []).forEach(function (r) {
+        var pk = phoneDigits(r && r.from_phone);
+        if (!pk) return;
+        var at = String((r && r.created_at) || "");
+        if (!lastByPhone[pk] || at > lastByPhone[pk]) lastByPhone[pk] = at;
+      });
+      var seen = readSeenMap();
+      var n = 0;
+      Object.keys(lastByPhone).forEach(function (pk) {
+        if (String(lastByPhone[pk]) > String(seen[pk] || "")) n += 1;
+      });
+      return n;
+    } catch (_e) {
+      return 0;
+    }
+  }
+
   global.PortalParentNotifyLog = {
     configure: configure,
     viewHtml: viewHtml,
     bindModule: bindModule,
+    unreadCount: fetchUnreadCount,
     refresh: function () {
       return loadRows(true);
     },
