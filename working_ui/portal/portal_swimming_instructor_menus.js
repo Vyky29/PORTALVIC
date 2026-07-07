@@ -563,7 +563,25 @@
   function portalResyncPlannerToolsAfterIdentity() {
     var staffKey = resolveCurrentStaffKey();
     if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
-    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    var __prof = resolveTopbarProfileForStaff(staffKey);
+    try {
+      var __planCell = document.getElementById("topbarToolCellSessionPlanner");
+      console.log("[topbar-diag]", {
+        STAFF_DASHBOARD_ID: global.STAFF_DASHBOARD_ID,
+        dashStaffName: global.dashboardData && global.dashboardData.staffName,
+        resolvedKey: staffKey,
+        canonHelper: typeof global.portalCanonicalStaffRosterKey,
+        canonOfId:
+          typeof global.portalCanonicalStaffRosterKey === "function"
+            ? global.portalCanonicalStaffRosterKey(global.STAFF_DASHBOARD_ID || "")
+            : "(n/a)",
+        profilePlanner: !!(__prof && __prof.planner),
+        isDefaultProfile: __prof === DEFAULT_TOPBAR_PROFILE,
+        planCellExists: !!__planCell,
+        planCellHidden: __planCell ? __planCell.hasAttribute("hidden") : "(no el)",
+      });
+    } catch (_) {}
+    applyTopbarProfile(__prof);
     try {
       if (typeof global.portalSyncTopbarRoleTools === "function") {
         global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });

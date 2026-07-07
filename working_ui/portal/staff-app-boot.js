@@ -138,7 +138,7 @@
     "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_swimming_instructor_menus.js?v=20260707-stf-canon",
+    "/portal/portal_swimming_instructor_menus.js?v=20260707-topbar-diag2",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
   ];
 
