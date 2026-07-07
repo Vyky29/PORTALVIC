@@ -12892,18 +12892,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-09",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-10",
@@ -13003,16 +12992,6 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Tuesday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                },
-                {
                   "time_slot": "4 to 4.30",
                   "client_name": "Jad",
                   "service": "Aquatic Activity",
@@ -13105,16 +13084,6 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Thursday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                },
-                {
                   "time_slot": "4 to 4.30",
                   "client_name": "Tom",
                   "service": "Aquatic Activity",
@@ -13197,14 +13166,84 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Sunday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
+                  "time_slot": "9 to 10.15",
+                  "client_name": "Yusuf Ah",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
                   "venue": "SwimFarm",
                   "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
+                  "participant_info": "1. Age: 10 years (born July 2014)\n2. Medical: One kidney. Primary immune deficiency. Takes prophylactic antibiotics (Azithromycin three times a week). Cannot drink cow\u2019s milk. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), climbing walls/soft play, dancing/rhythmic activities, drawing, painting, crafts, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, books, music and dramas.\n4. Dislikes/Avoids: Cats.\n5. Known Triggers: Loud/unexpected noise, waiting or delays, fatigue or hunger.\n6. Regulation Strategies: Movement/space to pace or jump, deep pressure, preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby, calming/breathing prompts.\n7. Level of Support: Needs adult nearby and occasional guidance when dysregulated.\n8. Communication: Verbal \u2013 full sentences; verbal \u2013 limited words or scripts; uses gestures and non-verbal cues (pointing, taking adult to item).\n9. Preferred Communication: Responds best when told the plan; verbal + gestures with visual supports (symbols, schedules, first-then boards).\n10. Mobility: Walks independently; may need adult assistance for transitions or moving between spaces.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: May act impulsively \u2013 needs supervision.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "10.15 to 11",
+                  "client_name": "Samer",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": ""
+                },
+                {
+                  "time_slot": "11 to 11.45",
+                  "client_name": "Gabriel",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 16 years (born September 2008)\n2. Medical: Epilepsy (fully controlled by medication), microcephaly. Takes Oxcarbazepine 900mg (morning) and 750mg (evening). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing/soft play, dancing/rhythmic activities, Lego/construction, puzzles, pattern-based games, YouTube videos, lights.\n4. Dislikes/Avoids: Being told what to do.\n5. Known Triggers: Being told \u201cno\u201d/denied access.\n6. Regulation Strategies: Movement/space to pace or jump, quiet space or break, supportive adult nearby, use of a timer.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal \u2013 uses full sentences.\n9. Preferred Communication: Needs reminders to listen before answering; benefits from verbal instructions supported by visuals (symbols, schedules, first-then boards).\n10. Mobility: Walks independently; needs support on uneven surfaces or stairs.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or prompts.\n12. Task Engagement: Can follow a simple routine independently; needs visual/verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off).\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "11.45 to 12.30",
+                  "client_name": "Arthur Mo",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 7 years (born October 2016)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, YouTube videos, music, lights, bubbles, being outside, windy weather, watching trees.\n4. Dislikes/Avoids: Loud noises; crowded areas.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d/denied access, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, quiet space or break, supportive adult nearby.\n7. Level of Support: Needs active adult support during episodes; requires 1:1 continuous supervision when distressed. Family member will always be present during sessions.\n8. Communication: Uses PECS/visuals, gestures, and non-verbal cues (pointing, leading adult); mainly communicates through behaviour.\n9. Preferred Communication: Verbal input with gestures; family notes he understands spoken language but mainly expresses wants through gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Uses continence aids (pads/support garments).\n12. Task Engagement: Needs 1:1 support for most activities; easily distracted and needs frequent redirection.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting.\n14. Safety: May act impulsively \u2014 requires supervision; no awareness of danger, constant 1:1 required.\n15. Other Notes: Family member will remain on site to provide support during sessions."
+                },
+                {
+                  "time_slot": "12.30 to 1.15",
+                  "client_name": "Amaar Ah",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 8 years (born April 2016)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Being in his own space, trampolining, swinging, rocking, weighted blankets, deep pressure activities, climbing walls/soft play, water play (swimming, pouring, splashing), watching YouTube videos, music, lights, bubbles.\n4. Dislikes/Avoids: Structured tasks.\n5. Known Triggers: Transitions or changes to routine, waiting or delays, being told \u201cno\u201d/denied access, fatigue or hunger.\n6. Regulation Strategies: Movement/space to pace or jump, pressure/deep touch, quiet space or break, supportive adult staying nearby.\n7. Level of Support: Requires 1:1 continuous supervision when distressed.\n8. Communication: Mainly communicates through behaviour.\n9. Preferred Communication: Needs 1:1 adult support to process instructions.\n10. Mobility: Walks independently.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs 1:1 support to complete most activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Struggles with unexpected changes or waiting time.\n14. Safety: No awareness of danger \u2014 constant 1:1 required.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "1.15 to 2",
+                  "client_name": "Adaam Ah",
+                  "service": "Multi-Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 12 years (born August 2012)\n2. Medical: No diagnosed conditions. No allergies. No regular medication. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, climbing walls/soft play, water play (swimming, pouring, splashing), Lego or construction sets, puzzles, pattern-based games, iPad/tablet apps (matching, sequencing), gaming (Minecraft, Roblox), watching YouTube videos, books.\n4. Dislikes/Avoids: Messy play.\n5. Known Triggers: Waiting or delays, fatigue or hunger, physical proximity or touch, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, visual support (first/then, countdown, etc.), quiet space or break, supportive adult staying nearby.\n7. Level of Support: Can self-regulate with minimal prompts; needs adult nearby and occasional guidance.\n8. Communication: Verbal (limited words or scripts); uses PECS or visuals to express needs.\n9. Preferred Communication: Verbal + gestures; visual support (symbols, schedules, first-then boards).\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing); may need reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task; requires 1:1 support to complete most activities.\n13. Transitions/Flexibility: Adapts easily to change in activities or environment; benefits from preparation or countdowns for transitions.\n14. Safety: May act impulsively \u2014 needs supervision.\n15. Other Notes: \u2014"
+                },
+                {
+                  "time_slot": "2 to 2.30",
+                  "client_name": "Rodin",
+                  "service": "Aquatic Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 6 years (born March 2018)\n2. Medical: Asthma. Takes Melatonin (5mg). No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), weighted blankets, deep pressure activities, climbing walls/soft play, dancing/rhythmic activities, Lego/construction sets, puzzles, pattern-based games, iPad/tablet apps, gaming (Minecraft, Roblox), YouTube videos, music, lights, bubbles, trains.\n4. Dislikes/Avoids: Wet clothes, dirty hands, being shouted at, long series of verbal instructions he cannot decode.\n5. Known Triggers: Loud/unexpected noise, transitions or changes to routine, waiting or delays, sensory overload (lights, textures), being told \u201cno\u201d/denied access, fatigue or hunger, group settings or crowds.\n6. Regulation Strategies: Movement/space to pace or jump, preferred toy/object, quiet space or break, supportive adult nearby, drinking water, chewelries, lollipops.\n7. Level of Support: Needs adult nearby and occasional guidance; often requires active adult support; may require 1:1 continuous supervision when distressed.\n8. Communication: Verbal \u2013 limited words or scripts.\n9. Preferred Communication: Verbal + visual supports + game-based approaches; benefits from symbols, schedules, first/then boards; needs 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs support on uneven surfaces or stairs.\n11. Personal Care: Needs physical assistance or supervision.\n12. Task Engagement: Needs visual/verbal prompts; requires 1:1 support for most activities; easily distracted and requires frequent redirection.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions; struggles with unexpected changes or waiting.\n14. Safety: Very poor sense of danger \u2014 constant 1:1 required. Can read safety signs (e.g. \u201cDo not run\u201d) but does not follow them.\n15. Other Notes: His poor danger awareness is not easily recognised by others until too late \u2014 staff must be vigilant."
+                },
+                {
+                  "time_slot": "2.30 to 3.30",
+                  "client_name": "Yoan",
+                  "service": "Aquatic Activity",
+                  "area": "Big Pool",
+                  "pool_note": "Big Pool",
+                  "venue": "SwimFarm",
+                  "instructors": "ROBERTO",
+                  "participant_info": "1. Age: 9 years (born September 2014)\n2. Medical: Epilepsy controlled with Keppra and Lamotrigine twice daily (morning and evening). No allergies. Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, water play (swimming, pouring, splashing), puzzles, pattern-based games, YouTube videos, music, lights, bubbles.\n4. Dislikes/Avoids: Loud noises.\n5. Known Triggers: Loud/unexpected noise.\n6. Regulation Strategies: Quiet space or break, supportive adult nearby.\n7. Level of Support: Can self-regulate with minimal prompts; requires 1:1 supervision for safety.\n8. Communication: Mainly communicates through behaviour.\n9. Preferred Communication: Verbal instructions supported with gestures and pictures.\n10. Mobility: Walks independently.\n11. Personal Care: Needs reminders or verbal prompts.\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Adapts easily to changes in activities or environment.\n14. Safety: No awareness of danger \u2014 requires constant 1:1 supervision.\n15. Other Notes: Needs consistent adult supervision due to lack of danger awareness."
                 }
               ]
             }
@@ -13326,18 +13365,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-07",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-08",
@@ -14622,18 +14650,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-16",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-17",
@@ -14733,16 +14750,6 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "weekday": "Tuesday",
               "slots": [
                 {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                },
-                {
                   "time_slot": "4 to 4.30",
                   "client_name": "Jad",
                   "service": "Aquatic Activity",
@@ -14834,16 +14841,6 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "sessionDate": "2026-07-16",
               "weekday": "Thursday",
               "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                },
                 {
                   "time_slot": "4 to 4.30",
                   "client_name": "Tom",
@@ -15040,18 +15037,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-14",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-15",
@@ -15371,18 +15357,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-21",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-22",
@@ -15403,18 +15378,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-23",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-24",
@@ -15704,18 +15668,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-21",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-22",
@@ -15845,18 +15798,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-23",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-24",
@@ -15910,18 +15852,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-28",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-29",
@@ -15942,18 +15873,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-30",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-31",
@@ -16243,18 +16163,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-28",
               "weekday": "Tuesday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-29",
@@ -16384,18 +16293,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "sessionDate": "2026-07-30",
               "weekday": "Thursday",
-              "slots": [
-                {
-                  "time_slot": "12.30 to 3",
-                  "client_name": "Fadi",
-                  "service": "Day Centre",
-                  "area": "Hub Room",
-                  "pool_note": "Hub Room",
-                  "venue": "SwimFarm",
-                  "instructors": "ROBERTO",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ]
+              "slots": []
             },
             {
               "sessionDate": "2026-07-31",
