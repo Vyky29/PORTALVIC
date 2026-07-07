@@ -69,6 +69,57 @@
     return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
   }
 
+  /**
+   * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
+   * segmented card. Emmanuel on Friday is split 11–1 + 3–4 (with Fadi 1–3 in between);
+   * the user wants a single Ikram-style card: name | 11 to 12 | 12 to 1 Big Pool | 3 to 4.
+   * Pay is driven by the continuous shift band, so collapsing the two blocks for display
+   * does not change hours; the merged slot is one feedback session (like other combined
+   * Day Centre cards). Keyed by canonical clientId + weekday.
+   */
+  var PORTAL_COMBINED_MULTIBLOCK = {
+    "emmanuel|friday": {
+      blockStarts: ["11:00", "15:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Day Centre" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "3 to 4", area: "Day Centre" },
+      ],
+    },
+  };
+  function portalMergeMultiBlockSessions(sessions) {
+    if (!Array.isArray(sessions) || !sessions.length) return sessions;
+    const groups = Object.create(null);
+    sessions.forEach(function (s) {
+      if (!s) return;
+      if (String(s.rosterService || "").trim().toLowerCase() !== "day centre") return;
+      const mapKey =
+        String(s.clientId || "").trim().toLowerCase() + "|" + String(s.day || "").trim().toLowerCase();
+      if (!PORTAL_COMBINED_MULTIBLOCK[mapKey]) return;
+      const gk = mapKey + "|" + String(s.staffId || "").toLowerCase() + "|" + String(s.session_date || "").slice(0, 10);
+      (groups[gk] = groups[gk] || []).push(s);
+    });
+    const drop = [];
+    Object.keys(groups).forEach(function (gk) {
+      const arr = groups[gk];
+      const mapKey = gk.split("|").slice(0, 2).join("|");
+      const cfg = PORTAL_COMBINED_MULTIBLOCK[mapKey];
+      if (!cfg || arr.length < 2) return;
+      const haveStarts = arr.map(function (s) { return String(s.start || "").slice(0, 5); });
+      if (!cfg.blockStarts.every(function (st) { return haveStarts.indexOf(st) !== -1; })) return;
+      arr.sort(function (a, b) { return String(a.start || "").localeCompare(String(b.start || "")); });
+      const keep = arr[0];
+      keep.start = cfg.merged.start;
+      keep.end = cfg.merged.end;
+      keep.timeSlotLabel = cfg.merged.time_slot;
+      keep.segments = cfg.segments.map(function (sg) { return { time_slot: sg.time_slot, area: sg.area }; });
+      for (let i = 1; i < arr.length; i++) drop.push(arr[i]);
+    });
+    if (!drop.length) return sessions;
+    return sessions.filter(function (s) { return drop.indexOf(s) === -1; });
+  }
+
   function parseHm(token) {
     const t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
@@ -782,14 +833,16 @@
       });
     }
 
-    sessionsModel.sort((a, b) => {
+    const mergedSessions = portalMergeMultiBlockSessions(sessionsModel);
+
+    mergedSessions.sort((a, b) => {
       if (a.day !== b.day) return a.day.localeCompare(b.day);
       return a.start.localeCompare(b.start);
     });
 
     const seenSessions = Object.create(null);
     const dedupedSessions = [];
-    sessionsModel.forEach((sess) => {
+    mergedSessions.forEach((sess) => {
       const sd = String(sess.session_date || "").trim().slice(0, 10);
       const key = [
         sd,
