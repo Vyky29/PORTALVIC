@@ -313,6 +313,7 @@
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
@@ -490,21 +491,6 @@
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras;
-
-    try {
-      var revCell = global.document && global.document.getElementById("topbarToolCellTermReview");
-      var venCell = global.document && global.document.getElementById("topbarToolCellVenue");
-      var planCell = global.document && global.document.getElementById("topbarToolCellSessionPlanner");
-      console.log("[topbar] applyProfile", {
-        isDefault: profile === DEFAULT_TOPBAR_PROFILE,
-        swReview: !!profile.swReview,
-        venue: !!profile.venue,
-        planner: !!profile.planner,
-        reviewHidden: revCell ? !!revCell.hidden : "no-el",
-        venueHidden: venCell ? !!venCell.hidden : "no-el",
-        plannerHidden: planCell ? !!planCell.hidden : "no-el",
-      });
-    } catch (_) {}
   }
 
   function applyCeoStaffTopbarTools() {
@@ -522,25 +508,44 @@
 
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;
 
+  /**
+   * Resolve the topbar profile for a staff key robustly. The stored key can be a
+   * full-name variant (e.g. "yousseflastname") depending on how the roster hit was
+   * matched, so fall back to the displayed staff name (first token) and a prefix
+   * match against the known profiles before defaulting.
+   */
   function resolveTopbarProfileForStaff(staffKey) {
-    var matched = null;
-    if (EXPLICIT_TOPBAR_PROFILES[staffKey]) {
-      matched = EXPLICIT_TOPBAR_PROFILES[staffKey];
-    } else {
+    var key = canonicalStaffRosterKey(staffKey);
+    var matched = key && EXPLICIT_TOPBAR_PROFILES[key] ? EXPLICIT_TOPBAR_PROFILES[key] : null;
+
+    if (!matched) {
+      try {
+        var nm = (global.dashboardData && global.dashboardData.staffName) || "";
+        var nameKey = canonicalStaffRosterKey(String(nm).split(/\s+/)[0]);
+        if (nameKey && EXPLICIT_TOPBAR_PROFILES[nameKey]) {
+          matched = EXPLICIT_TOPBAR_PROFILES[nameKey];
+        }
+      } catch (_) {}
+    }
+
+    if (!matched && key) {
+      var profileKeys = Object.keys(EXPLICIT_TOPBAR_PROFILES);
+      for (var i = 0; i < profileKeys.length; i += 1) {
+        var pk = profileKeys[i];
+        if (pk.length >= 5 && key.indexOf(pk) === 0) {
+          matched = EXPLICIT_TOPBAR_PROFILES[pk];
+          break;
+        }
+      }
+    }
+
+    if (!matched) {
       var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
       if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
         matched = EXPLICIT_TOPBAR_PROFILES[leadKey];
       }
     }
-    try {
-      console.log("[topbar] resolveProfile", {
-        staffKey: staffKey,
-        sid: global.STAFF_DASHBOARD_ID,
-        ddStaffId: (global.dashboardData || {}).staffId,
-        lastGood: __portalLastGoodStaffKey,
-        matched: !!matched,
-      });
-    } catch (_) {}
+
     return matched || DEFAULT_TOPBAR_PROFILE;
   }
 

@@ -315,6 +315,7 @@
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
