@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260704-term-edges-crash-v2";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260707-summer-end-22jul";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -14,7 +14,7 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   /** Bump when calendar content changes — staff must re-ack to see updates. */
-  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 2;
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 3;
   var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
@@ -349,7 +349,7 @@
     "2027-01-04": "first",
     "2027-03-25": "last",
     "2027-04-12": "first",
-    "2027-07-16": "last",
+    "2027-07-22": "last",
   };
   /** Crash-course days (Mon–Thu of each half term) — red, tappable to the crash timetable. */
   var DC_CAL_CRASH_DAYS = {

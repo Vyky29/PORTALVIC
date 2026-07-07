@@ -33,7 +33,7 @@ function gbp(n){ return "\u00a3" + n.toLocaleString("en-GB", { minimumFractionDi
 const AS_TERMS = [
   { name: "Autumn Term", year: "2026", start: "2026-09-05", end: "2026-12-18" },
   { name: "Spring Term", year: "2027", start: "2027-01-04", end: "2027-03-25" },
-  { name: "Summer Term", year: "2027", start: "2027-04-12", end: "2027-07-16" },
+  { name: "Summer Term", year: "2027", start: "2027-04-12", end: "2027-07-22" },
 ];
 const AS_CLOSED = [
   ["2026-10-24","2026-11-01"],

@@ -10,7 +10,7 @@ const path = require("path");
 const TERMS = [
   { name: "Autumn Term", year: "2026", start: "2026-09-05", end: "2026-12-18" },
   { name: "Spring Term", year: "2027", start: "2027-01-04", end: "2027-03-25" },
-  { name: "Summer Term", year: "2027", start: "2027-04-12", end: "2027-07-16" },
+  { name: "Summer Term", year: "2027", start: "2027-04-12", end: "2027-07-22" },
 ];
 
 // Whole ranges with no sessions (half terms incl. surrounding weekends, holidays).

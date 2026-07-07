@@ -2152,7 +2152,7 @@
     },
     {
       title: "Summer Term 2027",
-      sessions: "13 weekday · 11 weekend sessions",
+      sessions: "14 weekday · 12 weekend sessions",
       items: [
         { type: "start", date: "Monday 12 April 2027" },
         {
@@ -2160,7 +2160,7 @@
           date: "Monday 31 May – Friday 4 June 2027",
           crashIndex: 2,
         },
-        { type: "last_day", date: "Friday 16 July 2027" },
+        { type: "last_day", date: "Thursday 22 July 2027" },
       ],
     },
   ];
