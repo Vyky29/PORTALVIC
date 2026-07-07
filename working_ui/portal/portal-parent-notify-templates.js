@@ -257,7 +257,7 @@
   function absenceThanks(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var whenPart = when ? " on " + when : "";
     return (
       greet(meta && meta.parentCarerName) +
@@ -279,7 +279,7 @@
   function absenceFollowup(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var whenPart = when ? " on " + when : "";
     return (
       greet(meta && meta.parentCarerName) +
@@ -299,7 +299,7 @@
   function absence(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue : "";
@@ -370,13 +370,13 @@
   function trial(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
     var payload = (ov && ov.payload) || {};
     var participant =
       String(payload.to_client_name || payload.replacement_name || "").trim() ||
       client;
-    var whenPart = when ? " (" + when + ")" : "";
+    var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
     return (
       greet(meta && meta.parentCarerName) +
@@ -395,7 +395,7 @@
   function cancelled(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue : "";
