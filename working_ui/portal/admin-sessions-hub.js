@@ -4204,7 +4204,13 @@
     }
     this.indexAbsentMarks();
     this.indexParentShares();
-    if (this.mode === "feedback") this.initFeedbackDateRange();
+    // Only seed the week/day/range on the FIRST payload. Later payloads come from
+    // background live refreshes (feedback / incidents / schedule overrides) — if we
+    // re-init here we yank the admin back to today a few seconds after they picked a
+    // different day. Preserve whatever day/range the user is currently viewing.
+    if (this.mode === "feedback" && !this._feedbackDateRangeReady) {
+      this.initFeedbackDateRange();
+    }
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
       this.renderPanels();
@@ -4701,6 +4707,7 @@
     this.rangeTo = addDaysIso(this.weekStart, 6);
     this.selectedDay = today;
     this.feedbackMetricsDay = today;
+    this._feedbackDateRangeReady = true;
   };
 
   AdminSessionsHub.prototype.initFeedbackDateRangeAllLoaded = function () {
@@ -4722,6 +4729,7 @@
     this.weekStart = mondayOfWeek(today);
     this.selectedDay = today;
     this.feedbackMetricsDay = today;
+    this._feedbackDateRangeReady = true;
   };
 
   AdminSessionsHub.prototype.feedbackRowDate = function (fb) {
