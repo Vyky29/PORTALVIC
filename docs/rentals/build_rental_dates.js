@@ -52,10 +52,11 @@ const VENUES = {
   },
 };
 
-function resourceCellHtml(resources) {
+function resourceCellHtml(resources, dayTime) {
   return (resources || [])
     .map((r) => {
-      const t = r.time ? ` <span class="res-t">${r.time}</span>` : "";
+      const time = r.time || dayTime;
+      const t = time ? ` <span class="res-t">${time}</span>` : "";
       return `<span class="pill pill--${r.cls}">${esc(r.label)}</span>${t}`;
     })
     .join("<br>");
@@ -98,7 +99,7 @@ function termBlockHtml(v, term) {
   let html = `\n  <div class="term-block">\n    <div class="term-head"><span class="term-name">${esc(term.name)} ${term.year}</span><span class="term-span">${termSpanLabel(term)}</span></div>\n    <table class="dates">\n      <thead><tr><th style="width:12%">Day</th><th style="width:14%">Session time</th><th style="width:23%">Resource to book</th><th style="width:6%" class="center">Wks</th><th>Dates to book</th></tr></thead>\n      <tbody>\n`;
   v.days.forEach((day) => {
     const dates = datesFor(term, day.dow);
-    html += `        <tr><td class="day">${day.name}</td><td class="time">${day.time}</td><td class="res">${resourceCellHtml(day.resources)}</td><td class="center count">${dates.length}</td><td class="list">${dates.join(" · ")}</td></tr>\n`;
+    html += `        <tr><td class="day">${day.name}</td><td class="time">${day.time}</td><td class="res">${resourceCellHtml(day.resources, day.time)}</td><td class="center count">${dates.length}</td><td class="list">${dates.join(" · ")}</td></tr>\n`;
   });
   html += `      </tbody>\n    </table>\n  </div>\n`;
   return html;
@@ -169,6 +170,23 @@ function footerHtml(label, key) {
 
 const frag = venuePagesPerTerm("acton") + venueSinglePage("northolt");
 fs.writeFileSync(path.join(__dirname, "_term_dates_fragment.html"), frag);
+
+// Inject the fragment into the main rental HTML, between stable markers.
+const HTML = path.join(__dirname, "pool-room-rental-schedule-2026-27.html");
+const START = "<!-- TERM-DATES-START -->";
+const END = "<!-- TERM-DATES-END -->";
+let doc = fs.readFileSync(HTML, "utf8");
+if (doc.includes(START) && doc.includes(END)) {
+  const before = doc.slice(0, doc.indexOf(START) + START.length);
+  const after = doc.slice(doc.indexOf(END));
+  doc = before + "\n" + frag + "\n  " + after;
+} else {
+  const tdIdx = doc.indexOf("Term Dates to Book");
+  const secIdx = doc.lastIndexOf("<section", tdIdx);
+  const bodyIdx = doc.indexOf("</body>");
+  doc = doc.slice(0, secIdx) + START + "\n" + frag + "\n  " + END + "\n" + doc.slice(bodyIdx);
+}
+fs.writeFileSync(HTML, doc);
 
 // Console summary for validation.
 ["acton", "northolt"].forEach((key) => {
