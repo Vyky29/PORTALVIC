@@ -8,7 +8,7 @@
     roster: [
       "/portal/term_from_timetable.js?v=20260703-bundle-iife",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-      "/portal/clients_info_embed.js?v=20260707-karo-dedupe",
+      "/portal/clients_info_embed.js?v=20260707-social-workers",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
