@@ -10266,7 +10266,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Samer",
+      "client_name": "Jack S",
       "day": "Sunday",
       "instructors": "GODSWAY",
       "service": "Multi-Activity",
@@ -13555,7 +13555,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-07T13:29:40Z",
+    "rosterMadreSyncedAt": "2026-07-07T13:31:40Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

@@ -9946,7 +9946,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "9.30 to 10.15",
-                  "client_name": "Samer",
+                  "client_name": "Jack S",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
