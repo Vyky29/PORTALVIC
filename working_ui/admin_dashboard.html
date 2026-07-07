@@ -9112,12 +9112,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
-    function notifyParentTemplateOpts(){
-      return {
+    function notifyParentTemplateOpts(extra){
+      var o = {
         effectiveParticipantLabel: bookingEffectiveParticipantLabel,
         bookingMoney: bookingMoney,
         isTrialOverride: typeof schedOverrideIsTrial === 'function' ? schedOverrideIsTrial : null
       };
+      if(extra && typeof extra === 'object'){
+        for(var k in extra){ if(Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; }
+      }
+      return o;
     }
     function notifyParentCoverInstructorFromDrawer(){
       var name = '';
@@ -9234,10 +9238,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return 'Hi,\n\nTrial session update for '+String(slot.clientDisplay || 'participant')+'.';
     }
-    function notifyParentMessageCancelled(slot, ov, meta){
+    function notifyParentMessageCancelled(slot, ov, meta, cancelPolicy){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.cancelled === 'function'){
-        return T.cancelled(slot, ov, meta, notifyParentTemplateOpts());
+        return T.cancelled(slot, ov, meta, notifyParentTemplateOpts(cancelPolicy ? { cancelPolicy: cancelPolicy } : null));
       }
       return 'Hi,\n\nSession cancelled for '+String(slot.clientDisplay || 'participant')+'.';
     }
@@ -9407,6 +9411,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
       if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
       var hideSaveContact = !!(opts && opts.hideSaveContact);
+      var isCancelKind = (kind === 'session_cancelled');
+      var inferredCancelBucket = '';
+      if(isCancelKind){
+        try{
+          var Tcb = window.PortalParentNotifyTemplates;
+          if(Tcb && typeof Tcb.cancelPolicyBucket === 'function'){
+            inferredCancelBucket = Tcb.cancelPolicyBucket(pack.ov, {}) || '';
+          }
+        }catch(_cb){}
+      }
+      var cancelPolicyFieldset = isCancelKind
+        ? '<fieldset id="pnCancelPolicyWrap" style="margin:12px 0 0;padding:0;border:0;min-width:0">'+
+          '<legend class="muted" style="margin-bottom:6px">Cancellation policy wording</legend>'+
+          '<div style="display:flex;flex-direction:column;gap:8px;min-width:0">'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="" checked /> <span>Auto — from reason'+(inferredCancelBucket ? ' (detected: '+esc(inferredCancelBucket)+')' : '')+'</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="facility" /> <span>Pool / venue cause — offer refund, credit or make-up</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="illness" /> <span>Illness / not ready — charged as usual (refund with a doctor&#39;s note)</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="neutral" /> <span>Neutral — confirm options, no financial promise</span></label>'+
+          '</div>'+
+          '<p class="muted" style="margin:6px 0 0;font-size:12px;overflow-wrap:break-word">Changing this rewrites the draft below. You can still edit the text before sending.</p>'+
+          '</fieldset>'
+        : '';
       portalParentNotifyConfigureOnce();
       function pnFormatErr(err, data){
         if(window.PortalParentNotifySend && typeof window.PortalParentNotifySend.formatNotifyError === 'function'){
@@ -9446,6 +9472,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelWa" value="whatsapp"'+(defaultChannel==='whatsapp'?' checked':'')+' /> <span>WhatsApp</span></label>'+
         '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelBoth" value="both"'+(defaultChannel==='both'?' checked':'')+' /> <span>Both</span></label>'+
         '</div></fieldset>'+
+        cancelPolicyFieldset+
         '<label class="muted" for="pnBody" style="display:block;margin-top:12px">Message</label>'+
         '<textarea class="txa" id="pnBody" style="min-height:200px;max-width:100%">'+esc(pack.body)+'</textarea>'+
         '<p class="muted" id="pnSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:break-word;display:none" role="status"></p>'+
@@ -9505,6 +9532,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.querySelectorAll('input[name="pnChannel"]').forEach(function(el){
         el.addEventListener('change', pnUpdateChannelButtons);
       });
+      if(isCancelKind){
+        document.querySelectorAll('input[name="pnCancelPolicy"]').forEach(function(el){
+          el.addEventListener('change', function(){
+            var picked = document.querySelector('input[name="pnCancelPolicy"]:checked');
+            var sel = picked && picked.value ? String(picked.value) : '';
+            var ta = $('pnBody');
+            if(ta){
+              ta.value = notifyParentMessageCancelled(slot, pack.ov, meta, sel);
+              pnUpdateChannelButtons();
+            }
+          });
+        });
+      }
       pnUpdateChannelButtons();
       $('pnSend').onclick = function(){
         if(!window.PortalParentNotifySend || typeof window.PortalParentNotifySend.send !== 'function'){
