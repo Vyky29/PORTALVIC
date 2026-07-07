@@ -116,6 +116,50 @@
     return String((slot && slot.whenLabel) || "").trim();
   }
 
+  /** ISO date (YYYY-MM-DD) for the session, from the slot or the override. */
+  function sessionDateIso(slot, ov) {
+    var iso = String(
+      (slot && slot.sessionDate) || (ov && ov.session_date) || "",
+    ).trim();
+    var m = iso.match(/\d{4}-\d{2}-\d{2}/);
+    return m ? m[0] : "";
+  }
+
+  /** Friendly session date, e.g. "Monday 13 July". */
+  function friendlyDate(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso + "T12:00:00");
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", {
+        timeZone: "Europe/London",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  /**
+   * When line that always includes the session DATE, e.g.
+   * "Monday 13 July, 16:30 to 18:30". Falls back to whenLabel / date alone.
+   * whenLabel is "Weekday · time"; we keep only the time and prefix the date.
+   */
+  function sessionWhenWithDate(slot, ov) {
+    var friendly = friendlyDate(sessionDateIso(slot, ov));
+    var raw = sessionWhen(slot);
+    var timePart = "";
+    if (raw) {
+      var idx = raw.lastIndexOf("\u00b7");
+      timePart = idx >= 0 ? raw.slice(idx + 1).trim() : raw.trim();
+    }
+    if (friendly && timePart) return friendly + ", " + timePart;
+    if (friendly) return friendly;
+    return raw;
+  }
+
   function sessionVenue(slot) {
     return String((slot && slot.venue) || "").trim();
   }
@@ -176,12 +220,12 @@
   function instructorChange(slot, ov, meta, newInstructorName, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
     var oldI = String((slot && slot.staffName) || "").trim();
     var newI =
       String(newInstructorName || "").trim() || "[new instructor — edit here]";
-    var whenPart = when ? " " + when : "";
+    var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
     var swapPart = oldI ? " (instead of " + oldI + ")." : ".";
     var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
@@ -284,7 +328,7 @@
   function makeup(slot, ov, meta, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
-    var when = sessionWhen(slot);
+    var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
     var payload = (ov && ov.payload) || {};
     var replacement =
@@ -301,7 +345,7 @@
       ? "\n\nThe session will be with instructor " + instructorName + "."
       : "";
     var photoLine = instructorPhotoTextLine(instructorName, photoUrl);
-    var whenPart = when ? " (" + when + ")" : "";
+    var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
     return (
       greet(meta && meta.parentCarerName) +
