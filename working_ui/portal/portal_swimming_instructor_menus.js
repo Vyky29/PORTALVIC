@@ -452,7 +452,10 @@
 
   function applyTopbarProfile(profile) {
     profile = profile || DEFAULT_TOPBAR_PROFILE;
-    var venueOn = !!profile.venue && portalStaffVenueReportToolsAllowed();
+    /* Venue tool is now self-initiated (staff do a venue review only if a venue isn't
+       right), so it follows the header profile flag alone and is no longer gated by the
+       scheduled opening/closing duty windows. */
+    var venueOn = !!profile.venue;
     setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile));
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
     setIdsVisible(LEAD_TERM_REVIEW_IDS, !!profile.leadReview);

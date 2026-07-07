@@ -1412,24 +1412,13 @@
         termIncomplete = false;
         termLate = false;
       }
-      const venueScope = portalVenueReportScopeApplies();
       const shift = portalTodayShiftSessions();
+      /* Venue reminders disabled (Jul 2026): the venue review is now only done ad-hoc
+         when a venue isn't right, so staff are no longer nagged about opening/closing
+         checks. The venue tool stays available for anyone whose header profile includes
+         it (portal_swimming_instructor_menus.js). */
       let venueOpenNeed = false;
       let venueCloseNeed = false;
-      if(venueScope && portalVenueClockAppliesToCurrentView()){
-        const openDone = portalVenueFlagIsDone('open');
-        const closeDone = portalVenueFlagIsDone('close');
-        const w = portalVenueTimeWindowsForUser();
-        const m = portalMinutesNow();
-        if(w){
-          if(w.openEnd != null) venueOpenNeed = !openDone && m > w.openEnd;
-          if(typeof portalPoolStaffSkipVenueOpeningRow === 'function' && portalPoolStaffSkipVenueOpeningRow()) venueOpenNeed = false;
-          if(w.closeEnd != null) venueCloseNeed = !closeDone && m > w.closeEnd;
-          if(typeof portalPoolStaffSkipVenueClosingRow === 'function' && portalPoolStaffSkipVenueClosingRow()) venueCloseNeed = false;
-          if(!w.opening) venueOpenNeed = false;
-          if(!w.closing) venueCloseNeed = false;
-        }
-      }
       const rosterAttention = typeof portalStaffRosterOverrideAttentionState === 'function'
         ? portalStaffRosterOverrideAttentionState()
         : { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
