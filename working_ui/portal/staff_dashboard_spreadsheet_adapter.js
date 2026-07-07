@@ -7,6 +7,29 @@
       .replace(/^_+|_+$/g, "");
   }
 
+  /**
+   * Display-only breakdown for combined Day Centre slots (pool hour + centre),
+   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3 — the "combined" card like
+   * Emmanuel/Ikram. The static bundle carries `segments`, but the live MADRE
+   * document may omit them, which made the card render combined on first paint
+   * then revert to a single block after the live roster refresh. Synthesizing
+   * the breakdown here keeps the combined card stable from ANY source. This is
+   * strictly cosmetic: the slot stays ONE session for feedback / pay.
+   */
+  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot) {
+    const svc = String(service || "").trim().toLowerCase();
+    if (svc !== "day centre") return null;
+    const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
+    const name = String(nameLower || "").trim().toLowerCase();
+    if (name === "fadi" && slot === "12.30to3") {
+      return [
+        { time_slot: "12.30 to 1", area: "Big Pool" },
+        { time_slot: "1 to 3", area: "Day Centre" },
+      ];
+    }
+    return null;
+  }
+
   function parseHm(token) {
     const t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
@@ -600,6 +623,15 @@
       };
       if (Array.isArray(row.segments) && row.segments.length) {
         baseSession.segments = row.segments;
+      } else {
+        // The live MADRE document may omit the per-slot `segments` breakdown that
+        // the static bundle carries, which made combined Day Centre cards (e.g.
+        // Fadi: Big Pool 12.30–1 + Day Centre 1–3) render correctly on first paint
+        // and then revert to a single block after the live roster refresh.
+        // Synthesize the same display-only breakdown so the combined card is stable
+        // regardless of source. The slot stays ONE session for feedback / pay.
+        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel);
+        if (synthSegments) baseSession.segments = synthSegments;
       }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
