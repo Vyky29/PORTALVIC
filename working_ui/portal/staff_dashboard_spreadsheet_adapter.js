@@ -33,6 +33,21 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
+    // Emmanuel Day Centre block (Mon/Wed/Fri): Day Centre + Big Pool hour + Day Centre.
+    "emmanuel|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+    "emmanuel|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "emmanuel|11to1": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
   };
   // Days on which a participant's combined Day Centre block should NOT be split
   // into the Big Pool segments (it stays a single plain "Day Centre" card).

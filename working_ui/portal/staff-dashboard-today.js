@@ -536,11 +536,21 @@
           (res.data || []).forEach(function(row){ merged.push(row); });
         }
         merged.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
-        window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
+        // Anti-flicker: this refresh runs several times per load (identity resolve,
+        // realtime pings, token refresh). A transient empty result — a failed chunk
+        // or a mid-refresh auth state — must NOT wipe an already-loaded override set,
+        // or Today/Week oscillate between the base roster (uncovered/pending) and the
+        // covered/cancelled state. Only replace when we actually got rows, or on the
+        // first hydration. Admin voids apply on the next page load.
+        const prevOv = window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__;
+        if(merged.length || !Array.isArray(prevOv) || !prevOv.length){
+          window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
+        }
         if(merged.length) console.info('[portal] schedule_overrides loaded:', merged.length);
       }catch(e){
         console.debug('[portal] schedule_overrides fetch', e);
-        window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
+        // Never wipe an already-loaded set on a transient error (see anti-flicker above).
+        if(!Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)) window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
       }finally{
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
       }
