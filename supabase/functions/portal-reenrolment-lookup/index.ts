@@ -20,6 +20,7 @@ import {
   parentNamesMatch,
   paymentRowToContext,
   REENROL_ACADEMIC_YEAR,
+  slotsFromPublishedSessions,
   weeklySlotsFromRosterRows,
 } from "../_shared/reenrolment_catalog.ts";
 import {
@@ -197,30 +198,61 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("[portal-reenrolment-lookup] roster fetch", err);
   }
-  let weeklySlots = paymentWeeklySlots;
+  // Admin-published services (client_services_review.html → "Publicar al portal"
+  // → portal_participant_service_lines) are the authoritative source of the
+  // participant's service list when present. They override the payment/roster
+  // derivation; payment rows still supply pricing via the merge helper.
+  let publishedSlots: Awaited<ReturnType<typeof fetchPublishedServiceLines>> = [];
   try {
-    const rosterSlots = rosterRows.length
-      ? weeklySlotsFromRosterRows(participantDisplayName, rosterRows)
-      : [];
-    if (rosterSlots.length) {
-      weeklySlots = mergeWeeklySlotsFromRosterAndPayment(
-        participantDisplayName,
-        rosterSlots,
-        paymentWeeklySlots,
-        rosterRows,
-      );
-    } else if (paymentWeeklySlots.length && rosterRows.length) {
-      weeklySlots = enrichWeeklySlotsFromRoster(
-        participantDisplayName,
-        paymentWeeklySlots,
-        rosterRows,
-      );
-    }
+    publishedSlots = await fetchPublishedServiceLines(
+      supabase,
+      participantDisplayName,
+      participantRow,
+      paymentCtx?.clientKey || "",
+    );
   } catch (err) {
-    console.error("[portal-reenrolment-lookup] roster merge", err);
+    console.error("[portal-reenrolment-lookup] published fetch", err);
+  }
+
+  let weeklySlots = paymentWeeklySlots;
+  let dayCentreSlots = paymentCtx?.dayCentreSlots || [];
+  if (publishedSlots.length) {
+    const pubWeekly = publishedSlots.filter((s) => !s.isDayCentre);
+    const pubDc = publishedSlots.filter((s) => s.isDayCentre);
+    // Published weekly slots define days/services; payment rows supply pricing.
+    weeklySlots = pubWeekly.length
+      ? mergeWeeklySlotsFromRosterAndPayment(
+          participantDisplayName,
+          pubWeekly,
+          paymentWeeklySlots,
+          [],
+        )
+      : paymentWeeklySlots;
+    if (pubDc.length) dayCentreSlots = pubDc;
+  } else {
+    try {
+      const rosterSlots = rosterRows.length
+        ? weeklySlotsFromRosterRows(participantDisplayName, rosterRows)
+        : [];
+      if (rosterSlots.length) {
+        weeklySlots = mergeWeeklySlotsFromRosterAndPayment(
+          participantDisplayName,
+          rosterSlots,
+          paymentWeeklySlots,
+          rosterRows,
+        );
+      } else if (paymentWeeklySlots.length && rosterRows.length) {
+        weeklySlots = enrichWeeklySlotsFromRoster(
+          participantDisplayName,
+          paymentWeeklySlots,
+          rosterRows,
+        );
+      }
+    } catch (err) {
+      console.error("[portal-reenrolment-lookup] roster merge", err);
+    }
   }
   const annualWeeklyTotal = annualTotalForWeekly(weeklySlots);
-  const dayCentreSlots = paymentCtx?.dayCentreSlots || [];
   const currentArrangements2526 = buildCurrentArrangements2526({
     participantName: participantDisplayName,
     dobIso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
@@ -263,9 +295,9 @@ Deno.serve(async (req) => {
     service_raw: paymentCtx?.serviceRaw || null,
     current_arrangements_2526: currentArrangements2526,
     weekly_slots: weeklySlots,
-    day_centre: paymentCtx?.dayCentreSlots?.length
+    day_centre: dayCentreSlots.length
       ? {
-          slots: paymentCtx.dayCentreSlots,
+          slots: dayCentreSlots,
           venue: "SwimFarm",
           note: "Day Centre fees are agreed with your funder — not shown here.",
         }
@@ -381,6 +413,79 @@ async function findPaymentContext(
   }
 
   return best;
+}
+
+// Admin-reviewed services published from client_services_review.html →
+// portal_participant_service_lines. Bridged by client_key (payments use dashes,
+// the review tool uses underscores) with a fuzzy name fallback.
+async function fetchPublishedServiceLines(
+  supabase: ReturnType<typeof createClient>,
+  participantName: string,
+  participantRow: Record<string, unknown> | undefined,
+  paymentClientKey: string,
+) {
+  const empty: ReturnType<typeof slotsFromPublishedSessions> = [];
+  const tryKeys = new Set<string>();
+  if (paymentClientKey) {
+    tryKeys.add(paymentClientKey.replace(/-/g, "_"));
+    tryKeys.add(paymentClientKey);
+  }
+  const slug = canonicalParticipantClientId(participantName);
+  if (slug) {
+    tryKeys.add(slug);
+    tryKeys.add(slug.replace(/_/g, "-"));
+  }
+
+  for (const key of tryKeys) {
+    if (!key) continue;
+    const { data } = await supabase
+      .from("portal_participant_service_lines")
+      .select("client_key, client_name, sessions")
+      .eq("client_key", key)
+      .maybeSingle();
+    const sessions = data && Array.isArray((data as Record<string, unknown>).sessions)
+      ? (data as { sessions: unknown[] }).sessions
+      : null;
+    if (sessions && sessions.length) {
+      return slotsFromPublishedSessions(sessions as Parameters<typeof slotsFromPublishedSessions>[0]);
+    }
+  }
+
+  // Fuzzy fallback: match published rows by normalized-name prefix.
+  const identity = {
+    displayName: participantName,
+    firstName: String(participantRow?.first_name || participantName.split(/\s+/)[0] || ""),
+    lastName: String(participantRow?.last_name || ""),
+    contactId: String(participantRow?.contact_id || ""),
+  };
+  const prefixes = new Set<string>();
+  for (const nm of resolveParticipantLookupNames(identity)) {
+    const tok = normalizePersonName(nm).split(" ")[0] || "";
+    if (tok.length >= 2) prefixes.add(tok);
+  }
+  if (!prefixes.size) return empty;
+
+  for (const prefix of [...prefixes].slice(0, 5)) {
+    const { data } = await supabase
+      .from("portal_participant_service_lines")
+      .select("client_key, client_name, client_name_norm, sessions")
+      .ilike("client_name_norm", `${prefix}%`)
+      .limit(20);
+    for (const row of (data || []) as Array<Record<string, unknown>>) {
+      const name = String(row.client_name || "");
+      const sessions = Array.isArray(row.sessions) ? (row.sessions as unknown[]) : null;
+      if (!sessions || !sessions.length) continue;
+      if (
+        namesMatch(participantName, name) ||
+        participantIdentityMatches(identity, name, String(row.client_key || name))
+      ) {
+        return slotsFromPublishedSessions(
+          sessions as Parameters<typeof slotsFromPublishedSessions>[0],
+        );
+      }
+    }
+  }
+  return empty;
 }
 
 async function fetchRosterRowsForParticipant(

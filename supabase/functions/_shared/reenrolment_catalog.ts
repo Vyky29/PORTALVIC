@@ -745,6 +745,84 @@ export function weeklySlotsFromRosterRows(
   return out;
 }
 
+/**
+ * Admin-published services (client_services_review.html →
+ * portal_participant_service_lines.sessions) → ParsedSlot[]. Weekly slots are
+ * sorted by day; Day Centre entries are appended. Pricing is derived from the
+ * service type; callers may enrich with payment prices via
+ * mergeWeeklySlotsFromRosterAndPayment.
+ */
+export function slotsFromPublishedSessions(
+  sessions: Array<{
+    service?: string;
+    day?: string;
+    timeSlot?: string;
+    durationMin?: number;
+    instructor?: string;
+    venue?: string;
+    area?: string;
+  }>,
+): ParsedSlot[] {
+  const weekly: ParsedSlot[] = [];
+  const dayCentre: ParsedSlot[] = [];
+  let idx = 0;
+  for (const s of sessions || []) {
+    const svcRaw = String(s.service || "").trim();
+    if (!svcRaw) continue;
+    if (/day\s*centre/i.test(svcRaw)) {
+      dayCentre.push({
+        id: `pub-dc-${idx++}`,
+        raw: svcRaw,
+        serviceType: "DAY CENTRE",
+        durationMin: 0,
+        day: "",
+        isWeekend: false,
+        isDayCentre: true,
+        pricePerSession: null,
+        sessions: { autumn: 0, spring: 0, summer: 0, annual: 0 },
+        termTotals: { autumn: 0, spring: 0, summer: 0, annual: 0 },
+        venue: String(s.venue || "").trim() || "SwimFarm",
+      });
+      continue;
+    }
+    const serviceType = canonicalizeServiceTypeToken(svcRaw);
+    let durationMin = Number(s.durationMin) || 0;
+    if (!durationMin) {
+      durationMin = serviceType.includes("MULTI")
+        ? 90
+        : serviceType.includes("CLIMB") ||
+            serviceType.includes("PHYSICAL") ||
+            serviceType.includes("BESPOKE")
+        ? 60
+        : serviceType.includes("COUNSEL")
+        ? 45
+        : 30;
+    }
+    const day = normalizeDay(String(s.day || ""));
+    const isWeekend = WEEKEND_DAYS.has(day);
+    const counts = sessionCountsForDay(day);
+    const price = unitPriceFor(serviceType, durationMin);
+    const slot: ParsedSlot = {
+      id: `pub-${idx++}`,
+      raw: `${durationMin}' ${serviceType}${day ? ` (${day})` : ""}`,
+      serviceType,
+      durationMin,
+      day,
+      isWeekend,
+      isDayCentre: false,
+      pricePerSession: price,
+      sessions: { ...counts },
+      termTotals: termTotals(price, counts),
+      timeSlot: String(s.timeSlot || "").trim() || undefined,
+      venue: String(s.venue || "").trim() || undefined,
+      instructor: String(s.instructor || "").trim() || undefined,
+    };
+    slot.displayLabel = buildSlotDisplayLabel(slot);
+    weekly.push(slot);
+  }
+  return sortWeeklySlotsByDay(weekly).concat(dayCentre);
+}
+
 export function ageFromDobIso(dobIso: string | null | undefined): string | null {
   const raw = String(dobIso || "").trim();
   if (!raw) return null;
