@@ -14886,6 +14886,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         touchClient(rn, String(r.session_date || '').trim().slice(0, 10));
       }
 
+      // Roster/sessions are the source of truth for "who is a participant". Any
+      // client on the Mon–Sun schedule (canonical merged model — the same source
+      // the Schedule view uses) must appear here as "In Sessions", even when they
+      // are only a first-name entry on the sheet (e.g. "Jad") and are absent from
+      // the feedback export, the raw bundle rows, or the parents export. This walks
+      // every staff profile and expands all instructors, so it is richer than the
+      // STAFF_DASHBOARD_SOURCE.rows loop above.
+      try{
+        var mergedPack = adminMergeSpreadsheetSessions();
+        var mNotes = (mergedPack && mergedPack.notes) || {};
+        var mSessions = (mergedPack && mergedPack.sessions) || [];
+        for(i = 0; i < mSessions.length; i++){
+          var ms = mSessions[i];
+          if(String(ms.status || '').trim().toLowerCase() !== 'scheduled') continue;
+          var cidM = String(ms.clientId || '').trim();
+          if(!cidM) continue;
+          var nmM = (mNotes[cidM] && mNotes[cidM].name) ? String(mNotes[cidM].name).trim() : '';
+          if(!nmM) continue;
+          touchClient(nmM, '');
+        }
+      }catch(_eMergeCat){}
+
       function rowForEntry(ent){
         var nm = ent.displayName;
         var hit = adminParticipantsParentsRowForClientDisplayName(nm);
@@ -15616,6 +15638,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(age < 0 || age > 130) return null;
       return age;
     }
+    /** Booking-status pill meta (label + colours) for the participants list. */
+    function paxContactsBookingStatusMeta(st){
+      switch(String(st || '')){
+        case 'programme_in': case 'in_class': case 'in_camp':
+          return { label: 'In sessions', bg: '#dcfce7', fg: '#166534' };
+        case 'trial':
+          return { label: 'On a trial', bg: '#e0f2fe', fg: '#075985' };
+        case 'waiting_list':
+          return { label: 'Waiting list', bg: '#fef9c3', fg: '#854d0e' };
+        case 'old_participants': case 'not_in_programme':
+          return { label: 'Old participant', bg: '#f1f5f9', fg: '#475569' };
+        default:
+          return null;
+      }
+    }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
       return rows.map(function(p){
@@ -15634,9 +15671,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(phRaw && phRaw !== '—') emPhoneParts.push('<div style="white-space:nowrap">'+esc(phRaw)+'</div>');
         var emPhone = emPhoneParts.length ? emPhoneParts.join('') : '<span class="muted">—</span>';
         var cells = paxContactsServiceSlotCells(p);
+        var bkMeta = paxContactsBookingStatusMeta(p.bookingStatus);
+        var bkChip = bkMeta
+          ? '<div style="margin-top:4px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+bkMeta.bg+';color:'+bkMeta.fg+'">'+esc(bkMeta.label)+'</span></div>'
+          : '';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button></td>'+
+          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+bkChip+'</td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
