@@ -1505,7 +1505,13 @@
         return offRequested ? 'off-requested' : 'off';
       }
       const dayFlags = portalDayOverrideBadgeFlags(item.day, iso);
-      if(weekRowTotalClients(item) <= 0) return offRequested ? 'off-requested' : 'off';
+      if(weekRowTotalClients(item) <= 0){
+        // Paid cancellation: the client's session was cancelled by admin but the staff
+        // is still paid (and rostered). Show a green "worked" row + the Cancelled chip
+        // instead of a red day off. A genuine unavailability day already returned above.
+        if(dayFlags.hasCancelled) return rel === 'past' ? 'work-done' : 'work';
+        return offRequested ? 'off-requested' : 'off';
+      }
       if(weekListHasPendingFeedbackForDay(item.day)) return 'work-feedback';
       if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(rel === 'past') return 'work-done';

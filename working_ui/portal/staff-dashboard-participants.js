@@ -2626,24 +2626,18 @@
           ? portalOverrideCardDateParenLabel(isoNav)
           : '';
         if(kind === 'new_shift'){
-          const isCover = portalOverrideIsInstructorCoverForLoggedInStaff(row);
-          if(isCover){
-            const nm = portalClientFirstNameTokenForOverride(row);
-            title = nm
-              ? ('Schedule change - ' + nm + (datePart ? (' ' + datePart) : ''))
-              : ('Schedule change' + (datePart ? (' ' + datePart) : ''));
-            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-              ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
-              : '';
-          }else{
-            title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
-            // Show the time of the shift that was actually added (this override's own
-            // slot, e.g. 4.30 to 6.30) — NOT the whole day's merged payroll band, which
-            // widened a partial new shift to the full 11–6.30 window.
-            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-              ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
-              : '';
-          }
+          // Both a brand-new shift AND a cover (this instructor stepping into someone
+          // else's slot) render as a plain NEW SHIFT alert: time + venue + day only, with
+          // NO participant names. Covers on the same day/venue collapse into ONE card
+          // (portalCollapseNewShiftOverrideQuickMenuItems). The halo button navigates to
+          // that day where the covered clients (e.g. Scott, Stephanie) are shown.
+          title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+          // Show the time of the shift that was actually added (this override's own
+          // slot, e.g. 4.30 to 6.30) — NOT the whole day's merged payroll band, which
+          // widened a partial new shift to the full 11–6.30 window.
+          sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
+            : '';
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
