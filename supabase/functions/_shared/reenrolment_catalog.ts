@@ -383,14 +383,32 @@ export function dayPluralLabel(day: string): string {
   return `${d}s`;
 }
 
+/** am/pm for a single clock token (club hours: 9–11 = am, 12 & 1–8 = pm). */
+function clockMeridiem(tok: string): "am" | "pm" | "" {
+  const h = parseInt(String(tok || "").trim(), 10);
+  if (!Number.isFinite(h)) return "";
+  if (h === 12) return "pm";
+  if (h >= 1 && h <= 8) return "pm";
+  if (h >= 9 && h <= 11) return "am";
+  return "";
+}
+
 export function formatTimeSlotLabel(timeSlot: string): string {
   const s = String(timeSlot || "").trim();
   if (!s) return "";
   if (/\b(am|pm)\b/i.test(s)) return s;
-  const startRaw = s.split(/\s+to\s+/i)[0]?.trim() || "";
-  const start = Number.parseFloat(startRaw);
-  if (Number.isFinite(start) && start >= 1 && start <= 8) return `${s} pm`;
-  return s;
+  const parts = s.split(/\s+to\s+/i);
+  const startTok = (parts[0] || "").trim();
+  const endTok = parts.length > 1 ? (parts[1] || "").trim() : "";
+  const startMer = clockMeridiem(startTok);
+  if (!endTok) return startMer ? `${s} ${startMer}` : s;
+  const endMer = clockMeridiem(endTok);
+  if (startMer && endMer && startMer !== endMer) {
+    // range crosses midday, label each side (e.g. "11 am to 12.30 pm")
+    return `${startTok} ${startMer} to ${endTok} ${endMer}`;
+  }
+  const mer = endMer || startMer;
+  return mer ? `${s} ${mer}` : s;
 }
 
 export function buildSlotDisplayLabel(slot: ParsedSlot): string {
