@@ -14846,6 +14846,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         // Empty/offerable slots are not participants — they belong in capacity
         // (Available), never the participant directory.
         if(!cn || cnL === 'closed' || cnL === 'available' || cnL === 'no client' || cnL === 'noclient' || cnL === 'no participant' || cnL === 'open' || cnL === 'open slot' || cnL === '—') return;
+        // Non-participant roster rows: HOME/MANAGER are director dashboard cards,
+        // Q6 College is an outreach booking that ended and did not renew. ACAT is
+        // an active booking and intentionally kept.
+        if(cnL === 'home' || cnL === 'manager' || cnL === 'q6 college' || cnL === 'q6college') return;
         var norm = adminPortalNormalizedPersonName(cn);
         if(!norm) return;
         var iso = String(sessionIso || '').trim().slice(0, 10);
