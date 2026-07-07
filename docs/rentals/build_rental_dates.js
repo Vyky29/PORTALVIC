@@ -27,26 +27,39 @@ const CLOSED_DAYS = new Set([
 ]);
 
 // getDay(): Sun=0 Mon=1 Tue=2 Wed=3 Thu=4 Fri=5 Sat=6
+const POOL = { label: "¼ Teaching pool", cls: "pool" };
+const LANE = { label: "Lane", cls: "lane", time: "4:30 – 6:30 pm" };
+const ROOM2 = { label: "Room 2", cls: "room", time: "4:15 – 6:15 pm" };
+
 const VENUES = {
   acton: {
     label: "Acton",
     days: [
-      { dow: 1, name: "Monday", time: "4:00 – 6:30 pm" },
-      { dow: 2, name: "Tuesday", time: "4:00 – 6:30 pm" },
-      { dow: 3, name: "Wednesday", time: "4:00 – 6:30 pm" },
-      { dow: 4, name: "Thursday", time: "4:00 – 6:30 pm" },
-      { dow: 5, name: "Friday", time: "4:30 – 6:00 pm" },
-      { dow: 6, name: "Saturday", time: "9:30 am – 1:00 pm" },
+      { dow: 1, name: "Monday", time: "4:00 – 6:30 pm", resources: [POOL] },
+      { dow: 2, name: "Tuesday", time: "4:00 – 6:30 pm", resources: [POOL, LANE] },
+      { dow: 3, name: "Wednesday", time: "4:00 – 6:30 pm", resources: [POOL, ROOM2] },
+      { dow: 4, name: "Thursday", time: "4:00 – 6:30 pm", resources: [POOL, LANE] },
+      { dow: 5, name: "Friday", time: "4:30 – 6:00 pm", resources: [POOL] },
+      { dow: 6, name: "Saturday", time: "9:30 am – 1:00 pm", resources: [POOL] },
     ],
   },
   northolt: {
     label: "Northolt",
     days: [
-      { dow: 1, name: "Monday", time: "4:30 – 6:30 pm" },
-      { dow: 3, name: "Wednesday", time: "4:30 – 6:30 pm" },
+      { dow: 1, name: "Monday", time: "4:30 – 6:30 pm", resources: [POOL] },
+      { dow: 3, name: "Wednesday", time: "4:30 – 6:30 pm", resources: [POOL] },
     ],
   },
 };
+
+function resourceCellHtml(resources) {
+  return (resources || [])
+    .map((r) => {
+      const t = r.time ? ` <span class="res-t">${r.time}</span>` : "";
+      return `<span class="pill pill--${r.cls}">${esc(r.label)}</span>${t}`;
+    })
+    .join("<br>");
+}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -82,10 +95,10 @@ function esc(s) {
 }
 
 function termBlockHtml(v, term) {
-  let html = `\n  <div class="term-block">\n    <div class="term-head"><span class="term-name">${esc(term.name)} ${term.year}</span><span class="term-span">${termSpanLabel(term)}</span></div>\n    <table class="dates">\n      <thead><tr><th style="width:15%">Day</th><th style="width:19%">Session time</th><th style="width:7%" class="center">Wks</th><th>Dates to book</th></tr></thead>\n      <tbody>\n`;
+  let html = `\n  <div class="term-block">\n    <div class="term-head"><span class="term-name">${esc(term.name)} ${term.year}</span><span class="term-span">${termSpanLabel(term)}</span></div>\n    <table class="dates">\n      <thead><tr><th style="width:12%">Day</th><th style="width:14%">Session time</th><th style="width:23%">Resource to book</th><th style="width:6%" class="center">Wks</th><th>Dates to book</th></tr></thead>\n      <tbody>\n`;
   v.days.forEach((day) => {
     const dates = datesFor(term, day.dow);
-    html += `        <tr><td class="day">${day.name}</td><td class="time">${day.time}</td><td class="center count">${dates.length}</td><td class="list">${dates.join(" · ")}</td></tr>\n`;
+    html += `        <tr><td class="day">${day.name}</td><td class="time">${day.time}</td><td class="res">${resourceCellHtml(day.resources)}</td><td class="center count">${dates.length}</td><td class="list">${dates.join(" · ")}</td></tr>\n`;
   });
   html += `      </tbody>\n    </table>\n  </div>\n`;
   return html;
