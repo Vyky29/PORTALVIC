@@ -8,7 +8,7 @@
     roster: [
       "/portal/term_from_timetable.js?v=20260703-bundle-iife",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-      "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+      "/portal/clients_info_embed.js?v=20260707-emanuel",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
@@ -24,7 +24,7 @@
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
     absentees: ["/portal/absentees_credits_portal_data.js?v=20260530-abs"],
-    participants: ["/portal/participants_parents_portal_data.js?v=20260707-emani"],
+    participants: ["/portal/participants_parents_portal_data.js?v=20260707-emanuel"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
