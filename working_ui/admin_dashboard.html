@@ -19445,9 +19445,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var status = validated
           ? '<span class="chip chip--ok" title="Validated by '+portalSdEsc(r.validated_by_name || '')+' on '+portalSdFmtDateTime(r.validated_at)+'">Validated</span>'
           : '<span class="chip chip--urg">Pending</span>';
-        var action = validated
+        var viewBtn = '<button type="button" class="btn btn--ghost btn--sm" data-sd-view="'+portalSdEsc(r.id)+'">View</button>';
+        var action = viewBtn+' '+(validated
           ? '<button type="button" class="btn btn--ghost btn--sm" data-sd-undo="'+portalSdEsc(r.id)+'">Undo</button>'
-          : '<button type="button" class="btn btn--pri btn--sm" data-sd-validate="'+portalSdEsc(r.id)+'">Validate day</button>';
+          : '<button type="button" class="btn btn--pri btn--sm" data-sd-validate="'+portalSdEsc(r.id)+'">Validate day</button>');
         return '<tr>'+
           '<td style="white-space:nowrap">'+portalSdFmtDate(r.session_date)+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word"><strong>'+portalSdEsc(r.submitted_by_name || '')+'</strong>'+(r.role_label ? '<div class="muted" style="font-size:12px">'+portalSdEsc(r.role_label)+'</div>' : '')+'</td>'+
@@ -19489,10 +19490,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-sd-undo]').forEach(function(b){
         b.addEventListener('click', function(){ portalSdValidate(b.getAttribute('data-sd-undo'), 'undo', b); });
       });
+      root.querySelectorAll('[data-sd-view]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdOpenDetail(b.getAttribute('data-sd-view')); });
+      });
     }
     async function portalSdValidate(reportId, action, btn){
-      if(!reportId) return;
-      if(action === 'undo' && !window.confirm('Remove the validated day off for this report?')) return;
+      if(!reportId) return false;
+      if(action === 'undo' && !window.confirm('Remove the validated day off for this report?')) return false;
       var prev = btn ? btn.textContent : '';
       if(btn){ btn.disabled = true; btn.textContent = action === 'undo' ? 'Removing\u2026' : 'Validating\u2026'; }
       try{
@@ -19500,13 +19504,89 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(res.error || !res.data || !res.data.ok){
           if(btn){ btn.disabled = false; btn.textContent = prev; }
           window.alert('Action failed'+(res.error ? ': '+res.error : (res.data && res.data.error ? ': '+res.data.error : '.')));
-          return;
+          return false;
         }
         await portalSdLoad();
+        return true;
       }catch(e){
         if(btn){ btn.disabled = false; btn.textContent = prev; }
         window.alert('Action failed. Please try again.');
+        return false;
       }
+    }
+    function portalSdFindReport(reportId){
+      var list = window.__PORTAL_SESSION_DISRUPTION_REPORTS__ || [];
+      for(var i=0;i<list.length;i++){ if(String(list[i].id) === String(reportId)) return list[i]; }
+      return null;
+    }
+    function portalSdDetailFieldHtml(label, value){
+      var v = String(value == null ? '' : value).trim();
+      var shown = v ? portalSdEsc(v) : '<span class="muted">—</span>';
+      return ''+
+        '<div style="min-width:0;padding:10px 0;border-bottom:1px solid var(--line)">'+
+          '<div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin:0 0 3px">'+portalSdEsc(label)+'</div>'+
+          '<div style="min-width:0;overflow-wrap:break-word;white-space:pre-wrap">'+shown+'</div>'+
+        '</div>';
+    }
+    function portalSdDetailSectionHtml(title, fieldsHtml){
+      return ''+
+        '<div style="margin:0 0 4px"><h3 style="margin:16px 0 2px;font-size:14px;min-width:0;overflow-wrap:break-word">'+portalSdEsc(title)+'</h3>'+fieldsHtml+'</div>';
+    }
+    function portalSdOpenDetail(reportId){
+      var r = portalSdFindReport(reportId);
+      if(!r){ try{ window.alert('Report data is not available. Refresh and try again.'); }catch(_e){} return; }
+      var validated = !!r.validated_at;
+      var ret = String(r.expected_return || '');
+      if(r.return_date) ret += ' \u00b7 '+portalSdFmtDate(r.return_date).replace(/<[^>]*>/g,'');
+      var statusLine = validated
+        ? 'Validated by '+(r.validated_by_name || '—')+' on '+portalSdFmtDateTime(r.validated_at)
+        : 'Pending validation';
+
+      var reporter = portalSdDetailFieldHtml('Submitted by', r.submitted_by_name)+
+        portalSdDetailFieldHtml('Role', r.role_label)+
+        portalSdDetailFieldHtml('Submitted', portalSdFmtDateTime(r.created_at));
+      var session = portalSdDetailFieldHtml('Type of disruption', r.disruption_type)+
+        portalSdDetailFieldHtml('Date of affected session(s)', portalSdFmtDate(r.session_date).replace(/<[^>]*>/g,''))+
+        portalSdDetailFieldHtml('Venue', r.venue);
+      var reason = portalSdDetailFieldHtml('Reason', r.reason_category)+
+        portalSdDetailFieldHtml('Brief description', r.reason_description);
+      var ret2 = portalSdDetailFieldHtml('Expected return', ret);
+      var reflect = portalSdDetailFieldHtml('Could this reasonably have been prevented?', r.could_prevent)+
+        portalSdDetailFieldHtml('Prevention details', r.prevention_details);
+      var comments = portalSdDetailFieldHtml('Additional comments', r.additional_comments);
+
+      var actionBtn = validated
+        ? '<button type="button" class="btn btn--ghost" id="sdDetailUndo">Undo day off</button>'
+        : '<button type="button" class="btn btn--pri" id="sdDetailValidate">Validate day</button>';
+
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle" style="min-width:0;overflow-wrap:break-word">Session disruption report</h2>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">POL-048 \u00b7 '+portalSdEsc(statusLine)+'</p></div>'+
+        '<div class="modal-b" style="min-width:0;max-height:min(72vh,660px);overflow:auto">'+
+          portalSdDetailSectionHtml('1. Reporter', reporter)+
+          portalSdDetailSectionHtml('2. Session details', session)+
+          portalSdDetailSectionHtml('3. Reason for absence', reason)+
+          portalSdDetailSectionHtml('4. Expected return to work', ret2)+
+          portalSdDetailSectionHtml('5. Reflection', reflect)+
+          portalSdDetailSectionHtml('6. Additional comments', comments)+
+        '</div>'+
+        '<div class="modal-f" style="gap:8px"><button type="button" class="btn btn--ghost" id="sdDetailClose">Close</button>'+actionBtn+'</div>',
+        {}
+      );
+      var bClose = $('sdDetailClose');
+      if(bClose) bClose.onclick = closeModal;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeModal(); };
+      var bVal = $('sdDetailValidate');
+      if(bVal) bVal.onclick = async function(){
+        var ok = await portalSdValidate(reportId, 'validate', bVal);
+        if(ok) closeModal();
+      };
+      var bUndo = $('sdDetailUndo');
+      if(bUndo) bUndo.onclick = async function(){
+        var ok = await portalSdValidate(reportId, 'undo', bUndo);
+        if(ok) closeModal();
+      };
     }
     function portalSessionDisruptionsBind(){
       var btn = document.getElementById('sdRefreshBtn');
