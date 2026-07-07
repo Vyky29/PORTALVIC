@@ -745,10 +745,106 @@ export function weeklySlotsFromRosterRows(
   return out;
 }
 
+/** Parse a "9.30 to 11" style slot into start/end minutes (afternoon 1–8 → pm). */
+function publishedSlotStartEndMinutes(ts: string): { start: number; end: number } | null {
+  const parts = String(ts || "").trim().split(/\s+to\s+/i);
+  const parseTok = (tok: string): number | null => {
+    const t = String(tok || "").trim().replace(",", ".");
+    const m = t.match(/^(\d{1,2})(?:[.:](\d{1,2}))?/);
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const mi = m[2] ? parseInt(m[2].padEnd(2, "0").slice(0, 2), 10) : 0;
+    if (h >= 1 && h <= 8) h += 12; // after-school / weekend afternoon slots
+    return h * 60 + (Number.isFinite(mi) ? mi : 0);
+  };
+  const start = parseTok(parts[0] || "");
+  if (start == null) return null;
+  const end = parts[1] != null ? parseTok(parts[1]) : null;
+  return { start, end: end == null ? start : end };
+}
+
+/**
+ * Collapse the roster's per-teacher split rows into ONE service per
+ * (weekday + programme) — mirroring the parent portal's buildServicesDetail.
+ * A 90' Multi-Activity stored as two 45' teaching halves (different
+ * instructor/pool) becomes a single 90' Multi-Activity spanning the outer
+ * time bounds; two consecutive 30' aquatic slots become one 60' block, etc.
+ * Pricing is preserved (per-minute unit price × summed minutes = same total),
+ * so parents/admin/re-enrolment see one line while staff cards keep the halves.
+ */
+function collapsePublishedWeekly(weekly: ParsedSlot[]): ParsedSlot[] {
+  const groups = new Map<string, ParsedSlot[]>();
+  const order: string[] = [];
+  for (const s of weekly) {
+    const key = `${s.day}|${normalizeServiceType(s.serviceType)}`;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+      order.push(key);
+    }
+    groups.get(key)!.push(s);
+  }
+  const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
+  const out: ParsedSlot[] = [];
+  for (const key of order) {
+    const parts = groups.get(key)!;
+    if (parts.length === 1) {
+      out.push(parts[0]);
+      continue;
+    }
+    const base = parts[0];
+    const day = base.day;
+    const isMulti = normalizeServiceType(base.serviceType).includes("MULTI");
+    let minStart = Infinity;
+    let maxEnd = -Infinity;
+    let startTok = "";
+    let endTok = "";
+    let sumDur = 0;
+    const venues: string[] = [];
+    const instructors: string[] = [];
+    for (const p of parts) {
+      sumDur += Number(p.durationMin) || 0;
+      if (p.venue) venues.push(p.venue);
+      if (p.instructor) instructors.push(p.instructor);
+      const raw = String(p.timeSlot || "").split(/\s+to\s+/i);
+      const se = publishedSlotStartEndMinutes(String(p.timeSlot || ""));
+      if (se) {
+        if (se.start < minStart) {
+          minStart = se.start;
+          startTok = (raw[0] || "").trim();
+        }
+        if (se.end > maxEnd) {
+          maxEnd = se.end;
+          endTok = (raw[1] || raw[0] || "").trim();
+        }
+      }
+    }
+    const spanDur = minStart !== Infinity && maxEnd > minStart ? maxEnd - minStart : 0;
+    const durationMin = isMulti ? 90 : (sumDur || spanDur || base.durationMin);
+    const counts = sessionCountsForDay(day);
+    const price = unitPriceFor(base.serviceType, durationMin);
+    const timeSlot = startTok && endTok ? `${startTok} to ${endTok}` : base.timeSlot;
+    const merged: ParsedSlot = {
+      ...base,
+      durationMin,
+      pricePerSession: price,
+      sessions: { ...counts },
+      termTotals: termTotals(price, counts),
+      timeSlot,
+      venue: uniq(venues)[0] || base.venue,
+      instructor: uniq(instructors).join(" · ") || base.instructor,
+      displayLabel: undefined,
+    };
+    merged.displayLabel = buildSlotDisplayLabel(merged);
+    out.push(merged);
+  }
+  return out;
+}
+
 /**
  * Admin-published services (client_services_review.html →
  * portal_participant_service_lines.sessions) → ParsedSlot[]. Weekly slots are
- * sorted by day; Day Centre entries are appended. Pricing is derived from the
+ * collapsed to one per weekday+programme (see collapsePublishedWeekly), sorted
+ * by day; Day Centre entries are appended. Pricing is derived from the
  * service type; callers may enrich with payment prices via
  * mergeWeeklySlotsFromRosterAndPayment.
  */
@@ -820,7 +916,7 @@ export function slotsFromPublishedSessions(
     slot.displayLabel = buildSlotDisplayLabel(slot);
     weekly.push(slot);
   }
-  return sortWeeklySlotsByDay(weekly).concat(dayCentre);
+  return sortWeeklySlotsByDay(collapsePublishedWeekly(weekly)).concat(dayCentre);
 }
 
 export function ageFromDobIso(dobIso: string | null | undefined): string | null {
