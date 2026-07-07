@@ -24,7 +24,7 @@
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
     absentees: ["/portal/absentees_credits_portal_data.js?v=20260530-abs"],
-    participants: ["/portal/participants_parents_portal_data.js?v=20260707-karo"],
+    participants: ["/portal/participants_parents_portal_data.js?v=20260707-logan"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
