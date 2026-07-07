@@ -102,7 +102,7 @@ select
   'Elia',
   'Victor Matilla',
   'Paid',
-  7760.00,
+  7980.00,
   json_build_object(
     'Services',
     '60'' SW (Tuesday) · 90'' MULTI ACTIVITY (Sunday)',
@@ -111,8 +111,8 @@ select
     'Fund', 'Privately Funded',
     'VAT', '20% VAT included',
     'Cost', '£100 / session (Tue swim) · £120 / session (Sun multi)',
-    'Sessions', '38 weekday (Tue) + 33 weekend (Sun)',
-    'Year total', '£7760',
+    'Sessions', '39 weekday (Tue) + 34 weekend (Sun)',
+    'Year total', '£7980',
     'Admin fees', '£5 per installment (GoCardless)',
     'Notes', 'Demo seed for re-enrolment 2026/27 test — Elia Matilla / Victor Matilla.'
   )::json,
@@ -125,7 +125,7 @@ update public.client_payments cp
 set
   client_name = 'Elia',
   parent_name = 'Victor Matilla',
-  amount = 7760.00,
+  amount = 7980.00,
   data = json_build_object(
     'Services',
     '60'' SW (Tuesday) · 90'' MULTI ACTIVITY (Sunday)',
@@ -134,8 +134,8 @@ set
     'Fund', 'Privately Funded',
     'VAT', '20% VAT included',
     'Cost', '£100 / session (Tue swim) · £120 / session (Sun multi)',
-    'Sessions', '38 weekday (Tue) + 33 weekend (Sun)',
-    'Year total', '£7760',
+    'Sessions', '39 weekday (Tue) + 34 weekend (Sun)',
+    'Year total', '£7980',
     'Admin fees', '£5 per installment (GoCardless)',
     'Notes', 'Demo seed for re-enrolment 2026/27 test — Elia Matilla / Victor Matilla.'
   )::json
