@@ -490,6 +490,21 @@
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras;
+
+    try {
+      var revCell = global.document && global.document.getElementById("topbarToolCellTermReview");
+      var venCell = global.document && global.document.getElementById("topbarToolCellVenue");
+      var planCell = global.document && global.document.getElementById("topbarToolCellSessionPlanner");
+      console.log("[topbar] applyProfile", {
+        isDefault: profile === DEFAULT_TOPBAR_PROFILE,
+        swReview: !!profile.swReview,
+        venue: !!profile.venue,
+        planner: !!profile.planner,
+        reviewHidden: revCell ? !!revCell.hidden : "no-el",
+        venueHidden: venCell ? !!venCell.hidden : "no-el",
+        plannerHidden: planCell ? !!planCell.hidden : "no-el",
+      });
+    } catch (_) {}
   }
 
   function applyCeoStaffTopbarTools() {
@@ -508,14 +523,25 @@
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;
 
   function resolveTopbarProfileForStaff(staffKey) {
+    var matched = null;
     if (EXPLICIT_TOPBAR_PROFILES[staffKey]) {
-      return EXPLICIT_TOPBAR_PROFILES[staffKey];
+      matched = EXPLICIT_TOPBAR_PROFILES[staffKey];
+    } else {
+      var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
+      if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
+        matched = EXPLICIT_TOPBAR_PROFILES[leadKey];
+      }
     }
-    var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
-    if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
-      return EXPLICIT_TOPBAR_PROFILES[leadKey];
-    }
-    return DEFAULT_TOPBAR_PROFILE;
+    try {
+      console.log("[topbar] resolveProfile", {
+        staffKey: staffKey,
+        sid: global.STAFF_DASHBOARD_ID,
+        ddStaffId: (global.dashboardData || {}).staffId,
+        lastGood: __portalLastGoodStaffKey,
+        matched: !!matched,
+      });
+    } catch (_) {}
+    return matched || DEFAULT_TOPBAR_PROFILE;
   }
 
   function portalResyncPlannerToolsAfterIdentity() {
