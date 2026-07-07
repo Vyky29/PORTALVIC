@@ -313,8 +313,16 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
+    // Prefer the authoritative resolver (auth-map.js) with the full staff-code
+    // map (stf005 -> youssef, etc.) so topbar profiles resolve for every staff.
+    try {
+      if (typeof global.portalCanonicalStaffRosterKey === "function") {
+        var canon = global.portalCanonicalStaffRosterKey(k);
+        if (canon) return canon;
+      }
+    } catch (_) {}
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
-    if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
     if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
