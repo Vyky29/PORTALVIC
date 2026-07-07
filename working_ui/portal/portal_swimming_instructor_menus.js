@@ -369,6 +369,31 @@
     return __portalLastGoodStaffKey;
   }
 
+  /* Anti-downgrade guard. Several async passes (identity-resolved, source-updated,
+     avatar refresh) each re-resolve + re-apply the topbar profile. If one pass
+     transiently resolves to DEFAULT for a staff who actually has an explicit
+     profile (e.g. Youssef = Photo/Venue/PickUp/Plan), it would drop the 4th icon
+     back to the 3-icon default. Remember the last explicit (non-default) profile
+     per staff key and reuse it when a later pass fails to resolve for the SAME
+     staff (or before identity is known). A genuine switch to a different known
+     staff (e.g. admin ghost teleport) still gets its own profile. */
+  var __portalLastExplicitProfile = null;
+  var __portalLastExplicitKey = "";
+
+  function resolveTopbarProfileForStaffGuarded(staffKey) {
+    var canon = canonicalStaffRosterKey(staffKey);
+    var profile = resolveTopbarProfileForStaff(staffKey);
+    if (profile && profile !== DEFAULT_TOPBAR_PROFILE) {
+      __portalLastExplicitKey = canon;
+      __portalLastExplicitProfile = profile;
+      return profile;
+    }
+    if (__portalLastExplicitProfile && (!canon || canon === __portalLastExplicitKey)) {
+      return __portalLastExplicitProfile;
+    }
+    return profile;
+  }
+
   function resolveCurrentStaffKeyRaw() {
     try {
       var sid = global.STAFF_DASHBOARD_ID;
@@ -563,7 +588,7 @@
   function portalResyncPlannerToolsAfterIdentity() {
     var staffKey = resolveCurrentStaffKey();
     if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
-    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    applyTopbarProfile(resolveTopbarProfileForStaffGuarded(staffKey));
     try {
       if (typeof global.portalSyncTopbarRoleTools === "function") {
         global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });
@@ -584,7 +609,7 @@
     }
 
     var staffKey = resolveCurrentStaffKey();
-    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    applyTopbarProfile(resolveTopbarProfileForStaffGuarded(staffKey));
 
     try {
       if (typeof global.applySetupRoleTrainingRow === "function") {
