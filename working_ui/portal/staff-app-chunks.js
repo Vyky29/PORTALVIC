@@ -12,7 +12,7 @@
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260707-fadi-segments",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260707-fadi-ikram-segments",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",

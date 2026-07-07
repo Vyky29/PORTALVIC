@@ -9,25 +9,32 @@
 
   /**
    * Display-only breakdown for combined Day Centre slots (pool hour + centre),
-   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3 — the "combined" card like
-   * Emmanuel/Ikram. The static bundle carries `segments`, but the live MADRE
-   * document may omit them, which made the card render combined on first paint
-   * then revert to a single block after the live roster refresh. Synthesizing
-   * the breakdown here keeps the combined card stable from ANY source. This is
-   * strictly cosmetic: the slot stays ONE session for feedback / pay.
+   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
+   * Day Centre across 11–4. The static bundle carries `segments`, but the live
+   * MADRE document may omit them, which made the card render combined on first
+   * paint then revert to a single block after the live roster refresh.
+   * Synthesizing the same breakdown here keeps the combined card stable from ANY
+   * source. Strictly cosmetic: the slot stays ONE session for feedback / pay.
+   * Keyed by participant + normalized time slot (spaces stripped, lowercased).
    */
+  var PORTAL_COMBINED_DAY_CENTRE_SEGMENTS = {
+    "fadi|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+  };
   function portalSynthesizeCombinedSegments(nameLower, service, timeSlot) {
     const svc = String(service || "").trim().toLowerCase();
     if (svc !== "day centre") return null;
     const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
     const name = String(nameLower || "").trim().toLowerCase();
-    if (name === "fadi" && slot === "12.30to3") {
-      return [
-        { time_slot: "12.30 to 1", area: "Big Pool" },
-        { time_slot: "1 to 3", area: "Day Centre" },
-      ];
-    }
-    return null;
+    const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[name + "|" + slot];
+    return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
   }
 
   function parseHm(token) {
