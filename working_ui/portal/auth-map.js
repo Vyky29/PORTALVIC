@@ -91,6 +91,8 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Simon: "stf016@staff.import.pending",
   Luliya: "stf021@staff.import.pending",
   Lulia: "stf021@staff.import.pending",
+  Aida: "stf021@staff.import.pending",
+  "Aida Luliya": "stf021@staff.import.pending",
   Andres: "stf022@staff.import.pending",
   Javi: "javier@clubsensational.org",
   Palankas: "javier@clubsensational.org",
