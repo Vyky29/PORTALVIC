@@ -1663,7 +1663,7 @@
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
       if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
       var origInst = slotInstructors(slot).slice();
-      var effective = coverName ? [coverName] : coverId ? [coverId] : origInst.slice();
+      var effective = swapInstructorCoverInList(origInst, anchorId, coverName, coverId);
       var reassigned = Object.assign({}, slot, {
         instructors: effective,
         instructor_label: effective.join(", "),
@@ -1673,7 +1673,6 @@
         portalCoveringStaffId: coverId,
         portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
       });
-      reassigned.feedback_unit_key = feedbackUnitKey(reassigned);
       return reassigned;
     });
   }
@@ -1936,7 +1935,7 @@
       keys.push(feedbackUnitKey(slot));
       return keys;
     }
-    if (isBespokeMultiStaffSharedSlot(slot)) {
+    if (isBespokeSharedFeedbackSlot(slot)) {
       keys.push(slot.session_date + "|" + cid);
       keys.push(slot.session_date + "|" + cid + "|bespoke_shared");
       keys.push(slot.session_date + "|" + cid + "|hub_room");
@@ -2346,6 +2345,78 @@
     if (clean(slot.venue).toLowerCase() !== "swimfarm") return false;
     if (slotAreaKind(slot) !== "hub") return false;
     return slotInstructorCount(slot) >= 2;
+  }
+
+  /** Includes split single-instructor bundle rows merged via annotateBespokeSharedUnitKeys. */
+  function isBespokeSharedFeedbackSlot(slot) {
+    if (!slot) return false;
+    if (clean(slot.feedback_unit_key).indexOf("bespoke_shared") >= 0) return true;
+    return isBespokeMultiStaffSharedSlot(slot);
+  }
+
+  function bespokeSwimfarmHubGroupKey(slot) {
+    if (!slot || !isBespokeService(slot.service)) return "";
+    if (clean(slot.venue).toLowerCase() !== "swimfarm") return "";
+    if (slotAreaKind(slot) !== "hub") return "";
+    var cid = canonicalClientSlug(slot.client_name);
+    var day = clean(slot.session_date);
+    if (!cid || !day) return "";
+    var t = slot.time_start || normTimeKey(slot.time_slot, slot.day);
+    return day + "|" + cid + "|" + t + "|bespoke_hub";
+  }
+
+  /** MADRE sometimes ships one instructor per row (JOHN / GODSWAY / BISMARK) — unify feedback unit. */
+  function annotateBespokeSharedUnitKeys(slots) {
+    if (!slots || !slots.length) return slots || [];
+    var groups = Object.create(null);
+    var order = [];
+    var i;
+    for (i = 0; i < slots.length; i++) {
+      var gk = bespokeSwimfarmHubGroupKey(slots[i]);
+      if (!gk) continue;
+      if (!groups[gk]) {
+        groups[gk] = [];
+        order.push(gk);
+      }
+      groups[gk].push(slots[i]);
+    }
+    for (i = 0; i < order.length; i++) {
+      var g = groups[order[i]];
+      var mergedInst = mergeSlotInstructorLabels(g);
+      var instNames = mergedInst
+        ? mergedInst.split(/,\s*/).filter(Boolean)
+        : [];
+      if (g.length < 2 && instNames.length < 2) continue;
+      var cid = canonicalClientSlug(g[0].client_name);
+      var uk = g[0].session_date + "|" + cid + "|bespoke_shared";
+      for (var j = 0; j < g.length; j++) {
+        g[j].feedback_unit_key = uk;
+      }
+    }
+    return slots;
+  }
+
+  function swapInstructorCoverInList(instructors, anchorId, coverName, coverId) {
+    var list = normalizeInstructorList(instructors);
+    if (!list.length) {
+      var solo = coverName || resolveStaffDisplayName(coverId) || coverId;
+      return solo ? [solo] : [];
+    }
+    var cover = coverName || resolveStaffDisplayName(coverId) || coverId;
+    if (!anchorId) return cover ? [cover] : list.slice();
+    var hit = false;
+    var out = list.map(function (name) {
+      if (staffIdMatchesInstructorWithSwimAliases(anchorId, [name])) {
+        hit = true;
+        return cover || name;
+      }
+      return name;
+    });
+    if (!hit && list.length === 1 && staffIdMatchesInstructorWithSwimAliases(anchorId, list)) {
+      return cover ? [cover] : list.slice();
+    }
+    if (!hit && cover) return [cover];
+    return out.length ? out : list.slice();
   }
 
   function dayCentreFeedbackServiceCompatible(fb, slot) {
@@ -3272,7 +3343,7 @@
     if (isDayCentreService(slot.service)) {
       return dayCentreFeedbackServiceCompatible(fb, slot);
     }
-    if (isBespokeMultiStaffSharedSlot(slot)) {
+    if (isBespokeSharedFeedbackSlot(slot)) {
       if (isAbsentFeedbackRow(fb)) return false;
       if (!feedbackRosterDateMatches(fb, slot)) return false;
       if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
@@ -3366,7 +3437,7 @@
     if (isDayCentreService(slot.service)) {
       return slot.session_date + "|" + cid + "|day_centre";
     }
-    if (isBespokeMultiStaffSharedSlot(slot)) {
+    if (isBespokeSharedFeedbackSlot(slot)) {
       return slot.session_date + "|" + cid + "|bespoke_shared";
     }
     var t = slot.time_start || normTimeKey(slot.time_slot);
@@ -3449,7 +3520,7 @@
     var order = [];
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
-      var key = feedbackUnitKey(slot);
+      var key = clean(slot.feedback_unit_key) || feedbackUnitKey(slot);
       if (!key) {
         order.push({ key: "row-" + i, slots: [slot] });
         continue;
@@ -3468,8 +3539,8 @@
     return !!(st && st >= "16:00");
   }
 
-  /** Day Centre split blocks (e.g. Roberto 12.30–3 + Youssef 1–3): union instructors for overview/filter. */
-  function mergeDayCentreInstructorLabels(slots) {
+  /** Split roster rows (Day Centre blocks, bespoke 3:1 teams): union instructors for overview/filter. */
+  function mergeSlotInstructorLabels(slots) {
     var seen = Object.create(null);
     var out = [];
     for (var i = 0; i < slots.length; i++) {
@@ -3489,7 +3560,9 @@
     return out.join(", ");
   }
 
-  /** One overview row per feedback unit (Day Centre blocks collapse to one row per client). */
+  var mergeDayCentreInstructorLabels = mergeSlotInstructorLabels;
+
+  /** One overview row per feedback unit (Day Centre / bespoke_shared blocks collapse to one row). */
   function pickRepresentativeSlotForUnit(unit) {
     var slots = unit.slots;
     if (!slots || !slots.length) return null;
@@ -3498,13 +3571,17 @@
     for (si = 1; si < slots.length; si++) {
       if ((slots[si].time_start || "") < (rep.time_start || "")) rep = slots[si];
     }
-    if (slots.length === 1 || !isDayCentreService(rep.service)) return rep;
+    var unitKey = (unit && unit.key) || clean(rep.feedback_unit_key) || feedbackUnitKey(rep);
+    var mergeInstructors =
+      slots.length > 1 &&
+      (isDayCentreService(rep.service) || unitKey.indexOf("bespoke_shared") >= 0);
+    if (!mergeInstructors) return rep;
     var last = rep;
     for (si = 0; si < slots.length; si++) {
       if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
     }
     var merged = Object.assign({}, rep);
-    if (last !== rep) {
+    if (last !== rep && isDayCentreService(rep.service)) {
       var a = clean(rep.time_slot);
       var b = clean(last.time_slot);
       if (a && b && a !== b) {
@@ -3515,8 +3592,15 @@
         merged.time_start = pt.start;
       }
     }
-    var allInst = mergeDayCentreInstructorLabels(slots);
-    if (allInst) merged.instructors = allInst;
+    var allInst = mergeSlotInstructorLabels(slots);
+    if (allInst) {
+      merged.instructors = allInst;
+      merged.instructor_label = allInst;
+    }
+    if (unitKey.indexOf("bespoke_shared") >= 0) {
+      delete merged.portalInstructorReassigned;
+      delete merged.portalOriginalInstructors;
+    }
     return merged;
   }
 
@@ -5323,6 +5407,7 @@
       (this.payload && this.payload.schedule_overrides) || []
     );
     out = applyInstructorReassignOverrides(this, out);
+    out = annotateBespokeSharedUnitKeys(out);
     out = applyShadowingHostDisplay(this, out);
     if (this.opts && typeof this.opts.slotScopeFilter === "function") {
       out = out.filter(this.opts.slotScopeFilter);
@@ -5515,15 +5600,27 @@
     var instRaw = [];
     var svcMap = {};
     var slots = this.expandSlotsForDate(dayIso);
-    for (var i = 0; i < slots.length; i++) {
-      var s = slots[i];
-      if (shouldOmitOverviewSlot(hub, s)) continue;
-      if (isTeflonDemoRosterSlot(s)) continue;
+    var visible = slots.filter(function (s) {
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+    });
+    var displaySlots = overviewDisplaySlotsFromUnits(hub, visible);
+
+    function addInstructorsFromSlot(s) {
+      if (!s) return;
       var svc = clean(s.service);
       if (svc) svcMap[svc] = true;
       var labels = slotInstructors(s);
       for (var j = 0; j < labels.length; j++) instRaw.push(labels[j]);
+      if (s.portalOriginalInstructors) {
+        var orig = normalizeInstructorList(s.portalOriginalInstructors);
+        for (var oi = 0; oi < orig.length; oi++) instRaw.push(orig[oi]);
+      }
+      if (s.portalCoveringStaffName) instRaw.push(s.portalCoveringStaffName);
     }
+
+    for (var i = 0; i < displaySlots.length; i++) addInstructorsFromSlot(displaySlots[i]);
+    for (var k = 0; k < visible.length; k++) addInstructorsFromSlot(visible[k]);
+
     return {
       instructors: uniqueInstructorFilterNames(instRaw),
       services: Object.keys(svcMap).sort(function (a, b) {
