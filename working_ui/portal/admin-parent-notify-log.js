@@ -366,7 +366,20 @@
     if (/^bespoke\b/i.test(s)) return "Bespoke";
     if (/multi[- ]?activity/i.test(s)) return "Multi-Activity";
     if (/^aquatic\b/i.test(s)) return "Aquatic";
+    if (/day\s*centre/i.test(s)) return "Day centre";
     return s.replace(/\bProgramme\b/gi, "").replace(/\s{2,}/g, " ").trim();
+  }
+
+  /** Over 90' → hours (120' → 2h, 150' → 2.5h); otherwise minutes with '. */
+  function formatDurationLabel(mins) {
+    var n = Number(mins) || 0;
+    if (n <= 0) return "";
+    if (n > 90) {
+      var h = n / 60;
+      var rounded = Math.round(h * 10) / 10;
+      return (rounded % 1 === 0 ? String(rounded) : String(rounded)) + "h";
+    }
+    return n + "'";
   }
 
   /** Staffing ratio is product knowledge — not instructor count on the roster line. */
@@ -402,7 +415,8 @@
   }
 
   function parseSlotBounds(timeSlot) {
-    var s = String(timeSlot || "").trim();
+    // Roster typos like "12.30 to 1,30" → treat comma as minutes separator.
+    var s = String(timeSlot || "").trim().replace(/,/g, ".");
     var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*to\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i);
     if (!m) return null;
     function toMin(h, mm, mer) {
@@ -492,9 +506,46 @@
     return kept;
   }
 
+  /** Day Centre roster is often split for feedback — collapse each day to the real span. */
+  function collapseDayCentreDaySpans(slots) {
+    var pass = [];
+    var buckets = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      if (!/day\s*centre/.test(String(slot.serviceKey || ""))) {
+        pass.push(slot);
+        return;
+      }
+      var bk = [slot.day, slot.serviceKey, slot.venue].join("|");
+      if (!buckets[bk]) {
+        buckets[bk] = {
+          day: slot.day,
+          venue: slot.venue,
+          service: slot.service,
+          serviceKey: slot.serviceKey,
+          start: slot.start,
+          end: slot.end,
+          mins: slot.mins,
+          instructors: Object.assign(Object.create(null), slot.instructors || {}),
+        };
+        return;
+      }
+      buckets[bk].start = Math.min(buckets[bk].start, slot.start);
+      buckets[bk].end = Math.max(buckets[bk].end, slot.end);
+      buckets[bk].mins = buckets[bk].end - buckets[bk].start;
+      Object.keys(slot.instructors || {}).forEach(function (k) {
+        buckets[bk].instructors[k] = true;
+      });
+    });
+    return pass.concat(
+      Object.keys(buckets).map(function (k) {
+        return buckets[k];
+      })
+    );
+  }
+
   /**
-   * Enrolled service chips for the participant (hover = day / time / venue).
-   * Multi-Activity halves are merged to the real 90' booking.
+   * Enrolled service chips for the participant (hover = ratio / day / time / venue).
+   * Multi-Activity halves and Day Centre fragments are merged to the real booking.
    */
   function enrolledChipsForClient(clientName) {
     var want = String(clientName || "").trim();
@@ -537,7 +588,7 @@
       return deduped[k];
     });
     if (!raw.length) return "";
-    var merged = mergeAbuttingHalfSlots(raw);
+    var merged = collapseDayCentreDaySpans(mergeAbuttingHalfSlots(raw));
     var ratio = enrolledRatioForClient(want);
     var groups = Object.create(null);
     merged.forEach(function (slot) {
@@ -572,12 +623,15 @@
           return (DAY_ORDER[a.toLowerCase()] || 99) - (DAY_ORDER[b.toLowerCase()] || 99);
         });
         var bits = [];
-        if (g.mins) bits.push(g.mins + "'");
-        if (ratio > 1) bits.push(ratio + ":1");
+        var dur = formatDurationLabel(g.mins);
+        if (dur) bits.push(dur);
         bits.push(shortServiceLabel(g.service) || g.service);
-        var tip = [formatDayList(days), formatTimeRangeFromMinutes(g.start, g.end), g.venue]
-          .filter(Boolean)
-          .join(" / ");
+        var tipBits = [];
+        if (ratio > 1) tipBits.push(ratio + ":1");
+        tipBits.push(formatDayList(days));
+        tipBits.push(formatTimeRangeFromMinutes(g.start, g.end));
+        tipBits.push(g.venue);
+        var tip = tipBits.filter(Boolean).join(" / ");
         var tone = serviceChipTone(g.service, g.venue);
         return (
           '<span class="portal-pnlog-enrolled-chip portal-pnlog-enrolled-chip--' +
