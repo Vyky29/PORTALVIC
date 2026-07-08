@@ -292,13 +292,6 @@
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
         } catch (_) {}
-        try{
-          if(window.__PORTAL_STAFF_ROSTER_HYDRATED__){
-            portalStaffMarkInitialTodayScheduleSettled();
-          }else if(typeof portalStaffEnsureInitialTodayScheduleSettledSoon === 'function'){
-            portalStaffEnsureInitialTodayScheduleSettledSoon(4000);
-          }
-        }catch(_){}
         if (
           dashboardData.portalAnnouncementAcksMerged &&
           typeof portalSyncAnnouncementsAndRemindersUi === "function"
@@ -331,7 +324,6 @@
           if(typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
         }
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-        portalStaffMarkInitialTodayScheduleSettled();
         if (typeof renderHeader === "function") renderHeader();
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();

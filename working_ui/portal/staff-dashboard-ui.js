@@ -738,10 +738,9 @@
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
-      let count = Math.min(9, dashboardData.today.length || 0);
-      if(!count && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
-        count = 0;
-      }
+      const awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
+        && portalStaffLiveTodayAwaitingInitialSchedule();
+      let count = awaitingInitialToday ? 0 : Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
       if(!count){

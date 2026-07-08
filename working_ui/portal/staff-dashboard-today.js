@@ -2661,7 +2661,6 @@
     function portalStaffLiveTodayAwaitingInitialSchedule(){
       if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
       try{
-        if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return false;
         if(dashboardData && dashboardData.portalIdentityResolved === false) return true;
         if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
         /* Keep the Today cards on the brief "syncing" panel until schedule overrides have
@@ -2670,6 +2669,7 @@
            overrides flag is force-set to true on error/no-Supabase and via the settle/hydrate
            timers, so this can only hold the panel for the brief initial sync window. */
         if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
+        if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return true;
         return false;
       }catch(_){ return true; }
     }
@@ -2692,6 +2692,7 @@
         window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = setTimeout(function(){
           window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = null;
           if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return;
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return;
           portalStaffMarkInitialTodayScheduleSettled();
           try{ if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay(); }catch(_){}
           try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
@@ -3077,6 +3078,8 @@
       if(opts.loading) return 'loading';
       const sid = String(staffId || '').trim().toLowerCase();
       const live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(live && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
+        && portalStaffLiveTodayAwaitingInitialSchedule()) return 'sync';
       const anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
         ? portalResolveTodaySectionCalendarDate()
         : null;
@@ -3584,12 +3587,6 @@
       }
       dashboardData.today = rows;
       dashboardData.__portalTodayCalendarIso = selectedIso || (rows.length ? portalTodayRowsCalendarIso(rows) : '');
-      if(liveToday && typeof window !== 'undefined'
-        && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
-        && window.__PORTAL_STAFF_ROSTER_HYDRATED__
-        && typeof portalStaffMarkInitialTodayScheduleSettled === 'function'){
-        portalStaffMarkInitialTodayScheduleSettled();
-      }
       if(rows.length && typeof portalStaffUpdateSessionsModelGuard === 'function'){
         portalStaffUpdateSessionsModelGuard(id, Array.isArray(modelOverride) ? modelOverride : sessionsModel);
       }
@@ -3809,11 +3806,6 @@
         if(typeof renderHeader === 'function') renderHeader();
         if(typeof renderToday === 'function') renderToday();
       }catch(_){}
-      if(window.__PORTAL_STAFF_ROSTER_HYDRATED__){
-        try{ portalStaffMarkInitialTodayScheduleSettled(); }catch(_){}
-      }else{
-        try{ portalStaffEnsureInitialTodayScheduleSettledSoon(4000); }catch(_){}
-      }
       if(typeof portalStaffKickScheduleOverridesHydrate === 'function'){
         void portalStaffKickScheduleOverridesHydrate();
       }
