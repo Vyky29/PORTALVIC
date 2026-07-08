@@ -570,7 +570,7 @@
       "</textarea>" +
       '<div class="portal-pnlog-composer__bar">' +
       '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
-      '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend" style="background:#15803d;border-color:#15803d"' +
+      '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
       ">" +
       (state.sending ? "Sending…" : "Send") +

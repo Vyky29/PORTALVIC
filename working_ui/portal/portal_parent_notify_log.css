@@ -1,4 +1,11 @@
 .portal-pnlog-root {
+  --pnlog-blue: #2d84b3;
+  --pnlog-blue-soft: rgba(45, 132, 179, 0.12);
+  --pnlog-blue-mid: rgba(45, 132, 179, 0.22);
+  --pnlog-yellow: #f5c518;
+  --pnlog-yellow-soft: rgba(245, 197, 24, 0.28);
+  --pnlog-ink: #0f172a;
+  --pnlog-muted: #64748b;
   min-width: 0;
 }
 
@@ -31,7 +38,7 @@
 }
 
 .portal-pnlog-count--has-unread {
-  color: #15803d;
+  color: var(--pnlog-blue);
   font-weight: 700;
 }
 
@@ -47,15 +54,15 @@
   padding: 12px;
 }
 
-/* WhatsApp Web–style split */
+/* WhatsApp Web–style split — ClubSENsational blue / yellow */
 .portal-pnlog-chat {
   display: grid;
   grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   gap: 0;
   min-width: 0;
-  min-height: min(70vh, 640px);
-  max-height: min(78vh, 720px);
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  height: min(72vh, 680px);
+  max-height: min(72vh, 680px);
+  border: 1px solid rgba(45, 132, 179, 0.22);
   border-radius: 14px;
   overflow: hidden;
   background: #fff;
@@ -64,14 +71,16 @@
 .portal-pnlog-chat__list {
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid rgba(15, 23, 42, 0.1);
-  background: #f8fafc;
+  height: 100%;
+  border-right: 1px solid rgba(45, 132, 179, 0.16);
+  background: #f4f9fc;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .portal-pnlog-chat__list-inner {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
   display: flex;
@@ -81,10 +90,14 @@
 .portal-pnlog-chat__pane {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  background: #ece5dd;
-  background-image: linear-gradient(180deg, rgba(236, 229, 221, 0.95), rgba(229, 221, 212, 0.98));
+  overflow: hidden;
+  background: #eef6fb;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(245, 197, 24, 0.14), transparent 42%),
+    radial-gradient(circle at 88% 78%, rgba(45, 132, 179, 0.1), transparent 46%);
 }
 
 .portal-pnlog-conv {
@@ -96,7 +109,7 @@
   margin: 0;
   padding: 12px 14px;
   border: 0;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(45, 132, 179, 0.1);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -106,12 +119,12 @@
 }
 
 .portal-pnlog-conv:hover {
-  background: rgba(15, 23, 42, 0.04);
+  background: var(--pnlog-blue-soft);
 }
 
 .portal-pnlog-conv.is-selected {
-  background: rgba(22, 163, 74, 0.12);
-  box-shadow: inset 3px 0 0 #16a34a;
+  background: var(--pnlog-yellow-soft);
+  box-shadow: inset 3px 0 0 var(--pnlog-blue);
 }
 
 .portal-pnlog-conv--unread .portal-pnlog-conv__who {
@@ -131,6 +144,7 @@
   font-size: 14px;
   overflow-wrap: anywhere;
   min-width: 0;
+  color: var(--pnlog-ink);
 }
 
 .portal-pnlog-conv__when {
@@ -173,8 +187,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: #f0f2f5;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(90deg, #e8f3f9 0%, #fff8e1 100%);
+  border-bottom: 1px solid rgba(45, 132, 179, 0.18);
   min-width: 0;
   flex: 0 0 auto;
 }
@@ -194,6 +208,7 @@
   font-size: 15px;
   overflow-wrap: anywhere;
   min-width: 0;
+  color: var(--pnlog-blue);
 }
 
 .portal-pnlog-pane-head__sub {
@@ -202,11 +217,13 @@
   min-width: 0;
 }
 
+/* Must shrink so the composer stays visible below */
 .portal-pnlog-thread-scroll {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
   padding: 12px 14px 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .portal-pnlog-thread {
@@ -214,6 +231,7 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  padding-bottom: 4px;
 }
 
 .portal-pnlog-bubble {
@@ -235,8 +253,8 @@
 
 .portal-pnlog-bubble--out {
   align-self: flex-end;
-  background: #dcf8c6;
-  border-color: rgba(22, 163, 74, 0.22);
+  background: #fff3c4;
+  border-color: rgba(245, 197, 24, 0.55);
   border-bottom-right-radius: 4px;
 }
 
@@ -256,13 +274,13 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #64748b;
+  color: var(--pnlog-muted);
   min-width: 0;
 }
 
 .portal-pnlog-bubble__time {
   font-size: 11px;
-  color: #64748b;
+  color: var(--pnlog-muted);
   white-space: nowrap;
 }
 
@@ -285,7 +303,7 @@
 .portal-pnlog-bubble__file {
   font-size: 13px;
   font-weight: 600;
-  color: #1d4ed8;
+  color: var(--pnlog-blue);
   overflow-wrap: anywhere;
 }
 
@@ -308,8 +326,8 @@
 }
 
 .portal-pnlog-chip--ok {
-  background: rgba(22, 163, 74, 0.12);
-  color: #15803d;
+  background: var(--pnlog-blue-soft);
+  color: #1a5f82;
 }
 
 .portal-pnlog-chip--bad {
@@ -318,13 +336,13 @@
 }
 
 .portal-pnlog-chip--in {
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
+  background: var(--pnlog-blue-soft);
+  color: #1a5f82;
 }
 
 .portal-pnlog-chip--read {
-  background: rgba(37, 99, 235, 0.16);
-  color: #1d4ed8;
+  background: rgba(45, 132, 179, 0.2);
+  color: #1a5f82;
 }
 
 .portal-pnlog-chip--muted {
@@ -333,21 +351,24 @@
 }
 
 .portal-pnlog-chip--unread {
-  background: #16a34a;
+  background: var(--pnlog-blue);
   color: #fff;
   font-weight: 700;
   margin-top: 4px;
 }
 
+/* Always pinned at bottom of the pane */
 .portal-pnlog-composer {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 10px 12px 12px;
-  background: #f0f2f5;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  border-top: 2px solid var(--pnlog-yellow);
+  box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.06);
   min-width: 0;
+  z-index: 2;
 }
 
 .portal-pnlog-composer--disabled {
@@ -355,25 +376,29 @@
 }
 
 .portal-pnlog-composer__input {
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 52px;
+  min-height: 56px;
   max-height: 140px;
   resize: vertical;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(45, 132, 179, 0.35);
   border-radius: 12px;
   padding: 10px 12px;
   font: inherit;
   font-size: 14px;
   line-height: 1.4;
   background: #fff;
+  color: var(--pnlog-ink);
   overflow-wrap: anywhere;
+  box-sizing: border-box;
 }
 
 .portal-pnlog-composer__input:focus {
-  outline: 2px solid rgba(22, 163, 74, 0.35);
+  outline: 2px solid rgba(45, 132, 179, 0.45);
   outline-offset: 1px;
+  border-color: var(--pnlog-blue);
 }
 
 .portal-pnlog-composer__bar {
@@ -397,12 +422,24 @@
 
 .portal-pnlog-composer__send {
   flex: 0 0 auto;
+  background: var(--pnlog-blue) !important;
+  border-color: var(--pnlog-blue) !important;
+  color: #fff !important;
+}
+
+.portal-pnlog-composer__send:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.portal-pnlog-composer__send:disabled {
+  opacity: 0.65;
 }
 
 @media (max-width: 780px) {
   .portal-pnlog-chat {
     grid-template-columns: minmax(0, 1fr);
-    max-height: min(82vh, 720px);
+    height: min(78vh, 680px);
+    max-height: min(78vh, 680px);
   }
 
   .portal-pnlog-chat__list {
