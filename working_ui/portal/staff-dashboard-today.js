@@ -4040,7 +4040,11 @@
         dashboardData.portalLiveAnnouncementIdSet = {};
         visible.forEach(function(row){
           var rowTyp = String(row.message_type || '').toLowerCase().trim();
-          if(rowTyp === 'announcement' || rowTyp === 'contract_signing'){
+          /* incident_team / incident_encounter are signed like announcements; they
+             MUST be in the live set or portalPruneStaleSignedAnnouncementAcks deletes
+             the local ack (id not in liveSet) and the notice re-prompts on the next
+             hydrate / PWA resume reload / realtime event. */
+          if(rowTyp === 'announcement' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter'){
             dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
           }
         });
@@ -4206,7 +4210,10 @@
         const annIds = visible
           .filter(function(row){
             var rowTyp = String(row.message_type || '').toLowerCase().trim();
-            return rowTyp === 'announcement' || rowTyp === 'contract_signing';
+            /* Include incident notices so their acks are merged back from Supabase
+               (cross-device / after cache purge). Without this the server copy is
+               ignored and the notice re-prompts. */
+            return rowTyp === 'announcement' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter';
           })
           .map(function(row){ return String(row.id || ''); })
           .filter(Boolean);
