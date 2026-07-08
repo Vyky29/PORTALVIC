@@ -4800,8 +4800,42 @@
         window.__PORTAL_STAFF_HIDDEN_AT__ = Date.now();
       }catch(_){}
     }
+    /* Installed PWAs (esp. iOS) resume the last in-memory page instead of doing a
+       fresh network load like a browser tab, so schedule edits/new deploys never
+       reach the worker. When the app is brought back to the foreground after being
+       backgrounded a while, do a real reload (HTML is no-store → fresh boot + roster
+       + live data). Guarded so we never interrupt an open sheet or active typing. */
+    var PORTAL_STAFF_RESUME_RELOAD_MS = 4 * 60 * 1000;
+    function portalStaffIsStandalonePwa(){
+      try{
+        if(window.navigator && window.navigator.standalone === true) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+      }catch(_){}
+      return false;
+    }
+    function portalStaffShouldReloadOnResume(){
+      try{
+        if(!portalStaffIsStandalonePwa()) return false;
+        var tHid = Number(window.__PORTAL_STAFF_HIDDEN_AT__ || 0);
+        if(!(tHid > 0)) return false;
+        if(Date.now() - tHid < PORTAL_STAFF_RESUME_RELOAD_MS) return false;
+        if(document.querySelector('.sheet.open')) return false;
+        var ae = document.activeElement;
+        if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(String(ae.tagName || ''))) return false;
+        if(ae && ae.isContentEditable) return false;
+        return true;
+      }catch(_){ return false; }
+    }
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible'){
+        try{
+          if(portalStaffShouldReloadOnResume()){
+            window.location.reload();
+            return;
+          }
+        }catch(_){}
         try{
           if(typeof Notification !== 'undefined' && Notification.permission === 'granted' && typeof window.portalEnsureWebPushSubscription === 'function'){
             void window.portalEnsureWebPushSubscription();
