@@ -43,6 +43,7 @@
     liveAiUsed: false,
     aiUnavailable: false,
     manualMode: false,
+    unifiedParentFeedback: false,
     narrativeSnapshot: "",
     filterPositiveSnapshot: "",
     filterRelevantSnapshot: "",
@@ -388,10 +389,12 @@
     if (state.manualMode) {
       var mPos = clean(els.positive && els.positive.value);
       var mRel = clean(els.relevant && els.relevant.value);
-      els.submitBtn.disabled = len < MIN_NARRATIVE_CHARS || !mPos || !mRel;
+      // Unified flow: Relevant AI box is unused; optional Notes are separate.
+      els.submitBtn.disabled =
+        len < MIN_NARRATIVE_CHARS || !mPos || (!state.unifiedParentFeedback && !mRel);
       if (hint) {
         if (len < MIN_NARRATIVE_CHARS) hint.textContent = narrativeLengthHint();
-        else if (!mPos || !mRel) hint.textContent = MANUAL_ENTRY_HINT;
+        else if (!mPos || (!state.unifiedParentFeedback && !mRel)) hint.textContent = MANUAL_ENTRY_HINT;
         else hint.textContent = "Ready to submit (entered manually — no AI filter).";
       }
       return;
@@ -436,6 +439,7 @@
     state.filtered = false;
     state.liveAiUsed = false;
     state.aiUnavailable = false;
+    state.unifiedParentFeedback = false;
     state.narrativeSnapshot = "";
     state.filterPositiveSnapshot = "";
     state.filterRelevantSnapshot = "";
@@ -543,7 +547,7 @@
     }
   }
 
-  function applyFilterResult(positive, relevant, liveAi) {
+  function applyFilterResult(positive, relevant, liveAi, unified) {
     var ctx = readFormContext();
     var participantName = ctx.participant_name || "";
     if (global.PortalParticipantFeedbackName && participantName) {
@@ -551,25 +555,41 @@
         positive,
         participantName,
       );
-      relevant = global.PortalParticipantFeedbackName.enforceParticipantFirstNameInText(
-        relevant,
-        participantName,
-      );
+      if (relevant && !unified) {
+        relevant = global.PortalParticipantFeedbackName.enforceParticipantFirstNameInText(
+          relevant,
+          participantName,
+        );
+      }
     }
     if (els.positive) els.positive.value = positive;
-    if (els.relevant) els.relevant.value = relevant;
+    // From 7 Jul 2026: one parent-facing text. Optional Notes are staff-typed
+    // (sessionNotes → relevant_information on submit), not AI-invented.
+    if (els.relevant) {
+      if (unified) {
+        els.relevant.value = "";
+      } else {
+        els.relevant.value = /^none$/i.test(clean(relevant)) ? "" : relevant;
+      }
+    }
     state.filtered = true;
     state.liveAiUsed = !!liveAi;
+    state.unifiedParentFeedback = !!unified;
     if (liveAi) state.aiUnavailable = false;
     state.narrativeSnapshot = narrativeText();
     state.filterPositiveSnapshot = positive;
-    state.filterRelevantSnapshot = relevant;
+    state.filterRelevantSnapshot = unified ? "" : clean(relevant);
     state.counts.filter += 1;
     setAiFieldsRequired(true);
+    if (unified && els.relevant) els.relevant.removeAttribute("required");
     showAiOutput(true);
     syncSubmitGate();
     if (liveAi) {
-      setStatus("Filtered — edit Positive or Relevant if needed, then Submit.");
+      setStatus(
+        unified
+          ? "Filtered — one parent message ready. Edit if needed, then Submit. Optional Notes stay in the Notes field."
+          : "Filtered — edit Positive or Relevant if needed, then Submit.",
+      );
     }
   }
 
@@ -645,6 +665,7 @@
       ok: true,
       positive_feedback: clean(body.positive_feedback),
       relevant_information: clean(body.relevant_information),
+      unified_parent_feedback: !!body.unified_parent_feedback,
     };
   }
 
@@ -753,7 +774,12 @@
       return;
     }
 
-    applyFilterResult(result.positive_feedback, result.relevant_information, true);
+    applyFilterResult(
+      result.positive_feedback,
+      result.relevant_information,
+      true,
+      !!result.unified_parent_feedback,
+    );
 
     state.filtering = false;
     if (els.filterBtn) els.filterBtn.textContent = "Filter with AI";
@@ -816,6 +842,7 @@
       input_mode: state.inputMode,
       admin_filters: !!state.adminFilters,
       ai_unavailable: !!state.aiUnavailable,
+      unified_parent_feedback: !!state.unifiedParentFeedback,
       // In admin-filters mode the parent-facing text is prepared later by the
       // office, so submit stores the raw narrative only (positive/relevant cleared).
       ai_filter_pending: !!state.aiUnavailable || !!state.adminFilters,
@@ -825,7 +852,9 @@
       positive_edited_after_filter:
         state.filtered && positive !== clean(state.filterPositiveSnapshot),
       relevant_edited_after_filter:
-        state.filtered && relevant !== clean(state.filterRelevantSnapshot),
+        state.filtered &&
+        !state.unifiedParentFeedback &&
+        relevant !== clean(state.filterRelevantSnapshot),
       narrative_edited_after_filter:
         state.filtered && narrativeText() !== clean(state.narrativeSnapshot),
     };
@@ -860,7 +889,7 @@
         global.alert("Positive feedback is empty — write it yourself, then Submit.");
         return false;
       }
-      if (!mRelevant) {
+      if (!state.unifiedParentFeedback && !mRelevant) {
         global.alert("Relevant information is empty — write it (or 'None'), then Submit.");
         return false;
       }
@@ -895,7 +924,7 @@
       global.alert("Positive feedback is empty — run Filter with AI again.");
       return false;
     }
-    if (!relevant) {
+    if (!state.unifiedParentFeedback && !relevant) {
       global.alert("Relevant information is empty — run Filter with AI again.");
       return false;
     }

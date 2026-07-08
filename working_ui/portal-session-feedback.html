@@ -3030,17 +3030,22 @@ button{
     let positiveFeedback = (data.get("positiveFeedback") || "").toString();
     let relevantInformation = (data.get("relevantInformation") || "").toString();
     let aiFilterPending = false;
+    let unifiedParentFeedback = false;
     if(typeof window.PortalFeedbackNarrative !== "undefined" &&
         typeof window.PortalFeedbackNarrative.getSubmitAuditMeta === "function"){
       const auditMeta = window.PortalFeedbackNarrative.getSubmitAuditMeta() || {};
       aiFilterPending = !!(auditMeta.ai_filter_pending || auditMeta.ai_unavailable);
+      unifiedParentFeedback = !!auditMeta.unified_parent_feedback;
     }
     if(!aiFilterPending){
       if(!clean(positiveFeedback)){
         alert("Please run Filter with AI to fill Positive feedback.");
         return;
       }
-      if(!clean(relevantInformation)){
+      if(unifiedParentFeedback){
+        // From 7 Jul 2026: one parent message from AI; optional Notes are staff-typed.
+        relevantInformation = clean((data.get("sessionNotes") || "").toString());
+      } else if(!clean(relevantInformation)){
         alert("Please run Filter with AI to fill Relevant information.");
         return;
       }

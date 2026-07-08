@@ -159,7 +159,14 @@
       countStrong = String(canN);
       countLabel = canN === 1 ? "cancellation" : "cancellations";
       if (canN > 0) innerPct = 100;
-    } else if (hub.tab === "positive" || hub.tab === "relevant") {
+    } else if (hub.tab === "positive") {
+      var fbN = hub.feedbackLogRowsForDay(iso).filter(function (fb) {
+        return !isAbsentFeedbackRow(fb) && !isCancellationFeedbackRow(fb);
+      }).length;
+      countStrong = String(fbN);
+      countLabel = fbN === 1 ? "session" : "sessions";
+      if (fbN > 0) innerPct = 100;
+    } else if (hub.tab === "relevant") {
       var noteN = hub.feedbackNotesCountForDate(iso, hub.tab);
       countStrong = String(noteN);
       countLabel = noteN === 1 ? "note" : "notes";
@@ -4596,10 +4603,16 @@
         return hub.cancellationCountForDate(d);
       });
     }
-    if (this.tab === "positive" || this.tab === "relevant") {
-      var noteTab = this.tab;
+    if (this.tab === "positive") {
       return this.preferredCountDayInWeek(offset, function (d) {
-        return hub.feedbackNotesCountForDate(d, noteTab);
+        return hub.feedbackLogRowsForDay(d).filter(function (fb) {
+          return !isAbsentFeedbackRow(fb) && !isCancellationFeedbackRow(fb);
+        }).length;
+      });
+    }
+    if (this.tab === "relevant") {
+      return this.preferredCountDayInWeek(offset, function (d) {
+        return hub.feedbackNotesCountForDate(d, "relevant");
       });
     }
     if (
@@ -7323,8 +7336,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             fta.value = res.positive || "";
             var rel = fwrap.querySelector("[data-ash-family-relevant]");
             if (rel) {
-              if (res.relevant) {
-                rel.textContent = "Internal notes (AI): " + res.relevant;
+              var relText = String(res.relevant || "").trim();
+              if (relText && !/^none$/i.test(relText) && !res.unified) {
+                rel.textContent = "Internal notes (AI): " + relText;
                 rel.style.display = "";
               } else {
                 rel.textContent = "";
@@ -9053,7 +9067,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : this.htmlFeedbackWeekDaysRow();
 
     return (
-      '<p class="ash-feedback-filter-hint" style="margin-top:0">Most feedback is already AI-filtered on submit — only review and re-filter where the raw narrative still needs a parent-safe version.</p>' +
+      '<p class="ash-feedback-filter-hint" style="margin-top:0">From 7 Jul 2026: Filter with AI rewrites the whole session into one clubSENsational parent message (detail kept together). Optional staff Notes stay on the Notes tab — AI does not invent them.</p>' +
       weekBlock +
       this.feedbackFilterRowHtml() +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--filtered"><thead><tr>' +

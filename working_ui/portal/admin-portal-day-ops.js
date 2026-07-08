@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v17-incident-view-fix';
+  var PORTAL_DAY_OPS_BUILD = '20260708-v20-unified-parent-feedback';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -896,8 +896,8 @@
   function applyPendingFeedbackNav(hub) {
     if (!hub || pendingFeedbackNoteFilter === undefined) return;
     var nf = pendingFeedbackNoteFilter;
-    hub.tab = nf === 'positive' ? 'positive' : nf === 'relevant' ? 'relevant' : 'feedback';
-    hub.feedbackNoteFilter = nf === 'positive' || nf === 'relevant' ? nf : '';
+    // "positive" tab = Feedback (filtered) — all submitted narratives, not positive_feedback notes.
+    hub.feedbackNoteFilter = nf === 'relevant' ? 'relevant' : '';
     pendingFeedbackNoteFilter = undefined;
     if (hub.tab === 'positive' || hub.tab === 'relevant') {
       if (typeof hub.syncWeekPickerToCurrentWeek === 'function') hub.syncWeekPickerToCurrentWeek();
@@ -913,7 +913,7 @@
   }
 
   function feedbackSetupForC4k(tabId) {
-    if (tabId === 'positive') return { tab: 'positive', filter: 'positive' };
+    if (tabId === 'positive') return { tab: 'positive', filter: '' };
     if (tabId === 'relevant') return { tab: 'relevant', filter: 'relevant' };
     return { tab: 'feedback', filter: '' };
   }

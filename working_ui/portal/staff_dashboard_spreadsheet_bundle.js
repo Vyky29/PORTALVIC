@@ -8218,9 +8218,9 @@
     {
       "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "ROBERTO",
       "service": "Multi-Activity",
-      "area": "Hub Room",
+      "area": "Big Pool",
       "time_slot": "10.15 to 11",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
@@ -8248,9 +8248,9 @@
     {
       "client_name": "Samer",
       "day": "Sunday",
-      "instructors": "ROBERTO",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
-      "area": "Big Pool",
+      "area": "Hub Room",
       "time_slot": "10.15 to 11",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
@@ -8608,7 +8608,7 @@
     {
       "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.30 to 10.15",
