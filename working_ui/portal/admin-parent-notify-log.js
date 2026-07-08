@@ -303,9 +303,138 @@
       .trim();
     if (!na || !nb) return false;
     if (na === nb) return true;
-    // "Ayman El Bakry" vs "Ayman"
     if (na.indexOf(nb) === 0 || nb.indexOf(na) === 0) return true;
     return false;
+  }
+
+  var DAY_ORDER = {
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+    sunday: 7,
+  };
+
+  function normalizeDayName(d) {
+    var s = String(d || "").trim().toLowerCase();
+    if (!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function formatDayList(days) {
+    var list = (days || []).slice();
+    if (!list.length) return "";
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + " and " + list[1];
+    return list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+  }
+
+  function formatTimeSlotEnrolled(raw) {
+    var s = String(raw || "").trim().replace(/\s+/g, " ");
+    if (!s) return "";
+    if (/\b(am|pm)\b/i.test(s)) return s;
+    // "4.30 to 6" → "4.30 to 6pm" (afternoon club slots)
+    return s.replace(/\s+to\s+(\d+(?:\.\d+)?)\s*$/i, " to $1pm");
+  }
+
+  function shortServiceLabel(service) {
+    var s = String(service || "").trim();
+    if (!s) return "";
+    return s
+      .replace(/\bProgramme\b/gi, "")
+      .replace(/\bActivity\b/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  function slotMinutesFromLabel(timeSlot) {
+    var s = String(timeSlot || "").trim();
+    var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*to\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i);
+    if (!m) return 0;
+    function toMin(h, mm, mer) {
+      var hh = parseInt(h, 10) || 0;
+      var mi = parseInt(mm || "0", 10) || 0;
+      var merL = String(mer || "").toLowerCase();
+      if (merL === "pm" && hh < 12) hh += 12;
+      if (merL === "am" && hh === 12) hh = 0;
+      if (!merL && hh < 7) hh += 12; // bare afternoon hours
+      return hh * 60 + mi;
+    }
+    var a = toMin(m[1], m[2], m[3]);
+    var b = toMin(m[4], m[5], m[6] || m[3]);
+    var diff = b - a;
+    return diff > 0 ? diff : 0;
+  }
+
+  function rosterRowsForEnrolled() {
+    try {
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      if (src && Array.isArray(src.rows) && src.rows.length) return src.rows;
+    } catch (_e) {}
+    return [];
+  }
+
+  /**
+   * Build enrolled label from roster, e.g.
+   * 90' 3:1 Bespoke (Monday, Wednesday and Friday / 4.30 to 6pm / SwimFarm)
+   */
+  function enrolledLabelForClient(clientName) {
+    var want = String(clientName || "").trim();
+    if (!want) return "";
+    var rows = rosterRowsForEnrolled();
+    if (!rows.length) return "";
+    var groups = Object.create(null);
+    rows.forEach(function (r) {
+      var rowName = String(r.client_name || "").trim();
+      if (!rowName) return;
+      if (!namesRoughlySame(rowName, want) && rowName.toLowerCase() !== want.toLowerCase()) return;
+      var day = normalizeDayName(r.day || r.weekday || "");
+      var time = String(r.time_slot || "").trim();
+      var service = String(r.service || "").trim();
+      var venue = String(r.venue || "").trim();
+      if (!day || !time || !service) return;
+      var gk = [service, time, venue].join("|");
+      if (!groups[gk]) {
+        groups[gk] = {
+          service: service,
+          time: time,
+          venue: venue,
+          days: Object.create(null),
+          instructorsByDay: Object.create(null),
+        };
+      }
+      groups[gk].days[day] = true;
+      if (!groups[gk].instructorsByDay[day]) groups[gk].instructorsByDay[day] = Object.create(null);
+      String(r.instructors || r.instructor || "")
+        .split(/[,+/&|]/)
+        .forEach(function (x) {
+          var s = String(x || "").trim();
+          if (s) groups[gk].instructorsByDay[day][s.toUpperCase()] = true;
+        });
+    });
+    var labels = [];
+    Object.keys(groups).forEach(function (gk) {
+      var g = groups[gk];
+      var days = Object.keys(g.days).sort(function (a, b) {
+        return (DAY_ORDER[a.toLowerCase()] || 99) - (DAY_ORDER[b.toLowerCase()] || 99);
+      });
+      var maxInst = 1;
+      days.forEach(function (d) {
+        var n = Object.keys(g.instructorsByDay[d] || {}).length;
+        if (n > maxInst) maxInst = n;
+      });
+      var mins = slotMinutesFromLabel(g.time) || 0;
+      var bits = [];
+      if (mins) bits.push(mins + "'");
+      if (maxInst > 1) bits.push(maxInst + ":1");
+      bits.push(shortServiceLabel(g.service) || g.service);
+      var inside = [formatDayList(days), formatTimeSlotEnrolled(g.time), g.venue].filter(Boolean).join(" / ");
+      labels.push(bits.join(" ") + (inside ? " (" + inside + ")" : ""));
+    });
+    labels.sort();
+    return labels.join(" · ");
   }
 
   /** WhatsApp threads only (email stays in DB / other screens). */
@@ -629,13 +758,24 @@
     if (t.client && namesRoughlySame(title, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
       title = t.waContact;
     }
-    var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
+    var participant = t.client || "";
+    var enrolled = participant ? enrolledLabelForClient(participant) : "";
+    var subline = "+" + t.phone + (participant ? " · " + participant : "");
     return (
       '<div class="portal-pnlog-pane-head">' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
       '<div class="portal-pnlog-pane-head__text">' +
+      '<div class="portal-pnlog-pane-head__title-row">' +
       '<div class="portal-pnlog-pane-head__who">' +
       esc(title) +
+      "</div>" +
+      (enrolled
+        ? '<div class="portal-pnlog-pane-head__enrolled" title="' +
+          esc(enrolled) +
+          '">' +
+          esc(enrolled) +
+          "</div>"
+        : "") +
       "</div>" +
       '<div class="portal-pnlog-pane-head__sub muted">' +
       esc(subline) +
@@ -1043,7 +1183,19 @@
     root.setAttribute("data-bound", "1");
     bindFilters();
     startInboundLiveRefresh();
-    void loadRows(false);
+    // Roster powers enrolled labels in the thread header (e.g. Tinashe Bespoke).
+    var afterRoster = function () {
+      void loadRows(false);
+    };
+    if (
+      global.portalAdminLoadHeavyScripts &&
+      typeof global.portalAdminHeavyScriptsReady === "function" &&
+      !global.portalAdminHeavyScriptsReady()
+    ) {
+      void global.portalAdminLoadHeavyScripts(["roster"]).then(afterRoster).catch(afterRoster);
+    } else {
+      afterRoster();
+    }
   }
 
   async function fetchUnreadCount(client) {
