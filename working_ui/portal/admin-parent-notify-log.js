@@ -342,11 +342,10 @@
   function shortServiceLabel(service) {
     var s = String(service || "").trim();
     if (!s) return "";
-    return s
-      .replace(/\bProgramme\b/gi, "")
-      .replace(/\bActivity\b/gi, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
+    if (/^bespoke\b/i.test(s)) return "Bespoke";
+    if (/multi[- ]?activity/i.test(s)) return "Multi-Activity";
+    if (/^aquatic\b/i.test(s)) return "Aquatic";
+    return s.replace(/\bProgramme\b/gi, "").replace(/\s{2,}/g, " ").trim();
   }
 
   function slotMinutesFromLabel(timeSlot) {
@@ -765,9 +764,12 @@
       '<div class="portal-pnlog-pane-head">' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
       '<div class="portal-pnlog-pane-head__text">' +
-      '<div class="portal-pnlog-pane-head__title-row">' +
       '<div class="portal-pnlog-pane-head__who">' +
       esc(title) +
+      "</div>" +
+      '<div class="portal-pnlog-pane-head__sub-row">' +
+      '<div class="portal-pnlog-pane-head__sub muted">' +
+      esc(subline) +
       "</div>" +
       (enrolled
         ? '<div class="portal-pnlog-pane-head__enrolled" title="' +
@@ -776,9 +778,6 @@
           esc(enrolled) +
           "</div>"
         : "") +
-      "</div>" +
-      '<div class="portal-pnlog-pane-head__sub muted">' +
-      esc(subline) +
       "</div></div></div>" +
       '<div class="portal-pnlog-thread-scroll" id="portalPnlogThreadScroll">' +
       '<div class="portal-pnlog-thread">' +
@@ -1183,18 +1182,19 @@
     root.setAttribute("data-bound", "1");
     bindFilters();
     startInboundLiveRefresh();
-    // Roster powers enrolled labels in the thread header (e.g. Tinashe Bespoke).
-    var afterRoster = function () {
-      void loadRows(false);
-    };
-    if (
-      global.portalAdminLoadHeavyScripts &&
-      typeof global.portalAdminHeavyScriptsReady === "function" &&
-      !global.portalAdminHeavyScriptsReady()
-    ) {
-      void global.portalAdminLoadHeavyScripts(["roster"]).then(afterRoster).catch(afterRoster);
+    // Messages first; roster is lazy and powers enrolled labels beside the participant.
+    void loadRows(false);
+    function refreshEnrolledHeader() {
+      if (!document.getElementById("portalParentNotifyLogList")) return;
+      renderChat(true);
+    }
+    if (typeof global.portalAdminLoadHeavyScripts === "function") {
+      void global
+        .portalAdminLoadHeavyScripts(["roster"])
+        .then(refreshEnrolledHeader)
+        .catch(refreshEnrolledHeader);
     } else {
-      afterRoster();
+      refreshEnrolledHeader();
     }
   }
 

@@ -200,20 +200,27 @@
   flex: 1 1 auto;
 }
 
-.portal-pnlog-pane-head__title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 12px;
-  min-width: 0;
-}
-
 .portal-pnlog-pane-head__who {
   font-weight: 800;
   font-size: 15px;
   overflow-wrap: anywhere;
   min-width: 0;
   color: var(--pnlog-blue);
+}
+
+.portal-pnlog-pane-head__sub-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.portal-pnlog-pane-head__sub {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  min-width: 0;
   flex: 0 1 auto;
 }
 
@@ -225,12 +232,6 @@
   line-height: 1.35;
   color: #1a5f82;
   overflow-wrap: anywhere;
-}
-
-.portal-pnlog-pane-head__sub {
-  font-size: 12px;
-  overflow-wrap: anywhere;
-  min-width: 0;
 }
 
 /* Must shrink so the composer stays visible below */
