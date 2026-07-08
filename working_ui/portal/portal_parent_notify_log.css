@@ -248,6 +248,16 @@
   cursor: default;
 }
 
+.portal-pnlog-enrolled-chip--multi-acton {
+  background: rgba(234, 88, 12, 0.14);
+  color: #c2410c;
+}
+
+.portal-pnlog-enrolled-chip--multi-swimfarm {
+  background: rgba(14, 116, 144, 0.16);
+  color: #0e7490;
+}
+
 .portal-pnlog-enrolled-chip--multi {
   background: rgba(14, 116, 144, 0.14);
   color: #0e7490;
@@ -261,6 +271,11 @@
 .portal-pnlog-enrolled-chip--aquatic {
   background: rgba(2, 132, 199, 0.14);
   color: #0369a1;
+}
+
+.portal-pnlog-enrolled-chip--daycentre {
+  background: rgba(180, 83, 9, 0.14);
+  color: #b45309;
 }
 
 .portal-pnlog-enrolled-chip--swim {

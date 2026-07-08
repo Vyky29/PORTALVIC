@@ -369,11 +369,34 @@
     return s.replace(/\bProgramme\b/gi, "").replace(/\s{2,}/g, " ").trim();
   }
 
-  function serviceChipTone(service) {
+  /** Staffing ratio is product knowledge — not instructor count on the roster line. */
+  var ENROLLED_RATIO_BY_CLIENT = {
+    tinashe: 3,
+    ikram: 2,
+    fadi: 2,
+    timi: 2,
+  };
+
+  function enrolledRatioForClient(clientName) {
+    var key = String(clientName || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)[0];
+    return ENROLLED_RATIO_BY_CLIENT[key] || 1;
+  }
+
+  function serviceChipTone(service, venue) {
     var s = String(service || "").toLowerCase();
-    if (s.indexOf("multi") >= 0) return "multi";
+    var v = String(venue || "").toLowerCase();
+    if (s.indexOf("multi") >= 0) {
+      if (v.indexOf("swimfarm") >= 0 || v.indexOf("swim farm") >= 0) return "multi-swimfarm";
+      if (v.indexOf("acton") >= 0) return "multi-acton";
+      return "multi";
+    }
     if (s.indexOf("bespoke") >= 0) return "bespoke";
     if (s.indexOf("aquatic") >= 0) return "aquatic";
+    if (s.indexOf("day centre") >= 0 || s.indexOf("daycentre") >= 0) return "daycentre";
     if (s.indexOf("swim") >= 0) return "swim";
     return "other";
   }
@@ -515,6 +538,7 @@
     });
     if (!raw.length) return "";
     var merged = mergeAbuttingHalfSlots(raw);
+    var ratio = enrolledRatioForClient(want);
     var groups = Object.create(null);
     merged.forEach(function (slot) {
       var gk = [slot.serviceKey, slot.start, slot.end, slot.venue].join("|");
@@ -527,30 +551,9 @@
           end: slot.end,
           mins: slot.mins,
           days: Object.create(null),
-          maxInst: 1,
         };
       }
       groups[gk].days[slot.day] = true;
-    });
-    // Ratio = concurrent instructors on one roster line / same start (not sequential halves).
-    Object.keys(groups).forEach(function (gk) {
-      var g = groups[gk];
-      var maxInst = 1;
-      var byDayStart = Object.create(null);
-      raw.forEach(function (slot) {
-        if (slot.serviceKey !== g.serviceKey || slot.venue !== g.venue) return;
-        if (slot.start < g.start || slot.end > g.end) return;
-        var key = slot.day + "|" + slot.start;
-        if (!byDayStart[key]) byDayStart[key] = Object.create(null);
-        Object.keys(slot.instructors || {}).forEach(function (k) {
-          byDayStart[key][k] = true;
-        });
-      });
-      Object.keys(byDayStart).forEach(function (k) {
-        var n = Object.keys(byDayStart[k]).length;
-        if (n > maxInst) maxInst = n;
-      });
-      g.maxInst = maxInst;
     });
     var chips = Object.keys(groups)
       .map(function (gk) {
@@ -560,6 +563,8 @@
         var sa = shortServiceLabel(a.service) || a.service;
         var sb = shortServiceLabel(b.service) || b.service;
         if (sa !== sb) return sa.localeCompare(sb);
+        var va = String(a.venue || "").localeCompare(String(b.venue || ""));
+        if (va) return va;
         return a.start - b.start;
       })
       .map(function (g) {
@@ -568,12 +573,12 @@
         });
         var bits = [];
         if (g.mins) bits.push(g.mins + "'");
-        if (g.maxInst > 1) bits.push(g.maxInst + ":1");
+        if (ratio > 1) bits.push(ratio + ":1");
         bits.push(shortServiceLabel(g.service) || g.service);
         var tip = [formatDayList(days), formatTimeRangeFromMinutes(g.start, g.end), g.venue]
           .filter(Boolean)
           .join(" / ");
-        var tone = serviceChipTone(g.service);
+        var tone = serviceChipTone(g.service, g.venue);
         return (
           '<span class="portal-pnlog-enrolled-chip portal-pnlog-enrolled-chip--' +
           esc(tone) +
