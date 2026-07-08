@@ -292,6 +292,22 @@
     return String(err || "send_failed").replace(/_/g, " ");
   }
 
+  function namesRoughlySame(a, b) {
+    var na = String(a || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    var nb = String(b || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    if (!na || !nb) return false;
+    if (na === nb) return true;
+    // "Ayman El Bakry" vs "Ayman"
+    if (na.indexOf(nb) === 0 || nb.indexOf(na) === 0) return true;
+    return false;
+  }
+
   /** WhatsApp threads only (email stays in DB / other screens). */
   function buildWhatsAppThreads(items) {
     var wa = {};
@@ -301,6 +317,8 @@
           key: key,
           channel: "whatsapp",
           name: "",
+          parentName: "",
+          waContact: "",
           client: "",
           phone: key,
           events: [],
@@ -342,7 +360,8 @@
         t.lastInboundWaId = String(row.wa_message_id || row.context_wa_id || "").trim();
         var inAt = String(row.created_at || "");
         if (inAt > t.lastInboundAt) t.lastInboundAt = inAt;
-        if (row.contact_name && !t.name) t.name = String(row.contact_name).trim();
+        var contact = String(row.contact_name || "").trim();
+        if (contact && !t.waContact) t.waContact = contact;
         return;
       }
       var ch = String(row.channel || "").toLowerCase();
@@ -361,8 +380,19 @@
         channel: "whatsapp",
         row: row,
       });
-      if (!wt.name) wt.name = String(row.parent_name || row.client_display || "").trim();
-      if (row.client_display && !wt.client) wt.client = String(row.client_display).trim();
+      var pname = String(row.parent_name || "").trim();
+      var cname = String(row.client_display || "").trim();
+      // Prefer a parent_name that is not just a copy of the participant name.
+      if (pname) {
+        if (!wt.parentName) wt.parentName = pname;
+        else if (
+          namesRoughlySame(wt.parentName, wt.client || cname) &&
+          !namesRoughlySame(pname, cname || wt.client)
+        ) {
+          wt.parentName = pname;
+        }
+      }
+      if (cname && !wt.client) wt.client = cname;
       if (String(row.whatsapp_status || "").toLowerCase() === "failed") wt.hasFailed = true;
       else wt.hasSent = true;
     });
@@ -373,7 +403,17 @@
           return String(a.when || "").localeCompare(String(b.when || ""));
         });
         t.lastAt = t.events.length ? t.events[t.events.length - 1].when : "";
-        if (!t.name) t.name = "+" + t.phone;
+        // Title = carer/parent (foto 2: Alvar / Frankie). Never prefer the
+        // participant alone when we have a distinct WhatsApp contact or parent.
+        var parent = t.parentName;
+        if (!parent || namesRoughlySame(parent, t.client)) {
+          if (t.waContact && !namesRoughlySame(t.waContact, t.client)) {
+            parent = t.waContact;
+          } else if (!parent) {
+            parent = t.waContact || "";
+          }
+        }
+        t.name = parent || t.client || "+" + t.phone;
         return t;
       })
       .sort(function (a, b) {
@@ -518,6 +558,11 @@
     var sel = t.key === state.selectedKey ? " is-selected" : "";
     var sub = t.events.length ? bodyPreview(t.events[t.events.length - 1].body) : "";
     var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
+    var headName = t.name;
+    // If title still equals the participant, show a clearer label.
+    if (t.client && namesRoughlySame(headName, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
+      headName = t.waContact;
+    }
     return (
       '<button type="button" class="portal-pnlog-conv' +
       sel +
@@ -527,7 +572,7 @@
       '">' +
       '<span class="portal-pnlog-conv__top">' +
       '<span class="portal-pnlog-conv__who">' +
-      esc(t.name) +
+      esc(headName) +
       "</span>" +
       '<span class="portal-pnlog-conv__when muted">' +
       esc(formatLondonShort(t.lastAt)) +
@@ -580,13 +625,17 @@
 
   function renderThreadPane(t) {
     if (!t) return renderPaneEmpty();
+    var title = t.name;
+    if (t.client && namesRoughlySame(title, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
+      title = t.waContact;
+    }
     var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
     return (
       '<div class="portal-pnlog-pane-head">' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
       '<div class="portal-pnlog-pane-head__text">' +
       '<div class="portal-pnlog-pane-head__who">' +
-      esc(t.name) +
+      esc(title) +
       "</div>" +
       '<div class="portal-pnlog-pane-head__sub muted">' +
       esc(subline) +
