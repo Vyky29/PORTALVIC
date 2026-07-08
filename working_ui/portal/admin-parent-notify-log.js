@@ -197,17 +197,22 @@
   function statusChip(status, channel) {
     var s = String(status || "").toLowerCase();
     var label = s;
+    var ticks = "";
     if (s === "sent" || s === "sent_sms") label = s === "sent_sms" ? "SMS sent" : "Sent";
-    else if (s === "delivered") label = "Delivered ✓✓";
-    else if (s === "read") label = "Read ✓✓";
-    else if (s === "failed") label = "Failed";
+    else if (s === "delivered") {
+      label = "Delivered";
+      ticks = '<span class="portal-pnlog-ticks" aria-hidden="true">✓✓</span>';
+    } else if (s === "read") {
+      label = "Read";
+      ticks = '<span class="portal-pnlog-ticks" aria-hidden="true">✓✓</span>';
+    } else if (s === "failed") label = "Failed";
     else if (s === "skipped") label = "Skipped";
     else if (s === "pending") label = "Pending";
     else if (s === "reply") label = "Reply";
     else label = s || "—";
     var cls = "portal-pnlog-chip";
     if (s === "read") cls += " portal-pnlog-chip--read";
-    else if (s === "delivered") cls += " portal-pnlog-chip--in";
+    else if (s === "delivered") cls += " portal-pnlog-chip--delivered";
     else if (s === "sent" || s === "sent_sms") cls += " portal-pnlog-chip--ok";
     else if (s === "reply") cls += " portal-pnlog-chip--in";
     else if (s === "failed") cls += " portal-pnlog-chip--bad";
@@ -219,6 +224,7 @@
       esc(channel || "") +
       '">' +
       esc(label) +
+      (ticks ? " " + ticks : "") +
       "</span>"
     );
   }
@@ -331,12 +337,27 @@
     return list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
   }
 
-  function formatTimeSlotEnrolled(raw) {
-    var s = String(raw || "").trim().replace(/\s+/g, " ");
-    if (!s) return "";
-    if (/\b(am|pm)\b/i.test(s)) return s;
-    // "4.30 to 6" → "4.30 to 6pm" (afternoon club slots)
-    return s.replace(/\s+to\s+(\d+(?:\.\d+)?)\s*$/i, " to $1pm");
+  function formatClockFromMinutes(totalMin) {
+    var m = ((totalMin % (24 * 60)) + 24 * 60) % (24 * 60);
+    var hh = Math.floor(m / 60);
+    var mm = m % 60;
+    var h12 = hh % 12;
+    if (h12 === 0) h12 = 12;
+    var mer = hh >= 12 ? "pm" : "am";
+    if (mm === 0) return h12 + mer;
+    var mmStr = mm < 10 ? "0" + mm : String(mm);
+    return h12 + "." + mmStr + mer;
+  }
+
+  function formatTimeRangeFromMinutes(startMin, endMin) {
+    if (!Number.isFinite(startMin) || !Number.isFinite(endMin) || endMin <= startMin) return "";
+    var a = formatClockFromMinutes(startMin).replace(/am$/i, "").replace(/pm$/i, "");
+    var b = formatClockFromMinutes(endMin);
+    // Prefer club style: "4.30 to 6pm"
+    var aMer = startMin >= 12 * 60 ? "pm" : "am";
+    var bMer = endMin >= 12 * 60 ? "pm" : "am";
+    if (aMer === bMer) return a + " to " + b;
+    return formatClockFromMinutes(startMin) + " to " + b;
   }
 
   function shortServiceLabel(service) {
@@ -348,23 +369,32 @@
     return s.replace(/\bProgramme\b/gi, "").replace(/\s{2,}/g, " ").trim();
   }
 
-  function slotMinutesFromLabel(timeSlot) {
+  function serviceChipTone(service) {
+    var s = String(service || "").toLowerCase();
+    if (s.indexOf("multi") >= 0) return "multi";
+    if (s.indexOf("bespoke") >= 0) return "bespoke";
+    if (s.indexOf("aquatic") >= 0) return "aquatic";
+    if (s.indexOf("swim") >= 0) return "swim";
+    return "other";
+  }
+
+  function parseSlotBounds(timeSlot) {
     var s = String(timeSlot || "").trim();
     var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*to\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i);
-    if (!m) return 0;
+    if (!m) return null;
     function toMin(h, mm, mer) {
       var hh = parseInt(h, 10) || 0;
       var mi = parseInt(mm || "0", 10) || 0;
       var merL = String(mer || "").toLowerCase();
       if (merL === "pm" && hh < 12) hh += 12;
       if (merL === "am" && hh === 12) hh = 0;
-      if (!merL && hh < 7) hh += 12; // bare afternoon hours
+      if (!merL && hh < 7) hh += 12;
       return hh * 60 + mi;
     }
     var a = toMin(m[1], m[2], m[3]);
     var b = toMin(m[4], m[5], m[6] || m[3]);
-    var diff = b - a;
-    return diff > 0 ? diff : 0;
+    if (!(b > a)) return null;
+    return { start: a, end: b, mins: b - a };
   }
 
   function rosterRowsForEnrolled() {
@@ -375,16 +405,80 @@
     return [];
   }
 
+  /** Feedback splits Multi into 45'+45'; merge abutting halves into the real 90' service. */
+  function mergeAbuttingHalfSlots(slots) {
+    var list = (slots || []).slice().sort(function (a, b) {
+      var da = DAY_ORDER[String(a.day || "").toLowerCase()] || 99;
+      var db = DAY_ORDER[String(b.day || "").toLowerCase()] || 99;
+      if (da !== db) return da - db;
+      if (a.venue !== b.venue) return String(a.venue).localeCompare(String(b.venue));
+      if (a.serviceKey !== b.serviceKey) return String(a.serviceKey).localeCompare(String(b.serviceKey));
+      return a.start - b.start;
+    });
+    var out = [];
+    list.forEach(function (slot) {
+      var prev = out.length ? out[out.length - 1] : null;
+      var canMerge =
+        prev &&
+        prev.day === slot.day &&
+        prev.venue === slot.venue &&
+        prev.serviceKey === slot.serviceKey &&
+        /multi/.test(prev.serviceKey) &&
+        prev.end === slot.start &&
+        prev.mins <= 50 &&
+        slot.mins <= 50;
+      if (canMerge) {
+        prev.end = slot.end;
+        prev.mins = prev.end - prev.start;
+        Object.keys(slot.instructors || {}).forEach(function (k) {
+          prev.instructors[k] = true;
+        });
+        return;
+      }
+      out.push({
+        day: slot.day,
+        venue: slot.venue,
+        service: slot.service,
+        serviceKey: slot.serviceKey,
+        start: slot.start,
+        end: slot.end,
+        mins: slot.mins,
+        instructors: Object.assign(Object.create(null), slot.instructors || {}),
+      });
+    });
+    // Drop Multi fragments fully covered by a longer same-day/venue Multi block
+    // (e.g. leftover 4–5.15 when 4.30–6 already merged).
+    var kept = out.filter(function (slot, idx) {
+      if (!/multi/.test(slot.serviceKey)) return true;
+      for (var i = 0; i < out.length; i++) {
+        if (i === idx) continue;
+        var other = out[i];
+        if (other.day !== slot.day || other.venue !== slot.venue) continue;
+        if (!/multi/.test(other.serviceKey)) continue;
+        if (other.start <= slot.start && other.end >= slot.end && other.mins > slot.mins) {
+          return false;
+        }
+        // Overlapping feedback fragment vs real 90' booking (e.g. 4–5.15 vs 4.30–6).
+        var overlap = Math.min(slot.end, other.end) - Math.max(slot.start, other.start);
+        if (overlap > 0 && other.mins >= 80 && slot.mins < other.mins && overlap >= Math.min(slot.mins, 30)) {
+          return false;
+        }
+      }
+      return true;
+    });
+    return kept;
+  }
+
   /**
-   * Build enrolled label from roster, e.g.
-   * 90' 3:1 Bespoke (Monday, Wednesday and Friday / 4.30 to 6pm / SwimFarm)
+   * Enrolled service chips for the participant (hover = day / time / venue).
+   * Multi-Activity halves are merged to the real 90' booking.
    */
-  function enrolledLabelForClient(clientName) {
+  function enrolledChipsForClient(clientName) {
     var want = String(clientName || "").trim();
     if (!want) return "";
     var rows = rosterRowsForEnrolled();
     if (!rows.length) return "";
-    var groups = Object.create(null);
+    var deduped = Object.create(null);
     rows.forEach(function (r) {
       var rowName = String(r.client_name || "").trim();
       if (!rowName) return;
@@ -393,47 +487,106 @@
       var time = String(r.time_slot || "").trim();
       var service = String(r.service || "").trim();
       var venue = String(r.venue || "").trim();
-      if (!day || !time || !service) return;
-      var gk = [service, time, venue].join("|");
-      if (!groups[gk]) {
-        groups[gk] = {
-          service: service,
-          time: time,
+      var bounds = parseSlotBounds(time);
+      if (!day || !service || !bounds) return;
+      var serviceKey = shortServiceLabel(service).toLowerCase() || service.toLowerCase();
+      var dk = [day, serviceKey, venue, bounds.start, bounds.end].join("|");
+      if (!deduped[dk]) {
+        deduped[dk] = {
+          day: day,
           venue: venue,
-          days: Object.create(null),
-          instructorsByDay: Object.create(null),
+          service: service,
+          serviceKey: serviceKey,
+          start: bounds.start,
+          end: bounds.end,
+          mins: bounds.mins,
+          instructors: Object.create(null),
         };
       }
-      groups[gk].days[day] = true;
-      if (!groups[gk].instructorsByDay[day]) groups[gk].instructorsByDay[day] = Object.create(null);
       String(r.instructors || r.instructor || "")
         .split(/[,+/&|]/)
         .forEach(function (x) {
           var s = String(x || "").trim();
-          if (s) groups[gk].instructorsByDay[day][s.toUpperCase()] = true;
+          if (s) deduped[dk].instructors[s.toUpperCase()] = true;
         });
     });
-    var labels = [];
+    var raw = Object.keys(deduped).map(function (k) {
+      return deduped[k];
+    });
+    if (!raw.length) return "";
+    var merged = mergeAbuttingHalfSlots(raw);
+    var groups = Object.create(null);
+    merged.forEach(function (slot) {
+      var gk = [slot.serviceKey, slot.start, slot.end, slot.venue].join("|");
+      if (!groups[gk]) {
+        groups[gk] = {
+          service: slot.service,
+          serviceKey: slot.serviceKey,
+          venue: slot.venue,
+          start: slot.start,
+          end: slot.end,
+          mins: slot.mins,
+          days: Object.create(null),
+          maxInst: 1,
+        };
+      }
+      groups[gk].days[slot.day] = true;
+    });
+    // Ratio = concurrent instructors on one roster line / same start (not sequential halves).
     Object.keys(groups).forEach(function (gk) {
       var g = groups[gk];
-      var days = Object.keys(g.days).sort(function (a, b) {
-        return (DAY_ORDER[a.toLowerCase()] || 99) - (DAY_ORDER[b.toLowerCase()] || 99);
-      });
       var maxInst = 1;
-      days.forEach(function (d) {
-        var n = Object.keys(g.instructorsByDay[d] || {}).length;
+      var byDayStart = Object.create(null);
+      raw.forEach(function (slot) {
+        if (slot.serviceKey !== g.serviceKey || slot.venue !== g.venue) return;
+        if (slot.start < g.start || slot.end > g.end) return;
+        var key = slot.day + "|" + slot.start;
+        if (!byDayStart[key]) byDayStart[key] = Object.create(null);
+        Object.keys(slot.instructors || {}).forEach(function (k) {
+          byDayStart[key][k] = true;
+        });
+      });
+      Object.keys(byDayStart).forEach(function (k) {
+        var n = Object.keys(byDayStart[k]).length;
         if (n > maxInst) maxInst = n;
       });
-      var mins = slotMinutesFromLabel(g.time) || 0;
-      var bits = [];
-      if (mins) bits.push(mins + "'");
-      if (maxInst > 1) bits.push(maxInst + ":1");
-      bits.push(shortServiceLabel(g.service) || g.service);
-      var inside = [formatDayList(days), formatTimeSlotEnrolled(g.time), g.venue].filter(Boolean).join(" / ");
-      labels.push(bits.join(" ") + (inside ? " (" + inside + ")" : ""));
+      g.maxInst = maxInst;
     });
-    labels.sort();
-    return labels.join(" · ");
+    var chips = Object.keys(groups)
+      .map(function (gk) {
+        return groups[gk];
+      })
+      .sort(function (a, b) {
+        var sa = shortServiceLabel(a.service) || a.service;
+        var sb = shortServiceLabel(b.service) || b.service;
+        if (sa !== sb) return sa.localeCompare(sb);
+        return a.start - b.start;
+      })
+      .map(function (g) {
+        var days = Object.keys(g.days).sort(function (a, b) {
+          return (DAY_ORDER[a.toLowerCase()] || 99) - (DAY_ORDER[b.toLowerCase()] || 99);
+        });
+        var bits = [];
+        if (g.mins) bits.push(g.mins + "'");
+        if (g.maxInst > 1) bits.push(g.maxInst + ":1");
+        bits.push(shortServiceLabel(g.service) || g.service);
+        var tip = [formatDayList(days), formatTimeRangeFromMinutes(g.start, g.end), g.venue]
+          .filter(Boolean)
+          .join(" / ");
+        var tone = serviceChipTone(g.service);
+        return (
+          '<span class="portal-pnlog-enrolled-chip portal-pnlog-enrolled-chip--' +
+          esc(tone) +
+          '" title="' +
+          esc(tip) +
+          '">' +
+          esc(bits.join(" ")) +
+          "</span>"
+        );
+      });
+    return chips.length
+      ? '<div class="portal-pnlog-pane-head__enrolled">' + chips.join("") + "</div>"
+      : "";
   }
 
   /** WhatsApp threads only (email stays in DB / other screens). */
@@ -758,7 +911,7 @@
       title = t.waContact;
     }
     var participant = t.client || "";
-    var enrolled = participant ? enrolledLabelForClient(participant) : "";
+    var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
     var subline = "+" + t.phone + (participant ? " · " + participant : "");
     return (
       '<div class="portal-pnlog-pane-head">' +
@@ -771,13 +924,7 @@
       '<div class="portal-pnlog-pane-head__sub muted">' +
       esc(subline) +
       "</div>" +
-      (enrolled
-        ? '<div class="portal-pnlog-pane-head__enrolled" title="' +
-          esc(enrolled) +
-          '">' +
-          esc(enrolled) +
-          "</div>"
-        : "") +
+      enrolledHtml +
       "</div></div></div>" +
       '<div class="portal-pnlog-thread-scroll" id="portalPnlogThreadScroll">' +
       '<div class="portal-pnlog-thread">' +

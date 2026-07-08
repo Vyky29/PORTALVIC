@@ -225,13 +225,52 @@
 }
 
 .portal-pnlog-pane-head__enrolled {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   flex: 1 1 12rem;
   min-width: 0;
-  font-size: 12px;
-  font-weight: 600;
+}
+
+.portal-pnlog-enrolled-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
   line-height: 1.35;
-  color: #1a5f82;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.portal-pnlog-enrolled-chip--multi {
+  background: rgba(14, 116, 144, 0.14);
+  color: #0e7490;
+}
+
+.portal-pnlog-enrolled-chip--bespoke {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+.portal-pnlog-enrolled-chip--aquatic {
+  background: rgba(2, 132, 199, 0.14);
+  color: #0369a1;
+}
+
+.portal-pnlog-enrolled-chip--swim {
+  background: rgba(8, 145, 178, 0.14);
+  color: #0e7490;
+}
+
+.portal-pnlog-enrolled-chip--other {
+  background: rgba(71, 85, 105, 0.12);
+  color: #334155;
 }
 
 /* Must shrink so the composer stays visible below */
@@ -372,9 +411,20 @@
   color: #1a5f82;
 }
 
+.portal-pnlog-chip--delivered {
+  background: rgba(22, 163, 74, 0.14);
+  color: #15803d;
+}
+
 .portal-pnlog-chip--read {
-  background: rgba(45, 132, 179, 0.2);
-  color: #1a5f82;
+  background: rgba(22, 163, 74, 0.18);
+  color: #15803d;
+}
+
+.portal-pnlog-ticks {
+  color: #16a34a;
+  font-weight: 800;
+  letter-spacing: -0.04em;
 }
 
 .portal-pnlog-chip--muted {
