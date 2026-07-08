@@ -34,11 +34,6 @@
     return false;
   }
 
-  /** iPhone/iPad home-screen app: in-browser camera preview is often blocked — use native picker. */
-  function preferNativeCameraOnDevice() {
-    return deviceIsIos() && deviceIsStandalonePwa();
-  }
-
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -1259,10 +1254,6 @@
     }
     if (isAtPhotoLimit()) {
       setStatus(photoLimitMessage(), true);
-      return;
-    }
-    if (preferNativeCameraOnDevice()) {
-      openNativePhotoPicker();
       return;
     }
     var video = document.getElementById("portalAchievementsCameraVideo");

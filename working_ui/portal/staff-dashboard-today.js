@@ -365,9 +365,20 @@
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(sid && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
           const now = new Date();
-          const from = portalIsoYmdFromDate(now);
+          const t = window.PORTAL_TERM_FROM_TIMETABLE;
+          const termFrom = String(
+            (dashboardData && dashboardData.termDashboardCalendarFrom)
+            || (t && t.termResumeDate)
+            || ''
+          ).trim().slice(0, 10);
+          const termTo = String(
+            (dashboardData && dashboardData.termDashboardCalendarTo)
+            || (t && t.lastDate)
+            || ''
+          ).trim().slice(0, 10);
+          const from = termFrom || portalIsoYmdFromDate(now);
           const toD = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120);
-          const to = portalIsoYmdFromDate(toD);
+          const to = termTo || portalIsoYmdFromDate(toD);
           portalStaffInstructorCoverCalendarIsoKeys(sid, from, to).forEach(add);
         }
       }catch(_){}
@@ -409,7 +420,6 @@
         }
       }catch(_){}
       try{
-        if(opts.termCalendar !== false){
         const y = Number(dashboardData && dashboardData.termCalendarYear);
         let months = Array.isArray(dashboardData && dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
           ? dashboardData.termCalendarMonths.map(Number).filter(function(m){ return m >= 0 && m <= 11; })
@@ -431,7 +441,6 @@
               add(portalIsoYmdFromDate(new Date(y, monthIndex, day)));
             }
           });
-        }
         }
       }catch(_){}
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
@@ -543,6 +552,22 @@
         // covered/cancelled state. Only replace when we actually got rows, or on the
         // first hydration. Admin voids apply on the next page load.
         const prevOv = window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__;
+        const fetchedIsoSet = Object.create(null);
+        isoList.forEach(function(iso){ fetchedIsoSet[String(iso || '').trim()] = true; });
+        if(merged.length && Array.isArray(prevOv) && prevOv.length){
+          const seenIds = Object.create(null);
+          merged.forEach(function(row){
+            if(row && row.id) seenIds[String(row.id)] = true;
+          });
+          prevOv.forEach(function(row){
+            if(!row || !row.id || seenIds[String(row.id)]) return;
+            const iso = normaliseIsoDate(row.session_date);
+            if(iso && fetchedIsoSet[iso]) return;
+            merged.push(row);
+            seenIds[String(row.id)] = true;
+          });
+          merged.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+        }
         if(merged.length || !Array.isArray(prevOv) || !prevOv.length){
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
         }
