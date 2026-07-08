@@ -737,5 +737,27 @@
         portalResyncPlannerToolsAfterIdentity();
       } catch (_) {}
     });
+    /* Safety net: if `portal:staff-identity-resolved` fired before this module
+       attached its listener (e.g. a cache-bump refetches one script while others
+       load from cache, reordering boot), the topbar can stay stuck on the default
+       profile (3 icons) and drop a worker's own tools (e.g. Youssef's "Plan").
+       Re-apply once the page settles — but only when a staff key resolves, so this
+       never downgrades an already-correct topbar to the default. */
+    var portalLateTopbarResync = function () {
+      try {
+        var k =
+          (typeof resolveCurrentStaffKey === "function" && resolveCurrentStaffKey()) ||
+          (typeof resolveProgrammeLeadStaffKeyFromAuth === "function" &&
+            resolveProgrammeLeadStaffKeyFromAuth());
+        if (k) portalResyncPlannerToolsAfterIdentity();
+      } catch (_) {}
+    };
+    if (global.document && global.document.readyState === "complete") {
+      setTimeout(portalLateTopbarResync, 0);
+    } else {
+      global.addEventListener("load", function () {
+        setTimeout(portalLateTopbarResync, 300);
+      });
+    }
   }
 })(typeof window !== "undefined" ? window : globalThis);
