@@ -1578,6 +1578,60 @@
       const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
       return [start, end, staff, venue].join('|');
     }
+    function portalTodayItemSlotWindow(it){
+      const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+      const skParts = String(it && it.sessionKey || '').split('|');
+      const startRaw = base.start || skParts[1] || '';
+      const endRaw = base.end || skParts[2] || startRaw;
+      const canon = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken
+        : function(v){ return String(v || '').trim(); };
+      const toMin = typeof portalHmToMinutes === 'function'
+        ? portalHmToMinutes
+        : function(){ return NaN; };
+      const startM = toMin(canon(startRaw));
+      const endM = toMin(canon(endRaw));
+      const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
+      const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
+      return { startM, endM, staff, venue };
+    }
+    function portalTodaySlotWindowsOverlap(a, b){
+      if(!a || !b) return false;
+      if(a.staff !== b.staff || a.venue !== b.venue) return false;
+      if(!Number.isFinite(a.startM) || !Number.isFinite(a.endM) || !Number.isFinite(b.startM) || !Number.isFinite(b.endM)) return false;
+      return a.startM < b.endM && b.startM < a.endM;
+    }
+    function portalSessionWindowOverlapsInstructorCover(s, sessionDateIso, staffId){
+      const sid = portalNormKeyStr(staffId);
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!s || !sid || !iso) return false;
+      const venue = portalNormKeyStr(s.venue);
+      const sStart = String(s.start || '').trim();
+      const sEnd = String(s.end || s.start || '').trim();
+      const overlapFn = typeof portalSessionTimeWindowsOverlap === 'function'
+        ? portalSessionTimeWindowsOverlap
+        : function(rStart, rEnd, aStart, aEnd){
+          const toMin = typeof portalHmToMinutes === 'function' ? portalHmToMinutes : function(){ return NaN; };
+          const canon = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken : function(v){ return String(v || '').trim(); };
+          const lo1 = toMin(canon(typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(rStart) : rStart));
+          const hi1 = toMin(canon(typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(rEnd || rStart) : (rEnd || rStart)));
+          const lo2 = toMin(canon(aStart));
+          const hi2 = toMin(canon(aEnd || aStart));
+          if(!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) return false;
+          return lo1 < hi2 && lo2 < hi1;
+        };
+      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      for(let i = 0; i < rows.length; i++){
+        const ov = rows[i];
+        if(String(ov.status || 'active') !== 'active') continue;
+        if(String(ov.override_type || '').trim() !== 'instructor_reassign') continue;
+        if(normaliseIsoDate(ov.session_date) !== iso) continue;
+        if(portalNormKeyStr(ov.payload && ov.payload.covering_staff_id) !== sid) continue;
+        if(portalNormKeyStr(ov.anchor_venue) !== venue) continue;
+        if(overlapFn(ov.anchor_start, ov.anchor_end, sStart, sEnd)) return true;
+      }
+      return false;
+    }
     function portalTodayItemFeedbackPriority(it){
       if(!it || it.kind !== 'client') return 0;
       const r = typeof getEffectiveSessionReviewRecord === 'function'
@@ -1899,6 +1953,7 @@
             }, meta);
           }
           if(manualOv === 'NO_CLIENT'){
+            if(portalSessionWindowOverlapsInstructorCover(s, sessionDateKey, staffId)) return null;
             const cNo = clientNotesById.available;
             const showSpecNo = !isBespokeActivity(activity);
             return Object.assign({
@@ -2067,6 +2122,7 @@
                 scheduleAdminAdjusted: true
               });
             }
+            if(portalSessionWindowOverlapsInstructorCover(s, sessionDateKey, staffId)) return null;
             const c = clientNotesById.available;
             const showSpec = !isBespokeActivity(activity);
             return Object.assign({
@@ -2101,6 +2157,7 @@
                 scheduleAdminAdjusted: true
               });
             }
+            if(portalSessionWindowOverlapsInstructorCover(s, sessionDateKey, staffId)) return null;
             const c = clientNotesById.available;
             let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
             if(supportHidePoolNote) poolLocationLabel = null;
@@ -2494,32 +2551,52 @@
       }
       function portalDedupeInstructorCoverExtras(primaryItems, extraItems){
         if(!Array.isArray(primaryItems) || !Array.isArray(extraItems) || !extraItems.length) return extraItems || [];
-        const seen = Object.create(null);
+        const seenExact = Object.create(null);
+        const occupied = [];
         primaryItems.forEach(function(it){
           const k = portalTodayItemClientSlotDedupeKey(it);
-          if(k) seen[k] = true;
+          if(k) seenExact[k] = true;
+          if(!it || it.kind !== 'client') return;
+          const cid = String(it.clientId || '').trim().toLowerCase();
+          if(!cid || cid === 'available' || cid === 'closed') return;
+          occupied.push({ clientId: cid, win: portalTodayItemSlotWindow(it), dedupeKey: k });
         });
         return extraItems.filter(function(it){
           const ov = it && it.__portalScheduleOverride;
           if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return true;
           const k = portalTodayItemClientSlotDedupeKey(it);
-          return !k || !seen[k];
+          if(k && seenExact[k]) return false;
+          const win = portalTodayItemSlotWindow(it);
+          const cid = String(it.clientId || '').trim().toLowerCase();
+          if(!cid || cid === 'available' || cid === 'closed') return true;
+          for(let i = 0; i < occupied.length; i++){
+            const o = occupied[i];
+            if(o.clientId !== cid) continue;
+            if(k && o.dedupeKey && k === o.dedupeKey) return false;
+            if(portalTodaySlotWindowsOverlap(o.win, win)) return false;
+          }
+          return true;
         });
       }
       function portalSuppressAvailableWhenSlotFilled(items){
         if(!Array.isArray(items) || !items.length) return items || [];
-        const filled = Object.create(null);
+        const filledExact = Object.create(null);
+        const filledWindows = [];
         items.forEach(function(it){
           if(!it || it.kind !== 'client') return;
           const cid = String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed') return;
-          const ov = it && it.__portalScheduleOverride;
-          if(ov && String(ov.override_type || '').trim() === 'instructor_reassign') return;
-          filled[portalTodaySlotOccupancyKey(it)] = true;
+          filledExact[portalTodaySlotOccupancyKey(it)] = true;
+          filledWindows.push(portalTodayItemSlotWindow(it));
         });
         return items.filter(function(it){
           if(!it || it.kind !== 'available') return true;
-          return !filled[portalTodaySlotOccupancyKey(it)];
+          if(filledExact[portalTodaySlotOccupancyKey(it)]) return false;
+          const availWin = portalTodayItemSlotWindow(it);
+          for(let i = 0; i < filledWindows.length; i++){
+            if(portalTodaySlotWindowsOverlap(availWin, filledWindows[i])) return false;
+          }
+          return true;
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
