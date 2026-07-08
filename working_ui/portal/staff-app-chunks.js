@@ -36,7 +36,7 @@
     "/portal/portal_participant_photos.js?v=20260628-timi-smile",
     "/portal/portal_topbar_header.js?v=20260707-topbar-guard",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
-    "/portal/portal_swimming_instructor_menus.js?v=20260708-topbar-debug2",
+    "/portal/portal_swimming_instructor_menus.js?v=20260708c-topbar-plan-fix",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",
     "/portal/portal_today_next_chips.js?v=20260609-photo-fallback",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
