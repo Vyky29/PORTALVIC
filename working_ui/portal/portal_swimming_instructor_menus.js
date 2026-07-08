@@ -383,6 +383,9 @@
   function resolveTopbarProfileForStaffGuarded(staffKey) {
     var canon = canonicalStaffRosterKey(staffKey);
     var profile = resolveTopbarProfileForStaff(staffKey);
+    // #region agent log
+    try{fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'035b4c'},body:JSON.stringify({sessionId:'035b4c',hypothesisId:'resolve',location:'portal_swimming_instructor_menus.js:383',message:'resolveGuarded',data:{staffKeyIn:String(staffKey||''),canon:canon,matchedExplicit:!!(profile&&profile!==DEFAULT_TOPBAR_PROFILE),resultPlanner:!!(profile&&profile.planner),lastExplicitKey:__portalLastExplicitKey,hasLastExplicit:!!__portalLastExplicitProfile},timestamp:Date.now()})}).catch(()=>{});}catch(_){}
+    // #endregion
     if (profile && profile !== DEFAULT_TOPBAR_PROFILE) {
       __portalLastExplicitKey = canon;
       __portalLastExplicitProfile = profile;
@@ -515,6 +518,9 @@
     setIdsVisible(SWIMMING_VENUE_IDS, venueOn);
     setIdsVisible(SWIMMING_PICKUP_IDS, !!profile.pickup);
     setIdsVisible(SWIMMING_PLANNER_IDS, !!profile.planner);
+    // #region agent log
+    try{fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'035b4c'},body:JSON.stringify({sessionId:'035b4c',hypothesisId:'apply',location:'portal_swimming_instructor_menus.js:517',message:'applyTopbarProfile',data:{planner:!!profile.planner,isDefault:profile===DEFAULT_TOPBAR_PROFILE,planCellHidden:((global.document&&global.document.getElementById('topbarToolCellSessionPlanner'))||{}).hidden,planCellExists:!!(global.document&&global.document.getElementById('topbarToolCellSessionPlanner'))},timestamp:Date.now()})}).catch(()=>{});}catch(_){}
+    // #endregion
     if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
       try {
         global.portalEnableRoutinesPlannerUi();
@@ -588,6 +594,9 @@
   function portalResyncPlannerToolsAfterIdentity() {
     var staffKey = resolveCurrentStaffKey();
     if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
+    // #region agent log
+    try{fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'035b4c'},body:JSON.stringify({sessionId:'035b4c',hypothesisId:'event',location:'portal_swimming_instructor_menus.js:588',message:'resyncAfterIdentity',data:{staffKey:String(staffKey||'')},timestamp:Date.now()})}).catch(()=>{});}catch(_){}
+    // #endregion
     applyTopbarProfile(resolveTopbarProfileForStaffGuarded(staffKey));
     try {
       if (typeof global.portalSyncTopbarRoleTools === "function") {
@@ -749,7 +758,13 @@
           (typeof resolveCurrentStaffKey === "function" && resolveCurrentStaffKey()) ||
           (typeof resolveProgrammeLeadStaffKeyFromAuth === "function" &&
             resolveProgrammeLeadStaffKeyFromAuth());
+        // #region agent log
+        try{fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'035b4c'},body:JSON.stringify({sessionId:'035b4c',hypothesisId:'event',location:'portal_swimming_instructor_menus.js:late',message:'lateResync',data:{resolvedKey:String(k||'')},timestamp:Date.now()})}).catch(()=>{});}catch(_){}
+        // #endregion
         if (k) portalResyncPlannerToolsAfterIdentity();
+        // #region agent log
+        try{setTimeout(function(){var c=global.document&&global.document.getElementById('topbarToolCellSessionPlanner');fetch('http://127.0.0.1:7580/ingest/26d61b03-7462-4bdd-b8f7-734b28cdcaa9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'035b4c'},body:JSON.stringify({sessionId:'035b4c',hypothesisId:'settled',location:'portal_swimming_instructor_menus.js:settled',message:'settledState',data:{planCellExists:!!c,planCellHidden:c?c.hidden:null,planCellAriaHidden:c?c.getAttribute('aria-hidden'):null},timestamp:Date.now()})}).catch(()=>{});},2000);}catch(_){}
+        // #endregion
       } catch (_) {}
     };
     if (global.document && global.document.readyState === "complete") {
