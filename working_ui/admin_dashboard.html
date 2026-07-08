@@ -23269,10 +23269,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ansTh.hidden = !showAns;
             if(showAns) ansTh.textContent = paxContactsRegQuestionLabel(qv);
           }
+          /* Build the unified list ONCE per refresh and index by id. Previously each
+             row called paxContactsFindById() -> paxContactsUnifiedList(), rebuilding
+             the whole (heavy) list ~N times per keystroke (O(n^2)), which froze the
+             search input so only the first character registered. */
+          var byId = {};
+          var L = paxContactsUnifiedList();
+          for(var li = 0; li < L.length; li++){ byId[String(L[li].id)] = L[li]; }
           var n = 0;
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
-            var p = paxContactsFindById(id);
+            var p = byId[String(id)];
             if(!p){ tr.style.display = 'none'; return; }
             var ok = true;
             if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
